@@ -1,1 +1,4 @@
 project_id = "vxxgvdlqvvchtlmqnrqf"
+
+[functions.nylas-callback]
+verify_jwt = false
