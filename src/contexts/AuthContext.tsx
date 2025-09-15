@@ -63,13 +63,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) {
       toast({
         variant: "destructive",
-        title: "Sign up failed",
+        title: "Regisztráció sikertelen",
         description: error.message
       });
     } else {
       toast({
-        title: "Check your email",
-        description: "We've sent you a confirmation link."
+        title: "Ellenőrizd az email-ed",
+        description: "Elküldtünk egy megerősítő linket."
       });
     }
     
@@ -85,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) {
       toast({
         variant: "destructive",
-        title: "Sign in failed",
+        title: "Bejelentkezés sikertelen",
         description: error.message
       });
     }
@@ -98,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) {
       toast({
         variant: "destructive",
-        title: "Sign out failed",
+        title: "Kijelentkezés sikertelen",
         description: error.message
       });
     }

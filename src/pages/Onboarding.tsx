@@ -81,15 +81,15 @@ const Onboarding = () => {
       }
 
       toast({
-        title: "Profile completed!",
-        description: "Welcome to your Invoice Management dashboard."
+        title: "Profil elkészült!",
+        description: "Üdvözlünk a Számla Kezelő rendszerben."
       });
 
       navigate('/');
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Setup failed",
+        title: "Beállítás sikertelen",
         description: error.message
       });
     } finally {
@@ -103,45 +103,45 @@ const Onboarding = () => {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Set Up Your Invoice Categories</CardTitle>
+          <CardTitle className="text-2xl font-bold">Állítsd be a számla kategóriáidat</CardTitle>
           <CardDescription>
-            Create projects to organize your invoices and expenses by category
+            Hozz létre projekteket a számlák és kiadások kategorizálásához
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Profile Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Profile Information</h3>
+              <h3 className="text-lg font-semibold">Profil információk</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name">Teljes név</Label>
                   <Input
                     id="name"
                     type="text"
-                    placeholder="Enter your full name"
+                    placeholder="Add meg a teljes neved"
                     value={profile.name}
                     onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="position">Position</Label>
+                  <Label htmlFor="position">Beosztás</Label>
                   <Input
                     id="position"
                     type="text"
-                    placeholder="e.g. CEO, Manager, Accountant"
+                    placeholder="pl. vezérigazgató, menedzser, könyvelő"
                     value={profile.position}
                     onChange={(e) => setProfile({ ...profile, position: e.target.value })}
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="company">Company</Label>
+                <Label htmlFor="company">Cég</Label>
                 <Input
                   id="company"
                   type="text"
-                  placeholder="Enter your company name"
+                  placeholder="Add meg a cég nevét"
                   value={profile.company}
                   onChange={(e) => setProfile({ ...profile, company: e.target.value })}
                 />
@@ -151,7 +151,7 @@ const Onboarding = () => {
             {/* Projects */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Invoice Categories</h3>
+                <h3 className="text-lg font-semibold">Számla kategóriák</h3>
                 <Button
                   type="button"
                   variant="outline"
@@ -160,18 +160,18 @@ const Onboarding = () => {
                   className="flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
-                  Add Category
+                  Kategória hozzáadása
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground">
-                Create categories to organize your invoices and expenses. Each category should represent a different type of project or expense area.
+                Hozz létre kategóriákat a számlák és kiadások rendszerezéséhez. Minden kategória egy különböző projekt vagy kiadási területet jelent.
               </p>
               
               {projects.map((project, index) => (
                 <Card key={index} className="p-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Project {index + 1}</h4>
+                      <h4 className="font-medium">Projekt {index + 1}</h4>
                       {projects.length > 1 && (
                         <Button
                           type="button"
@@ -184,20 +184,20 @@ const Onboarding = () => {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor={`project-name-${index}`}>Category Name</Label>
+                      <Label htmlFor={`project-name-${index}`}>Kategória neve</Label>
                       <Input
                         id={`project-name-${index}`}
                         type="text"
-                        placeholder="e.g. Marketing, Office Supplies, Travel"
+                        placeholder="pl. Marketing, Irodai kellékek, Utazás"
                         value={project.name}
                         onChange={(e) => updateProject(index, 'name', e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor={`project-description-${index}`}>Invoice Types</Label>
+                      <Label htmlFor={`project-description-${index}`}>Számla típusok</Label>
                       <Textarea
                         id={`project-description-${index}`}
-                        placeholder="Describe what kinds of invoices/expenses belong to this category (e.g. advertising costs, social media tools, promotional materials)"
+                        placeholder="Írj le, milyen számlák/kiadások tartoznak ebbe a kategóriába (pl. reklámköltségek, közösségi média eszközök, promóciós anyagok)"
                         value={project.description}
                         onChange={(e) => updateProject(index, 'description', e.target.value)}
                         rows={3}
@@ -212,7 +212,7 @@ const Onboarding = () => {
             <NylasEmailConnect />
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Setting up...' : 'Complete Setup'}
+              {loading ? 'Beállítás...' : 'Beállítás befejezése'}
             </Button>
           </form>
         </CardContent>

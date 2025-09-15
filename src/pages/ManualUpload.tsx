@@ -28,8 +28,8 @@ const ManualUpload = () => {
       }
       toast({
         variant: "destructive",
-        title: "Invalid file type",
-        description: `${file.name} is not a supported file type. Please upload PDF or image files.`
+        title: "Érvénytelen fájltípus",
+        description: `${file.name} nem támogatott fájltípus. Kérlek tölts fel PDF vagy kép fájlokat.`
       });
       return false;
     });
@@ -45,8 +45,8 @@ const ManualUpload = () => {
     if (selectedFiles.length === 0) {
       toast({
         variant: "destructive",
-        title: "No files selected",
-        description: "Please select at least one file to upload."
+        title: "Nincs kiválasztott fájl",
+        description: "Kérlek válassz ki legalább egy fájlt a feltöltéshez."
       });
       return;
     }
@@ -59,16 +59,16 @@ const ManualUpload = () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast({
-        title: "Upload successful!",
-        description: `${selectedFiles.length} file(s) uploaded and queued for processing.`
+        title: "Feltöltés sikeres!",
+        description: `${selectedFiles.length} fájl feltöltve és feldolgozásra várakozik.`
       });
       
       setSelectedFiles([]);
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Upload failed",
-        description: "There was an error uploading your files. Please try again."
+        title: "Feltöltés sikertelen",
+        description: "Hiba történt a fájlok feltöltése során. Kérlek próbáld újra."
       });
     } finally {
       setUploading(false);
@@ -86,9 +86,9 @@ const ManualUpload = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Manual Invoice Upload</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Kézi számla feltöltés</h1>
         <p className="text-muted-foreground">
-          Upload invoice files directly for processing and categorization
+          Tölts fel számla fájlokat feldolgozásra és kategorizálásra
         </p>
       </div>
 
@@ -96,19 +96,19 @@ const ManualUpload = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
-            Upload Invoice Files
+            Számla fájlok feltöltése
           </CardTitle>
           <CardDescription>
-            Select PDF or image files containing invoices. Supported formats: PDF, JPG, PNG, WebP
+            Válassz PDF vagy kép fájlokat, amelyek számlákat tartalmaznak. Támogatott formátumok: PDF, JPG, PNG, WebP
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
             <FileText className="h-12 w-12 text-muted-foreground mb-4" />
             <div className="space-y-2">
-              <p className="text-sm font-medium">Choose files to upload</p>
+              <p className="text-sm font-medium">Válassz fájlokat a feltöltéshez</p>
               <p className="text-xs text-muted-foreground">
-                Select multiple files at once or upload one by one
+                Több fájlt is kiválaszthatsz egyszerre vagy egyenként is feltöltheted
               </p>
             </div>
             <Button 
@@ -116,7 +116,7 @@ const ManualUpload = () => {
               onClick={() => document.getElementById('file-input')?.click()}
             >
               <Upload className="h-4 w-4 mr-2" />
-              Browse Files
+              Fájlok tallózása
             </Button>
             <input
               id="file-input"
@@ -130,7 +130,7 @@ const ManualUpload = () => {
 
           {selectedFiles.length > 0 && (
             <div className="space-y-4">
-              <h3 className="font-medium">Selected Files ({selectedFiles.length})</h3>
+              <h3 className="font-medium">Kiválasztott fájlok ({selectedFiles.length})</h3>
               <div className="space-y-2">
                 {selectedFiles.map((file, index) => (
                   <div
@@ -170,12 +170,12 @@ const ManualUpload = () => {
                 {uploading ? (
                   <>
                     <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
-                    Processing...
+                    Feldolgozás...
                   </>
                 ) : (
                   <>
                     <Upload className="h-4 w-4 mr-2" />
-                    Upload {selectedFiles.length} File{selectedFiles.length !== 1 ? 's' : ''}
+                    {selectedFiles.length} fájl feltöltése
                   </>
                 )}
               </Button>

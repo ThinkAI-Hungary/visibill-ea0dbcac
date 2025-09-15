@@ -16,91 +16,91 @@ export type Database = {
     Tables: {
       invoices: {
         Row: {
-          attachment_url: string | null
-          buyer_address: string | null
-          buyer_name: string
-          buyer_vat_id: string | null
-          cash_accounting: boolean | null
-          created_at: string
-          currency: string | null
-          email_message_id: string | null
-          gross_total_amount: number
+          adoalap_osszesen: number
+          adomentesseg_hivatkozas: string | null
+          afa_kulcsok_bontasban: string | null
+          afa_osszeg_osszesen: number
+          brutto_vegosszeg: number
+          elado_cim: string | null
+          elado_nev: string
+          elado_vat_id: string | null
+          email_uzenet_id: string | null
+          feldolgozva: string | null
+          forditott_adozas: boolean | null
+          frissitve: string
           id: string
-          invoice_number: string
-          issue_date: string
-          performance_date: string | null
-          processed_at: string | null
+          kibocsatas_datuma: string
+          letrehozva: string
+          melleklet_url: string | null
+          onszamlazas: boolean | null
+          penzforgalmi_elszamolas: boolean | null
+          penznem: string | null
           project_id: string | null
-          reverse_charge: boolean | null
-          self_billing: boolean | null
-          seller_address: string | null
-          seller_name: string
-          seller_vat_id: string | null
-          status: string | null
-          tax_base_total: number
-          tax_exemption_reference: string | null
-          updated_at: string
+          statusz: string | null
+          szamlaszam: string
+          teljesites_datuma: string | null
           user_id: string
-          vat_amount_total: number
-          vat_rate_breakdown: string | null
+          vevo_cim: string | null
+          vevo_nev: string
+          vevo_vat_id: string | null
         }
         Insert: {
-          attachment_url?: string | null
-          buyer_address?: string | null
-          buyer_name: string
-          buyer_vat_id?: string | null
-          cash_accounting?: boolean | null
-          created_at?: string
-          currency?: string | null
-          email_message_id?: string | null
-          gross_total_amount?: number
+          adoalap_osszesen?: number
+          adomentesseg_hivatkozas?: string | null
+          afa_kulcsok_bontasban?: string | null
+          afa_osszeg_osszesen?: number
+          brutto_vegosszeg?: number
+          elado_cim?: string | null
+          elado_nev: string
+          elado_vat_id?: string | null
+          email_uzenet_id?: string | null
+          feldolgozva?: string | null
+          forditott_adozas?: boolean | null
+          frissitve?: string
           id?: string
-          invoice_number: string
-          issue_date: string
-          performance_date?: string | null
-          processed_at?: string | null
+          kibocsatas_datuma: string
+          letrehozva?: string
+          melleklet_url?: string | null
+          onszamlazas?: boolean | null
+          penzforgalmi_elszamolas?: boolean | null
+          penznem?: string | null
           project_id?: string | null
-          reverse_charge?: boolean | null
-          self_billing?: boolean | null
-          seller_address?: string | null
-          seller_name: string
-          seller_vat_id?: string | null
-          status?: string | null
-          tax_base_total?: number
-          tax_exemption_reference?: string | null
-          updated_at?: string
+          statusz?: string | null
+          szamlaszam: string
+          teljesites_datuma?: string | null
           user_id: string
-          vat_amount_total?: number
-          vat_rate_breakdown?: string | null
+          vevo_cim?: string | null
+          vevo_nev: string
+          vevo_vat_id?: string | null
         }
         Update: {
-          attachment_url?: string | null
-          buyer_address?: string | null
-          buyer_name?: string
-          buyer_vat_id?: string | null
-          cash_accounting?: boolean | null
-          created_at?: string
-          currency?: string | null
-          email_message_id?: string | null
-          gross_total_amount?: number
+          adoalap_osszesen?: number
+          adomentesseg_hivatkozas?: string | null
+          afa_kulcsok_bontasban?: string | null
+          afa_osszeg_osszesen?: number
+          brutto_vegosszeg?: number
+          elado_cim?: string | null
+          elado_nev?: string
+          elado_vat_id?: string | null
+          email_uzenet_id?: string | null
+          feldolgozva?: string | null
+          forditott_adozas?: boolean | null
+          frissitve?: string
           id?: string
-          invoice_number?: string
-          issue_date?: string
-          performance_date?: string | null
-          processed_at?: string | null
+          kibocsatas_datuma?: string
+          letrehozva?: string
+          melleklet_url?: string | null
+          onszamlazas?: boolean | null
+          penzforgalmi_elszamolas?: boolean | null
+          penznem?: string | null
           project_id?: string | null
-          reverse_charge?: boolean | null
-          self_billing?: boolean | null
-          seller_address?: string | null
-          seller_name?: string
-          seller_vat_id?: string | null
-          status?: string | null
-          tax_base_total?: number
-          tax_exemption_reference?: string | null
-          updated_at?: string
+          statusz?: string | null
+          szamlaszam?: string
+          teljesites_datuma?: string | null
           user_id?: string
-          vat_amount_total?: number
-          vat_rate_breakdown?: string | null
+          vevo_cim?: string | null
+          vevo_nev?: string
+          vevo_vat_id?: string | null
         }
         Relationships: [
           {

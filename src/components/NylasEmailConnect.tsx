@@ -44,8 +44,8 @@ const NylasEmailConnect: React.FC<NylasEmailConnectProps> = ({ onConnectionUpdat
       console.error('Error fetching tokens:', error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to load connected email accounts"
+        title: "Hiba",
+        description: "Nem sikerült betölteni a kapcsolt email fiókokat"
       });
     } finally {
       setLoading(false);
@@ -78,15 +78,15 @@ const NylasEmailConnect: React.FC<NylasEmailConnectProps> = ({ onConnectionUpdat
         
         if (event.data.success) {
           toast({
-            title: "Email Connected!",
-            description: `Successfully connected ${event.data.email}`
+            title: "Email kapcsolva!",
+            description: `Sikeresen kapcsolva: ${event.data.email}`
           });
           fetchTokens();
           onConnectionUpdate?.();
         } else if (event.data.error) {
           toast({
             variant: "destructive",
-            title: "Connection Failed",
+            title: "Kapcsolódás sikertelen",
             description: event.data.error
           });
         }
@@ -109,7 +109,7 @@ const NylasEmailConnect: React.FC<NylasEmailConnectProps> = ({ onConnectionUpdat
       console.error('Error initiating OAuth:', error);
       toast({
         variant: "destructive",
-        title: "Connection Error",
+        title: "Kapcsolódási hiba",
         description: error.message
       });
     } finally {
@@ -129,8 +129,8 @@ const NylasEmailConnect: React.FC<NylasEmailConnectProps> = ({ onConnectionUpdat
       if (error) throw error;
 
       toast({
-        title: "Email Disconnected",
-        description: `Disconnected ${emailAddress}`
+        title: "Email lekapcsolva",
+        description: `Lekapcsolva: ${emailAddress}`
       });
       
       fetchTokens();
@@ -139,7 +139,7 @@ const NylasEmailConnect: React.FC<NylasEmailConnectProps> = ({ onConnectionUpdat
       console.error('Error disconnecting email:', error);
       toast({
         variant: "destructive",
-        title: "Disconnection Error",
+        title: "Lekapcsolási hiba",
         description: error.message
       });
     }
@@ -151,7 +151,7 @@ const NylasEmailConnect: React.FC<NylasEmailConnectProps> = ({ onConnectionUpdat
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
             <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
-            <span className="ml-2">Loading email connections...</span>
+            <span className="ml-2">Email kapcsolatok betöltése...</span>
           </div>
         </CardContent>
       </Card>
@@ -161,18 +161,18 @@ const NylasEmailConnect: React.FC<NylasEmailConnectProps> = ({ onConnectionUpdat
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Mail className="h-5 w-5" />
-          Email Integration
-        </CardTitle>
-        <CardDescription>
-          Connect your email accounts to automatically process invoice attachments
-        </CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Email integráció
+          </CardTitle>
+          <CardDescription>
+            Kapcsold össze az email fiókjaidat a számla mellékletek automatikus feldolgozásához
+          </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {tokens.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-sm font-medium">Connected Accounts</h4>
+            <h4 className="text-sm font-medium">Kapcsolt fiókok</h4>
             {tokens.map((token) => (
               <div
                 key={token.id}
@@ -187,7 +187,7 @@ const NylasEmailConnect: React.FC<NylasEmailConnectProps> = ({ onConnectionUpdat
                         {token.provider}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        Connected {new Date(token.created_at).toLocaleDateString()}
+                        Kapcsolva: {new Date(token.created_at).toLocaleDateString('hu-HU')}
                       </span>
                     </div>
                   </div>
@@ -213,19 +213,19 @@ const NylasEmailConnect: React.FC<NylasEmailConnectProps> = ({ onConnectionUpdat
           {connecting ? (
             <>
               <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
-              Connecting...
+              Kapcsolódás...
             </>
           ) : (
             <>
               <Plus className="h-4 w-4 mr-2" />
-              Connect Email Account
+              Email fiók kapcsolása
             </>
           )}
         </Button>
         
         {tokens.length === 0 && (
           <p className="text-sm text-muted-foreground text-center">
-            Connect your email to automatically detect and process invoice attachments
+            Kapcsold össze az email-ed a számla mellékletek automatikus feldolgozásához
           </p>
         )}
       </CardContent>

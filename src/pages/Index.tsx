@@ -72,7 +72,7 @@ const Index = () => {
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-          <p className="mt-2 text-muted-foreground">Loading...</p>
+          <p className="mt-2 text-muted-foreground">Betöltés...</p>
         </div>
       </div>
     );
@@ -84,7 +84,7 @@ const Index = () => {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">Invoice Management</h1>
+            <h1 className="text-2xl font-bold">Számla Kezelő</h1>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -93,7 +93,7 @@ const Index = () => {
             </div>
             <Button variant="ghost" size="sm" onClick={handleSignOut}>
               <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
+              Kijelentkezés
             </Button>
           </div>
         </div>
@@ -103,9 +103,9 @@ const Index = () => {
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Welcome Section */}
         <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold">Welcome back, {profile?.name}!</h2>
+          <h2 className="text-3xl font-bold">Üdvözlünk vissza, {profile?.name}!</h2>
           <p className="text-muted-foreground">
-            Manage your invoices and track your business efficiently
+            Kezeld a számláidat és kövesd nyomon a vállalkozásodat hatékonyan
           </p>
         </div>
 
@@ -114,7 +114,7 @@ const Index = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              Profile Overview
+              Profil áttekintés
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -150,18 +150,18 @@ const Index = () => {
         {/* Projects Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Your Projects</CardTitle>
+            <CardTitle>Projektjeid</CardTitle>
             <CardDescription>
               {projects.length === 0 
-                ? "No projects yet. Create your first project to get started."
-                : `You have ${projects.length} project${projects.length === 1 ? '' : 's'}`
+                ? "Még nincsenek projektek. Hozd létre az első projektet a kezdéshez."
+                : `${projects.length} projekted van`
               }
             </CardDescription>
           </CardHeader>
           <CardContent>
             {projects.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No projects created yet.</p>
+                <p>Még nem hoztál létre projekteket.</p>
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -174,7 +174,7 @@ const Index = () => {
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      Created: {new Date(project.created_at).toLocaleDateString()}
+                      Létrehozva: {new Date(project.created_at).toLocaleDateString('hu-HU')}
                     </p>
                   </Card>
                 ))}
@@ -186,18 +186,18 @@ const Index = () => {
         {/* Quick Actions */}
         <div className="grid gap-4 md:grid-cols-3">
           <Card className="p-6 text-center">
-            <h3 className="font-semibold mb-2">Dashboard</h3>
+            <h3 className="font-semibold mb-2">Irányítópult</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              View invoice analytics and insights
+              Számla elemzések és betekintések megtekintése
             </p>
             <Button variant="outline" className="w-full" disabled>
-              Coming Soon
+              Hamarosan
             </Button>
           </Card>
           <Card className="p-6 text-center">
-            <h3 className="font-semibold mb-2">Upload Invoices</h3>
+            <h3 className="font-semibold mb-2">Számlák feltöltése</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Manually upload and process invoices
+              Számlák kézi feltöltése és feldolgozása
             </p>
             <Button 
               variant="outline" 
@@ -205,16 +205,16 @@ const Index = () => {
               onClick={() => navigate('/upload')}
             >
               <Upload className="h-4 w-4 mr-2" />
-              Upload Files
+              Fájlok feltöltése
             </Button>
           </Card>
           <Card className="p-6 text-center">
-            <h3 className="font-semibold mb-2">Nylas Integration</h3>
+            <h3 className="font-semibold mb-2">Nylas integráció</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Connect your email for automatic processing
+              Kapcsold össze az email-ed az automatikus feldolgozáshoz
             </p>
             <Button variant="outline" className="w-full" disabled>
-              Coming Soon
+              Hamarosan
             </Button>
           </Card>
         </div>
