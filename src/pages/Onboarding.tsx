@@ -107,9 +107,9 @@ const Onboarding = () => {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Complete Your Profile</CardTitle>
+          <CardTitle className="text-2xl font-bold">Set Up Your Invoice Categories</CardTitle>
           <CardDescription>
-            Let's set up your profile and initial projects to get started
+            Create projects to organize your invoices and expenses by category
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -155,7 +155,7 @@ const Onboarding = () => {
             {/* Projects */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Initial Projects</h3>
+                <h3 className="text-lg font-semibold">Invoice Categories</h3>
                 <Button
                   type="button"
                   variant="outline"
@@ -164,9 +164,12 @@ const Onboarding = () => {
                   className="flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
-                  Add Project
+                  Add Category
                 </Button>
               </div>
+              <p className="text-sm text-muted-foreground">
+                Create categories to organize your invoices and expenses. Each category should represent a different type of project or expense area.
+              </p>
               
               {projects.map((project, index) => (
                 <Card key={index} className="p-4">
@@ -185,23 +188,23 @@ const Onboarding = () => {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor={`project-name-${index}`}>Project Name</Label>
+                      <Label htmlFor={`project-name-${index}`}>Category Name</Label>
                       <Input
                         id={`project-name-${index}`}
                         type="text"
-                        placeholder="Enter project name"
+                        placeholder="e.g. Marketing, Office Supplies, Travel"
                         value={project.name}
                         onChange={(e) => updateProject(index, 'name', e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor={`project-description-${index}`}>Description (Optional)</Label>
+                      <Label htmlFor={`project-description-${index}`}>Invoice Types</Label>
                       <Textarea
                         id={`project-description-${index}`}
-                        placeholder="Brief description of the project"
+                        placeholder="Describe what kinds of invoices/expenses belong to this category (e.g. advertising costs, social media tools, promotional materials)"
                         value={project.description}
                         onChange={(e) => updateProject(index, 'description', e.target.value)}
-                        rows={2}
+                        rows={3}
                       />
                     </div>
                   </div>
