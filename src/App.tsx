@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import ManualUpload from "./pages/ManualUpload";
+import InvoicesPage from "./pages/InvoicesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,11 @@ const App = () => (
             <Route path="/upload" element={
               <ProtectedRoute>
                 <ManualUpload />
+              </ProtectedRoute>
+            } />
+            <Route path="/invoices" element={
+              <ProtectedRoute>
+                <InvoicesPage />
               </ProtectedRoute>
             } />
             <Route path="/" element={

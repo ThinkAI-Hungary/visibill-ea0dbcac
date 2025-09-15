@@ -50,7 +50,7 @@ const RecentInvoices = ({ invoices, onViewInvoice }: RecentInvoicesProps) => {
             </CardTitle>
             <CardDescription>Az utoljára feldolgozott számlák áttekintése</CardDescription>
           </div>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => window.location.href = '/invoices'}>
             Összes megtekintése
           </Button>
         </div>

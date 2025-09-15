@@ -299,12 +299,16 @@ const Index = () => {
         <div className="grid gap-4 md:grid-cols-3">
           <Card className="p-6 text-center hover:bg-muted/50 transition-colors">
             <BarChart3 className="h-8 w-8 mx-auto mb-3 text-primary" />
-            <h3 className="font-semibold mb-2">Részletes Elemzések</h3>
+            <h3 className="font-semibold mb-2">Számlák áttekintése</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Mélyebb betekintés a pénzügyi adatokba
+              Részletes számla lista szűrési lehetőségekkel
             </p>
-            <Button variant="outline" className="w-full" disabled>
-              Hamarosan
+            <Button 
+              variant="default" 
+              className="w-full"
+              onClick={() => navigate('/invoices')}
+            >
+              Számlák megtekintése
             </Button>
           </Card>
           <Card className="p-6 text-center hover:bg-muted/50 transition-colors">
