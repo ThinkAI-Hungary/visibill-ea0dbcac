@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, User, Building, Briefcase } from 'lucide-react';
+import { LogOut, User, Building, Briefcase, Upload } from 'lucide-react';
 
 interface Profile {
   name: string;
@@ -23,6 +24,7 @@ interface Project {
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -197,8 +199,13 @@ const Index = () => {
             <p className="text-sm text-muted-foreground mb-4">
               Manually upload and process invoices
             </p>
-            <Button variant="outline" className="w-full" disabled>
-              Coming Soon
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => navigate('/upload')}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Files
             </Button>
           </Card>
           <Card className="p-6 text-center">

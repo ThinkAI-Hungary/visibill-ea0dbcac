@@ -9,6 +9,7 @@ import AuthGuard from "./components/AuthGuard";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
+import ManualUpload from "./pages/ManualUpload";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,11 @@ const App = () => (
               <AuthGuard>
                 <Onboarding />
               </AuthGuard>
+            } />
+            <Route path="/upload" element={
+              <ProtectedRoute>
+                <ManualUpload />
+              </ProtectedRoute>
             } />
             <Route path="/" element={
               <ProtectedRoute>
