@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import ManualUpload from "./pages/ManualUpload";
 import InvoicesPage from "./pages/InvoicesPage";
+import NylasTest from "./pages/NylasTest";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -49,6 +50,13 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <Settings />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/test-nylas" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <NylasTest />
                 </AppLayout>
               </ProtectedRoute>
             } />

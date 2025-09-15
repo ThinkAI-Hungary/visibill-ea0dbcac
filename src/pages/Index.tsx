@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, Building, Briefcase, Upload, FileText, Euro, TrendingUp, Calendar, BarChart3, PieChart } from 'lucide-react';
+import { User, Building, Briefcase, Upload, FileText, Euro, TrendingUp, Calendar, BarChart3, PieChart, Mail } from 'lucide-react';
 import MetricCard from '@/components/dashboard/MetricCard';
 import RecentInvoices from '@/components/dashboard/RecentInvoices';
 import ProjectBreakdown from '@/components/dashboard/ProjectBreakdown';
@@ -277,7 +277,7 @@ const Index = () => {
         </Card>
 
         {/* Quick Actions */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card className="p-6 text-center hover:bg-muted/50 transition-colors">
             <BarChart3 className="h-8 w-8 mx-auto mb-3 text-primary" />
             <h3 className="font-semibold mb-2">Számlák áttekintése</h3>
@@ -314,6 +314,20 @@ const Index = () => {
             </p>
             <Button variant="outline" className="w-full" disabled>
               Hamarosan
+            </Button>
+          </Card>
+          <Card className="p-6 text-center hover:bg-muted/50 transition-colors">
+            <Mail className="h-8 w-8 mx-auto mb-3 text-info" />
+            <h3 className="font-semibold mb-2">Nylas Email Teszt</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Email integráció tesztelése
+            </p>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => navigate('/test-nylas')}
+            >
+              Email teszt
             </Button>
           </Card>
         </div>
