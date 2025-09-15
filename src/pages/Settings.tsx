@@ -129,7 +129,7 @@ export default function Settings() {
       .select("*")
       .eq("user_id", user.id);
 
-    if (data) {
+    if (data && data.length > 0) {
       data.forEach((setting) => {
         const value = setting.value;
         
@@ -163,6 +163,7 @@ export default function Settings() {
       });
 
     if (error) {
+      console.error('Profile update error:', error);
       toast({
         title: "Hiba történt",
         description: "A profil mentése sikertelen.",
@@ -182,23 +183,50 @@ export default function Settings() {
 
     setLoading(true);
     
-    for (const [key, value] of Object.entries(settings)) {
-      await supabase
-        .from("settings")
-        .upsert({
-          user_id: user.id,
-          category,
-          key,
-          value: value as any
-        });
-    }
+    try {
+      for (const [key, value] of Object.entries(settings)) {
+        const { error } = await supabase
+          .from("settings")
+          .upsert({
+            user_id: user.id,
+            category,
+            key,
+            value: value as any
+          });
+        
+        if (error) {
+          console.error(`Error saving setting ${key}:`, error);
+          throw error;
+        }
+      }
 
-    toast({
-      title: "Siker",
-      description: "A beállítások sikeresen mentve."
-    });
+      toast({
+        title: "Siker",
+        description: "A beállítások sikeresen mentve."
+      });
+    } catch (error) {
+      console.error('Settings save error:', error);
+      toast({
+        title: "Hiba történt",
+        description: "A beállítások mentése sikertelen.",
+        variant: "destructive"
+      });
+    }
     
     setLoading(false);
+  };
+
+  // Test function to verify settings functionality
+  const testSettings = async () => {
+    console.log('Current settings state:', {
+      profile,
+      businessSettings,
+      notificationSettings,
+      systemSettings
+    });
+    
+    // Test saving a simple setting
+    await updateSettings('system', { test_setting: 'test_value' });
   };
 
   return (
@@ -299,6 +327,14 @@ export default function Settings() {
               <Button onClick={updateProfile} disabled={loading}>
                 Profil mentése
               </Button>
+              
+              {/* Debug: Test settings functionality */}
+              <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-2">Tesztelés:</p>
+                <Button variant="outline" size="sm" onClick={testSettings}>
+                  Beállítások tesztelése
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
