@@ -14,6 +14,113 @@ export type Database = {
   }
   public: {
     Tables: {
+      invoices: {
+        Row: {
+          attachment_url: string | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          due_date: string | null
+          email_message_id: string
+          id: string
+          invoice_date: string | null
+          invoice_number: string | null
+          processed_at: string
+          project_id: string | null
+          status: string | null
+          total_amount: number | null
+          updated_at: string
+          user_id: string
+          vendor_email: string | null
+          vendor_name: string | null
+        }
+        Insert: {
+          attachment_url?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          due_date?: string | null
+          email_message_id: string
+          id?: string
+          invoice_date?: string | null
+          invoice_number?: string | null
+          processed_at?: string
+          project_id?: string | null
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          user_id: string
+          vendor_email?: string | null
+          vendor_name?: string | null
+        }
+        Update: {
+          attachment_url?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          due_date?: string | null
+          email_message_id?: string
+          id?: string
+          invoice_date?: string | null
+          invoice_number?: string | null
+          processed_at?: string
+          project_id?: string | null
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          user_id?: string
+          vendor_email?: string | null
+          vendor_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nylas_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          email_address: string
+          expires_at: string | null
+          grant_id: string
+          id: string
+          provider: string
+          refresh_token: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          email_address: string
+          expires_at?: string | null
+          grant_id: string
+          id?: string
+          provider: string
+          refresh_token?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          email_address?: string
+          expires_at?: string | null
+          grant_id?: string
+          id?: string
+          provider?: string
+          refresh_token?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
