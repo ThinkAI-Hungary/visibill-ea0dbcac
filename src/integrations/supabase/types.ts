@@ -14,6 +14,143 @@ export type Database = {
   }
   public: {
     Tables: {
+      bank_statements: {
+        Row: {
+          account_number: string | null
+          bank_name: string | null
+          closing_balance: number | null
+          created_at: string
+          currency: string | null
+          error_message: string | null
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string | null
+          id: string
+          metadata: Json | null
+          opening_balance: number | null
+          processed_at: string | null
+          statement_period_end: string | null
+          statement_period_start: string | null
+          status: string | null
+          total_credits: number | null
+          total_debits: number | null
+          transaction_count: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_number?: string | null
+          bank_name?: string | null
+          closing_balance?: number | null
+          created_at?: string
+          currency?: string | null
+          error_message?: string | null
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          metadata?: Json | null
+          opening_balance?: number | null
+          processed_at?: string | null
+          statement_period_end?: string | null
+          statement_period_start?: string | null
+          status?: string | null
+          total_credits?: number | null
+          total_debits?: number | null
+          transaction_count?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_number?: string | null
+          bank_name?: string | null
+          closing_balance?: number | null
+          created_at?: string
+          currency?: string | null
+          error_message?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          metadata?: Json | null
+          opening_balance?: number | null
+          processed_at?: string | null
+          statement_period_end?: string | null
+          statement_period_start?: string | null
+          status?: string | null
+          total_credits?: number | null
+          total_debits?: number | null
+          transaction_count?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      bank_transactions: {
+        Row: {
+          amount: number
+          balance: number | null
+          bank_statement_id: string
+          category: string | null
+          counterparty_account: string | null
+          counterparty_name: string | null
+          created_at: string
+          currency: string | null
+          description: string
+          id: string
+          reference: string | null
+          transaction_date: string
+          transaction_type: string | null
+          updated_at: string
+          value_date: string | null
+        }
+        Insert: {
+          amount: number
+          balance?: number | null
+          bank_statement_id: string
+          category?: string | null
+          counterparty_account?: string | null
+          counterparty_name?: string | null
+          created_at?: string
+          currency?: string | null
+          description: string
+          id?: string
+          reference?: string | null
+          transaction_date: string
+          transaction_type?: string | null
+          updated_at?: string
+          value_date?: string | null
+        }
+        Update: {
+          amount?: number
+          balance?: number | null
+          bank_statement_id?: string
+          category?: string | null
+          counterparty_account?: string | null
+          counterparty_name?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string
+          id?: string
+          reference?: string | null
+          transaction_date?: string
+          transaction_type?: string | null
+          updated_at?: string
+          value_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transactions_bank_statement_id_fkey"
+            columns: ["bank_statement_id"]
+            isOneToOne: false
+            referencedRelation: "bank_statements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           adoalap_osszesen: number
