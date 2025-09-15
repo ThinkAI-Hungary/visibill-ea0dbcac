@@ -38,7 +38,7 @@ serve(async (req) => {
 
     if (action === 'get_auth_url') {
       // Generate OAuth URL for Nylas
-      const redirectUri = `${req.url.replace('/nylas-auth', '/nylas-callback')}`;
+      const redirectUri = `https://${new URL(req.url).host}/functions/v1/nylas-callback`;
       const state = `${user.id}-${Date.now()}`;
       
       const authUrl = `https://api.us.nylas.com/v3/connect/auth?` +
