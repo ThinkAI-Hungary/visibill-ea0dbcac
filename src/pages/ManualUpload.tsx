@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/components/ui/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Upload, FileText, X, CreditCard, Building2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Upload, FileText, X, Building2, CreditCard } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const ManualUpload = () => {
   const [selectedInvoiceFiles, setSelectedInvoiceFiles] = useState<File[]>([]);
-  const [selectedBankStatements, setSelectedBankStatements] = useState<File[]>([]);
+  const [selectedBankFiles, setSelectedBankFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -42,16 +42,15 @@ const ManualUpload = () => {
     setSelectedInvoiceFiles(prev => [...prev, ...validFiles]);
   };
 
-  const handleBankStatementSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBankStatementFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     
-    // Filter for bank statement file types
+    // Filter for bank statement file types (PDF, CSV, XLS/XLSX)
     const allowedTypes = [
       'application/pdf',
       'text/csv',
       'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain'
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     ];
     
     const validFiles = files.filter(file => {
@@ -61,20 +60,35 @@ const ManualUpload = () => {
       toast({
         variant: "destructive",
         title: "Érvénytelen fájltípus",
-        description: `${file.name} nem támogatott fájltípus. Kérlek tölts fel PDF, CSV vagy Excel fájlokat.`
+        description: `${file.name} nem támogatott fájltípus. Bankkivonatokhoz tölts fel PDF, CSV vagy Excel fájlokat.`
       });
       return false;
     });
 
-    setSelectedBankStatements(prev => [...prev, ...validFiles]);
+    setSelectedBankFiles(prev => [...prev, ...validFiles]);
   };
 
   const removeInvoiceFile = (index: number) => {
     setSelectedInvoiceFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const removeBankStatement = (index: number) => {
-    setSelectedBankStatements(prev => prev.filter((_, i) => i !== index));
+  const removeBankFile = (index: number) => {
+    setSelectedBankFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadFileToStorage = async (file: File, bucket: string, folder: string) => {
+    if (!user) throw new Error('User not authenticated');
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+    const filePath = `${folder}/${fileName}`;
+
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, file);
+
+    if (error) throw error;
+    return data;
   };
 
   const handleInvoiceUpload = async () => {
@@ -82,7 +96,7 @@ const ManualUpload = () => {
       toast({
         variant: "destructive",
         title: "Nincs kiválasztott fájl",
-        description: "Kérlek válassz ki legalább egy fájlt a feltöltéshez."
+        description: "Kérlek válassz ki legalább egy számlafájlt a feltöltéshez."
       });
       return;
     }
@@ -90,13 +104,13 @@ const ManualUpload = () => {
     setUploading(true);
     
     try {
-      // TODO: Implement actual invoice file upload logic here
+      // TODO: Implement actual invoice upload logic here
       // For now, just simulate upload
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast({
         title: "Feltöltés sikeres!",
-        description: `${selectedInvoiceFiles.length} számla fájl feltöltve és feldolgozásra várakozik.`
+        description: `${selectedInvoiceFiles.length} számlafájl feltöltve és feldolgozásra várakozik.`
       });
       
       setSelectedInvoiceFiles([]);
@@ -112,11 +126,11 @@ const ManualUpload = () => {
   };
 
   const handleBankStatementUpload = async () => {
-    if (selectedBankStatements.length === 0) {
+    if (selectedBankFiles.length === 0) {
       toast({
         variant: "destructive",
         title: "Nincs kiválasztott fájl",
-        description: "Kérlek válassz ki legalább egy bank kivonatot a feltöltéshez."
+        description: "Kérlek válassz ki legalább egy bankkivonat fájlt a feltöltéshez."
       });
       return;
     }
@@ -124,8 +138,8 @@ const ManualUpload = () => {
     if (!user) {
       toast({
         variant: "destructive",
-        title: "Nincs bejelentkezve",
-        description: "A fájlok feltöltéséhez be kell jelentkezned."
+        title: "Nem vagy bejelentkezve",
+        description: "A feltöltéshez be kell jelentkezned."
       });
       return;
     }
@@ -133,18 +147,11 @@ const ManualUpload = () => {
     setUploading(true);
     
     try {
-      for (const file of selectedBankStatements) {
+      for (const file of selectedBankFiles) {
         // Upload file to storage
-        const fileName = `${user.id}/${Date.now()}-${file.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('bank-statements')
-          .upload(fileName, file);
-
-        if (uploadError) {
-          throw uploadError;
-        }
-
-        // Create database record
+        const uploadData = await uploadFileToStorage(file, 'bank-statements', user.id);
+        
+        // Save bank statement record to database
         const { error: dbError } = await supabase
           .from('bank_statements')
           .insert({
@@ -156,23 +163,21 @@ const ManualUpload = () => {
             status: 'uploaded'
           });
 
-        if (dbError) {
-          throw dbError;
-        }
+        if (dbError) throw dbError;
       }
       
       toast({
         title: "Feltöltés sikeres!",
-        description: `${selectedBankStatements.length} bank kivonat feltöltve és feldolgozásra várakozik.`
+        description: `${selectedBankFiles.length} bankkivonat feltöltve és feldolgozásra várakozik.`
       });
       
-      setSelectedBankStatements([]);
+      setSelectedBankFiles([]);
     } catch (error) {
       console.error('Bank statement upload error:', error);
       toast({
         variant: "destructive",
         title: "Feltöltés sikertelen",
-        description: "Hiba történt a bank kivonatok feltöltése során. Kérlek próbáld újra."
+        description: "Hiba történt a bankkivonatok feltöltése során. Kérlek próbáld újra."
       });
     } finally {
       setUploading(false);
@@ -190,9 +195,9 @@ const ManualUpload = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Fájl feltöltés</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Dokumentum feltöltés</h1>
         <p className="text-muted-foreground">
-          Tölts fel számla fájlokat és bank kivonatokat feldolgozásra
+          Tölts fel számlákat és bankkivonatokat feldolgozásra és elemzésre
         </p>
       </div>
 
@@ -203,8 +208,8 @@ const ManualUpload = () => {
             Számlák
           </TabsTrigger>
           <TabsTrigger value="bank-statements" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            Bank kivonatok
+            <Building2 className="h-4 w-4" />
+            Bankkivonatok
           </TabsTrigger>
         </TabsList>
 
@@ -213,7 +218,7 @@ const ManualUpload = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+                <Upload className="h-5 w-5" />
                 Számla fájlok feltöltése
               </CardTitle>
               <CardDescription>
@@ -224,7 +229,7 @@ const ManualUpload = () => {
               <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">Válassz számla fájlokat a feltöltéshez</p>
+                  <p className="text-sm font-medium">Válassz számlafájlokat a feltöltéshez</p>
                   <p className="text-xs text-muted-foreground">
                     Több fájlt is kiválaszthatsz egyszerre vagy egyenként is feltöltheted
                   </p>
@@ -234,7 +239,7 @@ const ManualUpload = () => {
                   onClick={() => document.getElementById('invoice-file-input')?.click()}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  Számla fájlok tallózása
+                  Fájlok tallózása
                 </Button>
                 <input
                   id="invoice-file-input"
@@ -248,7 +253,7 @@ const ManualUpload = () => {
 
               {selectedInvoiceFiles.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="font-medium">Kiválasztott számla fájlok ({selectedInvoiceFiles.length})</h3>
+                  <h3 className="font-medium">Kiválasztott fájlok ({selectedInvoiceFiles.length})</h3>
                   <div className="space-y-2">
                     {selectedInvoiceFiles.map((file, index) => (
                       <div
@@ -288,12 +293,12 @@ const ManualUpload = () => {
                     {uploading ? (
                       <>
                         <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
-                        Számla feltöltés...
+                        Feldolgozás...
                       </>
                     ) : (
                       <>
                         <Upload className="h-4 w-4 mr-2" />
-                        {selectedInvoiceFiles.length} számla feltöltése
+                        {selectedInvoiceFiles.length} számlafájl feltöltése
                       </>
                     )}
                   </Button>
@@ -308,69 +313,58 @@ const ManualUpload = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Bank kivonat feltöltése
+                <Building2 className="h-5 w-5" />
+                Bankkivonat feltöltése
               </CardTitle>
               <CardDescription>
-                Válassz bank kivonat fájlokat feldolgozásra. Támogatott formátumok: PDF, CSV, Excel (XLS/XLSX), TXT
+                Tölts fel bankkivonatokat automatikus tranzakció feldolgozásra. Támogatott formátumok: PDF, CSV, Excel (XLS/XLSX)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="bg-info-subtle border border-info/20 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <Building2 className="h-5 w-5 text-info mt-0.5" />
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-info-foreground">Támogatott bank kivonatok</p>
-                    <p className="text-xs text-info-foreground/80">
-                      A rendszer automatikusan feldolgozza a tranzakciókat és kategorizálja őket a könyveléshez.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
               <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
                 <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">Válassz bank kivonat fájlokat a feltöltéshez</p>
+                  <p className="text-sm font-medium">Válassz bankkivonat fájlokat</p>
                   <p className="text-xs text-muted-foreground">
-                    PDF, CSV, Excel vagy szöveges formátumban
+                    A rendszer automatikusan feldolgozza a tranzakciókat és kategorizálja őket
                   </p>
                 </div>
                 <Button 
                   className="mt-4"
-                  onClick={() => document.getElementById('bank-statement-input')?.click()}
+                  onClick={() => document.getElementById('bank-file-input')?.click()}
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  Bank kivonatok tallózása
+                  Bankkivonatok tallózása
                 </Button>
                 <input
-                  id="bank-statement-input"
+                  id="bank-file-input"
                   type="file"
                   multiple
-                  accept=".pdf,.csv,.xls,.xlsx,.txt"
-                  onChange={handleBankStatementSelect}
+                  accept=".pdf,.csv,.xls,.xlsx"
+                  onChange={handleBankStatementFileSelect}
                   className="hidden"
                 />
               </div>
 
-              {selectedBankStatements.length > 0 && (
+              {selectedBankFiles.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="font-medium">Kiválasztott bank kivonatok ({selectedBankStatements.length})</h3>
+                  <h3 className="font-medium">Kiválasztott bankkivonatok ({selectedBankFiles.length})</h3>
                   <div className="space-y-2">
-                    {selectedBankStatements.map((file, index) => (
+                    {selectedBankFiles.map((file, index) => (
                       <div
                         key={index}
                         className="flex items-center justify-between p-3 border rounded-lg"
                       >
                         <div className="flex items-center gap-3">
-                          <CreditCard className="h-4 w-4 text-muted-foreground" />
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
                           <div>
                             <p className="font-medium text-sm">{file.name}</p>
                             <div className="flex items-center gap-2">
                               <Badge variant="secondary" className="text-xs">
-                                {file.type.includes('csv') ? 'CSV' : 
+                                {file.type === 'text/csv' ? 'CSV' : 
+                                 file.type === 'application/pdf' ? 'PDF' :
                                  file.type.includes('excel') || file.type.includes('spreadsheet') ? 'EXCEL' :
-                                 file.type.includes('pdf') ? 'PDF' : 'TXT'}
+                                 file.type.split('/')[1].toUpperCase()}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
                                 {formatFileSize(file.size)}
@@ -381,7 +375,7 @@ const ManualUpload = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeBankStatement(index)}
+                          onClick={() => removeBankFile(index)}
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -397,12 +391,12 @@ const ManualUpload = () => {
                     {uploading ? (
                       <>
                         <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
-                        Bank kivonat feltöltés...
+                        Feltöltés és feldolgozás...
                       </>
                     ) : (
                       <>
                         <Upload className="h-4 w-4 mr-2" />
-                        {selectedBankStatements.length} bank kivonat feltöltése
+                        {selectedBankFiles.length} bankkivonat feltöltése
                       </>
                     )}
                   </Button>
