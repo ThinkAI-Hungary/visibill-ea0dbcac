@@ -55,8 +55,8 @@ const InvoicesPage = () => {
   
   const [filters, setFilters] = useState<Filters>({
     search: '',
-    status: '',
-    project: '',
+    status: 'all',
+    project: 'all',
     dateFrom: undefined,
     dateTo: undefined,
     amountMin: '',
@@ -120,12 +120,12 @@ const InvoicesPage = () => {
       }
 
       // Status filter
-      if (filters.status && invoice.statusz !== filters.status) {
+      if (filters.status && filters.status !== 'all' && invoice.statusz !== filters.status) {
         return false;
       }
 
       // Project filter
-      if (filters.project && invoice.project_id !== filters.project) {
+      if (filters.project && filters.project !== 'all' && invoice.project_id !== filters.project) {
         return false;
       }
 
@@ -205,8 +205,8 @@ const InvoicesPage = () => {
   const clearFilters = () => {
     setFilters({
       search: '',
-      status: '',
-      project: '',
+      status: 'all',
+      project: 'all',
       dateFrom: undefined,
       dateTo: undefined,
       amountMin: '',
@@ -282,7 +282,7 @@ const InvoicesPage = () => {
                     <SelectValue placeholder="Minden státusz" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Minden státusz</SelectItem>
+                    <SelectItem value="all">Minden státusz</SelectItem>
                     <SelectItem value="feldolgozva">Feldolgozva</SelectItem>
                     <SelectItem value="feldolgozas_alatt">Feldolgozás alatt</SelectItem>
                     <SelectItem value="hiba">Hiba</SelectItem>
@@ -301,7 +301,7 @@ const InvoicesPage = () => {
                     <SelectValue placeholder="Minden projekt" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Minden projekt</SelectItem>
+                    <SelectItem value="all">Minden projekt</SelectItem>
                     {projects.map((project) => (
                       <SelectItem key={project.id} value={project.id}>
                         {project.name}
