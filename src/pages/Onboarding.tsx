@@ -27,11 +27,6 @@ const Onboarding = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-    }
-  }, [user, navigate]);
 
   const addProject = () => {
     setProjects([...projects, { name: '', description: '' }]);
