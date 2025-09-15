@@ -161,7 +161,12 @@ export function AppSidebar() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1" disabled>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => navigate('/settings')}
+                >
                   <Settings className="h-4 w-4 mr-2" />
                   Beállítások
                 </Button>

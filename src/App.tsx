@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import ManualUpload from "./pages/ManualUpload";
 import InvoicesPage from "./pages/InvoicesPage";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,13 @@ const App = () => (
                 </AppLayout>
               </ProtectedRoute>
             } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Settings />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/" element={
               <ProtectedRoute>
                 <AppLayout>
@@ -51,7 +59,6 @@ const App = () => (
                 </AppLayout>
               </ProtectedRoute>
             } />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
