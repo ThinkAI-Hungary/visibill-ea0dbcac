@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { AppLayout } from "./components/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthGuard from "./components/AuthGuard";
 import Index from "./pages/Index";
@@ -31,17 +32,23 @@ const App = () => (
             } />
             <Route path="/upload" element={
               <ProtectedRoute>
-                <ManualUpload />
+                <AppLayout>
+                  <ManualUpload />
+                </AppLayout>
               </ProtectedRoute>
             } />
             <Route path="/invoices" element={
               <ProtectedRoute>
-                <InvoicesPage />
+                <AppLayout>
+                  <InvoicesPage />
+                </AppLayout>
               </ProtectedRoute>
             } />
             <Route path="/" element={
               <ProtectedRoute>
-                <Index />
+                <AppLayout>
+                  <Index />
+                </AppLayout>
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
