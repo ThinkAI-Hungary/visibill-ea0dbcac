@@ -17,60 +17,90 @@ export type Database = {
       invoices: {
         Row: {
           attachment_url: string | null
+          buyer_address: string | null
+          buyer_name: string
+          buyer_vat_id: string | null
+          cash_accounting: boolean | null
           created_at: string
           currency: string | null
-          description: string | null
-          due_date: string | null
-          email_message_id: string
+          email_message_id: string | null
+          gross_total_amount: number
           id: string
-          invoice_date: string | null
-          invoice_number: string | null
-          processed_at: string
+          invoice_number: string
+          issue_date: string
+          performance_date: string | null
+          processed_at: string | null
           project_id: string | null
+          reverse_charge: boolean | null
+          self_billing: boolean | null
+          seller_address: string | null
+          seller_name: string
+          seller_vat_id: string | null
           status: string | null
-          total_amount: number | null
+          tax_base_total: number
+          tax_exemption_reference: string | null
           updated_at: string
           user_id: string
-          vendor_email: string | null
-          vendor_name: string | null
+          vat_amount_total: number
+          vat_rate_breakdown: string | null
         }
         Insert: {
           attachment_url?: string | null
+          buyer_address?: string | null
+          buyer_name: string
+          buyer_vat_id?: string | null
+          cash_accounting?: boolean | null
           created_at?: string
           currency?: string | null
-          description?: string | null
-          due_date?: string | null
-          email_message_id: string
+          email_message_id?: string | null
+          gross_total_amount?: number
           id?: string
-          invoice_date?: string | null
-          invoice_number?: string | null
-          processed_at?: string
+          invoice_number: string
+          issue_date: string
+          performance_date?: string | null
+          processed_at?: string | null
           project_id?: string | null
+          reverse_charge?: boolean | null
+          self_billing?: boolean | null
+          seller_address?: string | null
+          seller_name: string
+          seller_vat_id?: string | null
           status?: string | null
-          total_amount?: number | null
+          tax_base_total?: number
+          tax_exemption_reference?: string | null
           updated_at?: string
           user_id: string
-          vendor_email?: string | null
-          vendor_name?: string | null
+          vat_amount_total?: number
+          vat_rate_breakdown?: string | null
         }
         Update: {
           attachment_url?: string | null
+          buyer_address?: string | null
+          buyer_name?: string
+          buyer_vat_id?: string | null
+          cash_accounting?: boolean | null
           created_at?: string
           currency?: string | null
-          description?: string | null
-          due_date?: string | null
-          email_message_id?: string
+          email_message_id?: string | null
+          gross_total_amount?: number
           id?: string
-          invoice_date?: string | null
-          invoice_number?: string | null
-          processed_at?: string
+          invoice_number?: string
+          issue_date?: string
+          performance_date?: string | null
+          processed_at?: string | null
           project_id?: string | null
+          reverse_charge?: boolean | null
+          self_billing?: boolean | null
+          seller_address?: string | null
+          seller_name?: string
+          seller_vat_id?: string | null
           status?: string | null
-          total_amount?: number | null
+          tax_base_total?: number
+          tax_exemption_reference?: string | null
           updated_at?: string
           user_id?: string
-          vendor_email?: string | null
-          vendor_name?: string | null
+          vat_amount_total?: number
+          vat_rate_breakdown?: string | null
         }
         Relationships: [
           {
