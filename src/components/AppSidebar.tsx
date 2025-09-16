@@ -22,7 +22,8 @@ import {
   Settings, 
   LogOut, 
   User,
-  BarChart3
+  BarChart3,
+  FolderKanban
 } from "lucide-react";
 import visibillLogo from '@/assets/visibill-logo.png';
 
@@ -31,6 +32,11 @@ const navigationItems = [
     title: "Irányítópult",
     url: "/",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Projektkezelő",
+    url: "/onboarding", 
+    icon: FolderKanban,
   },
   {
     title: "Számlák",
