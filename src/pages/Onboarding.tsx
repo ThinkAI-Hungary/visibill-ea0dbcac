@@ -12,21 +12,72 @@ import { Plus, X } from 'lucide-react';
 import NylasEmailConnect from '@/components/NylasEmailConnect';
 
 interface Project {
+  id?: string;
   name: string;
   description: string;
 }
 
 const Onboarding = () => {
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [profile, setProfile] = useState({
     name: '',
     position: '',
     company: '',
   });
-  const [projects, setProjects] = useState<Project[]>([{ name: '', description: '' }]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Load existing data
+  useEffect(() => {
+    const loadExistingData = async () => {
+      if (!user) return;
+      
+      try {
+        // Load profile
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (profileData) {
+          setProfile({
+            name: profileData.name || '',
+            position: profileData.position || '',
+            company: profileData.company || '',
+          });
+        }
+
+        // Load existing projects
+        const { data: projectData } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true });
+
+        if (projectData && projectData.length > 0) {
+          setProjects(projectData.map(p => ({
+            id: p.id,
+            name: p.name,
+            description: p.description || ''
+          })));
+        } else {
+          // If no projects exist, start with one empty project
+          setProjects([{ name: '', description: '' }]);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        setProjects([{ name: '', description: '' }]);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    loadExistingData();
+  }, [user]);
 
 
   const addProject = () => {
@@ -55,41 +106,75 @@ const Onboarding = () => {
       // Update profile
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          user_id: user.id,
           name: profile.name,
           position: profile.position,
           company: profile.company,
-        })
-        .eq('user_id', user.id);
+        });
 
       if (profileError) throw profileError;
 
-      // Create projects
+      // Handle projects (update existing, create new, delete removed)
       const validProjects = projects.filter(p => p.name.trim());
-      if (validProjects.length > 0) {
-        const { error: projectsError } = await supabase
-          .from('projects')
-          .insert(
-            validProjects.map(project => ({
+      
+      for (const project of validProjects) {
+        if (project.id) {
+          // Update existing project
+          const { error: updateError } = await supabase
+            .from('projects')
+            .update({
+              name: project.name,
+              description: project.description,
+            })
+            .eq('id', project.id)
+            .eq('user_id', user.id);
+          
+          if (updateError) throw updateError;
+        } else {
+          // Create new project
+          const { error: createError } = await supabase
+            .from('projects')
+            .insert({
               user_id: user.id,
               name: project.name,
               description: project.description,
-            }))
-          );
+            });
+          
+          if (createError) throw createError;
+        }
+      }
 
-        if (projectsError) throw projectsError;
+      // Delete projects that were removed (projects that exist in DB but not in current list)
+      const currentProjectIds = validProjects.filter(p => p.id).map(p => p.id);
+      if (currentProjectIds.length > 0) {
+        const { data: allUserProjects } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('user_id', user.id);
+        
+        const projectsToDelete = allUserProjects?.filter(p => !currentProjectIds.includes(p.id));
+        
+        if (projectsToDelete && projectsToDelete.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('projects')
+            .delete()
+            .in('id', projectsToDelete.map(p => p.id));
+          
+          if (deleteError) throw deleteError;
+        }
       }
 
       toast({
-        title: "Profil elkészült!",
-        description: "Üdvözlünk a Számla Kezelő rendszerben."
+        title: "Profil frissítve!",
+        description: "A változtatások sikeresen mentve."
       });
 
       navigate('/');
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Beállítás sikertelen",
+        title: "Mentés sikertelen",
         description: error.message
       });
     } finally {
@@ -97,15 +182,28 @@ const Onboarding = () => {
     }
   };
 
-  if (!user) return null;
+  if (!user || initialLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-2xl">
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="text-center space-y-2">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground">Adatok betöltése...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Állítsd be a számla kategóriáidat</CardTitle>
+          <CardTitle className="text-2xl font-bold">Projektkezelő</CardTitle>
           <CardDescription>
-            Hozz létre projekteket a számlák és kiadások kategorizálásához
+            Kezeld a projektjeidet és kategóriáidat a számlák rendszerezéséhez
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -164,14 +262,16 @@ const Onboarding = () => {
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground">
-                Hozz létre kategóriákat a számlák és kiadások rendszerezéséhez. Minden kategória egy különböző projekt vagy kiadási területet jelent.
+                Kezeld a kategóriáidat a számlák és kiadások rendszerezéséhez. Minden kategória egy különböző projekt vagy kiadási területet jelent.
               </p>
               
               {projects.map((project, index) => (
                 <Card key={index} className="p-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Projekt {index + 1}</h4>
+                      <h4 className="font-medium">
+                        {project.id ? `${project.name || `Projekt ${index + 1}`}` : `Új Projekt ${index + 1}`}
+                      </h4>
                       {projects.length > 1 && (
                         <Button
                           type="button"
@@ -212,7 +312,7 @@ const Onboarding = () => {
             <NylasEmailConnect />
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Beállítás...' : 'Beállítás befejezése'}
+              {loading ? 'Mentés...' : 'Változtatások mentése'}
             </Button>
           </form>
         </CardContent>
