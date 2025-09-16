@@ -35,8 +35,9 @@ serve(async (req) => {
       throw new Error('Missing code or state parameter');
     }
 
-    // Extract user ID from state
-    const [userId] = state.split('-');
+    // Extract user ID from state (format: uuid-timestamp)
+    const lastHyphenIndex = state.lastIndexOf('-');
+    const userId = state.substring(0, lastHyphenIndex);
     
     console.log('Processing OAuth callback for user:', userId);
 
