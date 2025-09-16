@@ -85,7 +85,9 @@ serve(async (req) => {
     }
 
     const accountData = await accountResponse.json();
-    console.log('Account data:', accountData);
+    console.log('Account raw:', accountData);
+
+    const grantInfo = accountData?.data ?? accountData;
 
     // Store token in database
     const { data, error: dbError } = await supabase
@@ -95,8 +97,8 @@ serve(async (req) => {
         grant_id: tokenData.grant_id,
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token || null,
-        email_address: accountData.email,
-        provider: accountData.provider,
+        email_address: grantInfo.email,
+        provider: grantInfo.provider,
         expires_at: tokenData.expires_in ? 
           new Date(Date.now() + tokenData.expires_in * 1000).toISOString() : null
       }, {
@@ -115,7 +117,7 @@ serve(async (req) => {
       `<html>
         <body>
           <script>
-            window.opener.postMessage({ success: true, email: '${accountData.email}' }, '*');
+            window.opener.postMessage({ success: true, email: '${grantInfo.email}' }, '*');
             window.close();
           </script>
           <p>Authorization successful! You can close this window.</p>
