@@ -1,0 +1,3 @@
+-- Enable leaked password protection for better security
+-- This is handled at the Supabase project level, not via SQL
+-- The user will need to enable this in the Supabase dashboard
