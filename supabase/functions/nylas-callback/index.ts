@@ -54,6 +54,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         client_id: nylasClientId,
+        client_secret: nylasApiKey,
         redirect_uri: redirectUri,
         code: code,
         grant_type: 'authorization_code'
