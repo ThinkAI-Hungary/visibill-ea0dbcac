@@ -316,20 +316,6 @@ const Index = () => {
               Hamarosan
             </Button>
           </Card>
-          <Card className="p-6 text-center hover:bg-muted/50 transition-colors">
-            <Mail className="h-8 w-8 mx-auto mb-3 text-info" />
-            <h3 className="font-semibold mb-2">Nylas Email Teszt</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Email integráció tesztelése
-            </p>
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => navigate('/test-nylas')}
-            >
-              Email teszt
-            </Button>
-          </Card>
         </div>
       </main>
     </div>
