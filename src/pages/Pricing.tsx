@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Check, Zap, Star, Crown, Gem } from 'lucide-react';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { toast } from 'sonner';
@@ -122,10 +123,29 @@ const pricingData = {
 const Pricing: React.FC = () => {
   const { tier, createCheckout, openCustomerPortal, subscribed } = useSubscription();
   const [billingPeriod, setBillingPeriod] = React.useState<'monthly' | 'yearly'>('monthly');
+  const [selectedVolumes, setSelectedVolumes] = React.useState<Record<string, number>>({});
 
-  const handleSubscribe = async (priceId: string) => {
+  const handleSubscribe = async (planKey: string) => {
+    const selectedVolume = selectedVolumes[planKey];
+    if (!selectedVolume && planKey !== 'salmon') {
+      toast.error('Kérjük válasszon számla mennyiséget');
+      return;
+    }
+
+    const plan = pricingData[planKey as keyof typeof pricingData];
+    if (planKey === 'salmon' || !('invoiceLimits' in plan)) return;
+
+    const volumeIndex = plan.invoiceLimits.indexOf(selectedVolume);
+    const prices = plan.prices[billingPeriod];
+    const priceData = Array.isArray(prices) ? prices[volumeIndex] : null;
+    
+    if (!priceData?.priceId) {
+      toast.error('Hiba történt az árazási információk betöltésekor');
+      return;
+    }
+
     try {
-      const checkoutUrl = await createCheckout(priceId);
+      const checkoutUrl = await createCheckout(priceData.priceId);
       window.open(checkoutUrl, '_blank');
     } catch (error) {
       console.error('Error creating checkout:', error);
@@ -141,6 +161,13 @@ const Pricing: React.FC = () => {
       console.error('Error opening customer portal:', error);
       toast.error('Hiba történt az előfizetés kezelés megnyitásakor');
     }
+  };
+
+  const handleVolumeChange = (planKey: string, volume: string) => {
+    setSelectedVolumes(prev => ({
+      ...prev,
+      [planKey]: parseInt(volume)
+    }));
   };
 
   const formatPrice = (amount: number) => {
@@ -216,27 +243,42 @@ const Pricing: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    {'invoiceLimits' in plan && plan.invoiceLimits?.map((limit, index) => {
-                      const prices = plan.prices[billingPeriod];
-                      const price = Array.isArray(prices) ? prices[index] : null;
-                      
-                      if (!price) return null;
-                      
-                      return (
-                        <div key={limit} className="flex items-center justify-between p-2 rounded border">
-                          <span className="text-sm">{limit} számla/hó</span>
-                          <div className="text-right">
-                            <div className="font-bold">
-                              {formatPrice(price.amount)}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              /{billingPeriod === 'monthly' ? 'hó' : 'év'}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="space-y-4">
+                    {/* Volume Selection Dropdown */}
+                    {'invoiceLimits' in plan && (
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">
+                          Számla mennyiség/hó:
+                        </label>
+                        <Select 
+                          value={selectedVolumes[planKey]?.toString() || ''} 
+                          onValueChange={(value) => handleVolumeChange(planKey, value)}
+                        >
+                          <SelectTrigger className="w-full bg-background border-border">
+                            <SelectValue placeholder="Válasszon mennyiséget" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background border-border z-50">
+                            {plan.invoiceLimits.map((limit, index) => {
+                              const prices = plan.prices[billingPeriod];
+                              const price = Array.isArray(prices) ? prices[index] : null;
+                              
+                              if (!price) return null;
+                              
+                              return (
+                                <SelectItem key={limit} value={limit.toString()} className="hover:bg-muted">
+                                  <div className="flex items-center justify-between w-full">
+                                    <span>{limit} számla</span>
+                                    <span className="ml-4 font-semibold">
+                                      {formatPrice(price.amount)}/{billingPeriod === 'monthly' ? 'hó' : 'év'}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -267,25 +309,13 @@ const Pricing: React.FC = () => {
                       Előfizetés kezelése
                     </Button>
                   ) : (
-                    <div className="space-y-2">
-                      {'invoiceLimits' in plan && plan.invoiceLimits?.map((limit, index) => {
-                        const prices = plan.prices[billingPeriod];
-                        const price = Array.isArray(prices) ? prices[index] : null;
-                        
-                        if (!price?.priceId) return null;
-                        
-                        return (
-                          <Button
-                            key={limit}
-                            className="w-full"
-                            size="sm"
-                            onClick={() => handleSubscribe(price.priceId)}
-                          >
-                            {limit} számla előfizetés
-                          </Button>
-                        );
-                      })}
-                    </div>
+                    <Button
+                      className="w-full"
+                      onClick={() => handleSubscribe(planKey)}
+                      disabled={!selectedVolumes[planKey] && planKey !== 'salmon'}
+                    >
+                      Előfizetek
+                    </Button>
                   )}
                 </div>
               </CardContent>
