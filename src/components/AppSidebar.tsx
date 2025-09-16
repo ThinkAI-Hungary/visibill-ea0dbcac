@@ -24,6 +24,7 @@ import {
   User,
   BarChart3
 } from "lucide-react";
+import visibillLogo from '@/assets/visibill-logo.png';
 
 const navigationItems = [
   {
@@ -88,17 +89,11 @@ export function AppSidebar() {
         <div className="p-4 border-b">
           {!isCollapsed ? (
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <FileText className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-sm">Visibill</h2>
-                <p className="text-xs text-muted-foreground">Financial Management</p>
-              </div>
+              <img src={visibillLogo} alt="Visibill" className="h-8 w-auto" />
             </div>
           ) : (
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center mx-auto">
-              <FileText className="h-4 w-4 text-primary-foreground" />
+            <div className="flex items-center justify-center">
+              <img src={visibillLogo} alt="Visibill" className="h-8 w-auto" />
             </div>
           )}
         </div>

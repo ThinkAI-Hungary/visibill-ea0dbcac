@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import visibillLogo from '@/assets/visibill-logo.png';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -47,7 +48,9 @@ const Auth = () => {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Visibill</CardTitle>
+          <div className="flex justify-center mb-4">
+            <img src={visibillLogo} alt="Visibill" className="h-16 w-auto" />
+          </div>
           <CardDescription>Jelentkezz be a fiókodba vagy hozz létre újat</CardDescription>
         </CardHeader>
         <CardContent>
