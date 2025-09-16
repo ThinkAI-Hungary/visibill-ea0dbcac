@@ -39,20 +39,20 @@ const pricingData = {
     ],
     prices: {
       monthly: [
-        { limit: 25, amount: 9990, priceId: 'price_tuna_25_monthly' },
-        { limit: 50, amount: 19990, priceId: 'price_tuna_50_monthly' },
-        { limit: 75, amount: 29990, priceId: 'price_tuna_75_monthly' },
-        { limit: 150, amount: 49990, priceId: 'price_tuna_150_monthly' },
-        { limit: 300, amount: 79990, priceId: 'price_tuna_300_monthly' },
-        { limit: 500, amount: 119990, priceId: 'price_tuna_500_monthly' }
+        { limit: 25, amount: 9990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' },
+        { limit: 50, amount: 19990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' },
+        { limit: 75, amount: 29990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' },
+        { limit: 150, amount: 49990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' },
+        { limit: 300, amount: 79990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' },
+        { limit: 500, amount: 119990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' }
       ],
       yearly: [
-        { limit: 25, amount: 99990, priceId: 'price_tuna_25_yearly' },
-        { limit: 50, amount: 199990, priceId: 'price_tuna_50_yearly' },
-        { limit: 75, amount: 299990, priceId: 'price_tuna_75_yearly' },
-        { limit: 150, amount: 499990, priceId: 'price_tuna_150_yearly' },
-        { limit: 300, amount: 799990, priceId: 'price_tuna_300_yearly' },
-        { limit: 500, amount: 1199990, priceId: 'price_tuna_500_yearly' }
+        { limit: 25, amount: 99990, priceId: 'price_1S7uwpDG9IVOU80sDO0MQbcZ' },
+        { limit: 50, amount: 199990, priceId: 'price_1S7uxlDG9IVOU80sczvZTXi2' },
+        { limit: 75, amount: 299990, priceId: 'price_1S7uy6DG9IVOU80s9eAMc1YX' },
+        { limit: 150, amount: 499990, priceId: 'price_1S7uyRDG9IVOU80sZvCDquGM' },
+        { limit: 300, amount: 799990, priceId: 'price_1S7uyrDG9IVOU80s8VJtsBEq' },
+        { limit: 500, amount: 1199990, priceId: 'price_1S7v0CDG9IVOU80svtUOrp6p' }
       ]
     }
   },
@@ -70,20 +70,20 @@ const pricingData = {
     ],
     prices: {
       monthly: [
-        { limit: 25, amount: 19990, priceId: 'price_shark_25_monthly' },
-        { limit: 50, amount: 39990, priceId: 'price_shark_50_monthly' },
-        { limit: 75, amount: 59990, priceId: 'price_shark_75_monthly' },
-        { limit: 150, amount: 99990, priceId: 'price_shark_150_monthly' },
-        { limit: 300, amount: 159990, priceId: 'price_shark_300_monthly' },
-        { limit: 500, amount: 239990, priceId: 'price_shark_500_monthly' }
+        { limit: 25, amount: 19990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' },
+        { limit: 50, amount: 39990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' },
+        { limit: 75, amount: 59990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' },
+        { limit: 150, amount: 99990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' },
+        { limit: 300, amount: 159990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' },
+        { limit: 500, amount: 239990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' }
       ],
       yearly: [
-        { limit: 25, amount: 199990, priceId: 'price_shark_25_yearly' },
-        { limit: 50, amount: 399990, priceId: 'price_shark_50_yearly' },
-        { limit: 75, amount: 599990, priceId: 'price_shark_75_yearly' },
-        { limit: 150, amount: 999990, priceId: 'price_shark_150_yearly' },
-        { limit: 300, amount: 1599990, priceId: 'price_shark_300_yearly' },
-        { limit: 500, amount: 2399990, priceId: 'price_shark_500_yearly' }
+        { limit: 25, amount: 199990, priceId: 'price_1S7v3aDG9IVOU80sKpfh9wbA' },
+        { limit: 50, amount: 399990, priceId: 'price_1S7v4ODG9IVOU80szgF7y6cp' },
+        { limit: 75, amount: 599990, priceId: 'price_1S7v4iDG9IVOU80sOt1ismqK' },
+        { limit: 150, amount: 999990, priceId: 'price_1S7v50DG9IVOU80sb2lcMNqr' },
+        { limit: 300, amount: 1599990, priceId: 'price_1S7v5LDG9IVOU80seQm5KlPl' },
+        { limit: 500, amount: 2399990, priceId: 'price_1S7v89DG9IVOU80sC3IcSWBh' }
       ]
     }
   },
@@ -101,20 +101,20 @@ const pricingData = {
     ],
     prices: {
       monthly: [
-        { limit: 25, amount: 39990, priceId: 'price_orca_25_monthly' },
-        { limit: 50, amount: 79990, priceId: 'price_orca_50_monthly' },
-        { limit: 75, amount: 119990, priceId: 'price_orca_75_monthly' },
-        { limit: 150, amount: 199990, priceId: 'price_orca_150_monthly' },
-        { limit: 300, amount: 319990, priceId: 'price_orca_300_monthly' },
-        { limit: 500, amount: 479990, priceId: 'price_orca_500_monthly' }
+        { limit: 25, amount: 39990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' },
+        { limit: 50, amount: 79990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' },
+        { limit: 75, amount: 119990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' },
+        { limit: 150, amount: 199990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' },
+        { limit: 300, amount: 319990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' },
+        { limit: 500, amount: 479990, priceId: 'price_1S7usLDG9IVOU80sBXGZCqdz' }
       ],
       yearly: [
-        { limit: 25, amount: 399990, priceId: 'price_orca_25_yearly' },
-        { limit: 50, amount: 799990, priceId: 'price_orca_50_yearly' },
-        { limit: 75, amount: 1199990, priceId: 'price_orca_75_yearly' },
-        { limit: 150, amount: 1999990, priceId: 'price_orca_150_yearly' },
-        { limit: 300, amount: 3199990, priceId: 'price_orca_300_yearly' },
-        { limit: 500, amount: 4799990, priceId: 'price_orca_500_yearly' }
+        { limit: 25, amount: 399990, priceId: 'price_1S7v8lDG9IVOU80srbILiftz' },
+        { limit: 50, amount: 799990, priceId: 'price_1S7v9BDG9IVOU80s7cdqgdMu' },
+        { limit: 75, amount: 1199990, priceId: 'price_1S7v9WDG9IVOU80sW8EgvHWG' },
+        { limit: 150, amount: 1999990, priceId: 'price_1S7vA2DG9IVOU80saGpQlUjz' },
+        { limit: 300, amount: 3199990, priceId: 'price_1S7vAVDG9IVOU80sGUoHyqVD' },
+        { limit: 500, amount: 4799990, priceId: 'price_1S7vRyDG9IVOU80s97v8QKBu' }
       ]
     }
   }
