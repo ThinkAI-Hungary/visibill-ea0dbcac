@@ -9,7 +9,7 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const nylasClientId = Deno.env.get('NYLAS_CLIENT_ID')!;
-const nylasClientSecret = Deno.env.get('NYLAS_CLIENT_SECRET')!;
+const nylasApiKey = Deno.env.get('NYLAS_API_KEY')!;
 
 serve(async (req) => {
   // Handle CORS preflight requests
