@@ -45,7 +45,7 @@ serve(async (req) => {
 
     // Exchange code for token using Nylas API
     const projectRef = new URL(supabaseUrl).host.split('.')[0];
-    const redirectUri = `https://${projectRef}.functions.supabase.co/nylas-callback`;
+    const redirectUri = `https://${projectRef}.supabase.co/functions/v1/nylas-callback`;
     const tokenResponse = await fetch('https://api.eu.nylas.com/v3/connect/token', {
       method: 'POST',
       headers: {

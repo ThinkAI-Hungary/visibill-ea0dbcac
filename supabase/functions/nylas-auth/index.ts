@@ -39,7 +39,7 @@ serve(async (req) => {
     if (action === 'get_auth_url') {
       // Generate OAuth URL for Nylas
       const projectRef = new URL(supabaseUrl).host.split('.')[0];
-      const redirectUri = `https://${projectRef}.functions.supabase.co/nylas-callback`;
+      const redirectUri = `https://${projectRef}.supabase.co/functions/v1/nylas-callback`;
       const state = `${user.id}-${Date.now()}`;
       
       const authUrl = `https://api.eu.nylas.com/v3/connect/auth?` +
