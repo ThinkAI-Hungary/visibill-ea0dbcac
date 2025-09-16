@@ -41,7 +41,7 @@ serve(async (req) => {
       const redirectUri = `https://${new URL(req.url).host}/functions/v1/nylas-callback`;
       const state = `${user.id}-${Date.now()}`;
       
-      const authUrl = `https://api.us.nylas.com/v3/connect/auth?` +
+      const authUrl = `https://api.eu.nylas.com/v3/connect/auth?` +
         `client_id=${nylasClientId}&` +
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +
         `response_type=code&` +

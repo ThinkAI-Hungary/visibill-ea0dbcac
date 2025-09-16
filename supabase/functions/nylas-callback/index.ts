@@ -44,7 +44,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Exchange code for token using Nylas API
-    const tokenResponse = await fetch('https://api.us.nylas.com/v3/connect/token', {
+    const tokenResponse = await fetch('https://api.eu.nylas.com/v3/connect/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -68,7 +68,7 @@ serve(async (req) => {
     console.log('Token exchange successful:', tokenData);
 
     // Get account information from Nylas
-    const accountResponse = await fetch(`https://api.us.nylas.com/v3/grants/${tokenData.grant_id}`, {
+    const accountResponse = await fetch(`https://api.eu.nylas.com/v3/grants/${tokenData.grant_id}`, {
       headers: {
         'Authorization': `Bearer ${nylasApiKey}`
       }
