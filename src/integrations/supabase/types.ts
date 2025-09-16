@@ -378,12 +378,64 @@ export type Database = {
         }
         Relationships: []
       }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          id: string
+          invoice_limit: number
+          invoices_used: number
+          period_end: string
+          period_start: string
+          stripe_customer_id: string | null
+          stripe_product_id: string | null
+          stripe_subscription_id: string | null
+          tier: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invoice_limit?: number
+          invoices_used?: number
+          period_end?: string
+          period_start?: string
+          stripe_customer_id?: string | null
+          stripe_product_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invoice_limit?: number
+          invoices_used?: number
+          period_end?: string
+          period_start?: string
+          stripe_customer_id?: string | null
+          stripe_product_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_invoice_usage: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
+      reset_monthly_usage: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
