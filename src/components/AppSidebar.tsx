@@ -23,7 +23,8 @@ import {
   LogOut, 
   User,
   BarChart3,
-  FolderKanban
+  FolderKanban,
+  Plug
 } from "lucide-react";
 import visibillLogo from '@/assets/visibill-logo.png';
 
@@ -47,6 +48,11 @@ const navigationItems = [
     title: "Feltöltés",
     url: "/upload",
     icon: Upload,
+  },
+  {
+    title: "Integrációk",
+    url: "/integrations",
+    icon: Plug,
   },
   {
     title: "Elemzések",
