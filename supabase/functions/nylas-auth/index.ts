@@ -47,7 +47,7 @@ serve(async (req) => {
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +
         `response_type=code&` +
         `state=${state}&` +
-        `scope=https://www.googleapis.com/auth/gmail.readonly`;
+        `scope=https://www.googleapis.com/auth/gmail.modify`;
 
       console.log('Generated auth URL:', authUrl);
 
