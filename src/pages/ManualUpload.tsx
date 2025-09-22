@@ -274,24 +274,58 @@ const ManualUpload = () => {
         // Upload file to storage
         const uploadData = await uploadFileToStorage(file, 'bank-statements', user.id);
         
-        // Save bank statement record to database
-        const { error: dbError } = await supabase
-          .from('bank_statements')
+        // Get the public URL
+        const { data: urlData } = supabase.storage
+          .from('bank-statements')
+          .getPublicUrl(uploadData.path);
+
+        // Save to bank_statement_uploads table for tracking
+        const { data: uploadRecord, error: dbError } = await supabase
+          .from('bank_statement_uploads')
           .insert({
             user_id: user.id,
             file_name: file.name,
-            file_url: uploadData.path,
+            file_url: urlData.publicUrl,
             file_size: file.size,
             file_type: file.type,
-            status: 'uploaded'
-          });
+            upload_status: 'uploaded',
+            processing_status: 'pending'
+          })
+          .select()
+          .single();
 
         if (dbError) throw dbError;
+
+        // Trigger processing webhook
+        try {
+          const { error: webhookError } = await supabase.functions.invoke('trigger-bank-statement-processing', {
+            body: {
+              uploadId: uploadRecord.id,
+              webhookUrl: 'https://your-n8n-webhook-url.com/bank-statement-processing' // TODO: Make this configurable
+            }
+          });
+
+          if (webhookError) {
+            console.error('Webhook error:', webhookError);
+            toast({
+              variant: "destructive",
+              title: "Feldolgozás indítása sikertelen",
+              description: `${file.name} feltöltve, de a feldolgozás nem indult el.`
+            });
+          }
+        } catch (webhookError) {
+          console.error('Webhook trigger error:', webhookError);
+          toast({
+            variant: "destructive",
+            title: "Feldolgozás indítása sikertelen",
+            description: `${file.name} feltöltve, de a feldolgozás nem indult el.`
+          });
+        }
       }
       
       toast({
         title: "Feltöltés sikeres!",
-        description: `${selectedBankFiles.length} bankkivonat feltöltve és feldolgozásra várakozik.`
+        description: `${selectedBankFiles.length} bankkivonat feltöltve és feldolgozásra elküldve.`
       });
       
       setSelectedBankFiles([]);

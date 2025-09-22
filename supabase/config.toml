@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.trigger-invoice-processing]
 verify_jwt = true
+
+[functions.trigger-bank-statement-processing]
+verify_jwt = true
