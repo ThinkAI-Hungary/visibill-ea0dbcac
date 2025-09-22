@@ -32,7 +32,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={
               <AuthGuard>
-                <Onboarding />
+                <AppLayout>
+                  <Onboarding />
+                </AppLayout>
               </AuthGuard>
             } />
             <Route path="/upload" element={
