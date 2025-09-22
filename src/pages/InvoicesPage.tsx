@@ -214,6 +214,47 @@ const InvoicesPage = () => {
     });
   };
 
+  const handleExport = () => {
+    const csvHeaders = [
+      'Számlaszám',
+      'Eladó',
+      'Vevő', 
+      'Összeg',
+      'Pénznem',
+      'Kibocsátás dátuma',
+      'Teljesítés dátuma',
+      'Projekt',
+      'Státusz'
+    ];
+
+    const csvData = filteredAndSortedInvoices.map(invoice => [
+      invoice.szamlaszam,
+      invoice.elado_nev,
+      invoice.vevo_nev,
+      invoice.brutto_vegosszeg.toString(),
+      invoice.penznem,
+      format(new Date(invoice.kibocsatas_datuma), "yyyy-MM-dd"),
+      invoice.teljesites_datuma ? format(new Date(invoice.teljesites_datuma), "yyyy-MM-dd") : '',
+      invoice.project_name || 'Nincs projekt',
+      getStatusLabel(invoice.statusz)
+    ]);
+
+    const csvContent = [
+      csvHeaders.join(','),
+      ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `szamlak_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -392,7 +433,7 @@ const InvoicesPage = () => {
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled>
+                <Button variant="outline" size="sm" onClick={handleExport}>
                   <Download className="h-4 w-4 mr-2" />
                   Export
                 </Button>
