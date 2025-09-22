@@ -94,6 +94,27 @@ const ManualUpload = () => {
     return data;
   };
 
+  const uploadFileToInvoiceStorage = async (file: File, userId: string): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    
+    const { data, error } = await supabase.storage
+      .from('invoice-uploads')
+      .upload(fileName, file);
+
+    if (error) {
+      console.error('Storage upload error:', error);
+      throw new Error(`Fájl feltöltési hiba: ${error.message}`);
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('invoice-uploads')
+      .getPublicUrl(fileName);
+
+    return urlData.publicUrl;
+  };
+
   const handleInvoiceUpload = async () => {
     if (selectedInvoiceFiles.length === 0) {
       toast({
@@ -152,25 +173,75 @@ const ManualUpload = () => {
           break;
         }
         
-        // TODO: Implement actual invoice upload logic here
-        // For now, just simulate upload
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        successfulUploads++;
+        try {
+          // Upload file to storage
+          const fileUrl = await uploadFileToInvoiceStorage(file, user?.id!);
+          
+          // Create upload record in database
+          const { data: uploadRecord, error: uploadError } = await supabase
+            .from('invoice_uploads')
+            .insert({
+              user_id: user?.id!,
+              file_name: file.name,
+              file_size: file.size,
+              file_type: file.type,
+              file_url: fileUrl,
+              upload_status: 'uploaded',
+              processing_status: 'pending'
+            })
+            .select()
+            .single();
+
+          if (uploadError) {
+            console.error('Database insert error:', uploadError);
+            throw new Error(`Adatbázis hiba: ${uploadError.message}`);
+          }
+
+          // Trigger N8N webhook processing
+          try {
+            const { error: webhookError } = await supabase.functions.invoke('trigger-invoice-processing', {
+              body: { 
+                uploadId: uploadRecord.id
+                // Note: N8N webhook URL should be configured in the edge function or settings
+              }
+            });
+
+            if (webhookError) {
+              console.error('Webhook trigger error:', webhookError);
+              // Don't throw here - file is uploaded, webhook is secondary
+            }
+          } catch (webhookError) {
+            console.error('Failed to trigger processing webhook:', webhookError);
+            // Continue - file upload succeeded
+          }
+
+          successfulUploads++;
+        } catch (fileError) {
+          console.error(`Error processing file ${file.name}:`, fileError);
+          // Continue with next file
+        }
       }
       
       if (successfulUploads > 0) {
         toast({
           title: "Feltöltés sikeres!",
-          description: `${successfulUploads} számlafájl feltöltve és feldolgozásra várakozik.`
+          description: `${successfulUploads} számlafájl feltöltve és feldolgozásra küldve.`
         });
         
         setSelectedInvoiceFiles([]);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Feltöltés sikertelen",
+          description: "Nem sikerült egyetlen fájlt sem feltölteni."
+        });
       }
     } catch (error) {
+      console.error('Upload error:', error);
       toast({
         variant: "destructive",
         title: "Feltöltés sikertelen",
-        description: "Hiba történt a fájlok feltöltése során. Kérlek próbáld újra."
+        description: error instanceof Error ? error.message : "Hiba történt a fájlok feltöltése során. Kérlek próbáld újra."
       });
     } finally {
       setUploading(false);
