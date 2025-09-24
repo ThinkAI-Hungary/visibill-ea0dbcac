@@ -10,13 +10,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CalendarIcon, Search, Filter, Download, Eye, ArrowUpDown, FileText, ArrowLeft, X } from 'lucide-react';
+import { CalendarIcon, Search, Filter, Download, Eye, ArrowUpDown, FileText, ArrowLeft, X, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { Invoice, InvoiceType, getInvoiceTypeLabel, getInvoiceTypeColor } from '@/types/invoices';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 
 interface Project {
   id: string;
@@ -246,7 +248,7 @@ const InvoicesPage = () => {
     }
   };
 
-  const handleExport = () => {
+  const handleExport = (format: 'csv' | 'xlsx') => {
     const getExportData = (invoice: any) => {
       const baseData = [
         getInvoiceTypeLabel(invoice.invoice_type),
@@ -261,7 +263,7 @@ const InvoicesPage = () => {
       return baseData;
     };
 
-    const csvHeaders = [
+    const headers = [
       'Típus',
       'Azonosító',
       'Kibocsátás dátuma',
@@ -271,24 +273,36 @@ const InvoicesPage = () => {
       'Projekt'
     ];
 
-    const csvData = filteredAndSortedInvoices.map(invoice => getExportData(invoice));
+    const exportData = filteredAndSortedInvoices.map(invoice => getExportData(invoice));
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
 
-    const csvContent = [
-      csvHeaders.join(','),
-      ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
+    if (format === 'csv') {
+      const csvContent = [
+        headers.join(','),
+        ...exportData.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
 
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `szamlak_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    toast.success("Számlák exportálva CSV formátumban");
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `szamlak_${timestamp}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Számlák exportálva CSV formátumban");
+    } else {
+      // XLSX export
+      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...exportData]);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Számlák');
+      
+      XLSX.writeFile(workbook, `szamlak_${timestamp}.xlsx`);
+      
+      toast.success("Számlák exportálva XLSX formátumban");
+    }
   };
 
   if (loading) {
@@ -315,10 +329,25 @@ const InvoicesPage = () => {
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={handleExport}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => handleExport('csv')}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Export CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport('xlsx')}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Export XLSX
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </CardHeader>
