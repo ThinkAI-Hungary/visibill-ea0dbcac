@@ -196,6 +196,54 @@ export type Database = {
           },
         ]
       }
+      egyszerusitett_szamla_backup: {
+        Row: {
+          adoalap_osszesen_netto: number | null
+          afa_osszeg: number | null
+          created_at: string
+          elado_cim: string | null
+          elado_nev: string
+          elado_vat_id: string | null
+          id: string
+          kibocsatas_datuma: string
+          project_id: string | null
+          termek_szolgaltatas_tipusa: string | null
+          updated_at: string
+          user_id: string
+          vevo_nev: string
+        }
+        Insert: {
+          adoalap_osszesen_netto?: number | null
+          afa_osszeg?: number | null
+          created_at?: string
+          elado_cim?: string | null
+          elado_nev: string
+          elado_vat_id?: string | null
+          id?: string
+          kibocsatas_datuma: string
+          project_id?: string | null
+          termek_szolgaltatas_tipusa?: string | null
+          updated_at?: string
+          user_id: string
+          vevo_nev: string
+        }
+        Update: {
+          adoalap_osszesen_netto?: number | null
+          afa_osszeg?: number | null
+          created_at?: string
+          elado_cim?: string | null
+          elado_nev?: string
+          elado_vat_id?: string | null
+          id?: string
+          kibocsatas_datuma?: string
+          project_id?: string | null
+          termek_szolgaltatas_tipusa?: string | null
+          updated_at?: string
+          user_id?: string
+          vevo_nev?: string
+        }
+        Relationships: []
+      }
       invoice_uploads: {
         Row: {
           created_at: string
@@ -441,6 +489,60 @@ export type Database = {
         }
         Relationships: []
       }
+      proforma_backup: {
+        Row: {
+          adojogi_megjegyzes: string | null
+          bankszamlaszam_iban: string | null
+          created_at: string
+          dokumentum_azonosito: string | null
+          elado_nev: string
+          elado_vat_id: string | null
+          fizetendo_osszeg: number | null
+          fizetesi_hatarido: string | null
+          fizetesi_mod: string | null
+          id: string
+          kibocsatas_datuma: string
+          project_id: string | null
+          updated_at: string
+          user_id: string
+          vevo_nev: string
+        }
+        Insert: {
+          adojogi_megjegyzes?: string | null
+          bankszamlaszam_iban?: string | null
+          created_at?: string
+          dokumentum_azonosito?: string | null
+          elado_nev: string
+          elado_vat_id?: string | null
+          fizetendo_osszeg?: number | null
+          fizetesi_hatarido?: string | null
+          fizetesi_mod?: string | null
+          id?: string
+          kibocsatas_datuma: string
+          project_id?: string | null
+          updated_at?: string
+          user_id: string
+          vevo_nev: string
+        }
+        Update: {
+          adojogi_megjegyzes?: string | null
+          bankszamlaszam_iban?: string | null
+          created_at?: string
+          dokumentum_azonosito?: string | null
+          elado_nev?: string
+          elado_vat_id?: string | null
+          fizetendo_osszeg?: number | null
+          fizetesi_hatarido?: string | null
+          fizetesi_mod?: string | null
+          id?: string
+          kibocsatas_datuma?: string
+          project_id?: string | null
+          updated_at?: string
+          user_id?: string
+          vevo_nev?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           created_at: string
@@ -498,6 +600,93 @@ export type Database = {
         }
         Relationships: []
       }
+      sima_szamla_backup: {
+        Row: {
+          adoalap_osszesen: number | null
+          adomentesseg_hivatkozas: string | null
+          afa_kulcsok_bontasban: string | null
+          afa_osszeg_osszesen: number | null
+          brutto_vegosszeg: number | null
+          created_at: string
+          elado_cim: string | null
+          elado_nev: string
+          elado_vat_id: string | null
+          email_uzenet_id: string | null
+          forditott_adozas: boolean | null
+          id: string
+          kibocsatas_datuma: string
+          melleklet_url: string | null
+          onszamlazas: boolean | null
+          penzforgalmi_elszamolas: boolean | null
+          penznem: string | null
+          project_id: string | null
+          statusz: string | null
+          szamlaszam: string
+          teljesites_datuma: string | null
+          updated_at: string
+          user_id: string
+          vevo_cim: string | null
+          vevo_nev: string
+          vevo_vat_id: string | null
+        }
+        Insert: {
+          adoalap_osszesen?: number | null
+          adomentesseg_hivatkozas?: string | null
+          afa_kulcsok_bontasban?: string | null
+          afa_osszeg_osszesen?: number | null
+          brutto_vegosszeg?: number | null
+          created_at?: string
+          elado_cim?: string | null
+          elado_nev: string
+          elado_vat_id?: string | null
+          email_uzenet_id?: string | null
+          forditott_adozas?: boolean | null
+          id?: string
+          kibocsatas_datuma: string
+          melleklet_url?: string | null
+          onszamlazas?: boolean | null
+          penzforgalmi_elszamolas?: boolean | null
+          penznem?: string | null
+          project_id?: string | null
+          statusz?: string | null
+          szamlaszam: string
+          teljesites_datuma?: string | null
+          updated_at?: string
+          user_id: string
+          vevo_cim?: string | null
+          vevo_nev: string
+          vevo_vat_id?: string | null
+        }
+        Update: {
+          adoalap_osszesen?: number | null
+          adomentesseg_hivatkozas?: string | null
+          afa_kulcsok_bontasban?: string | null
+          afa_osszeg_osszesen?: number | null
+          brutto_vegosszeg?: number | null
+          created_at?: string
+          elado_cim?: string | null
+          elado_nev?: string
+          elado_vat_id?: string | null
+          email_uzenet_id?: string | null
+          forditott_adozas?: boolean | null
+          id?: string
+          kibocsatas_datuma?: string
+          melleklet_url?: string | null
+          onszamlazas?: boolean | null
+          penzforgalmi_elszamolas?: boolean | null
+          penznem?: string | null
+          project_id?: string | null
+          statusz?: string | null
+          szamlaszam?: string
+          teljesites_datuma?: string | null
+          updated_at?: string
+          user_id?: string
+          vevo_cim?: string | null
+          vevo_nev?: string
+          vevo_vat_id?: string | null
+        }
+        Relationships: []
+      }
       user_subscriptions: {
         Row: {
           created_at: string
@@ -540,6 +729,72 @@ export type Database = {
           tier?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      vegszamla_backup: {
+        Row: {
+          adoalap_osszesen: number | null
+          afa_osszeg_osszesen: number | null
+          brutto_vegosszeg: number | null
+          created_at: string
+          elado_cim: string | null
+          elado_nev: string
+          elado_vat_id: string | null
+          elolegszamla_hivatkozas: string | null
+          elszamolt_eloleg_osszeg: number | null
+          forditott_adozas: boolean | null
+          id: string
+          kibocsatas_datuma: string
+          project_id: string | null
+          szamlaszam: string
+          teljesites_datuma: string | null
+          updated_at: string
+          user_id: string
+          vevo_cim: string | null
+          vevo_nev: string
+        }
+        Insert: {
+          adoalap_osszesen?: number | null
+          afa_osszeg_osszesen?: number | null
+          brutto_vegosszeg?: number | null
+          created_at?: string
+          elado_cim?: string | null
+          elado_nev: string
+          elado_vat_id?: string | null
+          elolegszamla_hivatkozas?: string | null
+          elszamolt_eloleg_osszeg?: number | null
+          forditott_adozas?: boolean | null
+          id?: string
+          kibocsatas_datuma: string
+          project_id?: string | null
+          szamlaszam: string
+          teljesites_datuma?: string | null
+          updated_at?: string
+          user_id: string
+          vevo_cim?: string | null
+          vevo_nev: string
+        }
+        Update: {
+          adoalap_osszesen?: number | null
+          afa_osszeg_osszesen?: number | null
+          brutto_vegosszeg?: number | null
+          created_at?: string
+          elado_cim?: string | null
+          elado_nev?: string
+          elado_vat_id?: string | null
+          elolegszamla_hivatkozas?: string | null
+          elszamolt_eloleg_osszeg?: number | null
+          forditott_adozas?: boolean | null
+          id?: string
+          kibocsatas_datuma?: string
+          project_id?: string | null
+          szamlaszam?: string
+          teljesites_datuma?: string | null
+          updated_at?: string
+          user_id?: string
+          vevo_cim?: string | null
+          vevo_nev?: string
         }
         Relationships: []
       }
