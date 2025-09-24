@@ -244,18 +244,27 @@ export type Database = {
       invoices: {
         Row: {
           adoalap_osszesen: number
+          adojogi_megjegyzes: string | null
           adomentesseg_hivatkozas: string | null
           afa_kulcsok_bontasban: string | null
           afa_osszeg_osszesen: number
+          bankszamlaszam_iban: string | null
           brutto_vegosszeg: number
+          dokumentum_azonosito: string | null
           elado_cim: string | null
           elado_nev: string
           elado_vat_id: string | null
+          elolegszamla_hivatkozas: string | null
+          elszamolt_eloleg_osszeg: number | null
           email_uzenet_id: string | null
           feldolgozva: string | null
+          fizetendo_osszeg: number | null
+          fizetesi_hatarido: string | null
+          fizetesi_mod: string | null
           forditott_adozas: boolean | null
           frissitve: string
           id: string
+          invoice_type: string
           kibocsatas_datuma: string
           letrehozva: string
           melleklet_url: string | null
@@ -266,6 +275,7 @@ export type Database = {
           statusz: string | null
           szamlaszam: string
           teljesites_datuma: string | null
+          termek_szolgaltatas_tipusa: string | null
           user_id: string
           vevo_cim: string | null
           vevo_nev: string
@@ -273,18 +283,27 @@ export type Database = {
         }
         Insert: {
           adoalap_osszesen?: number
+          adojogi_megjegyzes?: string | null
           adomentesseg_hivatkozas?: string | null
           afa_kulcsok_bontasban?: string | null
           afa_osszeg_osszesen?: number
+          bankszamlaszam_iban?: string | null
           brutto_vegosszeg?: number
+          dokumentum_azonosito?: string | null
           elado_cim?: string | null
           elado_nev: string
           elado_vat_id?: string | null
+          elolegszamla_hivatkozas?: string | null
+          elszamolt_eloleg_osszeg?: number | null
           email_uzenet_id?: string | null
           feldolgozva?: string | null
+          fizetendo_osszeg?: number | null
+          fizetesi_hatarido?: string | null
+          fizetesi_mod?: string | null
           forditott_adozas?: boolean | null
           frissitve?: string
           id?: string
+          invoice_type?: string
           kibocsatas_datuma: string
           letrehozva?: string
           melleklet_url?: string | null
@@ -295,6 +314,7 @@ export type Database = {
           statusz?: string | null
           szamlaszam: string
           teljesites_datuma?: string | null
+          termek_szolgaltatas_tipusa?: string | null
           user_id: string
           vevo_cim?: string | null
           vevo_nev: string
@@ -302,18 +322,27 @@ export type Database = {
         }
         Update: {
           adoalap_osszesen?: number
+          adojogi_megjegyzes?: string | null
           adomentesseg_hivatkozas?: string | null
           afa_kulcsok_bontasban?: string | null
           afa_osszeg_osszesen?: number
+          bankszamlaszam_iban?: string | null
           brutto_vegosszeg?: number
+          dokumentum_azonosito?: string | null
           elado_cim?: string | null
           elado_nev?: string
           elado_vat_id?: string | null
+          elolegszamla_hivatkozas?: string | null
+          elszamolt_eloleg_osszeg?: number | null
           email_uzenet_id?: string | null
           feldolgozva?: string | null
+          fizetendo_osszeg?: number | null
+          fizetesi_hatarido?: string | null
+          fizetesi_mod?: string | null
           forditott_adozas?: boolean | null
           frissitve?: string
           id?: string
+          invoice_type?: string
           kibocsatas_datuma?: string
           letrehozva?: string
           melleklet_url?: string | null
@@ -324,6 +353,7 @@ export type Database = {
           statusz?: string | null
           szamlaszam?: string
           teljesites_datuma?: string | null
+          termek_szolgaltatas_tipusa?: string | null
           user_id?: string
           vevo_cim?: string | null
           vevo_nev?: string
