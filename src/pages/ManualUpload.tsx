@@ -301,7 +301,7 @@ const ManualUpload = () => {
           const { error: webhookError } = await supabase.functions.invoke('trigger-bank-statement-processing', {
             body: {
               uploadId: uploadRecord.id,
-              webhookUrl: 'https://your-n8n-webhook-url.com/bank-statement-processing' // TODO: Make this configurable
+              webhookUrl: 'https://n8n.thinkaikontir.hu/webhook-test/a6f3dbf0-9eab-4e1c-98cf-c8ff56a498f6'
             }
           });
 
