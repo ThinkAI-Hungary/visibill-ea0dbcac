@@ -201,8 +201,8 @@ const ManualUpload = () => {
           try {
             const { error: webhookError } = await supabase.functions.invoke('trigger-invoice-processing', {
               body: { 
-                uploadId: uploadRecord.id
-                // Note: N8N webhook URL should be configured in the edge function or settings
+                uploadId: uploadRecord.id,
+                webhookUrl: 'https://n8n.thinkaikontir.hu/webhook-test/bd504dd3-8af8-45d6-90f6-cfc635a22da6'
               }
             });
 
