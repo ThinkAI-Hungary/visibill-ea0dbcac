@@ -4,9 +4,18 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Import SHA3-512 from js-sha3
+import { sha3_512 } from 'https://esm.sh/js-sha3@0.9.3';
+
 function utcTimestampYYYYMMDDHHMMSS(d = new Date()) {
-  // Return ISO format YYYY-MM-DDTHH:mm:ssZ as required by NAV v3
-  return d.toISOString();
+  // Return UTC timestamp in yyyyMMddHHmmss format as required by NAV v3
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  const hour = String(d.getUTCHours()).padStart(2, '0');
+  const minute = String(d.getUTCMinutes()).padStart(2, '0');
+  const second = String(d.getUTCSeconds()).padStart(2, '0');
+  return `${year}${month}${day}${hour}${minute}${second}`;
 }
 
 function sha512UpperHex(s: string) {
@@ -16,25 +25,23 @@ function sha512UpperHex(s: string) {
     .then(ab => Array.from(new Uint8Array(ab), b => b.toString(16).padStart(2, '0')).join('').toUpperCase());
 }
 
-// SHA3-512 implementation using crypto.subtle
-async function sha3_512UpperHex(s: string) {
-  // For now, use SHA-512 as fallback since crypto.subtle doesn't support SHA3-512
-  // In production, you'd need a proper SHA3-512 implementation
-  return sha512UpperHex(s);
+// SHA3-512 implementation using js-sha3
+function sha3_512UpperHex(s: string) {
+  return sha3_512(s).toUpperCase();
 }
 
 async function buildHeader(user: any, password: string, signatureKey: string, operation: string, useTestUrl: boolean) {
-  // Generate request ID and truncate to max 32 characters
+  // Generate request ID and truncate to max 30 characters (NAV v3 requirement)
   const fullRequestId = crypto.randomUUID();
-  const requestId = fullRequestId.replace(/-/g, '').substring(0, 32);
+  const requestId = fullRequestId.replace(/-/g, '').substring(0, 30);
   const timestamp = utcTimestampYYYYMMDDHHMMSS();
   
   // Hash password using SHA-512
   const passwordHash = await sha512UpperHex(password);
   
-  // Create request signature using SHA3-512 (falling back to SHA-512)
+  // Create request signature using SHA3-512
   const toHash = requestId + timestamp + signatureKey;
-  const signature = await sha3_512UpperHex(toHash);
+  const signature = sha3_512UpperHex(toHash);
 
   return {
     requestId,
@@ -62,16 +69,16 @@ function buildUserXml(taxNumber: string, login: string, passwordHash: string, si
 }
 
 const softwareXml = `
-  <common:software>
-    <common:softwareId>123456789123456789</common:softwareId>
-    <common:softwareName>Visibill NAV Integration</common:softwareName>
-    <common:softwareOperation>ONLINE_SERVICE</common:softwareOperation>
-    <common:softwareMainVersion>1.0</common:softwareMainVersion>
-    <common:softwareDevName>Visibill</common:softwareDevName>
-    <common:softwareDevContact>info@visibill.hu</common:softwareDevContact>
-    <common:softwareDevCountryCode>HU</common:softwareDevCountryCode>
-    <common:softwareDevTaxNumber>12345678</common:softwareDevTaxNumber>
-  </common:software>
+  <software>
+    <softwareId>123456789123456789</softwareId>
+    <softwareName>Visibill NAV Integration</softwareName>
+    <softwareOperation>ONLINE_SERVICE</softwareOperation>
+    <softwareMainVersion>1.0</softwareMainVersion>
+    <softwareDevName>Visibill</softwareDevName>
+    <softwareDevContact>info@visibill.hu</softwareDevContact>
+    <softwareDevCountryCode>HU</softwareDevCountryCode>
+    <softwareDevTaxNumber>12345678</softwareDevTaxNumber>
+  </software>
 `;
 
 function xmlEnvelope(bodyContent: string, requestType: string = 'QueryInvoiceDigestRequest') {
@@ -90,19 +97,39 @@ async function queryInvoiceDigestXml(params: any) {
     throw new Error('Missing required fields: login, password, signatureKey, taxNumber');
   }
   
+  // Validate that exactly one date interval is provided
+  const hasIssueDate = issueDateFrom && issueDateTo;
+  const hasInsDateTime = insDateTimeFrom && insDateTimeTo;
+  
+  if (!hasIssueDate && !hasInsDateTime) {
+    throw new Error('Either issueDate interval or insDateTime interval must be provided');
+  }
+  
+  if (hasIssueDate && hasInsDateTime) {
+    throw new Error('Only one date interval (issueDate OR insDateTime) can be provided');
+  }
+  
   const header = await buildHeader({ login, taxNumber }, password, signatureKey, 'queryInvoiceDigest', false);
   const userXml = buildUserXml(taxNumber, login, header.passwordHash, header.signature);
 
   let mandatoryQueryParams = '';
   
-  if (issueDateFrom && issueDateTo) {
-    mandatoryQueryParams += `<invoiceIssueDateFrom>${issueDateFrom}</invoiceIssueDateFrom>`;
-    mandatoryQueryParams += `<invoiceIssueDateTo>${issueDateTo}</invoiceIssueDateTo>`;
+  if (hasIssueDate) {
+    mandatoryQueryParams = `
+      <mandatoryQueryParams>
+        <invoiceIssueDateFrom>${issueDateFrom}</invoiceIssueDateFrom>
+        <invoiceIssueDateTo>${issueDateTo}</invoiceIssueDateTo>
+      </mandatoryQueryParams>
+    `;
   }
   
-  if (insDateTimeFrom && insDateTimeTo) {
-    mandatoryQueryParams += `<insDateTimeFrom>${insDateTimeFrom}</insDateTimeFrom>`;
-    mandatoryQueryParams += `<insDateTimeTo>${insDateTimeTo}</insDateTimeTo>`;
+  if (hasInsDateTime) {
+    mandatoryQueryParams = `
+      <mandatoryQueryParams>
+        <insDateTimeFrom>${insDateTimeFrom}</insDateTimeFrom>
+        <insDateTimeTo>${insDateTimeTo}</insDateTimeTo>
+      </mandatoryQueryParams>
+    `;
   }
 
   const bodyContent = `
@@ -111,11 +138,11 @@ async function queryInvoiceDigestXml(params: any) {
     </common:header>
     ${userXml}
     ${softwareXml}
-    <invoiceDigestRequest>
-      <common:page>${page}</common:page>
-      <invoiceDirection>${direction}</invoiceDirection>
+    <page>${page}</page>
+    <invoiceDirection>${direction}</invoiceDirection>
+    <invoiceQueryParams>
       ${mandatoryQueryParams}
-    </invoiceDigestRequest>
+    </invoiceQueryParams>
   `;
 
   return { xml: xmlEnvelope(bodyContent, 'QueryInvoiceDigestRequest'), requestId: header.requestId };
@@ -314,15 +341,17 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'list') {
+      let navResponse;
+      
       try {
         const { xml } = await queryInvoiceDigestXml(request);
         console.log('XML root element:', xml.match(/<([A-Za-z0-9:]+)\b/)?.[1]);
-        console.log('Sending XML to NAV:', xml.substring(0, 1000));
+        console.log('Sending XML to NAV (truncated):', xml.substring(0, 1000) + (xml.length > 1000 ? '...' : ''));
         
-        const navResponse = await callNav(xml, "queryInvoiceDigest", useTest);
+        navResponse = await callNav(xml, "queryInvoiceDigest", useTest);
         
         if (!navResponse.ok) {
-          console.error('NAV API Error Response:', navResponse.body);
+          console.error('NAV API Error Response (truncated):', navResponse.body.substring(0, 1000) + (navResponse.body.length > 1000 ? '...' : ''));
           return new Response(JSON.stringify({
             success: false,
             error: `NAV API error: ${navResponse.status} - ${navResponse.body}`
@@ -366,14 +395,16 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'data') {
+      let navResponse;
+      
       try {
         const { xml } = await queryInvoiceDataXml(request);
-        console.log('Sending XML to NAV for data query:', xml.substring(0, 1000));
+        console.log('Sending XML to NAV for data query (truncated):', xml.substring(0, 1000) + (xml.length > 1000 ? '...' : ''));
         
-        const navResponse = await callNav(xml, "queryInvoiceData", useTest);
+        navResponse = await callNav(xml, "queryInvoiceData", useTest);
         
         if (!navResponse.ok) {
-          console.error('NAV API Error Response:', navResponse.body);
+          console.error('NAV API Error Response (truncated):', navResponse.body.substring(0, 1000) + (navResponse.body.length > 1000 ? '...' : ''));
           return new Response(JSON.stringify({
             ok: false,
             error: `NAV API error: ${navResponse.status} - ${navResponse.body}`
