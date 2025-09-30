@@ -109,9 +109,11 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
 
     setValidating(true);
     try {
+      console.log('[NavCredentialsForm] Starting credential validation');
       const { data, error } = await supabase.functions.invoke('nav-token', {
         body: { action: 'validate_credentials' }
       });
+      console.log('[NavCredentialsForm] nav-token response', { data, error });
 
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);

@@ -116,19 +116,16 @@ const NavTesting: React.FC = () => {
   const handleTestConnection = async () => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      const response = await fetch(`/functions/v1/nav-token`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: 'validate_credentials' })
+      console.log('[NavTesting] Starting connection test');
+      const { data, error } = await supabase.functions.invoke('nav-token', {
+        body: { action: 'validate_credentials' }
       });
+      console.log('[NavTesting] nav-token response', { data, error });
 
-      const result = await response.json();
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      const result = data as any;
       
       if (result.success) {
         toast({
