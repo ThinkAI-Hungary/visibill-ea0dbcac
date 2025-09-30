@@ -417,6 +417,63 @@ export type Database = {
           },
         ]
       }
+      nav_outbound_invoices: {
+        Row: {
+          created_at: string
+          currency: string | null
+          customer_tax_number: string | null
+          fetched_at: string
+          id: string
+          ins_date: string | null
+          invoice_amount: number | null
+          invoice_number: string
+          invoice_operation: string | null
+          invoice_xml: string | null
+          last_updated: string
+          nav_environment: string
+          raw_nav_response: Json | null
+          supplier_tax_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          customer_tax_number?: string | null
+          fetched_at?: string
+          id?: string
+          ins_date?: string | null
+          invoice_amount?: number | null
+          invoice_number: string
+          invoice_operation?: string | null
+          invoice_xml?: string | null
+          last_updated?: string
+          nav_environment?: string
+          raw_nav_response?: Json | null
+          supplier_tax_number?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          customer_tax_number?: string | null
+          fetched_at?: string
+          id?: string
+          ins_date?: string | null
+          invoice_amount?: number | null
+          invoice_number?: string
+          invoice_operation?: string | null
+          invoice_xml?: string | null
+          last_updated?: string
+          nav_environment?: string
+          raw_nav_response?: Json | null
+          supplier_tax_number?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       nylas_tokens: {
         Row: {
           access_token: string
