@@ -87,37 +87,38 @@ function xmlEnvelope(bodyContent: string, requestType: string = 'QueryInvoiceDig
 }
 
 async function queryInvoiceDigestXml(params: any) {
-  const { login, password, signatureKey, taxNumber, direction, page = 1, invoiceIssueDate, insDate } = params;
+  const { login, password, signatureKey, taxNumber, direction, page = 1, invoiceIssueDate, issueDateFrom, issueDateTo, insDate } = params;
   
   // Validate required fields
   if (!login || !password || !signatureKey || !taxNumber) {
     throw new Error('Missing required fields: login, password, signatureKey, taxNumber');
   }
   
-  // Validate that exactly one date field is provided
+  // Handle date parameters - accept either invoiceIssueDate OR issueDateFrom/issueDateTo OR insDate
   const hasIssueDate = invoiceIssueDate;
+  const hasDateRange = issueDateFrom && issueDateTo;
   const hasInsDate = insDate;
   
-  if (!hasIssueDate && !hasInsDate) {
+  if (!hasIssueDate && !hasDateRange && !hasInsDate) {
     console.error('Validation error: Missing date field. Received params:', JSON.stringify(params, null, 2));
-    throw new Error('invoiceIssueDate field is required for invoice queries. Please ensure the date is properly set in the query form.');
+    throw new Error('Date field is required for invoice queries. Please provide either invoiceIssueDate, issueDateFrom/issueDateTo, or insDate.');
   }
   
-  if (hasIssueDate && hasInsDate) {
-    throw new Error('Only one date field (invoiceIssueDate OR insDate) can be provided');
-  }
+  // Use the appropriate date values
+  const dateFrom = invoiceIssueDate || issueDateFrom;
+  const dateTo = invoiceIssueDate || issueDateTo;
   
   const header = await buildHeader({ login, taxNumber }, password, signatureKey, 'queryInvoiceDigest', false);
   const userXml = buildUserXml(taxNumber, login, header.passwordHash, header.signature);
 
   let mandatoryQueryParams = '';
   
-  if (hasIssueDate) {
+  if (hasIssueDate || hasDateRange) {
     mandatoryQueryParams = `
       <mandatoryQueryParams>
         <invoiceIssueDate>
-          <dateFrom>${invoiceIssueDate}</dateFrom>
-          <dateTo>${invoiceIssueDate}</dateTo>
+          <dateFrom>${dateFrom}</dateFrom>
+          <dateTo>${dateTo}</dateTo>
         </invoiceIssueDate>
       </mandatoryQueryParams>
     `;
@@ -371,20 +372,22 @@ Deno.serve(async (req) => {
           
           return new Response(JSON.stringify({
             success: false,
-            error: errorMessage
+            error: errorMessage,
+            errorCode: 'NAV_API_ERROR'
           }), {
             headers: cors,
-            status: navResponse.status
+            status: 200
           });
         }
       } catch (validationError) {
         console.error('Validation error:', validationError);
         return new Response(JSON.stringify({
           success: false,
-          error: `Validation error: ${validationError.message}`
+          error: `Validation error: ${validationError.message}`,
+          errorCode: 'VALIDATION_ERROR'
         }), {
           headers: cors,
-          status: 400
+          status: 200
         });
       }
 
@@ -423,21 +426,23 @@ Deno.serve(async (req) => {
         if (!navResponse.ok) {
           console.error('NAV API Error Response (truncated):', navResponse.body.substring(0, 1000) + (navResponse.body.length > 1000 ? '...' : ''));
           return new Response(JSON.stringify({
-            ok: false,
-            error: `NAV API error: ${navResponse.status} - ${navResponse.body}`
+            success: false,
+            error: `NAV API error: ${navResponse.status} - ${navResponse.body}`,
+            errorCode: 'NAV_API_ERROR'
           }), {
             headers: cors,
-            status: navResponse.status
+            status: 200
           });
         }
       } catch (validationError) {
         console.error('Validation error:', validationError);
         return new Response(JSON.stringify({
-          ok: false,
-          error: `Validation error: ${validationError.message}`
+          success: false,
+          error: `Validation error: ${validationError.message}`,
+          errorCode: 'VALIDATION_ERROR'
         }), {
           headers: cors,
-          status: 400
+          status: 200
         });
       }
 
@@ -455,20 +460,24 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: "Unknown action" 
-    }), { 
-      status: 400, 
-      headers: cors 
-    });
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Unknown action",
+        errorCode: 'INVALID_ACTION'
+      }), { 
+        status: 200, 
+        headers: cors 
+      });
   } catch (e) {
     console.error('Edge function error:', e);
+    
+    // Return structured error with 200 status for better frontend handling
     return new Response(JSON.stringify({ 
       success: false, 
-      error: String(e) 
+      error: String(e),
+      errorCode: 'PROCESSING_ERROR'
     }), { 
-      status: 500, 
+      status: 200, 
       headers: cors 
     });
   }

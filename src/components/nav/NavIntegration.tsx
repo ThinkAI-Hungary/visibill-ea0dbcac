@@ -108,38 +108,39 @@ const NavIntegration = () => {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
-      const searchParams = new URLSearchParams({
+      const payload = {
+        ...credentials,
+        ...queryParams,
         action: 'list',
-        test: queryParams.useTestEnvironment.toString(),
-      });
-      
-      const response = await fetch(`https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/nav?${searchParams}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4eGd2ZGxxdnZjaHRsbXFucnFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5NzAwNTAsImV4cCI6MjA3MzU0NjA1MH0.Ec9KFcjt89cY6FF9Nq9GnW1hzlnDUhQCCJ_LhWm2evY`,
-        },
-        body: JSON.stringify({
-          ...credentials,
-          ...queryParams,
-        }),
-      });
-      
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.error || 'Network error');
+        test: queryParams.useTestEnvironment,
+        store_data: false,
+        // Map invoiceIssueDate to date range for backend compatibility
+        issueDateFrom: queryParams.invoiceIssueDate,
+        issueDateTo: queryParams.invoiceIssueDate,
+      };
 
-      if (!data?.ok) throw new Error(data?.error || 'Lekérdezési hiba');
-
-      setInvoices(data.items || []);
-      setPagination({
-        currentPage: data.currentPage || 1,
-        availablePage: data.availablePage || 1,
+      const { data, error } = await supabase.functions.invoke('nav', {
+        body: payload,
       });
 
-      toast({
-        title: "Sikeres lekérdezés",
-        description: `${data.items?.length || 0} számla található`,
-      });
+      if (error) {
+        throw new Error(`Supabase function error: ${error.message}`);
+      }
+
+      if (data?.success) {
+        setInvoices(data.invoices || []);
+        setPagination({
+          currentPage: data.currentPage || 1,
+          availablePage: data.availablePage || 1,
+        });
+
+        toast({
+          title: "Sikeres lekérdezés",
+          description: `${data.invoices?.length || 0} számla található`,
+        });
+      } else {
+        throw new Error(data?.error || 'Lekérdezési hiba');
+      }
     } catch (error) {
       console.error('NAV query failed:', error);
       toast({
