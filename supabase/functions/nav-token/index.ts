@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sha512 } from "https://denopkg.com/chiefbiiko/sha512@v1.0.2/mod.ts";
+import { sha3_512 } from "https://esm.sh/@noble/hashes@1.3.0/sha3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -70,6 +72,35 @@ serve(async (req) => {
   }
 });
 
+// Generate NAV-compliant request ID (max 32 chars)
+function generateRequestId(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = 'RID';
+  for (let i = 0; i < 13; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result; // 16 chars total: "RID" + 13 random chars
+}
+
+// SHA-512 hash for password
+function hashPassword(password: string, requestId: string): string {
+  const input = requestId + password;
+  const hash = sha512(input, "utf8", "hex");
+  return hash.toUpperCase();
+}
+
+// SHA3-512 hash for request signature
+function createSignature(credentials: NavCredentials, requestId: string, timestamp: string): string {
+  const signatureBase = requestId + timestamp + credentials.nav_sign_key;
+  const encoder = new TextEncoder();
+  const data = encoder.encode(signatureBase);
+  const hash = sha3_512(data);
+  return Array.from(hash)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
+}
+
 async function validateCredentials(supabaseClient: any, userId: string) {
   console.log('[NAV-TOKEN] Validating credentials for user:', userId);
 
@@ -83,28 +114,39 @@ async function validateCredentials(supabaseClient: any, userId: string) {
 
   const credentials: NavCredentials = credsResult;
   
-  // Test connection to NAV API
+  // Test connection to NAV API using TokenExchange
   const baseUrl = credentials.is_test_environment 
     ? 'https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3'
     : 'https://api.onlineszamla.nav.gov.hu/invoiceService/v3';
 
   try {
-    // Simple health check - just try to connect to the manageInvoice endpoint
-    const testResponse = await fetch(`${baseUrl}/manageInvoice`, {
+    const timestamp = new Date().toISOString();
+    const requestId = generateRequestId();
+    const passwordHash = hashPassword(credentials.nav_password, requestId);
+    const requestSignature = createSignature(credentials, requestId, timestamp);
+
+    const xmlRequest = buildTokenXML(credentials, requestId, timestamp, passwordHash, requestSignature);
+    
+    console.log('[NAV-TOKEN] Sending validation request, RequestId:', requestId, 'length:', requestId.length);
+
+    const testResponse = await fetch(`${baseUrl}/tokenExchange`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/xml; charset=UTF-8',
         'Accept': 'application/xml'
       },
-      body: createTestXMLRequest(credentials)
+      body: xmlRequest
     });
 
     const xmlResponse = await testResponse.text();
     console.log('[NAV-TOKEN] Validation response:', xmlResponse);
 
-    // Update validation status in database
-    const validationStatus = xmlResponse.includes('DONE') ? 'valid' : 'invalid';
-    const validationError = validationStatus === 'invalid' ? 'Authentication failed' : null;
+    // Check for success - NAV returns funcCode=OK for successful validation
+    const isValid = xmlResponse.includes('<funcCode>OK</funcCode>') || 
+                    xmlResponse.includes('<encodedExchangeToken>');
+    
+    const validationStatus = isValid ? 'valid' : 'invalid';
+    const validationError = !isValid ? parseNAVError(xmlResponse) : null;
 
     await supabaseClient
       .from('user_nav_credentials')
@@ -117,9 +159,10 @@ async function validateCredentials(supabaseClient: any, userId: string) {
 
     return new Response(
       JSON.stringify({
-        success: true,
+        success: isValid,
         status: validationStatus,
-        message: validationStatus === 'valid' ? 'Credentials validated successfully' : 'Invalid credentials'
+        message: isValid ? 'Credentials validated successfully' : validationError || 'Invalid credentials',
+        details: xmlResponse
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -158,13 +201,20 @@ async function requestToken(supabaseClient: any, userId: string) {
     : 'https://api.onlineszamla.nav.gov.hu/invoiceService/v3';
 
   try {
+    const timestamp = new Date().toISOString();
+    const requestId = generateRequestId();
+    const passwordHash = hashPassword(credentials.nav_password, requestId);
+    const requestSignature = createSignature(credentials, requestId, timestamp);
+
+    const xmlRequest = buildTokenXML(credentials, requestId, timestamp, passwordHash, requestSignature);
+
     const tokenResponse = await fetch(`${baseUrl}/tokenExchange`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/xml; charset=UTF-8',
         'Accept': 'application/xml'
       },
-      body: createTokenExchangeRequest(credentials)
+      body: xmlRequest
     });
 
     const xmlResponse = await tokenResponse.text();
@@ -175,7 +225,8 @@ async function requestToken(supabaseClient: any, userId: string) {
     const token = tokenMatch ? tokenMatch[1] : null;
 
     if (!token) {
-      throw new Error('No token received from NAV API');
+      const errorMsg = parseNAVError(xmlResponse);
+      throw new Error(errorMsg || 'No token received from NAV API');
     }
 
     return new Response(
@@ -193,12 +244,16 @@ async function requestToken(supabaseClient: any, userId: string) {
   }
 }
 
-function createTestXMLRequest(credentials: NavCredentials): string {
-  const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-  const requestId = crypto.randomUUID();
-
+function buildTokenXML(
+  creds: NavCredentials, 
+  requestId: string, 
+  timestamp: string, 
+  passwordHash: string, 
+  requestSignature: string
+): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
-<ManageInvoiceRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api" xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common">
+<TokenExchangeRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api" 
+                      xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common">
   <common:header>
     <common:requestId>${requestId}</common:requestId>
     <common:timestamp>${timestamp}</common:timestamp>
@@ -206,70 +261,34 @@ function createTestXMLRequest(credentials: NavCredentials): string {
     <common:headerVersion>1.0</common:headerVersion>
   </common:header>
   <common:user>
-    <common:login>${credentials.nav_username}</common:login>
-    <common:passwordHash>${hashPassword(credentials.nav_password, requestId)}</common:passwordHash>
-    <common:taxNumber>${credentials.nav_tax_number}</common:taxNumber>
-    <common:requestSignature>${createSignature(credentials, requestId, timestamp)}</common:requestSignature>
+    <common:login>${creds.nav_username}</common:login>
+    <common:passwordHash cryptoType="SHA-512">${passwordHash}</common:passwordHash>
+    <common:taxNumber>${creds.nav_tax_number}</common:taxNumber>
+    <common:requestSignature cryptoType="SHA3-512">${requestSignature}</common:requestSignature>
   </common:user>
   <software>
-    <softwareId>${credentials.software_id}</softwareId>
+    <softwareId>${creds.software_id}</softwareId>
     <softwareName>VisiBill NAV Integration</softwareName>
     <softwareOperation>LOCAL_SOFTWARE</softwareOperation>
     <softwareMainVersion>1.0</softwareMainVersion>
-    <softwareDevName>${credentials.software_dev_name || 'VisiBill'}</softwareDevName>
-    <softwareDevContact>${credentials.software_dev_contact || 'support@visibill.hu'}</softwareDevContact>
-  </software>
-</ManageInvoiceRequest>`;
-}
-
-function createTokenExchangeRequest(credentials: NavCredentials): string {
-  const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-  const requestId = crypto.randomUUID();
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<TokenExchangeRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api" xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common">
-  <common:header>
-    <common:requestId>${requestId}</common:requestId>
-    <common:timestamp>${timestamp}</common:timestamp>
-    <common:requestVersion>3.0</common:requestVersion>
-    <common:headerVersion>1.0</common:headerVersion>
-  </common:header>
-  <common:user>
-    <common:login>${credentials.nav_username}</common:login>
-    <common:passwordHash>${hashPassword(credentials.nav_password, requestId)}</common:passwordHash>
-    <common:taxNumber>${credentials.nav_tax_number}</common:taxNumber>
-    <common:requestSignature>${createSignature(credentials, requestId, timestamp)}</common:requestSignature>
-  </common:user>
-  <software>
-    <softwareId>${credentials.software_id}</softwareId>
-    <softwareName>VisiBill NAV Integration</softwareName>
-    <softwareOperation>LOCAL_SOFTWARE</softwareOperation>
-    <softwareMainVersion>1.0</softwareMainVersion>
-    <softwareDevName>${credentials.software_dev_name || 'VisiBill'}</softwareDevName>
-    <softwareDevContact>${credentials.software_dev_contact || 'support@visibill.hu'}</softwareDevContact>
+    <softwareDevName>${creds.software_dev_name || 'VisiBill'}</softwareDevName>
+    <softwareDevContact>${creds.software_dev_contact || 'support@visibill.hu'}</softwareDevContact>
   </software>
 </TokenExchangeRequest>`;
 }
 
-function hashPassword(password: string, requestId: string): string {
-  // NAV requires SHA512 hash of password + requestId
-  const encoder = new TextEncoder();
-  const data = encoder.encode(requestId + password);
-  return crypto.subtle.digest('SHA-512', data)
-    .then(hash => Array.from(new Uint8Array(hash))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('')
-      .toUpperCase());
-}
-
-function createSignature(credentials: NavCredentials, requestId: string, timestamp: string): string {
-  // Simplified signature creation - in production, this would use proper cryptographic signing
-  const signatureBase = `${requestId}${timestamp}${credentials.nav_sign_key}`;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(signatureBase);
-  return crypto.subtle.digest('SHA-256', data)
-    .then(hash => Array.from(new Uint8Array(hash))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('')
-      .toUpperCase());
+function parseNAVError(xmlResponse: string): string {
+  // Try to extract error message from NAV response
+  const errorMatch = xmlResponse.match(/<message>(.+?)<\/message>/);
+  const errorCodeMatch = xmlResponse.match(/<errorCode>(.+?)<\/errorCode>/);
+  
+  if (errorMatch && errorCodeMatch) {
+    return `${errorCodeMatch[1]}: ${errorMatch[1]}`;
+  } else if (errorMatch) {
+    return errorMatch[1];
+  } else if (errorCodeMatch) {
+    return errorCodeMatch[1];
+  }
+  
+  return 'Unknown NAV API error';
 }
