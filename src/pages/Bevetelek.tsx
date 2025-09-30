@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { TrendingUp, Eye, RefreshCw, Download } from "lucide-react";
 import { NavCredentialsForm } from "@/components/nav/NavCredentialsForm";
 import { NavInvoiceViewer } from "@/components/nav/NavInvoiceViewer";
@@ -122,7 +122,7 @@ export default function Bevetelek() {
   // Fetch fresh data from NAV and store in Supabase
   const fetchFromNAV = async (forceRefresh = false) => {
     if (!connected && !forceRefresh) {
-      toast.error("Először csatlakozzon a NAV rendszerhez");
+      toast({ title: "NAV kapcsolat szükséges", description: "Először csatlakozzon a NAV rendszerhez", variant: "destructive" });
       return;
     }
 
@@ -143,18 +143,18 @@ export default function Bevetelek() {
 
       if (error) {
         console.error('NAV invoke error:', error);
-        toast.error(error.message || 'Hiba történt a NAV lekérdezés során');
+        toast({ title: "NAV hiba", description: error.message || 'Hiba történt a NAV lekérdezés során', variant: "destructive" });
       } else if (result && result.success && result.data) {
-        toast.success(`${result.data.currentPage}/${result.data.availablePage} oldal betöltve a NAV-ból`);
+        toast({ title: "NAV szinkron", description: `${result.data.currentPage}/${result.data.availablePage} oldal betöltve a NAV-ból` });
         setCurrentPage(result.data.currentPage);
         setTotalPages(result.data.availablePage);
         await loadStoredInvoices();
       } else {
-        toast.error((result && result.error) || 'Hiba történt a NAV lekérdezés során');
+        toast({ title: "NAV hiba", description: (result && result.error) || 'Hiba történt a NAV lekérdezés során', variant: "destructive" });
       }
     } catch (error) {
       console.error('NAV API hiba:', error);
-      toast.error("Kapcsolódási hiba a NAV rendszerrel");
+      toast({ title: "Kapcsolódási hiba", description: "Kapcsolódási hiba a NAV rendszerrel", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -179,15 +179,15 @@ export default function Bevetelek() {
 
       if (!error && result?.success) {
         setConnected(true);
-        toast.success('Sikeres csatlakozás a NAV rendszerhez!');
+        toast({ title: 'Sikeres csatlakozás', description: 'Sikeres csatlakozás a NAV rendszerhez!' });
       } else {
         setConnected(false);
-        toast.error((error && error.message) || result?.error || 'Sikertelen csatlakozás');
+        toast({ title: 'Sikertelen csatlakozás', description: (error && (error as any).message) || result?.error || 'Sikertelen csatlakozás', variant: 'destructive' });
       }
     } catch (error) {
       console.error('Kapcsolódási hiba:', error);
       setConnected(false);
-      toast.error("Kapcsolódási hiba");
+      toast({ title: 'Kapcsolódási hiba', description: 'Kapcsolódási hiba', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
