@@ -19,6 +19,8 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(false);
   const [validationStatus, setValidationStatus] = useState<'pending' | 'valid' | 'invalid' | 'error'>('pending');
+  const [showDebug, setShowDebug] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     nav_username: '',
@@ -65,6 +67,19 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
     }
 
     setLoading(true);
+    
+    // Prepare sanitized payload for debug
+    const payload = {
+      navUsername: formData.nav_username,
+      navTaxNumber: formData.nav_tax_number,
+      navSignKey: '***masked***',
+      navExchangeKey: '***masked***',
+      navPassword: '***masked***',
+      softwareDevName: formData.software_dev_name || null,
+      softwareDevContact: formData.software_dev_contact || null,
+      isTestEnvironment: formData.is_test_environment
+    };
+    
     try {
       const { data, error } = await supabase.functions.invoke('save-credentials', {
         body: {
@@ -79,8 +94,38 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
         }
       });
 
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
+      // Store debug info
+      setDebugInfo({
+        timestamp: new Date().toISOString(),
+        payload,
+        response: {
+          status: error ? 'error' : 'success',
+          error: error?.message,
+          data: data ? { ...data, password: undefined, signKey: undefined, exchangeKey: undefined } : null
+        }
+      });
+
+      // Check for errors in the response
+      if (error) {
+        // Try to extract structured error from context
+        const errorData = (error as any).context || {};
+        const errorCode = errorData.code || data?.code || 'UNKNOWN_ERROR';
+        const errorMsg = errorData.error || data?.error || error.message;
+        const debugId = errorData.debugId || data?.debugId;
+        const hint = errorData.hint || data?.hint;
+        
+        throw new Error(
+          `${errorMsg}${hint ? `\n💡 ${hint}` : ''}${debugId ? `\n🔍 Debug ID: ${debugId}` : ''}`
+        );
+      }
+      
+      if (data?.error) {
+        const debugId = data?.debugId;
+        const hint = data?.hint;
+        throw new Error(
+          `${data.error}${hint ? `\n💡 ${hint}` : ''}${debugId ? `\n🔍 Debug ID: ${debugId}` : ''}`
+        );
+      }
 
       toast({
         title: 'Sikeres mentés',
@@ -321,6 +366,53 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
             {validating ? 'Validálás...' : 'Kapcsolat Tesztelése'}
           </Button>
         </div>
+
+        {/* Debug Panel */}
+        {debugInfo && (
+          <div className="pt-4 border-t">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDebug(!showDebug)}
+              className="w-full justify-between"
+            >
+              <span className="text-sm">🔍 Debug részletek</span>
+              <Badge variant="outline" className="ml-2">
+                {debugInfo.response.status === 'success' ? '✓' : '✗'}
+              </Badge>
+            </Button>
+            
+            {showDebug && (
+              <div className="mt-3 p-3 bg-muted rounded-lg space-y-2 text-xs font-mono">
+                <div>
+                  <strong>Időpont:</strong> {new Date(debugInfo.timestamp).toLocaleString('hu-HU')}
+                </div>
+                <div>
+                  <strong>Státusz:</strong> {debugInfo.response.status}
+                </div>
+                {debugInfo.response.data?.debugId && (
+                  <div>
+                    <strong>Debug ID:</strong> {debugInfo.response.data.debugId}
+                  </div>
+                )}
+                <div>
+                  <strong>Elküldött adatok:</strong>
+                  <pre className="mt-1 p-2 bg-background rounded text-[10px] overflow-x-auto">
+                    {JSON.stringify(debugInfo.payload, null, 2)}
+                  </pre>
+                </div>
+                {debugInfo.response.error && (
+                  <div>
+                    <strong className="text-destructive">Hiba:</strong>
+                    <pre className="mt-1 p-2 bg-background rounded text-[10px] overflow-x-auto">
+                      {debugInfo.response.error}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

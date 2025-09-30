@@ -80,7 +80,7 @@ const NavTesting: React.FC = () => {
       const { data, error } = await supabase
         .from('user_nav_credentials')
         .select('id')
-        .single();
+        .maybeSingle();
       
       setCredentialsExist(!error && !!data);
     } catch (error) {
