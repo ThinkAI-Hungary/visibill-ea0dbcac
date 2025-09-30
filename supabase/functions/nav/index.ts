@@ -111,7 +111,9 @@ async function queryInvoiceDigestXml(params: any) {
   if (hasIssueDate) {
     mandatoryQueryParams = `
       <mandatoryQueryParams>
-        <invoiceIssueDate>${invoiceIssueDate}</invoiceIssueDate>
+        <invoiceIssueDate>
+          <dateFrom>${invoiceIssueDate}</dateFrom>
+        </invoiceIssueDate>
       </mandatoryQueryParams>
     `;
   }
@@ -119,7 +121,9 @@ async function queryInvoiceDigestXml(params: any) {
   if (hasInsDate) {
     mandatoryQueryParams = `
       <mandatoryQueryParams>
-        <insDate>${insDate}</insDate>
+        <insDate>
+          <dateFrom>${insDate}</dateFrom>
+        </insDate>
       </mandatoryQueryParams>
     `;
   }
