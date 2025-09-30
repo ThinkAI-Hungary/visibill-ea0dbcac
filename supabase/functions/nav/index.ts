@@ -113,6 +113,7 @@ async function queryInvoiceDigestXml(params: any) {
       <mandatoryQueryParams>
         <invoiceIssueDate>
           <dateFrom>${invoiceIssueDate}</dateFrom>
+          <dateTo>${invoiceIssueDate}</dateTo>
         </invoiceIssueDate>
       </mandatoryQueryParams>
     `;
@@ -123,6 +124,7 @@ async function queryInvoiceDigestXml(params: any) {
       <mandatoryQueryParams>
         <insDate>
           <dateFrom>${insDate}</dateFrom>
+          <dateTo>${insDate}</dateTo>
         </insDate>
       </mandatoryQueryParams>
     `;
