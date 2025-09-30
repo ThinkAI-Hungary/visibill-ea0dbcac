@@ -7,15 +7,9 @@ const cors = {
 // Import SHA3-512 from Node.js crypto (available in Deno)
 import { createHash } from "node:crypto";
 
-function utcTimestampYYYYMMDDHHMMSS(d = new Date()) {
-  // Return UTC timestamp in yyyyMMddHHmmss format as required by NAV v3
-  const year = d.getUTCFullYear();
-  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(d.getUTCDate()).padStart(2, '0');
-  const hour = String(d.getUTCHours()).padStart(2, '0');
-  const minute = String(d.getUTCMinutes()).padStart(2, '0');
-  const second = String(d.getUTCSeconds()).padStart(2, '0');
-  return `${year}${month}${day}${hour}${minute}${second}`;
+function utcTimestampISO8601(d = new Date()) {
+  // Return UTC timestamp in ISO 8601 format as required by NAV v3: yyyy-MM-ddTHH:mm:ssZ
+  return d.toISOString();
 }
 
 function sha512UpperHex(s: string) {
@@ -34,7 +28,7 @@ async function buildHeader(user: any, password: string, signatureKey: string, op
   // Generate request ID and truncate to max 30 characters (NAV v3 requirement)
   const fullRequestId = crypto.randomUUID();
   const requestId = fullRequestId.replace(/-/g, '').substring(0, 30);
-  const timestamp = utcTimestampYYYYMMDDHHMMSS();
+  const timestamp = utcTimestampISO8601();
   
   // Hash password using SHA-512
   const passwordHash = await sha512UpperHex(password);
@@ -90,23 +84,23 @@ function xmlEnvelope(bodyContent: string, requestType: string = 'QueryInvoiceDig
 }
 
 async function queryInvoiceDigestXml(params: any) {
-  const { login, password, signatureKey, taxNumber, direction, page = 1, issueDateFrom, issueDateTo, insDateTimeFrom, insDateTimeTo } = params;
+  const { login, password, signatureKey, taxNumber, direction, page = 1, invoiceIssueDate, insDate } = params;
   
   // Validate required fields
   if (!login || !password || !signatureKey || !taxNumber) {
     throw new Error('Missing required fields: login, password, signatureKey, taxNumber');
   }
   
-  // Validate that exactly one date interval is provided
-  const hasIssueDate = issueDateFrom && issueDateTo;
-  const hasInsDateTime = insDateTimeFrom && insDateTimeTo;
+  // Validate that exactly one date field is provided
+  const hasIssueDate = invoiceIssueDate;
+  const hasInsDate = insDate;
   
-  if (!hasIssueDate && !hasInsDateTime) {
-    throw new Error('Either issueDate interval or insDateTime interval must be provided');
+  if (!hasIssueDate && !hasInsDate) {
+    throw new Error('Either invoiceIssueDate or insDate must be provided');
   }
   
-  if (hasIssueDate && hasInsDateTime) {
-    throw new Error('Only one date interval (issueDate OR insDateTime) can be provided');
+  if (hasIssueDate && hasInsDate) {
+    throw new Error('Only one date field (invoiceIssueDate OR insDate) can be provided');
   }
   
   const header = await buildHeader({ login, taxNumber }, password, signatureKey, 'queryInvoiceDigest', false);
@@ -117,17 +111,15 @@ async function queryInvoiceDigestXml(params: any) {
   if (hasIssueDate) {
     mandatoryQueryParams = `
       <mandatoryQueryParams>
-        <invoiceIssueDateFrom>${issueDateFrom}</invoiceIssueDateFrom>
-        <invoiceIssueDateTo>${issueDateTo}</invoiceIssueDateTo>
+        <invoiceIssueDate>${invoiceIssueDate}</invoiceIssueDate>
       </mandatoryQueryParams>
     `;
   }
   
-  if (hasInsDateTime) {
+  if (hasInsDate) {
     mandatoryQueryParams = `
       <mandatoryQueryParams>
-        <insDateTimeFrom>${insDateTimeFrom}</insDateTimeFrom>
-        <insDateTimeTo>${insDateTimeTo}</insDateTimeTo>
+        <insDate>${insDate}</insDate>
       </mandatoryQueryParams>
     `;
   }
