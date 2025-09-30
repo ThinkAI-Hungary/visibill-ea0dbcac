@@ -99,7 +99,8 @@ async function queryInvoiceDigestXml(params: any) {
   const hasInsDate = insDate;
   
   if (!hasIssueDate && !hasInsDate) {
-    throw new Error('Either invoiceIssueDate or insDate must be provided');
+    console.error('Validation error: Missing date field. Received params:', JSON.stringify(params, null, 2));
+    throw new Error('invoiceIssueDate field is required for invoice queries. Please ensure the date is properly set in the query form.');
   }
   
   if (hasIssueDate && hasInsDate) {

@@ -36,6 +36,7 @@ const NavIntegration = () => {
   const [queryParams, setQueryParams] = useState<NavQueryParams>({
     direction: 'INBOUND',
     page: 1,
+    invoiceIssueDate: new Date().toISOString().split('T')[0], // Initialize with today's date
     useTestEnvironment: true,
   });
   const [invoices, setInvoices] = useState<NavInvoiceDigest[]>([]);

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,13 +24,15 @@ export const NavInvoiceQuery = ({
     onQueryParamsChange({ ...queryParams, [field]: value });
   };
 
-  const isFormValid = queryParams.invoiceIssueDate;
+  // Ensure default date is set using useEffect for proper state management
+  useEffect(() => {
+    if (!queryParams.invoiceIssueDate) {
+      const today = new Date().toISOString().split('T')[0];
+      handleChange('invoiceIssueDate', today);
+    }
+  }, [queryParams.invoiceIssueDate]);
 
-  // Set default date if not set (today)
-  if (!queryParams.invoiceIssueDate) {
-    const today = new Date();
-    handleChange('invoiceIssueDate', today.toISOString().split('T')[0]);
-  }
+  const isFormValid = queryParams.invoiceIssueDate;
 
   return (
     <Card>
