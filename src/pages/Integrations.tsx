@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Mail, Zap, Shield, Clock } from 'lucide-react';
 import NylasEmailConnect from '@/components/NylasEmailConnect';
-import NavIntegration from '@/components/nav/NavIntegration';
+
 
 const Integrations = () => {
   return (
@@ -65,8 +65,6 @@ const Integrations = () => {
           </CardContent>
         </Card>
 
-        {/* NAV Integration */}
-        <NavIntegration />
 
         {/* Future Integrations Preview */}
         <Card className="opacity-60">
