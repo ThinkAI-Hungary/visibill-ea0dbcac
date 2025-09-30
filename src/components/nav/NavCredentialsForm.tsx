@@ -109,19 +109,14 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
 
     setValidating(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      const response = await fetch(`${window.location.origin}/api/nav-token`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: 'validate_credentials' })
+      const { data, error } = await supabase.functions.invoke('nav-token', {
+        body: { action: 'validate_credentials' }
       });
 
-      const result = await response.json();
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      const result = data;
       
       if (result.success) {
         setValidationStatus(result.status);
