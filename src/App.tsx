@@ -16,7 +16,6 @@ import InvoicesPage from "./pages/InvoicesPage";
 import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
 import Pricing from "./pages/Pricing";
-import Bevetelek from "./pages/Bevetelek";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,9 +32,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={
               <AuthGuard>
-                <AppLayout>
-                  <Onboarding />
-                </AppLayout>
+                <Onboarding />
               </AuthGuard>
             } />
             <Route path="/upload" element={
@@ -70,13 +67,6 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <Pricing />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/bevetelek" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Bevetelek />
                 </AppLayout>
               </ProtectedRoute>
             } />

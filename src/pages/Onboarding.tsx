@@ -184,7 +184,7 @@ const Onboarding = () => {
 
   if (!user || initialLoading) {
     return (
-      <div className="flex justify-center p-8">
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <Card className="w-full max-w-2xl">
           <CardContent className="flex items-center justify-center py-8">
             <div className="text-center space-y-2">
@@ -198,7 +198,7 @@ const Onboarding = () => {
   }
 
   return (
-    <div className="flex justify-center p-8">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Projektkezelő</CardTitle>

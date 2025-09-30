@@ -49,10 +49,6 @@ serve(async (req) => {
     
     if (customers.data.length === 0) {
       logStep("No customer found, returning free tier");
-      
-      // Ensure user has local subscription record
-      await ensureUserSubscription(supabaseClient, user.id, 'salmon', 3);
-      
       return new Response(JSON.stringify({ 
         subscribed: false, 
         tier: 'salmon',
@@ -76,7 +72,6 @@ serve(async (req) => {
     let productId = null;
     let subscriptionEnd = null;
     let tier = 'salmon'; // Default to free tier
-    let invoiceLimit = 3; // Default limit
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
@@ -85,28 +80,21 @@ serve(async (req) => {
       
       productId = subscription.items.data[0].price.product;
       
-      // Determine tier and invoice limit based on product name
+      // Determine tier based on product name
       const product = await stripe.products.retrieve(productId as string);
       const productName = product.name.toLowerCase();
       
       if (productName.includes('tuna')) {
         tier = 'tuna';
-        invoiceLimit = extractInvoiceLimit(productName);
       } else if (productName.includes('shark')) {
         tier = 'shark';
-        invoiceLimit = extractInvoiceLimit(productName);
       } else if (productName.includes('orca')) {
         tier = 'orca';
-        invoiceLimit = extractInvoiceLimit(productName);
       }
       
-      logStep("Determined subscription tier", { productId, tier, productName, invoiceLimit });
-      
-      // Update local subscription record
-      await ensureUserSubscription(supabaseClient, user.id, tier, invoiceLimit, customerId, subscription.id, productId as string);
+      logStep("Determined subscription tier", { productId, tier, productName });
     } else {
       logStep("No active subscription found, using free tier");
-      await ensureUserSubscription(supabaseClient, user.id, 'salmon', 3);
     }
 
     return new Response(JSON.stringify({
@@ -127,42 +115,3 @@ serve(async (req) => {
     });
   }
 });
-
-// Helper function to extract invoice limit from product name (e.g., "Tuna 50 Havi" -> 50)
-function extractInvoiceLimit(productName: string): number {
-  const match = productName.match(/(\d+)/);
-  return match ? parseInt(match[1]) : 3;
-}
-
-// Helper function to ensure user subscription record exists and is updated
-async function ensureUserSubscription(
-  supabaseClient: any,
-  userId: string,
-  tier: string,
-  invoiceLimit: number,
-  stripeCustomerId?: string,
-  stripeSubscriptionId?: string,
-  stripeProductId?: string
-) {
-  try {
-    const { error } = await supabaseClient
-      .from('user_subscriptions')
-      .upsert({
-        user_id: userId,
-        tier: tier,
-        invoice_limit: invoiceLimit,
-        stripe_customer_id: stripeCustomerId,
-        stripe_subscription_id: stripeSubscriptionId,
-        stripe_product_id: stripeProductId,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id'
-      });
-
-    if (error) {
-      console.error('Error upserting user subscription:', error);
-    }
-  } catch (error) {
-    console.error('Error in ensureUserSubscription:', error);
-  }
-}

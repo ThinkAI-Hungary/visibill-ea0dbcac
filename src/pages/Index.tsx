@@ -10,7 +10,6 @@ import { User, Building, Briefcase, Upload, FileText, Euro, TrendingUp, Calendar
 import MetricCard from '@/components/dashboard/MetricCard';
 import RecentInvoices from '@/components/dashboard/RecentInvoices';
 import ProjectBreakdown from '@/components/dashboard/ProjectBreakdown';
-import SubscriptionUsage from '@/components/SubscriptionUsage';
 import { formatCurrency } from '@/lib/utils';
 
 interface Profile {
@@ -225,24 +224,18 @@ const Index = () => {
         )}
 
         {/* Main Dashboard Grid */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-2">
           {/* Recent Invoices */}
-          <div className="lg:col-span-2">
-            <RecentInvoices 
-              invoices={invoices} 
-              onViewInvoice={(invoice) => console.log('View invoice:', invoice)}
-            />
-          </div>
+          <RecentInvoices 
+            invoices={invoices} 
+            onViewInvoice={(invoice) => console.log('View invoice:', invoice)}
+          />
 
-          {/* Subscription Usage */}
-          <div className="space-y-6">
-            <SubscriptionUsage />
-            {/* Project Breakdown */}
-            <ProjectBreakdown 
-              projects={getProjectBreakdownData()}
-              totalAmount={metrics?.totalAmount || 0}
-            />
-          </div>
+          {/* Project Breakdown */}
+          <ProjectBreakdown 
+            projects={getProjectBreakdownData()}
+            totalAmount={metrics?.totalAmount || 0}
+          />
         </div>
 
         {/* Profile Summary */}

@@ -34,8 +34,7 @@ serve(async (req) => {
       throw new Error('Invalid user token');
     }
 
-    const requestBody = await req.json();
-    const { action, email_address } = requestBody;
+    const { action } = await req.json();
 
     if (action === 'get_auth_url') {
       // Generate OAuth URL for Nylas
@@ -48,7 +47,7 @@ serve(async (req) => {
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +
         `response_type=code&` +
         `state=${state}&` +
-        `scope=https://www.googleapis.com/auth/gmail.modify`;
+        `scope=https://www.googleapis.com/auth/gmail.readonly`;
 
       console.log('Generated auth URL:', authUrl);
 
@@ -83,11 +82,7 @@ serve(async (req) => {
     }
 
     if (action === 'disconnect') {
-      if (!email_address) {
-        throw new Error('Email address is required for disconnect action');
-      }
-      
-      console.log('Disconnecting email:', email_address, 'for user:', user.id);
+      const { email_address } = await req.json();
       
       // Delete the stored token
       const { error } = await supabase
