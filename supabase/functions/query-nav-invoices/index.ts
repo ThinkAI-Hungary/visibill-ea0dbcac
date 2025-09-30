@@ -101,7 +101,17 @@ async function getNavToken(creds: any): Promise<string> {
   const requestId = generateRequestId()
   const timestamp = new Date().toISOString()
   const passwordHash = await sha512(creds.nav_password)
-  const requestSignature = sha3_512(requestId + timestamp + creds.nav_sign_key)
+  
+  // Convert ISO timestamp to compact format (yyyyMMddHHmmss) for signature
+  const date = new Date(timestamp)
+  const compactTimestamp = date.getUTCFullYear().toString() +
+    (date.getUTCMonth() + 1).toString().padStart(2, '0') +
+    date.getUTCDate().toString().padStart(2, '0') +
+    date.getUTCHours().toString().padStart(2, '0') +
+    date.getUTCMinutes().toString().padStart(2, '0') +
+    date.getUTCSeconds().toString().padStart(2, '0')
+  
+  const requestSignature = sha3_512(requestId + compactTimestamp + creds.nav_sign_key)
 
   const xml = buildTokenXML(creds, requestId, timestamp, passwordHash, requestSignature)
 
@@ -134,7 +144,17 @@ async function queryInvoices(creds: any, token: string, params: any): Promise<an
   const requestId = generateRequestId()
   const timestamp = new Date().toISOString()
   const passwordHash = await sha512(creds.nav_password)
-  const requestSignature = sha3_512(requestId + timestamp + creds.nav_sign_key)
+  
+  // Convert ISO timestamp to compact format (yyyyMMddHHmmss) for signature
+  const date = new Date(timestamp)
+  const compactTimestamp = date.getUTCFullYear().toString() +
+    (date.getUTCMonth() + 1).toString().padStart(2, '0') +
+    date.getUTCDate().toString().padStart(2, '0') +
+    date.getUTCHours().toString().padStart(2, '0') +
+    date.getUTCMinutes().toString().padStart(2, '0') +
+    date.getUTCSeconds().toString().padStart(2, '0')
+  
+  const requestSignature = sha3_512(requestId + compactTimestamp + creds.nav_sign_key)
 
   const xml = buildQueryXML(creds, token, params, requestId, timestamp, passwordHash, requestSignature)
 
