@@ -128,35 +128,29 @@ export default function Bevetelek() {
 
     setLoading(true);
     try {
-      const response = await fetch(
-        `https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/nav?action=list&test=${useTest}&store_data=true`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4eGd2ZGxxdnZjaHRsbXFucnFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5NzAwNTAsImV4cCI6MjA3MzU0NjA1MH0.Ec9KFcjt89cY6FF9Nq9GnW1hzlnDUhQCCJ_LhWm2evY`,
-          },
-          body: JSON.stringify({
-            ...credentials,
-            direction: "OUTBOUND",
-            page: currentPage,
-            issueDateFrom: dateFrom,
-            issueDateTo: dateTo,
-          }),
-        }
-      );
+      const { data: result, error } = await supabase.functions.invoke('nav', {
+        body: {
+          ...credentials,
+          direction: 'OUTBOUND',
+          page: currentPage,
+          issueDateFrom: dateFrom,
+          issueDateTo: dateTo,
+          action: 'list',
+          test: useTest,
+          store_data: true,
+        },
+      });
 
-      const result = await response.json();
-
-      if (result.success && result.data) {
+      if (error) {
+        console.error('NAV invoke error:', error);
+        toast.error(error.message || 'Hiba történt a NAV lekérdezés során');
+      } else if (result && result.success && result.data) {
         toast.success(`${result.data.currentPage}/${result.data.availablePage} oldal betöltve a NAV-ból`);
         setCurrentPage(result.data.currentPage);
         setTotalPages(result.data.availablePage);
-        
-        // Reload stored data to get the fresh data
         await loadStoredInvoices();
       } else {
-        toast.error(result.error || "Hiba történt a NAV lekérdezés során");
+        toast.error((result && result.error) || 'Hiba történt a NAV lekérdezés során');
       }
     } catch (error) {
       console.error('NAV API hiba:', error);
@@ -170,32 +164,25 @@ export default function Bevetelek() {
   const testConnection = async () => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/nav?action=list&test=${useTest}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4eGd2ZGxxdnZjaHRsbXFucnFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5NzAwNTAsImV4cCI6MjA3MzU0NjA1MH0.Ec9KFcjt89cY6FF9Nq9GnW1hzlnDUhQCCJ_LhWm2evY`,
-          },
-          body: JSON.stringify({
-            ...credentials,
-            direction: "OUTBOUND",
-            page: 1,
-            issueDateFrom: dateFrom,
-            issueDateTo: dateTo,
-          }),
-        }
-      );
+      const { data: result, error } = await supabase.functions.invoke('nav', {
+        body: {
+          ...credentials,
+          direction: 'OUTBOUND',
+          page: 1,
+          issueDateFrom: dateFrom,
+          issueDateTo: dateTo,
+          action: 'list',
+          test: useTest,
+          store_data: false,
+        },
+      });
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (!error && result?.success) {
         setConnected(true);
-        toast.success("Sikeres csatlakozás a NAV rendszerhez!");
+        toast.success('Sikeres csatlakozás a NAV rendszerhez!');
       } else {
         setConnected(false);
-        toast.error(result.error || "Sikertelen csatlakozás");
+        toast.error((error && error.message) || result?.error || 'Sikertelen csatlakozás');
       }
     } catch (error) {
       console.error('Kapcsolódási hiba:', error);

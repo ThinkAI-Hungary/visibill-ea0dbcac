@@ -261,12 +261,13 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const action = url.searchParams.get('action');
-    const useTest = url.searchParams.get('test') !== 'false';
-    const shouldStore = url.searchParams.get('store_data') === 'true';
-    
     const requestText = await req.text();
-    const request = JSON.parse(requestText);
+    const request = requestText ? JSON.parse(requestText) : {};
+    // Support query params and body fallbacks
+    const action = url.searchParams.get('action') || request.action || 'list';
+    const testParam = url.searchParams.get('test');
+    const useTest = testParam ? testParam !== 'false' : (request.test !== false);
+    const shouldStore = url.searchParams.get('store_data') === 'true' || request.store_data === true;
     
     console.log('📥 Request received:', { action, test: useTest, direction: request.direction, shouldStore });
 
@@ -285,6 +286,7 @@ Deno.serve(async (req) => {
 
     if (action === 'list') {
       const { xml } = await queryInvoiceDigestXml(request);
+      console.log('XML root element:', xml.match(/<([A-Za-z0-9:]+)\b/)?.[1]);
       const navResponse = await callNav(xml, "queryInvoiceDigest", useTest);
       
       if (!navResponse.ok) {
