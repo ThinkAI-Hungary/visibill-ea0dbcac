@@ -19,8 +19,7 @@ export type NavCredentials = {
 export type NavQueryParams = {
   direction: 'INBOUND' | 'OUTBOUND';
   page: number;
-  issueDateFrom?: string;
-  issueDateTo?: string;
+  invoiceIssueDate?: string;
   useTestEnvironment: boolean;
 };
 
@@ -68,8 +67,7 @@ const NavIntegration = () => {
           ...credentials,
           direction: 'INBOUND',
           page: 1,
-          issueDateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          issueDateTo: new Date().toISOString().split('T')[0],
+          invoiceIssueDate: new Date().toISOString().split('T')[0],
         }),
       });
       
@@ -96,7 +94,7 @@ const NavIntegration = () => {
   };
 
   const queryInvoices = async () => {
-    if (!credentials || !queryParams.issueDateFrom || !queryParams.issueDateTo) {
+    if (!credentials || !queryParams.invoiceIssueDate) {
       toast({
         title: "Hiányzó adatok",
         description: "Kérjük, töltse ki az összes kötelező mezőt",

@@ -23,19 +23,12 @@ export const NavInvoiceQuery = ({
     onQueryParamsChange({ ...queryParams, [field]: value });
   };
 
-  const isFormValid = queryParams.issueDateFrom && queryParams.issueDateTo;
+  const isFormValid = queryParams.invoiceIssueDate;
 
-  // Set default dates if not set (last 30 days)
-  if (!queryParams.issueDateFrom || !queryParams.issueDateTo) {
+  // Set default date if not set (today)
+  if (!queryParams.invoiceIssueDate) {
     const today = new Date();
-    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-    
-    if (!queryParams.issueDateFrom) {
-      handleChange('issueDateFrom', thirtyDaysAgo.toISOString().split('T')[0]);
-    }
-    if (!queryParams.issueDateTo) {
-      handleChange('issueDateTo', today.toISOString().split('T')[0]);
-    }
+    handleChange('invoiceIssueDate', today.toISOString().split('T')[0]);
   }
 
   return (
@@ -69,23 +62,20 @@ export const NavInvoiceQuery = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="date-from">Dátum kezdete</Label>
+            <Label htmlFor="invoice-date">Számla dátuma</Label>
             <Input
-              id="date-from"
+              id="invoice-date"
               type="date"
-              value={queryParams.issueDateFrom || ''}
-              onChange={(e) => handleChange('issueDateFrom', e.target.value)}
+              value={queryParams.invoiceIssueDate || ''}
+              onChange={(e) => handleChange('invoiceIssueDate', e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="date-to">Dátum vége</Label>
-            <Input
-              id="date-to"
-              type="date"
-              value={queryParams.issueDateTo || ''}
-              onChange={(e) => handleChange('issueDateTo', e.target.value)}
-            />
+            <Label className="text-muted-foreground">Környezet</Label>
+            <p className="text-sm text-muted-foreground">
+              {queryParams.useTestEnvironment ? 'Teszt környezet' : 'Éles környezet'}
+            </p>
           </div>
         </div>
 
