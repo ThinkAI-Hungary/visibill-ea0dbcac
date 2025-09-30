@@ -61,16 +61,8 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
 
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      const response = await fetch('/functions/v1/save-credentials', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('save-credentials', {
+        body: {
           navUsername: formData.nav_username,
           navPassword: formData.nav_password,
           navTaxNumber: formData.nav_tax_number,
@@ -79,11 +71,11 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
           softwareDevName: formData.software_dev_name || null,
           softwareDevContact: formData.software_dev_contact || null,
           isTestEnvironment: formData.is_test_environment
-        })
+        }
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error);
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: 'Sikeres mentés',
