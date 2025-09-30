@@ -81,6 +81,10 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
     };
     
     try {
+      // Get session and explicitly pass Authorization header
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+      
       const { data, error } = await supabase.functions.invoke('save-credentials', {
         body: {
           navUsername: formData.nav_username,
@@ -91,6 +95,9 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
           softwareDevName: formData.software_dev_name || null,
           softwareDevContact: formData.software_dev_contact || null,
           isTestEnvironment: formData.is_test_environment
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
         }
       });
 
@@ -160,8 +167,16 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
     setValidating(true);
     try {
       console.log('[NavCredentialsForm] Starting credential validation');
+      
+      // Get session and explicitly pass Authorization header
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+      
       const { data, error } = await supabase.functions.invoke('nav-token', {
-        body: { action: 'validate_credentials' }
+        body: { action: 'validate_credentials' },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
       console.log('[NavCredentialsForm] nav-token response', { data, error });
 
