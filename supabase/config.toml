@@ -2,3 +2,12 @@ project_id = "vxxgvdlqvvchtlmqnrqf"
 
 [functions.nylas-callback]
 verify_jwt = false
+
+[functions.trigger-invoice-processing]
+verify_jwt = true
+
+[functions.trigger-bank-statement-processing]
+verify_jwt = true
+
+[functions.nav]
+verify_jwt = true

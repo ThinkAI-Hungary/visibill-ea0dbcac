@@ -66,6 +66,11 @@ serve(async (req) => {
       mode: "subscription",
       success_url: `${origin}/dashboard?success=true`,
       cancel_url: `${origin}/dashboard?canceled=true`,
+      billing_address_collection: 'auto',
+      tax_id_collection: {
+        enabled: true,
+      },
+      customer_creation: 'always',
       metadata: {
         user_id: user.id,
       },

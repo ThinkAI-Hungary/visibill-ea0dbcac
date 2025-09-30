@@ -7,27 +7,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CalendarIcon, Search, Filter, Download, Eye, ArrowUpDown, FileText, ArrowLeft } from 'lucide-react';
+import { CalendarIcon, Search, Filter, Download, Eye, ArrowUpDown, FileText, ArrowLeft, X, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
-
-interface Invoice {
-  id: string;
-  szamlaszam: string;
-  elado_nev: string;
-  vevo_nev: string;
-  brutto_vegosszeg: number;
-  kibocsatas_datuma: string;
-  teljesites_datuma: string;
-  statusz: string;
-  project_id?: string;
-  penznem: string;
-  project_name?: string;
-}
+import { Invoice, InvoiceType, getInvoiceTypeLabel, getInvoiceTypeColor } from '@/types/invoices';
+import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 
 interface Project {
   id: string;
@@ -52,6 +43,7 @@ const InvoicesPage = () => {
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<keyof Invoice>('kibocsatas_datuma');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [activeTab, setActiveTab] = useState<InvoiceType | 'all'>('all');
   
   const [filters, setFilters] = useState<Filters>({
     search: '',
@@ -85,7 +77,7 @@ const InvoicesPage = () => {
       const formattedInvoices = (invoicesData || []).map(invoice => ({
         ...invoice,
         project_name: invoice.projects?.name || 'Nincs projekt'
-      }));
+      })) as any[];
       
       setInvoices(formattedInvoices);
 
@@ -107,20 +99,24 @@ const InvoicesPage = () => {
 
   const filteredAndSortedInvoices = useMemo(() => {
     let filtered = invoices.filter(invoice => {
+      // Tab filtering
+      const matchesTab = activeTab === 'all' || invoice.invoice_type === activeTab;
+      
       // Text search
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
-        if (
-          !invoice.szamlaszam.toLowerCase().includes(searchLower) &&
-          !invoice.elado_nev.toLowerCase().includes(searchLower) &&
-          !invoice.vevo_nev.toLowerCase().includes(searchLower)
-        ) {
-          return false;
-        }
+        const matchesSearch = 
+          (invoice.invoice_type === 'sima_szamla' && invoice.szamlaszam?.toLowerCase().includes(searchLower)) ||
+          (invoice.invoice_type === 'vegszamla' && invoice.szamlaszam?.toLowerCase().includes(searchLower)) ||
+          (invoice.invoice_type === 'proforma' && invoice.dokumentum_azonosito?.toLowerCase().includes(searchLower)) ||
+          invoice.elado_nev?.toLowerCase().includes(searchLower) ||
+          invoice.vevo_nev?.toLowerCase().includes(searchLower);
+        
+        if (!matchesSearch) return false;
       }
 
-      // Status filter
-      if (filters.status && filters.status !== 'all' && invoice.statusz !== filters.status) {
+      // Status filter (only for sima_szamla)
+      if (filters.status && filters.status !== 'all' && invoice.invoice_type === 'sima_szamla' && invoice.statusz !== filters.status) {
         return false;
       }
 
@@ -142,22 +138,31 @@ const InvoicesPage = () => {
       }
 
       // Amount range filter
-      if (filters.amountMin && invoice.brutto_vegosszeg < parseFloat(filters.amountMin)) {
+      let invoiceAmount = 0;
+      if (invoice.invoice_type === 'sima_szamla' || invoice.invoice_type === 'vegszamla') {
+        invoiceAmount = invoice.brutto_vegosszeg;
+      } else if (invoice.invoice_type === 'proforma') {
+        invoiceAmount = invoice.fizetendo_osszeg || 0;
+      } else if (invoice.invoice_type === 'egyszerusitett_szamla') {
+        invoiceAmount = invoice.afa_osszeg || 0;
+      }
+
+      if (filters.amountMin && invoiceAmount < parseFloat(filters.amountMin)) {
         return false;
       }
-      if (filters.amountMax && invoice.brutto_vegosszeg > parseFloat(filters.amountMax)) {
+      if (filters.amountMax && invoiceAmount > parseFloat(filters.amountMax)) {
         return false;
       }
 
-      return true;
+      return matchesTab;
     });
 
     // Sort
     filtered.sort((a, b) => {
-      let aValue = a[sortField];
-      let bValue = b[sortField];
+      let aValue: any = a[sortField];
+      let bValue: any = b[sortField];
 
-      if (sortField === 'kibocsatas_datuma' || sortField === 'teljesites_datuma') {
+      if (sortField === 'kibocsatas_datuma') {
         aValue = new Date(aValue as string).getTime();
         bValue = new Date(bValue as string).getTime();
       }
@@ -173,7 +178,7 @@ const InvoicesPage = () => {
     });
 
     return filtered;
-  }, [invoices, filters, sortField, sortDirection]);
+  }, [invoices, filters, sortField, sortDirection, activeTab]);
 
   const handleSort = (field: keyof Invoice) => {
     if (sortField === field) {
@@ -186,8 +191,8 @@ const InvoicesPage = () => {
 
   const getStatusVariant = (status: string) => {
     switch (status) {
-      case 'feldolgozva': return 'success';
-      case 'feldolgozas_alatt': return 'warning';
+      case 'feldolgozva': return 'default';
+      case 'feldolgozas_alatt': return 'secondary';
       case 'hiba': return 'destructive';
       default: return 'secondary';
     }
@@ -212,6 +217,92 @@ const InvoicesPage = () => {
       amountMin: '',
       amountMax: ''
     });
+    setActiveTab('all');
+  };
+
+  const getInvoiceAmount = (invoice: any) => {
+    switch (invoice.invoice_type) {
+      case 'sima_szamla':
+      case 'vegszamla':
+        return invoice.brutto_vegosszeg || 0;
+      case 'proforma':
+        return invoice.fizetendo_osszeg || 0;
+      case 'egyszerusitett_szamla':
+        return invoice.afa_osszeg || 0;
+      default:
+        return 0;
+    }
+  };
+
+  const getInvoiceIdentifier = (invoice: any) => {
+    switch (invoice.invoice_type) {
+      case 'sima_szamla':
+      case 'vegszamla':
+        return invoice.szamlaszam || 'N/A';
+      case 'proforma':
+        return invoice.dokumentum_azonosito || 'N/A';
+      case 'egyszerusitett_szamla':
+        return 'Egyszerűsített';
+      default:
+        return 'N/A';
+    }
+  };
+
+  const handleExport = (format: 'csv' | 'xlsx') => {
+    const getExportData = (invoice: any) => {
+      const baseData = [
+        getInvoiceTypeLabel(invoice.invoice_type),
+        getInvoiceIdentifier(invoice),
+        invoice.kibocsatas_datuma,
+        invoice.elado_nev,
+        invoice.vevo_nev,
+        getInvoiceAmount(invoice).toString(),
+        invoice.project_name || 'Nincs projekt'
+      ];
+
+      return baseData;
+    };
+
+    const headers = [
+      'Típus',
+      'Azonosító',
+      'Kibocsátás dátuma',
+      'Eladó',
+      'Vevő',
+      'Összeg',
+      'Projekt'
+    ];
+
+    const exportData = filteredAndSortedInvoices.map(invoice => getExportData(invoice));
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+
+    if (format === 'csv') {
+      const csvContent = [
+        headers.join(','),
+        ...exportData.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `szamlak_${timestamp}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Számlák exportálva CSV formátumban");
+    } else {
+      // XLSX export
+      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...exportData]);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Számlák');
+      
+      XLSX.writeFile(workbook, `szamlak_${timestamp}.xlsx`);
+      
+      toast.success("Számlák exportálva XLSX formátumban");
+    }
   };
 
   if (loading) {
@@ -228,272 +319,282 @@ const InvoicesPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Szűrők
-            </CardTitle>
-            <CardDescription>
-              {filteredAndSortedInvoices.length} számla {invoices.length !== filteredAndSortedInvoices.length && `(${invoices.length} összesen)`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {/* Search */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Keresés</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Számlaszám, eladó, vevő..."
-                    value={filters.search}
-                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              {/* Status */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Státusz</label>
-                <Select
-                  value={filters.status}
-                  onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Minden státusz" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Minden státusz</SelectItem>
-                    <SelectItem value="feldolgozva">Feldolgozva</SelectItem>
-                    <SelectItem value="feldolgozas_alatt">Feldolgozás alatt</SelectItem>
-                    <SelectItem value="hiba">Hiba</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Project */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Projekt</label>
-                <Select
-                  value={filters.project}
-                  onValueChange={(value) => setFilters(prev => ({ ...prev, project: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Minden projekt" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Minden projekt</SelectItem>
-                    {projects.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Date From */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Dátum-tól</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !filters.dateFrom && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {filters.dateFrom ? format(filters.dateFrom, "yyyy. MM. dd.", { locale: hu }) : "Válassz dátumot"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={filters.dateFrom}
-                      onSelect={(date) => setFilters(prev => ({ ...prev, dateFrom: date }))}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* Date To */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Dátum-ig</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !filters.dateTo && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {filters.dateTo ? format(filters.dateTo, "yyyy. MM. dd.", { locale: hu }) : "Válassz dátumot"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={filters.dateTo}
-                      onSelect={(date) => setFilters(prev => ({ ...prev, dateTo: date }))}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* Amount Min */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Minimum összeg</label>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={filters.amountMin}
-                  onChange={(e) => setFilters(prev => ({ ...prev, amountMin: e.target.value }))}
-                />
-              </div>
-
-              {/* Amount Max */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Maximum összeg</label>
-                <Input
-                  type="number"
-                  placeholder="∞"
-                  value={filters.amountMax}
-                  onChange={(e) => setFilters(prev => ({ ...prev, amountMax: e.target.value }))}
-                />
-              </div>
-
-              {/* Clear Filters */}
-              <div className="flex items-end">
-                <Button variant="outline" onClick={clearFilters} className="w-full">
-                  Szűrők törlése
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Table */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
-                <CardTitle>Számlák listája</CardTitle>
+                <CardTitle className="text-2xl font-bold">Számlák</CardTitle>
                 <CardDescription>
-                  {filteredAndSortedInvoices.length} számla megjelenítve
+                  Számláinak áttekintése és kezelése - {filteredAndSortedInvoices.length} találat
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => handleExport('csv')}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Export CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport('xlsx')}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Export XLSX
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleSort('szamlaszam')}
+          
+          <CardContent className="space-y-6">
+            {/* Invoice Type Tabs */}
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as InvoiceType | 'all')}>
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="all">Összes</TabsTrigger>
+                <TabsTrigger value="sima_szamla">Sima számla</TabsTrigger>
+                <TabsTrigger value="vegszamla">Végszámla</TabsTrigger>
+                <TabsTrigger value="proforma">Proforma</TabsTrigger>
+                <TabsTrigger value="egyszerusitett_szamla">Egyszerűsített</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value={activeTab} className="space-y-6">
+                {/* Filters */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Keresés</label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        placeholder="Számlaszám, eladó, vevő..."
+                        value={filters.search}
+                        onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Státusz</label>
+                    <Select
+                      value={filters.status}
+                      onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
                     >
-                      <div className="flex items-center gap-2">
-                        Számlaszám
-                        <ArrowUpDown className="h-4 w-4" />
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleSort('elado_nev')}
+                      <SelectTrigger>
+                        <SelectValue placeholder="Minden státusz" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Minden státusz</SelectItem>
+                        <SelectItem value="feldolgozva">Feldolgozva</SelectItem>
+                        <SelectItem value="feldolgozas_alatt">Feldolgozás alatt</SelectItem>
+                        <SelectItem value="hiba">Hiba</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Projekt</label>
+                    <Select
+                      value={filters.project}
+                      onValueChange={(value) => setFilters(prev => ({ ...prev, project: value }))}
                     >
-                      <div className="flex items-center gap-2">
-                        Eladó
-                        <ArrowUpDown className="h-4 w-4" />
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleSort('vevo_nev')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Vevő
-                        <ArrowUpDown className="h-4 w-4" />
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleSort('brutto_vegosszeg')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Összeg
-                        <ArrowUpDown className="h-4 w-4" />
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleSort('kibocsatas_datuma')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Kibocsátás
-                        <ArrowUpDown className="h-4 w-4" />
-                      </div>
-                    </TableHead>
-                    <TableHead>Projekt</TableHead>
-                    <TableHead>Státusz</TableHead>
-                    <TableHead className="text-right">Műveletek</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAndSortedInvoices.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        Nincs megjeleníthető számla a jelenlegi szűrők alapján.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredAndSortedInvoices.map((invoice) => (
-                      <TableRow key={invoice.id} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">{invoice.szamlaszam}</TableCell>
-                        <TableCell>{invoice.elado_nev}</TableCell>
-                        <TableCell>{invoice.vevo_nev}</TableCell>
-                        <TableCell className="font-medium">
-                          {formatCurrency(invoice.brutto_vegosszeg, invoice.penznem)}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(invoice.kibocsatas_datuma), "yyyy. MM. dd.", { locale: hu })}
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {invoice.project_name}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusVariant(invoice.statusz)}>
-                            {getStatusLabel(invoice.statusz)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Minden projekt" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Minden projekt</SelectItem>
+                        {projects.map((project) => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Összeg tartomány</label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        placeholder="Min"
+                        value={filters.amountMin}
+                        onChange={(e) => setFilters(prev => ({ ...prev, amountMin: e.target.value }))}
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Max"
+                        value={filters.amountMax}
+                        onChange={(e) => setFilters(prev => ({ ...prev, amountMax: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Dátum tartomány</label>
+                    <div className="flex gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "justify-start text-left font-normal",
+                              !filters.dateFrom && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {filters.dateFrom ? format(filters.dateFrom, "MM/dd", { locale: hu }) : "Kezdő"}
                           </Button>
-                        </TableCell>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={filters.dateFrom}
+                            onSelect={(date) => setFilters(prev => ({ ...prev, dateFrom: date }))}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "justify-start text-left font-normal",
+                              !filters.dateTo && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {filters.dateTo ? format(filters.dateTo, "MM/dd", { locale: hu }) : "Befejező"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={filters.dateTo}
+                            onSelect={(date) => setFilters(prev => ({ ...prev, dateTo: date }))}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+
+                  <div className="flex items-end gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={clearFilters}
+                      className="flex items-center gap-2"
+                    >
+                      <X className="h-4 w-4" />
+                      Szűrők törlése
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Invoice Table */}
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Típus</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort('kibocsatas_datuma')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Kibocsátás dátuma
+                            <ArrowUpDown className="h-4 w-4" />
+                          </div>
+                        </TableHead>
+                        <TableHead>Dokumentum azonosító</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort('elado_nev')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Eladó
+                            <ArrowUpDown className="h-4 w-4" />
+                          </div>
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort('vevo_nev')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Vevő
+                            <ArrowUpDown className="h-4 w-4" />
+                          </div>
+                        </TableHead>
+                        <TableHead className="text-right">Összeg</TableHead>
+                        <TableHead>Státusz</TableHead>
+                        <TableHead>Projekt</TableHead>
+                        <TableHead className="text-right">Műveletek</TableHead>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAndSortedInvoices.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                            Nincs megjeleníthető számla a megadott szűrők alapján.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredAndSortedInvoices.map((invoice) => (
+                          <TableRow key={invoice.id}>
+                            <TableCell>
+                              <Badge className={getInvoiceTypeColor(invoice.invoice_type)}>
+                                {getInvoiceTypeLabel(invoice.invoice_type)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {format(new Date(invoice.kibocsatas_datuma), 'yyyy. MM. dd.', { locale: hu })}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {getInvoiceIdentifier(invoice)}
+                            </TableCell>
+                            <TableCell>{invoice.elado_nev}</TableCell>
+                            <TableCell>{invoice.vevo_nev}</TableCell>
+                            <TableCell className="text-right font-medium">
+                              {new Intl.NumberFormat('hu-HU', { 
+                                style: 'currency', 
+                                currency: 'HUF' 
+                              }).format(getInvoiceAmount(invoice))}
+                            </TableCell>
+                            <TableCell>
+                              {invoice.invoice_type === 'sima_szamla' && (
+                                <Badge variant={getStatusVariant(invoice.statusz)}>
+                                  {getStatusLabel(invoice.statusz)}
+                                </Badge>
+                              )}
+                              {invoice.invoice_type !== 'sima_szamla' && (
+                                <Badge variant="secondary">
+                                  Aktív
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {invoice.project_name || 'Nincs projekt'}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="ghost" size="sm">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </main>

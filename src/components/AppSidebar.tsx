@@ -46,6 +46,11 @@ const navigationItems = [
     icon: FileText,
   },
   {
+    title: "Bevételek",
+    url: "/bevetelek",
+    icon: BarChart3,
+  },
+  {
     title: "Feltöltés",
     url: "/upload",
     icon: Upload,

@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import SubscriptionUsage from '@/components/SubscriptionUsage';
 
 const ManualUpload = () => {
   const [selectedInvoiceFiles, setSelectedInvoiceFiles] = useState<File[]>([]);
@@ -14,6 +16,7 @@ const ManualUpload = () => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { canProcessInvoice, incrementUsage, remainingInvoices } = useSubscription();
 
   const handleInvoiceFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -91,6 +94,27 @@ const ManualUpload = () => {
     return data;
   };
 
+  const uploadFileToInvoiceStorage = async (file: File, userId: string): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    
+    const { data, error } = await supabase.storage
+      .from('invoice-uploads')
+      .upload(fileName, file);
+
+    if (error) {
+      console.error('Storage upload error:', error);
+      throw new Error(`Fájl feltöltési hiba: ${error.message}`);
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('invoice-uploads')
+      .getPublicUrl(fileName);
+
+    return urlData.publicUrl;
+  };
+
   const handleInvoiceUpload = async () => {
     if (selectedInvoiceFiles.length === 0) {
       toast({
@@ -101,24 +125,123 @@ const ManualUpload = () => {
       return;
     }
 
+    // Check if user can process invoices
+    if (!canProcessInvoice()) {
+      toast({
+        variant: "destructive",
+        title: "Elérted a számlafeldolgozási limitet",
+        description: "Frissítsd csomagodat vagy várj a következő billing ciklusig további számlák feldolgozásához."
+      });
+      return;
+    }
+
+    // Check if trying to upload more invoices than remaining limit
+    if (selectedInvoiceFiles.length > remainingInvoices) {
+      toast({
+        variant: "destructive",
+        title: "Túl sok számla",
+        description: `Csak ${remainingInvoices} számlát tudsz még feldolgozni ebben a billing ciklusban.`
+      });
+      return;
+    }
+
     setUploading(true);
     
     try {
-      // TODO: Implement actual invoice upload logic here
-      // For now, just simulate upload
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Process each invoice and increment usage
+      let successfulUploads = 0;
       
-      toast({
-        title: "Feltöltés sikeres!",
-        description: `${selectedInvoiceFiles.length} számlafájl feltöltve és feldolgozásra várakozik.`
-      });
+      for (const file of selectedInvoiceFiles) {
+        // Check if we can still process this invoice
+        if (!canProcessInvoice()) {
+          toast({
+            variant: "destructive",
+            title: "Elérted a limitet",
+            description: `${successfulUploads} számla sikeresen feltöltve, de elérted a havi limitet.`
+          });
+          break;
+        }
+        
+        // Try to increment usage before processing
+        const canIncrement = await incrementUsage();
+        if (!canIncrement) {
+          toast({
+            variant: "destructive",
+            title: "Nem sikerült a feldolgozás",
+            description: `${successfulUploads} számla sikeresen feltöltve, de nem tudtunk több számlát feldolgozni.`
+          });
+          break;
+        }
+        
+        try {
+          // Upload file to storage
+          const fileUrl = await uploadFileToInvoiceStorage(file, user?.id!);
+          
+          // Create upload record in database
+          const { data: uploadRecord, error: uploadError } = await supabase
+            .from('invoice_uploads')
+            .insert({
+              user_id: user?.id!,
+              file_name: file.name,
+              file_size: file.size,
+              file_type: file.type,
+              file_url: fileUrl,
+              upload_status: 'uploaded',
+              processing_status: 'pending'
+            })
+            .select()
+            .single();
+
+          if (uploadError) {
+            console.error('Database insert error:', uploadError);
+            throw new Error(`Adatbázis hiba: ${uploadError.message}`);
+          }
+
+          // Trigger N8N webhook processing
+          try {
+            const { error: webhookError } = await supabase.functions.invoke('trigger-invoice-processing', {
+              body: { 
+                uploadId: uploadRecord.id,
+                webhookUrl: 'https://n8n.thinkaikontir.hu/webhook-test/bd504dd3-8af8-45d6-90f6-cfc635a22da6'
+              }
+            });
+
+            if (webhookError) {
+              console.error('Webhook trigger error:', webhookError);
+              // Don't throw here - file is uploaded, webhook is secondary
+            }
+          } catch (webhookError) {
+            console.error('Failed to trigger processing webhook:', webhookError);
+            // Continue - file upload succeeded
+          }
+
+          successfulUploads++;
+        } catch (fileError) {
+          console.error(`Error processing file ${file.name}:`, fileError);
+          // Continue with next file
+        }
+      }
       
-      setSelectedInvoiceFiles([]);
+      if (successfulUploads > 0) {
+        toast({
+          title: "Feltöltés sikeres!",
+          description: `${successfulUploads} számlafájl feltöltve és feldolgozásra küldve.`
+        });
+        
+        setSelectedInvoiceFiles([]);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Feltöltés sikertelen",
+          description: "Nem sikerült egyetlen fájlt sem feltölteni."
+        });
+      }
     } catch (error) {
+      console.error('Upload error:', error);
       toast({
         variant: "destructive",
         title: "Feltöltés sikertelen",
-        description: "Hiba történt a fájlok feltöltése során. Kérlek próbáld újra."
+        description: error instanceof Error ? error.message : "Hiba történt a fájlok feltöltése során. Kérlek próbáld újra."
       });
     } finally {
       setUploading(false);
@@ -151,24 +274,58 @@ const ManualUpload = () => {
         // Upload file to storage
         const uploadData = await uploadFileToStorage(file, 'bank-statements', user.id);
         
-        // Save bank statement record to database
-        const { error: dbError } = await supabase
-          .from('bank_statements')
+        // Get the public URL
+        const { data: urlData } = supabase.storage
+          .from('bank-statements')
+          .getPublicUrl(uploadData.path);
+
+        // Save to bank_statement_uploads table for tracking
+        const { data: uploadRecord, error: dbError } = await supabase
+          .from('bank_statement_uploads')
           .insert({
             user_id: user.id,
             file_name: file.name,
-            file_url: uploadData.path,
+            file_url: urlData.publicUrl,
             file_size: file.size,
             file_type: file.type,
-            status: 'uploaded'
-          });
+            upload_status: 'uploaded',
+            processing_status: 'pending'
+          })
+          .select()
+          .single();
 
         if (dbError) throw dbError;
+
+        // Trigger processing webhook
+        try {
+          const { error: webhookError } = await supabase.functions.invoke('trigger-bank-statement-processing', {
+            body: {
+              uploadId: uploadRecord.id,
+              webhookUrl: 'https://n8n.thinkaikontir.hu/webhook-test/a6f3dbf0-9eab-4e1c-98cf-c8ff56a498f6'
+            }
+          });
+
+          if (webhookError) {
+            console.error('Webhook error:', webhookError);
+            toast({
+              variant: "destructive",
+              title: "Feldolgozás indítása sikertelen",
+              description: `${file.name} feltöltve, de a feldolgozás nem indult el.`
+            });
+          }
+        } catch (webhookError) {
+          console.error('Webhook trigger error:', webhookError);
+          toast({
+            variant: "destructive",
+            title: "Feldolgozás indítása sikertelen",
+            description: `${file.name} feltöltve, de a feldolgozás nem indult el.`
+          });
+        }
       }
       
       toast({
         title: "Feltöltés sikeres!",
-        description: `${selectedBankFiles.length} bankkivonat feltöltve és feldolgozásra várakozik.`
+        description: `${selectedBankFiles.length} bankkivonat feltöltve és feldolgozásra elküldve.`
       });
       
       setSelectedBankFiles([]);
@@ -201,55 +358,66 @@ const ManualUpload = () => {
         </p>
       </div>
 
-      <Tabs defaultValue="invoices" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="invoices" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Számlák
-          </TabsTrigger>
-          <TabsTrigger value="bank-statements" className="flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            Bankkivonatok
-          </TabsTrigger>
-        </TabsList>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="invoices" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="invoices" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Számlák
+              </TabsTrigger>
+              <TabsTrigger value="bank-statements" className="flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                Bankkivonatok
+              </TabsTrigger>
+            </TabsList>
 
-        {/* Invoice Upload Tab */}
-        <TabsContent value="invoices">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Számla fájlok feltöltése
-              </CardTitle>
-              <CardDescription>
-                Válassz PDF vagy kép fájlokat, amelyek számlákat tartalmaznak. Támogatott formátumok: PDF, JPG, PNG, WebP
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Válassz számlafájlokat a feltöltéshez</p>
-                  <p className="text-xs text-muted-foreground">
-                    Több fájlt is kiválaszthatsz egyszerre vagy egyenként is feltöltheted
-                  </p>
-                </div>
-                <Button 
-                  className="mt-4"
-                  onClick={() => document.getElementById('invoice-file-input')?.click()}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Fájlok tallózása
-                </Button>
-                <input
-                  id="invoice-file-input"
-                  type="file"
-                  multiple
-                  accept=".pdf,.jpg,.jpeg,.png,.webp"
-                  onChange={handleInvoiceFileSelect}
-                  className="hidden"
-                />
-              </div>
+            {/* Invoice Upload Tab */}
+            <TabsContent value="invoices">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Upload className="h-5 w-5" />
+                    Számla fájlok feltöltése
+                  </CardTitle>
+                  <CardDescription>
+                    Válassz PDF vagy kép fájlokat, amelyek számlákat tartalmaznak. Támogatott formátumok: PDF, JPG, PNG, WebP
+                  </CardDescription>
+                  {remainingInvoices <= 5 && (
+                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm text-yellow-800">
+                        Figyelem: Csak {remainingInvoices} számlát tudsz még feldolgozni ebben a hónapban.
+                      </p>
+                    </div>
+                  )}
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
+                    <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Válassz számlafájlokat a feltöltéshez</p>
+                      <p className="text-xs text-muted-foreground">
+                        Több fájlt is kiválaszthatsz egyszerre vagy egyenként is feltöltheted
+                      </p>
+                    </div>
+                    <Button 
+                      className="mt-4"
+                      onClick={() => document.getElementById('invoice-file-input')?.click()}
+                      disabled={!canProcessInvoice()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {canProcessInvoice() ? 'Fájlok tallózása' : 'Elérted a limitet'}
+                    </Button>
+                    <input
+                      id="invoice-file-input"
+                      type="file"
+                      multiple
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      onChange={handleInvoiceFileSelect}
+                      className="hidden"
+                      disabled={!canProcessInvoice()}
+                    />
+                  </div>
 
               {selectedInvoiceFiles.length > 0 && (
                 <div className="space-y-4">
@@ -287,7 +455,7 @@ const ManualUpload = () => {
                   
                   <Button 
                     onClick={handleInvoiceUpload}
-                    disabled={uploading}
+                    disabled={uploading || !canProcessInvoice()}
                     className="w-full"
                   >
                     {uploading ? (
@@ -295,6 +463,8 @@ const ManualUpload = () => {
                         <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
                         Feldolgozás...
                       </>
+                    ) : !canProcessInvoice() ? (
+                      'Elérted a havi limitet'
                     ) : (
                       <>
                         <Upload className="h-4 w-4 mr-2" />
@@ -407,6 +577,13 @@ const ManualUpload = () => {
         </TabsContent>
       </Tabs>
     </div>
+    
+    {/* Subscription Usage Sidebar */}
+    <div className="lg:col-span-1">
+      <SubscriptionUsage />
+    </div>
+  </div>
+</div>
   );
 };
 
