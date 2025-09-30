@@ -29,7 +29,6 @@ Deno.serve(async (req) => {
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const navApiUrl = Deno.env.get('NAV_API_URL')!;
 
     // Create Supabase client with auth header
     const authHeader = req.headers.get('Authorization');
@@ -46,7 +45,8 @@ Deno.serve(async (req) => {
     });
 
     // Authenticate user
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
     if (authError || !user) {
       console.error('[NAV-QUERY-OUTBOUND] Authentication failed:', authError);
       return new Response(
@@ -117,15 +117,18 @@ Deno.serve(async (req) => {
       const timestamp = new Date().toISOString();
       const timestampFormatted = timestamp.replace(/[-:]/g, '').split('.')[0] + 'Z';
 
-      // Build password hash (SHA-512)
-      const passwordHashInput = requestId + credentials.nav_password;
-      const passwordHash = Array.from(sha512(passwordHashInput, 'utf8'))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('')
-        .toUpperCase();
+      // Build password hash (SHA-512) - NAV v3 requires hashing password only
+      const passwordHash = (sha512(credentials.nav_password, 'utf8', 'hex') as string).toUpperCase();
 
-      // Build request signature (SHA3-512)
-      const signatureInput = requestId + timestampFormatted.substring(0, 14) + credentials.nav_sign_key;
+      // Build request signature (SHA3-512) using compact UTC timestamp yyyyMMddHHmmss
+      const d = new Date(timestamp);
+      const compactTimestamp = d.getUTCFullYear().toString()
+        + (d.getUTCMonth() + 1).toString().padStart(2, '0')
+        + d.getUTCDate().toString().padStart(2, '0')
+        + d.getUTCHours().toString().padStart(2, '0')
+        + d.getUTCMinutes().toString().padStart(2, '0')
+        + d.getUTCSeconds().toString().padStart(2, '0');
+      const signatureInput = requestId + compactTimestamp + credentials.nav_sign_key;
       const encoder = new TextEncoder();
       const data = encoder.encode(signatureInput);
       const hash = sha3_512(data);
