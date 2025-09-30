@@ -123,8 +123,16 @@ const NavTesting: React.FC = () => {
     setValidationResult(null);
     try {
       console.log('[NavTesting] Starting connection test');
+      
+      // Get session and explicitly pass Authorization header
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+      
       const { data, error } = await supabase.functions.invoke('nav-token', {
-        body: { action: 'validate_credentials' }
+        body: { action: 'validate_credentials' },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
       console.log('[NavTesting] nav-token response', { data, error });
 

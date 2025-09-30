@@ -121,7 +121,7 @@ async function getNavToken(creds: any): Promise<string> {
 
   const response = await fetch(`${apiUrl}/tokenExchange`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/xml', 'Accept': 'application/xml' },
+    headers: { 'Content-Type': 'application/xml; charset=UTF-8', 'Accept': 'application/xml' },
     body: xml
   })
 
@@ -165,7 +165,7 @@ async function queryInvoices(creds: any, token: string, params: any): Promise<an
 
   const response = await fetch(`${apiUrl}/queryInvoiceDigest`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/xml', 'Accept': 'application/xml' },
+    headers: { 'Content-Type': 'application/xml; charset=UTF-8', 'Accept': 'application/xml' },
     body: xml
   })
 

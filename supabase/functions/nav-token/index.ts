@@ -319,7 +319,7 @@ function buildTokenXML(
   <software>
     <softwareId>${creds.software_id}</softwareId>
     <softwareName>VisiBill NAV Integration</softwareName>
-    <softwareOperation>LOCAL_SOFTWARE</softwareOperation>
+    <softwareOperation>ONLINE_SERVICE</softwareOperation>
     <softwareMainVersion>1.0</softwareMainVersion>
     <softwareDevName>${creds.software_dev_name || 'VisiBill'}</softwareDevName>
     <softwareDevContact>${creds.software_dev_contact || 'support@visibill.hu'}</softwareDevContact>
