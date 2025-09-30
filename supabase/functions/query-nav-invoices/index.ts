@@ -143,7 +143,8 @@ async function getNavToken(creds: any): Promise<string> {
 async function queryInvoices(creds: any, token: string, params: any): Promise<any[]> {
   const requestId = generateRequestId()
   const timestamp = new Date().toISOString()
-  const passwordHash = await sha512(creds.nav_password)
+  // For queryInvoiceDigest, passwordHash = SHA-512(requestId + password)
+  const passwordHash = await sha512(requestId + creds.nav_password)
   
   // Convert ISO timestamp to compact format (yyyyMMddHHmmss) for signature
   const date = new Date(timestamp)
@@ -231,12 +232,14 @@ function buildTokenXML(creds: any, requestId: string, timestamp: string, passwor
 
 function buildQueryXML(creds: any, token: string, params: any, requestId: string, timestamp: string, passwordHash: string, requestSignature: string): string {
   const dateFilter = params.dateFrom && params.dateTo
-    ? `<mandatoryQueryParams>
-        <invoiceIssueDate>
-          <dateFrom>${params.dateFrom}</dateFrom>
-          <dateTo>${params.dateTo}</dateTo>
-        </invoiceIssueDate>
-      </mandatoryQueryParams>`
+    ? `<invoiceQueryParams>
+        <mandatoryQueryParams>
+          <invoiceIssueDate>
+            <dateFrom>${params.dateFrom}</dateFrom>
+            <dateTo>${params.dateTo}</dateTo>
+          </invoiceIssueDate>
+        </mandatoryQueryParams>
+      </invoiceQueryParams>`
     : ''
 
   return `<?xml version="1.0" encoding="UTF-8"?>
