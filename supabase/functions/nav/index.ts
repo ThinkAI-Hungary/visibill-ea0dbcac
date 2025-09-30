@@ -4,8 +4,8 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Import SHA3-512 from Deno standard library
-import { Sha3_512 } from "https://deno.land/std@0.224.0/hash/sha3.ts";
+// Import SHA3-512 from Node.js crypto (available in Deno)
+import { createHash } from "node:crypto";
 
 function utcTimestampYYYYMMDDHHMMSS(d = new Date()) {
   // Return UTC timestamp in yyyyMMddHHmmss format as required by NAV v3
@@ -25,11 +25,9 @@ function sha512UpperHex(s: string) {
     .then(ab => Array.from(new Uint8Array(ab), b => b.toString(16).padStart(2, '0')).join('').toUpperCase());
 }
 
-// SHA3-512 implementation using Deno standard library
+// SHA3-512 implementation using Node.js crypto
 function sha3_512UpperHex(s: string) {
-  const h = new Sha3_512();
-  h.update(new TextEncoder().encode(s));
-  return h.hex().toUpperCase();
+  return createHash('sha3-512').update(s).digest('hex').toUpperCase();
 }
 
 async function buildHeader(user: any, password: string, signatureKey: string, operation: string, useTestUrl: boolean) {
