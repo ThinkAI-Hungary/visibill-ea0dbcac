@@ -406,10 +406,11 @@ Deno.serve(async (req) => {
       } else {
         return new Response(JSON.stringify({
           success: false,
-          error: result.error || "Failed to process NAV response"
+          error: result.error || "Failed to process NAV response",
+          errorCode: 'PROCESSING_ERROR'
         }), {
           headers: cors,
-          status: 500
+          status: 200
         });
       }
     }
@@ -452,11 +453,12 @@ Deno.serve(async (req) => {
       const decodedXml = b64 ? base64ToUtf8(b64) : null;
       
       return new Response(JSON.stringify({ 
-        ok: true, 
+        success: true, 
         rawXml: navResponse.body, 
         invoiceXml: decodedXml 
       }), { 
-        headers: cors 
+        headers: cors,
+        status: 200
       });
     }
 

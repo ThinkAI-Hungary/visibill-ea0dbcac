@@ -53,35 +53,33 @@ const NavIntegration = () => {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
-      const searchParams = new URLSearchParams({
+      const payload = {
+        ...credentials,
         action: 'list',
-        test: queryParams.useTestEnvironment.toString(),
-      });
-      
-      const response = await fetch(`https://vxxgvdlqvvchtlmqnrqf.supabase.co/functions/v1/nav?${searchParams}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4eGd2ZGxxdnZjaHRsbXFucnFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5NzAwNTAsImV4cCI6MjA3MzU0NjA1MH0.Ec9KFcjt89cY6FF9Nq9GnW1hzlnDUhQCCJ_LhWm2evY`,
-        },
-        body: JSON.stringify({
-          ...credentials,
-          direction: 'INBOUND',
-          page: 1,
-          invoiceIssueDate: new Date().toISOString().split('T')[0],
-        }),
-      });
-      
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.error || 'Network error');
+        test: queryParams.useTestEnvironment,
+        direction: 'INBOUND',
+        page: 1,
+        issueDateFrom: new Date().toISOString().split('T')[0],
+        issueDateTo: new Date().toISOString().split('T')[0],
+      };
 
-      if (!data?.ok) throw new Error(data?.error || 'Kapcsolódási hiba');
-
-      setIsConnected(true);
-      toast({
-        title: "Sikeres kapcsolódás",
-        description: "NAV API kapcsolat sikeresen létrejött",
+      const { data, error } = await supabase.functions.invoke('nav', {
+        body: payload,
       });
+
+      if (error) {
+        throw new Error(`Supabase function error: ${error.message}`);
+      }
+
+      if (data?.success) {
+        setIsConnected(true);
+        toast({
+          title: "Sikeres kapcsolódás",
+          description: "NAV API kapcsolat sikeresen létrejött",
+        });
+      } else {
+        throw new Error(data?.error || data?.errorCode || 'Kapcsolódási hiba');
+      }
     } catch (error) {
       console.error('NAV connection test failed:', error);
       toast({
