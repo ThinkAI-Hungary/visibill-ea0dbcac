@@ -114,7 +114,41 @@ async function validateCredentials(supabaseClient: any, userId: string) {
 
   const credentials: NavCredentials = credsResult;
   
+  // Sanitize inputs
+  const nav_username = credentials.nav_username?.trim() || '';
+  const nav_password = credentials.nav_password?.trim() || '';
+  const nav_tax_number = credentials.nav_tax_number?.trim() || '';
+  const nav_sign_key = credentials.nav_sign_key?.trim() || '';
+  
+  // Validate inputs
+  if (!nav_username || !nav_password || !nav_tax_number || !nav_sign_key) {
+    throw new Error('Missing required credentials');
+  }
+  
+  if (!/^\d{8}$/.test(nav_tax_number)) {
+    throw new Error('Invalid tax number format - must be exactly 8 digits');
+  }
+  
+  // Field diagnostics for debugging (no actual values logged)
+  const diagnostics = {
+    loginLength: nav_username.length,
+    taxNumberLength: nav_tax_number.length,
+    hasWhitespaceInLogin: nav_username !== credentials.nav_username,
+    hasWhitespaceInPassword: nav_password !== credentials.nav_password,
+    hasWhitespaceInSignKey: nav_sign_key !== credentials.nav_sign_key
+  };
+  
+  // Create sanitized credentials object
+  const sanitizedCreds: NavCredentials = {
+    ...credentials,
+    nav_username,
+    nav_password,
+    nav_tax_number,
+    nav_sign_key
+  };
+  
   // Test connection to NAV API using TokenExchange
+  const env = credentials.is_test_environment ? 'test' : 'prod';
   const baseUrl = credentials.is_test_environment 
     ? 'https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3'
     : 'https://api.onlineszamla.nav.gov.hu/invoiceService/v3';
@@ -122,12 +156,17 @@ async function validateCredentials(supabaseClient: any, userId: string) {
   try {
     const timestamp = new Date().toISOString();
     const requestId = generateRequestId();
-    const passwordHash = hashPassword(credentials.nav_password, requestId);
-    const requestSignature = createSignature(credentials, requestId, timestamp);
+    const passwordHash = hashPassword(sanitizedCreds.nav_password, requestId);
+    const requestSignature = createSignature(sanitizedCreds, requestId, timestamp);
 
-    const xmlRequest = buildTokenXML(credentials, requestId, timestamp, passwordHash, requestSignature);
+    const xmlRequest = buildTokenXML(sanitizedCreds, requestId, timestamp, passwordHash, requestSignature);
     
-    console.log('[NAV-TOKEN] Sending validation request, RequestId:', requestId, 'length:', requestId.length);
+    console.log('[NAV-TOKEN] Sending validation request', {
+      requestId,
+      requestIdLength: requestId.length,
+      timestampFormat: timestamp,
+      environment: env
+    });
 
     const testResponse = await fetch(`${baseUrl}/tokenExchange`, {
       method: 'POST',
@@ -139,7 +178,7 @@ async function validateCredentials(supabaseClient: any, userId: string) {
     });
 
     const xmlResponse = await testResponse.text();
-    console.log('[NAV-TOKEN] Validation response:', xmlResponse);
+    console.log('[NAV-TOKEN] Validation response status:', testResponse.status);
 
     // Check for success - NAV returns funcCode=OK for successful validation
     const isValid = xmlResponse.includes('<funcCode>OK</funcCode>') || 
@@ -162,7 +201,10 @@ async function validateCredentials(supabaseClient: any, userId: string) {
         success: isValid,
         status: validationStatus,
         message: isValid ? 'Credentials validated successfully' : validationError || 'Invalid credentials',
-        details: xmlResponse
+        details: xmlResponse,
+        env,
+        requestId,
+        diagnostics: !isValid ? diagnostics : undefined
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

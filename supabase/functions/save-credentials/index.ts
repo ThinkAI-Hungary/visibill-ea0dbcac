@@ -42,23 +42,46 @@ Deno.serve(async (req) => {
       isTestEnvironment = true
     } = body
 
+    // Sanitize inputs
+    const username = navUsername?.trim() || '';
+    const password = navPassword?.trim() || '';
+    const taxNumber = navTaxNumber?.trim() || '';
+    const signKey = navSignKey?.trim() || '';
+    const exchangeKey = navExchangeKey?.trim() || '';
+
     // Validate required fields
-    if (!navUsername || !navPassword || !navTaxNumber || !navSignKey || !navExchangeKey) {
+    if (!username || !password || !taxNumber || !signKey || !exchangeKey) {
       return new Response(
-        JSON.stringify({ error: 'All NAV credentials are required' }),
+        JSON.stringify({ error: 'All NAV credentials are required (cannot be empty or whitespace)' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    // Validate tax number format
+    if (!/^\d{8}$/.test(taxNumber)) {
+      return new Response(
+        JSON.stringify({ error: 'Tax number must be exactly 8 digits' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    // Validate username/sign key character set (alphanumeric)
+    if (!/^[a-zA-Z0-9]+$/.test(username)) {
+      return new Response(
+        JSON.stringify({ error: 'Username must contain only letters and numbers' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Call the database function to save credentials
+    // Call the database function to save credentials with sanitized values
     const { data, error } = await supabaseClient.rpc('save_nav_credentials', {
-      p_nav_username: navUsername,
-      p_nav_password: navPassword,
-      p_nav_tax_number: navTaxNumber,
-      p_nav_sign_key: navSignKey,
-      p_nav_exchange_key: navExchangeKey,
-      p_software_dev_name: softwareDevName || null,
-      p_software_dev_contact: softwareDevContact || null,
+      p_nav_username: username,
+      p_nav_password: password,
+      p_nav_tax_number: taxNumber,
+      p_nav_sign_key: signKey,
+      p_nav_exchange_key: exchangeKey,
+      p_software_dev_name: softwareDevName?.trim() || null,
+      p_software_dev_contact: softwareDevContact?.trim() || null,
       p_is_test_environment: isTestEnvironment
     })
 

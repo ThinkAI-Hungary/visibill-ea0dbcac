@@ -32,18 +32,23 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
   });
 
   const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Auto-trim string inputs
+    const processedValue = typeof value === 'string' ? value.trim() : value;
+    setFormData(prev => ({ ...prev, [field]: processedValue }));
     setValidationStatus('pending');
   };
 
   const validateForm = () => {
     const errors: string[] = [];
     
-    if (!formData.nav_username.trim()) errors.push('NAV felhasználónév kötelező');
-    if (!formData.nav_password.trim()) errors.push('NAV jelszó kötelező');
-    if (!formData.nav_tax_number.match(/^\d{8}$/)) errors.push('Adószám 8 számjegy kell legyen');
-    if (!formData.nav_sign_key.trim()) errors.push('Aláíró kulcs kötelező');
-    if (!formData.nav_exchange_key.trim()) errors.push('Csere kulcs kötelező');
+    if (!formData.nav_username) errors.push('NAV felhasználónév kötelező');
+    if (formData.nav_username && !/^[a-zA-Z0-9]+$/.test(formData.nav_username)) {
+      errors.push('Felhasználónév csak betűket és számokat tartalmazhat');
+    }
+    if (!formData.nav_password) errors.push('NAV jelszó kötelező');
+    if (!formData.nav_tax_number.match(/^\d{8}$/)) errors.push('Adószám pontosan 8 számjegy kell legyen');
+    if (!formData.nav_sign_key) errors.push('Aláíró kulcs kötelező');
+    if (!formData.nav_exchange_key) errors.push('Csere kulcs kötelező');
     
     return errors;
   };
@@ -188,11 +193,16 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
 
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {formData.is_test_environment 
-              ? 'Teszt környezet: A teszteléshez használja a NAV teszt API adatait'
-              : 'Éles környezet: Valós NAV API adatok szükségesek'
-            }
+          <AlertDescription className="space-y-1">
+            <p>
+              {formData.is_test_environment 
+                ? 'Teszt környezet: A teszteléshez használja a NAV teszt API adatait'
+                : 'Éles környezet: Valós NAV API adatok szükségesek'
+              }
+            </p>
+            <p className="text-sm text-muted-foreground">
+              ⚠️ A technikai felhasználóhoz tartozó adószámnak egyeznie kell a NAV-ban
+            </p>
           </AlertDescription>
         </Alert>
 
@@ -218,7 +228,11 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
               onChange={(e) => handleInputChange('nav_tax_number', e.target.value)}
               placeholder="12345678"
               maxLength={8}
+              className={formData.nav_tax_number && !/^\d{8}$/.test(formData.nav_tax_number) ? 'border-destructive' : ''}
             />
+            {formData.nav_tax_number && !/^\d{8}$/.test(formData.nav_tax_number) && (
+              <p className="text-xs text-destructive mt-1">Pontosan 8 számjegy szükséges</p>
+            )}
           </div>
         </div>
 
