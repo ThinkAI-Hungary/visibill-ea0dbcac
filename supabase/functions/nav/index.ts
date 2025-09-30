@@ -5,7 +5,7 @@ const cors = {
 };
 
 // Import SHA3-512 from js-sha3
-import { sha3_512 } from 'https://esm.sh/js-sha3@0.9.3';
+import { sha3_512 } from 'https://esm.sh/js-sha3@0.9.3/src/sha3.js';
 
 function utcTimestampYYYYMMDDHHMMSS(d = new Date()) {
   // Return UTC timestamp in yyyyMMddHHmmss format as required by NAV v3
