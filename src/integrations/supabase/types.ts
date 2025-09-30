@@ -417,60 +417,105 @@ export type Database = {
           },
         ]
       }
-      nav_outbound_invoices: {
+      nav_invoices: {
         Row: {
-          created_at: string
+          created_at: string | null
           currency: string | null
           customer_tax_number: string | null
-          fetched_at: string
+          fetched_at: string | null
           id: string
-          ins_date: string | null
-          invoice_amount: number | null
+          invoice_delivery_date: string | null
+          invoice_direction: string | null
+          invoice_gross_amount: number | null
+          invoice_issue_date: string | null
+          invoice_net_amount: number | null
           invoice_number: string
           invoice_operation: string | null
-          invoice_xml: string | null
-          last_updated: string
-          nav_environment: string
-          raw_nav_response: Json | null
+          invoice_vat_amount: number | null
+          payment_method: string | null
           supplier_tax_number: string | null
-          updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           currency?: string | null
           customer_tax_number?: string | null
-          fetched_at?: string
+          fetched_at?: string | null
           id?: string
-          ins_date?: string | null
-          invoice_amount?: number | null
+          invoice_delivery_date?: string | null
+          invoice_direction?: string | null
+          invoice_gross_amount?: number | null
+          invoice_issue_date?: string | null
+          invoice_net_amount?: number | null
           invoice_number: string
           invoice_operation?: string | null
-          invoice_xml?: string | null
-          last_updated?: string
-          nav_environment?: string
-          raw_nav_response?: Json | null
+          invoice_vat_amount?: number | null
+          payment_method?: string | null
           supplier_tax_number?: string | null
-          updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           currency?: string | null
           customer_tax_number?: string | null
-          fetched_at?: string
+          fetched_at?: string | null
           id?: string
-          ins_date?: string | null
-          invoice_amount?: number | null
+          invoice_delivery_date?: string | null
+          invoice_direction?: string | null
+          invoice_gross_amount?: number | null
+          invoice_issue_date?: string | null
+          invoice_net_amount?: number | null
           invoice_number?: string
           invoice_operation?: string | null
-          invoice_xml?: string | null
-          last_updated?: string
-          nav_environment?: string
-          raw_nav_response?: Json | null
+          invoice_vat_amount?: number | null
+          payment_method?: string | null
           supplier_tax_number?: string | null
-          updated_at?: string
-          user_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      nav_sync_logs: {
+        Row: {
+          completed_at: string | null
+          date_from: string | null
+          date_to: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          invoice_direction: string | null
+          invoices_fetched: number | null
+          started_at: string | null
+          status: string
+          sync_type: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          date_from?: string | null
+          date_to?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          invoice_direction?: string | null
+          invoices_fetched?: number | null
+          started_at?: string | null
+          status: string
+          sync_type: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          date_from?: string | null
+          date_to?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          invoice_direction?: string | null
+          invoices_fetched?: number | null
+          started_at?: string | null
+          status?: string
+          sync_type?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -744,6 +789,63 @@ export type Database = {
         }
         Relationships: []
       }
+      user_nav_credentials: {
+        Row: {
+          created_at: string | null
+          exchange_key_secret_id: string | null
+          id: string
+          is_test_environment: boolean | null
+          last_validated_at: string | null
+          nav_tax_number: string
+          nav_username: string
+          password_secret_id: string | null
+          sign_key_secret_id: string | null
+          software_dev_contact: string | null
+          software_dev_name: string | null
+          software_id: string | null
+          updated_at: string | null
+          user_id: string | null
+          validation_error: string | null
+          validation_status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          exchange_key_secret_id?: string | null
+          id?: string
+          is_test_environment?: boolean | null
+          last_validated_at?: string | null
+          nav_tax_number: string
+          nav_username: string
+          password_secret_id?: string | null
+          sign_key_secret_id?: string | null
+          software_dev_contact?: string | null
+          software_dev_name?: string | null
+          software_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          validation_error?: string | null
+          validation_status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          exchange_key_secret_id?: string | null
+          id?: string
+          is_test_environment?: boolean | null
+          last_validated_at?: string | null
+          nav_tax_number?: string
+          nav_username?: string
+          password_secret_id?: string | null
+          sign_key_secret_id?: string | null
+          software_dev_contact?: string | null
+          software_dev_name?: string | null
+          software_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          validation_error?: string | null
+          validation_status?: string | null
+        }
+        Relationships: []
+      }
       user_subscriptions: {
         Row: {
           created_at: string
@@ -860,6 +962,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_nav_credentials: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       increment_invoice_usage: {
         Args: { user_uuid: string }
         Returns: boolean
@@ -867,6 +973,19 @@ export type Database = {
       reset_monthly_usage: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      save_nav_credentials: {
+        Args: {
+          p_is_test_environment?: boolean
+          p_nav_exchange_key: string
+          p_nav_password: string
+          p_nav_sign_key: string
+          p_nav_tax_number: string
+          p_nav_username: string
+          p_software_dev_contact?: string
+          p_software_dev_name?: string
+        }
+        Returns: Json
       }
     }
     Enums: {
