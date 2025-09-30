@@ -3,6 +3,9 @@ project_id = "vxxgvdlqvvchtlmqnrqf"
 [functions.nylas-callback]
 verify_jwt = false
 
+[functions.nav-query-outbound-invoices]
+verify_jwt = true
+
 [functions.trigger-invoice-processing]
 verify_jwt = true
 

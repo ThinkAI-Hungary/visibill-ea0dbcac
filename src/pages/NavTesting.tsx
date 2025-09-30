@@ -69,6 +69,14 @@ const NavTesting: React.FC = () => {
     dateTo: new Date().toISOString().split('T')[0] // today
   });
 
+  const [queryParams, setQueryParams] = useState({
+    dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    dateTo: new Date().toISOString().split('T')[0]
+  });
+  
+  const [queryResults, setQueryResults] = useState<any>(null);
+  const [querying, setQuerying] = useState(false);
+
   useEffect(() => {
     checkCredentialsExist();
     loadSyncLogs();
@@ -209,6 +217,73 @@ const NavTesting: React.FC = () => {
     }
   };
 
+  const handleQueryOutbound = async () => {
+    // Validate date range (max 35 days)
+    const fromDate = new Date(queryParams.dateFrom);
+    const toDate = new Date(queryParams.dateTo);
+    const daysDiff = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysDiff > 35) {
+      toast({
+        title: 'Érvénytelen dátum tartomány',
+        description: 'A dátum tartomány nem haladhatja meg a 35 napot',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (daysDiff < 0) {
+      toast({
+        title: 'Érvénytelen dátum tartomány',
+        description: 'A kezdő dátum nem lehet később, mint a végső dátum',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setQuerying(true);
+    setQueryResults(null);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      console.log('[NavTesting] Querying outbound invoices');
+      
+      const { data, error } = await supabase.functions.invoke('nav-query-outbound-invoices', {
+        body: {
+          dateFrom: queryParams.dateFrom,
+          dateTo: queryParams.dateTo
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      console.log('[NavTesting] Query response:', { data, error });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      setQueryResults(data);
+      
+      toast({
+        title: 'Lekérdezés sikeres',
+        description: `${data.totalInvoices} számla találva (${data.pagesFetched} oldal)`,
+      });
+
+    } catch (error: any) {
+      console.error('Query error:', error);
+      toast({
+        title: 'Lekérdezési hiba',
+        description: error.message || 'Nem sikerült lekérdezni a számlákat',
+        variant: 'destructive'
+      });
+    } finally {
+      setQuerying(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
@@ -336,13 +411,146 @@ const NavTesting: React.FC = () => {
         </Alert>
       )}
 
-      <Tabs defaultValue="sync" className="space-y-6">
+      <Tabs defaultValue="query" className="space-y-6">
         <TabsList>
+          <TabsTrigger value="query">Kimenő Számlák Lekérdezése</TabsTrigger>
           <TabsTrigger value="sync">Szinkronizálás</TabsTrigger>
           <TabsTrigger value="invoices">NAV Számlák</TabsTrigger>
           <TabsTrigger value="logs">Sync Logok</TabsTrigger>
           <TabsTrigger value="credentials">Hitelesítő Adatok</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="query" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Kimenő Számlák Lekérdezése (OUTBOUND)
+              </CardTitle>
+              <CardDescription>
+                Lekérdezi a NAV-tól az Ön által kibocsátott számlákat. Automatikusan lekérdez max. 3 oldalt (akár 300 számla).
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="queryDateFrom">Kezdő dátum (számlakeltezés)</Label>
+                  <Input
+                    id="queryDateFrom"
+                    type="date"
+                    value={queryParams.dateFrom}
+                    onChange={(e) => setQueryParams(prev => ({ ...prev, dateFrom: e.target.value }))}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="queryDateTo">Végső dátum (számlakeltezés)</Label>
+                  <Input
+                    id="queryDateTo"
+                    type="date"
+                    value={queryParams.dateTo}
+                    onChange={(e) => setQueryParams(prev => ({ ...prev, dateTo: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <Alert>
+                <Calendar className="h-4 w-4" />
+                <AlertTitle>Dátum tartomány korlát</AlertTitle>
+                <AlertDescription>
+                  Maximum 35 napos időszakot lehet lekérdezni egy kérésben. A rendszer automatikusan lekérdezi az első 3 oldalt (max. 300 számla).
+                </AlertDescription>
+              </Alert>
+              
+              <Button 
+                onClick={handleQueryOutbound} 
+                disabled={querying}
+                className="w-full"
+              >
+                {querying ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Lekérdezés folyamatban...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    Kimenő Számlák Lekérdezése
+                  </>
+                )}
+              </Button>
+
+              {queryResults && (
+                <div className="space-y-4 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Lekérdezés eredménye</h3>
+                    <div className="flex gap-2">
+                      <Badge variant="outline">
+                        {queryResults.totalInvoices} számla
+                      </Badge>
+                      <Badge variant="outline">
+                        {queryResults.pagesFetched}/{queryResults.totalPagesAvailable} oldal
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {queryResults.invoices && queryResults.invoices.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Számlaszám</TableHead>
+                            <TableHead>Művelet</TableHead>
+                            <TableHead>Kategória</TableHead>
+                            <TableHead>Keltezés</TableHead>
+                            <TableHead>Vevő</TableHead>
+                            <TableHead>Nettó (HUF)</TableHead>
+                            <TableHead>ÁFA (HUF)</TableHead>
+                            <TableHead>Fizetési mód</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {queryResults.invoices.map((invoice: any, index: number) => (
+                            <TableRow key={`${invoice.transactionId}-${invoice.index || index}`}>
+                              <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  invoice.invoiceOperation === 'CREATE' ? 'default' :
+                                  invoice.invoiceOperation === 'MODIFY' ? 'secondary' :
+                                  'destructive'
+                                }>
+                                  {invoice.invoiceOperation}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{invoice.invoiceCategory}</TableCell>
+                              <TableCell>{invoice.invoiceIssueDate}</TableCell>
+                              <TableCell>
+                                <div className="text-sm">
+                                  <div className="font-medium">{invoice.customerName || '-'}</div>
+                                  {invoice.customerTaxNumber && (
+                                    <div className="text-muted-foreground text-xs">{invoice.customerTaxNumber}</div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>{formatCurrency(parseFloat(invoice.invoiceNetAmountHUF || 0))}</TableCell>
+                              <TableCell>{formatCurrency(parseFloat(invoice.invoiceVatAmountHUF || 0))}</TableCell>
+                              <TableCell>{invoice.paymentMethod || '-'}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Nincsenek számlák a megadott időszakban
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="sync" className="space-y-6">
           <Card>
