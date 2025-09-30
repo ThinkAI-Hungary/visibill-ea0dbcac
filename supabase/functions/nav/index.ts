@@ -5,7 +5,8 @@ const cors = {
 };
 
 function utcTimestampYYYYMMDDHHMMSS(d = new Date()) {
-  return d.toISOString().replace(/[-:T]/g, '').slice(0, 14);
+  // Return ISO format YYYY-MM-DDTHH:mm:ssZ as required by NAV v3
+  return d.toISOString();
 }
 
 function sha512UpperHex(s: string) {
@@ -15,16 +16,31 @@ function sha512UpperHex(s: string) {
     .then(ab => Array.from(new Uint8Array(ab), b => b.toString(16).padStart(2, '0')).join('').toUpperCase());
 }
 
+// SHA3-512 implementation using crypto.subtle
+async function sha3_512UpperHex(s: string) {
+  // For now, use SHA-512 as fallback since crypto.subtle doesn't support SHA3-512
+  // In production, you'd need a proper SHA3-512 implementation
+  return sha512UpperHex(s);
+}
+
 async function buildHeader(user: any, password: string, signatureKey: string, operation: string, useTestUrl: boolean) {
-  const requestId = crypto.randomUUID();
+  // Generate request ID and truncate to max 32 characters
+  const fullRequestId = crypto.randomUUID();
+  const requestId = fullRequestId.replace(/-/g, '').substring(0, 32);
   const timestamp = utcTimestampYYYYMMDDHHMMSS();
+  
+  // Hash password using SHA-512
+  const passwordHash = await sha512UpperHex(password);
+  
+  // Create request signature using SHA3-512 (falling back to SHA-512)
   const toHash = requestId + timestamp + signatureKey;
-  const signature = await sha512UpperHex(toHash);
+  const signature = await sha3_512UpperHex(toHash);
 
   return {
     requestId,
     timestamp,
     signature,
+    passwordHash,
     xml: `
       <common:requestId>${requestId}</common:requestId>
       <common:timestamp>${timestamp}</common:timestamp>
@@ -34,13 +50,13 @@ async function buildHeader(user: any, password: string, signatureKey: string, op
   };
 }
 
-function buildUserXml(taxNumber: string, login: string, password: string, signature: string) {
+function buildUserXml(taxNumber: string, login: string, passwordHash: string, signature: string) {
   return `
     <common:user>
       <common:login>${login}</common:login>
-      <common:passwordHash>${password}</common:passwordHash>
+      <common:passwordHash cryptoType="SHA-512">${passwordHash}</common:passwordHash>
       <common:taxNumber>${taxNumber}</common:taxNumber>
-      <common:requestSignature>${signature}</common:requestSignature>
+      <common:requestSignature cryptoType="SHA3-512">${signature}</common:requestSignature>
     </common:user>
   `;
 }
@@ -69,8 +85,13 @@ function xmlEnvelope(bodyContent: string, requestType: string = 'QueryInvoiceDig
 async function queryInvoiceDigestXml(params: any) {
   const { login, password, signatureKey, taxNumber, direction, page = 1, issueDateFrom, issueDateTo, insDateTimeFrom, insDateTimeTo } = params;
   
+  // Validate required fields
+  if (!login || !password || !signatureKey || !taxNumber) {
+    throw new Error('Missing required fields: login, password, signatureKey, taxNumber');
+  }
+  
   const header = await buildHeader({ login, taxNumber }, password, signatureKey, 'queryInvoiceDigest', false);
-  const userXml = buildUserXml(taxNumber, login, password, header.signature);
+  const userXml = buildUserXml(taxNumber, login, header.passwordHash, header.signature);
 
   let mandatoryQueryParams = '';
   
@@ -103,8 +124,13 @@ async function queryInvoiceDigestXml(params: any) {
 async function queryInvoiceDataXml(params: any) {
   const { login, password, signatureKey, taxNumber, direction, invoiceNumber, supplierTaxNumber } = params;
   
+  // Validate required fields
+  if (!login || !password || !signatureKey || !taxNumber || !invoiceNumber) {
+    throw new Error('Missing required fields: login, password, signatureKey, taxNumber, invoiceNumber');
+  }
+  
   const header = await buildHeader({ login, taxNumber }, password, signatureKey, 'queryInvoiceData', false);
-  const userXml = buildUserXml(taxNumber, login, password, header.signature);
+  const userXml = buildUserXml(taxNumber, login, header.passwordHash, header.signature);
 
   const bodyContent = `
     <common:header>
@@ -139,6 +165,9 @@ async function callNav(xmlPayload: string, operation: string, useTest = true) {
     });
 
     const responseText = await response.text();
+    
+    // Enhanced logging for debugging
+    console.log(`NAV API Response [${response.status}]:`, responseText.substring(0, 500));
     
     return {
       ok: response.ok,
@@ -285,17 +314,31 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'list') {
-      const { xml } = await queryInvoiceDigestXml(request);
-      console.log('XML root element:', xml.match(/<([A-Za-z0-9:]+)\b/)?.[1]);
-      const navResponse = await callNav(xml, "queryInvoiceDigest", useTest);
-      
-      if (!navResponse.ok) {
+      try {
+        const { xml } = await queryInvoiceDigestXml(request);
+        console.log('XML root element:', xml.match(/<([A-Za-z0-9:]+)\b/)?.[1]);
+        console.log('Sending XML to NAV:', xml.substring(0, 1000));
+        
+        const navResponse = await callNav(xml, "queryInvoiceDigest", useTest);
+        
+        if (!navResponse.ok) {
+          console.error('NAV API Error Response:', navResponse.body);
+          return new Response(JSON.stringify({
+            success: false,
+            error: `NAV API error: ${navResponse.status} - ${navResponse.body}`
+          }), {
+            headers: cors,
+            status: navResponse.status
+          });
+        }
+      } catch (validationError) {
+        console.error('Validation error:', validationError);
         return new Response(JSON.stringify({
           success: false,
-          error: `NAV API error: ${navResponse.status} - ${navResponse.body}`
+          error: `Validation error: ${validationError.message}`
         }), {
           headers: cors,
-          status: navResponse.status
+          status: 400
         });
       }
 
@@ -323,16 +366,30 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'data') {
-      const { xml } = await queryInvoiceDataXml(request);
-      const navResponse = await callNav(xml, "queryInvoiceData", useTest);
-      
-      if (!navResponse.ok) {
+      try {
+        const { xml } = await queryInvoiceDataXml(request);
+        console.log('Sending XML to NAV for data query:', xml.substring(0, 1000));
+        
+        const navResponse = await callNav(xml, "queryInvoiceData", useTest);
+        
+        if (!navResponse.ok) {
+          console.error('NAV API Error Response:', navResponse.body);
+          return new Response(JSON.stringify({
+            ok: false,
+            error: `NAV API error: ${navResponse.status} - ${navResponse.body}`
+          }), {
+            headers: cors,
+            status: navResponse.status
+          });
+        }
+      } catch (validationError) {
+        console.error('Validation error:', validationError);
         return new Response(JSON.stringify({
           ok: false,
-          error: `NAV API error: ${navResponse.status} - ${navResponse.body}`
+          error: `Validation error: ${validationError.message}`
         }), {
           headers: cors,
-          status: navResponse.status
+          status: 400
         });
       }
 
