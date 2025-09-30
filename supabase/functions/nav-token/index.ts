@@ -82,16 +82,24 @@ function generateRequestId(): string {
   return result; // 16 chars total: "RID" + 13 random chars
 }
 
-// SHA-512 hash for password
-function hashPassword(password: string, requestId: string): string {
-  const input = requestId + password;
-  const hash = sha512(input, "utf8", "hex");
+// SHA-512 hash for password (NAV v3: hash password only, no requestId)
+function hashPassword(password: string): string {
+  const hash = sha512(password, "utf8", "hex");
   return hash.toUpperCase();
 }
 
-// SHA3-512 hash for request signature
+// SHA3-512 hash for request signature (NAV v3: use compact timestamp format yyyyMMddHHmmss)
 function createSignature(credentials: NavCredentials, requestId: string, timestamp: string): string {
-  const signatureBase = requestId + timestamp + credentials.nav_sign_key;
+  // Convert ISO timestamp to compact format (yyyyMMddHHmmss) in UTC
+  const date = new Date(timestamp);
+  const compactTimestamp = date.getUTCFullYear().toString() +
+    (date.getUTCMonth() + 1).toString().padStart(2, '0') +
+    date.getUTCDate().toString().padStart(2, '0') +
+    date.getUTCHours().toString().padStart(2, '0') +
+    date.getUTCMinutes().toString().padStart(2, '0') +
+    date.getUTCSeconds().toString().padStart(2, '0');
+  
+  const signatureBase = requestId + compactTimestamp + credentials.nav_sign_key;
   const encoder = new TextEncoder();
   const data = encoder.encode(signatureBase);
   const hash = sha3_512(data);
@@ -156,7 +164,7 @@ async function validateCredentials(supabaseClient: any, userId: string) {
   try {
     const timestamp = new Date().toISOString();
     const requestId = generateRequestId();
-    const passwordHash = hashPassword(sanitizedCreds.nav_password, requestId);
+    const passwordHash = hashPassword(sanitizedCreds.nav_password);
     const requestSignature = createSignature(sanitizedCreds, requestId, timestamp);
 
     const xmlRequest = buildTokenXML(sanitizedCreds, requestId, timestamp, passwordHash, requestSignature);
@@ -245,7 +253,7 @@ async function requestToken(supabaseClient: any, userId: string) {
   try {
     const timestamp = new Date().toISOString();
     const requestId = generateRequestId();
-    const passwordHash = hashPassword(credentials.nav_password, requestId);
+    const passwordHash = hashPassword(credentials.nav_password);
     const requestSignature = createSignature(credentials, requestId, timestamp);
 
     const xmlRequest = buildTokenXML(credentials, requestId, timestamp, passwordHash, requestSignature);
