@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { sha512 } from 'https://denopkg.com/chiefbiiko/sha512@v1.0.2/mod.ts';
-import { sha3_512 } from 'https://deno.land/x/sha3@v1.0.1/mod.ts';
+import { sha3_512 } from 'https://esm.sh/@noble/hashes@1.3.0/sha3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -126,7 +126,13 @@ Deno.serve(async (req) => {
 
       // Build request signature (SHA3-512)
       const signatureInput = requestId + timestampFormatted.substring(0, 14) + credentials.nav_sign_key;
-      const requestSignature = sha3_512(signatureInput).toString().toUpperCase();
+      const encoder = new TextEncoder();
+      const data = encoder.encode(signatureInput);
+      const hash = sha3_512(data);
+      const requestSignature = Array.from(hash)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')
+        .toUpperCase();
 
       // Build XML request
       const xmlBody = buildQueryXML({
