@@ -58,12 +58,12 @@ const softwareXml = `
   </common:software>
 `;
 
-function xmlEnvelope(bodyContent: string) {
+function xmlEnvelope(bodyContent: string, requestType: string = 'QueryInvoiceDigestRequest') {
   return `<?xml version="1.0" encoding="UTF-8"?>
-    <QueryRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api" 
-                  xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common">
+    <${requestType} xmlns="http://schemas.nav.gov.hu/OSA/3.0/api" 
+                    xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common">
       ${bodyContent}
-    </QueryRequest>`;
+    </${requestType}>`;
 }
 
 async function queryInvoiceDigestXml(params: any) {
@@ -97,7 +97,7 @@ async function queryInvoiceDigestXml(params: any) {
     </invoiceDigestRequest>
   `;
 
-  return { xml: xmlEnvelope(bodyContent), requestId: header.requestId };
+  return { xml: xmlEnvelope(bodyContent, 'QueryInvoiceDigestRequest'), requestId: header.requestId };
 }
 
 async function queryInvoiceDataXml(params: any) {
@@ -121,7 +121,7 @@ async function queryInvoiceDataXml(params: any) {
     </invoiceDataRequest>
   `;
 
-  return { xml: xmlEnvelope(bodyContent), requestId: header.requestId };
+  return { xml: xmlEnvelope(bodyContent, 'QueryInvoiceDataRequest'), requestId: header.requestId };
 }
 
 async function callNav(xmlPayload: string, operation: string, useTest = true) {
