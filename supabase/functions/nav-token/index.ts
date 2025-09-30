@@ -198,19 +198,19 @@ function createTestXMLRequest(credentials: NavCredentials): string {
   const requestId = crypto.randomUUID();
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<ManageInvoiceRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api">
-  <header>
-    <requestId>${requestId}</requestId>
-    <timestamp>${timestamp}</timestamp>
-    <requestVersion>3.0</requestVersion>
-    <headerVersion>1.0</headerVersion>
-  </header>
-  <user>
-    <login>${credentials.nav_username}</login>
-    <passwordHash>${hashPassword(credentials.nav_password, requestId)}</passwordHash>
-    <taxNumber>${credentials.nav_tax_number}</taxNumber>
-    <requestSignature>${createSignature(credentials, requestId, timestamp)}</requestSignature>
-  </user>
+<ManageInvoiceRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api" xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common">
+  <common:header>
+    <common:requestId>${requestId}</common:requestId>
+    <common:timestamp>${timestamp}</common:timestamp>
+    <common:requestVersion>3.0</common:requestVersion>
+    <common:headerVersion>1.0</common:headerVersion>
+  </common:header>
+  <common:user>
+    <common:login>${credentials.nav_username}</common:login>
+    <common:passwordHash>${hashPassword(credentials.nav_password, requestId)}</common:passwordHash>
+    <common:taxNumber>${credentials.nav_tax_number}</common:taxNumber>
+    <common:requestSignature>${createSignature(credentials, requestId, timestamp)}</common:requestSignature>
+  </common:user>
   <software>
     <softwareId>${credentials.software_id}</softwareId>
     <softwareName>VisiBill NAV Integration</softwareName>
@@ -227,19 +227,19 @@ function createTokenExchangeRequest(credentials: NavCredentials): string {
   const requestId = crypto.randomUUID();
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<TokenExchangeRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api">
-  <header>
-    <requestId>${requestId}</requestId>
-    <timestamp>${timestamp}</timestamp>
-    <requestVersion>3.0</requestVersion>
-    <headerVersion>1.0</headerVersion>
-  </header>
-  <user>
-    <login>${credentials.nav_username}</login>
-    <passwordHash>${hashPassword(credentials.nav_password, requestId)}</passwordHash>
-    <taxNumber>${credentials.nav_tax_number}</taxNumber>
-    <requestSignature>${createSignature(credentials, requestId, timestamp)}</requestSignature>
-  </user>
+<TokenExchangeRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api" xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common">
+  <common:header>
+    <common:requestId>${requestId}</common:requestId>
+    <common:timestamp>${timestamp}</common:timestamp>
+    <common:requestVersion>3.0</common:requestVersion>
+    <common:headerVersion>1.0</common:headerVersion>
+  </common:header>
+  <common:user>
+    <common:login>${credentials.nav_username}</common:login>
+    <common:passwordHash>${hashPassword(credentials.nav_password, requestId)}</common:passwordHash>
+    <common:taxNumber>${credentials.nav_tax_number}</common:taxNumber>
+    <common:requestSignature>${createSignature(credentials, requestId, timestamp)}</common:requestSignature>
+  </common:user>
   <software>
     <softwareId>${credentials.software_id}</softwareId>
     <softwareName>VisiBill NAV Integration</softwareName>
