@@ -32,10 +32,13 @@ async function buildHeader(user: any, password: string, signatureKey: string, op
   
   // Hash password using SHA-512
   const passwordHash = await sha512UpperHex(password);
+  console.log('🔐 Password hash:', passwordHash);
   
   // Create request signature using SHA3-512
   const toHash = requestId + timestamp + signatureKey;
   const signature = sha3_512UpperHex(toHash);
+  console.log('📝 Signature input:', toHash);
+  console.log('✍️ Signature:', signature);
 
   return {
     requestId,
@@ -64,7 +67,7 @@ function buildUserXml(taxNumber: string, login: string, passwordHash: string, si
 
 const softwareXml = `
   <software>
-    <softwareId>123456789123456789</softwareId>
+    <softwareId>HU1234567800000000</softwareId>
     <softwareName>Visibill NAV Integration</softwareName>
     <softwareOperation>ONLINE_SERVICE</softwareOperation>
     <softwareMainVersion>1.0</softwareMainVersion>
@@ -342,6 +345,14 @@ Deno.serve(async (req) => {
       let navResponse;
       
       try {
+        console.log('🔍 Authentication details:', {
+          login: request.login?.substring(0, 5) + '***',
+          taxNumber: request.taxNumber,
+          hasPassword: !!request.password,
+          hasSignatureKey: !!request.signatureKey,
+          testMode: useTest
+        });
+        
         const { xml } = await queryInvoiceDigestXml(request);
         console.log('XML root element:', xml.match(/<([A-Za-z0-9:]+)\b/)?.[1]);
         console.log('Sending XML to NAV (truncated):', xml.substring(0, 1000) + (xml.length > 1000 ? '...' : ''));
@@ -350,9 +361,16 @@ Deno.serve(async (req) => {
         
         if (!navResponse.ok) {
           console.error('NAV API Error Response (truncated):', navResponse.body.substring(0, 1000) + (navResponse.body.length > 1000 ? '...' : ''));
+          
+          // Check for specific authentication errors and provide helpful messages
+          let errorMessage = `NAV API error: ${navResponse.status} - ${navResponse.body}`;
+          if (navResponse.body.includes('INVALID_SECURITY_USER')) {
+            errorMessage += '\n\nTroubleshooting tips:\n1. Ensure you are using TEST environment credentials for test mode\n2. Verify your login, password, and signature key are correct\n3. Check that your technical user is properly registered in the test environment';
+          }
+          
           return new Response(JSON.stringify({
             success: false,
-            error: `NAV API error: ${navResponse.status} - ${navResponse.body}`
+            error: errorMessage
           }), {
             headers: cors,
             status: navResponse.status
