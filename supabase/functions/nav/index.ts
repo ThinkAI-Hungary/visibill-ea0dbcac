@@ -34,10 +34,16 @@ async function buildHeader(user: any, password: string, signatureKey: string, op
   const passwordHash = await sha512UpperHex(password);
   console.log('🔐 Password hash:', passwordHash);
   
-  // Create request signature using SHA3-512
-  const toHash = requestId + timestamp + signatureKey;
+  // Create request signature using SHA3-512 (requestId + timestamp + requestVersion + signatureKey)
+  const requestVersion = '3.0';
+  const toHash = requestId + timestamp + requestVersion + signatureKey;
   const signature = sha3_512UpperHex(toHash);
-  console.log('📝 Signature input:', toHash);
+  
+  // Mask signature key for logging (show only first 3 and last 3 characters)
+  const maskedSignatureKey = signatureKey.length > 6 
+    ? signatureKey.substring(0, 3) + '***' + signatureKey.substring(signatureKey.length - 3)
+    : '***';
+  console.log(`📝 Signature input: ${requestId}${timestamp}${requestVersion}${maskedSignatureKey}`);
   console.log('✍️ Signature:', signature);
 
   return {
