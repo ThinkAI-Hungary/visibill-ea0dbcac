@@ -61,18 +61,29 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('save_nav_credentials', {
-        p_nav_username: formData.nav_username,
-        p_nav_password: formData.nav_password,
-        p_nav_tax_number: formData.nav_tax_number,
-        p_nav_sign_key: formData.nav_sign_key,
-        p_nav_exchange_key: formData.nav_exchange_key,
-        p_software_dev_name: formData.software_dev_name || null,
-        p_software_dev_contact: formData.software_dev_contact || null,
-        p_is_test_environment: formData.is_test_environment
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await fetch('/functions/v1/save-credentials', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          navUsername: formData.nav_username,
+          navPassword: formData.nav_password,
+          navTaxNumber: formData.nav_tax_number,
+          navSignKey: formData.nav_sign_key,
+          navExchangeKey: formData.nav_exchange_key,
+          softwareDevName: formData.software_dev_name || null,
+          softwareDevContact: formData.software_dev_contact || null,
+          isTestEnvironment: formData.is_test_environment
+        })
       });
 
-      if (error) throw error;
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
 
       toast({
         title: 'Sikeres mentés',

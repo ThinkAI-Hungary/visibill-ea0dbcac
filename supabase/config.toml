@@ -15,6 +15,12 @@ verify_jwt = true
 [functions.nav-sync]
 verify_jwt = true
 
+[functions.save-credentials]
+verify_jwt = true
+
+[functions.query-nav-invoices]
+verify_jwt = true
+
 [functions.check-subscription]
 verify_jwt = true
 

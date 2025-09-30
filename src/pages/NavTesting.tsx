@@ -158,13 +158,18 @@ const NavTesting: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      const response = await fetch(`/functions/v1/nav-sync`, {
+      const response = await fetch(`/functions/v1/query-nav-invoices`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(syncParams)
+        body: JSON.stringify({
+          invoiceDirection: syncParams.direction,
+          dateFrom: syncParams.dateFrom,
+          dateTo: syncParams.dateTo,
+          page: 1
+        })
       });
 
       const result = await response.json();
@@ -172,7 +177,7 @@ const NavTesting: React.FC = () => {
       if (result.success) {
         toast({
           title: 'Szinkronizálás befejezve',
-          description: `${result.invoices_fetched} számla letöltve`,
+          description: `${result.count} számla letöltve`,
         });
         
         // Reload data
