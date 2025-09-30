@@ -25,7 +25,8 @@ import {
   BarChart3,
   FolderKanban,
   Plug,
-  CreditCard
+  CreditCard,
+  TestTube
 } from "lucide-react";
 import visibillLogo from '@/assets/visibill-logo.png';
 
@@ -54,6 +55,11 @@ const navigationItems = [
     title: "Integrációk",
     url: "/integrations",
     icon: Plug,
+  },
+  {
+    title: "NAV Tesztelés",
+    url: "/nav-testing",
+    icon: TestTube,
   },
   {
     title: "Előfizetés",

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Mail, Zap, Shield, Clock } from 'lucide-react';
 import NylasEmailConnect from '@/components/NylasEmailConnect';
 
@@ -65,6 +66,48 @@ const Integrations = () => {
           </CardContent>
         </Card>
 
+
+        {/* NAV Integration */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">NAV Online Számla</h3>
+                  <p className="text-muted-foreground">
+                    Magyar NAV online számla rendszer integráció
+                  </p>
+                  <div className="flex gap-2 mt-2">
+                    <Badge variant="secondary" className="text-xs">
+                      <Shield className="w-3 h-3 mr-1" />
+                      Biztonságos
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      <Zap className="w-3 h-3 mr-1" />
+                      Automatikus
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              <Button asChild>
+                <a href="/nav-testing">Beállítás</a>
+              </Button>
+            </div>
+            
+            <div className="mt-4 pt-4 border-t">
+              <h4 className="font-medium mb-2">Jellemzők:</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Számlák automatikus szinkronizálása</li>
+                <li>• Valós idejű státusz frissítések</li>
+                <li>• Titkosított hitelesítő adatok tárolása</li>
+                <li>• Teszt és éles környezet támogatás</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Future Integrations Preview */}
         <Card className="opacity-60">

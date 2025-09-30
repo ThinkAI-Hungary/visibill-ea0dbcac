@@ -9,5 +9,20 @@ verify_jwt = true
 [functions.trigger-bank-statement-processing]
 verify_jwt = true
 
-[functions.nav]
+[functions.nav-token]
+verify_jwt = true
+
+[functions.nav-sync]
+verify_jwt = true
+
+[functions.check-subscription]
+verify_jwt = true
+
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.customer-portal]
+verify_jwt = true
+
+[functions.nylas-auth]
 verify_jwt = true
