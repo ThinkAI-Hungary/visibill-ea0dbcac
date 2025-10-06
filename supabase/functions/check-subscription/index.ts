@@ -48,14 +48,14 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
     if (customers.data.length === 0) {
-      logStep("No customer found, returning free tier");
+      logStep("No customer found, returning default teszt tier");
       
       // Ensure user has local subscription record
-      await ensureUserSubscription(supabaseClient, user.id, 'salmon', 3);
+      await ensureUserSubscription(supabaseClient, user.id, 'teszt', 999999);
       
       return new Response(JSON.stringify({ 
         subscribed: false, 
-        tier: 'salmon',
+        tier: 'teszt',
         product_id: null,
         subscription_end: null 
       }), {
@@ -75,8 +75,8 @@ serve(async (req) => {
     const hasActiveSub = subscriptions.data.length > 0;
     let productId = null;
     let subscriptionEnd = null;
-    let tier = 'salmon'; // Default to free tier
-    let invoiceLimit = 3; // Default limit
+    let tier = 'teszt'; // Default to teszt tier
+    let invoiceLimit = 999999; // Default unlimited limit
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
@@ -108,8 +108,8 @@ serve(async (req) => {
       // Update local subscription record
       await ensureUserSubscription(supabaseClient, user.id, tier, invoiceLimit, customerId, subscription.id, productId as string);
     } else {
-      logStep("No active subscription found, using free tier");
-      await ensureUserSubscription(supabaseClient, user.id, 'salmon', 3);
+      logStep("No active subscription found, using default teszt tier");
+      await ensureUserSubscription(supabaseClient, user.id, 'teszt', 999999);
     }
 
     return new Response(JSON.stringify({
