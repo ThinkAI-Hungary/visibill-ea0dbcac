@@ -498,24 +498,21 @@ export default function Settings() {
 
         {/* System Settings */}
         <TabsContent value="system">
-          <Card>
+          <Card className="opacity-50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Palette className="h-5 w-5" />
                 Rendszer beállítások
               </CardTitle>
               <CardDescription>
-                Megjelenítés és formátum beállítások
+                Ez a funkció hamarosan elérhető lesz
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="theme">Téma</Label>
-                  <Select
-                    value={systemSettings.theme}
-                    onValueChange={(value) => setSystemSettings(prev => ({ ...prev, theme: value }))}
-                  >
+                  <Select disabled value={systemSettings.theme}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -528,10 +525,7 @@ export default function Settings() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="language">Nyelv</Label>
-                  <Select
-                    value={systemSettings.language}
-                    onValueChange={(value) => setSystemSettings(prev => ({ ...prev, language: value }))}
-                  >
+                  <Select disabled value={systemSettings.language}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -546,10 +540,7 @@ export default function Settings() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="date_format">Dátum formátum</Label>
-                  <Select
-                    value={systemSettings.date_format}
-                    onValueChange={(value) => setSystemSettings(prev => ({ ...prev, date_format: value }))}
-                  >
+                  <Select disabled value={systemSettings.date_format}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -562,10 +553,7 @@ export default function Settings() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="number_format">Szám formátum</Label>
-                  <Select
-                    value={systemSettings.number_format}
-                    onValueChange={(value) => setSystemSettings(prev => ({ ...prev, number_format: value }))}
-                  >
+                  <Select disabled value={systemSettings.number_format}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -578,7 +566,7 @@ export default function Settings() {
                 </div>
               </div>
 
-              <Button onClick={() => updateSettings('system', systemSettings)} disabled={loading}>
+              <Button disabled={true}>
                 Rendszer beállítások mentése
               </Button>
             </CardContent>
