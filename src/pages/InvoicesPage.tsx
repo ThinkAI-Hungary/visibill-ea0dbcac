@@ -251,8 +251,11 @@ const InvoicesPage = () => {
   const handleViewInvoice = (invoice: Invoice) => {
     const mellekletUrl = 'melleklet_url' in invoice ? invoice.melleklet_url : undefined;
     
+    console.log('View invoice clicked:', { invoice, mellekletUrl });
+    
     if (mellekletUrl) {
       window.open(mellekletUrl, '_blank');
+      toast.success("Számla megnyitva");
     } else {
       toast.info("Nincs elérhető melléklet ehhez a számlához");
     }
