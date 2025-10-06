@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface SubscriptionContextType {
   subscribed: boolean;
-  tier: 'salmon' | 'tuna' | 'shark' | 'orca';
+  tier: 'salmon' | 'tuna' | 'shark' | 'orca' | 'teszt';
   productId: string | null;
   subscriptionEnd: string | null;
   invoiceLimit: number;
@@ -32,7 +32,7 @@ export const useSubscription = () => {
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, session } = useAuth();
   const [subscribed, setSubscribed] = useState(false);
-  const [tier, setTier] = useState<'salmon' | 'tuna' | 'shark' | 'orca'>('salmon');
+  const [tier, setTier] = useState<'salmon' | 'tuna' | 'shark' | 'orca' | 'teszt'>('salmon');
   const [productId, setProductId] = useState<string | null>(null);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
   const [invoiceLimit, setInvoiceLimit] = useState(3);

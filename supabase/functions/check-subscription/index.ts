@@ -89,7 +89,10 @@ serve(async (req) => {
       const product = await stripe.products.retrieve(productId as string);
       const productName = product.name.toLowerCase();
       
-      if (productName.includes('tuna')) {
+      if (productName.includes('teszt')) {
+        tier = 'teszt';
+        invoiceLimit = 999999; // Unlimited
+      } else if (productName.includes('tuna')) {
         tier = 'tuna';
         invoiceLimit = extractInvoiceLimit(productName);
       } else if (productName.includes('shark')) {

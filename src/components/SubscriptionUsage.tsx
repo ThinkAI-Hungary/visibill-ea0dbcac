@@ -19,20 +19,23 @@ const SubscriptionUsage: React.FC = () => {
   } = useSubscription();
   const navigate = useNavigate();
 
-  const usagePercentage = (invoicesUsed / invoiceLimit) * 100;
+  const isUnlimited = tier === 'teszt' || invoiceLimit >= 999999;
+  const usagePercentage = isUnlimited ? 0 : (invoicesUsed / invoiceLimit) * 100;
   
   const tierNames = {
     salmon: 'Salmon Trial',
     tuna: 'Tuna Plan',
     shark: 'Shark Plan',
-    orca: 'Orca Plan'
+    orca: 'Orca Plan',
+    teszt: 'Teszt Unlimited'
   };
 
   const tierColors = {
     salmon: 'bg-green-500',
     tuna: 'bg-blue-500',
     shark: 'bg-purple-500',
-    orca: 'bg-gradient-to-r from-yellow-400 to-orange-500'
+    orca: 'bg-gradient-to-r from-yellow-400 to-orange-500',
+    teszt: 'bg-cyan-500'
   };
 
   const handleManageSubscription = async () => {
@@ -92,16 +95,18 @@ const SubscriptionUsage: React.FC = () => {
               <span>Felhasznált számlák</span>
             </div>
             <span className="font-medium">
-              {invoicesUsed} / {invoiceLimit}
+              {invoicesUsed} / {isUnlimited ? 'Korlátlan' : invoiceLimit}
             </span>
           </div>
           <Progress value={usagePercentage} className="h-2" />
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{Math.round(usagePercentage)}% felhasználva</span>
-            <span className="flex items-center space-x-1">
-              <Zap className="h-3 w-3" />
-              <span>{remainingInvoices} maradt</span>
-            </span>
+            <span>{isUnlimited ? 'Korlátlan használat' : `${Math.round(usagePercentage)}% felhasználva`}</span>
+            {!isUnlimited && (
+              <span className="flex items-center space-x-1">
+                <Zap className="h-3 w-3" />
+                <span>{remainingInvoices} maradt</span>
+              </span>
+            )}
           </div>
         </div>
 
@@ -119,7 +124,7 @@ const SubscriptionUsage: React.FC = () => {
         )}
 
         {/* Usage Warning */}
-        {usagePercentage >= 80 && (
+        {!isUnlimited && usagePercentage >= 80 && (
           <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-center space-x-2 text-yellow-800">
               <Zap className="h-4 w-4" />
@@ -139,7 +144,7 @@ const SubscriptionUsage: React.FC = () => {
         )}
 
         {/* No usage remaining */}
-        {remainingInvoices === 0 && (
+        {!isUnlimited && remainingInvoices === 0 && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center space-x-2 text-red-800">
               <FileText className="h-4 w-4" />
