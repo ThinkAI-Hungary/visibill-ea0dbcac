@@ -192,6 +192,8 @@ export default function Settings() {
             category,
             key,
             value: value as any
+          }, {
+            onConflict: 'user_id,category,key'
           });
         
         if (error) {
