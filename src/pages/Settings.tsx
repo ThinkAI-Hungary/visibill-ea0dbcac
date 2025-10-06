@@ -415,59 +415,6 @@ export default function Settings() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Pénzügyi beállítások
-                </CardTitle>
-                <CardDescription>
-                  Alapértelmezett pénzügyi paraméterek
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="default_currency">Alapértelmezett pénznem</Label>
-                    <Select
-                      value={businessSettings.default_currency}
-                      onValueChange={(value) => setBusinessSettings(prev => ({ ...prev, default_currency: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="HUF">HUF - Magyar forint</SelectItem>
-                        <SelectItem value="EUR">EUR - Euró</SelectItem>
-                        <SelectItem value="USD">USD - Amerikai dollár</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="payment_terms">Fizetési határidő (nap)</Label>
-                    <Input
-                      id="payment_terms"
-                      type="number"
-                      value={businessSettings.default_payment_terms}
-                      onChange={(e) => setBusinessSettings(prev => ({ ...prev, default_payment_terms: Number(e.target.value) }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="tax_rate">ÁFA kulcs (%)</Label>
-                    <Input
-                      id="tax_rate"
-                      type="number"
-                      value={businessSettings.tax_rate}
-                      onChange={(e) => setBusinessSettings(prev => ({ ...prev, tax_rate: Number(e.target.value) }))}
-                    />
-                  </div>
-                </div>
-
-                <Button onClick={() => updateSettings('business', businessSettings)} disabled={loading}>
-                  Pénzügyi beállítások mentése
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
 
