@@ -21,7 +21,8 @@ import {
   Shield,
   FileText,
   Mail,
-  Upload
+  Upload,
+  Download
 } from "lucide-react";
 
 interface Profile {
@@ -62,6 +63,7 @@ export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [profile, setProfile] = useState<Profile>({
     name: "",
@@ -218,6 +220,47 @@ export default function Settings() {
     }
     
     setLoading(false);
+  };
+
+  const handleExportData = async () => {
+    try {
+      setExportLoading(true);
+      
+      const { data, error } = await supabase.functions.invoke('export-user-data', {
+        headers: {
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      // Create and download the JSON file
+      const blob = new Blob([JSON.stringify(data, null, 2)], { 
+        type: 'application/json' 
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `visibill-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Siker",
+        description: "Adatok sikeresen exportálva és letöltve!",
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Hiba",
+        description: "Hiba történt az adatok exportálása során. Kérlek, próbáld újra.",
+        variant: "destructive",
+      });
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   // Test function to verify settings functionality
@@ -615,14 +658,14 @@ export default function Settings() {
               </CardContent>
             </Card>
 
-            <Card className="opacity-50">
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
                   Adatok kezelése
                 </CardTitle>
                 <CardDescription>
-                  Export és törlési opciók (hamarosan)
+                  Export és törlési opciók
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -630,16 +673,18 @@ export default function Settings() {
                   <Button 
                     variant="outline" 
                     className="w-full justify-start" 
-                    disabled
+                    onClick={handleExportData}
+                    disabled={exportLoading}
                   >
-                    Adatok exportálása
+                    <Download className="mr-2 h-4 w-4" />
+                    {exportLoading ? "Exportálás..." : "Adatok exportálása"}
                   </Button>
                   <Button 
                     variant="destructive" 
-                    className="w-full justify-start" 
+                    className="w-full justify-start opacity-50" 
                     disabled
                   >
-                    Fiók törlése
+                    Fiók törlése (hamarosan)
                   </Button>
                 </div>
               </CardContent>
