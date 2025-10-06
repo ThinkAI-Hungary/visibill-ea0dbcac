@@ -420,14 +420,14 @@ export default function Settings() {
 
         {/* Notification Settings */}
         <TabsContent value="notifications">
-          <Card>
+          <Card className="opacity-50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5" />
                 Értesítési beállítások
               </CardTitle>
               <CardDescription>
-                E-mail és rendszer értesítések kezelése
+                Ez a funkció hamarosan elérhető lesz
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -441,8 +441,8 @@ export default function Settings() {
                   </div>
                   <Switch
                     id="email_notifications"
-                    checked={notificationSettings.email_notifications}
-                    onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, email_notifications: checked }))}
+                    checked={false}
+                    disabled={true}
                   />
                 </div>
 
@@ -455,8 +455,8 @@ export default function Settings() {
                   </div>
                   <Switch
                     id="invoice_reminders"
-                    checked={notificationSettings.invoice_reminders}
-                    onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, invoice_reminders: checked }))}
+                    checked={false}
+                    disabled={true}
                   />
                 </div>
 
@@ -469,8 +469,8 @@ export default function Settings() {
                   </div>
                   <Switch
                     id="payment_alerts"
-                    checked={notificationSettings.payment_alerts}
-                    onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, payment_alerts: checked }))}
+                    checked={false}
+                    disabled={true}
                   />
                 </div>
 
@@ -483,13 +483,13 @@ export default function Settings() {
                   </div>
                   <Switch
                     id="system_updates"
-                    checked={notificationSettings.system_updates}
-                    onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, system_updates: checked }))}
+                    checked={false}
+                    disabled={true}
                   />
                 </div>
               </div>
 
-              <Button onClick={() => updateSettings('notifications', notificationSettings)} disabled={loading}>
+              <Button disabled={true}>
                 Értesítési beállítások mentése
               </Button>
             </CardContent>
