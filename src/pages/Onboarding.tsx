@@ -201,9 +201,9 @@ const Onboarding = () => {
     <div className="flex justify-center p-8">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Projektkezelő</CardTitle>
+          <CardTitle className="text-2xl font-bold">Kategória kezelő</CardTitle>
           <CardDescription>
-            Kezeld a projektjeidet és kategóriáidat a számlák rendszerezéséhez
+            Kezeld a költség kategóriáidat a számlák rendszerezéséhez
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -246,10 +246,10 @@ const Onboarding = () => {
               </div>
             </div>
 
-            {/* Projects */}
+            {/* Categories */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Számla kategóriák</h3>
+                <h3 className="text-lg font-semibold">Költség kategóriák</h3>
                 <Button
                   type="button"
                   variant="outline"

@@ -26,7 +26,8 @@ import {
   FolderKanban,
   Plug,
   CreditCard,
-  TestTube
+  TestTube,
+  Tags
 } from "lucide-react";
 import visibillLogo from '@/assets/visibill-logo.png';
 
@@ -37,8 +38,13 @@ const navigationItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "Projektkezelő",
-    url: "/onboarding", 
+    title: "Kategóriák",
+    url: "/onboarding",
+    icon: Tags,
+  },
+  {
+    title: "Projektek",
+    url: "/projects",
     icon: FolderKanban,
   },
   {
