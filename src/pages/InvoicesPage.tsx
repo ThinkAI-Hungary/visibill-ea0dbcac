@@ -248,6 +248,16 @@ const InvoicesPage = () => {
     }
   };
 
+  const handleViewInvoice = (invoice: Invoice) => {
+    const mellekletUrl = 'melleklet_url' in invoice ? invoice.melleklet_url : undefined;
+    
+    if (mellekletUrl) {
+      window.open(mellekletUrl, '_blank');
+    } else {
+      toast.info("Nincs elérhető melléklet ehhez a számlához");
+    }
+  };
+
   const handleExport = (format: 'csv' | 'xlsx') => {
     const getExportData = (invoice: any) => {
       const baseData = [
@@ -582,11 +592,15 @@ const InvoicesPage = () => {
                             <TableCell>
                               {invoice.category_name || 'Nincs kategória'}
                             </TableCell>
-                            <TableCell className="text-right">
-                              <Button variant="ghost" size="sm">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
+                      <TableCell className="text-right">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewInvoice(invoice)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                           </TableRow>
                         ))
                       )}
