@@ -10,8 +10,9 @@ export interface BaseInvoice {
   elado_vat_id?: string;
   created_at?: string;
   updated_at?: string;
+  category_id?: string;
+  category_name?: string;
   project_id?: string;
-  project_name?: string;
 }
 
 export interface SimaInvoice extends BaseInvoice {

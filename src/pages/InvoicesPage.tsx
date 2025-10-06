@@ -20,7 +20,7 @@ import { Invoice, InvoiceType, getInvoiceTypeLabel, getInvoiceTypeColor } from '
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 
-interface Project {
+interface Category {
   id: string;
   name: string;
 }
@@ -39,7 +39,7 @@ const InvoicesPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<keyof Invoice>('kibocsatas_datuma');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -63,12 +63,12 @@ const InvoicesPage = () => {
     if (!user) return;
     
     try {
-      // Fetch invoices with project data
+      // Fetch invoices with category data
       const { data: invoicesData, error: invoicesError } = await supabase
         .from('invoices')
         .select(`
           *,
-          projects(id, name)
+          categories(id, name)
         `)
         .eq('user_id', user.id);
 
@@ -76,19 +76,19 @@ const InvoicesPage = () => {
 
       const formattedInvoices = (invoicesData || []).map(invoice => ({
         ...invoice,
-        project_name: invoice.projects?.name || 'Nincs projekt'
+        category_name: invoice.categories?.name || 'Nincs kategória'
       })) as any[];
       
       setInvoices(formattedInvoices);
 
-      // Fetch projects for filter dropdown
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('projects')
+      // Fetch categories for filter dropdown
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
         .select('id, name')
         .eq('user_id', user.id);
 
-      if (projectsError) throw projectsError;
-      setProjects(projectsData || []);
+      if (categoriesError) throw categoriesError;
+      setCategories(categoriesData || []);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -120,8 +120,8 @@ const InvoicesPage = () => {
         return false;
       }
 
-      // Project filter
-      if (filters.project && filters.project !== 'all' && invoice.project_id !== filters.project) {
+      // Category filter
+      if (filters.project && filters.project !== 'all' && invoice.category_id !== filters.project) {
         return false;
       }
 
@@ -257,7 +257,7 @@ const InvoicesPage = () => {
         invoice.elado_nev,
         invoice.vevo_nev,
         getInvoiceAmount(invoice).toString(),
-        invoice.project_name || 'Nincs projekt'
+        invoice.category_name || 'Nincs kategória'
       ];
 
       return baseData;
@@ -270,7 +270,7 @@ const InvoicesPage = () => {
       'Eladó',
       'Vevő',
       'Összeg',
-      'Projekt'
+      'Kategória'
     ];
 
     const exportData = filteredAndSortedInvoices.map(invoice => getExportData(invoice));
@@ -398,19 +398,19 @@ const InvoicesPage = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Projekt</label>
+                    <label className="text-sm font-medium">Kategória</label>
                     <Select
                       value={filters.project}
                       onValueChange={(value) => setFilters(prev => ({ ...prev, project: value }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Minden projekt" />
+                        <SelectValue placeholder="Minden kategória" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Minden projekt</SelectItem>
-                        {projects.map((project) => (
-                          <SelectItem key={project.id} value={project.id}>
-                            {project.name}
+                        <SelectItem value="all">Minden kategória</SelectItem>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -534,7 +534,7 @@ const InvoicesPage = () => {
                         </TableHead>
                         <TableHead className="text-right">Összeg</TableHead>
                         <TableHead>Státusz</TableHead>
-                        <TableHead>Projekt</TableHead>
+                        <TableHead>Kategória</TableHead>
                         <TableHead className="text-right">Műveletek</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -580,7 +580,7 @@ const InvoicesPage = () => {
                               )}
                             </TableCell>
                             <TableCell>
-                              {invoice.project_name || 'Nincs projekt'}
+                              {invoice.category_name || 'Nincs kategória'}
                             </TableCell>
                             <TableCell className="text-right">
                               <Button variant="ghost" size="sm">

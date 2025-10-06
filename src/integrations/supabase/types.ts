@@ -196,10 +196,38 @@ export type Database = {
           },
         ]
       }
+      categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       egyszerusitett_szamla_backup: {
         Row: {
           adoalap_osszesen_netto: number | null
           afa_osszeg: number | null
+          category_id: string | null
           created_at: string
           elado_cim: string | null
           elado_nev: string
@@ -215,6 +243,7 @@ export type Database = {
         Insert: {
           adoalap_osszesen_netto?: number | null
           afa_osszeg?: number | null
+          category_id?: string | null
           created_at?: string
           elado_cim?: string | null
           elado_nev: string
@@ -230,6 +259,7 @@ export type Database = {
         Update: {
           adoalap_osszesen_netto?: number | null
           afa_osszeg?: number | null
+          category_id?: string | null
           created_at?: string
           elado_cim?: string | null
           elado_nev?: string
@@ -298,6 +328,7 @@ export type Database = {
           afa_osszeg_osszesen: number
           bankszamlaszam_iban: string | null
           brutto_vegosszeg: number
+          category_id: string | null
           dokumentum_azonosito: string | null
           elado_cim: string | null
           elado_nev: string
@@ -309,6 +340,7 @@ export type Database = {
           fizetendo_osszeg: number | null
           fizetesi_hatarido: string | null
           fizetesi_mod: string | null
+          fizetve: boolean | null
           forditott_adozas: boolean | null
           frissitve: string
           id: string
@@ -337,6 +369,7 @@ export type Database = {
           afa_osszeg_osszesen?: number
           bankszamlaszam_iban?: string | null
           brutto_vegosszeg?: number
+          category_id?: string | null
           dokumentum_azonosito?: string | null
           elado_cim?: string | null
           elado_nev: string
@@ -348,6 +381,7 @@ export type Database = {
           fizetendo_osszeg?: number | null
           fizetesi_hatarido?: string | null
           fizetesi_mod?: string | null
+          fizetve?: boolean | null
           forditott_adozas?: boolean | null
           frissitve?: string
           id?: string
@@ -376,6 +410,7 @@ export type Database = {
           afa_osszeg_osszesen?: number
           bankszamlaszam_iban?: string | null
           brutto_vegosszeg?: number
+          category_id?: string | null
           dokumentum_azonosito?: string | null
           elado_cim?: string | null
           elado_nev?: string
@@ -387,6 +422,7 @@ export type Database = {
           fizetendo_osszeg?: number | null
           fizetesi_hatarido?: string | null
           fizetesi_mod?: string | null
+          fizetve?: boolean | null
           forditott_adozas?: boolean | null
           frissitve?: string
           id?: string
@@ -410,9 +446,9 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "invoices_project_id_fkey"
-            columns: ["project_id"]
+            columns: ["category_id"]
             isOneToOne: false
-            referencedRelation: "projects"
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
         ]
@@ -595,6 +631,7 @@ export type Database = {
         Row: {
           adojogi_megjegyzes: string | null
           bankszamlaszam_iban: string | null
+          category_id: string | null
           created_at: string
           dokumentum_azonosito: string | null
           elado_nev: string
@@ -612,6 +649,7 @@ export type Database = {
         Insert: {
           adojogi_megjegyzes?: string | null
           bankszamlaszam_iban?: string | null
+          category_id?: string | null
           created_at?: string
           dokumentum_azonosito?: string | null
           elado_nev: string
@@ -629,6 +667,7 @@ export type Database = {
         Update: {
           adojogi_megjegyzes?: string | null
           bankszamlaszam_iban?: string | null
+          category_id?: string | null
           created_at?: string
           dokumentum_azonosito?: string | null
           elado_nev?: string
@@ -647,26 +686,41 @@ export type Database = {
       }
       projects: {
         Row: {
+          budget: number | null
+          client_name: string | null
           created_at: string
           description: string | null
+          end_date: string | null
           id: string
           name: string
+          start_date: string | null
+          status: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          budget?: number | null
+          client_name?: string | null
           created_at?: string
           description?: string | null
+          end_date?: string | null
           id?: string
           name: string
+          start_date?: string | null
+          status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          budget?: number | null
+          client_name?: string | null
           created_at?: string
           description?: string | null
+          end_date?: string | null
           id?: string
           name?: string
+          start_date?: string | null
+          status?: string
           updated_at?: string
           user_id?: string
         }
@@ -709,6 +763,7 @@ export type Database = {
           afa_kulcsok_bontasban: string | null
           afa_osszeg_osszesen: number | null
           brutto_vegosszeg: number | null
+          category_id: string | null
           created_at: string
           elado_cim: string | null
           elado_nev: string
@@ -737,6 +792,7 @@ export type Database = {
           afa_kulcsok_bontasban?: string | null
           afa_osszeg_osszesen?: number | null
           brutto_vegosszeg?: number | null
+          category_id?: string | null
           created_at?: string
           elado_cim?: string | null
           elado_nev: string
@@ -765,6 +821,7 @@ export type Database = {
           afa_kulcsok_bontasban?: string | null
           afa_osszeg_osszesen?: number | null
           brutto_vegosszeg?: number | null
+          category_id?: string | null
           created_at?: string
           elado_cim?: string | null
           elado_nev?: string
@@ -896,6 +953,7 @@ export type Database = {
           adoalap_osszesen: number | null
           afa_osszeg_osszesen: number | null
           brutto_vegosszeg: number | null
+          category_id: string | null
           created_at: string
           elado_cim: string | null
           elado_nev: string
@@ -917,6 +975,7 @@ export type Database = {
           adoalap_osszesen?: number | null
           afa_osszeg_osszesen?: number | null
           brutto_vegosszeg?: number | null
+          category_id?: string | null
           created_at?: string
           elado_cim?: string | null
           elado_nev: string
@@ -938,6 +997,7 @@ export type Database = {
           adoalap_osszesen?: number | null
           afa_osszeg_osszesen?: number | null
           brutto_vegosszeg?: number | null
+          category_id?: string | null
           created_at?: string
           elado_cim?: string | null
           elado_nev?: string

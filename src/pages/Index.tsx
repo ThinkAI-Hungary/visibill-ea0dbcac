@@ -20,7 +20,7 @@ interface Profile {
   avatar_url: string;
 }
 
-interface Project {
+interface Category {
   id: string;
   name: string;
   description: string;
@@ -35,7 +35,7 @@ interface Invoice {
   brutto_vegosszeg: number;
   kibocsatas_datuma: string;
   statusz: string;
-  project_id?: string;
+  category_id?: string;
 }
 
 interface DashboardMetrics {
@@ -51,7 +51,7 @@ const Index = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,22 +74,22 @@ const Index = () => {
       if (profileError) throw profileError;
       setProfile(profileData);
 
-      // Fetch projects
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('projects')
+      // Fetch categories (formerly projects)
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (projectsError) throw projectsError;
-      setProjects(projectsData || []);
+      if (categoriesError) throw categoriesError;
+      setCategories(categoriesData || []);
 
-      // Fetch invoices with project names
+      // Fetch invoices with category names
       const { data: invoicesData, error: invoicesError } = await supabase
         .from('invoices')
         .select(`
           *,
-          projects!inner(name)
+          categories(name)
         `)
         .eq('user_id', user.id)
         .order('kibocsatas_datuma', { ascending: false })
@@ -99,7 +99,7 @@ const Index = () => {
       
       const formattedInvoices = (invoicesData || []).map(invoice => ({
         ...invoice,
-        project_name: invoice.projects?.name
+        category_name: invoice.categories?.name
       }));
       setInvoices(formattedInvoices);
 
@@ -141,26 +141,26 @@ const Index = () => {
     }
   };
 
-  const getProjectBreakdownData = () => {
-    if (!projects.length || !invoices.length) return [];
+  const getCategoryBreakdownData = () => {
+    if (!categories.length || !invoices.length) return [];
 
-    const projectStats = projects.map(project => {
-      const projectInvoices = invoices.filter(invoice => invoice.project_id === project.id);
-      const totalAmount = projectInvoices.reduce((sum, invoice) => sum + invoice.brutto_vegosszeg, 0);
+    const categoryStats = categories.map(category => {
+      const categoryInvoices = invoices.filter(invoice => invoice.category_id === category.id);
+      const totalAmount = categoryInvoices.reduce((sum, invoice) => sum + invoice.brutto_vegosszeg, 0);
       
       return {
-        id: project.id,
-        name: project.name,
-        description: project.description,
-        invoice_count: projectInvoices.length,
+        id: category.id,
+        name: category.name,
+        description: category.description,
+        invoice_count: categoryInvoices.length,
         total_amount: totalAmount,
-        avg_amount: projectInvoices.length > 0 ? totalAmount / projectInvoices.length : 0,
+        avg_amount: categoryInvoices.length > 0 ? totalAmount / categoryInvoices.length : 0,
         percentage: metrics ? (totalAmount / metrics.totalAmount) * 100 : 0
       };
-    }).filter(project => project.invoice_count > 0)
+    }).filter(category => category.invoice_count > 0)
       .sort((a, b) => b.total_amount - a.total_amount);
 
-    return projectStats;
+    return categoryStats;
   };
 
   const handleSignOut = async () => {
@@ -237,9 +237,9 @@ const Index = () => {
           {/* Subscription Usage */}
           <div className="space-y-6">
             <SubscriptionUsage />
-            {/* Project Breakdown */}
+            {/* Category Breakdown */}
             <ProjectBreakdown 
-              projects={getProjectBreakdownData()}
+              projects={getCategoryBreakdownData()}
               totalAmount={metrics?.totalAmount || 0}
             />
           </div>
@@ -319,8 +319,12 @@ const Index = () => {
             <p className="text-sm text-muted-foreground mb-4">
               Projektek szerkesztése és rendszerezése
             </p>
-            <Button variant="outline" className="w-full" disabled>
-              Hamarosan
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => navigate('/projects')}
+            >
+              Projektek kezelése
             </Button>
           </Card>
         </div>

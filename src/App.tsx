@@ -15,6 +15,7 @@ import ManualUpload from "./pages/ManualUpload";
 import InvoicesPage from "./pages/InvoicesPage";
 import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
+import Projects from "./pages/Projects";
 import Pricing from "./pages/Pricing";
 import NavTesting from "./pages/NavTesting";
 import NotFound from "./pages/NotFound";
@@ -63,6 +64,13 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <Settings />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/projects" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Projects />
                 </AppLayout>
               </ProtectedRoute>
             } />

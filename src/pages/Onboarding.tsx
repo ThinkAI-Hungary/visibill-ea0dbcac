@@ -51,9 +51,9 @@ const Onboarding = () => {
           });
         }
 
-        // Load existing projects
+        // Load existing categories (formerly projects)
         const { data: projectData } = await supabase
-          .from('projects')
+          .from('categories')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: true });
@@ -120,9 +120,9 @@ const Onboarding = () => {
       
       for (const project of validProjects) {
         if (project.id) {
-          // Update existing project
+          // Update existing category
           const { error: updateError } = await supabase
-            .from('projects')
+            .from('categories')
             .update({
               name: project.name,
               description: project.description,
@@ -132,9 +132,9 @@ const Onboarding = () => {
           
           if (updateError) throw updateError;
         } else {
-          // Create new project
+          // Create new category
           const { error: createError } = await supabase
-            .from('projects')
+            .from('categories')
             .insert({
               user_id: user.id,
               name: project.name,
@@ -145,11 +145,11 @@ const Onboarding = () => {
         }
       }
 
-      // Delete projects that were removed (projects that exist in DB but not in current list)
+      // Delete categories that were removed (categories that exist in DB but not in current list)
       const currentProjectIds = validProjects.filter(p => p.id).map(p => p.id);
       if (currentProjectIds.length > 0) {
         const { data: allUserProjects } = await supabase
-          .from('projects')
+          .from('categories')
           .select('id')
           .eq('user_id', user.id);
         
@@ -157,7 +157,7 @@ const Onboarding = () => {
         
         if (projectsToDelete && projectsToDelete.length > 0) {
           const { error: deleteError } = await supabase
-            .from('projects')
+            .from('categories')
             .delete()
             .in('id', projectsToDelete.map(p => p.id));
           
