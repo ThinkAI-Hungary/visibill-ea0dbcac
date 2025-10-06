@@ -10,6 +10,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, name?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -104,6 +105,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updatePassword = async (currentPassword: string, newPassword: string) => {
+    if (!user?.email) {
+      return { error: { message: "Nincs bejelentkezett felhasználó" } };
+    }
+
+    // Re-authenticate with current password
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+
+    if (signInError) {
+      toast({
+        variant: "destructive",
+        title: "Hitelesítés sikertelen",
+        description: "A jelenlegi jelszó helytelen"
+      });
+      return { error: signInError };
+    }
+
+    // Update to new password
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Jelszó módosítás sikertelen",
+        description: error.message
+      });
+    } else {
+      toast({
+        title: "Sikeres",
+        description: "Jelszó sikeresen megváltoztatva"
+      });
+    }
+
+    return { error };
+  };
+
   const value = {
     user,
     session,
@@ -111,6 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signIn,
     signOut,
+    updatePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

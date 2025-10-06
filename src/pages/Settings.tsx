@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +62,7 @@ export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [profile, setProfile] = useState<Profile>({
     name: "",
     company: "",
@@ -588,35 +590,55 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-4">
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => setPasswordDialogOpen(true)}
+                  >
                     Jelszó megváltoztatása
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    Kétfaktoros hitelesítés beállítása
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start opacity-50" 
+                    disabled
+                  >
+                    Kétfaktoros hitelesítés beállítása (hamarosan)
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    Aktív munkamenetek megtekintése
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start opacity-50" 
+                    disabled
+                  >
+                    Aktív munkamenetek megtekintése (hamarosan)
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="opacity-50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
                   Adatok kezelése
                 </CardTitle>
                 <CardDescription>
-                  Export és törlési opciók
+                  Export és törlési opciók (hamarosan)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-4">
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    disabled
+                  >
                     Adatok exportálása
                   </Button>
-                  <Button variant="destructive" className="w-full justify-start">
+                  <Button 
+                    variant="destructive" 
+                    className="w-full justify-start" 
+                    disabled
+                  >
                     Fiók törlése
                   </Button>
                 </div>
@@ -625,6 +647,11 @@ export default function Settings() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <ChangePasswordDialog 
+        open={passwordDialogOpen} 
+        onOpenChange={setPasswordDialogOpen} 
+      />
     </div>
   );
 }
