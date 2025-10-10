@@ -27,7 +27,8 @@ import {
   Plug,
   CreditCard,
   TestTube,
-  Tags
+  Tags,
+  TrendingUp
 } from "lucide-react";
 import visibillLogo from '@/assets/visibill-logo.png';
 
@@ -66,6 +67,11 @@ const navigationItems = [
     title: "NAV Tesztelés",
     url: "/nav-testing",
     icon: TestTube,
+  },
+  {
+    title: "Árfolyamok",
+    url: "/exchange-rates",
+    icon: TrendingUp,
   },
   {
     title: "Előfizetés",

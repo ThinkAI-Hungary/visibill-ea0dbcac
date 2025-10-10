@@ -18,6 +18,7 @@ import Settings from "./pages/Settings";
 import Projects from "./pages/Projects";
 import Pricing from "./pages/Pricing";
 import NavTesting from "./pages/NavTesting";
+import ExchangeRates from "./pages/ExchangeRates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -85,6 +86,13 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <NavTesting />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/exchange-rates" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <ExchangeRates />
                 </AppLayout>
               </ProtectedRoute>
             } />
