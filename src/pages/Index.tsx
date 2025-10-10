@@ -11,6 +11,7 @@ import MetricCard from '@/components/dashboard/MetricCard';
 import RecentInvoices from '@/components/dashboard/RecentInvoices';
 import ProjectBreakdown from '@/components/dashboard/ProjectBreakdown';
 import SubscriptionUsage from '@/components/SubscriptionUsage';
+import CurrencyConverter from '@/components/dashboard/CurrencyConverter';
 import { formatCurrency } from '@/lib/utils';
 
 interface Profile {
@@ -237,6 +238,10 @@ const Index = () => {
           {/* Subscription Usage */}
           <div className="space-y-6">
             <SubscriptionUsage />
+            
+            {/* Currency Converter */}
+            <CurrencyConverter />
+            
             {/* Category Breakdown */}
             <ProjectBreakdown 
               projects={getCategoryBreakdownData()}
