@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, Building, Briefcase, Upload, FileText, Euro, TrendingUp, Calendar, BarChart3, PieChart, Mail } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { User, Building, Briefcase, Upload, FileText, Euro, TrendingUp, Calendar, BarChart3, PieChart } from 'lucide-react';
 import MetricCard from '@/components/dashboard/MetricCard';
 import RecentInvoices from '@/components/dashboard/RecentInvoices';
 import ProjectBreakdown from '@/components/dashboard/ProjectBreakdown';
 import SubscriptionUsage from '@/components/SubscriptionUsage';
-import CurrencyConverter from '@/components/dashboard/CurrencyConverter';
 import { formatCurrency } from '@/lib/utils';
 
 interface Profile {
@@ -56,10 +56,42 @@ const Index = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('HUF');
+  const [exchangeRates, setExchangeRates] = useState<{[key: string]: number}>({});
+
+  const currencies = [
+    { code: 'HUF', name: 'Magyar Forint', flag: '🇭🇺' },
+    { code: 'EUR', name: 'Euró', flag: '🇪🇺' },
+    { code: 'USD', name: 'Amerikai Dollár', flag: '🇺🇸' },
+    { code: 'GBP', name: 'Brit Font', flag: '🇬🇧' },
+    { code: 'CHF', name: 'Svájci Frank', flag: '🇨🇭' },
+    { code: 'PLN', name: 'Lengyel Zloty', flag: '🇵🇱' },
+    { code: 'CZK', name: 'Cseh Korona', flag: '🇨🇿' },
+    { code: 'RON', name: 'Román Lej', flag: '🇷🇴' },
+    { code: 'JPY', name: 'Japán Yen', flag: '🇯🇵' },
+    { code: 'CNY', name: 'Kínai Yuan', flag: '🇨🇳' },
+  ];
 
   useEffect(() => {
     fetchDashboardData();
+    fetchExchangeRates();
   }, [user]);
+
+  const fetchExchangeRates = async () => {
+    try {
+      const response = await fetch('https://api.exchangerate-api.com/v4/latest/HUF');
+      const data = await response.json();
+      setExchangeRates(data.rates);
+    } catch (error) {
+      console.error('Error fetching exchange rates:', error);
+    }
+  };
+
+  const convertAmount = (amount: number): number => {
+    if (selectedCurrency === 'HUF') return amount;
+    const rate = exchangeRates[selectedCurrency] || 1;
+    return amount * rate;
+  };
 
   const fetchDashboardData = async () => {
     if (!user) return;
@@ -184,11 +216,27 @@ const Index = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Welcome Section */}
-        <div className="space-y-2">
-          <h2 className="text-3xl font-bold">Üdvözlünk vissza, {profile?.name}!</h2>
-          <p className="text-muted-foreground">
-            Itt van a vállalkozásod teljes áttekintése
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold">Üdvözlünk vissza, {profile?.name}!</h2>
+            <p className="text-muted-foreground">
+              Itt van a vállalkozásod teljes áttekintése
+            </p>
+          </div>
+          <div className="w-[200px]">
+            <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {currencies.map((curr) => (
+                  <SelectItem key={curr.code} value={curr.code}>
+                    {curr.flag} {curr.code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Metrics Cards */}
@@ -203,21 +251,21 @@ const Index = () => {
             />
             <MetricCard
               title="Teljes összeg"
-              value={formatCurrency(metrics.totalAmount)}
+              value={formatCurrency(convertAmount(metrics.totalAmount), selectedCurrency)}
               description="Minden számla összege"
               icon={Euro}
               variant="success"
             />
             <MetricCard
               title="Ez a hónap"
-              value={formatCurrency(metrics.thisMonthAmount)}
+              value={formatCurrency(convertAmount(metrics.thisMonthAmount), selectedCurrency)}
               description="Jelenlegi havi bevétel"
               icon={Calendar}
               variant="warning"
             />
             <MetricCard
               title="Átlagos számla"
-              value={formatCurrency(metrics.averageInvoiceAmount)}
+              value={formatCurrency(convertAmount(metrics.averageInvoiceAmount), selectedCurrency)}
               description="Számla átlagérték"
               icon={TrendingUp}
               variant="default"
@@ -238,10 +286,6 @@ const Index = () => {
           {/* Subscription Usage */}
           <div className="space-y-6">
             <SubscriptionUsage />
-            
-            {/* Currency Converter */}
-            <CurrencyConverter />
-            
             {/* Category Breakdown */}
             <ProjectBreakdown 
               projects={getCategoryBreakdownData()}
