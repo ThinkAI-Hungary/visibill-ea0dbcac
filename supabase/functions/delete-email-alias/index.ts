@@ -47,12 +47,12 @@ serve(async (req) => {
       throw new Error('Alias not found');
     }
 
-    // Delete Mailgun route if it exists (using US region)
+    // Delete Mailgun route if it exists (EU region)
     if (alias.mailgun_route_id) {
       const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY');
       if (mailgunApiKey) {
         const deleteResponse = await fetch(
-          `https://api.mailgun.net/v3/routes/${alias.mailgun_route_id}`,
+          `https://api.eu.mailgun.net/v3/routes/${alias.mailgun_route_id}`,
           {
             method: 'DELETE',
             headers: {
