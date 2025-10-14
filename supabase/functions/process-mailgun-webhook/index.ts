@@ -104,7 +104,7 @@ serve(async (req) => {
           .getPublicUrl(fileName);
 
         // Create invoice upload record
-        const { error: recordError } = await supabase
+        const { data: uploadRecord, error: recordError } = await supabase
           .from('invoice_uploads')
           .insert({
             user_id: alias.user_id,
@@ -121,7 +121,9 @@ serve(async (req) => {
               subject,
               received_at: new Date().toISOString(),
             },
-          });
+          })
+          .select()
+          .single();
 
         if (recordError) {
           console.error('Error creating invoice upload record:', recordError);
@@ -133,8 +135,8 @@ serve(async (req) => {
             'trigger-invoice-processing',
             {
               body: {
-                file_url: publicUrl,
-                user_id: alias.user_id,
+                uploadId: uploadRecord.id,
+                webhookUrl: null,
               },
             }
           );
