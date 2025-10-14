@@ -130,19 +130,29 @@ serve(async (req) => {
         } else {
           console.log('Invoice upload record created for:', attachment.name);
           
-          // Trigger invoice processing
-          const { error: processError } = await supabase.functions.invoke(
-            'trigger-invoice-processing',
-            {
-              body: {
-                uploadId: uploadRecord.id,
-                webhookUrl: null,
-              },
-            }
-          );
+          // Trigger invoice processing to both N8N webhooks (test and prod)
+          const webhookUrls = [
+            'https://n8n.thinkaikontir.hu/webhook-test/bd504dd3-8af8-45d6-90f6-cfc635a22da6',
+            'https://n8n.thinkaikontir.hu/webhook/bd504dd3-8af8-45d6-90f6-cfc635a22da6'
+          ];
 
-          if (processError) {
-            console.error('Error triggering invoice processing:', processError);
+          for (const webhookUrl of webhookUrls) {
+            console.log(`Triggering invoice processing with webhook: ${webhookUrl}`);
+            const { error: processError } = await supabase.functions.invoke(
+              'trigger-invoice-processing',
+              {
+                body: {
+                  uploadId: uploadRecord.id,
+                  webhookUrl,
+                },
+              }
+            );
+
+            if (processError) {
+              console.error(`Error triggering invoice processing to ${webhookUrl}:`, processError);
+            } else {
+              console.log(`Successfully triggered processing for ${webhookUrl}`);
+            }
           }
         }
       }
