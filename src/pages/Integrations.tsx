@@ -1,8 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Mail, Zap, Shield, Clock } from 'lucide-react';
+import { Mail, Zap, Shield, Clock, AtSign } from 'lucide-react';
 import NylasEmailConnect from '@/components/NylasEmailConnect';
+import EmailAliasManager from '@/components/EmailAliasManager';
 
 
 const Integrations = () => {
@@ -66,6 +67,49 @@ const Integrations = () => {
           </CardContent>
         </Card>
 
+        {/* Email Alias Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <AtSign className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">Email Alias-ok</CardTitle>
+                <CardDescription>
+                  Egyedi email címek cégekhez a számlák automatikus fogadásához
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-3 gap-4 mb-6">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <Mail className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="font-medium text-sm">Dedikált címek</p>
+                  <p className="text-xs text-muted-foreground">Cégenkénti elkülönítés</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <Zap className="h-5 w-5 text-purple-600" />
+                <div>
+                  <p className="font-medium text-sm">Automatikus</p>
+                  <p className="text-xs text-muted-foreground">Azonnali feldolgozás</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <Shield className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="font-medium text-sm">Biztonságos</p>
+                  <p className="text-xs text-muted-foreground">Ellenőrzött forrás</p>
+                </div>
+              </div>
+            </div>
+
+            <EmailAliasManager />
+          </CardContent>
+        </Card>
 
         {/* NAV Integration */}
         <Card>
