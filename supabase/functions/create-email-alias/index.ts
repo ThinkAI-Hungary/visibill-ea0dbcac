@@ -52,7 +52,7 @@ serve(async (req) => {
     const aliasEmail = `${slug}@${mailgunDomain}`;
 
     // Create Mailgun route
-    const routeUrl = `https://api.eu.mailgun.org/v3/routes`;
+    const routeUrl = `https://api.eu.mailgun.net/v3/routes`;
     const forwardUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/process-mailgun-webhook`;
     
     const routeResponse = await fetch(routeUrl, {
@@ -96,7 +96,7 @@ serve(async (req) => {
       console.error('Database error:', dbError);
       // Try to cleanup Mailgun route if DB insert fails
       if (routeData.route?.id) {
-        await fetch(`https://api.eu.mailgun.org/v3/routes/${routeData.route.id}`, {
+        await fetch(`https://api.eu.mailgun.net/v3/routes/${routeData.route.id}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Basic ${btoa(`api:${mailgunApiKey}`)}`,

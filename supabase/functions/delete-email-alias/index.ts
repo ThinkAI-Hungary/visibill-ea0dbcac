@@ -56,7 +56,7 @@ serve(async (req) => {
       const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY');
       if (mailgunApiKey) {
         const deleteResponse = await fetch(
-          `https://api.eu.mailgun.org/v3/routes/${alias.mailgun_route_id}`,
+          `https://api.eu.mailgun.net/v3/routes/${alias.mailgun_route_id}`,
           {
             method: 'DELETE',
             headers: {
