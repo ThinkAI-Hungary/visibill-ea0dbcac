@@ -274,6 +274,42 @@ export type Database = {
         }
         Relationships: []
       }
+      email_aliases: {
+        Row: {
+          alias_email: string
+          company_name: string
+          created_at: string
+          id: string
+          mailgun_route_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          alias_email: string
+          company_name: string
+          created_at?: string
+          id?: string
+          mailgun_route_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          alias_email?: string
+          company_name?: string
+          created_at?: string
+          id?: string
+          mailgun_route_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       invoice_uploads: {
         Row: {
           created_at: string
@@ -344,6 +380,7 @@ export type Database = {
           forditott_adozas: boolean | null
           frissitve: string
           id: string
+          image_url: string | null
           invoice_type: string
           kibocsatas_datuma: string
           letrehozva: string
@@ -385,6 +422,7 @@ export type Database = {
           forditott_adozas?: boolean | null
           frissitve?: string
           id?: string
+          image_url?: string | null
           invoice_type?: string
           kibocsatas_datuma: string
           letrehozva?: string
@@ -426,6 +464,7 @@ export type Database = {
           forditott_adozas?: boolean | null
           frissitve?: string
           id?: string
+          image_url?: string | null
           invoice_type?: string
           kibocsatas_datuma?: string
           letrehozva?: string
