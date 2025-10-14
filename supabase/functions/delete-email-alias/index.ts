@@ -25,13 +25,9 @@ serve(async (req) => {
 
     // Get authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
     if (userError || !user) {
-      console.error('Auth error:', userError);
       throw new Error('Unauthorized');
     }
-
-    console.log('Authenticated user:', user.id);
 
     const { alias_id } = await req.json();
 
@@ -51,7 +47,28 @@ serve(async (req) => {
       throw new Error('Alias not found');
     }
 
-    console.log('Deleting alias:', alias.alias_email);
+    // Delete Mailgun route if it exists
+    if (alias.mailgun_route_id) {
+      const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY');
+      if (mailgunApiKey) {
+        const deleteResponse = await fetch(
+          `https://api.eu.mailgun.org/v3/routes/${alias.mailgun_route_id}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Basic ${btoa(`api:${mailgunApiKey}`)}`,
+            },
+          }
+        );
+
+        if (!deleteResponse.ok) {
+          console.error('Failed to delete Mailgun route:', await deleteResponse.text());
+          // Continue anyway to delete from our database
+        } else {
+          console.log('Mailgun route deleted:', alias.mailgun_route_id);
+        }
+      }
+    }
 
     // Delete from database
     const { error: deleteError } = await supabase
