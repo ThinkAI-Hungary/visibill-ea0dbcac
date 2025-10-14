@@ -1,6 +1,24 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { createHmac } from "https://deno.land/std@0.190.0/node/crypto.ts";
+
+// Helper function to verify Mailgun webhook signature using Web Crypto API
+async function verifySignature(timestamp: string, token: string, signature: string, signingKey: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(timestamp + token);
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(signingKey),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  
+  const signatureBuffer = await crypto.subtle.sign('HMAC', key, data);
+  const hashArray = Array.from(new Uint8Array(signatureBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  return hashHex === signature;
+}
 
 serve(async (req) => {
   try {
@@ -14,21 +32,19 @@ serve(async (req) => {
     // Parse form data
     const formData = await req.formData();
     
-    // Verify webhook signature
+    // Verify webhook signature (optional but recommended)
     const timestamp = formData.get('timestamp') as string;
     const token = formData.get('token') as string;
     const signature = formData.get('signature') as string;
     
     const mailgunSigningKey = Deno.env.get('MAILGUN_SIGNING_KEY');
-    if (mailgunSigningKey) {
-      const hmac = createHmac('sha256', mailgunSigningKey);
-      hmac.update(timestamp + token);
-      const calculatedSignature = hmac.digest('hex');
-      
-      if (calculatedSignature !== signature) {
-        console.error('Invalid signature');
+    if (mailgunSigningKey && timestamp && token && signature) {
+      const isValid = await verifySignature(timestamp, token, signature, mailgunSigningKey);
+      if (!isValid) {
+        console.error('Invalid webhook signature');
         return new Response('Invalid signature', { status: 401 });
       }
+      console.log('Webhook signature verified');
     }
 
     // Extract email data
