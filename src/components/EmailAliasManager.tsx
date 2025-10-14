@@ -70,8 +70,11 @@ const EmailAliasManager = () => {
 
     setCreating(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
       const { data, error } = await supabase.functions.invoke('create-email-alias', {
         body: { company_name: companyName },
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
       });
 
       if (error) throw error;
@@ -97,8 +100,11 @@ const EmailAliasManager = () => {
 
   const handleDelete = async (aliasId: string) => {
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
       const { error } = await supabase.functions.invoke('delete-email-alias', {
         body: { alias_id: aliasId },
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
       });
 
       if (error) throw error;
