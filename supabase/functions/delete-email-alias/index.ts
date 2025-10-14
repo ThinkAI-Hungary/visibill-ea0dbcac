@@ -25,9 +25,13 @@ serve(async (req) => {
 
     // Get authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
     if (userError || !user) {
+      console.error('Auth error:', userError);
       throw new Error('Unauthorized');
     }
+
+    console.log('Authenticated user:', user.id);
 
     const { alias_id } = await req.json();
 
