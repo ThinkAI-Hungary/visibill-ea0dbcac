@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
@@ -62,6 +63,7 @@ interface SystemSettings {
 export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
@@ -92,12 +94,17 @@ export default function Settings() {
   });
 
   const [systemSettings, setSystemSettings] = useState<SystemSettings>({
-    theme: "light",
+    theme: theme,
     language: "hu",
     date_format: "DD/MM/YYYY",
     number_format: "1 234 567,89",
     timezone: "Europe/Budapest"
   });
+
+  // Sync theme from context to local state
+  useEffect(() => {
+    setSystemSettings(prev => ({ ...prev, theme }));
+  }, [theme]);
 
   useEffect(() => {
     if (user) {
@@ -543,21 +550,27 @@ export default function Settings() {
 
         {/* System Settings */}
         <TabsContent value="system">
-          <Card className="opacity-50">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Palette className="h-5 w-5" />
                 Rendszer beállítások
               </CardTitle>
               <CardDescription>
-                Ez a funkció hamarosan elérhető lesz
+                Téma és megjelenítési beállítások
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="theme">Téma</Label>
-                  <Select disabled value={systemSettings.theme}>
+                  <Select 
+                    value={systemSettings.theme}
+                    onValueChange={(value) => {
+                      setTheme(value as "light" | "dark" | "system");
+                      setSystemSettings(prev => ({ ...prev, theme: value }));
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -611,7 +624,7 @@ export default function Settings() {
                 </div>
               </div>
 
-              <Button disabled={true}>
+              <Button onClick={() => updateSettings('system', systemSettings)} disabled={loading}>
                 Rendszer beállítások mentése
               </Button>
             </CardContent>
