@@ -408,14 +408,33 @@ const ManualUpload = () => {
           .from('salaries')
           .getPublicUrl(uploadData.path);
 
-        // Note: You'll need to create a salaries table similar to bank_statement_uploads
-        // For now, this will log the successful upload
-        console.log('Salary file uploaded:', {
+        // Trigger webhooks
+        const webhookUrls = [
+          'https://n8n.thinkaikontir.hu/webhook-test/jarulek',
+          'https://n8n.thinkaikontir.hu/webhook/jarulek'
+        ];
+
+        const webhookPayload = {
           fileName: file.name,
           fileUrl: urlData.publicUrl,
+          filePath: uploadData.path,
+          userId: user.id,
           fileSize: file.size,
-          fileType: file.type
-        });
+          fileType: file.type,
+          uploadedAt: new Date().toISOString()
+        };
+
+        for (const webhookUrl of webhookUrls) {
+          try {
+            await fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(webhookPayload)
+            });
+          } catch (webhookError) {
+            console.error(`Webhook error for ${webhookUrl}:`, webhookError);
+          }
+        }
       }
       
       toast({
