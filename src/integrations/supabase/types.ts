@@ -492,6 +492,143 @@ export type Database = {
           },
         ]
       }
+      invoices_teszt: {
+        Row: {
+          adoalap_osszesen: number
+          adojogi_megjegyzes: string | null
+          adomentesseg_hivatkozas: string | null
+          afa_kulcsok_bontasban: string | null
+          afa_osszeg_osszesen: number
+          bankszamlaszam_iban: string | null
+          brutto_vegosszeg: number
+          category_id: string | null
+          dokumentum_azonosito: string | null
+          elado_cim: string | null
+          elado_nev: string
+          elado_vat_id: string | null
+          elolegszamla_hivatkozas: string | null
+          elszamolt_eloleg_osszeg: number | null
+          email_uzenet_id: string | null
+          feldolgozva: string | null
+          fizetendo_osszeg: number | null
+          fizetesi_hatarido: string | null
+          fizetesi_mod: string | null
+          fizetve: boolean | null
+          forditott_adozas: boolean | null
+          frissitve: string
+          id: string
+          image_url: string | null
+          invoice_type: string
+          kibocsatas_datuma: string
+          letrehozva: string
+          melleklet_url: string | null
+          onszamlazas: boolean | null
+          penzforgalmi_elszamolas: boolean | null
+          penznem: string | null
+          project_id: string | null
+          statusz: string | null
+          szamlaszam: string
+          teljesites_datuma: string | null
+          termek_szolgaltatas_tipusa: string | null
+          user_id: string
+          vevo_cim: string | null
+          vevo_nev: string
+          vevo_vat_id: string | null
+        }
+        Insert: {
+          adoalap_osszesen?: number
+          adojogi_megjegyzes?: string | null
+          adomentesseg_hivatkozas?: string | null
+          afa_kulcsok_bontasban?: string | null
+          afa_osszeg_osszesen?: number
+          bankszamlaszam_iban?: string | null
+          brutto_vegosszeg?: number
+          category_id?: string | null
+          dokumentum_azonosito?: string | null
+          elado_cim?: string | null
+          elado_nev: string
+          elado_vat_id?: string | null
+          elolegszamla_hivatkozas?: string | null
+          elszamolt_eloleg_osszeg?: number | null
+          email_uzenet_id?: string | null
+          feldolgozva?: string | null
+          fizetendo_osszeg?: number | null
+          fizetesi_hatarido?: string | null
+          fizetesi_mod?: string | null
+          fizetve?: boolean | null
+          forditott_adozas?: boolean | null
+          frissitve?: string
+          id?: string
+          image_url?: string | null
+          invoice_type?: string
+          kibocsatas_datuma: string
+          letrehozva?: string
+          melleklet_url?: string | null
+          onszamlazas?: boolean | null
+          penzforgalmi_elszamolas?: boolean | null
+          penznem?: string | null
+          project_id?: string | null
+          statusz?: string | null
+          szamlaszam: string
+          teljesites_datuma?: string | null
+          termek_szolgaltatas_tipusa?: string | null
+          user_id: string
+          vevo_cim?: string | null
+          vevo_nev: string
+          vevo_vat_id?: string | null
+        }
+        Update: {
+          adoalap_osszesen?: number
+          adojogi_megjegyzes?: string | null
+          adomentesseg_hivatkozas?: string | null
+          afa_kulcsok_bontasban?: string | null
+          afa_osszeg_osszesen?: number
+          bankszamlaszam_iban?: string | null
+          brutto_vegosszeg?: number
+          category_id?: string | null
+          dokumentum_azonosito?: string | null
+          elado_cim?: string | null
+          elado_nev?: string
+          elado_vat_id?: string | null
+          elolegszamla_hivatkozas?: string | null
+          elszamolt_eloleg_osszeg?: number | null
+          email_uzenet_id?: string | null
+          feldolgozva?: string | null
+          fizetendo_osszeg?: number | null
+          fizetesi_hatarido?: string | null
+          fizetesi_mod?: string | null
+          fizetve?: boolean | null
+          forditott_adozas?: boolean | null
+          frissitve?: string
+          id?: string
+          image_url?: string | null
+          invoice_type?: string
+          kibocsatas_datuma?: string
+          letrehozva?: string
+          melleklet_url?: string | null
+          onszamlazas?: boolean | null
+          penzforgalmi_elszamolas?: boolean | null
+          penznem?: string | null
+          project_id?: string | null
+          statusz?: string | null
+          szamlaszam?: string
+          teljesites_datuma?: string | null
+          termek_szolgaltatas_tipusa?: string | null
+          user_id?: string
+          vevo_cim?: string | null
+          vevo_nev?: string
+          vevo_vat_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_teszt_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nav_invoices: {
         Row: {
           created_at: string | null
@@ -759,6 +896,72 @@ export type Database = {
           id?: string
           name?: string
           start_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      salaries: {
+        Row: {
+          amount_to_transfer: number
+          created_at: string
+          description: string
+          due_date: string | null
+          employee_name: string | null
+          file_name: string | null
+          file_url: string | null
+          id: string
+          metadata: Json | null
+          payment_date: string | null
+          payment_reference: string | null
+          payment_type: string
+          period_month: number | null
+          period_year: number | null
+          recipient_name: string
+          source: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_to_transfer: number
+          created_at?: string
+          description: string
+          due_date?: string | null
+          employee_name?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_date?: string | null
+          payment_reference?: string | null
+          payment_type: string
+          period_month?: number | null
+          period_year?: number | null
+          recipient_name: string
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_to_transfer?: number
+          created_at?: string
+          description?: string
+          due_date?: string | null
+          employee_name?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_date?: string | null
+          payment_reference?: string | null
+          payment_type?: string
+          period_month?: number | null
+          period_year?: number | null
+          recipient_name?: string
+          source?: string
           status?: string
           updated_at?: string
           user_id?: string
@@ -1061,18 +1264,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_nav_credentials: {
-        Args: { p_user_id: string }
-        Returns: Json
-      }
-      increment_invoice_usage: {
-        Args: { user_uuid: string }
-        Returns: boolean
-      }
-      reset_monthly_usage: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      get_nav_credentials: { Args: { p_user_id: string }; Returns: Json }
+      increment_invoice_usage: { Args: { user_uuid: string }; Returns: boolean }
+      reset_monthly_usage: { Args: never; Returns: number }
       save_nav_credentials: {
         Args: {
           p_is_test_environment?: boolean

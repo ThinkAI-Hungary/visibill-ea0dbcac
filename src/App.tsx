@@ -19,6 +19,7 @@ import Projects from "./pages/Projects";
 import Pricing from "./pages/Pricing";
 import NavTesting from "./pages/NavTesting";
 import ExchangeRates from "./pages/ExchangeRates";
+import SalariesPage from "./pages/SalariesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -93,6 +94,13 @@ const App = () => (
               <ProtectedRoute>
                 <AppLayout>
                   <ExchangeRates />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/salaries" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <SalariesPage />
                 </AppLayout>
               </ProtectedRoute>
             } />

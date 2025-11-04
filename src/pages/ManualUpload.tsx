@@ -424,6 +424,25 @@ const ManualUpload = () => {
           uploadedAt: new Date().toISOString()
         };
 
+        // Insert preliminary record into salaries table
+        const { error: dbError } = await supabase
+          .from('salaries')
+          .insert({
+            user_id: user.id,
+            payment_type: 'other',
+            recipient_name: 'Feldolgozás alatt',
+            description: `${file.name} - Feldolgozás alatt...`,
+            amount_to_transfer: 0,
+            status: 'pending',
+            file_url: urlData.publicUrl,
+            file_name: file.name,
+            source: 'automated'
+          });
+
+        if (dbError) {
+          console.error('Database insert error:', dbError);
+        }
+
         for (const webhookUrl of webhookUrls) {
           try {
             await fetch(webhookUrl, {
