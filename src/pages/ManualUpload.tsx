@@ -424,9 +424,9 @@ const ManualUpload = () => {
           uploadedAt: new Date().toISOString()
         };
 
-        // Insert preliminary record into salaries table
+        // Insert preliminary record into salary_files table
         const { error: dbError } = await supabase
-          .from('salaries')
+          .from('salary_files' as any)
           .insert({
             user_id: user.id,
             payment_type: 'other',
