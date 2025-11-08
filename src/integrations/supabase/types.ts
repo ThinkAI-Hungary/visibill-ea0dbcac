@@ -902,7 +902,34 @@ export type Database = {
         }
         Relationships: []
       }
-      salaries: {
+      salary: {
+        Row: {
+          created_at: string
+          id: string
+          nev: string
+          osszeg: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nev: string
+          osszeg: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nev?: string
+          osszeg?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      salary_files: {
         Row: {
           amount_to_transfer: number
           created_at: string
@@ -1085,6 +1112,36 @@ export type Database = {
           vevo_cim?: string | null
           vevo_nev?: string
           vevo_vat_id?: string | null
+        }
+        Relationships: []
+      }
+      tax: {
+        Row: {
+          adonem: string
+          created_at: string
+          id: string
+          kategoria: string | null
+          osszeg: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          adonem: string
+          created_at?: string
+          id?: string
+          kategoria?: string | null
+          osszeg: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          adonem?: string
+          created_at?: string
+          id?: string
+          kategoria?: string | null
+          osszeg?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
