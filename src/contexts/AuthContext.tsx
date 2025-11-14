@@ -73,16 +73,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Elküldtünk egy megerősítő linket."
       });
 
-      // Send welcome email in background
-      if (data.user) {
-        supabase.functions.invoke('send-welcome-email', {
-          body: {
-            userId: data.user.id,
-            email: data.user.email,
-            name: name || data.user.email?.split('@')[0]
-          }
-        }).catch(err => console.error('Failed to send welcome email:', err));
-      }
+      // Send welcome email immediately (don't wait for email confirmation)
+      // The edge function will check email preferences before sending
+      supabase.functions.invoke('send-welcome-email', {
+        body: {
+          userId: data.user?.id,
+          email: email,
+          name: name || email.split('@')[0]
+        }
+      }).then(response => {
+        if (response.error) {
+          console.error('Failed to send welcome email:', response.error);
+        } else {
+          console.log('Welcome email sent successfully');
+        }
+      }).catch(err => {
+        console.error('Error calling welcome email function:', err);
+      });
     }
     
     return { error };
