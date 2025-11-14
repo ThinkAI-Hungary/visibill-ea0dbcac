@@ -101,7 +101,7 @@ export default function SalariesPage() {
     
     try {
       const { data, error } = await supabase
-        .from("salaries")
+        .from("salary_files")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
@@ -143,7 +143,7 @@ export default function SalariesPage() {
 
       if (editingId) {
         const { error } = await supabase
-          .from("salaries")
+          .from("salary_files")
           .update(dataToSubmit)
           .eq("id", editingId);
 
@@ -151,7 +151,7 @@ export default function SalariesPage() {
         toast({ title: "Siker", description: "Bejegyzés frissítve." });
       } else {
         const { error } = await supabase
-          .from("salaries")
+          .from("salary_files")
           .insert([dataToSubmit]);
 
         if (error) throw error;
@@ -194,7 +194,7 @@ export default function SalariesPage() {
 
     try {
       const { error } = await supabase
-        .from("salaries")
+        .from("salary_files")
         .delete()
         .eq("id", id);
 
