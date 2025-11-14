@@ -37,10 +37,10 @@ export function EmailPreferences() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('user_email_preferences')
+        .from('user_email_preferences' as any)
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         throw error;
@@ -48,16 +48,16 @@ export function EmailPreferences() {
 
       if (data) {
         setPreferences({
-          welcome_email: data.welcome_email,
-          invoice_processed: data.invoice_processed,
-          invoice_failed: data.invoice_failed,
-          subscription_warnings: data.subscription_warnings,
-          monthly_summary: data.monthly_summary,
+          welcome_email: (data as any).welcome_email ?? true,
+          invoice_processed: (data as any).invoice_processed ?? true,
+          invoice_failed: (data as any).invoice_failed ?? true,
+          subscription_warnings: (data as any).subscription_warnings ?? true,
+          monthly_summary: (data as any).monthly_summary ?? false,
         });
       }
     } catch (error) {
       console.error('Error loading email preferences:', error);
-      toast.error('Failed to load email preferences');
+      toast.error('Nem sikerült betölteni az email beállításokat');
     } finally {
       setLoading(false);
     }
@@ -69,7 +69,7 @@ export function EmailPreferences() {
     try {
       setSaving(true);
       const { error } = await supabase
-        .from('user_email_preferences')
+        .from('user_email_preferences' as any)
         .upsert({
           user_id: user.id,
           [key]: value,
@@ -78,10 +78,10 @@ export function EmailPreferences() {
       if (error) throw error;
 
       setPreferences(prev => ({ ...prev, [key]: value }));
-      toast.success('Preference updated');
+      toast.success('Beállítás frissítve');
     } catch (error) {
       console.error('Error updating preference:', error);
-      toast.error('Failed to update preference');
+      toast.error('Nem sikerült frissíteni a beállítást');
     } finally {
       setSaving(false);
     }
