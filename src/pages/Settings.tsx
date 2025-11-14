@@ -4,6 +4,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
+import { EmailPreferences } from "@/components/EmailPreferences";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -472,80 +473,7 @@ export default function Settings() {
 
         {/* Notification Settings */}
         <TabsContent value="notifications">
-          <Card className="opacity-50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Értesítési beállítások
-              </CardTitle>
-              <CardDescription>
-                Ez a funkció hamarosan elérhető lesz
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="email_notifications">E-mail értesítések</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Általános e-mail értesítések fogadása
-                    </p>
-                  </div>
-                  <Switch
-                    id="email_notifications"
-                    checked={false}
-                    disabled={true}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="invoice_reminders">Számla emlékeztetők</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Fizetési határidő emlékeztetők
-                    </p>
-                  </div>
-                  <Switch
-                    id="invoice_reminders"
-                    checked={false}
-                    disabled={true}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="payment_alerts">Befizetési értesítések</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Sikeres fizetések értesítései
-                    </p>
-                  </div>
-                  <Switch
-                    id="payment_alerts"
-                    checked={false}
-                    disabled={true}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="system_updates">Rendszer frissítések</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Új funkciók és frissítések
-                    </p>
-                  </div>
-                  <Switch
-                    id="system_updates"
-                    checked={false}
-                    disabled={true}
-                  />
-                </div>
-              </div>
-
-              <Button disabled={true}>
-                Értesítési beállítások mentése
-              </Button>
-            </CardContent>
-          </Card>
+          <EmailPreferences />
         </TabsContent>
 
         {/* System Settings */}

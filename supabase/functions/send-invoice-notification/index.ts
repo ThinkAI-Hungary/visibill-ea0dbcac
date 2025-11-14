@@ -45,8 +45,27 @@ serve(async (req) => {
 
     console.log("[SEND-INVOICE-NOTIFICATION] Sending notification to:", email);
 
-    if (!email || !fileName || !status) {
-      throw new Error("Email, fileName, and status are required");
+    if (!email || !fileName || !status || !userId) {
+      throw new Error("Email, fileName, status, and userId are required");
+    }
+
+    // Check email preferences
+    const preferenceKey = status === 'success' ? 'invoice_processed' : 'invoice_failed';
+    const { data: prefs } = await supabaseClient
+      .from('user_email_preferences')
+      .select(preferenceKey)
+      .eq('user_id', userId)
+      .single();
+
+    if (prefs && !prefs[preferenceKey]) {
+      console.log(`[SEND-INVOICE-NOTIFICATION] User has disabled ${preferenceKey} emails`);
+      return new Response(
+        JSON.stringify({ success: true, message: "Email disabled by user preference" }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Render the email template

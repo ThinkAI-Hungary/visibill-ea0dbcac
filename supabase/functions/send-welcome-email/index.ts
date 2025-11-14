@@ -35,6 +35,24 @@ serve(async (req) => {
       throw new Error("Email is required");
     }
 
+    // Check email preferences
+    const { data: prefs } = await supabaseClient
+      .from('user_email_preferences')
+      .select('welcome_email')
+      .eq('user_id', userId)
+      .single();
+
+    if (prefs && !prefs.welcome_email) {
+      console.log("[SEND-WELCOME-EMAIL] User has disabled welcome emails");
+      return new Response(
+        JSON.stringify({ success: true, message: "Email disabled by user preference" }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Render the email template
     const html = await renderAsync(
       React.createElement(WelcomeEmail, {
