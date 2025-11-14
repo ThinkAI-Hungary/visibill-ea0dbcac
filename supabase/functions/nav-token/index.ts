@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sha512 } from "https://denopkg.com/chiefbiiko/sha512@v1.0.2/mod.ts";
 import { sha3_512 } from "https://esm.sh/@noble/hashes@1.3.0/sha3";
 
 const corsHeaders = {
@@ -83,9 +82,12 @@ function generateRequestId(): string {
 }
 
 // SHA-512 hash for password (NAV v3: hash password only, no requestId)
-function hashPassword(password: string): string {
-  const hash = sha512(password, "utf8", "hex");
-  return hash.toUpperCase();
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-512', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 
 // SHA3-512 hash for request signature (NAV v3: use compact timestamp format yyyyMMddHHmmss)
@@ -164,7 +166,7 @@ async function validateCredentials(supabaseClient: any, userId: string) {
   try {
     const timestamp = new Date().toISOString();
     const requestId = generateRequestId();
-    const passwordHash = hashPassword(sanitizedCreds.nav_password);
+    const passwordHash = await hashPassword(sanitizedCreds.nav_password);
     const requestSignature = createSignature(sanitizedCreds, requestId, timestamp);
 
     const xmlRequest = buildTokenXML(sanitizedCreds, requestId, timestamp, passwordHash, requestSignature);
@@ -253,7 +255,7 @@ async function requestToken(supabaseClient: any, userId: string) {
   try {
     const timestamp = new Date().toISOString();
     const requestId = generateRequestId();
-    const passwordHash = hashPassword(credentials.nav_password);
+    const passwordHash = await hashPassword(credentials.nav_password);
     const requestSignature = createSignature(credentials, requestId, timestamp);
 
     const xmlRequest = buildTokenXML(credentials, requestId, timestamp, passwordHash, requestSignature);
