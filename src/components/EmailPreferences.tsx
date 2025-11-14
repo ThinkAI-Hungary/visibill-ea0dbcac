@@ -1,0 +1,189 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { Loader2, Mail } from "lucide-react";
+
+interface EmailPreferences {
+  welcome_email: boolean;
+  invoice_processed: boolean;
+  invoice_failed: boolean;
+  subscription_warnings: boolean;
+  monthly_summary: boolean;
+}
+
+export function EmailPreferences() {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [preferences, setPreferences] = useState<EmailPreferences>({
+    welcome_email: true,
+    invoice_processed: true,
+    invoice_failed: true,
+    subscription_warnings: true,
+    monthly_summary: false,
+  });
+
+  useEffect(() => {
+    loadPreferences();
+  }, [user]);
+
+  const loadPreferences = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('user_email_preferences')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (data) {
+        setPreferences({
+          welcome_email: data.welcome_email,
+          invoice_processed: data.invoice_processed,
+          invoice_failed: data.invoice_failed,
+          subscription_warnings: data.subscription_warnings,
+          monthly_summary: data.monthly_summary,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading email preferences:', error);
+      toast.error('Failed to load email preferences');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updatePreference = async (key: keyof EmailPreferences, value: boolean) => {
+    if (!user) return;
+
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from('user_email_preferences')
+        .upsert({
+          user_id: user.id,
+          [key]: value,
+        });
+
+      if (error) throw error;
+
+      setPreferences(prev => ({ ...prev, [key]: value }));
+      toast.success('Preference updated');
+    } catch (error) {
+      console.error('Error updating preference:', error);
+      toast.error('Failed to update preference');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center p-8">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Mail className="h-5 w-5 text-primary" />
+          <CardTitle>Email Notifications</CardTitle>
+        </div>
+        <CardDescription>
+          Manage which email notifications you'd like to receive
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="welcome_email">Welcome emails</Label>
+            <p className="text-sm text-muted-foreground">
+              Receive a welcome email when you sign up
+            </p>
+          </div>
+          <Switch
+            id="welcome_email"
+            checked={preferences.welcome_email}
+            onCheckedChange={(value) => updatePreference('welcome_email', value)}
+            disabled={saving}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="invoice_processed">Invoice processed</Label>
+            <p className="text-sm text-muted-foreground">
+              Get notified when invoices are successfully processed
+            </p>
+          </div>
+          <Switch
+            id="invoice_processed"
+            checked={preferences.invoice_processed}
+            onCheckedChange={(value) => updatePreference('invoice_processed', value)}
+            disabled={saving}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="invoice_failed">Invoice errors</Label>
+            <p className="text-sm text-muted-foreground">
+              Get notified when invoice processing fails
+            </p>
+          </div>
+          <Switch
+            id="invoice_failed"
+            checked={preferences.invoice_failed}
+            onCheckedChange={(value) => updatePreference('invoice_failed', value)}
+            disabled={saving}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="subscription_warnings">Usage warnings</Label>
+            <p className="text-sm text-muted-foreground">
+              Get notified when approaching your invoice limit
+            </p>
+          </div>
+          <Switch
+            id="subscription_warnings"
+            checked={preferences.subscription_warnings}
+            onCheckedChange={(value) => updatePreference('subscription_warnings', value)}
+            disabled={saving}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="monthly_summary">Monthly summaries</Label>
+            <p className="text-sm text-muted-foreground">
+              Receive a monthly summary of your invoices and taxes
+            </p>
+          </div>
+          <Switch
+            id="monthly_summary"
+            checked={preferences.monthly_summary}
+            onCheckedChange={(value) => updatePreference('monthly_summary', value)}
+            disabled={saving}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
