@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { Loader2, Mail } from "lucide-react";
 
 interface EmailPreferences {
-  welcome_email: boolean;
   invoice_processed: boolean;
   invoice_failed: boolean;
   subscription_warnings: boolean;
@@ -20,7 +19,6 @@ export function EmailPreferences() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [preferences, setPreferences] = useState<EmailPreferences>({
-    welcome_email: true,
     invoice_processed: true,
     invoice_failed: true,
     subscription_warnings: true,
@@ -48,7 +46,6 @@ export function EmailPreferences() {
 
       if (data) {
         setPreferences({
-          welcome_email: (data as any).welcome_email ?? true,
           invoice_processed: (data as any).invoice_processed ?? true,
           invoice_failed: (data as any).invoice_failed ?? true,
           subscription_warnings: (data as any).subscription_warnings ?? true,
@@ -109,21 +106,6 @@ export function EmailPreferences() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label htmlFor="welcome_email">Üdvözlő emailek</Label>
-            <p className="text-sm text-muted-foreground">
-              Üdvözlő email fogadása regisztrációkor
-            </p>
-          </div>
-          <Switch
-            id="welcome_email"
-            checked={preferences.welcome_email}
-            onCheckedChange={(value) => updatePreference('welcome_email', value)}
-            disabled={saving}
-          />
-        </div>
-
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
             <Label htmlFor="invoice_processed">Számla feldolgozva</Label>
