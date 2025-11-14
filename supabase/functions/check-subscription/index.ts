@@ -76,7 +76,7 @@ serve(async (req) => {
       logStep("No customer found, returning default teszt tier");
       
       // Ensure user has local subscription record
-      await ensureUserSubscription(supabaseAdmin, user.id, 'teszt', 999999);
+      await ensureUserSubscription(supabaseAdmin, userId, 'teszt', 999999);
       
       return new Response(JSON.stringify({ 
         subscribed: false, 
@@ -131,10 +131,10 @@ serve(async (req) => {
       logStep("Determined subscription tier", { productId, tier, productName, invoiceLimit });
       
       // Update local subscription record
-      await ensureUserSubscription(supabaseAdmin, user.id, tier, invoiceLimit, customerId, subscription.id, productId as string);
+      await ensureUserSubscription(supabaseAdmin, userId, tier, invoiceLimit, customerId, subscription.id, productId as string);
     } else {
       logStep("No active subscription found, using default teszt tier");
-      await ensureUserSubscription(supabaseAdmin, user.id, 'teszt', 999999);
+      await ensureUserSubscription(supabaseAdmin, userId, 'teszt', 999999);
     }
 
     return new Response(JSON.stringify({
