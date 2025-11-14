@@ -102,18 +102,18 @@ export function EmailPreferences() {
       <CardHeader>
         <div className="flex items-center gap-2">
           <Mail className="h-5 w-5 text-primary" />
-          <CardTitle>Email Notifications</CardTitle>
+          <CardTitle>Email Értesítések</CardTitle>
         </div>
         <CardDescription>
-          Manage which email notifications you'd like to receive
+          Válaszd ki, mely email értesítéseket szeretnéd fogadni
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label htmlFor="welcome_email">Welcome emails</Label>
+            <Label htmlFor="welcome_email">Üdvözlő emailek</Label>
             <p className="text-sm text-muted-foreground">
-              Receive a welcome email when you sign up
+              Üdvözlő email fogadása regisztrációkor
             </p>
           </div>
           <Switch
@@ -126,9 +126,9 @@ export function EmailPreferences() {
 
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label htmlFor="invoice_processed">Invoice processed</Label>
+            <Label htmlFor="invoice_processed">Számla feldolgozva</Label>
             <p className="text-sm text-muted-foreground">
-              Get notified when invoices are successfully processed
+              Értesítés a sikeresen feldolgozott számlákról
             </p>
           </div>
           <Switch
@@ -141,9 +141,9 @@ export function EmailPreferences() {
 
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label htmlFor="invoice_failed">Invoice errors</Label>
+            <Label htmlFor="invoice_failed">Számla feldolgozási hibák</Label>
             <p className="text-sm text-muted-foreground">
-              Get notified when invoice processing fails
+              Értesítés a sikertelen számla feldolgozásokról
             </p>
           </div>
           <Switch
@@ -156,9 +156,9 @@ export function EmailPreferences() {
 
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label htmlFor="subscription_warnings">Usage warnings</Label>
+            <Label htmlFor="subscription_warnings">Használati figyelmeztetések</Label>
             <p className="text-sm text-muted-foreground">
-              Get notified when approaching your invoice limit
+              Értesítés a számla limit közeledésekor
             </p>
           </div>
           <Switch
@@ -171,9 +171,9 @@ export function EmailPreferences() {
 
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label htmlFor="monthly_summary">Monthly summaries</Label>
+            <Label htmlFor="monthly_summary">Havi összesítők</Label>
             <p className="text-sm text-muted-foreground">
-              Receive a monthly summary of your invoices and taxes
+              Havi összesítő a számláidról és adóidról
             </p>
           </div>
           <Switch
