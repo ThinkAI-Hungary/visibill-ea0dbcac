@@ -1,5 +1,4 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
-import { sha512 } from 'https://denopkg.com/chiefbiiko/sha512@v1.0.2/mod.ts';
 import { sha3_512 } from 'https://esm.sh/@noble/hashes@1.3.0/sha3';
 
 const corsHeaders = {
@@ -118,7 +117,7 @@ Deno.serve(async (req) => {
       const timestampFormatted = timestamp.replace(/[-:]/g, '').split('.')[0] + 'Z';
 
       // Build password hash (SHA-512) - NAV v3 requires hashing password only
-      const passwordHash = (sha512(credentials.nav_password, 'utf8', 'hex') as string).toUpperCase();
+      const passwordHash = await sha512Hash(credentials.nav_password);
 
       // Build request signature (SHA3-512) using compact UTC timestamp yyyyMMddHHmmss
       const d = new Date(timestamp);
@@ -366,4 +365,13 @@ function parseNAVError(xml: string): string {
   }
   
   return 'Unknown NAV API error';
+}
+
+// Helper function to compute SHA-512
+async function sha512Hash(input: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hashBuffer = await crypto.subtle.digest('SHA-512', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
