@@ -47,3 +47,9 @@ verify_jwt = true
 
 [functions.process-mailgun-webhook]
 verify_jwt = false
+
+[functions.send-welcome-email]
+verify_jwt = true
+
+[functions.send-invoice-notification]
+verify_jwt = true
