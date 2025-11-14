@@ -113,13 +113,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Kijelentkezés sikertelen",
-        description: error.message
-      });
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error && !`${error.message}`.toLowerCase().includes('session')) {
+        // Ha nem "session missing" jellegű hiba, jelezzük
+        throw error;
+      }
+    } catch (err: any) {
+      // Nem kritikus – kliens oldalon kényszerített kijelentkezés
+      console.warn('signOut fallback (forced):', err?.message || err);
+    } finally {
+      try {
+        // Supabase auth token kulcs a projekt ref alapján
+        localStorage.removeItem('sb-vxxgvdlqvvchtlmqnrqf-auth-token');
+        localStorage.removeItem('supabase.auth.token');
+      } catch {}
+      setUser(null);
+      setSession(null);
+      toast({ title: 'Kijelentkezve', description: 'Sikeresen kijelentkeztél.' });
     }
   };
 
