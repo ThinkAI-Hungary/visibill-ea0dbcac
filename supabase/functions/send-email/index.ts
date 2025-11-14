@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
     console.log('[SEND-EMAIL] Sending email via Resend')
     
     const { error } = await resend.emails.send({
-      from: 'Visibill <noreply@visibill.hu>',
+      from: 'Visibill <info@mail.visibill.hu>',
       to: [user.email],
       subject,
       html,
