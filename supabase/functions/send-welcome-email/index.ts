@@ -29,11 +29,32 @@ serve(async (req) => {
 
     // Get user from request body
     const { userId, email, name } = await req.json();
-    console.log("[SEND-WELCOME-EMAIL] Sending welcome email to:", email);
+    console.log("[SEND-WELCOME-EMAIL] Checking user:", email);
 
     if (!email) {
       throw new Error("Email is required");
     }
+
+    // Check if user's email is verified
+    const { data: userData, error: userError } = await supabaseClient.auth.admin.getUserById(userId);
+    
+    if (userError) {
+      console.error("[SEND-WELCOME-EMAIL] Error fetching user:", userError);
+      throw new Error("Failed to fetch user data");
+    }
+
+    if (!userData?.user?.email_confirmed_at) {
+      console.log("[SEND-WELCOME-EMAIL] User email not verified yet, skipping welcome email");
+      return new Response(
+        JSON.stringify({ success: true, message: "Email not verified yet" }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    console.log("[SEND-WELCOME-EMAIL] Email verified, sending welcome email to:", email);
 
     // Check email preferences
     const { data: prefs } = await supabaseClient
