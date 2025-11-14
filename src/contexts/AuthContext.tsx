@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, name?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -72,6 +72,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Ellenőrizd az email-ed",
         description: "Elküldtünk egy megerősítő linket."
       });
+
+      // Send welcome email in background
+      if (data.user) {
+        supabase.functions.invoke('send-welcome-email', {
+          body: {
+            userId: data.user.id,
+            email: data.user.email,
+            name: name || data.user.email?.split('@')[0]
+          }
+        }).catch(err => console.error('Failed to send welcome email:', err));
+      }
     }
     
     return { error };
