@@ -84,9 +84,9 @@ serve(async (req) => {
         if (!webhookResponse.ok) {
           throw new Error(`Webhook failed with status: ${webhookResponse.status}`);
         }
-
+ 
         console.log('Webhook sent successfully to N8N');
-
+ 
         // Update status to indicate webhook was sent
         await supabase
           .from('invoice_uploads')
@@ -95,7 +95,7 @@ serve(async (req) => {
             updated_at: new Date().toISOString()
           })
           .eq('id', uploadId);
-
+ 
       } catch (webhookError) {
         console.error('Error sending webhook:', webhookError);
         
@@ -108,18 +108,20 @@ serve(async (req) => {
             updated_at: new Date().toISOString()
           })
           .eq('id', uploadId);
-
+ 
+        // Ne dobjunk 500-at a kliensnek, csak jelezzük az állapotot
         return new Response(
           JSON.stringify({ 
+            success: false,
             error: 'Webhook failed', 
             details: webhookError.message,
             uploadId: uploadId
           }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     }
-
+ 
     return new Response(
       JSON.stringify({ 
         success: true, 
