@@ -905,25 +905,28 @@ export type Database = {
       salary: {
         Row: {
           created_at: string
+          dátum: string | null
           id: string
-          nev: string
-          osszeg: number
+          név: string
+          összeg: number
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          dátum?: string | null
           id?: string
-          nev: string
-          osszeg: number
+          név: string
+          összeg: number
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          dátum?: string | null
           id?: string
-          nev?: string
-          osszeg?: number
+          név?: string
+          összeg?: number
           updated_at?: string
           user_id?: string
         }
@@ -1119,8 +1122,8 @@ export type Database = {
         Row: {
           adonem: string
           created_at: string
+          datum: string | null
           id: string
-          kategoria: string | null
           osszeg: number
           updated_at: string
           user_id: string
@@ -1128,8 +1131,8 @@ export type Database = {
         Insert: {
           adonem: string
           created_at?: string
+          datum?: string | null
           id?: string
-          kategoria?: string | null
           osszeg: number
           updated_at?: string
           user_id: string
@@ -1137,10 +1140,43 @@ export type Database = {
         Update: {
           adonem?: string
           created_at?: string
+          datum?: string | null
           id?: string
-          kategoria?: string | null
           osszeg?: number
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_email_preferences: {
+        Row: {
+          created_at: string | null
+          id: string
+          invoice_failed: boolean | null
+          invoice_processed: boolean | null
+          monthly_summary: boolean | null
+          subscription_warnings: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          invoice_failed?: boolean | null
+          invoice_processed?: boolean | null
+          monthly_summary?: boolean | null
+          subscription_warnings?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          invoice_failed?: boolean | null
+          invoice_processed?: boolean | null
+          monthly_summary?: boolean | null
+          subscription_warnings?: boolean | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
