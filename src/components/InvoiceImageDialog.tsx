@@ -1,6 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Invoice {
   id: string;
@@ -25,15 +23,10 @@ const InvoiceImageDialog = ({ invoice, open, onClose }: InvoiceImageDialogProps)
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle>Számla: {invoice.szamlaszam}</DialogTitle>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">
+          <DialogTitle>Számla: {invoice.szamlaszam}</DialogTitle>
+          <DialogDescription>
             {invoice.elado_nev} → {invoice.vevo_nev}
-          </p>
+          </DialogDescription>
         </DialogHeader>
         <div className="mt-4 overflow-auto max-h-[calc(90vh-120px)]">
           {invoice.image_url ? (
