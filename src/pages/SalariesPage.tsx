@@ -30,7 +30,8 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Search, FileText, Trash2, Edit, ExternalLink } from "lucide-react";
+import { Plus, Search, FileText, Trash2, Edit, ExternalLink, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
 
 interface Salary {
@@ -276,7 +277,19 @@ export default function SalariesPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Bérek és járulékok</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold">Bérek és járulékok</h1>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-5 w-5 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Kezeld a bérek kifizetéseit és az adó/járulék kötelezettségeket. Feltölthetsz fájlokat vagy manuálisan rögzíthetsz bejegyzéseket.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <p className="text-muted-foreground">Kezelje a béreket és kormányzati járulékokat</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => {

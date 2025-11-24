@@ -1,9 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Mail, Zap, Shield, Clock, AtSign } from 'lucide-react';
+import { Mail, Zap, Shield, Clock, AtSign, Info } from 'lucide-react';
 import NylasEmailConnect from '@/components/NylasEmailConnect';
 import EmailAliasManager from '@/components/EmailAliasManager';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 const Integrations = () => {
@@ -30,8 +31,20 @@ const Integrations = () => {
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Mail className="h-6 w-6 text-primary" />
               </div>
-              <div>
-                <CardTitle className="text-xl">Email Integráció</CardTitle>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-xl">Email Integráció</CardTitle>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Csatlakoztasd email fiókodat, hogy automatikusan feldolgozzuk az érkező számlákat. OAuth2 biztonságos kapcsolattal.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <CardDescription>
                   Automatikus számla feldolgozás közvetlenül az email fiókodból
                 </CardDescription>
@@ -74,8 +87,20 @@ const Integrations = () => {
               <div className="p-2 bg-primary/10 rounded-lg">
                 <AtSign className="h-6 w-6 text-primary" />
               </div>
-              <div>
-                <CardTitle className="text-xl">Email Alias-ok</CardTitle>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-xl">Email Alias-ok</CardTitle>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Hozz létre dedikált email címeket minden céghez. Add meg ezeket a címeket a számlázóknak, és a számlák automatikusan feldolgozásra kerülnek.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <CardDescription>
                   Egyedi email címek cégekhez a számlák automatikus fogadásához
                 </CardDescription>
@@ -114,13 +139,25 @@ const Integrations = () => {
         {/* NAV Integration */}
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
                   <Shield className="w-6 h-6 text-primary" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg">NAV Online Számla</h3>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-lg">NAV Online Számla</h3>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>Csatlakoztasd a NAV Online Számla rendszert a kimenő számlák automatikus szinkronizálásához. Technikai felhasználó adatai szükségesek.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <p className="text-muted-foreground">
                     Magyar NAV online számla rendszer integráció
                   </p>

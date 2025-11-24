@@ -19,8 +19,10 @@ import {
   Activity,
   Calendar,
   AlertTriangle,
-  ChevronDown
+  ChevronDown,
+  Info
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
@@ -338,16 +340,35 @@ const NavTesting: React.FC = () => {
         <div className="flex items-center gap-2">
           <TestTube className="w-6 h-6 text-primary" />
           <h1 className="text-2xl font-bold">NAV API Tesztelés</h1>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-5 w-5 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>Teszteld a NAV kapcsolatot és szinkronizáld a kimenő számláidat. Technikai felhasználó adatokra van szükség.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         
-        <Button 
-          onClick={handleTestConnection} 
-          disabled={loading}
-          variant="outline"
-        >
-          <Shield className="w-4 h-4 mr-2" />
-          Kapcsolat Tesztelése
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                onClick={handleTestConnection} 
+                disabled={loading}
+                variant="outline"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Kapcsolat Tesztelése
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Ellenőrzi, hogy a NAV hitelesítési adatok helyesek-e</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Validation Result Card */}
