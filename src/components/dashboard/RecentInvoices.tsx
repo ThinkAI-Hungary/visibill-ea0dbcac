@@ -13,6 +13,7 @@ interface Invoice {
   kibocsatas_datuma: string;
   statusz: string;
   project_name?: string;
+  image_url?: string;
 }
 
 interface RecentInvoicesProps {
