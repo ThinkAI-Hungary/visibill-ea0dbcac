@@ -30,67 +30,30 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Search, FileText, Trash2, Edit, ExternalLink, Info } from "lucide-react";
+import { Plus, Search, Trash2, Edit, Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Textarea } from "@/components/ui/textarea";
 
 interface Salary {
   id: string;
-  payment_type: string;
-  employee_name: string | null;
-  recipient_name: string;
-  description: string;
-  amount_to_transfer: number;
-  payment_date: string | null;
-  due_date: string | null;
-  period_month: number | null;
-  period_year: number | null;
-  status: string;
-  payment_reference: string | null;
-  file_url: string | null;
-  file_name: string | null;
-  source: string;
+  név: string;
+  összeg: number;
+  dátum: string | null;
   created_at: string;
+  updated_at: string;
 }
-
-const PAYMENT_TYPES = [
-  { value: "salary", label: "Bér" },
-  { value: "tax_contribution", label: "TB járulék" },
-  { value: "social_security", label: "Társadalombiztosítás" },
-  { value: "health_insurance", label: "EHO" },
-  { value: "pension", label: "Nyugdíj" },
-  { value: "other", label: "Egyéb" },
-];
-
-const STATUS_OPTIONS = [
-  { value: "pending", label: "Függőben", color: "bg-yellow-500" },
-  { value: "paid", label: "Kifizetve", color: "bg-green-500" },
-  { value: "overdue", label: "Lejárt", color: "bg-red-500" },
-  { value: "cancelled", label: "Törölt", color: "bg-gray-500" },
-];
 
 export default function SalariesPage() {
   const { user } = useAuth();
   const [salaries, setSalaries] = useState<Salary[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
-    payment_type: "salary",
-    employee_name: "",
-    recipient_name: "",
-    description: "",
-    amount_to_transfer: "",
-    payment_date: "",
-    due_date: "",
-    period_month: "",
-    period_year: new Date().getFullYear().toString(),
-    status: "pending",
-    payment_reference: "",
+    név: "",
+    összeg: "",
+    dátum: "",
   });
 
   useEffect(() => {
@@ -102,7 +65,7 @@ export default function SalariesPage() {
     
     try {
       const { data, error } = await supabase
-        .from("salary_files")
+        .from("salary")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
@@ -114,7 +77,7 @@ export default function SalariesPage() {
       toast({
         variant: "destructive",
         title: "Hiba",
-        description: "Nem sikerült betölteni a béreket és járulékokat.",
+        description: "Nem sikerült betölteni a béreket.",
       });
     } finally {
       setLoading(false);
@@ -128,23 +91,14 @@ export default function SalariesPage() {
     try {
       const dataToSubmit = {
         user_id: user.id,
-        payment_type: formData.payment_type,
-        employee_name: formData.employee_name || null,
-        recipient_name: formData.recipient_name,
-        description: formData.description,
-        amount_to_transfer: parseFloat(formData.amount_to_transfer),
-        payment_date: formData.payment_date || null,
-        due_date: formData.due_date || null,
-        period_month: formData.period_month ? parseInt(formData.period_month) : null,
-        period_year: formData.period_year ? parseInt(formData.period_year) : null,
-        status: formData.status,
-        payment_reference: formData.payment_reference || null,
-        source: "manual",
+        név: formData.név,
+        összeg: parseFloat(formData.összeg),
+        dátum: formData.dátum || null,
       };
 
       if (editingId) {
         const { error } = await supabase
-          .from("salary_files")
+          .from("salary")
           .update(dataToSubmit)
           .eq("id", editingId);
 
@@ -152,7 +106,7 @@ export default function SalariesPage() {
         toast({ title: "Siker", description: "Bejegyzés frissítve." });
       } else {
         const { error } = await supabase
-          .from("salary_files")
+          .from("salary")
           .insert([dataToSubmit]);
 
         if (error) throw error;
@@ -175,17 +129,9 @@ export default function SalariesPage() {
   const handleEdit = (salary: Salary) => {
     setEditingId(salary.id);
     setFormData({
-      payment_type: salary.payment_type,
-      employee_name: salary.employee_name || "",
-      recipient_name: salary.recipient_name,
-      description: salary.description,
-      amount_to_transfer: salary.amount_to_transfer.toString(),
-      payment_date: salary.payment_date || "",
-      due_date: salary.due_date || "",
-      period_month: salary.period_month?.toString() || "",
-      period_year: salary.period_year?.toString() || "",
-      status: salary.status,
-      payment_reference: salary.payment_reference || "",
+      név: salary.név,
+      összeg: salary.összeg.toString(),
+      dátum: salary.dátum || "",
     });
     setDialogOpen(true);
   };
@@ -195,7 +141,7 @@ export default function SalariesPage() {
 
     try {
       const { error } = await supabase
-        .from("salary_files")
+        .from("salary")
         .delete()
         .eq("id", id);
 
@@ -215,52 +161,18 @@ export default function SalariesPage() {
   const resetForm = () => {
     setEditingId(null);
     setFormData({
-      payment_type: "salary",
-      employee_name: "",
-      recipient_name: "",
-      description: "",
-      amount_to_transfer: "",
-      payment_date: "",
-      due_date: "",
-      period_month: "",
-      period_year: new Date().getFullYear().toString(),
-      status: "pending",
-      payment_reference: "",
+      név: "",
+      összeg: "",
+      dátum: "",
     });
   };
 
   const filteredSalaries = salaries.filter((salary) => {
-    const matchesSearch =
-      salary.recipient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      salary.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (salary.employee_name && salary.employee_name.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesStatus = statusFilter === "all" || salary.status === statusFilter;
-    const matchesType = typeFilter === "all" || salary.payment_type === typeFilter;
-    
-    return matchesSearch && matchesStatus && matchesType;
+    const matchesSearch = salary.név.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
   });
 
-  const totalPending = filteredSalaries
-    .filter((s) => s.status === "pending")
-    .reduce((sum, s) => sum + s.amount_to_transfer, 0);
-
-  const totalPaid = filteredSalaries
-    .filter((s) => s.status === "paid")
-    .reduce((sum, s) => sum + s.amount_to_transfer, 0);
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = STATUS_OPTIONS.find((s) => s.value === status);
-    return (
-      <Badge className={statusConfig?.color}>
-        {statusConfig?.label || status}
-      </Badge>
-    );
-  };
-
-  const getPaymentTypeLabel = (type: string) => {
-    return PAYMENT_TYPES.find((t) => t.value === type)?.label || type;
-  };
+  const totalAmount = filteredSalaries.reduce((sum, s) => sum + s.összeg, 0);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("hu-HU", {
@@ -278,19 +190,19 @@ export default function SalariesPage() {
       <div className="flex justify-between items-center">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold">Bérek és járulékok</h1>
+            <h1 className="text-3xl font-bold">Bérek</h1>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-5 w-5 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
-                  <p>Kezeld a bérek kifizetéseit és az adó/járulék kötelezettségeket. Feltölthetsz fájlokat vagy manuálisan rögzíthetsz bejegyzéseket.</p>
+                  <p>Rögzítsd és kezeld az alkalmazottak bérét. Kövesd nyomon a kifizetéseket egyszerűen.</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
-          <p className="text-muted-foreground">Kezelje a béreket és kormányzati járulékokat</p>
+          <p className="text-muted-foreground">Alkalmazottak bérének kezelése</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open);
@@ -309,153 +221,38 @@ export default function SalariesPage() {
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="payment_type">Típus *</Label>
-                  <Select
-                    value={formData.payment_type}
-                    onValueChange={(value) => setFormData({ ...formData, payment_type: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PAYMENT_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="status">Státusz *</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) => setFormData({ ...formData, status: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STATUS_OPTIONS.map((status) => (
-                        <SelectItem key={status.value} value={status.value}>
-                          {status.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
               <div className="space-y-2">
-                <Label htmlFor="recipient_name">Címzett *</Label>
+                <Label htmlFor="név">Alkalmazott neve *</Label>
                 <Input
-                  id="recipient_name"
-                  value={formData.recipient_name}
-                  onChange={(e) => setFormData({ ...formData, recipient_name: e.target.value })}
-                  placeholder="Alkalmazott neve vagy kormányzati szerv"
+                  id="név"
+                  value={formData.név}
+                  onChange={(e) => setFormData({ ...formData, név: e.target.value })}
+                  placeholder="Alkalmazott teljes neve"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="employee_name">Alkalmazott neve</Label>
+                <Label htmlFor="összeg">Bér összege (HUF) *</Label>
                 <Input
-                  id="employee_name"
-                  value={formData.employee_name}
-                  onChange={(e) => setFormData({ ...formData, employee_name: e.target.value })}
-                  placeholder="Alkalmazott neve (opcionális)"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Megnevezés *</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Részletes leírás"
+                  id="összeg"
+                  type="number"
+                  step="0.01"
+                  value={formData.összeg}
+                  onChange={(e) => setFormData({ ...formData, összeg: e.target.value })}
+                  placeholder="0"
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="amount_to_transfer">Utalandó összeg (HUF) *</Label>
-                  <Input
-                    id="amount_to_transfer"
-                    type="number"
-                    step="0.01"
-                    value={formData.amount_to_transfer}
-                    onChange={(e) => setFormData({ ...formData, amount_to_transfer: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="payment_reference">Közlemény</Label>
-                  <Input
-                    id="payment_reference"
-                    value={formData.payment_reference}
-                    onChange={(e) => setFormData({ ...formData, payment_reference: e.target.value })}
-                    placeholder="Utalási közlemény"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="payment_date">Fizetés dátuma</Label>
-                  <Input
-                    id="payment_date"
-                    type="date"
-                    value={formData.payment_date}
-                    onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="due_date">Esedékesség</Label>
-                  <Input
-                    id="due_date"
-                    type="date"
-                    value={formData.due_date}
-                    onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="period_month">Időszak (hónap)</Label>
-                  <Select
-                    value={formData.period_month}
-                    onValueChange={(value) => setFormData({ ...formData, period_month: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Válasszon" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                        <SelectItem key={month} value={month.toString()}>
-                          {month}. hónap
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="period_year">Év</Label>
-                  <Input
-                    id="period_year"
-                    type="number"
-                    value={formData.period_year}
-                    onChange={(e) => setFormData({ ...formData, period_year: e.target.value })}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="dátum">Fizetés dátuma</Label>
+                <Input
+                  id="dátum"
+                  type="date"
+                  value={formData.dátum}
+                  onChange={(e) => setFormData({ ...formData, dátum: e.target.value })}
+                />
               </div>
 
               <DialogFooter>
@@ -474,131 +271,65 @@ export default function SalariesPage() {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Függőben lévő</CardTitle>
+            <CardTitle className="text-sm font-medium">Összes bér</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalPending)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalAmount)}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Kifizetve</CardTitle>
+            <CardTitle className="text-sm font-medium">Bejegyzések száma</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalPaid)}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Összesen</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{filteredSalaries.length} bejegyzés</div>
+            <div className="text-2xl font-bold">{filteredSalaries.length}</div>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Keresés név vagy leírás alapján..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder="Típus" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Minden típus</SelectItem>
-                {PAYMENT_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder="Státusz" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Minden státusz</SelectItem>
-                {STATUS_OPTIONS.map((status) => (
-                  <SelectItem key={status.value} value={status.value}>
-                    {status.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Keresés név alapján..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
           </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Típus</TableHead>
-                <TableHead>Címzett</TableHead>
-                <TableHead>Megnevezés</TableHead>
-                <TableHead>Időszak</TableHead>
-                <TableHead className="text-right">Utalandó</TableHead>
-                <TableHead>Esedékesség</TableHead>
-                <TableHead>Státusz</TableHead>
-                <TableHead>Forrás</TableHead>
+                <TableHead>Alkalmazott neve</TableHead>
+                <TableHead className="text-right">Összeg</TableHead>
+                <TableHead>Fizetés dátuma</TableHead>
                 <TableHead className="text-right">Műveletek</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredSalaries.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground">
+                  <TableCell colSpan={4} className="text-center text-muted-foreground">
                     Nincs megjeleníthető bejegyzés
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredSalaries.map((salary) => (
                   <TableRow key={salary.id}>
-                    <TableCell>
-                      <Badge variant="outline">{getPaymentTypeLabel(salary.payment_type)}</Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">{salary.recipient_name}</TableCell>
-                    <TableCell className="max-w-xs truncate">{salary.description}</TableCell>
-                    <TableCell>
-                      {salary.period_year && salary.period_month
-                        ? `${salary.period_year}. ${salary.period_month}.`
-                        : "-"}
-                    </TableCell>
+                    <TableCell className="font-medium">{salary.név}</TableCell>
                     <TableCell className="text-right font-medium">
-                      {formatCurrency(salary.amount_to_transfer)}
+                      {formatCurrency(salary.összeg)}
                     </TableCell>
-                    <TableCell>{salary.due_date || "-"}</TableCell>
-                    <TableCell>{getStatusBadge(salary.status)}</TableCell>
-                    <TableCell>
-                      <Badge variant={salary.source === "manual" ? "secondary" : "default"}>
-                        {salary.source === "manual" ? "Kézi" : "Automatikus"}
-                      </Badge>
-                    </TableCell>
+                    <TableCell>{salary.dátum || "-"}</TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-2">
-                        {salary.file_url && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(salary.file_url!, "_blank")}
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
-                        )}
                         <Button
                           variant="ghost"
                           size="sm"
