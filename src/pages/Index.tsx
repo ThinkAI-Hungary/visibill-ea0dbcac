@@ -298,6 +298,8 @@ const Index = () => {
                   <RecentInvoices 
                     invoices={invoices} 
                     onViewInvoice={(invoice) => {
+                      console.log('Opening invoice:', invoice);
+                      console.log('Invoice image_url:', invoice.image_url);
                       setSelectedInvoice(invoice);
                       setIsDialogOpen(true);
                     }}
