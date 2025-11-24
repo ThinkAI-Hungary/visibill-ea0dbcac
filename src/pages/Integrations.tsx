@@ -1,8 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Mail, Zap, Shield, Clock, AtSign, Info } from 'lucide-react';
-import NylasEmailConnect from '@/components/NylasEmailConnect';
+import { Mail, Zap, Shield, AtSign, Info } from 'lucide-react';
 import EmailAliasManager from '@/components/EmailAliasManager';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -24,62 +23,6 @@ const Integrations = () => {
       </div>
 
       <div className="grid gap-6">
-        {/* Email Integration Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Mail className="h-6 w-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-xl">Email Integráció</CardTitle>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>Csatlakoztasd email fiókodat, hogy automatikusan feldolgozzuk az érkező számlákat. OAuth2 biztonságos kapcsolattal.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <CardDescription>
-                  Automatikus számla feldolgozás közvetlenül az email fiókodból
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-3 gap-4 mb-6">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <Shield className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="font-medium text-sm">Biztonságos</p>
-                  <p className="text-xs text-muted-foreground">OAuth2 hitelesítés</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <Clock className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="font-medium text-sm">Valós idejű</p>
-                  <p className="text-xs text-muted-foreground">Azonnali szinkronizálás</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <Zap className="h-5 w-5 text-purple-600" />
-                <div>
-                  <p className="font-medium text-sm">Automatikus</p>
-                  <p className="text-xs text-muted-foreground">Kézi munka nélkül</p>
-                </div>
-              </div>
-            </div>
-
-            <NylasEmailConnect />
-          </CardContent>
-        </Card>
-
         {/* Email Alias Section */}
         <Card>
           <CardHeader>
