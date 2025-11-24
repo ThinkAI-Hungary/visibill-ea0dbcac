@@ -570,7 +570,7 @@ const InvoicesPage = () => {
                           </div>
                         </TableHead>
                         <TableHead className="text-right">Összeg</TableHead>
-                        <TableHead>Státusz</TableHead>
+                        <TableHead>Fizetve?</TableHead>
                         <TableHead>Kategória</TableHead>
                         <TableHead className="text-right">Műveletek</TableHead>
                       </TableRow>
@@ -605,16 +605,9 @@ const InvoicesPage = () => {
                               }).format(getInvoiceAmount(invoice))}
                             </TableCell>
                             <TableCell>
-                              {invoice.invoice_type === 'sima_szamla' && (
-                                <Badge variant={getStatusVariant(invoice.statusz)}>
-                                  {getStatusLabel(invoice.statusz)}
-                                </Badge>
-                              )}
-                              {invoice.invoice_type !== 'sima_szamla' && (
-                                <Badge variant="secondary">
-                                  Aktív
-                                </Badge>
-                              )}
+                              <Badge variant={invoice.fizetve ? 'success' : 'secondary'}>
+                                {invoice.fizetve ? 'Igen' : 'Nem'}
+                              </Badge>
                             </TableCell>
                             <TableCell>
                               {invoice.category_name || 'Nincs kategória'}
