@@ -13,6 +13,7 @@ export interface BaseInvoice {
   category_id?: string;
   category_name?: string;
   project_id?: string;
+  fizetve?: boolean;
 }
 
 export interface SimaInvoice extends BaseInvoice {
