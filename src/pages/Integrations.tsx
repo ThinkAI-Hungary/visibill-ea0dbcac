@@ -8,7 +8,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 const Integrations = () => {
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <TooltipProvider delayDuration={300}>
+      <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Integrációk</h1>
@@ -33,16 +34,14 @@ const Integrations = () => {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <CardTitle className="text-xl">Email Alias-ok</CardTitle>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>Hozz létre dedikált email címeket minden céghez. Add meg ezeket a címeket a számlázóknak, és a számlák automatikusan feldolgozásra kerülnek.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>Hozz létre dedikált email címeket minden céghez. Add meg ezeket a címeket a számlázóknak, és a számlák automatikusan feldolgozásra kerülnek.</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
                 <CardDescription>
                   Egyedi email címek cégekhez a számlák automatikus fogadásához
@@ -90,16 +89,14 @@ const Integrations = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-lg">NAV Online Számla</h3>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p>Csatlakoztasd a NAV Online Számla rendszert a kimenő számlák automatikus szinkronizálásához. Technikai felhasználó adatai szükségesek.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Csatlakoztasd a NAV Online Számla rendszert a kimenő számlák automatikus szinkronizálásához. Technikai felhasználó adatai szükségesek.</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                   <p className="text-muted-foreground">
                     Magyar NAV online számla rendszer integráció
@@ -135,6 +132,7 @@ const Integrations = () => {
 
       </div>
     </div>
+    </TooltipProvider>
   );
 };
 
