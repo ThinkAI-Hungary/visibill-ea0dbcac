@@ -69,11 +69,8 @@ const RecentInvoices = ({ invoices, onViewInvoice }: RecentInvoicesProps) => {
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="mb-1">
                     <h4 className="font-medium truncate">{invoice.szamlaszam}</h4>
-                    <Badge variant={getStatusVariant(invoice.statusz)}>
-                      {getStatusLabel(invoice.statusz)}
-                    </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground truncate">
                     {invoice.elado_nev} → {invoice.vevo_nev}
