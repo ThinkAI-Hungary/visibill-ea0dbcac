@@ -10,9 +10,10 @@
 6. [Projektek kezelése](#projektek-kezelése)
 7. [Fizetések és számlák](#fizetések-és-számlák)
 8. [Email integráció](#email-integráció)
-9. [Előfizetések](#előfizetések)
-10. [Beállítások](#beállítások)
-11. [Gyakori kérdések](#gyakori-kérdések)
+9. [Árfolyamok](#árfolyamok)
+10. [Előfizetések](#előfizetések)
+11. [Beállítások](#beállítások)
+12. [Gyakori kérdések](#gyakori-kérdések)
 
 ---
 
@@ -395,6 +396,38 @@ Ha nem kívánja tovább használni az email szinkronizálást:
 1. Menjen az **"Integrációk"** oldalra
 2. Kattintson a **"Leválasztás"** gombra a Nylas kártyán
 3. Erősítse meg a műveletet
+
+---
+
+## Árfolyamok
+
+### Deviza árfolyamok megtekintése
+
+Az **"Árfolyamok"** oldalon valós idejű deviza árfolyamokat tekinthet meg, amelyek segítenek a külföldi számlák kezelésében és a devizanemek közötti átváltásban.
+
+#### Funkciók
+
+1. Menjen az **"Árfolyamok"** oldalra a bal oldali menüben
+2. Megtekintheti a következő információkat:
+   - **MNB hivatalos árfolyamok**: A Magyar Nemzeti Bank naprakész árfolyamai
+   - **Népszerű devizapárok**: EUR/HUF, USD/HUF, GBP/HUF, CHF/HUF
+   - **Árfolyam változások**: Napi változások százalékban
+   - **Frissítés ideje**: Utolsó frissítés időpontja
+
+#### Használati tippek
+
+- Az árfolyamok automatikusan frissülnek
+- Használja referenciaként külföldi számlák feldolgozásakor
+- A számított összegek tájékoztató jellegűek, a banki árfolyamok eltérhetnek
+- Több devizanem támogatása elérhető
+
+#### Deviza konverzió
+
+Ha külföldi devizás számlákat kezel:
+1. Nézze meg az aktuális árfolyamot az Árfolyamok oldalon
+2. Használja a számlák rögzítésekor a megfelelő devizanemet
+3. A rendszer automatikusan tárolja az eredeti devizát
+4. Később visszanézheti a történeti árfolyamokat
 
 ---
 
