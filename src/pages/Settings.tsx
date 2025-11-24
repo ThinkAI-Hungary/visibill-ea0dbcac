@@ -24,8 +24,10 @@ import {
   FileText,
   Mail,
   Upload,
-  Download
+  Download,
+  Info
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Profile {
   name: string;
@@ -287,7 +289,19 @@ export default function Settings() {
   return (
     <div className="container mx-auto py-8 px-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Beállítások</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold">Beállítások</h1>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-5 w-5 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>Itt kezelheted a profil adataid, cég információid, értesítési beállításokat, témát és biztonságot.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <p className="text-muted-foreground mt-2">
           Rendszer és üzleti beállítások kezelése
         </p>

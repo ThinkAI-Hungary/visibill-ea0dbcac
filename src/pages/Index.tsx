@@ -13,6 +13,8 @@ import RecentInvoices from '@/components/dashboard/RecentInvoices';
 import ProjectBreakdown from '@/components/dashboard/ProjectBreakdown';
 import SubscriptionUsage from '@/components/SubscriptionUsage';
 import { formatCurrency } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 
 interface Profile {
   name: string;
@@ -223,20 +225,29 @@ const Index = () => {
               Itt van a vállalkozásod teljes áttekintése
             </p>
           </div>
-          <div className="w-[200px]">
-            <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {currencies.map((curr) => (
-                  <SelectItem key={curr.code} value={curr.code}>
-                    {curr.flag} {curr.code}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="w-[200px]">
+                  <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currencies.map((curr) => (
+                        <SelectItem key={curr.code} value={curr.code}>
+                          {curr.flag} {curr.code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Válassz pénznemet az összegek átváltásához</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
         {/* Metrics Cards */}
@@ -276,12 +287,21 @@ const Index = () => {
         {/* Main Dashboard Grid */}
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Recent Invoices */}
-          <div className="lg:col-span-2">
-            <RecentInvoices 
-              invoices={invoices} 
-              onViewInvoice={(invoice) => console.log('View invoice:', invoice)}
-            />
-          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="lg:col-span-2">
+                  <RecentInvoices 
+                    invoices={invoices} 
+                    onViewInvoice={(invoice) => console.log('View invoice:', invoice)}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>A legutóbb feldolgozott számlák listája</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
           {/* Subscription Usage */}
           <div className="space-y-6">
