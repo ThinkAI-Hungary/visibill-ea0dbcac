@@ -12,6 +12,7 @@ import MetricCard from '@/components/dashboard/MetricCard';
 import RecentInvoices from '@/components/dashboard/RecentInvoices';
 import ProjectBreakdown from '@/components/dashboard/ProjectBreakdown';
 import SubscriptionUsage from '@/components/SubscriptionUsage';
+import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { formatCurrency } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
@@ -39,6 +40,7 @@ interface Invoice {
   kibocsatas_datuma: string;
   statusz: string;
   category_id?: string;
+  image_url?: string;
 }
 
 interface DashboardMetrics {
@@ -60,6 +62,8 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [selectedCurrency, setSelectedCurrency] = useState<string>('HUF');
   const [exchangeRates, setExchangeRates] = useState<{[key: string]: number}>({});
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const currencies = [
     { code: 'HUF', name: 'Magyar Forint', flag: '🇭🇺' },
@@ -290,10 +294,13 @@ const Index = () => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="lg:col-span-2">
+                 <div className="lg:col-span-2">
                   <RecentInvoices 
                     invoices={invoices} 
-                    onViewInvoice={(invoice) => console.log('View invoice:', invoice)}
+                    onViewInvoice={(invoice) => {
+                      setSelectedInvoice(invoice);
+                      setIsDialogOpen(true);
+                    }}
                   />
                 </div>
               </TooltipTrigger>
@@ -398,6 +405,15 @@ const Index = () => {
           </Card>
         </div>
       </main>
+
+      <InvoiceImageDialog 
+        invoice={selectedInvoice}
+        open={isDialogOpen}
+        onClose={() => {
+          setIsDialogOpen(false);
+          setSelectedInvoice(null);
+        }}
+      />
     </div>
   );
 };
