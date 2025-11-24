@@ -133,53 +133,6 @@ const Integrations = () => {
           </CardContent>
         </Card>
 
-        {/* Future Integrations Preview */}
-        <Card className="opacity-60">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-muted rounded-lg">
-                  <Zap className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl text-muted-foreground">További Integrációk</CardTitle>
-                  <CardDescription>
-                    Hamarosan elérhető további szolgáltatások
-                  </CardDescription>
-                </div>
-              </div>
-              <Badge variant="outline">Hamarosan</Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="p-4 border rounded-lg bg-muted/20">
-                <h4 className="font-medium text-muted-foreground">Accounting Software</h4>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Közvetlen integráció számlázó rendszerekkel
-                </p>
-              </div>
-              <div className="p-4 border rounded-lg bg-muted/20">
-                <h4 className="font-medium text-muted-foreground">Cloud Storage</h4>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Automatikus mentés felhő szolgáltatásokba
-                </p>
-              </div>
-              <div className="p-4 border rounded-lg bg-muted/20">
-                <h4 className="font-medium text-muted-foreground">API Access</h4>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Programmatic hozzáférés fejlesztőknek
-                </p>
-              </div>
-              <div className="p-4 border rounded-lg bg-muted/20">
-                <h4 className="font-medium text-muted-foreground">Reporting Tools</h4>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Integráció reporting és analytics eszközökkel
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
