@@ -8,6 +8,7 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 const nylasClientId = Deno.env.get('NYLAS_CLIENT_ID')!;
 const nylasApiKey = Deno.env.get('NYLAS_API_KEY')!;
 
@@ -23,16 +24,25 @@ serve(async (req) => {
       throw new Error('No authorization header');
     }
 
-    // Create Supabase client
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Create Supabase client with anon key to validate user JWT
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader
+        }
+      }
+    });
     
     // Get user from JWT
-    const jwt = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(jwt);
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
     
     if (userError || !user) {
+      console.error('User validation error:', userError);
       throw new Error('Invalid user token');
     }
+
+    // Create admin client for database operations
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const requestBody = await req.json();
     const { action, email_address } = requestBody;
@@ -65,7 +75,7 @@ serve(async (req) => {
 
     if (action === 'get_tokens') {
       // Fetch user's stored tokens
-      const { data: tokens, error } = await supabase
+      const { data: tokens, error } = await supabaseAdmin
         .from('nylas_tokens')
         .select('*')
         .eq('user_id', user.id);
@@ -90,7 +100,7 @@ serve(async (req) => {
       console.log('Disconnecting email:', email_address, 'for user:', user.id);
       
       // Delete the stored token
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('nylas_tokens')
         .delete()
         .eq('user_id', user.id)
