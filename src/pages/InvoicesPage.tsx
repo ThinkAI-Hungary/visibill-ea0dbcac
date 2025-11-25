@@ -225,11 +225,10 @@ const InvoicesPage = () => {
     switch (invoice.invoice_type) {
       case 'sima_szamla':
       case 'vegszamla':
+      case 'egyszerusitett_szamla':
         return invoice.brutto_vegosszeg || 0;
       case 'proforma':
         return invoice.fizetendo_osszeg || 0;
-      case 'egyszerusitett_szamla':
-        return invoice.afa_osszeg || 0;
       default:
         return 0;
     }
