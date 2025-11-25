@@ -118,6 +118,14 @@ const Onboarding = () => {
 
       // Handle projects (update existing, create new, delete removed)
       const validProjects = projects.filter(p => p.name.trim());
+
+      // Load existing categories BEFORE any insert/update so we don't accidentally delete newly created ones
+      const { data: existingUserProjects, error: loadCategoriesError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('user_id', user.id);
+
+      if (loadCategoriesError) throw loadCategoriesError;
       
       for (const project of validProjects) {
         if (project.id) {
@@ -146,15 +154,10 @@ const Onboarding = () => {
         }
       }
 
-      // Delete categories that were removed (categories that exist in DB but not in current list)
+      // Delete categories that were removed (categories that existed before but are not in current list)
       const currentProjectIds = validProjects.filter(p => p.id).map(p => p.id);
-      if (currentProjectIds.length > 0) {
-        const { data: allUserProjects } = await supabase
-          .from('categories')
-          .select('id')
-          .eq('user_id', user.id);
-        
-        const projectsToDelete = allUserProjects?.filter(p => !currentProjectIds.includes(p.id));
+      if (existingUserProjects && existingUserProjects.length > 0) {
+        const projectsToDelete = existingUserProjects.filter(p => !currentProjectIds.includes(p.id));
         
         if (projectsToDelete && projectsToDelete.length > 0) {
           const deleteIds = projectsToDelete.map(p => p.id);
