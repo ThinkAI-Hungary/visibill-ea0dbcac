@@ -110,6 +110,8 @@ const Onboarding = () => {
           name: profile.name,
           position: profile.position,
           company: profile.company,
+        }, {
+          onConflict: 'user_id'
         });
 
       if (profileError) throw profileError;
