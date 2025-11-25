@@ -9,7 +9,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { Plus, X } from 'lucide-react';
-import NylasEmailConnect from '@/components/NylasEmailConnect';
 
 interface Project {
   id?: string;
@@ -307,9 +306,6 @@ const Onboarding = () => {
                 </Card>
               ))}
             </div>
-
-            {/* Email Integration */}
-            <NylasEmailConnect />
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Mentés...' : 'Változtatások mentése'}
