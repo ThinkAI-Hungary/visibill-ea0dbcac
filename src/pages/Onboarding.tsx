@@ -157,10 +157,21 @@ const Onboarding = () => {
         const projectsToDelete = allUserProjects?.filter(p => !currentProjectIds.includes(p.id));
         
         if (projectsToDelete && projectsToDelete.length > 0) {
+          const deleteIds = projectsToDelete.map(p => p.id);
+          
+          // First, remove category references from invoices
+          const { error: updateInvoicesError } = await supabase
+            .from('invoices')
+            .update({ category_id: null })
+            .in('category_id', deleteIds);
+          
+          if (updateInvoicesError) throw updateInvoicesError;
+          
+          // Then delete the categories
           const { error: deleteError } = await supabase
             .from('categories')
             .delete()
-            .in('id', projectsToDelete.map(p => p.id));
+            .in('id', deleteIds);
           
           if (deleteError) throw deleteError;
         }
