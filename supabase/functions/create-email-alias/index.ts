@@ -72,7 +72,20 @@ serve(async (req) => {
     if (!routeResponse.ok) {
       const errorText = await routeResponse.text();
       console.error('Mailgun route creation failed:', errorText);
-      throw new Error(`Failed to create Mailgun route: ${routeResponse.statusText}`);
+      
+      let errorMessage = 'Failed to create Mailgun route';
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.message && errorJson.message.includes('quota')) {
+          errorMessage = 'Mailgun route limit reached. Please upgrade your Mailgun plan or delete existing routes.';
+        } else {
+          errorMessage = errorJson.message || errorMessage;
+        }
+      } catch {
+        errorMessage = errorText || routeResponse.statusText;
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const routeData = await routeResponse.json();

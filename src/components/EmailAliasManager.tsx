@@ -85,10 +85,24 @@ const EmailAliasManager = () => {
       fetchAliases();
     } catch (error: any) {
       console.error('Error creating alias:', error);
+      
+      // Extract error message from edge function response
+      let errorMessage = 'Nem sikerült létrehozni az email aliast';
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.context?.body) {
+        try {
+          const body = JSON.parse(error.context.body);
+          errorMessage = body.error || errorMessage;
+        } catch {
+          // Keep default message
+        }
+      }
+      
       toast({
         variant: 'destructive',
         title: 'Létrehozási hiba',
-        description: error.message || 'Nem sikerült létrehozni az email aliast',
+        description: errorMessage,
       });
     } finally {
       setCreating(false);
