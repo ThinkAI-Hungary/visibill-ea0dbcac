@@ -12,7 +12,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Building2, 
@@ -23,7 +22,6 @@ import {
   Shield,
   FileText,
   Mail,
-  Upload,
   Download,
   Info
 } from "lucide-react";
@@ -334,24 +332,6 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center gap-6">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={profile.avatar_url} />
-                  <AvatarFallback className="text-lg">
-                    {profile.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="space-y-2">
-                  <Button variant="outline" size="sm">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Avatar feltöltése
-                  </Button>
-                  <p className="text-sm text-muted-foreground">
-                    JPG, PNG vagy SVG. Max 2MB.
-                  </p>
-                </div>
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Teljes név</Label>
