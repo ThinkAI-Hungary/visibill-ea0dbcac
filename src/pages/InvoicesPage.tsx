@@ -62,6 +62,37 @@ const InvoicesPage = () => {
     fetchData();
   }, [user]);
 
+  const getInvoiceAmount = (invoice: any) => {
+    switch (invoice.invoice_type) {
+      case 'sima_szamla':
+      case 'sima_szla':
+      case 'vegszamla':
+      case 'egyszerusitett_szamla':
+        return invoice.brutto_vegosszeg || 0;
+      case 'proforma':
+      case 'dijbekero_proforma':
+        return invoice.fizetendo_osszeg || 0;
+      default:
+        return invoice.brutto_vegosszeg || invoice.fizetendo_osszeg || 0;
+    }
+  };
+
+  const getInvoiceIdentifier = (invoice: any) => {
+    switch (invoice.invoice_type) {
+      case 'sima_szamla':
+      case 'sima_szla':
+      case 'vegszamla':
+        return invoice.szamlaszam || 'N/A';
+      case 'proforma':
+      case 'dijbekero_proforma':
+        return invoice.dokumentum_azonosito || 'N/A';
+      case 'egyszerusitett_szamla':
+        return 'Egyszerűsített';
+      default:
+        return invoice.szamlaszam || invoice.dokumentum_azonosito || 'N/A';
+    }
+  };
+
   const fetchData = async () => {
     if (!user) return;
     
@@ -220,37 +251,6 @@ const InvoicesPage = () => {
       currency: 'all'
     });
     setActiveTab('all');
-  };
-
-  const getInvoiceAmount = (invoice: any) => {
-    switch (invoice.invoice_type) {
-      case 'sima_szamla':
-      case 'sima_szla':
-      case 'vegszamla':
-      case 'egyszerusitett_szamla':
-        return invoice.brutto_vegosszeg || 0;
-      case 'proforma':
-      case 'dijbekero_proforma':
-        return invoice.fizetendo_osszeg || 0;
-      default:
-        return invoice.brutto_vegosszeg || invoice.fizetendo_osszeg || 0;
-    }
-  };
-
-  const getInvoiceIdentifier = (invoice: any) => {
-    switch (invoice.invoice_type) {
-      case 'sima_szamla':
-      case 'sima_szla':
-      case 'vegszamla':
-        return invoice.szamlaszam || 'N/A';
-      case 'proforma':
-      case 'dijbekero_proforma':
-        return invoice.dokumentum_azonosito || 'N/A';
-      case 'egyszerusitett_szamla':
-        return 'Egyszerűsített';
-      default:
-        return invoice.szamlaszam || invoice.dokumentum_azonosito || 'N/A';
-    }
   };
 
   const handleViewInvoice = (invoice: Invoice) => {
