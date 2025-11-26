@@ -100,6 +100,22 @@ const Index = () => {
     return amount * rate;
   };
 
+  const convertToSelectedCurrency = (amount: number, fromCurrency: string): number => {
+    if (fromCurrency === selectedCurrency) return amount;
+    
+    // First convert to HUF (base currency)
+    let amountInHUF = amount;
+    if (fromCurrency !== 'HUF') {
+      const rateFromHUF = exchangeRates[fromCurrency] || 1;
+      amountInHUF = amount / rateFromHUF;
+    }
+    
+    // Then convert from HUF to selected currency
+    if (selectedCurrency === 'HUF') return amountInHUF;
+    const rateToSelected = exchangeRates[selectedCurrency] || 1;
+    return amountInHUF * rateToSelected;
+  };
+
   const fetchDashboardData = async () => {
     if (!user) return;
     
@@ -275,7 +291,14 @@ const Index = () => {
 
         {/* Metrics Cards */}
         {metrics && (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <>
+            {(() => {
+              const totalInSelectedCurrency = Object.entries(metrics.totalAmountByCurrency).reduce((total, [currency, amount]) => {
+                return total + convertToSelectedCurrency(amount, currency);
+              }, 0);
+
+              return (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <MetricCard
               title="Összes számla"
               value={metrics.totalInvoices}
@@ -306,13 +329,16 @@ const Index = () => {
               variant="warning"
             />
             <MetricCard
-              title="Átlagos számla"
-              value={formatCurrency(convertAmount(metrics.averageInvoiceAmount), selectedCurrency)}
-              description="Számla átlagérték"
+              title="Összesített érték"
+              value={formatCurrency(totalInSelectedCurrency, selectedCurrency)}
+              description="Minden számla átváltva"
               icon={TrendingUp}
               variant="default"
             />
-          </div>
+                </div>
+              );
+            })()}
+          </>
         )}
 
         {/* Main Dashboard Grid */}
