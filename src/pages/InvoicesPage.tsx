@@ -12,7 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CalendarIcon, Search, Filter, Download, Eye, ArrowUpDown, FileText, ArrowLeft, X, ChevronDown, Info } from 'lucide-react';
+import { CalendarIcon, Search, Filter, Download, Eye, ArrowUpDown, FileText, ArrowLeft, X, ChevronDown, Info, Pencil } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -21,8 +21,14 @@ import { Invoice, InvoiceType, getInvoiceTypeLabel, getInvoiceTypeColor } from '
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
+import InvoiceEditDialog from '@/components/InvoiceEditDialog';
 
 interface Category {
+  id: string;
+  name: string;
+}
+
+interface Project {
   id: string;
   name: string;
 }
@@ -43,6 +49,7 @@ const InvoicesPage = () => {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<keyof Invoice>('kibocsatas_datuma');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -61,6 +68,8 @@ const InvoicesPage = () => {
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -112,13 +121,6 @@ const InvoicesPage = () => {
 
       if (invoicesError) throw invoicesError;
 
-      const formattedInvoices = (invoicesData || []).map(invoice => ({
-        ...invoice,
-        category_name: invoice.categories?.name || 'Nincs kategória'
-      })) as any[];
-      
-      setInvoices(formattedInvoices);
-
       // Fetch categories for filter dropdown
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
@@ -127,6 +129,25 @@ const InvoicesPage = () => {
 
       if (categoriesError) throw categoriesError;
       setCategories(categoriesData || []);
+
+      // Fetch projects for filter and edit dropdown
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select('id, name')
+        .eq('user_id', user.id);
+
+      if (projectsError) throw projectsError;
+      setProjects(projectsData || []);
+
+      // Map project names to invoices
+      const projectMap = new Map(projectsData?.map(p => [p.id, p.name]) || []);
+      const formattedInvoices = (invoicesData || []).map(invoice => ({
+        ...invoice,
+        category_name: invoice.categories?.name || 'Nincs kategória',
+        project_name: invoice.project_id ? projectMap.get(invoice.project_id) || 'Nincs projekt' : 'Nincs projekt'
+      })) as any[];
+      
+      setInvoices(formattedInvoices);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -260,6 +281,11 @@ const InvoicesPage = () => {
   const handleViewInvoice = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setIsDialogOpen(true);
+  };
+
+  const handleEditInvoice = (invoice: Invoice) => {
+    setEditingInvoice(invoice);
+    setIsEditDialogOpen(true);
   };
 
   const handleExport = (format: 'csv' | 'xlsx') => {
@@ -591,19 +617,20 @@ const InvoicesPage = () => {
                             <ArrowUpDown className="h-4 w-4" />
                           </div>
                         </TableHead>
-                        <TableHead className="text-right">Összeg</TableHead>
-                        <TableHead>Fizetve?</TableHead>
-                        <TableHead>Kategória</TableHead>
-                        <TableHead className="text-right">Számlakép</TableHead>
+                         <TableHead className="text-right">Összeg</TableHead>
+                         <TableHead>Fizetve?</TableHead>
+                         <TableHead>Kategória</TableHead>
+                         <TableHead>Projekt</TableHead>
+                         <TableHead className="text-right">Műveletek</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredAndSortedInvoices.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                            Nincs megjeleníthető számla a megadott szűrők alapján.
-                          </TableCell>
-                        </TableRow>
+                       {filteredAndSortedInvoices.length === 0 ? (
+                         <TableRow>
+                           <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                             Nincs megjeleníthető számla a megadott szűrők alapján.
+                           </TableCell>
+                         </TableRow>
                       ) : (
                         filteredAndSortedInvoices.map((invoice) => (
                           <TableRow key={invoice.id}>
@@ -628,18 +655,30 @@ const InvoicesPage = () => {
                                 {invoice.fizetve ? 'Igen' : 'Nem'}
                               </Badge>
                             </TableCell>
-                            <TableCell>
-                              {invoice.category_name || 'Nincs kategória'}
-                            </TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleViewInvoice(invoice)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+                             <TableCell>
+                               {invoice.category_name || 'Nincs kategória'}
+                             </TableCell>
+                             <TableCell>
+                               {invoice.project_name || 'Nincs projekt'}
+                             </TableCell>
+                             <TableCell className="text-right">
+                               <div className="flex gap-1 justify-end">
+                                 <Button 
+                                   variant="ghost" 
+                                   size="sm"
+                                   onClick={() => handleEditInvoice(invoice)}
+                                 >
+                                   <Pencil className="h-4 w-4" />
+                                 </Button>
+                                 <Button 
+                                   variant="ghost" 
+                                   size="sm"
+                                   onClick={() => handleViewInvoice(invoice)}
+                                 >
+                                   <Eye className="h-4 w-4" />
+                                 </Button>
+                               </div>
+                             </TableCell>
                           </TableRow>
                         ))
                       )}
@@ -659,6 +698,18 @@ const InvoicesPage = () => {
           setIsDialogOpen(false);
           setSelectedInvoice(null);
         }}
+      />
+
+      <InvoiceEditDialog
+        invoice={editingInvoice}
+        categories={categories}
+        projects={projects}
+        open={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false);
+          setEditingInvoice(null);
+        }}
+        onSave={fetchData}
       />
     </div>
   );
