@@ -106,10 +106,10 @@ const InvoicesPage = () => {
       // Text search
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
+        const inv = invoice as any;
         const matchesSearch = 
-          (invoice.invoice_type === 'sima_szamla' && invoice.szamlaszam?.toLowerCase().includes(searchLower)) ||
-          (invoice.invoice_type === 'vegszamla' && invoice.szamlaszam?.toLowerCase().includes(searchLower)) ||
-          (invoice.invoice_type === 'proforma' && invoice.dokumentum_azonosito?.toLowerCase().includes(searchLower)) ||
+          (['sima_szamla', 'sima_szla', 'vegszamla'].includes(invoice.invoice_type) && inv.szamlaszam?.toLowerCase().includes(searchLower)) ||
+          (['proforma', 'dijbekero_proforma'].includes(invoice.invoice_type) && inv.dokumentum_azonosito?.toLowerCase().includes(searchLower)) ||
           invoice.elado_nev?.toLowerCase().includes(searchLower) ||
           invoice.vevo_nev?.toLowerCase().includes(searchLower);
         
@@ -139,14 +139,7 @@ const InvoicesPage = () => {
       }
 
       // Amount range filter
-      let invoiceAmount = 0;
-      if (invoice.invoice_type === 'sima_szamla' || invoice.invoice_type === 'vegszamla') {
-        invoiceAmount = invoice.brutto_vegosszeg;
-      } else if (invoice.invoice_type === 'proforma') {
-        invoiceAmount = invoice.fizetendo_osszeg || 0;
-      } else if (invoice.invoice_type === 'egyszerusitett_szamla') {
-        invoiceAmount = invoice.afa_osszeg || 0;
-      }
+      const invoiceAmount = getInvoiceAmount(invoice);
 
       if (filters.amountMin && invoiceAmount < parseFloat(filters.amountMin)) {
         return false;
@@ -224,27 +217,31 @@ const InvoicesPage = () => {
   const getInvoiceAmount = (invoice: any) => {
     switch (invoice.invoice_type) {
       case 'sima_szamla':
+      case 'sima_szla':
       case 'vegszamla':
       case 'egyszerusitett_szamla':
         return invoice.brutto_vegosszeg || 0;
       case 'proforma':
+      case 'dijbekero_proforma':
         return invoice.fizetendo_osszeg || 0;
       default:
-        return 0;
+        return invoice.brutto_vegosszeg || invoice.fizetendo_osszeg || 0;
     }
   };
 
   const getInvoiceIdentifier = (invoice: any) => {
     switch (invoice.invoice_type) {
       case 'sima_szamla':
+      case 'sima_szla':
       case 'vegszamla':
         return invoice.szamlaszam || 'N/A';
       case 'proforma':
+      case 'dijbekero_proforma':
         return invoice.dokumentum_azonosito || 'N/A';
       case 'egyszerusitett_szamla':
         return 'Egyszerűsített';
       default:
-        return 'N/A';
+        return invoice.szamlaszam || invoice.dokumentum_azonosito || 'N/A';
     }
   };
 
