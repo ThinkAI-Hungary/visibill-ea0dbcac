@@ -34,6 +34,7 @@ interface Filters {
   dateTo: Date | undefined;
   amountMin: string;
   amountMax: string;
+  currency: string;
 }
 
 const InvoicesPage = () => {
@@ -53,7 +54,8 @@ const InvoicesPage = () => {
     dateFrom: undefined,
     dateTo: undefined,
     amountMin: '',
-    amountMax: ''
+    amountMax: '',
+    currency: 'all'
   });
 
   useEffect(() => {
@@ -148,6 +150,11 @@ const InvoicesPage = () => {
         return false;
       }
 
+      // Currency filter
+      if (filters.currency && filters.currency !== 'all' && invoice.penznem !== filters.currency) {
+        return false;
+      }
+
       return matchesTab;
     });
 
@@ -209,7 +216,8 @@ const InvoicesPage = () => {
       dateFrom: undefined,
       dateTo: undefined,
       amountMin: '',
-      amountMax: ''
+      amountMax: '',
+      currency: 'all'
     });
     setActiveTab('all');
   };
@@ -267,6 +275,7 @@ const InvoicesPage = () => {
         invoice.elado_nev,
         invoice.vevo_nev,
         getInvoiceAmount(invoice).toString(),
+        invoice.penznem || 'HUF',
         invoice.category_name || 'Nincs kategória'
       ];
 
@@ -280,6 +289,7 @@ const InvoicesPage = () => {
       'Eladó',
       'Vevő',
       'Összeg',
+      'Pénznem',
       'Kategória'
     ];
 
@@ -451,6 +461,26 @@ const InvoicesPage = () => {
                   </div>
 
                   <div className="space-y-2">
+                    <label className="text-sm font-medium">Pénznem</label>
+                    <Select
+                      value={filters.currency}
+                      onValueChange={(value) => setFilters(prev => ({ ...prev, currency: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Minden pénznem" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Minden pénznem</SelectItem>
+                        {Array.from(new Set(invoices.map(inv => inv.penznem).filter(Boolean))).sort().map((currency) => (
+                          <SelectItem key={currency} value={currency}>
+                            {currency}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
                     <label className="text-sm font-medium">Összeg tartomány</label>
                     <div className="flex gap-2">
                       <Input
@@ -595,10 +625,7 @@ const InvoicesPage = () => {
                             <TableCell>{invoice.elado_nev}</TableCell>
                             <TableCell>{invoice.vevo_nev}</TableCell>
                             <TableCell className="text-right font-medium">
-                              {new Intl.NumberFormat('hu-HU', { 
-                                style: 'currency', 
-                                currency: 'HUF' 
-                              }).format(getInvoiceAmount(invoice))}
+                              {formatCurrency(getInvoiceAmount(invoice), invoice.penznem || 'HUF')}
                             </TableCell>
                             <TableCell>
                               <Badge variant={invoice.fizetve ? 'success' : 'secondary'}>
