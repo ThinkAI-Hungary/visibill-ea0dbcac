@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { Invoice, InvoiceType, getInvoiceTypeLabel, getInvoiceTypeColor } from '@/types/invoices';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 
 interface Category {
   id: string;
@@ -57,6 +58,9 @@ const InvoicesPage = () => {
     amountMax: '',
     currency: 'all'
   });
+
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -254,16 +258,8 @@ const InvoicesPage = () => {
   };
 
   const handleViewInvoice = (invoice: Invoice) => {
-    const mellekletUrl = 'melleklet_url' in invoice ? invoice.melleklet_url : undefined;
-    
-    console.log('View invoice clicked:', { invoice, mellekletUrl });
-    
-    if (mellekletUrl) {
-      window.open(mellekletUrl, '_blank');
-      toast.success("Számla megnyitva");
-    } else {
-      toast.info("Nincs elérhető melléklet ehhez a számlához");
-    }
+    setSelectedInvoice(invoice);
+    setIsDialogOpen(true);
   };
 
   const handleExport = (format: 'csv' | 'xlsx') => {
@@ -598,7 +594,7 @@ const InvoicesPage = () => {
                         <TableHead className="text-right">Összeg</TableHead>
                         <TableHead>Fizetve?</TableHead>
                         <TableHead>Kategória</TableHead>
-                        <TableHead className="text-right">Műveletek</TableHead>
+                        <TableHead className="text-right">Számlakép</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -655,6 +651,15 @@ const InvoicesPage = () => {
           </CardContent>
         </Card>
       </main>
+
+      <InvoiceImageDialog 
+        invoice={selectedInvoice}
+        open={isDialogOpen}
+        onClose={() => {
+          setIsDialogOpen(false);
+          setSelectedInvoice(null);
+        }}
+      />
     </div>
   );
 };
