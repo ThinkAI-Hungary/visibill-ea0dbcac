@@ -174,6 +174,8 @@ export default function Settings() {
         company: profile.company,
         position: profile.position,
         avatar_url: profile.avatar_url
+      }, {
+        onConflict: 'user_id'
       });
 
     if (error) {
@@ -273,18 +275,6 @@ export default function Settings() {
     }
   };
 
-  // Test function to verify settings functionality
-  const testSettings = async () => {
-    console.log('Current settings state:', {
-      profile,
-      businessSettings,
-      notificationSettings,
-      systemSettings
-    });
-    
-    // Test saving a simple setting
-    await updateSettings('system', { test_setting: 'test_value' });
-  };
 
   return (
     <div className="container mx-auto py-8 px-6">
@@ -396,14 +386,6 @@ export default function Settings() {
               <Button onClick={updateProfile} disabled={loading}>
                 Profil mentése
               </Button>
-              
-              {/* Debug: Test settings functionality */}
-              <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-                <p className="text-sm text-muted-foreground mb-2">Tesztelés:</p>
-                <Button variant="outline" size="sm" onClick={testSettings}>
-                  Beállítások tesztelése
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
