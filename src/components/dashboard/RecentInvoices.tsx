@@ -12,6 +12,7 @@ interface Invoice {
   brutto_vegosszeg: number;
   kibocsatas_datuma: string;
   statusz: string;
+  penznem?: string;
   project_name?: string;
   image_url?: string;
 }
@@ -87,7 +88,7 @@ const RecentInvoices = ({ invoices, onViewInvoice }: RecentInvoicesProps) => {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <p className="font-medium">{formatCurrency(invoice.brutto_vegosszeg)}</p>
+                    <p className="font-medium">{formatCurrency(invoice.brutto_vegosszeg, invoice.penznem || 'HUF')}</p>
                   </div>
                   {onViewInvoice && (
                     <Button 

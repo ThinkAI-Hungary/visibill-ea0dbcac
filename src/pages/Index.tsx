@@ -39,14 +39,15 @@ interface Invoice {
   brutto_vegosszeg: number;
   kibocsatas_datuma: string;
   statusz: string;
+  penznem?: string;
   category_id?: string;
   image_url?: string;
 }
 
 interface DashboardMetrics {
   totalInvoices: number;
-  totalAmount: number;
-  thisMonthAmount: number;
+  totalAmountByCurrency: { [currency: string]: number };
+  thisMonthAmountByCurrency: { [currency: string]: number };
   averageInvoiceAmount: number;
   processingCount: number;
   completedCount: number;
@@ -145,7 +146,7 @@ const Index = () => {
       // Calculate metrics
       const { data: allInvoicesData, error: metricsError } = await supabase
         .from('invoices')
-        .select('brutto_vegosszeg, kibocsatas_datuma, statusz')
+        .select('brutto_vegosszeg, kibocsatas_datuma, statusz, penznem')
         .eq('user_id', user.id);
 
       if (metricsError) throw metricsError;
@@ -159,16 +160,32 @@ const Index = () => {
         return invoiceDate.getMonth() === currentMonth && invoiceDate.getFullYear() === currentYear;
       });
 
-      const totalAmount = (allInvoicesData || []).reduce((sum, invoice) => sum + invoice.brutto_vegosszeg, 0);
-      const thisMonthAmount = thisMonthInvoices.reduce((sum, invoice) => sum + invoice.brutto_vegosszeg, 0);
+      // Group amounts by currency
+      const totalAmountByCurrency: { [key: string]: number } = {};
+      const thisMonthAmountByCurrency: { [key: string]: number } = {};
+      
+      (allInvoicesData || []).forEach(invoice => {
+        const currency = invoice.penznem || 'HUF';
+        totalAmountByCurrency[currency] = (totalAmountByCurrency[currency] || 0) + invoice.brutto_vegosszeg;
+      });
+
+      thisMonthInvoices.forEach(invoice => {
+        const currency = invoice.penznem || 'HUF';
+        thisMonthAmountByCurrency[currency] = (thisMonthAmountByCurrency[currency] || 0) + invoice.brutto_vegosszeg;
+      });
+
       const processingCount = (allInvoicesData || []).filter(invoice => invoice.statusz === 'feldolgozas_alatt').length;
       const completedCount = (allInvoicesData || []).filter(invoice => invoice.statusz === 'feldolgozva').length;
 
+      // Calculate average based on primary currency (HUF)
+      const totalHUF = totalAmountByCurrency['HUF'] || 0;
+      const countHUF = (allInvoicesData || []).filter(inv => (inv.penznem || 'HUF') === 'HUF').length;
+
       setMetrics({
         totalInvoices: (allInvoicesData || []).length,
-        totalAmount,
-        thisMonthAmount,
-        averageInvoiceAmount: (allInvoicesData || []).length > 0 ? totalAmount / (allInvoicesData || []).length : 0,
+        totalAmountByCurrency,
+        thisMonthAmountByCurrency,
+        averageInvoiceAmount: countHUF > 0 ? totalHUF / countHUF : 0,
         processingCount,
         completedCount
       });
@@ -187,6 +204,8 @@ const Index = () => {
       const categoryInvoices = invoices.filter(invoice => invoice.category_id === category.id);
       const totalAmount = categoryInvoices.reduce((sum, invoice) => sum + invoice.brutto_vegosszeg, 0);
       
+      const allTotal = metrics ? Object.values(metrics.totalAmountByCurrency).reduce((sum, val) => sum + val, 0) : 0;
+      
       return {
         id: category.id,
         name: category.name,
@@ -194,7 +213,7 @@ const Index = () => {
         invoice_count: categoryInvoices.length,
         total_amount: totalAmount,
         avg_amount: categoryInvoices.length > 0 ? totalAmount / categoryInvoices.length : 0,
-        percentage: metrics ? (totalAmount / metrics.totalAmount) * 100 : 0
+        percentage: allTotal > 0 ? (totalAmount / allTotal) * 100 : 0
       };
     }).filter(category => category.invoice_count > 0)
       .sort((a, b) => b.total_amount - a.total_amount);
@@ -266,14 +285,22 @@ const Index = () => {
             />
             <MetricCard
               title="Teljes összeg"
-              value={formatCurrency(convertAmount(metrics.totalAmount), selectedCurrency)}
+              value={
+                Object.entries(metrics.totalAmountByCurrency)
+                  .map(([currency, amount]) => formatCurrency(amount, currency))
+                  .join(' | ')
+              }
               description="Minden számla összege"
               icon={Euro}
               variant="success"
             />
             <MetricCard
               title="Ez a hónap"
-              value={formatCurrency(convertAmount(metrics.thisMonthAmount), selectedCurrency)}
+              value={
+                Object.entries(metrics.thisMonthAmountByCurrency)
+                  .map(([currency, amount]) => formatCurrency(amount, currency))
+                  .join(' | ')
+              }
               description="Jelenlegi havi bevétel"
               icon={Calendar}
               variant="warning"
@@ -318,7 +345,7 @@ const Index = () => {
             {/* Category Breakdown */}
             <ProjectBreakdown 
               projects={getCategoryBreakdownData()}
-              totalAmount={metrics?.totalAmount || 0}
+              totalAmount={Object.values(metrics?.totalAmountByCurrency || {}).reduce((sum, val) => sum + val, 0)}
             />
           </div>
         </div>
