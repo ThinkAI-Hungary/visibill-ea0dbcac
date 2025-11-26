@@ -13,6 +13,7 @@ export interface BaseInvoice {
   category_id?: string;
   category_name?: string;
   project_id?: string;
+  project_name?: string;
   fizetve?: boolean;
   penznem?: string;
 }
