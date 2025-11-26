@@ -4,16 +4,18 @@ import { ExternalLink, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface Invoice {
+interface InvoiceForDialog {
   id: string;
-  szamlaszam: string;
   elado_nev: string;
   vevo_nev: string;
-  image_url?: string;
+  szamlaszam?: string;
+  dokumentum_azonosito?: string;
+  invoice_type?: string;
+  melleklet_url?: string;
 }
 
 interface InvoiceImageDialogProps {
-  invoice: Invoice | null;
+  invoice: InvoiceForDialog | null;
   open: boolean;
   onClose: () => void;
 }
@@ -22,6 +24,13 @@ const InvoiceImageDialog = ({ invoice, open, onClose }: InvoiceImageDialogProps)
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
+
+  const getInvoiceIdentifier = (invoice: InvoiceForDialog) => {
+    if (invoice.szamlaszam) return invoice.szamlaszam;
+    if (invoice.dokumentum_azonosito) return invoice.dokumentum_azonosito;
+    if (invoice.invoice_type === 'egyszerusitett_szamla') return 'Egyszerűsített számla';
+    return 'N/A';
+  };
 
   useEffect(() => {
     const fetchSignedUrl = async () => {
@@ -75,7 +84,7 @@ const InvoiceImageDialog = ({ invoice, open, onClose }: InvoiceImageDialogProps)
 
   if (!invoice) return null;
 
-  const displayUrl = signedUrl || invoice.image_url;
+  const displayUrl = signedUrl || invoice.melleklet_url;
   const isPDF = displayUrl?.toLowerCase().endsWith('.pdf');
   
   console.log('InvoiceImageDialog - Invoice:', invoice);
@@ -86,7 +95,7 @@ const InvoiceImageDialog = ({ invoice, open, onClose }: InvoiceImageDialogProps)
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Számla: {invoice.szamlaszam}</DialogTitle>
+          <DialogTitle>Számla: {getInvoiceIdentifier(invoice)}</DialogTitle>
           <DialogDescription>
             {invoice.elado_nev} → {invoice.vevo_nev}
           </DialogDescription>
@@ -130,7 +139,7 @@ const InvoiceImageDialog = ({ invoice, open, onClose }: InvoiceImageDialogProps)
                       <iframe
                         src={displayUrl}
                         className="w-full h-[60vh] border rounded"
-                        title={`Számla: ${invoice.szamlaszam}`}
+                        title={`Számla: ${getInvoiceIdentifier(invoice)}`}
                         onLoad={() => setIsLoading(false)}
                         onError={() => {
                           console.error('PDF iframe error:', displayUrl);
@@ -153,7 +162,7 @@ const InvoiceImageDialog = ({ invoice, open, onClose }: InvoiceImageDialogProps)
                       </div>
                       <img
                         src={displayUrl}
-                        alt={`Számla: ${invoice.szamlaszam}`}
+                        alt={`Számla: ${getInvoiceIdentifier(invoice)}`}
                         className="w-full h-auto rounded"
                         onLoad={() => setIsLoading(false)}
                         onError={(e) => {
