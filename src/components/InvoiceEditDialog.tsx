@@ -37,8 +37,8 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
 
   useEffect(() => {
     if (invoice && open) {
-      setSelectedCategoryId(invoice.category_id || '');
-      setSelectedProjectId(invoice.project_id || '');
+      setSelectedCategoryId(invoice.category_id || 'none');
+      setSelectedProjectId(invoice.project_id || 'none');
       setIsPaid(invoice.fizetve || false);
     }
   }, [invoice, open]);
@@ -51,8 +51,8 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
       const { error } = await supabase
         .from('invoices')
         .update({
-          category_id: selectedCategoryId || null,
-          project_id: selectedProjectId || null,
+          category_id: selectedCategoryId === 'none' ? null : selectedCategoryId || null,
+          project_id: selectedProjectId === 'none' ? null : selectedProjectId || null,
           fizetve: isPaid,
         })
         .eq('id', invoice.id)
@@ -92,7 +92,7 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
                 <SelectValue placeholder="Válassz kategóriát" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nincs kategória</SelectItem>
+                <SelectItem value="none">Nincs kategória</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -112,7 +112,7 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
                 <SelectValue placeholder="Válassz projektet" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nincs projekt</SelectItem>
+                <SelectItem value="none">Nincs projekt</SelectItem>
                 {projects.map((project) => (
                   <SelectItem key={project.id} value={project.id}>
                     {project.name}
