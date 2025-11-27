@@ -2,7 +2,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { ExternalLink, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface InvoiceForDialog {
   id: string;
@@ -11,6 +10,7 @@ interface InvoiceForDialog {
   szamlaszam?: string;
   dokumentum_azonosito?: string;
   invoice_type?: string;
+  image_url?: string;
   melleklet_url?: string;
 }
 
@@ -23,7 +23,6 @@ interface InvoiceImageDialogProps {
 const InvoiceImageDialog = ({ invoice, open, onClose }: InvoiceImageDialogProps) => {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
 
   const getInvoiceIdentifier = (invoice: InvoiceForDialog) => {
     if (invoice.szamlaszam) return invoice.szamlaszam;
@@ -33,63 +32,16 @@ const InvoiceImageDialog = ({ invoice, open, onClose }: InvoiceImageDialogProps)
   };
 
   useEffect(() => {
-    const fetchSignedUrl = async () => {
-      if (!invoice?.id || !open) {
-        setSignedUrl(null);
-        return;
-      }
-
+    if (open && invoice) {
       setIsLoading(true);
       setImageError(false);
-
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          console.error('No active session');
-          setImageError(true);
-          setIsLoading(false);
-          return;
-        }
-
-        const response = await supabase.functions.invoke('get-invoice-image-url', {
-          body: { invoiceId: invoice.id },
-        });
-
-        if (response.error) {
-          console.error('Error fetching signed URL:', response.error);
-          setImageError(true);
-          setIsLoading(false);
-          return;
-        }
-
-        if (response.data?.signedUrl) {
-          console.log('Got signed URL successfully');
-          setSignedUrl(response.data.signedUrl);
-          setIsLoading(false);
-        } else {
-          console.error('No signed URL in response');
-          setImageError(true);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('Error in fetchSignedUrl:', error);
-        setImageError(true);
-        setIsLoading(false);
-      }
-    };
-
-    fetchSignedUrl();
+    }
   }, [invoice?.id, open]);
 
   if (!invoice) return null;
 
-  const displayUrl = signedUrl || invoice.melleklet_url;
+  const displayUrl = invoice.image_url || invoice.melleklet_url;
   const isPDF = displayUrl?.toLowerCase().endsWith('.pdf');
-  
-  console.log('InvoiceImageDialog - Invoice:', invoice);
-  console.log('InvoiceImageDialog - Display URL:', displayUrl);
-  console.log('InvoiceImageDialog - Is PDF:', isPDF);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
