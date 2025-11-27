@@ -441,43 +441,43 @@ const Index = () => {
 
         {/* Quick Actions */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card className="p-6 text-center hover:bg-muted/50 transition-colors">
+          <Card className="p-6 text-center hover:bg-muted/50 transition-colors flex flex-col">
             <BarChart3 className="h-8 w-8 mx-auto mb-3 text-primary" />
             <h3 className="font-semibold mb-2">Számlák áttekintése</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-4 flex-1">
               Részletes számla lista szűrési lehetőségekkel
             </p>
             <Button 
               variant="default" 
-              className="w-full"
+              className="w-full mt-auto"
               onClick={() => navigate('/invoices')}
             >
               Számlák megtekintése
             </Button>
           </Card>
-          <Card className="p-6 text-center hover:bg-muted/50 transition-colors">
+          <Card className="p-6 text-center hover:bg-muted/50 transition-colors flex flex-col">
             <Upload className="h-8 w-8 mx-auto mb-3 text-accent" />
             <h3 className="font-semibold mb-2">Számlák feltöltése</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-4 flex-1">
               Új számlák kézi feltöltése
             </p>
             <Button 
               variant="default" 
-              className="w-full"
+              className="w-full mt-auto"
               onClick={() => navigate('/upload')}
             >
               Fájlok feltöltése
             </Button>
           </Card>
-          <Card className="p-6 text-center hover:bg-muted/50 transition-colors">
+          <Card className="p-6 text-center hover:bg-muted/50 transition-colors flex flex-col">
             <PieChart className="h-8 w-8 mx-auto mb-3 text-warning" />
             <h3 className="font-semibold mb-2">Projekt Kezelés</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-4 flex-1">
               Projektek szerkesztése és rendszerezése
             </p>
             <Button 
               variant="outline" 
-              className="w-full"
+              className="w-full mt-auto"
               onClick={() => navigate('/projects')}
             >
               Projektek kezelése
