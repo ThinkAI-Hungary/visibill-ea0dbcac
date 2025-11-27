@@ -330,9 +330,11 @@ const Index = () => {
             <MetricCard
               title="Teljes összeg"
               value={
-                Object.entries(metrics.totalAmountByCurrency)
-                  .map(([currency, amount]) => formatCurrency(amount, currency))
-                  .join(' | ')
+                Object.keys(metrics.totalAmountByCurrency).length > 0
+                  ? Object.entries(metrics.totalAmountByCurrency)
+                      .map(([currency, amount]) => formatCurrency(amount, currency))
+                      .join(' | ')
+                  : '0 Ft'
               }
               description="Minden számla összege"
               icon={Euro}
@@ -341,9 +343,11 @@ const Index = () => {
             <MetricCard
               title="Ez a hónap"
               value={
-                Object.entries(metrics.thisMonthAmountByCurrency)
-                  .map(([currency, amount]) => formatCurrency(amount, currency))
-                  .join(' | ')
+                Object.keys(metrics.thisMonthAmountByCurrency).length > 0
+                  ? Object.entries(metrics.thisMonthAmountByCurrency)
+                      .map(([currency, amount]) => formatCurrency(amount, currency))
+                      .join(' | ')
+                  : '0 Ft'
               }
               description="Jelenlegi havi bevétel"
               icon={Calendar}
