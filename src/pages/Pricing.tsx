@@ -220,7 +220,7 @@ const Pricing: React.FC = () => {
           const isFree = planKey === 'salmon';
           
           return (
-            <Card key={planKey} className={`relative ${isCurrentPlan ? 'ring-2 ring-primary' : ''}`}>
+            <Card key={planKey} className={`relative flex flex-col ${isCurrentPlan ? 'ring-2 ring-primary' : ''}`}>
               {isCurrentPlan && (
                 <Badge className="absolute -top-2 left-1/2 -translate-x-1/2">
                   Jelenlegi csomag
@@ -235,7 +235,7 @@ const Pricing: React.FC = () => {
                 <CardDescription>{plan.description}</CardDescription>
               </CardHeader>
 
-              <CardContent className="space-y-4">
+              <CardContent className="flex flex-col flex-1 space-y-4">
                 {isFree ? (
                   <div className="text-center">
                     <div className="text-3xl font-bold">Ingyenes</div>
@@ -283,7 +283,7 @@ const Pricing: React.FC = () => {
                   </div>
                 )}
 
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   {plan.features.map((feature, index) => (
                     <div key={index} className="flex items-center space-x-2">
                       <Check className="h-4 w-4 text-green-500" />
@@ -292,7 +292,7 @@ const Pricing: React.FC = () => {
                   ))}
                 </div>
 
-                <div className="pt-4">
+                <div className="mt-auto pt-4">
                   {isFree ? (
                     <Button 
                       className="w-full" 
