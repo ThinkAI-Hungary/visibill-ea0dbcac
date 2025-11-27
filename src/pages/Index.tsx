@@ -24,6 +24,14 @@ interface Profile {
   avatar_url: string;
 }
 
+// Helper function to extract first name from full name
+// Hungarian names follow "Családnév Keresztnév" format
+const getFirstName = (fullName: string | undefined): string => {
+  if (!fullName) return '';
+  const nameParts = fullName.trim().split(' ');
+  return nameParts[nameParts.length - 1]; // Get the last word (first name)
+};
+
 interface Category {
   id: string;
   name: string;
@@ -259,7 +267,7 @@ const Index = () => {
         {/* Welcome Section */}
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <h2 className="text-3xl font-bold">Szép napot! {profile?.name}</h2>
+            <h2 className="text-3xl font-bold">Szép napot! {getFirstName(profile?.name)}</h2>
             <p className="text-muted-foreground">
               Itt van a vállalkozásod teljes áttekintése
             </p>
