@@ -259,7 +259,7 @@ const Index = () => {
         {/* Welcome Section */}
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <h2 className="text-3xl font-bold">Üdvözlünk új, {profile?.name}!</h2>
+            <h2 className="text-3xl font-bold">Szép napot! {profile?.name}</h2>
             <p className="text-muted-foreground">
               Itt van a vállalkozásod teljes áttekintése
             </p>
