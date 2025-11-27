@@ -32,6 +32,19 @@ const getFirstName = (fullName: string | undefined): string => {
   return nameParts[nameParts.length - 1]; // Get the last word (first name)
 };
 
+// Helper function to get greeting based on time of day
+const getGreeting = (): string => {
+  const hour = new Date().getHours();
+  
+  if (hour >= 5 && hour < 12) {
+    return 'Jó reggelt';
+  } else if (hour >= 12 && hour < 18) {
+    return 'Szép napot';
+  } else {
+    return 'Jó estét';
+  }
+};
+
 interface Category {
   id: string;
   name: string;
@@ -267,7 +280,7 @@ const Index = () => {
         {/* Welcome Section */}
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <h2 className="text-3xl font-bold">Szép napot! {getFirstName(profile?.name)}</h2>
+            <h2 className="text-3xl font-bold">{getGreeting()} {getFirstName(profile?.name)}!</h2>
             <p className="text-muted-foreground">
               Itt van a vállalkozásod teljes áttekintése
             </p>
