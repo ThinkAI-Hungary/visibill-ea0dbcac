@@ -568,18 +568,16 @@ const InvoicesPage = () => {
                           />
                         </PopoverContent>
                       </Popover>
-                    </div>
-                  </div>
 
-                  <div className="flex items-end gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={clearFilters}
-                      className="flex items-center gap-2"
-                    >
-                      <X className="h-4 w-4" />
-                      Szűrők törlése
-                    </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={clearFilters}
+                        className="flex items-center gap-2"
+                      >
+                        <X className="h-4 w-4" />
+                        Szűrők törlése
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
