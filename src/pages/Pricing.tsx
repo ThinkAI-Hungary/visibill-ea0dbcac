@@ -204,11 +204,12 @@ const Pricing: React.FC = () => {
           <span className={billingPeriod === 'yearly' ? 'font-semibold' : 'text-muted-foreground'}>
             Éves
           </span>
-          {billingPeriod === 'yearly' && (
-            <Badge variant="secondary" className="ml-2">
-              2 hónap ingyen!
-            </Badge>
-          )}
+          <Badge 
+            variant="secondary" 
+            className={`ml-2 transition-opacity ${billingPeriod === 'yearly' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          >
+            2 hónap ingyen!
+          </Badge>
         </div>
       </div>
 
