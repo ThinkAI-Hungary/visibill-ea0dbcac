@@ -157,11 +157,9 @@ async function validateCredentials(supabaseClient: any, userId: string) {
     nav_sign_key
   };
   
-  // Test connection to NAV API using TokenExchange
-  const env = credentials.is_test_environment ? 'test' : 'prod';
-  const baseUrl = credentials.is_test_environment 
-    ? 'https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3'
-    : 'https://api.onlineszamla.nav.gov.hu/invoiceService/v3';
+  // Test connection to NAV API using TokenExchange (production only)
+  const env = 'prod';
+  const baseUrl = 'https://api.onlineszamla.nav.gov.hu/invoiceService/v3';
 
   try {
     const timestamp = new Date().toISOString();
@@ -248,9 +246,7 @@ async function requestToken(supabaseClient: any, userId: string) {
 
   const credentials: NavCredentials = credsResult;
   
-  const baseUrl = credentials.is_test_environment 
-    ? 'https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3'
-    : 'https://api.onlineszamla.nav.gov.hu/invoiceService/v3';
+  const baseUrl = 'https://api.onlineszamla.nav.gov.hu/invoiceService/v3';
 
   try {
     const timestamp = new Date().toISOString();

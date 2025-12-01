@@ -379,9 +379,6 @@ const NavTesting: React.FC = () => {
           <AlertDescription className="space-y-3">
             <div className="space-y-1">
               <p className="font-medium">{validationResult.message}</p>
-              {validationResult.env && (
-                <p className="text-sm">Környezet: {validationResult.env === 'test' ? 'Teszt' : 'Éles'}</p>
-              )}
               {validationResult.requestId && (
                 <p className="text-sm">Request ID: {validationResult.requestId}</p>
               )}
@@ -425,7 +422,7 @@ const NavTesting: React.FC = () => {
                 <li>A technikai felhasználó és adószám azonos adózóhoz tartozik a NAV-nál</li>
                 <li>A technikai felhasználó aktiválva van és nem lejárt/zárolva</li>
                 <li>Jelszó és aláíró kulcs helyesen lett megadva (whitespace-ek automatikusan eltávolítva)</li>
-                <li>NAV {validationResult.env === 'test' ? 'TESZT' : 'ÉLES'} környezet van használva</li>
+                <li>Éles NAV API környezet van használva</li>
               </ul>
             </div>
           </AlertDescription>
