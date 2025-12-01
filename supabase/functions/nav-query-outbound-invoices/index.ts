@@ -147,7 +147,18 @@ Deno.serve(async (req) => {
         additionalFilters
       });
 
-      console.log('[NAV-QUERY-OUTBOUND] Sending request to NAV API');
+      // Mask sensitive data in XML for logging
+      const maskedXmlBody = xmlBody
+        .replace(/<common:passwordHash[^>]*>.*?<\/common:passwordHash>/g, '<common:passwordHash>***MASKED***</common:passwordHash>')
+        .replace(/<common:requestSignature[^>]*>.*?<\/common:requestSignature>/g, '<common:requestSignature>***MASKED***</common:requestSignature>');
+
+      console.log('[NAV-QUERY-OUTBOUND] ========== QUERY REQUEST START ==========');
+      console.log('[NAV-QUERY-OUTBOUND] Request ID:', requestId);
+      console.log('[NAV-QUERY-OUTBOUND] Page:', currentPage);
+      console.log('[NAV-QUERY-OUTBOUND] Date Range:', { dateFrom, dateTo });
+      console.log('[NAV-QUERY-OUTBOUND] XML Request (sensitive data masked):');
+      console.log(maskedXmlBody);
+      console.log('[NAV-QUERY-OUTBOUND] ========== QUERY REQUEST END ==========');
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -159,7 +170,14 @@ Deno.serve(async (req) => {
       });
 
       const responseText = await response.text();
-      console.log('[NAV-QUERY-OUTBOUND] NAV API response status:', response.status);
+      
+      console.log('[NAV-QUERY-OUTBOUND] ========== QUERY RESPONSE START ==========');
+      console.log('[NAV-QUERY-OUTBOUND] Request ID:', requestId);
+      console.log('[NAV-QUERY-OUTBOUND] Page:', currentPage);
+      console.log('[NAV-QUERY-OUTBOUND] HTTP Status:', response.status);
+      console.log('[NAV-QUERY-OUTBOUND] XML Response:');
+      console.log(responseText);
+      console.log('[NAV-QUERY-OUTBOUND] ========== QUERY RESPONSE END ==========');
 
       if (!response.ok) {
         console.error('[NAV-QUERY-OUTBOUND] NAV API error:', responseText);
