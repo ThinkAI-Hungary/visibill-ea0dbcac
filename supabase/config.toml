@@ -1,5 +1,8 @@
 project_id = "vxxgvdlqvvchtlmqnrqf"
 
+[functions.nav-auto-sync]
+verify_jwt = false
+
 [functions.nylas-callback]
 verify_jwt = false
 
