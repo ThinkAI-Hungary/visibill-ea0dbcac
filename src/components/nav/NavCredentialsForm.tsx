@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle, Shield, Key } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, CheckCircle, Shield, Key, RefreshCw, XCircle, Clock } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,6 +20,13 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
   const [validationStatus, setValidationStatus] = useState<'pending' | 'valid' | 'invalid' | 'error'>('pending');
   const [showDebug, setShowDebug] = useState(false);
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [credentialInfo, setCredentialInfo] = useState<{
+    validation_status: string | null;
+    last_validated_at: string | null;
+    validation_error: string | null;
+    software_id: string | null;
+    nav_tax_number: string | null;
+  } | null>(null);
   
   const [formData, setFormData] = useState({
     nav_username: '',
@@ -31,6 +38,26 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
     software_dev_contact: '',
     is_test_environment: false
   });
+
+  useEffect(() => {
+    loadCredentialInfo();
+  }, []);
+
+  const loadCredentialInfo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_nav_credentials')
+        .select('validation_status, last_validated_at, validation_error, software_id, nav_tax_number')
+        .maybeSingle();
+      
+      if (!error && data) {
+        setCredentialInfo(data);
+        setValidationStatus(data.validation_status as any);
+      }
+    } catch (error) {
+      console.error('Error loading credential info:', error);
+    }
+  };
 
   const handleInputChange = (field: string, value: string | boolean) => {
     // Auto-trim string inputs
@@ -135,10 +162,11 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
 
       toast({
         title: 'Sikeres mentés',
-        description: 'NAV hitelesítő adatok sikeresen mentve',
+        description: 'NAV hitelesítő adatok sikeresen mentve. Kapcsolat tesztelése...',
       });
 
-      setValidationStatus('pending');
+      // Automatically validate after successful save
+      await handleValidate();
       onCredentialsSaved?.();
 
     } catch (error: any) {
@@ -154,15 +182,6 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
   };
 
   const handleValidate = async () => {
-    if (validationStatus === 'pending') {
-      toast({
-        title: 'Előbb mentse az adatokat',
-        description: 'A validálás előtt mentse el a hitelesítő adatokat',
-        variant: 'destructive'
-      });
-      return;
-    }
-
     setValidating(true);
     try {
       console.log('[NavCredentialsForm] Starting credential validation');
@@ -186,13 +205,16 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
       
       if (result.success) {
         setValidationStatus(result.status);
-        toast({
-          title: result.status === 'valid' ? 'Sikeres validálás' : 'Validálási hiba',
-          description: result.message,
-          variant: result.status === 'valid' ? 'default' : 'destructive'
-        });
+        await loadCredentialInfo(); // Reload credential info
+        if (result.status === 'valid') {
+          toast({
+            title: 'Sikeres validálás',
+            description: result.message,
+          });
+        }
       } else {
-        throw new Error(result.error);
+        setValidationStatus('error');
+        await loadCredentialInfo();
       }
 
     } catch (error: any) {
@@ -208,28 +230,86 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
     }
   };
 
-  const getStatusBadge = () => {
-    switch (validationStatus) {
-      case 'valid':
-        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Érvényes</Badge>;
-      case 'invalid':
-        return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" />Érvénytelen</Badge>;
-      case 'error':
-        return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" />Hiba</Badge>;
-      default:
-        return <Badge variant="secondary">Validálásra vár</Badge>;
-    }
+  const getConnectionStatusCard = () => {
+    if (!credentialInfo) return null;
+
+    const isValid = credentialInfo.validation_status === 'valid';
+    const isPending = credentialInfo.validation_status === 'pending';
+    const isInvalid = credentialInfo.validation_status === 'invalid' || credentialInfo.validation_status === 'error';
+
+    return (
+      <Card className={`border-2 ${isValid ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : isInvalid ? 'border-red-500 bg-red-50 dark:bg-red-950/20' : 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20'}`}>
+        <CardContent className="pt-6">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-3 flex-1">
+              {isValid && <CheckCircle className="w-6 h-6 text-green-600 mt-0.5" />}
+              {isPending && <Clock className="w-6 h-6 text-yellow-600 mt-0.5" />}
+              {isInvalid && <XCircle className="w-6 h-6 text-red-600 mt-0.5" />}
+              
+              <div className="flex-1 space-y-2">
+                <div>
+                  <h3 className="font-semibold text-lg">
+                    {isValid && 'Élő NAV Kapcsolat'}
+                    {isPending && 'Kapcsolat Ellenőrzése Szükséges'}
+                    {isInvalid && 'Nincs NAV Kapcsolat'}
+                  </h3>
+                  {credentialInfo.last_validated_at && (
+                    <p className="text-sm text-muted-foreground">
+                      Utolsó ellenőrzés: {new Date(credentialInfo.last_validated_at).toLocaleString('hu-HU')}
+                    </p>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                  {credentialInfo.software_id && (
+                    <div>
+                      <span className="font-medium">Software ID:</span> {credentialInfo.software_id}
+                    </div>
+                  )}
+                  {credentialInfo.nav_tax_number && (
+                    <div>
+                      <span className="font-medium">Adószám:</span> {credentialInfo.nav_tax_number}
+                    </div>
+                  )}
+                </div>
+
+                {isInvalid && credentialInfo.validation_error && (
+                  <Alert variant="destructive" className="mt-3">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Kapcsolati hiba</AlertTitle>
+                    <AlertDescription className="text-sm">
+                      {credentialInfo.validation_error}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </div>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleValidate}
+              disabled={validating}
+              className="ml-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${validating ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
+    <div className="space-y-6">
+      {getConnectionStatusCard()}
+      
+    
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-primary" />
-            <CardTitle>NAV API Hitelesítő Adatok</CardTitle>
-          </div>
-          {getStatusBadge()}
+        <div className="flex items-center gap-2">
+          <Shield className="w-5 h-5 text-primary" />
+          <CardTitle>NAV API Hitelesítő Adatok</CardTitle>
         </div>
         <CardDescription>
           Adja meg a NAV online számla rendszer API hozzáférési adatait
@@ -346,22 +426,13 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 pt-4">
+        <div className="flex gap-2 pt-4">
           <Button
             onClick={handleSave}
-            disabled={loading}
+            disabled={loading || validating}
             className="flex-1"
           >
-            {loading ? 'Mentés...' : 'Adatok Mentése'}
-          </Button>
-          
-          <Button
-            variant="outline"
-            onClick={handleValidate}
-            disabled={validating || validationStatus === 'pending'}
-            className="flex-1"
-          >
-            {validating ? 'Validálás...' : 'Kapcsolat Tesztelése'}
+            {loading ? 'Mentés...' : validating ? 'Tesztelés...' : 'Mentés és Tesztelés'}
           </Button>
         </div>
 
@@ -413,6 +484,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
         )}
       </CardContent>
     </Card>
+    </div>
   );
 };
 
