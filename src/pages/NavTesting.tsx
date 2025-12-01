@@ -178,33 +178,31 @@ const NavTesting: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      const response = await fetch(`/functions/v1/query-nav-invoices`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('nav-query-outbound-invoices', {
+        body: {
           invoiceDirection: syncParams.direction,
           dateFrom: syncParams.dateFrom,
-          dateTo: syncParams.dateTo,
-          page: 1
-        })
+          dateTo: syncParams.dateTo
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
-      const result = await response.json();
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       
-      if (result.success) {
+      if (data?.success) {
         toast({
           title: 'Szinkronizálás befejezve',
-          description: `${result.count} számla letöltve`,
+          description: `${data.totalInvoices} számla letöltve`,
         });
         
         // Reload data
         loadSyncLogs();
         loadNavInvoices();
       } else {
-        throw new Error(result.error);
+        throw new Error('Unexpected response format');
       }
 
     } catch (error: any) {
@@ -255,7 +253,8 @@ const NavTesting: React.FC = () => {
       const { data, error } = await supabase.functions.invoke('nav-query-outbound-invoices', {
         body: {
           dateFrom: queryParams.dateFrom,
-          dateTo: queryParams.dateTo
+          dateTo: queryParams.dateTo,
+          invoiceDirection: 'OUTBOUND'
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`
