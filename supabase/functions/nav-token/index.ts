@@ -169,12 +169,18 @@ async function validateCredentials(supabaseClient: any, userId: string) {
 
     const xmlRequest = buildTokenXML(sanitizedCreds, requestId, timestamp, passwordHash, requestSignature);
     
-    console.log('[NAV-TOKEN] Sending validation request', {
-      requestId,
-      requestIdLength: requestId.length,
-      timestampFormat: timestamp,
-      environment: env
-    });
+    // Mask sensitive data in XML for logging
+    const maskedXmlRequest = xmlRequest
+      .replace(/<common:passwordHash[^>]*>.*?<\/common:passwordHash>/g, '<common:passwordHash>***MASKED***</common:passwordHash>')
+      .replace(/<common:requestSignature[^>]*>.*?<\/common:requestSignature>/g, '<common:requestSignature>***MASKED***</common:requestSignature>');
+    
+    console.log('[NAV-TOKEN] ========== VALIDATION REQUEST START ==========');
+    console.log('[NAV-TOKEN] Request ID:', requestId);
+    console.log('[NAV-TOKEN] Environment:', env);
+    console.log('[NAV-TOKEN] Endpoint:', baseUrl);
+    console.log('[NAV-TOKEN] XML Request (sensitive data masked):');
+    console.log(maskedXmlRequest);
+    console.log('[NAV-TOKEN] ========== VALIDATION REQUEST END ==========');
 
     const testResponse = await fetch(`${baseUrl}/tokenExchange`, {
       method: 'POST',
@@ -186,7 +192,13 @@ async function validateCredentials(supabaseClient: any, userId: string) {
     });
 
     const xmlResponse = await testResponse.text();
-    console.log('[NAV-TOKEN] Validation response status:', testResponse.status);
+    
+    console.log('[NAV-TOKEN] ========== VALIDATION RESPONSE START ==========');
+    console.log('[NAV-TOKEN] Request ID:', requestId);
+    console.log('[NAV-TOKEN] HTTP Status:', testResponse.status);
+    console.log('[NAV-TOKEN] XML Response:');
+    console.log(xmlResponse);
+    console.log('[NAV-TOKEN] ========== VALIDATION RESPONSE END ==========');
 
     // Check for success - NAV returns funcCode=OK for successful validation
     const isValid = xmlResponse.includes('<funcCode>OK</funcCode>') || 
@@ -256,6 +268,17 @@ async function requestToken(supabaseClient: any, userId: string) {
 
     const xmlRequest = buildTokenXML(credentials, requestId, timestamp, passwordHash, requestSignature);
 
+    // Mask sensitive data in XML for logging
+    const maskedXmlRequest = xmlRequest
+      .replace(/<common:passwordHash[^>]*>.*?<\/common:passwordHash>/g, '<common:passwordHash>***MASKED***</common:passwordHash>')
+      .replace(/<common:requestSignature[^>]*>.*?<\/common:requestSignature>/g, '<common:requestSignature>***MASKED***</common:requestSignature>');
+    
+    console.log('[NAV-TOKEN] ========== TOKEN REQUEST START ==========');
+    console.log('[NAV-TOKEN] Request ID:', requestId);
+    console.log('[NAV-TOKEN] XML Request (sensitive data masked):');
+    console.log(maskedXmlRequest);
+    console.log('[NAV-TOKEN] ========== TOKEN REQUEST END ==========');
+
     const tokenResponse = await fetch(`${baseUrl}/tokenExchange`, {
       method: 'POST',
       headers: {
@@ -266,7 +289,13 @@ async function requestToken(supabaseClient: any, userId: string) {
     });
 
     const xmlResponse = await tokenResponse.text();
-    console.log('[NAV-TOKEN] Token response:', xmlResponse);
+    
+    console.log('[NAV-TOKEN] ========== TOKEN RESPONSE START ==========');
+    console.log('[NAV-TOKEN] Request ID:', requestId);
+    console.log('[NAV-TOKEN] HTTP Status:', tokenResponse.status);
+    console.log('[NAV-TOKEN] XML Response:');
+    console.log(xmlResponse);
+    console.log('[NAV-TOKEN] ========== TOKEN RESPONSE END ==========');
 
     // Parse token from XML response
     const tokenMatch = xmlResponse.match(/<encodedExchangeToken>(.+?)<\/encodedExchangeToken>/);
