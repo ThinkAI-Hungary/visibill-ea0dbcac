@@ -88,6 +88,30 @@ Deno.serve(async (req) => {
 
     console.log('[NAV-QUERY-OUTBOUND] Date range:', { dateFrom, dateTo, daysDiff });
 
+    const startTime = Date.now();
+
+    // Create sync log entry
+    const { data: logEntry, error: logError } = await supabaseClient
+      .from('nav_sync_logs')
+      .insert({
+        user_id: user.id,
+        sync_type: 'manual',
+        invoice_direction: invoiceDirection,
+        date_from: dateFrom,
+        date_to: dateTo,
+        status: 'running',
+        started_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (logError) {
+      console.error('[NAV-QUERY-OUTBOUND] Failed to create sync log:', logError);
+    }
+
+    const syncLogId = logEntry?.id;
+    console.log('[NAV-QUERY-OUTBOUND] Created sync log:', syncLogId);
+
     // Get credentials
     const { data: credsData, error: credsError } = await supabaseClient.rpc('get_nav_credentials', {
       p_user_id: user.id
@@ -95,6 +119,20 @@ Deno.serve(async (req) => {
 
     if (credsError || !credsData || credsData.error) {
       console.error('[NAV-QUERY-OUTBOUND] Failed to get credentials:', credsError || credsData?.error);
+      
+      // Update sync log with failure
+      if (syncLogId) {
+        await supabaseClient
+          .from('nav_sync_logs')
+          .update({
+            status: 'failed',
+            error_message: 'Failed to retrieve NAV credentials',
+            completed_at: new Date().toISOString(),
+            duration_ms: Date.now() - startTime
+          })
+          .eq('id', syncLogId);
+      }
+      
       return new Response(
         JSON.stringify({ error: 'Failed to retrieve NAV credentials' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -191,6 +229,20 @@ Deno.serve(async (req) => {
       if (!response.ok) {
         console.error('[NAV-QUERY-OUTBOUND] NAV API error:', responseText);
         const errorMsg = parseNAVError(responseText);
+        
+        // Update sync log with failure
+        if (syncLogId) {
+          await supabaseClient
+            .from('nav_sync_logs')
+            .update({
+              status: 'failed',
+              error_message: `NAV API request failed: ${errorMsg}`,
+              completed_at: new Date().toISOString(),
+              duration_ms: Date.now() - startTime
+            })
+            .eq('id', syncLogId);
+        }
+        
         return new Response(
           JSON.stringify({ 
             error: 'NAV API request failed',
@@ -206,6 +258,20 @@ Deno.serve(async (req) => {
       
       if (pageData.funcCode !== 'OK') {
         console.error('[NAV-QUERY-OUTBOUND] NAV returned error:', pageData.errorMessage);
+        
+        // Update sync log with failure
+        if (syncLogId) {
+          await supabaseClient
+            .from('nav_sync_logs')
+            .update({
+              status: 'failed',
+              error_message: `NAV query failed: ${pageData.errorMessage}`,
+              completed_at: new Date().toISOString(),
+              duration_ms: Date.now() - startTime
+            })
+            .eq('id', syncLogId);
+        }
+        
         return new Response(
           JSON.stringify({ 
             error: 'NAV query failed',
@@ -230,6 +296,78 @@ Deno.serve(async (req) => {
 
     console.log(`[NAV-QUERY-OUTBOUND] Query complete. Total invoices: ${allInvoices.length}, Pages fetched: ${currentPage - 1}`);
 
+    // Store invoices in database
+    if (allInvoices.length > 0) {
+      console.log('[NAV-QUERY-OUTBOUND] Storing invoices in database...');
+      
+      const invoicesToInsert = allInvoices.map(inv => ({
+        user_id: user.id,
+        invoice_number: inv.invoiceNumber,
+        invoice_direction: invoiceDirection,
+        supplier_tax_number: inv.supplierTaxNumber,
+        customer_tax_number: inv.customerTaxNumber,
+        invoice_issue_date: inv.invoiceIssueDate,
+        invoice_delivery_date: null,
+        invoice_net_amount: parseFloat(inv.invoiceNetAmount || '0'),
+        invoice_vat_amount: parseFloat(inv.invoiceVatAmount || '0'),
+        invoice_gross_amount: parseFloat(inv.invoiceNetAmount || '0') + parseFloat(inv.invoiceVatAmount || '0'),
+        currency: inv.currency || 'HUF',
+        payment_method: inv.paymentMethod,
+        invoice_operation: inv.invoiceOperation,
+        fetched_at: new Date().toISOString()
+      }));
+
+      const { error: insertError } = await supabaseClient
+        .from('nav_invoices')
+        .upsert(invoicesToInsert, { 
+          onConflict: 'invoice_number,user_id',
+          ignoreDuplicates: false 
+        });
+
+      if (insertError) {
+        console.error('[NAV-QUERY-OUTBOUND] Failed to store invoices:', insertError);
+        
+        // Update sync log with partial failure
+        if (syncLogId) {
+          await supabaseClient
+            .from('nav_sync_logs')
+            .update({
+              status: 'failed',
+              error_message: `Failed to store invoices: ${insertError.message}`,
+              invoices_fetched: allInvoices.length,
+              completed_at: new Date().toISOString(),
+              duration_ms: Date.now() - startTime
+            })
+            .eq('id', syncLogId);
+        }
+        
+        return new Response(
+          JSON.stringify({ 
+            error: 'Failed to store invoices',
+            details: insertError.message
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('[NAV-QUERY-OUTBOUND] Invoices stored successfully');
+    }
+
+    // Update sync log with success
+    if (syncLogId) {
+      await supabaseClient
+        .from('nav_sync_logs')
+        .update({
+          status: 'completed',
+          invoices_fetched: allInvoices.length,
+          completed_at: new Date().toISOString(),
+          duration_ms: Date.now() - startTime
+        })
+        .eq('id', syncLogId);
+    }
+
+    console.log('[NAV-QUERY-OUTBOUND] Sync log updated');
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -243,6 +381,47 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('[NAV-QUERY-OUTBOUND] Unexpected error:', error);
+    
+    // Try to update sync log with error if we have a sync log ID
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const authHeader = req.headers.get('Authorization');
+      
+      if (authHeader) {
+        const supabaseClient = createClient(supabaseUrl, supabaseKey, {
+          global: { headers: { Authorization: authHeader } }
+        });
+        
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabaseClient.auth.getUser(token);
+        
+        if (user) {
+          // Find the most recent running log for this user
+          const { data: runningLogs } = await supabaseClient
+            .from('nav_sync_logs')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('status', 'running')
+            .order('started_at', { ascending: false })
+            .limit(1);
+          
+          if (runningLogs && runningLogs.length > 0) {
+            await supabaseClient
+              .from('nav_sync_logs')
+              .update({
+                status: 'failed',
+                error_message: `Unexpected error: ${error.message}`,
+                completed_at: new Date().toISOString()
+              })
+              .eq('id', runningLogs[0].id);
+          }
+        }
+      }
+    } catch (logError) {
+      console.error('[NAV-QUERY-OUTBOUND] Failed to update error log:', logError);
+    }
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
