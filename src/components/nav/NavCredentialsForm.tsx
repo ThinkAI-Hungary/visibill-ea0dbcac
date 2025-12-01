@@ -3,9 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle, Shield, Key, Building } from 'lucide-react';
+import { AlertCircle, CheckCircle, Shield, Key } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,7 +29,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
     nav_exchange_key: '',
     software_dev_name: '',
     software_dev_contact: '',
-    is_test_environment: true
+    is_test_environment: false
   });
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -238,30 +237,14 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
       </CardHeader>
       
       <CardContent className="space-y-6">
-        {/* Environment Toggle */}
-        <div className="flex items-center justify-between p-4 border rounded-lg">
-          <div className="flex items-center gap-2">
-            <Building className="w-4 h-4" />
-            <Label htmlFor="environment">Teszt környezet</Label>
-          </div>
-          <Switch
-            id="environment"
-            checked={formData.is_test_environment}
-            onCheckedChange={(checked) => handleInputChange('is_test_environment', checked)}
-          />
-        </div>
-
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="space-y-1">
             <p>
-              {formData.is_test_environment 
-                ? 'Teszt környezet: A teszteléshez használja a NAV teszt API adatait'
-                : 'Éles környezet: Valós NAV API adatok szükségesek'
-              }
+              Éles NAV API környezet használatához valós NAV technikai felhasználó adatok szükségesek.
             </p>
             <p className="text-sm text-muted-foreground">
-              ⚠️ A technikai felhasználóhoz tartozó adószámnak egyeznie kell a NAV-ban
+              ⚠️ A technikai felhasználóhoz tartozó adószámnak egyeznie kell a NAV-ban regisztrált adatokkal
             </p>
           </AlertDescription>
         </Alert>

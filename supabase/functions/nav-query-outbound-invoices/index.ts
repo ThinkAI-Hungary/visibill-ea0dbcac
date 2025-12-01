@@ -96,10 +96,8 @@ Deno.serve(async (req) => {
     const credentials: NavCredentials = credsData;
     console.log('[NAV-QUERY-OUTBOUND] Credentials retrieved');
 
-    // Determine endpoint
-    const endpoint = credentials.is_test_environment
-      ? 'https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3/queryInvoiceDigest'
-      : 'https://api.onlineszamla.nav.gov.hu/invoiceService/v3/queryInvoiceDigest';
+    // Use production endpoint only
+    const endpoint = 'https://api.onlineszamla.nav.gov.hu/invoiceService/v3/queryInvoiceDigest';
 
     console.log('[NAV-QUERY-OUTBOUND] Using endpoint:', endpoint);
 

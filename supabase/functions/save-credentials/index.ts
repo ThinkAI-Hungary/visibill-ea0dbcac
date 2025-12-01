@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
       navExchangeKey,
       softwareDevName,
       softwareDevContact,
-      isTestEnvironment = true
+      isTestEnvironment = false
     } = body
 
     // Sanitize inputs
