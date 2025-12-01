@@ -63,7 +63,6 @@ const NavTesting: React.FC = () => {
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [navInvoices, setNavInvoices] = useState<NavInvoice[]>([]);
   const [credentialsExist, setCredentialsExist] = useState(false);
-  const [validationResult, setValidationResult] = useState<any>(null);
   
   const [syncParams, setSyncParams] = useState({
     direction: 'OUTBOUND' as 'OUTBOUND' | 'INBOUND',
@@ -128,49 +127,6 @@ const NavTesting: React.FC = () => {
     }
   };
 
-  const handleTestConnection = async () => {
-    setLoading(true);
-    setValidationResult(null);
-    try {
-      console.log('[NavTesting] Starting connection test');
-      
-      // Get session and explicitly pass Authorization header
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-      
-      const { data, error } = await supabase.functions.invoke('nav-token', {
-        body: { action: 'validate_credentials' },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
-      console.log('[NavTesting] nav-token response', { data, error });
-
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
-
-      const result = data as any;
-      setValidationResult(result);
-      
-      if (result.success && result.status === 'valid') {
-        toast({
-          title: 'Kapcsolat teszt sikeres',
-          description: 'NAV API kapcsolat működik!',
-        });
-      }
-      // Don't show error toast for invalid credentials - show the card instead
-
-    } catch (error: any) {
-      console.error('Connection test error:', error);
-      toast({
-        title: 'Kapcsolat teszt hiba',
-        description: error.message || 'Nem sikerült tesztelni a kapcsolatot',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSync = async () => {
     setLoading(true);
@@ -335,98 +291,20 @@ const NavTesting: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <TestTube className="w-6 h-6 text-primary" />
-          <h1 className="text-2xl font-bold">NAV API Tesztelés</h1>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="h-5 w-5 text-muted-foreground cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p>Teszteld a NAV kapcsolatot és szinkronizáld a kimenő számláidat. Technikai felhasználó adatokra van szükség.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        
+      <div className="flex items-center gap-2">
+        <TestTube className="w-6 h-6 text-primary" />
+        <h1 className="text-2xl font-bold">NAV API Tesztelés</h1>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                onClick={handleTestConnection} 
-                disabled={loading}
-                variant="outline"
-              >
-                <Shield className="w-4 h-4 mr-2" />
-                Kapcsolat Tesztelése
-              </Button>
+              <Info className="h-5 w-5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
-            <TooltipContent>
-              <p>Ellenőrzi, hogy a NAV hitelesítési adatok helyesek-e</p>
+            <TooltipContent className="max-w-xs">
+              <p>Teszteld a NAV kapcsolatot és szinkronizáld a kimenő számláidat. Technikai felhasználó adatokra van szükség.</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
-
-      {/* Validation Result Card */}
-      {validationResult && !validationResult.success && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>NAV elutasította az autentikációt</AlertTitle>
-          <AlertDescription className="space-y-3">
-            <div className="space-y-1">
-              <p className="font-medium">{validationResult.message}</p>
-              {validationResult.requestId && (
-                <p className="text-sm">Request ID: {validationResult.requestId}</p>
-              )}
-            </div>
-            
-            {validationResult.diagnostics && (
-              <div className="text-sm space-y-1 pt-2 border-t">
-                <p className="font-medium">Mező diagnosztika:</p>
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                  <li>Felhasználónév hossz: {validationResult.diagnostics.loginLength}</li>
-                  <li>Adószám hossz: {validationResult.diagnostics.taxNumberLength}</li>
-                  {validationResult.diagnostics.hasWhitespaceInLogin && (
-                    <li className="text-yellow-200">⚠️ Felhasználónév tartalmazott whitespace karaktereket (eltávolítva)</li>
-                  )}
-                  {validationResult.diagnostics.hasWhitespaceInPassword && (
-                    <li className="text-yellow-200">⚠️ Jelszó tartalmazott whitespace karaktereket (eltávolítva)</li>
-                  )}
-                </ul>
-              </div>
-            )}
-            
-            <Accordion type="single" collapsible className="mt-3">
-              <AccordionItem value="details" className="border-none">
-                <AccordionTrigger className="text-sm py-2 hover:no-underline">
-                  <span className="flex items-center gap-2">
-                    <ChevronDown className="h-3 w-3" />
-                    NAV XML Válasz Részletei
-                  </span>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <pre className="text-xs bg-black/20 p-3 rounded overflow-x-auto max-h-48">
-                    {validationResult.details}
-                  </pre>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-            
-            <div className="pt-3 border-t">
-              <p className="text-sm font-medium mb-2">Ellenőrizze:</p>
-              <ul className="list-disc list-inside space-y-1 text-xs">
-                <li>A technikai felhasználó és adószám azonos adózóhoz tartozik a NAV-nál</li>
-                <li>A technikai felhasználó aktiválva van és nem lejárt/zárolva</li>
-                <li>Jelszó és aláíró kulcs helyesen lett megadva (whitespace-ek automatikusan eltávolítva)</li>
-                <li>Éles NAV API környezet van használva</li>
-              </ul>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
 
       <Tabs defaultValue="query" className="space-y-6">
         <TabsList>
