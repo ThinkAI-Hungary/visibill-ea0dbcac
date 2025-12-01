@@ -57,11 +57,19 @@ Deno.serve(async (req) => {
     console.log('[NAV-QUERY-OUTBOUND] User authenticated:', user.id);
 
     // Parse request body
-    const { dateFrom, dateTo, additionalFilters } = await req.json();
+    const { dateFrom, dateTo, additionalFilters, invoiceDirection = 'OUTBOUND' } = await req.json();
     
     if (!dateFrom || !dateTo) {
       return new Response(
         JSON.stringify({ error: 'dateFrom and dateTo are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate invoiceDirection
+    if (!['INBOUND', 'OUTBOUND'].includes(invoiceDirection)) {
+      return new Response(
+        JSON.stringify({ error: 'invoiceDirection must be INBOUND or OUTBOUND' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -144,7 +152,8 @@ Deno.serve(async (req) => {
         page: currentPage,
         dateFrom,
         dateTo,
-        additionalFilters
+        additionalFilters,
+        invoiceDirection
       });
 
       // Mask sensitive data in XML for logging
@@ -260,8 +269,9 @@ function buildQueryXML(params: {
   dateFrom: string;
   dateTo: string;
   additionalFilters?: any;
+  invoiceDirection: string;
 }): string {
-  const { requestId, timestamp, credentials, passwordHash, requestSignature, page, dateFrom, dateTo, additionalFilters } = params;
+  const { requestId, timestamp, credentials, passwordHash, requestSignature, page, dateFrom, dateTo, additionalFilters, invoiceDirection } = params;
 
   let additionalParamsXML = '';
   if (additionalFilters) {
@@ -298,7 +308,7 @@ function buildQueryXML(params: {
     <softwareDevContact>${credentials.software_dev_contact || 'support@visibill.hu'}</softwareDevContact>
   </software>
   <page>${page}</page>
-  <invoiceDirection>OUTBOUND</invoiceDirection>
+  <invoiceDirection>${invoiceDirection}</invoiceDirection>
   <invoiceQueryParams>
     <mandatoryQueryParams>
       <invoiceIssueDate>
@@ -312,7 +322,7 @@ function buildQueryXML(params: {
 }
 
 function parseQueryResponse(xml: string): any {
-  const funcCodeMatch = xml.match(/<funcCode>([^<]+)<\/funcCode>/);
+  const funcCodeMatch = xml.match(/<(?:\w+:)?funcCode>([^<]+)<\/(?:\w+:)?funcCode>/);
   const funcCode = funcCodeMatch ? funcCodeMatch[1] : null;
 
   if (funcCode !== 'OK') {
@@ -320,14 +330,14 @@ function parseQueryResponse(xml: string): any {
     return { funcCode, errorMessage };
   }
 
-  const currentPageMatch = xml.match(/<currentPage>(\d+)<\/currentPage>/);
-  const availablePageMatch = xml.match(/<availablePage>(\d+)<\/availablePage>/);
+  const currentPageMatch = xml.match(/<(?:\w+:)?currentPage>(\d+)<\/(?:\w+:)?currentPage>/);
+  const availablePageMatch = xml.match(/<(?:\w+:)?availablePage>(\d+)<\/(?:\w+:)?availablePage>/);
 
   const currentPage = currentPageMatch ? parseInt(currentPageMatch[1]) : 1;
   const availablePage = availablePageMatch ? parseInt(availablePageMatch[1]) : 1;
 
   const invoices: any[] = [];
-  const invoiceDigestRegex = /<invoiceDigest>([\s\S]*?)<\/invoiceDigest>/g;
+  const invoiceDigestRegex = /<(?:\w+:)?invoiceDigest>([\s\S]*?)<\/(?:\w+:)?invoiceDigest>/g;
   let match;
 
   while ((match = invoiceDigestRegex.exec(xml)) !== null) {
@@ -336,7 +346,7 @@ function parseQueryResponse(xml: string): any {
     const invoice: any = {};
     
     const extractField = (fieldName: string) => {
-      const regex = new RegExp(`<${fieldName}>([^<]*)<\/${fieldName}>`);
+      const regex = new RegExp(`<(?:\\w+:)?${fieldName}>([^<]*)<\\/(?:\\w+:)?${fieldName}>`);
       const match = digestXML.match(regex);
       return match ? match[1] : null;
     };
