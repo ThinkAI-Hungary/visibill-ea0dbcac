@@ -733,25 +733,42 @@ const NavTesting: React.FC = () => {
                     </TableHeader>
                     <TableBody>
                       {syncLogs.map((log) => (
-                        <TableRow key={log.id}>
-                          <TableCell>{formatDate(log.started_at)}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{log.sync_type}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={log.invoice_direction === 'OUTBOUND' ? 'default' : 'secondary'}>
-                              {log.invoice_direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {log.date_from} - {log.date_to}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(log.status)}</TableCell>
-                          <TableCell>{log.invoices_fetched}</TableCell>
-                          <TableCell>
-                            {log.duration_ms ? `${Math.round(log.duration_ms / 1000)}s` : '-'}
-                          </TableCell>
-                        </TableRow>
+                        <React.Fragment key={log.id}>
+                          <TableRow>
+                            <TableCell>{formatDate(log.started_at)}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{log.sync_type}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={log.invoice_direction === 'OUTBOUND' ? 'default' : 'secondary'}>
+                                {log.invoice_direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {log.date_from} - {log.date_to}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(log.status)}</TableCell>
+                            <TableCell>{log.invoices_fetched}</TableCell>
+                            <TableCell>
+                              {log.duration_ms ? `${Math.round(log.duration_ms / 1000)}s` : '-'}
+                            </TableCell>
+                          </TableRow>
+                          {log.error_message && (
+                            <TableRow>
+                              <TableCell colSpan={7} className="bg-destructive/5 border-l-4 border-destructive">
+                                <div className="flex items-start gap-2 py-2">
+                                  <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                                  <div className="flex-1">
+                                    <div className="text-sm font-medium text-destructive mb-1">Hibaüzenet:</div>
+                                    <div className="text-sm text-muted-foreground font-mono break-all">
+                                      {log.error_message}
+                                    </div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </React.Fragment>
                       ))}
                     </TableBody>
                   </Table>
