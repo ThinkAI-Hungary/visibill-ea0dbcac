@@ -77,6 +77,8 @@ interface DashboardMetrics {
 interface NavVatData {
   inboundVat: { [currency: string]: number };
   outboundVat: { [currency: string]: number };
+  revenueNet: { [currency: string]: number };
+  revenueGross: { [currency: string]: number };
 }
 
 const Index = () => {
@@ -223,22 +225,24 @@ const Index = () => {
         completedCount
       });
 
-      // Fetch NAV invoices for VAT calculation (selected month)
+      // Fetch NAV invoices for VAT calculation and revenue (selected month)
       const firstDayOfSelectedMonth = new Date(selectedYear, selectedMonth - 1, 1).toISOString().split('T')[0];
       const lastDayOfSelectedMonth = new Date(selectedYear, selectedMonth, 0).toISOString().split('T')[0];
 
       const { data: navInvoicesData, error: navInvoicesError } = await supabase
         .from('nav_invoices')
-        .select('invoice_direction, invoice_vat_amount, currency')
+        .select('invoice_direction, invoice_vat_amount, invoice_net_amount, invoice_gross_amount, currency')
         .eq('user_id', user.id)
         .gte('invoice_issue_date', firstDayOfSelectedMonth)
         .lte('invoice_issue_date', lastDayOfSelectedMonth);
 
       if (navInvoicesError) throw navInvoicesError;
 
-      // Calculate VAT by direction and currency
+      // Calculate VAT by direction and currency + revenue for OUTBOUND
       const inboundVat: { [currency: string]: number } = {};
       const outboundVat: { [currency: string]: number } = {};
+      const revenueNet: { [currency: string]: number } = {};
+      const revenueGross: { [currency: string]: number } = {};
 
       (navInvoicesData || []).forEach(invoice => {
         const currency = invoice.currency || 'HUF';
@@ -248,10 +252,12 @@ const Index = () => {
           inboundVat[currency] = (inboundVat[currency] || 0) + vatAmount;
         } else if (invoice.invoice_direction === 'OUTBOUND') {
           outboundVat[currency] = (outboundVat[currency] || 0) + vatAmount;
+          revenueNet[currency] = (revenueNet[currency] || 0) + (invoice.invoice_net_amount || 0);
+          revenueGross[currency] = (revenueGross[currency] || 0) + (invoice.invoice_gross_amount || 0);
         }
       });
 
-      setNavVatData({ inboundVat, outboundVat });
+      setNavVatData({ inboundVat, outboundVat, revenueNet, revenueGross });
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -397,29 +403,29 @@ const Index = () => {
               variant="default"
             />
             <MetricCard
-              title="Teljes összeg"
+              title="Bevétel (nettó)"
               value={
-                Object.keys(metrics.totalAmountByCurrency).length > 0
-                  ? Object.entries(metrics.totalAmountByCurrency)
+                navVatData && Object.keys(navVatData.revenueNet).length > 0
+                  ? Object.entries(navVatData.revenueNet)
                       .map(([currency, amount]) => formatCurrency(amount, currency))
                       .join(' | ')
                   : '0 Ft'
               }
-              description="Minden számla összege"
+              description="Kimenő számlák nettó összege"
               icon={Euro}
               variant="success"
             />
             <MetricCard
-              title="Ez a hónap"
+              title="Bevétel (bruttó)"
               value={
-                Object.keys(metrics.thisMonthAmountByCurrency).length > 0
-                  ? Object.entries(metrics.thisMonthAmountByCurrency)
+                navVatData && Object.keys(navVatData.revenueGross).length > 0
+                  ? Object.entries(navVatData.revenueGross)
                       .map(([currency, amount]) => formatCurrency(amount, currency))
                       .join(' | ')
                   : '0 Ft'
               }
-              description="Jelenlegi havi bevétel"
-              icon={Calendar}
+              description="Kimenő számlák bruttó összege"
+              icon={TrendingUp}
               variant="warning"
             />
             <MetricCard
