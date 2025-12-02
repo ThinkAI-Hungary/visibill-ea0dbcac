@@ -233,11 +233,16 @@ const Index = () => {
         completedCount
       });
 
-      // Fetch NAV invoices for VAT calculation
+      // Fetch NAV invoices for VAT calculation (current month only)
+      const firstDayOfMonth = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
+      const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
+
       const { data: navInvoicesData, error: navInvoicesError } = await supabase
         .from('nav_invoices')
         .select('invoice_direction, invoice_vat_amount, currency')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .gte('invoice_issue_date', firstDayOfMonth)
+        .lte('invoice_issue_date', lastDayOfMonth);
 
       if (navInvoicesError) throw navInvoicesError;
 
