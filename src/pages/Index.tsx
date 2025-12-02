@@ -416,7 +416,7 @@ const Index = () => {
               variant="success"
             />
             <MetricCard
-              title="Bevétel (bruttó)"
+              title="Kimenő számlaösszeg (bruttó)"
               value={
                 navVatData && Object.keys(navVatData.revenueGross).length > 0
                   ? Object.entries(navVatData.revenueGross)
