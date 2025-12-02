@@ -65,7 +65,6 @@ const NavTesting: React.FC = () => {
   const [credentialsExist, setCredentialsExist] = useState(false);
   
   const [syncParams, setSyncParams] = useState({
-    direction: 'OUTBOUND' as 'OUTBOUND' | 'INBOUND',
     dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
     dateTo: new Date().toISOString().split('T')[0] // today
   });
@@ -134,32 +133,79 @@ const NavTesting: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase.functions.invoke('nav-query-outbound-invoices', {
-        body: {
-          invoiceDirection: syncParams.direction,
-          dateFrom: syncParams.dateFrom,
-          dateTo: syncParams.dateTo
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
+      // Sync both OUTBOUND and INBOUND invoices
+      const [outboundResult, inboundResult] = await Promise.allSettled([
+        supabase.functions.invoke('nav-query-outbound-invoices', {
+          body: {
+            invoiceDirection: 'OUTBOUND',
+            dateFrom: syncParams.dateFrom,
+            dateTo: syncParams.dateTo
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        }),
+        supabase.functions.invoke('nav-query-outbound-invoices', {
+          body: {
+            invoiceDirection: 'INBOUND',
+            dateFrom: syncParams.dateFrom,
+            dateTo: syncParams.dateTo
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        })
+      ]);
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      
-      if (data?.success) {
+      let totalInvoices = 0;
+      const errors: string[] = [];
+
+      // Process OUTBOUND result
+      if (outboundResult.status === 'fulfilled') {
+        const { data, error } = outboundResult.value;
+        if (error || data?.error) {
+          errors.push(`Kimenő: ${error?.message || data?.error}`);
+        } else if (data?.success) {
+          totalInvoices += data.totalInvoices || 0;
+        }
+      } else {
+        errors.push(`Kimenő: ${outboundResult.reason?.message || 'Ismeretlen hiba'}`);
+      }
+
+      // Process INBOUND result
+      if (inboundResult.status === 'fulfilled') {
+        const { data, error } = inboundResult.value;
+        if (error || data?.error) {
+          errors.push(`Bejövő: ${error?.message || data?.error}`);
+        } else if (data?.success) {
+          totalInvoices += data.totalInvoices || 0;
+        }
+      } else {
+        errors.push(`Bejövő: ${inboundResult.reason?.message || 'Ismeretlen hiba'}`);
+      }
+
+      // Show result
+      if (errors.length === 2) {
+        // Both failed
+        throw new Error(errors.join('; '));
+      } else if (errors.length === 1) {
+        // One succeeded, one failed
+        toast({
+          title: 'Szinkronizálás részben sikeres',
+          description: `${totalInvoices} számla letöltve. Hibák: ${errors.join('; ')}`,
+          variant: 'default'
+        });
+      } else {
+        // Both succeeded
         toast({
           title: 'Szinkronizálás befejezve',
-          description: `${data.totalInvoices} számla letöltve`,
+          description: `${totalInvoices} számla letöltve (kimenő és bejövő)`,
         });
-        
-        // Reload data
-        loadSyncLogs();
-        loadNavInvoices();
-      } else {
-        throw new Error('Unexpected response format');
       }
+      
+      // Reload data
+      loadSyncLogs();
+      loadNavInvoices();
 
     } catch (error: any) {
       console.error('Sync error:', error);
@@ -460,25 +506,7 @@ const NavTesting: React.FC = () => {
             </CardHeader>
             
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="direction">Irány</Label>
-                  <Select
-                    value={syncParams.direction}
-                    onValueChange={(value: 'OUTBOUND' | 'INBOUND') => 
-                      setSyncParams(prev => ({ ...prev, direction: value }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="OUTBOUND">Kimenő (Eladási)</SelectItem>
-                      <SelectItem value="INBOUND">Bejövő (Beszerzési)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="dateFrom">Kezdő dátum</Label>
                   <Input
