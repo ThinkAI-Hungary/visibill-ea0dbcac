@@ -349,7 +349,7 @@ const Index = () => {
                 return total + convertToSelectedCurrency(amount, currency);
               }, 0);
 
-              // Calculate payable VAT (INBOUND - OUTBOUND) in selected currency
+              // Calculate payable VAT (OUTBOUND - INBOUND) in selected currency
               let payableVat = 0;
               if (navVatData) {
                 const inboundTotal = Object.entries(navVatData.inboundVat).reduce((total, [currency, amount]) => {
@@ -358,7 +358,7 @@ const Index = () => {
                 const outboundTotal = Object.entries(navVatData.outboundVat).reduce((total, [currency, amount]) => {
                   return total + convertToSelectedCurrency(amount, currency);
                 }, 0);
-                payableVat = inboundTotal - outboundTotal;
+                payableVat = outboundTotal - inboundTotal;
               }
 
               return (
@@ -406,7 +406,7 @@ const Index = () => {
             <MetricCard
               title="Kifizetendő ÁFA"
               value={formatCurrency(payableVat, selectedCurrency)}
-              description="INBOUND - OUTBOUND"
+              description="OUTBOUND - INBOUND"
               icon={PieChart}
               variant={payableVat > 0 ? "warning" : "success"}
             />
