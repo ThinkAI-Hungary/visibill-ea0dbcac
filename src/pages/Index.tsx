@@ -92,6 +92,7 @@ const Index = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [navVatData, setNavVatData] = useState<NavVatData | null>(null);
+  const [selectedVatMonth, setSelectedVatMonth] = useState<string>(new Date().toISOString().slice(0, 7));
 
   const currencies = [
     { code: 'HUF', name: 'Magyar Forint', flag: '🇭🇺' },
@@ -109,7 +110,7 @@ const Index = () => {
   useEffect(() => {
     fetchDashboardData();
     fetchExchangeRates();
-  }, [user]);
+  }, [user, selectedVatMonth]);
 
   const fetchExchangeRates = async () => {
     try {
@@ -233,16 +234,17 @@ const Index = () => {
         completedCount
       });
 
-      // Fetch NAV invoices for VAT calculation (current month only)
-      const firstDayOfMonth = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
-      const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
+      // Fetch NAV invoices for VAT calculation (selected month)
+      const [selectedYear, selectedMonth] = selectedVatMonth.split('-').map(Number);
+      const firstDayOfSelectedMonth = new Date(selectedYear, selectedMonth - 1, 1).toISOString().split('T')[0];
+      const lastDayOfSelectedMonth = new Date(selectedYear, selectedMonth, 0).toISOString().split('T')[0];
 
       const { data: navInvoicesData, error: navInvoicesError } = await supabase
         .from('nav_invoices')
         .select('invoice_direction, invoice_vat_amount, currency')
         .eq('user_id', user.id)
-        .gte('invoice_issue_date', firstDayOfMonth)
-        .lte('invoice_issue_date', lastDayOfMonth);
+        .gte('invoice_issue_date', firstDayOfSelectedMonth)
+        .lte('invoice_issue_date', lastDayOfSelectedMonth);
 
       if (navInvoicesError) throw navInvoicesError;
 
@@ -321,29 +323,60 @@ const Index = () => {
               Itt van a vállalkozásod teljes áttekintése
             </p>
           </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="w-[200px]">
-                  <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currencies.map((curr) => (
-                        <SelectItem key={curr.code} value={curr.code}>
-                          {curr.flag} {curr.code}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Válassz pénznemet az összegek átváltásához</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className="flex gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="w-[200px]">
+                    <Select value={selectedVatMonth} onValueChange={setSelectedVatMonth}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const date = new Date();
+                          date.setMonth(date.getMonth() - i);
+                          const value = date.toISOString().slice(0, 7);
+                          const label = date.toLocaleDateString('hu-HU', { year: 'numeric', month: 'long' });
+                          return (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Válassz hónapot az ÁFA megtekintéséhez</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="w-[200px]">
+                    <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currencies.map((curr) => (
+                          <SelectItem key={curr.code} value={curr.code}>
+                            {curr.flag} {curr.code}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Válassz pénznemet az összegek átváltásához</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
 
         {/* Metrics Cards */}
