@@ -27,9 +27,9 @@ Deno.serve(async (req) => {
     console.log('[NAV-QUERY-OUTBOUND] Function started');
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Create Supabase client with auth header
+    // Get auth header for user authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.error('[NAV-QUERY-OUTBOUND] No authorization header');
@@ -39,13 +39,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    const supabaseClient = createClient(supabaseUrl, supabaseKey, {
+    // Create client for user authentication (with user token)
+    const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
       global: { headers: { Authorization: authHeader } }
     });
 
+    // Create service client for admin operations (bypasses RLS)
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+
     // Authenticate user
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    const { data: { user }, error: authError } = await userClient.auth.getUser(token);
     if (authError || !user) {
       console.error('[NAV-QUERY-OUTBOUND] Authentication failed:', authError);
       return new Response(
@@ -90,8 +94,8 @@ Deno.serve(async (req) => {
 
     const startTime = Date.now();
 
-    // Create sync log entry
-    const { data: logEntry, error: logError } = await supabaseClient
+    // Create sync log entry using service client (bypasses RLS)
+    const { data: logEntry, error: logError } = await serviceClient
       .from('nav_sync_logs')
       .insert({
         user_id: user.id,
@@ -112,17 +116,17 @@ Deno.serve(async (req) => {
     const syncLogId = logEntry?.id;
     console.log('[NAV-QUERY-OUTBOUND] Created sync log:', syncLogId);
 
-    // Get credentials
-    const { data: credsData, error: credsError } = await supabaseClient.rpc('get_nav_credentials', {
+    // Get credentials using service client
+    const { data: credsData, error: credsError } = await serviceClient.rpc('get_nav_credentials', {
       p_user_id: user.id
     });
 
     if (credsError || !credsData || credsData.error) {
       console.error('[NAV-QUERY-OUTBOUND] Failed to get credentials:', credsError || credsData?.error);
       
-      // Update sync log with failure
+      // Update sync log with failure using service client
       if (syncLogId) {
-        await supabaseClient
+        await serviceClient
           .from('nav_sync_logs')
           .update({
             status: 'failed',
@@ -230,9 +234,9 @@ Deno.serve(async (req) => {
         console.error('[NAV-QUERY-OUTBOUND] NAV API error:', responseText);
         const errorMsg = parseNAVError(responseText);
         
-        // Update sync log with failure
+        // Update sync log with failure using service client
         if (syncLogId) {
-          await supabaseClient
+          await serviceClient
             .from('nav_sync_logs')
             .update({
               status: 'failed',
@@ -259,9 +263,9 @@ Deno.serve(async (req) => {
       if (pageData.funcCode !== 'OK') {
         console.error('[NAV-QUERY-OUTBOUND] NAV returned error:', pageData.errorMessage);
         
-        // Update sync log with failure
+        // Update sync log with failure using service client
         if (syncLogId) {
-          await supabaseClient
+          await serviceClient
             .from('nav_sync_logs')
             .update({
               status: 'failed',
@@ -317,7 +321,7 @@ Deno.serve(async (req) => {
         fetched_at: new Date().toISOString()
       }));
 
-      const { error: insertError } = await supabaseClient
+      const { error: insertError } = await serviceClient
         .from('nav_invoices')
         .upsert(invoicesToInsert, { 
           onConflict: 'invoice_number,user_id',
@@ -327,9 +331,9 @@ Deno.serve(async (req) => {
       if (insertError) {
         console.error('[NAV-QUERY-OUTBOUND] Failed to store invoices:', insertError);
         
-        // Update sync log with partial failure
+        // Update sync log with partial failure using service client
         if (syncLogId) {
-          await supabaseClient
+          await serviceClient
             .from('nav_sync_logs')
             .update({
               status: 'failed',
@@ -353,9 +357,9 @@ Deno.serve(async (req) => {
       console.log('[NAV-QUERY-OUTBOUND] Invoices stored successfully');
     }
 
-    // Update sync log with success
+    // Update sync log with success using service client
     if (syncLogId) {
-      await supabaseClient
+      await serviceClient
         .from('nav_sync_logs')
         .update({
           status: 'completed',
@@ -385,20 +389,21 @@ Deno.serve(async (req) => {
     // Try to update sync log with error if we have a sync log ID
     try {
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
       const authHeader = req.headers.get('Authorization');
       
       if (authHeader) {
-        const supabaseClient = createClient(supabaseUrl, supabaseKey, {
+        const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
           global: { headers: { Authorization: authHeader } }
         });
+        const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
         
         const token = authHeader.replace('Bearer ', '');
-        const { data: { user } } = await supabaseClient.auth.getUser(token);
+        const { data: { user } } = await userClient.auth.getUser(token);
         
         if (user) {
           // Find the most recent running log for this user
-          const { data: runningLogs } = await supabaseClient
+          const { data: runningLogs } = await serviceClient
             .from('nav_sync_logs')
             .select('id')
             .eq('user_id', user.id)
@@ -407,7 +412,7 @@ Deno.serve(async (req) => {
             .limit(1);
           
           if (runningLogs && runningLogs.length > 0) {
-            await supabaseClient
+            await serviceClient
               .from('nav_sync_logs')
               .update({
                 status: 'failed',
