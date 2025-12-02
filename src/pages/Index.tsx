@@ -74,6 +74,11 @@ interface DashboardMetrics {
   completedCount: number;
 }
 
+interface NavVatData {
+  inboundVat: { [currency: string]: number };
+  outboundVat: { [currency: string]: number };
+}
+
 const Index = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -86,6 +91,7 @@ const Index = () => {
   const [exchangeRates, setExchangeRates] = useState<{[key: string]: number}>({});
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [navVatData, setNavVatData] = useState<NavVatData | null>(null);
 
   const currencies = [
     { code: 'HUF', name: 'Magyar Forint', flag: '🇭🇺' },
@@ -227,6 +233,31 @@ const Index = () => {
         completedCount
       });
 
+      // Fetch NAV invoices for VAT calculation
+      const { data: navInvoicesData, error: navInvoicesError } = await supabase
+        .from('nav_invoices')
+        .select('invoice_direction, invoice_vat_amount, currency')
+        .eq('user_id', user.id);
+
+      if (navInvoicesError) throw navInvoicesError;
+
+      // Calculate VAT by direction and currency
+      const inboundVat: { [currency: string]: number } = {};
+      const outboundVat: { [currency: string]: number } = {};
+
+      (navInvoicesData || []).forEach(invoice => {
+        const currency = invoice.currency || 'HUF';
+        const vatAmount = invoice.invoice_vat_amount || 0;
+
+        if (invoice.invoice_direction === 'INBOUND') {
+          inboundVat[currency] = (inboundVat[currency] || 0) + vatAmount;
+        } else if (invoice.invoice_direction === 'OUTBOUND') {
+          outboundVat[currency] = (outboundVat[currency] || 0) + vatAmount;
+        }
+      });
+
+      setNavVatData({ inboundVat, outboundVat });
+
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -318,8 +349,20 @@ const Index = () => {
                 return total + convertToSelectedCurrency(amount, currency);
               }, 0);
 
+              // Calculate payable VAT (INBOUND - OUTBOUND) in selected currency
+              let payableVat = 0;
+              if (navVatData) {
+                const inboundTotal = Object.entries(navVatData.inboundVat).reduce((total, [currency, amount]) => {
+                  return total + convertToSelectedCurrency(amount, currency);
+                }, 0);
+                const outboundTotal = Object.entries(navVatData.outboundVat).reduce((total, [currency, amount]) => {
+                  return total + convertToSelectedCurrency(amount, currency);
+                }, 0);
+                payableVat = inboundTotal - outboundTotal;
+              }
+
               return (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <MetricCard
               title="Összes számla"
               value={metrics.totalInvoices}
@@ -359,6 +402,13 @@ const Index = () => {
               description="Minden számla átváltva"
               icon={TrendingUp}
               variant="default"
+            />
+            <MetricCard
+              title="Kifizetendő ÁFA"
+              value={formatCurrency(payableVat, selectedCurrency)}
+              description="INBOUND - OUTBOUND"
+              icon={PieChart}
+              variant={payableVat > 0 ? "warning" : "success"}
             />
                 </div>
               );
