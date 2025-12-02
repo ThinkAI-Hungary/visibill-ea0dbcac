@@ -187,7 +187,9 @@ const Index = () => {
       }));
       setInvoices(formattedInvoices);
 
-      // Calculate metrics
+      // Calculate metrics for selected month
+      const [selectedYear, selectedMonth] = selectedVatMonth.split('-').map(Number);
+      
       const { data: allInvoicesData, error: metricsError } = await supabase
         .from('invoices')
         .select('brutto_vegosszeg, kibocsatas_datuma, statusz, penznem')
@@ -195,47 +197,33 @@ const Index = () => {
 
       if (metricsError) throw metricsError;
 
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-
-      const thisMonthInvoices = (allInvoicesData || []).filter(invoice => {
+      // Filter invoices for the selected month
+      const selectedMonthInvoices = (allInvoicesData || []).filter(invoice => {
         const invoiceDate = new Date(invoice.kibocsatas_datuma);
-        return invoiceDate.getMonth() === currentMonth && invoiceDate.getFullYear() === currentYear;
+        return invoiceDate.getMonth() === selectedMonth - 1 && invoiceDate.getFullYear() === selectedYear;
       });
 
-      // Group amounts by currency
-      const totalAmountByCurrency: { [key: string]: number } = {};
-      const thisMonthAmountByCurrency: { [key: string]: number } = {};
+      // Group amounts by currency for selected month
+      const selectedMonthAmountByCurrency: { [key: string]: number } = {};
       
-      (allInvoicesData || []).forEach(invoice => {
+      selectedMonthInvoices.forEach(invoice => {
         const currency = invoice.penznem || 'HUF';
-        totalAmountByCurrency[currency] = (totalAmountByCurrency[currency] || 0) + invoice.brutto_vegosszeg;
+        selectedMonthAmountByCurrency[currency] = (selectedMonthAmountByCurrency[currency] || 0) + invoice.brutto_vegosszeg;
       });
 
-      thisMonthInvoices.forEach(invoice => {
-        const currency = invoice.penznem || 'HUF';
-        thisMonthAmountByCurrency[currency] = (thisMonthAmountByCurrency[currency] || 0) + invoice.brutto_vegosszeg;
-      });
-
-      const processingCount = (allInvoicesData || []).filter(invoice => invoice.statusz === 'feldolgozas_alatt').length;
-      const completedCount = (allInvoicesData || []).filter(invoice => invoice.statusz === 'feldolgozva').length;
-
-      // Calculate average based on primary currency (HUF)
-      const totalHUF = totalAmountByCurrency['HUF'] || 0;
-      const countHUF = (allInvoicesData || []).filter(inv => (inv.penznem || 'HUF') === 'HUF').length;
+      const processingCount = selectedMonthInvoices.filter(invoice => invoice.statusz === 'feldolgozas_alatt').length;
+      const completedCount = selectedMonthInvoices.filter(invoice => invoice.statusz === 'feldolgozva').length;
 
       setMetrics({
-        totalInvoices: (allInvoicesData || []).length,
-        totalAmountByCurrency,
-        thisMonthAmountByCurrency,
-        averageInvoiceAmount: countHUF > 0 ? totalHUF / countHUF : 0,
+        totalInvoices: selectedMonthInvoices.length,
+        totalAmountByCurrency: selectedMonthAmountByCurrency,
+        thisMonthAmountByCurrency: selectedMonthAmountByCurrency,
+        averageInvoiceAmount: 0, // Not used anymore
         processingCount,
         completedCount
       });
 
       // Fetch NAV invoices for VAT calculation (selected month)
-      const [selectedYear, selectedMonth] = selectedVatMonth.split('-').map(Number);
       const firstDayOfSelectedMonth = new Date(selectedYear, selectedMonth - 1, 1).toISOString().split('T')[0];
       const lastDayOfSelectedMonth = new Date(selectedYear, selectedMonth, 0).toISOString().split('T')[0];
 
