@@ -3,6 +3,9 @@ project_id = "vxxgvdlqvvchtlmqnrqf"
 [functions.nav-auto-sync]
 verify_jwt = false
 
+[functions.delete-nav-credentials]
+verify_jwt = true
+
 [functions.nylas-callback]
 verify_jwt = false
 

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle, Shield, Key, RefreshCw, XCircle, Clock } from 'lucide-react';
+import { AlertCircle, CheckCircle, Shield, Key, RefreshCw, XCircle, Clock, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -230,6 +230,51 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
     }
   };
 
+  const handleDisconnect = async () => {
+    if (!confirm('Biztosan le szeretné választani a NAV API kapcsolatot? Ez törli az összes mentett hitelesítő adatot.')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('delete-nav-credentials');
+
+      if (error) throw error;
+
+      toast({
+        title: "Sikeres leválasztás",
+        description: "A NAV API kapcsolat sikeresen leválasztva.",
+      });
+
+      // Reset local state
+      setCredentialInfo(null);
+      setValidationStatus('pending');
+      setFormData({
+        nav_username: '',
+        nav_password: '',
+        nav_tax_number: '',
+        nav_sign_key: '',
+        nav_exchange_key: '',
+        software_dev_name: '',
+        software_dev_contact: '',
+        is_test_environment: false
+      });
+
+      // Notify parent if callback provided
+      onCredentialsSaved?.();
+
+    } catch (error: any) {
+      console.error('Error disconnecting NAV credentials:', error);
+      toast({
+        title: "Hiba",
+        description: error.message || "Nem sikerült leválasztani a NAV kapcsolatot.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getConnectionStatusCard = () => {
     if (!credentialInfo) return null;
 
@@ -299,6 +344,38 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
       </Card>
     );
   };
+
+  // If connection is valid, show only status card and disconnect button
+  if (credentialInfo?.validation_status === 'valid') {
+    return (
+      <div className="space-y-6">
+        {getConnectionStatusCard()}
+        
+        <Card>
+          <CardContent className="pt-6">
+            <Button
+              variant="destructive"
+              onClick={handleDisconnect}
+              disabled={loading}
+              className="w-full"
+            >
+              {loading ? (
+                <>
+                  <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  Leválasztás...
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  Leválasztás
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
