@@ -403,7 +403,7 @@ const Index = () => {
               variant="default"
             />
             <MetricCard
-              title="Bevétel (nettó)"
+              title="Kimenő számlaösszeg (nettó)"
               value={
                 navVatData && Object.keys(navVatData.revenueNet).length > 0
                   ? Object.entries(navVatData.revenueNet)
