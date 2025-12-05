@@ -320,14 +320,20 @@ async function getNavToken(credentials: NavCredentials, navApiUrl: string): Prom
     body: tokenXml
   });
 
+  const responseText = await response.text();
+  
   if (!response.ok) {
-    throw new Error(`NAV token request failed: ${response.status}`);
+    // Parse NAV error details from response
+    const errorCode = extractTag(responseText, 'funcCode') || extractTag(responseText, 'resultCode');
+    const errorMessage = extractTag(responseText, 'message') || extractTag(responseText, 'errorDetail');
+    console.error(`NAV token error response: ${responseText.substring(0, 500)}`);
+    throw new Error(`NAV token request failed (${response.status}): ${errorCode || 'UNKNOWN'} - ${errorMessage || 'No details'}`);
   }
 
-  const responseText = await response.text();
   const tokenMatch = responseText.match(/<encodedExchangeToken>([^<]+)<\/encodedExchangeToken>/);
 
   if (!tokenMatch) {
+    console.error(`NAV response without token: ${responseText.substring(0, 500)}`);
     throw new Error('Failed to extract token from NAV response');
   }
 
@@ -371,11 +377,15 @@ async function queryInvoiceDigest(
     body: queryXml
   });
 
+  const responseText = await response.text();
+
   if (!response.ok) {
-    throw new Error(`NAV query failed: ${response.status}`);
+    const errorCode = extractTag(responseText, 'funcCode') || extractTag(responseText, 'resultCode');
+    const errorMessage = extractTag(responseText, 'message') || extractTag(responseText, 'errorDetail');
+    console.error(`NAV query error response: ${responseText.substring(0, 500)}`);
+    throw new Error(`NAV query failed (${response.status}): ${errorCode || 'UNKNOWN'} - ${errorMessage || 'No details'}`);
   }
 
-  const responseText = await response.text();
   return parseInvoicesFromXML(responseText);
 }
 
