@@ -187,32 +187,61 @@ export default function Analytics() {
     const yearStart = `${selectedYear}-01-01`;
     const yearEnd = `${selectedYear}-12-31`;
 
-    // Fetch invoices table to get company names by tax number
+    // First, fetch cached partners from the partners table
+    const { data: cachedPartners } = await supabase
+      .from("partners")
+      .select("tax_number, name, partner_type")
+      .eq("company_id", selectedCompany?.id);
+
+    // Build name lookup map from cached partners
+    const partnerNameMap: { [taxNumber: string]: string } = {};
+    cachedPartners?.forEach(p => {
+      partnerNameMap[p.tax_number] = p.name;
+    });
+
+    // Fetch invoices table as fallback for uncached names
     const { data: allInvoices } = await supabase
       .from("invoices")
       .select("elado_nev, elado_vat_id, vevo_nev, vevo_vat_id")
       .eq("company_id", selectedCompany?.id);
 
-    // Build name lookup maps from invoices
-    const customerNameMap: { [taxNumber: string]: string } = {};
-    const supplierNameMap: { [taxNumber: string]: string } = {};
+    // Build fallback name maps from invoices (only for tax numbers not in cache)
+    const newPartnersToCache: { tax_number: string; name: string; partner_type: string }[] = [];
     
     allInvoices?.forEach(inv => {
-      // Customers (vevo) - extract 8-digit tax number prefix
+      // Customers (vevo)
       if (inv.vevo_vat_id && inv.vevo_nev) {
         const taxPrefix = inv.vevo_vat_id.substring(0, 8);
-        if (!customerNameMap[taxPrefix]) {
-          customerNameMap[taxPrefix] = inv.vevo_nev;
+        if (!partnerNameMap[taxPrefix]) {
+          partnerNameMap[taxPrefix] = inv.vevo_nev;
+          newPartnersToCache.push({ tax_number: taxPrefix, name: inv.vevo_nev, partner_type: 'customer' });
         }
       }
-      // Suppliers (elado) - extract 8-digit tax number prefix
+      // Suppliers (elado)
       if (inv.elado_vat_id && inv.elado_nev) {
         const taxPrefix = inv.elado_vat_id.substring(0, 8);
-        if (!supplierNameMap[taxPrefix]) {
-          supplierNameMap[taxPrefix] = inv.elado_nev;
+        if (!partnerNameMap[taxPrefix]) {
+          partnerNameMap[taxPrefix] = inv.elado_nev;
+          newPartnersToCache.push({ tax_number: taxPrefix, name: inv.elado_nev, partner_type: 'supplier' });
         }
       }
     });
+
+    // Cache new partners in the background (don't await)
+    if (newPartnersToCache.length > 0 && user && selectedCompany) {
+      const partnersToInsert = newPartnersToCache.map(p => ({
+        user_id: user.id,
+        company_id: selectedCompany.id,
+        tax_number: p.tax_number,
+        name: p.name,
+        partner_type: p.partner_type
+      }));
+      
+      supabase
+        .from("partners")
+        .upsert(partnersToInsert, { onConflict: 'company_id,tax_number', ignoreDuplicates: true })
+        .then(() => console.log(`Cached ${newPartnersToCache.length} new partners`));
+    }
 
     // Top customers (outbound invoices)
     const { data: outboundInvoices } = await supabase
@@ -228,7 +257,7 @@ export default function Analytics() {
     outboundInvoices?.forEach(inv => {
       const taxNumber = inv.customer_tax_number || "";
       const key = taxNumber || "Ismeretlen";
-      const name = customerNameMap[taxNumber] || taxNumber || "Ismeretlen";
+      const name = partnerNameMap[taxNumber] || taxNumber || "Ismeretlen";
       
       if (!customerMap[key]) {
         customerMap[key] = {
@@ -260,7 +289,7 @@ export default function Analytics() {
     inboundInvoices?.forEach(inv => {
       const taxNumber = inv.supplier_tax_number || "";
       const key = taxNumber || "Ismeretlen";
-      const name = supplierNameMap[taxNumber] || taxNumber || "Ismeretlen";
+      const name = partnerNameMap[taxNumber] || taxNumber || "Ismeretlen";
       
       if (!supplierMap[key]) {
         supplierMap[key] = {
