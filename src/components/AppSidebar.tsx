@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
@@ -161,20 +161,19 @@ export function AppSidebar() {
                     asChild
                     isActive={isActive(item.url)}
                   >
-                    <Button
-                      variant="ghost"
-                      className={`w-full justify-start ${
+                    <Link
+                      to={item.url}
+                      className={`flex items-center w-full px-3 py-2 rounded-md text-sm transition-colors ${
                         isActive(item.url) 
                           ? 'bg-primary/10 text-primary font-medium' 
                           : 'hover:bg-muted/50'
                       }`}
-                      onClick={() => navigate(item.url)}
                     >
                       <item.icon className={`h-4 w-4 ${isCollapsed ? '' : 'mr-3'}`} />
                       {!isCollapsed && (
                         <span>{item.title}</span>
                       )}
-                    </Button>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -203,15 +202,13 @@ export function AppSidebar() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1"
-                  onClick={() => navigate('/settings')}
+                <Link 
+                  to="/settings"
+                  className="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3"
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Beállítások
-                </Button>
+                </Link>
                 <Button 
                   variant="outline" 
                   size="sm" 
