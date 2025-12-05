@@ -68,6 +68,7 @@ serve(async (req) => {
           fileSize: upload.file_size,
           fileType: upload.file_type,
           userId: upload.user_id,
+          companyId: upload.company_id,
           uploadedAt: upload.created_at,
           metadata: upload.metadata
         };
