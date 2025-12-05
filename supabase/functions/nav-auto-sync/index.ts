@@ -261,6 +261,9 @@ async function syncInvoices(
       if (upsertError) {
         throw new Error(`Failed to upsert invoices: ${upsertError.message}`);
       }
+
+      // Cache partners from NAV data
+      await cachePartnersFromInvoices(supabase, userId, companyId, allInvoices, direction);
     }
 
     // Update sync log with success
@@ -505,7 +508,9 @@ function parseInvoicesFromXML(xml: string): any[] {
       invoiceIssueDate: extractTag(digest, 'invoiceIssueDate'),
       invoiceDeliveryDate: extractTag(digest, 'invoiceDeliveryDate'),
       supplierTaxNumber: extractTag(digest, 'supplierTaxNumber'),
+      supplierName: extractTag(digest, 'supplierName'),
       customerTaxNumber: extractTag(digest, 'customerTaxNumber'),
+      customerName: extractTag(digest, 'customerName'),
       invoiceOperation: extractTag(digest, 'invoiceOperation'),
       invoiceNetAmount: parseFloat(extractTag(digest, 'invoiceNetAmount') || '0'),
       invoiceVatAmount: parseFloat(extractTag(digest, 'invoiceVatAmount') || '0'),
@@ -518,6 +523,73 @@ function parseInvoicesFromXML(xml: string): any[] {
   }
 
   return invoices;
+}
+
+async function cachePartnersFromInvoices(
+  supabase: any,
+  userId: string,
+  companyId: string,
+  invoices: any[],
+  direction: 'OUTBOUND' | 'INBOUND'
+) {
+  try {
+    // Collect unique partners from invoices
+    const partnersMap = new Map<string, { taxNumber: string; name: string; type: 'customer' | 'supplier' }>();
+
+    for (const inv of invoices) {
+      // For OUTBOUND invoices, the customer is the partner
+      // For INBOUND invoices, the supplier is the partner
+      if (direction === 'OUTBOUND' && inv.customerTaxNumber) {
+        const taxNumber = inv.customerTaxNumber;
+        if (!partnersMap.has(taxNumber) && inv.customerName) {
+          partnersMap.set(taxNumber, {
+            taxNumber,
+            name: inv.customerName,
+            type: 'customer'
+          });
+        }
+      } else if (direction === 'INBOUND' && inv.supplierTaxNumber) {
+        const taxNumber = inv.supplierTaxNumber;
+        if (!partnersMap.has(taxNumber) && inv.supplierName) {
+          partnersMap.set(taxNumber, {
+            taxNumber,
+            name: inv.supplierName,
+            type: 'supplier'
+          });
+        }
+      }
+    }
+
+    if (partnersMap.size === 0) {
+      console.log('📋 No new partners to cache from NAV data');
+      return;
+    }
+
+    // Upsert partners to database
+    const partnersToUpsert = Array.from(partnersMap.values()).map(p => ({
+      user_id: userId,
+      company_id: companyId,
+      tax_number: p.taxNumber,
+      name: p.name,
+      partner_type: p.type
+    }));
+
+    const { error: partnerError } = await supabase
+      .from('partners')
+      .upsert(partnersToUpsert, {
+        onConflict: 'user_id,tax_number',
+        ignoreDuplicates: false
+      });
+
+    if (partnerError) {
+      console.error('Error caching partners:', partnerError);
+    } else {
+      console.log(`📋 Cached ${partnersMap.size} partners from ${direction} invoices`);
+    }
+  } catch (error) {
+    // Don't fail the sync if partner caching fails
+    console.error('Error in partner caching:', error);
+  }
 }
 
 function extractTag(xml: string, tagName: string): string {
