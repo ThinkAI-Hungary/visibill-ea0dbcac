@@ -595,7 +595,7 @@ const InvoicesPage = () => {
                         >
                           <div className="flex items-center gap-2">
                             Kibocsátás dátuma
-                            <ArrowUpDown className="h-5 w-5" />
+                            <ArrowUpDown className="h-4 w-4" />
                           </div>
                         </TableHead>
                         <TableHead>Dokumentum azonosító</TableHead>
@@ -605,7 +605,7 @@ const InvoicesPage = () => {
                         >
                           <div className="flex items-center gap-2">
                             Eladó
-                            <ArrowUpDown className="h-5 w-5" />
+                            <ArrowUpDown className="h-4 w-4" />
                           </div>
                         </TableHead>
                         <TableHead 
@@ -614,7 +614,7 @@ const InvoicesPage = () => {
                         >
                           <div className="flex items-center gap-2">
                             Vevő
-                            <ArrowUpDown className="h-5 w-5" />
+                            <ArrowUpDown className="h-4 w-4" />
                           </div>
                         </TableHead>
                          <TableHead className="text-right">Összeg</TableHead>
@@ -668,14 +668,14 @@ const InvoicesPage = () => {
                                    size="sm"
                                    onClick={() => handleEditInvoice(invoice)}
                                  >
-                                   <Pencil className="h-5 w-5" />
+                                   <Pencil className="h-4 w-4" />
                                  </Button>
                                  <Button 
                                    variant="ghost" 
                                    size="sm"
                                    onClick={() => handleViewInvoice(invoice)}
                                  >
-                                   <Eye className="h-5 w-5" />
+                                   <Eye className="h-4 w-4" />
                                  </Button>
                                </div>
                              </TableCell>
