@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
@@ -23,9 +24,11 @@ import {
   FileText,
   Mail,
   Download,
-  Info
+  Info,
+  AlertCircle
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Profile {
   name: string;
@@ -65,6 +68,7 @@ export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
+  const { companies, selectedCompany, setSelectedCompany, refreshCompanies, loading: companiesLoading } = useCompany();
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
@@ -74,6 +78,12 @@ export default function Settings() {
     position: "",
     avatar_url: ""
   });
+
+  // Company edit state
+  const [companyName, setCompanyName] = useState("");
+  const [companyTaxNumber, setCompanyTaxNumber] = useState("");
+  const [companyAddress, setCompanyAddress] = useState("");
+  const [savingCompany, setSavingCompany] = useState(false);
   
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings>({
     company_name: "",
@@ -86,6 +96,15 @@ export default function Settings() {
     default_payment_terms: 30,
     tax_rate: 27
   });
+
+  // Sync company data when selectedCompany changes
+  useEffect(() => {
+    if (selectedCompany) {
+      setCompanyName(selectedCompany.name);
+      setCompanyTaxNumber(selectedCompany.tax_number || "");
+      setCompanyAddress(selectedCompany.address || "");
+    }
+  }, [selectedCompany]);
 
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
     email_notifications: true,
@@ -232,6 +251,46 @@ export default function Settings() {
     setLoading(false);
   };
 
+  const saveCompanyData = async () => {
+    if (!selectedCompany || !companyName.trim()) return;
+
+    setSavingCompany(true);
+    try {
+      const { error } = await supabase
+        .from('companies')
+        .update({
+          name: companyName.trim(),
+          tax_number: companyTaxNumber.trim() || null,
+          address: companyAddress.trim() || null,
+        })
+        .eq('id', selectedCompany.id);
+
+      if (error) throw error;
+
+      await refreshCompanies();
+      setSelectedCompany({
+        ...selectedCompany,
+        name: companyName.trim(),
+        tax_number: companyTaxNumber.trim() || null,
+        address: companyAddress.trim() || null,
+      });
+
+      toast({
+        title: "Siker",
+        description: "Cég adatai sikeresen mentve."
+      });
+    } catch (error) {
+      console.error('Error saving company:', error);
+      toast({
+        title: "Hiba történt",
+        description: "A cég adatainak mentése sikertelen.",
+        variant: "destructive"
+      });
+    } finally {
+      setSavingCompany(false);
+    }
+  };
+
   const handleExportData = async () => {
     try {
       setExportLoading(true);
@@ -373,77 +432,123 @@ export default function Settings() {
         {/* Business Settings */}
         <TabsContent value="business">
           <div className="space-y-6">
+            {/* Selected Company Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Building2 className="h-5 w-5" />
-                  Céginformációk
+                  Kiválasztott cég adatai
                 </CardTitle>
                 <CardDescription>
-                  Alapvető céginformációk és elérhetőségek
+                  {selectedCompany ? (
+                    <>Az aktuálisan kiválasztott cég: <strong>{selectedCompany.name}</strong></>
+                  ) : (
+                    "Válassz céget a felső menüből"
+                  )}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="company_name">Cég neve</Label>
-                    <Input
-                      id="company_name"
-                      value={businessSettings.company_name}
-                      onChange={(e) => setBusinessSettings(prev => ({ ...prev, company_name: e.target.value }))}
-                      placeholder="Példa Kft."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="tax_id">Adószám</Label>
-                    <Input
-                      id="tax_id"
-                      value={businessSettings.tax_id}
-                      onChange={(e) => setBusinessSettings(prev => ({ ...prev, tax_id: e.target.value }))}
-                      placeholder="12345678-1-23"
-                    />
-                  </div>
-                </div>
+                {!selectedCompany ? (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Nincs kiválasztott cég. A cég adatainak szerkesztéséhez válassz egy céget a felső menüből.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="company_name">Cég neve *</Label>
+                        <Input
+                          id="company_name"
+                          value={companyName}
+                          onChange={(e) => setCompanyName(e.target.value)}
+                          placeholder="Pl. Példa Kft."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="tax_number">Adószám</Label>
+                        <Input
+                          id="tax_number"
+                          value={companyTaxNumber}
+                          onChange={(e) => setCompanyTaxNumber(e.target.value)}
+                          placeholder="Pl. 12345678-2-42"
+                        />
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="address">Cím</Label>
-                  <Textarea
-                    id="address"
-                    value={businessSettings.address}
-                    onChange={(e) => setBusinessSettings(prev => ({ ...prev, address: e.target.value }))}
-                    placeholder="1234 Budapest, Példa utca 1."
-                    rows={3}
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="company_address">Cím</Label>
+                      <Textarea
+                        id="company_address"
+                        value={companyAddress}
+                        onChange={(e) => setCompanyAddress(e.target.value)}
+                        placeholder="Pl. 1234 Budapest, Példa utca 1."
+                        rows={3}
+                      />
+                    </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Telefon</Label>
-                    <Input
-                      id="phone"
-                      value={businessSettings.phone}
-                      onChange={(e) => setBusinessSettings(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="+36 30 123 4567"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={businessSettings.email}
-                      onChange={(e) => setBusinessSettings(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="info@pelda.hu"
-                    />
-                  </div>
-                </div>
-
-                <Button onClick={() => updateSettings('business', businessSettings)} disabled={loading}>
-                  Céginformációk mentése
-                </Button>
+                    <div className="flex items-center gap-4 pt-2">
+                      <Button 
+                        onClick={saveCompanyData} 
+                        disabled={!companyName.trim() || savingCompany}
+                      >
+                        {savingCompany ? "Mentés..." : "Cég adatainak mentése"}
+                      </Button>
+                      <p className="text-sm text-muted-foreground">
+                        Létrehozva: {new Date(selectedCompany.created_at).toLocaleDateString('hu-HU')}
+                      </p>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
+            {/* All Companies Overview */}
+            {companies.length > 1 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Összes cég áttekintése</CardTitle>
+                  <CardDescription>
+                    A fiókodhoz tartozó összes cég
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {companies.map((company) => (
+                      <div 
+                        key={company.id} 
+                        className={`flex items-center justify-between p-3 rounded-lg border ${
+                          selectedCompany?.id === company.id 
+                            ? 'border-primary bg-primary/5' 
+                            : 'border-border hover:bg-muted/50'
+                        }`}
+                      >
+                        <div>
+                          <p className="font-medium">{company.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {company.tax_number || 'Nincs adószám megadva'}
+                          </p>
+                        </div>
+                        {selectedCompany?.id !== company.id && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setSelectedCompany(company)}
+                          >
+                            Kiválasztás
+                          </Button>
+                        )}
+                        {selectedCompany?.id === company.id && (
+                          <span className="text-sm text-primary font-medium">Aktív</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
 
