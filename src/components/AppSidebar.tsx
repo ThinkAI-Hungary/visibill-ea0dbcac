@@ -126,7 +126,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className={isCollapsed ? "w-14" : "w-64"} collapsible="icon">
+    <Sidebar className={isCollapsed ? "w-14" : "w-72"} collapsible="icon">
       <SidebarContent>
         {/* Header */}
         <div className="p-4 border-b">
