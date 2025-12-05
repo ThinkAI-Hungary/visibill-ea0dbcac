@@ -37,27 +37,29 @@ const MetricCard = ({
   };
 
   return (
-    <Card className={cn('relative overflow-hidden', variantStyles[variant])}>
+    <Card className={cn('relative overflow-hidden h-full', variantStyles[variant])}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Icon className={cn('h-4 w-4', iconStyles[variant])} />
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col justify-between min-h-[80px]">
         <div className="text-2xl font-bold">{value}</div>
-        {description && (
-          <p className="text-xs text-muted-foreground mt-1">{description}</p>
-        )}
-        {trend && (
-          <div className="flex items-center mt-2">
-            <span className={cn(
-              'text-xs font-medium',
-              trend.isPositive ? 'text-success' : 'text-destructive'
-            )}>
-              {trend.isPositive ? '+' : ''}{trend.value}%
-            </span>
-            <span className="text-xs text-muted-foreground ml-1">az előző hónaphoz képest</span>
-          </div>
-        )}
+        <div className="mt-auto pt-2">
+          {description && (
+            <p className="text-xs text-muted-foreground">{description}</p>
+          )}
+          {trend && (
+            <div className="flex items-center">
+              <span className={cn(
+                'text-xs font-medium',
+                trend.isPositive ? 'text-success' : 'text-destructive'
+              )}>
+                {trend.isPositive ? '+' : ''}{trend.value}%
+              </span>
+              <span className="text-xs text-muted-foreground ml-1">az előző hónaphoz képest</span>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
