@@ -63,6 +63,7 @@ serve(async (req) => {
         const webhookPayload = {
           uploadId: upload.id,
           userId: upload.user_id,
+          companyId: upload.company_id,
           fileName: upload.file_name,
           fileSize: upload.file_size,
           fileType: upload.file_type,
