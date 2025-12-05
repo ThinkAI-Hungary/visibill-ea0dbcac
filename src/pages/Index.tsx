@@ -413,7 +413,7 @@ const Index = () => {
               }
 
               return (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 items-stretch">
             <MetricCard
               title="Összes számla"
               value={metrics.totalInvoices}
