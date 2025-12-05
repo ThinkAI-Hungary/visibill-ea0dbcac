@@ -37,12 +37,12 @@ const MetricCard = ({
   };
 
   return (
-    <Card className={cn('relative overflow-hidden h-full', variantStyles[variant])}>
+    <Card className={cn('relative overflow-hidden h-full flex flex-col', variantStyles[variant])}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <Icon className={cn('h-4 w-4', iconStyles[variant])} />
       </CardHeader>
-      <CardContent className="flex flex-col justify-between min-h-[80px]">
+      <CardContent className="flex flex-col flex-1">
         <div className="text-2xl font-bold">{value}</div>
         <div className="mt-auto pt-2">
           {description && (
