@@ -61,11 +61,19 @@ Deno.serve(async (req) => {
     console.log('[NAV-QUERY-OUTBOUND] User authenticated:', user.id);
 
     // Parse request body
-    const { dateFrom, dateTo, additionalFilters, invoiceDirection = 'OUTBOUND' } = await req.json();
+    const { dateFrom, dateTo, additionalFilters, invoiceDirection = 'OUTBOUND', companyId } = await req.json();
     
     if (!dateFrom || !dateTo) {
       return new Response(
         JSON.stringify({ error: 'dateFrom and dateTo are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // companyId is required for multi-tenancy
+    if (!companyId) {
+      return new Response(
+        JSON.stringify({ error: 'companyId is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -90,7 +98,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('[NAV-QUERY-OUTBOUND] Date range:', { dateFrom, dateTo, daysDiff });
+    console.log('[NAV-QUERY-OUTBOUND] Date range:', { dateFrom, dateTo, daysDiff, companyId });
 
     const startTime = Date.now();
 
@@ -99,6 +107,7 @@ Deno.serve(async (req) => {
       .from('nav_sync_logs')
       .insert({
         user_id: user.id,
+        company_id: companyId,
         sync_type: 'manual',
         invoice_direction: invoiceDirection,
         date_from: dateFrom,
@@ -116,13 +125,15 @@ Deno.serve(async (req) => {
     const syncLogId = logEntry?.id;
     console.log('[NAV-QUERY-OUTBOUND] Created sync log:', syncLogId);
 
-    // Get credentials using service client
-    const { data: credsData, error: credsError } = await serviceClient.rpc('get_nav_credentials', {
-      p_user_id: user.id
-    });
+    // Get credentials using service client - now by company_id
+    const { data: credsData, error: credsError } = await serviceClient
+      .from('user_nav_credentials')
+      .select('*')
+      .eq('company_id', companyId)
+      .single();
 
-    if (credsError || !credsData || credsData.error) {
-      console.error('[NAV-QUERY-OUTBOUND] Failed to get credentials:', credsError || credsData?.error);
+    if (credsError || !credsData) {
+      console.error('[NAV-QUERY-OUTBOUND] Failed to get credentials:', credsError);
       
       // Update sync log with failure using service client
       if (syncLogId) {
@@ -130,7 +141,7 @@ Deno.serve(async (req) => {
           .from('nav_sync_logs')
           .update({
             status: 'failed',
-            error_message: 'Failed to retrieve NAV credentials',
+            error_message: 'Failed to retrieve NAV credentials for company',
             completed_at: new Date().toISOString(),
             duration_ms: Date.now() - startTime
           })
@@ -138,12 +149,38 @@ Deno.serve(async (req) => {
       }
       
       return new Response(
-        JSON.stringify({ error: 'Failed to retrieve NAV credentials' }),
+        JSON.stringify({ error: 'Failed to retrieve NAV credentials for company' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const credentials: NavCredentials = credsData;
+    // Get decrypted credentials via RPC
+    const { data: decryptedCreds, error: decryptError } = await serviceClient.rpc('get_nav_credentials', {
+      p_user_id: user.id
+    });
+
+    if (decryptError || !decryptedCreds || decryptedCreds.error) {
+      console.error('[NAV-QUERY-OUTBOUND] Failed to decrypt credentials:', decryptError || decryptedCreds?.error);
+      
+      if (syncLogId) {
+        await serviceClient
+          .from('nav_sync_logs')
+          .update({
+            status: 'failed',
+            error_message: 'Failed to decrypt NAV credentials',
+            completed_at: new Date().toISOString(),
+            duration_ms: Date.now() - startTime
+          })
+          .eq('id', syncLogId);
+      }
+      
+      return new Response(
+        JSON.stringify({ error: 'Failed to decrypt NAV credentials' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const credentials: NavCredentials = decryptedCreds;
     console.log('[NAV-QUERY-OUTBOUND] Credentials retrieved');
 
     // Use production endpoint only
@@ -306,6 +343,7 @@ Deno.serve(async (req) => {
       
       const invoicesToInsert = allInvoices.map(inv => ({
         user_id: user.id,
+        company_id: companyId,
         invoice_number: inv.invoiceNumber,
         invoice_direction: invoiceDirection,
         supplier_tax_number: inv.supplierTaxNumber,

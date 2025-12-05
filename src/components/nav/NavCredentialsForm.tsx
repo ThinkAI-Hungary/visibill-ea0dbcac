@@ -10,10 +10,11 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 interface NavCredentialsFormProps {
+  companyId?: string;
   onCredentialsSaved?: () => void;
 }
 
-const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSaved }) => {
+const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, onCredentialsSaved }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(false);
@@ -41,18 +42,25 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
 
   useEffect(() => {
     loadCredentialInfo();
-  }, []);
+  }, [companyId]);
 
   const loadCredentialInfo = async () => {
+    if (!companyId) {
+      setCredentialInfo(null);
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('user_nav_credentials')
         .select('validation_status, last_validated_at, validation_error, software_id, nav_tax_number')
+        .eq('company_id', companyId)
         .maybeSingle();
       
       if (!error && data) {
         setCredentialInfo(data);
         setValidationStatus(data.validation_status as any);
+      } else {
+        setCredentialInfo(null);
       }
     } catch (error) {
       console.error('Error loading credential info:', error);
@@ -120,7 +128,8 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ onCredentialsSa
           navExchangeKey: formData.nav_exchange_key,
           softwareDevName: formData.software_dev_name || null,
           softwareDevContact: formData.software_dev_contact || null,
-          isTestEnvironment: formData.is_test_environment
+          isTestEnvironment: formData.is_test_environment,
+          companyId: companyId || null
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`

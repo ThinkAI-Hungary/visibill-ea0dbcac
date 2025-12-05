@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import SubscriptionUsage from '@/components/SubscriptionUsage';
 
 const ManualUpload = () => {
@@ -18,6 +19,7 @@ const ManualUpload = () => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { selectedCompany } = useCompany();
   const { canProcessInvoice, incrementUsage, remainingInvoices } = useSubscription();
 
   const handleInvoiceFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -214,6 +216,7 @@ const ManualUpload = () => {
             .from('invoice_uploads')
             .insert({
               user_id: user?.id!,
+              company_id: selectedCompany?.id || null,
               file_name: file.name,
               file_size: file.size,
               file_type: file.type,
@@ -430,6 +433,7 @@ const ManualUpload = () => {
           .from('salary_files' as any)
           .insert({
             user_id: user.id,
+            company_id: selectedCompany?.id || null,
             payment_type: 'other',
             recipient_name: 'Feldolgozás alatt',
             description: `${file.name} - Feldolgozás alatt...`,

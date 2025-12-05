@@ -28,6 +28,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import NavCredentialsForm from '@/components/nav/NavCredentialsForm';
+import { useCompany } from '@/contexts/CompanyContext';
 
 interface SyncLog {
   id: string;
@@ -59,6 +60,7 @@ interface NavInvoice {
 
 const NavTesting: React.FC = () => {
   const { toast } = useToast();
+  const { selectedCompany } = useCompany();
   const [loading, setLoading] = useState(false);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [navInvoices, setNavInvoices] = useState<NavInvoice[]>([]);
@@ -76,21 +78,28 @@ const NavTesting: React.FC = () => {
   });
 
   useEffect(() => {
-    checkCredentialsExist();
-    loadSyncLogs();
-  }, []);
+    if (selectedCompany) {
+      checkCredentialsExist();
+      loadSyncLogs();
+    }
+  }, [selectedCompany]);
 
   useEffect(() => {
-    if (credentialsExist) {
+    if (credentialsExist && selectedCompany) {
       loadNavInvoices();
     }
-  }, [invoiceFilters, credentialsExist]);
+  }, [invoiceFilters, credentialsExist, selectedCompany]);
 
   const checkCredentialsExist = async () => {
+    if (!selectedCompany) {
+      setCredentialsExist(false);
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('user_nav_credentials')
         .select('id')
+        .eq('company_id', selectedCompany.id)
         .maybeSingle();
       
       setCredentialsExist(!error && !!data);
@@ -100,10 +109,12 @@ const NavTesting: React.FC = () => {
   };
 
   const loadSyncLogs = async () => {
+    if (!selectedCompany) return;
     try {
       const { data, error } = await supabase
         .from('nav_sync_logs')
         .select('*')
+        .eq('company_id', selectedCompany.id)
         .order('started_at', { ascending: false })
         .limit(20);
 
@@ -115,10 +126,12 @@ const NavTesting: React.FC = () => {
   };
 
   const loadNavInvoices = async () => {
+    if (!selectedCompany) return;
     try {
       let query = supabase
         .from('nav_invoices')
         .select('*')
+        .eq('company_id', selectedCompany.id)
         .gte('invoice_issue_date', invoiceFilters.dateFrom)
         .lte('invoice_issue_date', invoiceFilters.dateTo)
         .order('invoice_issue_date', { ascending: false });
@@ -139,6 +152,15 @@ const NavTesting: React.FC = () => {
 
 
   const handleSync = async () => {
+    if (!selectedCompany) {
+      toast({
+        title: 'Nincs kiválasztott cég',
+        description: 'Kérlek válassz ki egy céget a szinkronizáláshoz',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -150,7 +172,8 @@ const NavTesting: React.FC = () => {
           body: {
             invoiceDirection: 'OUTBOUND',
             dateFrom: syncParams.dateFrom,
-            dateTo: syncParams.dateTo
+            dateTo: syncParams.dateTo,
+            companyId: selectedCompany.id
           },
           headers: {
             Authorization: `Bearer ${session.access_token}`
@@ -160,7 +183,8 @@ const NavTesting: React.FC = () => {
           body: {
             invoiceDirection: 'INBOUND',
             dateFrom: syncParams.dateFrom,
-            dateTo: syncParams.dateTo
+            dateTo: syncParams.dateTo,
+            companyId: selectedCompany.id
           },
           headers: {
             Authorization: `Bearer ${session.access_token}`
@@ -270,9 +294,12 @@ const NavTesting: React.FC = () => {
           </p>
         </div>
 
-        <NavCredentialsForm onCredentialsSaved={() => {
-          checkCredentialsExist();
-        }} />
+        <NavCredentialsForm 
+          companyId={selectedCompany?.id}
+          onCredentialsSaved={() => {
+            checkCredentialsExist();
+          }} 
+        />
       </div>
     );
   }
