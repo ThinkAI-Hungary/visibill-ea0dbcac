@@ -43,7 +43,8 @@ Deno.serve(async (req) => {
       navExchangeKey,
       softwareDevName,
       softwareDevContact,
-      isTestEnvironment = false
+      isTestEnvironment = false,
+      companyId = null
     } = body
 
     // Sanitize inputs
@@ -56,6 +57,7 @@ Deno.serve(async (req) => {
     // Log entry with privacy-safe data
     console.log(`[SAVE-CREDS][${debugId}] Entry:`, {
       userId: user.id,
+      companyId,
       taxNumberMasked: taxNumber.length >= 4 ? taxNumber.substring(0, 2) + '******' + taxNumber.substring(taxNumber.length - 2) : '***',
       usernameLength: username.length,
       isTestEnvironment
@@ -112,7 +114,8 @@ Deno.serve(async (req) => {
       p_nav_exchange_key: exchangeKey,
       p_software_dev_name: softwareDevName?.trim() || null,
       p_software_dev_contact: softwareDevContact?.trim() || null,
-      p_is_test_environment: isTestEnvironment
+      p_is_test_environment: isTestEnvironment,
+      p_company_id: companyId
     })
 
     if (error) {
