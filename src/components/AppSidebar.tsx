@@ -135,7 +135,9 @@ export function AppSidebar() {
             </div>
           ) : (
             <div className="flex items-center justify-center">
-              <img src={visibillLogo} alt="Visibill" className="h-8 w-auto" />
+              <span className="text-2xl font-black bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent tracking-tight">
+                V
+              </span>
             </div>
           )}
         </div>
