@@ -1,4 +1,4 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 
 interface AppLayoutProps {
@@ -12,10 +12,6 @@ export function AppLayout({ children }: AppLayoutProps) {
         <AppSidebar />
         
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Floating Sidebar Trigger */}
-          <div className="absolute top-4 left-4 z-50 md:hidden">
-            <SidebarTrigger className="hover:bg-muted bg-background/80 backdrop-blur" />
-          </div>
           
           {/* Main Content */}
           <main className="flex-1">
