@@ -158,6 +158,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    font-size: 1.125rem;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
