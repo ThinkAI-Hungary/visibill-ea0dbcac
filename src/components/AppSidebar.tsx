@@ -31,7 +31,6 @@ import {
   TrendingUp,
   Wallet
 } from "lucide-react";
-import visibillLogo from '@/assets/visibill-logo.png';
 import CompanySelector from "./CompanySelector";
 
 const navigationItems = [
@@ -131,7 +130,9 @@ export function AppSidebar() {
         <div className="p-4 border-b">
           {!isCollapsed ? (
             <div className="flex items-center gap-3">
-              <img src={visibillLogo} alt="Visibill" className="h-8 w-auto" />
+              <span className="text-2xl font-black bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent tracking-tight">
+                Visibill
+              </span>
             </div>
           ) : (
             <div className="flex items-center justify-center">
