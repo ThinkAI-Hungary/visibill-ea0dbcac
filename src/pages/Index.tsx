@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -83,6 +84,7 @@ interface NavVatData {
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const { selectedCompany } = useCompany();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -116,7 +118,7 @@ const Index = () => {
   useEffect(() => {
     fetchDashboardData();
     fetchExchangeRates();
-  }, [user, selectedYear, selectedMonth]);
+  }, [user, selectedCompany, selectedYear, selectedMonth]);
 
   const fetchExchangeRates = async () => {
     try {
@@ -151,7 +153,7 @@ const Index = () => {
   };
 
   const fetchDashboardData = async () => {
-    if (!user) return;
+    if (!user || !selectedCompany) return;
     
     try {
       // Fetch profile
@@ -164,24 +166,24 @@ const Index = () => {
       if (profileError) throw profileError;
       setProfile(profileData);
 
-      // Fetch categories (formerly projects)
+      // Fetch categories for the selected company
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('company_id', selectedCompany.id)
         .order('created_at', { ascending: false });
 
       if (categoriesError) throw categoriesError;
       setCategories(categoriesData || []);
 
-      // Fetch invoices with category names
+      // Fetch invoices with category names for the selected company
       const { data: invoicesData, error: invoicesError } = await supabase
         .from('invoices')
         .select(`
           *,
           categories(name)
         `)
-        .eq('user_id', user.id)
+        .eq('company_id', selectedCompany.id)
         .order('kibocsatas_datuma', { ascending: false })
         .limit(10);
 
@@ -199,7 +201,7 @@ const Index = () => {
       const { data: allInvoicesData, error: metricsError } = await supabase
         .from('invoices')
         .select('brutto_vegosszeg, kibocsatas_datuma, statusz, penznem')
-        .eq('user_id', user.id);
+        .eq('company_id', selectedCompany.id);
 
       if (metricsError) throw metricsError;
 
@@ -236,7 +238,7 @@ const Index = () => {
       const { data: navInvoicesData, error: navInvoicesError } = await supabase
         .from('nav_invoices')
         .select('invoice_direction, invoice_vat_amount, invoice_net_amount, invoice_gross_amount, currency')
-        .eq('user_id', user.id)
+        .eq('company_id', selectedCompany.id)
         .gte('invoice_issue_date', firstDayOfSelectedMonth)
         .lte('invoice_issue_date', lastDayOfSelectedMonth);
 

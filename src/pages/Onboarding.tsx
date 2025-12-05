@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,13 +27,14 @@ const Onboarding = () => {
   });
   const [projects, setProjects] = useState<Project[]>([]);
   const { user } = useAuth();
+  const { selectedCompany } = useCompany();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   // Load existing data
   useEffect(() => {
     const loadExistingData = async () => {
-      if (!user) return;
+      if (!user || !selectedCompany) return;
       
       try {
         // Load profile
@@ -50,11 +52,11 @@ const Onboarding = () => {
           });
         }
 
-        // Load existing categories (formerly projects)
+        // Load existing categories for the selected company
         const { data: projectData } = await supabase
           .from('categories')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('company_id', selectedCompany.id)
           .order('created_at', { ascending: true });
 
         if (projectData && projectData.length > 0) {
@@ -76,7 +78,7 @@ const Onboarding = () => {
     };
 
     loadExistingData();
-  }, [user]);
+  }, [user, selectedCompany]);
 
 
   const addProject = () => {
@@ -97,7 +99,7 @@ const Onboarding = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !selectedCompany) return;
     
     setLoading(true);
 
@@ -123,7 +125,7 @@ const Onboarding = () => {
       const { data: existingUserProjects, error: loadCategoriesError } = await supabase
         .from('categories')
         .select('id')
-        .eq('user_id', user.id);
+        .eq('company_id', selectedCompany.id);
 
       if (loadCategoriesError) throw loadCategoriesError;
       
@@ -137,7 +139,7 @@ const Onboarding = () => {
               description: project.description,
             })
             .eq('id', project.id)
-            .eq('user_id', user.id);
+            .eq('company_id', selectedCompany.id);
           
           if (updateError) throw updateError;
         } else {
@@ -146,6 +148,7 @@ const Onboarding = () => {
             .from('categories')
             .insert({
               user_id: user.id,
+              company_id: selectedCompany.id,
               name: project.name,
               description: project.description,
             });

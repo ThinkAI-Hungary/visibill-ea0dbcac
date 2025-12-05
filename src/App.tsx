@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { CompanyProvider } from "./contexts/CompanyContext";
 import { AppLayout } from "./components/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthGuard from "./components/AuthGuard";
@@ -29,9 +30,10 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <AuthProvider>
-        <SubscriptionProvider>
-          <TooltipProvider>
-          <Toaster />
+        <CompanyProvider>
+          <SubscriptionProvider>
+            <TooltipProvider>
+            <Toaster />
         
         <BrowserRouter>
           <Routes>
@@ -116,8 +118,9 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-          </TooltipProvider>
-        </SubscriptionProvider>
+            </TooltipProvider>
+          </SubscriptionProvider>
+        </CompanyProvider>
       </AuthProvider>
     </ThemeProvider>
   </QueryClientProvider>

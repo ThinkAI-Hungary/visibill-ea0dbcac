@@ -32,6 +32,7 @@ import {
   Wallet
 } from "lucide-react";
 import visibillLogo from '@/assets/visibill-logo.png';
+import CompanySelector from "./CompanySelector";
 
 const navigationItems = [
   {
@@ -139,6 +140,13 @@ export function AppSidebar() {
             </div>
           )}
         </div>
+
+        {/* Company Selector */}
+        {!isCollapsed && (
+          <div className="p-3 border-b">
+            <CompanySelector />
+          </div>
+        )}
 
         {/* Navigation */}
         <SidebarGroup>

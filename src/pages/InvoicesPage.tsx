@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +47,7 @@ interface Filters {
 
 const InvoicesPage = () => {
   const { user } = useAuth();
+  const { selectedCompany } = useCompany();
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -73,7 +75,7 @@ const InvoicesPage = () => {
 
   useEffect(() => {
     fetchData();
-  }, [user]);
+  }, [user, selectedCompany]);
 
   const getInvoiceAmount = (invoice: any) => {
     switch (invoice.invoice_type) {
@@ -107,7 +109,7 @@ const InvoicesPage = () => {
   };
 
   const fetchData = async () => {
-    if (!user) return;
+    if (!user || !selectedCompany) return;
     
     try {
       // Fetch invoices with category data
@@ -117,7 +119,7 @@ const InvoicesPage = () => {
           *,
           categories(id, name)
         `)
-        .eq('user_id', user.id);
+        .eq('company_id', selectedCompany.id);
 
       if (invoicesError) throw invoicesError;
 
@@ -125,7 +127,7 @@ const InvoicesPage = () => {
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('id, name')
-        .eq('user_id', user.id);
+        .eq('company_id', selectedCompany.id);
 
       if (categoriesError) throw categoriesError;
       setCategories(categoriesData || []);
@@ -134,7 +136,7 @@ const InvoicesPage = () => {
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('id, name')
-        .eq('user_id', user.id);
+        .eq('company_id', selectedCompany.id);
 
       if (projectsError) throw projectsError;
       setProjects(projectsData || []);
