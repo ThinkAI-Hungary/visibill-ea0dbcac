@@ -326,6 +326,7 @@ const ManualUpload = () => {
           .from('bank_statement_uploads')
           .insert({
             user_id: user.id,
+            company_id: selectedCompany?.id || null,
             file_name: file.name,
             file_url: urlData.publicUrl,
             file_size: file.size,

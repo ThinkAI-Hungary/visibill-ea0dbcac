@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       bank_statement_uploads: {
         Row: {
+          company_id: string | null
           created_at: string
           error_message: string | null
           file_name: string
@@ -30,6 +31,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           error_message?: string | null
           file_name: string
@@ -44,6 +46,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           error_message?: string | null
           file_name?: string
@@ -57,7 +60,15 @@ export type Database = {
           upload_status?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bank_statement_uploads_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bank_statements: {
         Row: {
