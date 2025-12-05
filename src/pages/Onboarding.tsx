@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -34,14 +34,12 @@ const Onboarding = () => {
   const { toast } = useToast();
   
   // Track initial state for unsaved changes detection
-  const initialStateRef = useRef<{ profile: typeof profile; projects: Project[] } | null>(null);
+  const [initialProfile, setInitialProfile] = useState<typeof profile | null>(null);
+  const [initialProjects, setInitialProjects] = useState<Project[] | null>(null);
   
-  // Determine if there are unsaved changes
-  const hasUnsavedChanges = (): boolean => {
-    if (!initialStateRef.current || initialLoading) return false;
-    
-    const initialProfile = initialStateRef.current.profile;
-    const initialProjects = initialStateRef.current.projects;
+  // Calculate if there are unsaved changes using useMemo for reactivity
+  const hasUnsavedChanges = useMemo(() => {
+    if (!initialProfile || !initialProjects || initialLoading) return false;
     
     // Check profile changes
     if (
@@ -70,9 +68,9 @@ const Onboarding = () => {
     }
     
     return false;
-  };
+  }, [profile, projects, initialProfile, initialProjects, initialLoading]);
   
-  const { showDialog, confirmNavigation, cancelNavigation } = useUnsavedChanges(hasUnsavedChanges());
+  const { showDialog, confirmNavigation, cancelNavigation } = useUnsavedChanges(hasUnsavedChanges);
 
   // Load existing data
   useEffect(() => {
@@ -123,15 +121,13 @@ const Onboarding = () => {
     loadExistingData();
   }, [user, selectedCompany]);
 
-  // Set initial state after loading completes
+  // Set initial state after loading completes (only once)
   useEffect(() => {
-    if (!initialLoading && !initialStateRef.current) {
-      initialStateRef.current = {
-        profile: { ...profile },
-        projects: projects.map(p => ({ ...p }))
-      };
+    if (!initialLoading && initialProfile === null && initialProjects === null) {
+      setInitialProfile({ ...profile });
+      setInitialProjects(projects.map(p => ({ ...p })));
     }
-  }, [initialLoading, profile, projects]);
+  }, [initialLoading]);
 
 
   const addProject = () => {
@@ -241,10 +237,8 @@ const Onboarding = () => {
       });
 
       // Reset initial state to prevent unsaved changes warning
-      initialStateRef.current = {
-        profile: { ...profile },
-        projects: projects.map(p => ({ ...p }))
-      };
+      setInitialProfile({ ...profile });
+      setInitialProjects(projects.map(p => ({ ...p })));
 
       navigate('/');
     } catch (error: any) {
