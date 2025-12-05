@@ -154,9 +154,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get decrypted credentials via RPC
+    // Get decrypted credentials via RPC - pass company_id for multi-tenant lookup
     const { data: decryptedCreds, error: decryptError } = await serviceClient.rpc('get_nav_credentials', {
-      p_user_id: user.id
+      p_user_id: user.id,
+      p_company_id: companyId
     });
 
     if (decryptError || !decryptedCreds || decryptedCreds.error) {
