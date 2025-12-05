@@ -1,21 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useBlocker } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export function useUnsavedChanges(hasChanges: boolean) {
   const [showDialog, setShowDialog] = useState(false);
-  const pendingNavigation = useRef<(() => void) | null>(null);
-
-  // Block navigation when there are unsaved changes
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      hasChanges && currentLocation.pathname !== nextLocation.pathname
-  );
-
-  useEffect(() => {
-    if (blocker.state === 'blocked') {
-      setShowDialog(true);
-    }
-  }, [blocker.state]);
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Handle browser back/forward and tab close
   useEffect(() => {
@@ -30,23 +20,57 @@ export function useUnsavedChanges(hasChanges: boolean) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasChanges]);
 
+  // Intercept link clicks
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (!hasChanges) return;
+      
+      const target = e.target as HTMLElement;
+      const link = target.closest('a');
+      
+      if (link && link.href) {
+        const url = new URL(link.href);
+        // Only intercept internal navigation
+        if (url.origin === window.location.origin && url.pathname !== location.pathname) {
+          e.preventDefault();
+          e.stopPropagation();
+          setPendingPath(url.pathname);
+          setShowDialog(true);
+        }
+      }
+    };
+
+    document.addEventListener('click', handleClick, true);
+    return () => document.removeEventListener('click', handleClick, true);
+  }, [hasChanges, location.pathname]);
+
   const confirmNavigation = useCallback(() => {
     setShowDialog(false);
-    if (blocker.state === 'blocked') {
-      blocker.proceed();
+    if (pendingPath) {
+      navigate(pendingPath);
+      setPendingPath(null);
     }
-  }, [blocker]);
+  }, [navigate, pendingPath]);
 
   const cancelNavigation = useCallback(() => {
     setShowDialog(false);
-    if (blocker.state === 'blocked') {
-      blocker.reset();
+    setPendingPath(null);
+  }, []);
+
+  // Helper to navigate with check
+  const safeNavigate = useCallback((path: string) => {
+    if (hasChanges) {
+      setPendingPath(path);
+      setShowDialog(true);
+    } else {
+      navigate(path);
     }
-  }, [blocker]);
+  }, [hasChanges, navigate]);
 
   return {
     showDialog,
     confirmNavigation,
     cancelNavigation,
+    safeNavigate,
   };
 }
