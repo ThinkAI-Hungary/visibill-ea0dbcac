@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +32,6 @@ const Projects = () => {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const { user } = useAuth();
-  const { selectedCompany } = useCompany();
   const { toast } = useToast();
 
   const emptyProject: Project = {
@@ -48,16 +46,16 @@ const Projects = () => {
 
   useEffect(() => {
     loadProjects();
-  }, [user, selectedCompany]);
+  }, [user]);
 
   const loadProjects = async () => {
-    if (!user || !selectedCompany) return;
+    if (!user) return;
 
     try {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .eq('company_id', selectedCompany.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -103,7 +101,7 @@ const Projects = () => {
             end_date: editingProject.end_date,
           })
           .eq('id', editingProject.id)
-          .eq('company_id', selectedCompany?.id);
+          .eq('user_id', user.id);
 
         if (error) throw error;
 
@@ -117,7 +115,6 @@ const Projects = () => {
           .from('projects')
           .insert({
             user_id: user.id,
-            company_id: selectedCompany?.id,
             name: editingProject.name,
             description: editingProject.description,
             client_name: editingProject.client_name,
