@@ -39,36 +39,56 @@ const Onboarding = () => {
   
   // Calculate if there are unsaved changes using useMemo for reactivity
   const hasUnsavedChanges = useMemo(() => {
-    if (!initialProfile || !initialProjects || initialLoading) return false;
+    if (!initialProfile || !initialProjects || initialLoading) {
+      console.log('[UnsavedChanges] Skipping check - initial state not ready', { 
+        hasInitialProfile: !!initialProfile, 
+        hasInitialProjects: !!initialProjects, 
+        initialLoading 
+      });
+      return false;
+    }
     
     // Check profile changes
-    if (
+    const profileChanged = (
       profile.name !== initialProfile.name ||
       profile.position !== initialProfile.position ||
       profile.company !== initialProfile.company
-    ) {
-      return true;
-    }
+    );
     
     // Check project count changes
-    if (projects.length !== initialProjects.length) return true;
+    const projectCountChanged = projects.length !== initialProjects.length;
     
     // Check individual project changes
+    let projectContentChanged = false;
     for (let i = 0; i < projects.length; i++) {
       const current = projects[i];
       const initial = initialProjects[i];
-      if (!initial) return true;
+      if (!initial) {
+        projectContentChanged = true;
+        break;
+      }
       if (
         current.name !== initial.name ||
         current.description !== initial.description ||
         current.id !== initial.id
       ) {
-        return true;
+        projectContentChanged = true;
+        break;
       }
     }
     
-    return false;
+    const hasChanges = profileChanged || projectCountChanged || projectContentChanged;
+    console.log('[UnsavedChanges] Check result:', { 
+      profileChanged, 
+      projectCountChanged, 
+      projectContentChanged, 
+      hasChanges 
+    });
+    
+    return hasChanges;
   }, [profile, projects, initialProfile, initialProjects, initialLoading]);
+  
+  console.log('[UnsavedChanges] Hook input hasUnsavedChanges:', hasUnsavedChanges);
   
   const { showDialog, confirmNavigation, cancelNavigation } = useUnsavedChanges(hasUnsavedChanges);
 
