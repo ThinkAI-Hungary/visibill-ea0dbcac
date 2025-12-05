@@ -7,9 +7,12 @@ export function useUnsavedChanges(hasChanges: boolean) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  console.log('[useUnsavedChanges] Hook called with hasChanges:', hasChanges);
+
   // Handle browser back/forward and tab close
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      console.log('[useUnsavedChanges] beforeunload triggered, hasChanges:', hasChanges);
       if (hasChanges) {
         e.preventDefault();
         e.returnValue = '';
@@ -23,15 +26,25 @@ export function useUnsavedChanges(hasChanges: boolean) {
   // Intercept link clicks
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
+      console.log('[useUnsavedChanges] Click detected, hasChanges:', hasChanges);
       if (!hasChanges) return;
       
       const target = e.target as HTMLElement;
       const link = target.closest('a');
       
+      console.log('[useUnsavedChanges] Link found:', link?.href);
+      
       if (link && link.href) {
         const url = new URL(link.href);
+        console.log('[useUnsavedChanges] URL check:', { 
+          origin: url.origin, 
+          windowOrigin: window.location.origin,
+          pathname: url.pathname,
+          currentPathname: location.pathname
+        });
         // Only intercept internal navigation
         if (url.origin === window.location.origin && url.pathname !== location.pathname) {
+          console.log('[useUnsavedChanges] Intercepting navigation to:', url.pathname);
           e.preventDefault();
           e.stopPropagation();
           setPendingPath(url.pathname);
