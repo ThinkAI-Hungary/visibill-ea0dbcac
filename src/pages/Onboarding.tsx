@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { Plus, X } from 'lucide-react';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 
 interface Project {
   id?: string;
@@ -30,6 +32,47 @@ const Onboarding = () => {
   const { selectedCompany } = useCompany();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Track initial state for unsaved changes detection
+  const initialStateRef = useRef<{ profile: typeof profile; projects: Project[] } | null>(null);
+  
+  // Determine if there are unsaved changes
+  const hasUnsavedChanges = (): boolean => {
+    if (!initialStateRef.current || initialLoading) return false;
+    
+    const initialProfile = initialStateRef.current.profile;
+    const initialProjects = initialStateRef.current.projects;
+    
+    // Check profile changes
+    if (
+      profile.name !== initialProfile.name ||
+      profile.position !== initialProfile.position ||
+      profile.company !== initialProfile.company
+    ) {
+      return true;
+    }
+    
+    // Check project count changes
+    if (projects.length !== initialProjects.length) return true;
+    
+    // Check individual project changes
+    for (let i = 0; i < projects.length; i++) {
+      const current = projects[i];
+      const initial = initialProjects[i];
+      if (!initial) return true;
+      if (
+        current.name !== initial.name ||
+        current.description !== initial.description ||
+        current.id !== initial.id
+      ) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+  
+  const { showDialog, confirmNavigation, cancelNavigation } = useUnsavedChanges(hasUnsavedChanges());
 
   // Load existing data
   useEffect(() => {
@@ -79,6 +122,16 @@ const Onboarding = () => {
 
     loadExistingData();
   }, [user, selectedCompany]);
+
+  // Set initial state after loading completes
+  useEffect(() => {
+    if (!initialLoading && !initialStateRef.current) {
+      initialStateRef.current = {
+        profile: { ...profile },
+        projects: projects.map(p => ({ ...p }))
+      };
+    }
+  }, [initialLoading, profile, projects]);
 
 
   const addProject = () => {
@@ -186,6 +239,12 @@ const Onboarding = () => {
         title: "Profil frissítve!",
         description: "A változtatások sikeresen mentve."
       });
+
+      // Reset initial state to prevent unsaved changes warning
+      initialStateRef.current = {
+        profile: { ...profile },
+        projects: projects.map(p => ({ ...p }))
+      };
 
       navigate('/');
     } catch (error: any) {
@@ -331,6 +390,12 @@ const Onboarding = () => {
           </form>
         </CardContent>
       </Card>
+      
+      <UnsavedChangesDialog
+        open={showDialog}
+        onConfirm={confirmNavigation}
+        onCancel={cancelNavigation}
+      />
     </div>
   );
 };
