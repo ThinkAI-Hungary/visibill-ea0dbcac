@@ -40,11 +40,6 @@ const Onboarding = () => {
   // Calculate if there are unsaved changes using useMemo for reactivity
   const hasUnsavedChanges = useMemo(() => {
     if (!initialProfile || !initialProjects || initialLoading) {
-      console.log('[UnsavedChanges] Skipping check - initial state not ready', { 
-        hasInitialProfile: !!initialProfile, 
-        hasInitialProjects: !!initialProjects, 
-        initialLoading 
-      });
       return false;
     }
     
@@ -77,18 +72,8 @@ const Onboarding = () => {
       }
     }
     
-    const hasChanges = profileChanged || projectCountChanged || projectContentChanged;
-    console.log('[UnsavedChanges] Check result:', { 
-      profileChanged, 
-      projectCountChanged, 
-      projectContentChanged, 
-      hasChanges 
-    });
-    
-    return hasChanges;
+    return profileChanged || projectCountChanged || projectContentChanged;
   }, [profile, projects, initialProfile, initialProjects, initialLoading]);
-  
-  console.log('[UnsavedChanges] Hook input hasUnsavedChanges:', hasUnsavedChanges);
   
   const { showDialog, confirmNavigation, cancelNavigation } = useUnsavedChanges(hasUnsavedChanges);
 
