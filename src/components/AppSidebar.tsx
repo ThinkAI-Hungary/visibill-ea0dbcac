@@ -186,9 +186,9 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* User Section */}
-        <div className="mt-auto p-4 border-t">
+        <div className="mt-auto border-t">
           {!isCollapsed ? (
-            <div className="space-y-3">
+            <div className="p-4 space-y-3">
               <div className="flex items-center gap-3">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user?.user_metadata?.avatar_url} />
@@ -227,7 +227,7 @@ export function AppSidebar() {
               </div>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="p-2 space-y-2">
               <Avatar className="h-8 w-8 mx-auto">
                 <AvatarImage src={user?.user_metadata?.avatar_url} />
                 <AvatarFallback className="text-xs">
@@ -244,6 +244,11 @@ export function AppSidebar() {
               </Button>
             </div>
           )}
+          
+          {/* Sidebar Toggle */}
+          <div className="p-2 border-t">
+            <SidebarTrigger className="w-full hover:bg-muted" />
+          </div>
         </div>
       </SidebarContent>
     </Sidebar>
