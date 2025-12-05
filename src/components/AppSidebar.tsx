@@ -172,7 +172,7 @@ export function AppSidebar() {
                     >
                       <item.icon className={`h-5 w-5 ${isCollapsed ? '' : 'mr-3'}`} />
                       {!isCollapsed && (
-                        <span className={`text-[20px] ${item.disabled ? 'line-through' : ''}`}>
+                        <span className={`text-[18px] ${item.disabled ? 'line-through' : ''}`}>
                           {item.title}
                           {item.disabled && ' (Hamarosan)'}
                         </span>
