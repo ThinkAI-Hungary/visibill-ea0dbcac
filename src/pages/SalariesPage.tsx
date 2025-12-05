@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +45,7 @@ interface Salary {
 
 export default function SalariesPage() {
   const { user } = useAuth();
+  const { selectedCompany } = useCompany();
   const [salaries, setSalaries] = useState<Salary[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -58,16 +60,16 @@ export default function SalariesPage() {
 
   useEffect(() => {
     fetchSalaries();
-  }, []);
+  }, [selectedCompany]);
 
   const fetchSalaries = async () => {
-    if (!user) return;
+    if (!user || !selectedCompany) return;
     
     try {
       const { data, error } = await supabase
         .from("salary")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("company_id", selectedCompany.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -86,11 +88,12 @@ export default function SalariesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !selectedCompany) return;
 
     try {
       const dataToSubmit = {
         user_id: user.id,
+        company_id: selectedCompany.id,
         név: formData.név,
         összeg: parseFloat(formData.összeg),
         dátum: formData.dátum || null,
