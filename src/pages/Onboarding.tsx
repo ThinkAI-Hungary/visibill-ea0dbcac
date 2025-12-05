@@ -52,11 +52,11 @@ const Onboarding = () => {
           });
         }
 
-        // Load existing categories for the selected company
+        // Load existing categories for the user (user-based, not company-based)
         const { data: projectData } = await supabase
           .from('categories')
           .select('*')
-          .eq('company_id', selectedCompany.id)
+          .eq('user_id', user.id)
           .order('created_at', { ascending: true });
 
         if (projectData && projectData.length > 0) {
@@ -125,7 +125,7 @@ const Onboarding = () => {
       const { data: existingUserProjects, error: loadCategoriesError } = await supabase
         .from('categories')
         .select('id')
-        .eq('company_id', selectedCompany.id);
+        .eq('user_id', user.id);
 
       if (loadCategoriesError) throw loadCategoriesError;
       
@@ -139,7 +139,7 @@ const Onboarding = () => {
               description: project.description,
             })
             .eq('id', project.id)
-            .eq('company_id', selectedCompany.id);
+            .eq('user_id', user.id);
           
           if (updateError) throw updateError;
         } else {
@@ -148,7 +148,6 @@ const Onboarding = () => {
             .from('categories')
             .insert({
               user_id: user.id,
-              company_id: selectedCompany.id,
               name: project.name,
               description: project.description,
             });

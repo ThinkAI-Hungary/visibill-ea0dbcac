@@ -112,7 +112,7 @@ const InvoicesPage = () => {
     if (!user || !selectedCompany) return;
     
     try {
-      // Fetch invoices with category data
+      // Fetch invoices with category data (company-based)
       const { data: invoicesData, error: invoicesError } = await supabase
         .from('invoices')
         .select(`
@@ -123,20 +123,20 @@ const InvoicesPage = () => {
 
       if (invoicesError) throw invoicesError;
 
-      // Fetch categories for filter dropdown
+      // Fetch categories for filter dropdown (user-based, not company-based)
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('id, name')
-        .eq('company_id', selectedCompany.id);
+        .eq('user_id', user.id);
 
       if (categoriesError) throw categoriesError;
       setCategories(categoriesData || []);
 
-      // Fetch projects for filter and edit dropdown
+      // Fetch projects for filter and edit dropdown (user-based, not company-based)
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('id, name')
-        .eq('company_id', selectedCompany.id);
+        .eq('user_id', user.id);
 
       if (projectsError) throw projectsError;
       setProjects(projectsData || []);

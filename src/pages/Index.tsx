@@ -166,11 +166,11 @@ const Index = () => {
       if (profileError) throw profileError;
       setProfile(profileData);
 
-      // Fetch categories for the selected company
+      // Fetch categories for the user (user-based, not company-based)
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
-        .eq('company_id', selectedCompany.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (categoriesError) throw categoriesError;
