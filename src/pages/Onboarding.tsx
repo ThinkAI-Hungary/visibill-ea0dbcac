@@ -105,13 +105,12 @@ const Onboarding = () => {
           .eq('user_id', user.id)
           .single();
         
-        if (profileData) {
-          setProfile({
-            name: profileData.name || '',
-            position: profileData.position || '',
-            company: profileData.company || '',
-          });
-        }
+        const loadedProfile = {
+          name: profileData?.name || '',
+          position: profileData?.position || '',
+          company: profileData?.company || '',
+        };
+        setProfile(loadedProfile);
 
         // Load existing categories for the user (user-based, not company-based)
         const { data: projectData } = await supabase
@@ -120,19 +119,27 @@ const Onboarding = () => {
           .eq('user_id', user.id)
           .order('created_at', { ascending: true });
 
+        let loadedProjects: Project[];
         if (projectData && projectData.length > 0) {
-          setProjects(projectData.map(p => ({
+          loadedProjects = projectData.map(p => ({
             id: p.id,
             name: p.name,
             description: p.description || ''
-          })));
+          }));
         } else {
-          // If no projects exist, start with one empty project
-          setProjects([{ name: '', description: '' }]);
+          loadedProjects = [{ name: '', description: '' }];
         }
+        setProjects(loadedProjects);
+        
+        // Set initial state immediately after loading
+        setInitialProfile({ ...loadedProfile });
+        setInitialProjects(loadedProjects.map(p => ({ ...p })));
       } catch (error) {
         console.error('Error loading data:', error);
-        setProjects([{ name: '', description: '' }]);
+        const defaultProjects = [{ name: '', description: '' }];
+        setProjects(defaultProjects);
+        setInitialProfile({ name: '', position: '', company: '' });
+        setInitialProjects(defaultProjects.map(p => ({ ...p })));
       } finally {
         setInitialLoading(false);
       }
@@ -140,14 +147,6 @@ const Onboarding = () => {
 
     loadExistingData();
   }, [user, selectedCompany]);
-
-  // Set initial state after loading completes (only once)
-  useEffect(() => {
-    if (!initialLoading && initialProfile === null && initialProjects === null) {
-      setInitialProfile({ ...profile });
-      setInitialProjects(projects.map(p => ({ ...p })));
-    }
-  }, [initialLoading]);
 
 
   const addProject = () => {
