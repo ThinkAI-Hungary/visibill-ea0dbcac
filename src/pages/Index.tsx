@@ -323,72 +323,54 @@ const Index = () => {
               Itt van a vállalkozásod teljes áttekintése
             </p>
           </div>
-          <div className="flex gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex gap-2">
-                    <Select value={selectedYear} onValueChange={setSelectedYear}>
-                      <SelectTrigger className="w-[100px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 5 }, (_, i) => {
-                          const year = new Date().getFullYear() - i;
-                          return (
-                            <SelectItem key={year} value={year.toString()}>
-                              {year}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                    <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                      <SelectTrigger className="w-[120px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-none">
-                        {Array.from({ length: 12 }, (_, i) => {
-                          const monthNum = (i + 1).toString().padStart(2, '0');
-                          const monthName = new Date(2024, i, 1).toLocaleDateString('hu-HU', { month: 'long' });
-                          return (
-                            <SelectItem key={monthNum} value={monthNum}>
-                              {monthName.charAt(0).toUpperCase() + monthName.slice(1)}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Válassz időszakot az adatok megtekintéséhez</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="w-[200px]">
-                    <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {currencies.map((curr) => (
-                          <SelectItem key={curr.code} value={curr.code}>
-                            {curr.flag} {curr.code}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Válassz pénznemet az összegek átváltásához</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+          <div className="flex gap-2 items-center">
+            <div className="flex gap-2">
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 5 }, (_, i) => {
+                    const year = new Date().getFullYear() - i;
+                    return (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-none">
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const monthNum = (i + 1).toString().padStart(2, '0');
+                    const monthName = new Date(2024, i, 1).toLocaleDateString('hu-HU', { month: 'long' });
+                    return (
+                      <SelectItem key={monthNum} value={monthNum}>
+                        {monthName.charAt(0).toUpperCase() + monthName.slice(1)}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-[200px]">
+              <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencies.map((curr) => (
+                    <SelectItem key={curr.code} value={curr.code}>
+                      {curr.flag} {curr.code}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
