@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -14,6 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import { UnsavedChangesDialog } from "@/components/UnsavedChangesDialog";
 import { 
   Building2, 
   CreditCard, 
@@ -72,6 +74,8 @@ export default function Settings() {
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+  
   const [profile, setProfile] = useState<Profile>({
     name: "",
     company: "",
@@ -97,12 +101,22 @@ export default function Settings() {
     tax_rate: 27
   });
 
+  // Initial state tracking for unsaved changes
+  const [initialProfile, setInitialProfile] = useState<Profile | null>(null);
+  const [initialCompanyData, setInitialCompanyData] = useState<{name: string, taxNumber: string, address: string} | null>(null);
+
   // Sync company data when selectedCompany changes
   useEffect(() => {
     if (selectedCompany) {
       setCompanyName(selectedCompany.name);
       setCompanyTaxNumber(selectedCompany.tax_number || "");
       setCompanyAddress(selectedCompany.address || "");
+      // Set initial company state for comparison
+      setInitialCompanyData({
+        name: selectedCompany.name,
+        taxNumber: selectedCompany.tax_number || "",
+        address: selectedCompany.address || ""
+      });
     }
   }, [selectedCompany]);
 
@@ -120,6 +134,32 @@ export default function Settings() {
     number_format: "1 234 567,89",
     timezone: "Europe/Budapest"
   });
+
+  // Calculate unsaved changes
+  const hasUnsavedChanges = useMemo(() => {
+    if (!initialDataLoaded || !initialProfile) return false;
+
+    // Check profile changes
+    const profileChanged = (
+      profile.name !== initialProfile.name ||
+      profile.company !== initialProfile.company ||
+      profile.position !== initialProfile.position
+    );
+
+    // Check company changes
+    let companyChanged = false;
+    if (initialCompanyData && selectedCompany) {
+      companyChanged = (
+        companyName !== initialCompanyData.name ||
+        companyTaxNumber !== initialCompanyData.taxNumber ||
+        companyAddress !== initialCompanyData.address
+      );
+    }
+
+    return profileChanged || companyChanged;
+  }, [profile, initialProfile, companyName, companyTaxNumber, companyAddress, initialCompanyData, selectedCompany, initialDataLoaded]);
+
+  const { showDialog, confirmNavigation, cancelNavigation } = useUnsavedChanges(hasUnsavedChanges);
 
   // Sync theme from context to local state
   useEffect(() => {
@@ -143,12 +183,23 @@ export default function Settings() {
       .single();
 
     if (data) {
-      setProfile({
+      const profileData = {
         name: data.name || "",
         company: data.company || "",
         position: data.position || "",
         avatar_url: data.avatar_url || ""
+      };
+      setProfile(profileData);
+      setInitialProfile(profileData);
+      setInitialDataLoaded(true);
+    } else {
+      setInitialProfile({
+        name: "",
+        company: "",
+        position: "",
+        avatar_url: ""
       });
+      setInitialDataLoaded(true);
     }
   };
 
@@ -203,6 +254,8 @@ export default function Settings() {
         variant: "destructive"
       });
     } else {
+      // Reset initial state after successful save
+      setInitialProfile({ ...profile });
       toast({
         title: "Siker",
         description: "A profil sikeresen mentve."
@@ -273,6 +326,13 @@ export default function Settings() {
         name: companyName.trim(),
         tax_number: companyTaxNumber.trim() || null,
         address: companyAddress.trim() || null,
+      });
+
+      // Reset initial state after successful save
+      setInitialCompanyData({
+        name: companyName.trim(),
+        taxNumber: companyTaxNumber.trim(),
+        address: companyAddress.trim()
       });
 
       toast({
@@ -718,6 +778,12 @@ export default function Settings() {
       <ChangePasswordDialog 
         open={passwordDialogOpen} 
         onOpenChange={setPasswordDialogOpen} 
+      />
+
+      <UnsavedChangesDialog
+        open={showDialog}
+        onConfirm={confirmNavigation}
+        onCancel={cancelNavigation}
       />
     </div>
   );
