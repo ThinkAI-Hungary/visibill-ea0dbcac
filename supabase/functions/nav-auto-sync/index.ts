@@ -41,33 +41,34 @@ Deno.serve(async (req) => {
     // Create admin client with service role
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    // Get all users with validated NAV credentials
-    const { data: usersWithCreds, error: usersError } = await supabase
+    // Get all companies with validated NAV credentials
+    const { data: companiesWithCreds, error: companiesError } = await supabase
       .from('user_nav_credentials')
-      .select('user_id, nav_username')
-      .eq('validation_status', 'valid');
+      .select('user_id, company_id, nav_username')
+      .eq('validation_status', 'valid')
+      .not('company_id', 'is', null);
 
-    if (usersError) {
-      console.error('Error fetching users with credentials:', usersError);
-      throw new Error(`Failed to fetch users: ${usersError.message}`);
+    if (companiesError) {
+      console.error('Error fetching companies with credentials:', companiesError);
+      throw new Error(`Failed to fetch companies: ${companiesError.message}`);
     }
 
-    if (!usersWithCreds || usersWithCreds.length === 0) {
-      console.log('ℹ️ No users with valid NAV credentials found');
+    if (!companiesWithCreds || companiesWithCreds.length === 0) {
+      console.log('ℹ️ No companies with valid NAV credentials found');
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: 'No users to sync',
-          users_processed: 0 
+          message: 'No companies to sync',
+          companies_processed: 0 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`📊 Found ${usersWithCreds.length} users to sync`);
+    console.log(`📊 Found ${companiesWithCreds.length} companies to sync`);
 
     const results = {
-      total_users: usersWithCreds.length,
+      total_companies: companiesWithCreds.length,
       successful: 0,
       failed: 0,
       details: [] as any[]
@@ -81,14 +82,14 @@ Deno.serve(async (req) => {
     const dateToStr = dateTo.toISOString().split('T')[0];
     const dateFromStr = dateFrom.toISOString().split('T')[0];
 
-    // Process each user with rate limiting
-    for (const user of usersWithCreds) {
-      console.log(`\n👤 Processing user: ${user.user_id} (${user.nav_username})`);
+    // Process each company with rate limiting
+    for (const company of companiesWithCreds) {
+      console.log(`\n👤 Processing company: ${company.company_id} (user: ${company.user_id})`);
 
       try {
         // Get credentials via RPC
         const { data: credsData, error: credsError } = await supabase.rpc('get_nav_credentials', {
-          p_user_id: user.user_id
+          p_user_id: company.user_id
         });
 
         if (credsError || !credsData) {
@@ -98,32 +99,34 @@ Deno.serve(async (req) => {
         const credentials = credsData as NavCredentials;
 
         // Sync OUTBOUND invoices
-        await syncInvoices(supabase, user.user_id, credentials, 'OUTBOUND', dateFromStr, dateToStr);
-        console.log(`✅ OUTBOUND sync completed for ${user.user_id}`);
+        await syncInvoices(supabase, company.user_id, company.company_id, credentials, 'OUTBOUND', dateFromStr, dateToStr);
+        console.log(`✅ OUTBOUND sync completed for company ${company.company_id}`);
 
         // Sync INBOUND invoices
-        await syncInvoices(supabase, user.user_id, credentials, 'INBOUND', dateFromStr, dateToStr);
-        console.log(`✅ INBOUND sync completed for ${user.user_id}`);
+        await syncInvoices(supabase, company.user_id, company.company_id, credentials, 'INBOUND', dateFromStr, dateToStr);
+        console.log(`✅ INBOUND sync completed for company ${company.company_id}`);
 
         results.successful++;
         results.details.push({
-          user_id: user.user_id,
-          username: user.nav_username,
+          company_id: company.company_id,
+          user_id: company.user_id,
+          username: company.nav_username,
           status: 'success'
         });
 
       } catch (error) {
-        console.error(`❌ Error syncing user ${user.user_id}:`, error);
+        console.error(`❌ Error syncing company ${company.company_id}:`, error);
         results.failed++;
         results.details.push({
-          user_id: user.user_id,
-          username: user.nav_username,
+          company_id: company.company_id,
+          user_id: company.user_id,
+          username: company.nav_username,
           status: 'failed',
           error: error.message
         });
       }
 
-      // Rate limiting: 200ms delay between users (max 5 users/second)
+      // Rate limiting: 200ms delay between companies (max 5/second)
       await delay(200);
     }
 
@@ -156,6 +159,7 @@ Deno.serve(async (req) => {
 async function syncInvoices(
   supabase: any,
   userId: string,
+  companyId: string,
   credentials: NavCredentials,
   direction: 'OUTBOUND' | 'INBOUND',
   dateFrom: string,
@@ -168,6 +172,7 @@ async function syncInvoices(
     .from('nav_sync_logs')
     .insert({
       user_id: userId,
+      company_id: companyId,
       sync_type: 'automatic',
       invoice_direction: direction,
       date_from: dateFrom,
@@ -225,6 +230,7 @@ async function syncInvoices(
     if (allInvoices.length > 0) {
       const invoicesToInsert = allInvoices.map(inv => ({
         user_id: userId,
+        company_id: companyId,
         invoice_number: inv.invoiceNumber,
         invoice_direction: direction,
         invoice_issue_date: inv.invoiceIssueDate,
