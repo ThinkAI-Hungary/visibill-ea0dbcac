@@ -256,8 +256,9 @@ export default function Analytics() {
     const customerMap: { [key: string]: PartnerData } = {};
     outboundInvoices?.forEach(inv => {
       const taxNumber = inv.customer_tax_number || "";
+      const taxPrefix = taxNumber.substring(0, 8); // Hungarian tax numbers: first 8 chars are the ID
       const key = taxNumber || "Ismeretlen";
-      const name = partnerNameMap[taxNumber] || taxNumber || "Ismeretlen";
+      const name = partnerNameMap[taxPrefix] || partnerNameMap[taxNumber] || taxNumber || "Ismeretlen";
       
       if (!customerMap[key]) {
         customerMap[key] = {
@@ -288,8 +289,9 @@ export default function Analytics() {
     const supplierMap: { [key: string]: PartnerData } = {};
     inboundInvoices?.forEach(inv => {
       const taxNumber = inv.supplier_tax_number || "";
+      const taxPrefix = taxNumber.substring(0, 8); // Hungarian tax numbers: first 8 chars are the ID
       const key = taxNumber || "Ismeretlen";
-      const name = partnerNameMap[taxNumber] || taxNumber || "Ismeretlen";
+      const name = partnerNameMap[taxPrefix] || partnerNameMap[taxNumber] || taxNumber || "Ismeretlen";
       
       if (!supplierMap[key]) {
         supplierMap[key] = {
