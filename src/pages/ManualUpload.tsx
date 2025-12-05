@@ -423,6 +423,7 @@ const ManualUpload = () => {
           fileUrl: urlData.publicUrl,
           filePath: uploadData.path,
           userId: user.id,
+          companyId: selectedCompany?.id || null,
           fileSize: file.size,
           fileType: file.type,
           uploadedAt: new Date().toISOString()
