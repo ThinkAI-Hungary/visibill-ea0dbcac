@@ -94,7 +94,11 @@ const Index = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [navVatData, setNavVatData] = useState<NavVatData | null>(null);
-  const [selectedVatMonth, setSelectedVatMonth] = useState<string>(new Date().toISOString().slice(0, 7));
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+  const [selectedMonth, setSelectedMonth] = useState<string>((new Date().getMonth() + 1).toString().padStart(2, '0'));
+  
+  // Computed value for backward compatibility
+  const selectedVatMonth = `${selectedYear}-${selectedMonth}`;
 
   const currencies = [
     { code: 'HUF', name: 'Magyar Forint', flag: '🇭🇺' },
@@ -112,7 +116,7 @@ const Index = () => {
   useEffect(() => {
     fetchDashboardData();
     fetchExchangeRates();
-  }, [user, selectedVatMonth]);
+  }, [user, selectedYear, selectedMonth]);
 
   const fetchExchangeRates = async () => {
     try {
@@ -190,7 +194,7 @@ const Index = () => {
       setInvoices(formattedInvoices);
 
       // Calculate metrics for selected month
-      const [selectedYear, selectedMonth] = selectedVatMonth.split('-').map(Number);
+      const [yearNum, monthNum] = selectedVatMonth.split('-').map(Number);
       
       const { data: allInvoicesData, error: metricsError } = await supabase
         .from('invoices')
@@ -202,7 +206,7 @@ const Index = () => {
       // Filter invoices for the selected month
       const selectedMonthInvoices = (allInvoicesData || []).filter(invoice => {
         const invoiceDate = new Date(invoice.kibocsatas_datuma);
-        return invoiceDate.getMonth() === selectedMonth - 1 && invoiceDate.getFullYear() === selectedYear;
+        return invoiceDate.getMonth() === monthNum - 1 && invoiceDate.getFullYear() === yearNum;
       });
 
       // Group amounts by currency for selected month
@@ -226,8 +230,8 @@ const Index = () => {
       });
 
       // Fetch NAV invoices for VAT calculation and revenue (selected month)
-      const firstDayOfSelectedMonth = new Date(selectedYear, selectedMonth - 1, 1).toISOString().split('T')[0];
-      const lastDayOfSelectedMonth = new Date(selectedYear, selectedMonth, 0).toISOString().split('T')[0];
+      const firstDayOfSelectedMonth = new Date(yearNum, monthNum - 1, 1).toISOString().split('T')[0];
+      const lastDayOfSelectedMonth = new Date(yearNum, monthNum, 0).toISOString().split('T')[0];
 
       const { data: navInvoicesData, error: navInvoicesError } = await supabase
         .from('nav_invoices')
@@ -321,20 +325,33 @@ const Index = () => {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="w-[200px]">
-                    <Select value={selectedVatMonth} onValueChange={setSelectedVatMonth}>
-                      <SelectTrigger>
+                  <div className="flex gap-2">
+                    <Select value={selectedYear} onValueChange={setSelectedYear}>
+                      <SelectTrigger className="w-[100px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 5 }, (_, i) => {
+                          const year = new Date().getFullYear() - i;
+                          return (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                      <SelectTrigger className="w-[120px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {Array.from({ length: 12 }, (_, i) => {
-                          const date = new Date();
-                          date.setMonth(date.getMonth() - i);
-                          const value = date.toISOString().slice(0, 7);
-                          const label = date.toLocaleDateString('hu-HU', { year: 'numeric', month: 'long' });
+                          const monthNum = (i + 1).toString().padStart(2, '0');
+                          const monthName = new Date(2024, i, 1).toLocaleDateString('hu-HU', { month: 'long' });
                           return (
-                            <SelectItem key={value} value={value}>
-                              {label}
+                            <SelectItem key={monthNum} value={monthNum}>
+                              {monthName.charAt(0).toUpperCase() + monthName.slice(1)}
                             </SelectItem>
                           );
                         })}
@@ -343,7 +360,7 @@ const Index = () => {
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Válassz hónapot az ÁFA megtekintéséhez</p>
+                  <p>Válassz időszakot az adatok megtekintéséhez</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
