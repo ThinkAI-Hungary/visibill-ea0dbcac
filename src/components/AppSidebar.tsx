@@ -89,7 +89,6 @@ const navigationItems = [
     title: "Elemzések",
     url: "/analytics",
     icon: BarChart3,
-    disabled: true,
   },
 ];
 
@@ -158,7 +157,6 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={isActive(item.url)}
-                    disabled={item.disabled}
                   >
                     <Button
                       variant="ghost"
@@ -166,16 +164,12 @@ export function AppSidebar() {
                         isActive(item.url) 
                           ? 'bg-primary/10 text-primary font-medium' 
                           : 'hover:bg-muted/50'
-                      } ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      onClick={() => !item.disabled && navigate(item.url)}
-                      disabled={item.disabled}
+                      }`}
+                      onClick={() => navigate(item.url)}
                     >
                       <item.icon className={`h-4 w-4 ${isCollapsed ? '' : 'mr-3'}`} />
                       {!isCollapsed && (
-                        <span className={item.disabled ? 'line-through' : ''}>
-                          {item.title}
-                          {item.disabled && ' (Hamarosan)'}
-                        </span>
+                        <span>{item.title}</span>
                       )}
                     </Button>
                   </SidebarMenuButton>
