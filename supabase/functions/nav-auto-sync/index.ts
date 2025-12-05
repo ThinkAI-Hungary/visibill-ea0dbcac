@@ -87,13 +87,19 @@ Deno.serve(async (req) => {
       console.log(`\n👤 Processing company: ${company.company_id} (user: ${company.user_id})`);
 
       try {
-        // Get credentials via RPC
+        // Get credentials via RPC - pass company_id for multi-tenant lookup
         const { data: credsData, error: credsError } = await supabase.rpc('get_nav_credentials', {
-          p_user_id: company.user_id
+          p_user_id: company.user_id,
+          p_company_id: company.company_id
         });
 
         if (credsError || !credsData) {
           throw new Error(`Failed to get credentials: ${credsError?.message || 'No data'}`);
+        }
+
+        // Check if credentials lookup returned an error
+        if (credsData.error) {
+          throw new Error(`Credentials lookup failed: ${credsData.error}`);
         }
 
         const credentials = credsData as NavCredentials;

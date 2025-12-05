@@ -1529,7 +1529,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_nav_credentials: { Args: { p_user_id: string }; Returns: Json }
+      get_nav_credentials:
+        | { Args: { p_company_id?: string; p_user_id: string }; Returns: Json }
+        | { Args: { p_user_id: string }; Returns: Json }
       increment_invoice_usage: { Args: { user_uuid: string }; Returns: boolean }
       reset_monthly_usage: { Args: never; Returns: number }
       save_nav_credentials:
