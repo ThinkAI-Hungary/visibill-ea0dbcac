@@ -1521,19 +1521,34 @@ export type Database = {
       get_nav_credentials: { Args: { p_user_id: string }; Returns: Json }
       increment_invoice_usage: { Args: { user_uuid: string }; Returns: boolean }
       reset_monthly_usage: { Args: never; Returns: number }
-      save_nav_credentials: {
-        Args: {
-          p_is_test_environment?: boolean
-          p_nav_exchange_key: string
-          p_nav_password: string
-          p_nav_sign_key: string
-          p_nav_tax_number: string
-          p_nav_username: string
-          p_software_dev_contact?: string
-          p_software_dev_name?: string
-        }
-        Returns: Json
-      }
+      save_nav_credentials:
+        | {
+            Args: {
+              p_is_test_environment?: boolean
+              p_nav_exchange_key: string
+              p_nav_password: string
+              p_nav_sign_key: string
+              p_nav_tax_number: string
+              p_nav_username: string
+              p_software_dev_contact?: string
+              p_software_dev_name?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_company_id?: string
+              p_is_test_environment?: boolean
+              p_nav_exchange_key: string
+              p_nav_password: string
+              p_nav_sign_key: string
+              p_nav_tax_number: string
+              p_nav_username: string
+              p_software_dev_contact?: string
+              p_software_dev_name?: string
+            }
+            Returns: Json
+          }
       user_has_company_access: {
         Args: { p_company_id: string }
         Returns: boolean

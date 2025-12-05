@@ -562,13 +562,16 @@ const NavTesting: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="credentials" className="space-y-6">
-          <NavCredentialsForm onCredentialsSaved={() => {
-            checkCredentialsExist();
-            toast({
-              title: 'Hitelesítő adatok frissítve',
-              description: 'A NAV API hitelesítő adatok sikeresen frissítve',
-            });
-          }} />
+          <NavCredentialsForm 
+            companyId={selectedCompany?.id}
+            onCredentialsSaved={() => {
+              checkCredentialsExist();
+              toast({
+                title: 'Hitelesítő adatok frissítve',
+                description: 'A NAV API hitelesítő adatok sikeresen frissítve',
+              });
+            }} 
+          />
         </TabsContent>
       </Tabs>
     </div>
