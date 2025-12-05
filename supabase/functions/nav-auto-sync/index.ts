@@ -1,6 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { sha3_512 } from 'https://esm.sh/@noble/hashes@1.3.0/sha3';
-import { bytesToHex } from 'https://esm.sh/@noble/hashes@1.3.0/utils';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -299,10 +298,12 @@ async function syncInvoices(
 
 async function getNavToken(credentials: NavCredentials, navApiUrl: string): Promise<string> {
   const requestId = generateRequestId();
-  const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const compactTimestamp = getCompactTimestamp(now);
 
   const passwordHash = await sha512Hash(credentials.nav_password);
-  const signatureInput = `${requestId}${timestamp}${credentials.nav_sign_key}`;
+  const signatureInput = `${requestId}${compactTimestamp}${credentials.nav_sign_key}`;
   const signature = sha3Hash(signatureInput);
 
   const tokenXml = buildTokenXML(
@@ -336,7 +337,8 @@ async function getNavToken(credentials: NavCredentials, navApiUrl: string): Prom
     throw new Error(`NAV token request failed (${response.status}): ${errorCode || 'UNKNOWN'} - ${errorMessage || 'No details'}`);
   }
 
-  const tokenMatch = responseText.match(/<encodedExchangeToken>([^<]+)<\/encodedExchangeToken>/);
+  // Handle both prefixed and non-prefixed token tag
+  const tokenMatch = responseText.match(/<(?:\w+:)?encodedExchangeToken>([^<]+)<\/(?:\w+:)?encodedExchangeToken>/);
 
   if (!tokenMatch) {
     console.error(`NAV response without token: ${responseText.substring(0, 500)}`);
@@ -356,18 +358,25 @@ async function queryInvoiceDigest(
   page: number
 ): Promise<any[]> {
   const requestId = generateRequestId();
-  const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const compactTimestamp = getCompactTimestamp(now);
 
-  const signatureInput = `${requestId}${timestamp}${credentials.nav_sign_key}`;
+  const passwordHash = await sha512Hash(credentials.nav_password);
+  const signatureInput = `${requestId}${compactTimestamp}${credentials.nav_sign_key}`;
   const signature = sha3Hash(signatureInput);
 
   const queryXml = buildQueryXML(
     credentials.nav_username,
+    passwordHash,
     credentials.nav_tax_number,
     signature,
     requestId,
     timestamp,
     token,
+    credentials.software_id,
+    credentials.software_dev_name || '',
+    credentials.software_dev_contact || '',
     direction,
     dateFrom,
     dateTo,
@@ -407,25 +416,25 @@ function buildTokenXML(
   devContact: string
 ): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
-<TokenExchangeRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api">
-  <header>
-    <requestId>${requestId}</requestId>
-    <timestamp>${timestamp}</timestamp>
-    <requestVersion>3.0</requestVersion>
-    <headerVersion>1.0</headerVersion>
-  </header>
-  <user>
-    <login>${username}</login>
-    <passwordHash cryptoType="SHA-512">${passwordHash}</passwordHash>
-    <taxNumber>${taxNumber}</taxNumber>
-    <requestSignature cryptoType="SHA3-512">${signature}</requestSignature>
-  </user>
+<TokenExchangeRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api" xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common">
+  <common:header>
+    <common:requestId>${requestId}</common:requestId>
+    <common:timestamp>${timestamp}</common:timestamp>
+    <common:requestVersion>3.0</common:requestVersion>
+    <common:headerVersion>1.0</common:headerVersion>
+  </common:header>
+  <common:user>
+    <common:login>${username}</common:login>
+    <common:passwordHash cryptoType="SHA-512">${passwordHash}</common:passwordHash>
+    <common:taxNumber>${taxNumber}</common:taxNumber>
+    <common:requestSignature cryptoType="SHA3-512">${signature}</common:requestSignature>
+  </common:user>
   <software>
     <softwareId>${softwareId}</softwareId>
-    <softwareName>VisiBill</softwareName>
+    <softwareName>Visibill</softwareName>
     <softwareOperation>ONLINE_SERVICE</softwareOperation>
     <softwareMainVersion>1.0</softwareMainVersion>
-    <softwareDevName>${devName || 'VisiBill Dev'}</softwareDevName>
+    <softwareDevName>${devName || 'Visibill'}</softwareDevName>
     <softwareDevContact>${devContact || 'support@visibill.hu'}</softwareDevContact>
   </software>
 </TokenExchangeRequest>`;
@@ -433,38 +442,43 @@ function buildTokenXML(
 
 function buildQueryXML(
   username: string,
+  passwordHash: string,
   taxNumber: string,
   signature: string,
   requestId: string,
   timestamp: string,
   token: string,
+  softwareId: string,
+  devName: string,
+  devContact: string,
   direction: string,
   dateFrom: string,
   dateTo: string,
   page: number
 ): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
-<QueryInvoiceDigestRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api">
-  <header>
-    <requestId>${requestId}</requestId>
-    <timestamp>${timestamp}</timestamp>
-    <requestVersion>3.0</requestVersion>
-    <headerVersion>1.0</headerVersion>
-  </header>
-  <user>
-    <login>${username}</login>
-    <taxNumber>${taxNumber}</taxNumber>
-    <requestSignature cryptoType="SHA3-512">${signature}</requestSignature>
-  </user>
+<QueryInvoiceDigestRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api" xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common">
+  <common:header>
+    <common:requestId>${requestId}</common:requestId>
+    <common:timestamp>${timestamp}</common:timestamp>
+    <common:requestVersion>3.0</common:requestVersion>
+    <common:headerVersion>1.0</common:headerVersion>
+  </common:header>
+  <common:user>
+    <common:login>${username}</common:login>
+    <common:passwordHash cryptoType="SHA-512">${passwordHash}</common:passwordHash>
+    <common:taxNumber>${taxNumber}</common:taxNumber>
+    <common:requestSignature cryptoType="SHA3-512">${signature}</common:requestSignature>
+  </common:user>
   <software>
-    <softwareId>HU12345678VISIBILL</softwareId>
-    <softwareName>VisiBill</softwareName>
+    <softwareId>${softwareId}</softwareId>
+    <softwareName>Visibill</softwareName>
     <softwareOperation>ONLINE_SERVICE</softwareOperation>
     <softwareMainVersion>1.0</softwareMainVersion>
-    <softwareDevName>VisiBill Dev</softwareDevName>
-    <softwareDevContact>support@visibill.hu</softwareDevContact>
+    <softwareDevName>${devName || 'Visibill'}</softwareDevName>
+    <softwareDevContact>${devContact || 'support@visibill.hu'}</softwareDevContact>
   </software>
-  <exchangeToken>${token}</exchangeToken>
+  <page>${page}</page>
   <invoiceDirection>${direction}</invoiceDirection>
   <invoiceQueryParams>
     <mandatoryQueryParams>
@@ -474,7 +488,6 @@ function buildQueryXML(
       </invoiceIssueDate>
     </mandatoryQueryParams>
   </invoiceQueryParams>
-  <page>${page}</page>
 </QueryInvoiceDigestRequest>`;
 }
 
@@ -508,7 +521,8 @@ function parseInvoicesFromXML(xml: string): any[] {
 }
 
 function extractTag(xml: string, tagName: string): string {
-  const regex = new RegExp(`<${tagName}>([^<]*)<\/${tagName}>`, 'i');
+  // Handle both prefixed and non-prefixed tags
+  const regex = new RegExp(`<(?:\\w+:)?${tagName}>([^<]*)<\\/(?:\\w+:)?${tagName}>`, 'i');
   const match = xml.match(regex);
   return match ? match[1] : '';
 }
@@ -521,11 +535,22 @@ async function sha512Hash(input: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(input);
   const hashBuffer = await crypto.subtle.digest('SHA-512', data);
-  return bytesToHex(new Uint8Array(hashBuffer));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 
 function sha3Hash(input: string): string {
   const encoder = new TextEncoder();
   const data = encoder.encode(input);
-  return bytesToHex(sha3_512(data));
+  const hashArray = Array.from(sha3_512(data));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+function getCompactTimestamp(date: Date): string {
+  return date.getUTCFullYear().toString()
+    + (date.getUTCMonth() + 1).toString().padStart(2, '0')
+    + date.getUTCDate().toString().padStart(2, '0')
+    + date.getUTCHours().toString().padStart(2, '0')
+    + date.getUTCMinutes().toString().padStart(2, '0')
+    + date.getUTCSeconds().toString().padStart(2, '0');
 }
