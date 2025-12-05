@@ -170,9 +170,9 @@ export function AppSidebar() {
                       onClick={() => !item.disabled && navigate(item.url)}
                       disabled={item.disabled}
                     >
-                      <item.icon className={`h-4 w-4 ${isCollapsed ? '' : 'mr-3'}`} />
+                      <item.icon className={`h-5 w-5 ${isCollapsed ? '' : 'mr-3'}`} />
                       {!isCollapsed && (
-                        <span className={item.disabled ? 'line-through' : ''}>
+                        <span className={`text-[20px] ${item.disabled ? 'line-through' : ''}`}>
                           {item.title}
                           {item.disabled && ' (Hamarosan)'}
                         </span>
