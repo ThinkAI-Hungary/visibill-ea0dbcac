@@ -187,6 +187,33 @@ export default function Analytics() {
     const yearStart = `${selectedYear}-01-01`;
     const yearEnd = `${selectedYear}-12-31`;
 
+    // Fetch invoices table to get company names by tax number
+    const { data: allInvoices } = await supabase
+      .from("invoices")
+      .select("elado_nev, elado_vat_id, vevo_nev, vevo_vat_id")
+      .eq("company_id", selectedCompany?.id);
+
+    // Build name lookup maps from invoices
+    const customerNameMap: { [taxNumber: string]: string } = {};
+    const supplierNameMap: { [taxNumber: string]: string } = {};
+    
+    allInvoices?.forEach(inv => {
+      // Customers (vevo) - extract 8-digit tax number prefix
+      if (inv.vevo_vat_id && inv.vevo_nev) {
+        const taxPrefix = inv.vevo_vat_id.substring(0, 8);
+        if (!customerNameMap[taxPrefix]) {
+          customerNameMap[taxPrefix] = inv.vevo_nev;
+        }
+      }
+      // Suppliers (elado) - extract 8-digit tax number prefix
+      if (inv.elado_vat_id && inv.elado_nev) {
+        const taxPrefix = inv.elado_vat_id.substring(0, 8);
+        if (!supplierNameMap[taxPrefix]) {
+          supplierNameMap[taxPrefix] = inv.elado_nev;
+        }
+      }
+    });
+
     // Top customers (outbound invoices)
     const { data: outboundInvoices } = await supabase
       .from("nav_invoices")
@@ -199,11 +226,14 @@ export default function Analytics() {
     // Group by customer tax number
     const customerMap: { [key: string]: PartnerData } = {};
     outboundInvoices?.forEach(inv => {
-      const key = inv.customer_tax_number || "Ismeretlen";
+      const taxNumber = inv.customer_tax_number || "";
+      const key = taxNumber || "Ismeretlen";
+      const name = customerNameMap[taxNumber] || taxNumber || "Ismeretlen";
+      
       if (!customerMap[key]) {
         customerMap[key] = {
-          name: key,
-          taxNumber: inv.customer_tax_number || "",
+          name,
+          taxNumber,
           totalAmount: 0,
           invoiceCount: 0
         };
@@ -228,11 +258,14 @@ export default function Analytics() {
 
     const supplierMap: { [key: string]: PartnerData } = {};
     inboundInvoices?.forEach(inv => {
-      const key = inv.supplier_tax_number || "Ismeretlen";
+      const taxNumber = inv.supplier_tax_number || "";
+      const key = taxNumber || "Ismeretlen";
+      const name = supplierNameMap[taxNumber] || taxNumber || "Ismeretlen";
+      
       if (!supplierMap[key]) {
         supplierMap[key] = {
-          name: key,
-          taxNumber: inv.supplier_tax_number || "",
+          name,
+          taxNumber,
           totalAmount: 0,
           invoiceCount: 0
         };
