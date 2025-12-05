@@ -345,7 +345,7 @@ const Index = () => {
                       <SelectTrigger className="w-[120px]">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-h-none">
                         {Array.from({ length: 12 }, (_, i) => {
                           const monthNum = (i + 1).toString().padStart(2, '0');
                           const monthName = new Date(2024, i, 1).toLocaleDateString('hu-HU', { month: 'long' });
