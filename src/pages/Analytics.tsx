@@ -313,7 +313,7 @@ export default function Analytics() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6 max-w-full overflow-hidden">
+      <div className="p-6 space-y-6">
         <Skeleton className="h-10 w-64" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => (
@@ -326,7 +326,7 @@ export default function Analytics() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-full overflow-hidden">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
