@@ -235,18 +235,20 @@ export function AppSidebar() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Link 
-                  to="/settings"
-                  className="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Beállítások
-                </Link>
                 <Button 
                   variant="outline" 
-                  size="sm" 
+                  asChild
+                  className="flex-1 h-8 px-3 text-xs"
+                >
+                  <Link to="/settings">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Beállítások
+                  </Link>
+                </Button>
+                <Button 
+                  variant="outline" 
                   onClick={handleSignOut}
-                  className="flex-1"
+                  className="flex-1 h-8 px-3 text-xs"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Kilépés
