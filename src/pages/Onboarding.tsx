@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -6,12 +6,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, X } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
+import { CategoryCard } from '@/components/CategoryCard';
 
 interface Project {
   id?: string;
@@ -320,7 +320,7 @@ const Onboarding = () => {
               </div>
             </div>
 
-            {/* Categories */}
+            {/* Categories - Modern Grid Layout */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Költség kategóriák</h3>
@@ -332,54 +332,30 @@ const Onboarding = () => {
                   className="flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
-                  Kategória hozzáadása
+                  Új kategória
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground">
-                Kezeld a kategóriáidat a számlák és kiadások rendszerezéséhez. Minden kategória egy különböző projekt vagy kiadási területet jelent.
+                Kezeld a kategóriáidat a számlák és kiadások rendszerezéséhez.
               </p>
               
-              {projects.map((project, index) => (
-                <Card key={index} className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">
-                        {project.id ? `${project.name || `Projekt ${index + 1}`}` : `Új Projekt ${index + 1}`}
-                      </h4>
-                      {projects.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeProject(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`project-name-${index}`}>Kategória neve</Label>
-                      <Input
-                        id={`project-name-${index}`}
-                        type="text"
-                        placeholder="pl. Marketing, Irodai kellékek, Utazás"
-                        value={project.name}
-                        onChange={(e) => updateProject(index, 'name', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`project-description-${index}`}>Számla típusok</Label>
-                      <Textarea
-                        id={`project-description-${index}`}
-                        placeholder="Írj le, milyen számlák/kiadások tartoznak ebbe a kategóriába (pl. reklámköltségek, közösségi média eszközök, promóciós anyagok)"
-                        value={project.description}
-                        onChange={(e) => updateProject(index, 'description', e.target.value)}
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-                </Card>
-              ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {projects.map((project, index) => (
+                  <CategoryCard
+                    key={project.id || `new-${index}`}
+                    name={project.name}
+                    description={project.description}
+                    isNew={!project.id}
+                    onUpdate={(name, description) => {
+                      const updatedProjects = [...projects];
+                      updatedProjects[index] = { ...updatedProjects[index], name, description };
+                      setProjects(updatedProjects);
+                    }}
+                    onRemove={() => removeProject(index)}
+                    canRemove={projects.length > 1}
+                  />
+                ))}
+              </div>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
