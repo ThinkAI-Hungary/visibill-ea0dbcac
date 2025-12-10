@@ -16,33 +16,12 @@ import {
   Clock,
   Shield,
   Database,
-  Activity,
-  Calendar,
-  AlertTriangle,
-  ChevronDown,
   Info
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import NavCredentialsForm from '@/components/nav/NavCredentialsForm';
 import { useCompany } from '@/contexts/CompanyContext';
-
-interface SyncLog {
-  id: string;
-  sync_type: string;
-  invoice_direction: string;
-  date_from: string;
-  date_to: string;
-  invoices_fetched: number;
-  status: string;
-  error_message?: string;
-  duration_ms?: number;
-  started_at: string;
-  completed_at?: string;
-}
 
 interface NavInvoice {
   id: string;
@@ -62,25 +41,23 @@ const NavTesting: React.FC = () => {
   const { toast } = useToast();
   const { selectedCompany } = useCompany();
   const [loading, setLoading] = useState(false);
-  const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [navInvoices, setNavInvoices] = useState<NavInvoice[]>([]);
   const [credentialsExist, setCredentialsExist] = useState(false);
   
   const [syncParams, setSyncParams] = useState({
-    dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
-    dateTo: new Date().toISOString().split('T')[0] // today
+    dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    dateTo: new Date().toISOString().split('T')[0]
   });
 
   const [invoiceFilters, setInvoiceFilters] = useState({
     direction: 'ALL' as 'ALL' | 'OUTBOUND' | 'INBOUND',
-    dateFrom: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 90 days ago
-    dateTo: new Date().toISOString().split('T')[0] // today
+    dateFrom: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    dateTo: new Date().toISOString().split('T')[0]
   });
 
   useEffect(() => {
     if (selectedCompany) {
       checkCredentialsExist();
-      loadSyncLogs();
     }
   }, [selectedCompany]);
 
@@ -108,23 +85,6 @@ const NavTesting: React.FC = () => {
     }
   };
 
-  const loadSyncLogs = async () => {
-    if (!selectedCompany) return;
-    try {
-      const { data, error } = await supabase
-        .from('nav_sync_logs')
-        .select('*')
-        .eq('company_id', selectedCompany.id)
-        .order('started_at', { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-      setSyncLogs(data || []);
-    } catch (error: any) {
-      console.error('Error loading sync logs:', error);
-    }
-  };
-
   const loadNavInvoices = async () => {
     if (!selectedCompany) return;
     try {
@@ -136,7 +96,6 @@ const NavTesting: React.FC = () => {
         .lte('invoice_issue_date', invoiceFilters.dateTo)
         .order('invoice_issue_date', { ascending: false });
 
-      // Apply direction filter if not ALL
       if (invoiceFilters.direction !== 'ALL') {
         query = query.eq('invoice_direction', invoiceFilters.direction);
       }
@@ -149,7 +108,6 @@ const NavTesting: React.FC = () => {
       console.error('Error loading nav invoices:', error);
     }
   };
-
 
   const handleSync = async () => {
     if (!selectedCompany) {
@@ -166,7 +124,6 @@ const NavTesting: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      // Sync both OUTBOUND and INBOUND invoices
       const [outboundResult, inboundResult] = await Promise.allSettled([
         supabase.functions.invoke('nav-query-outbound-invoices', {
           body: {
@@ -195,7 +152,6 @@ const NavTesting: React.FC = () => {
       let totalInvoices = 0;
       const errors: string[] = [];
 
-      // Process OUTBOUND result
       if (outboundResult.status === 'fulfilled') {
         const { data, error } = outboundResult.value;
         if (error || data?.error) {
@@ -207,7 +163,6 @@ const NavTesting: React.FC = () => {
         errors.push(`Kimenő: ${outboundResult.reason?.message || 'Ismeretlen hiba'}`);
       }
 
-      // Process INBOUND result
       if (inboundResult.status === 'fulfilled') {
         const { data, error } = inboundResult.value;
         if (error || data?.error) {
@@ -219,27 +174,21 @@ const NavTesting: React.FC = () => {
         errors.push(`Bejövő: ${inboundResult.reason?.message || 'Ismeretlen hiba'}`);
       }
 
-      // Show result
       if (errors.length === 2) {
-        // Both failed
         throw new Error(errors.join('; '));
       } else if (errors.length === 1) {
-        // One succeeded, one failed
         toast({
           title: 'Szinkronizálás részben sikeres',
           description: `${totalInvoices} számla letöltve. Hibák: ${errors.join('; ')}`,
           variant: 'default'
         });
       } else {
-        // Both succeeded
         toast({
           title: 'Szinkronizálás befejezve',
           description: `${totalInvoices} számla letöltve (kimenő és bejövő)`,
         });
       }
       
-      // Reload data
-      loadSyncLogs();
       loadNavInvoices();
 
     } catch (error: any) {
@@ -251,19 +200,6 @@ const NavTesting: React.FC = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Sikeres</Badge>;
-      case 'failed':
-        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Sikertelen</Badge>;
-      case 'running':
-        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Futó</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
@@ -290,16 +226,12 @@ const NavTesting: React.FC = () => {
           <Shield className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
           <h2 className="text-xl font-semibold mb-2">Először állítsa be a NAV hitelesítő adatokat</h2>
           <p className="text-muted-foreground mb-6">
-            A tesztelés megkezdéséhez szükséges a NAV API hozzáférési adatok megadása
+            A tesztelés megkezdéséhez szükséges a NAV API hozzáférési adatok megadása az Integrációk oldalon
           </p>
+          <Button asChild>
+            <a href="/integrations">Ugrás az Integrációkhoz</a>
+          </Button>
         </div>
-
-        <NavCredentialsForm 
-          companyId={selectedCompany?.id}
-          onCredentialsSaved={() => {
-            checkCredentialsExist();
-          }} 
-        />
       </div>
     );
   }
@@ -315,7 +247,7 @@ const NavTesting: React.FC = () => {
               <Info className="h-5 w-5 text-muted-foreground cursor-help" />
             </TooltipTrigger>
             <TooltipContent className="max-w-xs">
-              <p>Teszteld a NAV kapcsolatot és szinkronizáld a kimenő számláidat. Technikai felhasználó adatokra van szükség.</p>
+              <p>Teszteld a NAV kapcsolatot és szinkronizáld a számlaidat.</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -325,8 +257,6 @@ const NavTesting: React.FC = () => {
         <TabsList>
           <TabsTrigger value="sync">Szinkronizálás</TabsTrigger>
           <TabsTrigger value="invoices">NAV Számlák</TabsTrigger>
-          <TabsTrigger value="logs">Sync Logok</TabsTrigger>
-          <TabsTrigger value="credentials">Hitelesítő Adatok</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sync" className="space-y-6">
@@ -481,97 +411,6 @@ const NavTesting: React.FC = () => {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="logs" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5" />
-                Szinkronizálási Logok
-              </CardTitle>
-              <CardDescription>
-                NAV API szinkronizálási műveletek történetje
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent>
-              {syncLogs.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Még nincsenek szinkronizálási logok.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Indítva</TableHead>
-                        <TableHead>Típus</TableHead>
-                        <TableHead>Irány</TableHead>
-                        <TableHead>Időszak</TableHead>
-                        <TableHead>Státusz</TableHead>
-                        <TableHead>Számlák</TableHead>
-                        <TableHead>Időtartam</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {syncLogs.map((log) => (
-                        <React.Fragment key={log.id}>
-                          <TableRow>
-                            <TableCell>{formatDate(log.started_at)}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{log.sync_type}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={log.invoice_direction === 'OUTBOUND' ? 'default' : 'secondary'}>
-                                {log.invoice_direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-sm">
-                              {log.date_from} - {log.date_to}
-                            </TableCell>
-                            <TableCell>{getStatusBadge(log.status)}</TableCell>
-                            <TableCell>{log.invoices_fetched}</TableCell>
-                            <TableCell>
-                              {log.duration_ms ? `${Math.round(log.duration_ms / 1000)}s` : '-'}
-                            </TableCell>
-                          </TableRow>
-                          {log.error_message && (
-                            <TableRow>
-                              <TableCell colSpan={7} className="bg-destructive/5 border-l-4 border-destructive">
-                                <div className="flex items-start gap-2 py-2">
-                                  <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
-                                  <div className="flex-1">
-                                    <div className="text-sm font-medium text-destructive mb-1">Hibaüzenet:</div>
-                                    <div className="text-sm text-muted-foreground font-mono break-all">
-                                      {log.error_message}
-                                    </div>
-                                  </div>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="credentials" className="space-y-6">
-          <NavCredentialsForm 
-            companyId={selectedCompany?.id}
-            onCredentialsSaved={() => {
-              checkCredentialsExist();
-              toast({
-                title: 'Hitelesítő adatok frissítve',
-                description: 'A NAV API hitelesítő adatok sikeresen frissítve',
-              });
-            }} 
-          />
         </TabsContent>
       </Tabs>
     </div>
