@@ -156,6 +156,15 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  /* Remove focus ring globally */
+  *:focus {
+    @apply outline-none ring-0 ring-offset-0;
+  }
+  
+  *:focus-visible {
+    @apply outline-none ring-0 ring-offset-0;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-size: 1.125rem;
