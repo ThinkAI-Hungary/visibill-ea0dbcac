@@ -340,7 +340,7 @@ export default function Analytics() {
                       {vatBarData.map((item, index) => (
                         <div key={item.name} className="space-y-2">
                           <div className="flex items-center gap-4">
-                            <div className="w-3 h-full bg-purple-200" style={{ minHeight: '40px' }} />
+                            <div className="w-3 rounded" style={{ minHeight: '40px', backgroundColor: item.color }} />
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-sm text-muted-foreground">{item.name}</span>
