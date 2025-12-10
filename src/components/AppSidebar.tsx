@@ -237,16 +237,16 @@ export function AppSidebar() {
               <div className="flex gap-2">
                 <Link 
                   to="/settings"
-                  className="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium bg-transparent hover:bg-primary/10 text-foreground hover:text-primary h-8 px-3 transition-colors"
+                  className="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3"
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Beállítások
                 </Link>
                 <Button 
-                  variant="ghost" 
+                  variant="outline" 
                   size="sm" 
                   onClick={handleSignOut}
-                  className="flex-1 hover:bg-destructive/10 hover:text-destructive"
+                  className="flex-1"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Kilépés

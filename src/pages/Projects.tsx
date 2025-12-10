@@ -189,9 +189,9 @@ const Projects = () => {
     return labels[status as keyof typeof labels] || status;
   };
 
-  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" | "success" => {
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     const variants = {
-      active: 'success' as const,
+      active: 'default' as const,
       completed: 'secondary' as const,
       on_hold: 'outline' as const,
       cancelled: 'destructive' as const
