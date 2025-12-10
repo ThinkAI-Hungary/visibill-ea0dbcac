@@ -12,7 +12,7 @@ import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from "recharts";
-import { ChevronUp, Download, Loader2 } from "lucide-react";
+import { ChevronUp, Loader2 } from "lucide-react";
 import { format, parseISO, subMonths } from "date-fns";
 import { hu } from "date-fns/locale";
 
@@ -660,10 +660,6 @@ export default function Analytics() {
                 </ResponsiveContainer>
                 </div>
 
-                <Button variant="link" className="mt-4 text-orange-500 p-0">
-                  <Download className="h-4 w-4 mr-2" />
-                  Grafikon letöltése
-                </Button>
               </CardContent>
             </CollapsibleContent>
           </Card>
