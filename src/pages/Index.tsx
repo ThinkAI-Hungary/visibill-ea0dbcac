@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import EmptyStateDashboard from '@/components/dashboard/EmptyStateDashboard';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -112,7 +113,7 @@ const MONTH_NAMES = ["január", "február", "március", "április", "május", "j
 
 const Index = () => {
   const { user, signOut } = useAuth();
-  const { selectedCompany } = useCompany();
+  const { selectedCompany, companies, loading: companyLoading } = useCompany();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -505,7 +506,8 @@ const Index = () => {
     await signOut();
   };
 
-  if (loading) {
+  // Show loading spinner only while company data is being fetched
+  if (companyLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -514,6 +516,11 @@ const Index = () => {
         </div>
       </div>
     );
+  }
+
+  // Show empty state dashboard when no companies exist
+  if (companies.length === 0) {
+    return <EmptyStateDashboard />;
   }
 
   return (
