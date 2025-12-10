@@ -554,13 +554,13 @@ export default function Analytics() {
                 </div>
 
                 {/* Monthly summary row */}
-                <div className="grid grid-cols-12 gap-2 mb-2 text-center">
+                <div className="grid gap-2 mb-2 text-center" style={{ gridTemplateColumns: 'minmax(80px, auto) repeat(12, 1fr)' }}>
                   <div className="font-semibold text-left">{selectedYear}. év</div>
                   {MONTH_NAMES.map((month, i) => (
-                    <div key={month} className="text-sm font-medium">{month}</div>
+                    <div key={month} className="text-sm font-medium">{month.slice(0, 3)}.</div>
                   ))}
                 </div>
-                <div className="grid grid-cols-12 gap-2 mb-6 text-center">
+                <div className="grid gap-2 mb-6 text-center" style={{ gridTemplateColumns: 'minmax(80px, auto) repeat(12, 1fr)' }}>
                   <div className="text-orange-500 font-medium text-left">Eredmény</div>
                   {monthlyData.map((data, i) => {
                     const result = data.revenue - data.expenses - data.salaries;
