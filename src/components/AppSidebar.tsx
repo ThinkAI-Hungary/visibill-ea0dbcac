@@ -87,11 +87,6 @@ const navigationItems = [
     icon: TrendingUp,
   },
   {
-    title: "Elemzések",
-    url: "/analytics",
-    icon: BarChart3,
-  },
-  {
     title: "Előfizetés",
     url: "/pricing",
     icon: CreditCard,
