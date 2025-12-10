@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   Sidebar,
   SidebarContent,
@@ -36,7 +37,9 @@ import {
   TestTube,
   Tags,
   TrendingUp,
-  Wallet
+  Wallet,
+  Sun,
+  Moon
 } from "lucide-react";
 import CompanySelector from "./CompanySelector";
 
@@ -99,10 +102,16 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { selectedCompany } = useCompany();
+  const { theme, setTheme } = useTheme();
   const currentPath = location.pathname;
 
   const isCollapsed = state === "collapsed";
   const hasNoCompany = !selectedCompany;
+  const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+  const toggleTheme = () => {
+    setTheme(isDark ? "light" : "dark");
+  };
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -224,6 +233,17 @@ export function AppSidebar() {
                     {user?.email}
                   </p>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleTheme}
+                  className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                >
+                  <div className="relative h-4 w-4">
+                    <Sun className={`h-4 w-4 absolute transition-all ${isDark ? 'animate-rotate-out' : 'animate-rotate-in'}`} />
+                    <Moon className={`h-4 w-4 absolute transition-all ${isDark ? 'animate-rotate-in' : 'animate-rotate-out'}`} />
+                  </div>
+                </Button>
               </div>
               <div className="flex gap-2">
                 <Button 
@@ -254,6 +274,22 @@ export function AppSidebar() {
                   {getUserInitials()}
                 </AvatarFallback>
               </Avatar>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleTheme}
+                    className="w-8 h-8 hover:bg-primary/10 hover:text-primary"
+                  >
+                    <div className="relative h-4 w-4">
+                      <Sun className={`h-4 w-4 absolute transition-all ${isDark ? 'animate-rotate-out' : 'animate-rotate-in'}`} />
+                      <Moon className={`h-4 w-4 absolute transition-all ${isDark ? 'animate-rotate-in' : 'animate-rotate-out'}`} />
+                    </div>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">{isDark ? 'Világos mód' : 'Sötét mód'}</TooltipContent>
+              </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
