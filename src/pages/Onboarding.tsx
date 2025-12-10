@@ -1,11 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { Plus } from 'lucide-react';
@@ -13,7 +10,7 @@ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 import { CategoryCard } from '@/components/CategoryCard';
 
-interface Project {
+interface Category {
   id?: string;
   name: string;
   description: string;
@@ -22,176 +19,123 @@ interface Project {
 const Onboarding = () => {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [profile, setProfile] = useState({
-    name: '',
-    position: '',
-    company: '',
-  });
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const { user } = useAuth();
-  const { selectedCompany } = useCompany();
   const navigate = useNavigate();
   const { toast } = useToast();
   
   // Track initial state for unsaved changes detection
-  const [initialProfile, setInitialProfile] = useState<typeof profile | null>(null);
-  const [initialProjects, setInitialProjects] = useState<Project[] | null>(null);
+  const [initialCategories, setInitialCategories] = useState<Category[] | null>(null);
   
-  // Calculate if there are unsaved changes using useMemo for reactivity
+  // Calculate if there are unsaved changes
   const hasUnsavedChanges = useMemo(() => {
-    if (!initialProfile || !initialProjects || initialLoading) {
+    if (!initialCategories || initialLoading) {
       return false;
     }
     
-    // Check profile changes
-    const profileChanged = (
-      profile.name !== initialProfile.name ||
-      profile.position !== initialProfile.position ||
-      profile.company !== initialProfile.company
-    );
+    // Check category count changes
+    if (categories.length !== initialCategories.length) {
+      return true;
+    }
     
-    // Check project count changes
-    const projectCountChanged = projects.length !== initialProjects.length;
-    
-    // Check individual project changes
-    let projectContentChanged = false;
-    for (let i = 0; i < projects.length; i++) {
-      const current = projects[i];
-      const initial = initialProjects[i];
+    // Check individual category changes
+    for (let i = 0; i < categories.length; i++) {
+      const current = categories[i];
+      const initial = initialCategories[i];
       if (!initial) {
-        projectContentChanged = true;
-        break;
+        return true;
       }
       if (
         current.name !== initial.name ||
         current.description !== initial.description ||
         current.id !== initial.id
       ) {
-        projectContentChanged = true;
-        break;
+        return true;
       }
     }
     
-    return profileChanged || projectCountChanged || projectContentChanged;
-  }, [profile, projects, initialProfile, initialProjects, initialLoading]);
+    return false;
+  }, [categories, initialCategories, initialLoading]);
   
   const { showDialog, confirmNavigation, cancelNavigation } = useUnsavedChanges(hasUnsavedChanges);
 
   // Load existing data
   useEffect(() => {
     const loadExistingData = async () => {
-      if (!user || !selectedCompany) return;
+      if (!user) return;
       
       try {
-        // Load profile
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-        
-        const loadedProfile = {
-          name: profileData?.name || '',
-          position: profileData?.position || '',
-          company: profileData?.company || '',
-        };
-        setProfile(loadedProfile);
-
         // Load existing categories for the user (user-based, not company-based)
-        const { data: projectData } = await supabase
+        const { data: categoryData } = await supabase
           .from('categories')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: true });
 
-        let loadedProjects: Project[];
-        if (projectData && projectData.length > 0) {
-          loadedProjects = projectData.map(p => ({
-            id: p.id,
-            name: p.name,
-            description: p.description || ''
+        let loadedCategories: Category[];
+        if (categoryData && categoryData.length > 0) {
+          loadedCategories = categoryData.map(c => ({
+            id: c.id,
+            name: c.name,
+            description: c.description || ''
           }));
         } else {
-          loadedProjects = [{ name: '', description: '' }];
+          loadedCategories = [{ name: '', description: '' }];
         }
-        setProjects(loadedProjects);
-        
-        // Set initial state immediately after loading
-        setInitialProfile({ ...loadedProfile });
-        setInitialProjects(loadedProjects.map(p => ({ ...p })));
+        setCategories(loadedCategories);
+        setInitialCategories(loadedCategories.map(c => ({ ...c })));
       } catch (error) {
         console.error('Error loading data:', error);
-        const defaultProjects = [{ name: '', description: '' }];
-        setProjects(defaultProjects);
-        setInitialProfile({ name: '', position: '', company: '' });
-        setInitialProjects(defaultProjects.map(p => ({ ...p })));
+        const defaultCategories = [{ name: '', description: '' }];
+        setCategories(defaultCategories);
+        setInitialCategories(defaultCategories.map(c => ({ ...c })));
       } finally {
         setInitialLoading(false);
       }
     };
 
     loadExistingData();
-  }, [user, selectedCompany]);
+  }, [user]);
 
 
-  const addProject = () => {
-    setProjects([...projects, { name: '', description: '' }]);
+  const addCategory = () => {
+    setCategories([...categories, { name: '', description: '' }]);
   };
 
-  const removeProject = (index: number) => {
-    if (projects.length > 1) {
-      setProjects(projects.filter((_, i) => i !== index));
+  const removeCategory = (index: number) => {
+    if (categories.length > 1) {
+      setCategories(categories.filter((_, i) => i !== index));
     }
-  };
-
-  const updateProject = (index: number, field: keyof Project, value: string) => {
-    const updatedProjects = [...projects];
-    updatedProjects[index][field] = value;
-    setProjects(updatedProjects);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !selectedCompany) return;
+    if (!user) return;
     
     setLoading(true);
 
     try {
-      // Update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          user_id: user.id,
-          name: profile.name,
-          position: profile.position,
-          company: profile.company,
-        }, {
-          onConflict: 'user_id'
-        });
-
-      if (profileError) throw profileError;
-
-      // Handle projects (update existing, create new, delete removed)
-      const validProjects = projects.filter(p => p.name.trim());
+      // Handle categories (update existing, create new, delete removed)
+      const validCategories = categories.filter(c => c.name.trim());
 
       // Load existing categories BEFORE any insert/update so we don't accidentally delete newly created ones
-      const { data: existingUserProjects, error: loadCategoriesError } = await supabase
+      const { data: existingUserCategories, error: loadCategoriesError } = await supabase
         .from('categories')
         .select('id')
         .eq('user_id', user.id);
 
       if (loadCategoriesError) throw loadCategoriesError;
       
-      for (const project of validProjects) {
-        if (project.id) {
+      for (const category of validCategories) {
+        if (category.id) {
           // Update existing category
           const { error: updateError } = await supabase
             .from('categories')
             .update({
-              name: project.name,
-              description: project.description,
+              name: category.name,
+              description: category.description,
             })
-            .eq('id', project.id)
+            .eq('id', category.id)
             .eq('user_id', user.id);
           
           if (updateError) throw updateError;
@@ -201,8 +145,8 @@ const Onboarding = () => {
             .from('categories')
             .insert({
               user_id: user.id,
-              name: project.name,
-              description: project.description,
+              name: category.name,
+              description: category.description,
             });
           
           if (createError) throw createError;
@@ -210,12 +154,12 @@ const Onboarding = () => {
       }
 
       // Delete categories that were removed (categories that existed before but are not in current list)
-      const currentProjectIds = validProjects.filter(p => p.id).map(p => p.id);
-      if (existingUserProjects && existingUserProjects.length > 0) {
-        const projectsToDelete = existingUserProjects.filter(p => !currentProjectIds.includes(p.id));
+      const currentCategoryIds = validCategories.filter(c => c.id).map(c => c.id);
+      if (existingUserCategories && existingUserCategories.length > 0) {
+        const categoriesToDelete = existingUserCategories.filter(c => !currentCategoryIds.includes(c.id));
         
-        if (projectsToDelete && projectsToDelete.length > 0) {
-          const deleteIds = projectsToDelete.map(p => p.id);
+        if (categoriesToDelete && categoriesToDelete.length > 0) {
+          const deleteIds = categoriesToDelete.map(c => c.id);
           
           // First, remove category references from invoices
           const { error: updateInvoicesError } = await supabase
@@ -236,13 +180,12 @@ const Onboarding = () => {
       }
 
       toast({
-        title: "Profil frissítve!",
+        title: "Kategóriák mentve!",
         description: "A változtatások sikeresen mentve."
       });
 
       // Reset initial state to prevent unsaved changes warning
-      setInitialProfile({ ...profile });
-      setInitialProjects(projects.map(p => ({ ...p })));
+      setInitialCategories(categories.map(c => ({ ...c })));
 
       navigate('/');
     } catch (error: any) {
@@ -282,44 +225,6 @@ const Onboarding = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Profile Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Profil információk</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Teljes név</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Add meg a teljes neved"
-                    value={profile.name}
-                    onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="position">Beosztás</Label>
-                  <Input
-                    id="position"
-                    type="text"
-                    placeholder="pl. vezérigazgató, menedzser, könyvelő"
-                    value={profile.position}
-                    onChange={(e) => setProfile({ ...profile, position: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="company">Cég</Label>
-                <Input
-                  id="company"
-                  type="text"
-                  placeholder="Add meg a cég nevét"
-                  value={profile.company}
-                  onChange={(e) => setProfile({ ...profile, company: e.target.value })}
-                />
-              </div>
-            </div>
-
             {/* Categories - Modern Grid Layout */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -328,7 +233,7 @@ const Onboarding = () => {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={addProject}
+                  onClick={addCategory}
                   className="flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
@@ -340,19 +245,19 @@ const Onboarding = () => {
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {projects.map((project, index) => (
+                {categories.map((category, index) => (
                   <CategoryCard
-                    key={project.id || `new-${index}`}
-                    name={project.name}
-                    description={project.description}
-                    isNew={!project.id}
+                    key={category.id || `new-${index}`}
+                    name={category.name}
+                    description={category.description}
+                    isNew={!category.id}
                     onUpdate={(name, description) => {
-                      const updatedProjects = [...projects];
-                      updatedProjects[index] = { ...updatedProjects[index], name, description };
-                      setProjects(updatedProjects);
+                      const updatedCategories = [...categories];
+                      updatedCategories[index] = { ...updatedCategories[index], name, description };
+                      setCategories(updatedCategories);
                     }}
-                    onRemove={() => removeProject(index)}
-                    canRemove={projects.length > 1}
+                    onRemove={() => removeCategory(index)}
+                    canRemove={categories.length > 1}
                   />
                 ))}
               </div>
