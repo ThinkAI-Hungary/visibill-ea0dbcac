@@ -46,7 +46,8 @@ const Auth = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
+      <div className="w-full max-w-md rounded-xl bg-gradient-to-br from-primary via-primary/80 to-primary/60 p-[2px]">
+      <Card className="w-full rounded-xl border-0">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-2">
             <span className="text-5xl font-black bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent tracking-tight">
@@ -135,6 +136,7 @@ const Auth = () => {
           </Tabs>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };
