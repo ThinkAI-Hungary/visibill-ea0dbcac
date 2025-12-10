@@ -315,7 +315,7 @@ export default function Analytics() {
                       onClick={() => setShowCurrentPeriod(true)}
                       className={`transition-all duration-300 ease-out ${showCurrentPeriod ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                     >
-                      {showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
+                      <span className={`w-2 h-2 rounded-full bg-orange-500 mr-2 transition-opacity ${showCurrentPeriod ? 'opacity-100' : 'opacity-0'}`} />
                       Aktuális időszak
                     </Button>
                     <Button
@@ -324,7 +324,7 @@ export default function Analytics() {
                       onClick={() => setShowCurrentPeriod(false)}
                       className={`transition-all duration-300 ease-out ${!showCurrentPeriod ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                     >
-                      {!showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
+                      <span className={`w-2 h-2 rounded-full bg-orange-500 mr-2 transition-opacity ${!showCurrentPeriod ? 'opacity-100' : 'opacity-0'}`} />
                       <Select 
                         value={comparisonMonth.toString()} 
                         onValueChange={(v) => {
@@ -546,7 +546,7 @@ export default function Analytics() {
                         onClick={() => setShowBrutto(true)}
                         className={`transition-all duration-300 ease-out ${showBrutto ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                       >
-                        {showBrutto && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
+                        <span className={`w-2 h-2 rounded-full bg-orange-500 mr-2 transition-opacity ${showBrutto ? 'opacity-100' : 'opacity-0'}`} />
                         bruttó
                       </Button>
                       <Button
@@ -555,7 +555,7 @@ export default function Analytics() {
                         onClick={() => setShowBrutto(false)}
                         className={`transition-all duration-300 ease-out ${!showBrutto ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                       >
-                        {!showBrutto && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
+                        <span className={`w-2 h-2 rounded-full bg-orange-500 mr-2 transition-opacity ${!showBrutto ? 'opacity-100' : 'opacity-0'}`} />
                         nettó
                       </Button>
                     </div>
