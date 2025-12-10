@@ -18,10 +18,10 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Primary: Your purple brand color #8156E5 */
-    --primary: 259 77% 62%;
+    /* Primary: Fintech Teal brand color */
+    --primary: 173 80% 40%;
     --primary-foreground: 0 0% 100%;
-    --primary-subtle: 259 77% 97%;
+    --primary-subtle: 173 80% 97%;
 
     /* Secondary: Clean neutral grays */
     --secondary: 220 14% 96%;
@@ -40,7 +40,7 @@ All colors MUST be HSL.
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 259 77% 62%;
+    --ring: 173 80% 40%;
 
     --radius: 0.75rem;
 
@@ -59,7 +59,7 @@ All colors MUST be HSL.
     --info-subtle: 219 82% 97%;
 
     /* Chart colors using brand palette */
-    --chart-1: 259 77% 62%;
+    --chart-1: 173 80% 40%;
     --chart-2: 219 82% 57%;
     --chart-3: 38 92% 50%;
     --chart-4: 142 71% 45%;
@@ -98,10 +98,10 @@ All colors MUST be HSL.
     --popover: 222 47% 5%;
     --popover-foreground: 210 40% 98%;
 
-    /* Primary: Slightly lighter in dark mode */
-    --primary: 259 77% 68%;
-    --primary-foreground: 222 47% 4%;
-    --primary-subtle: 259 77% 8%;
+    /* Primary: Fintech Teal - brighter for dark mode */
+    --primary: 173 80% 48%;
+    --primary-foreground: 0 0% 100%;
+    --primary-subtle: 173 80% 10%;
 
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
@@ -119,7 +119,7 @@ All colors MUST be HSL.
 
     --border: 217 33% 17%;
     --input: 217 33% 17%;
-    --ring: 259 77% 68%;
+    --ring: 173 80% 48%;
 
     /* Dashboard specific colors for dark mode */
     --success: 142 71% 50%;
@@ -135,7 +135,7 @@ All colors MUST be HSL.
     --info-subtle: 219 82% 8%;
 
     /* Chart colors for dark mode */
-    --chart-1: 259 77% 68%;
+    --chart-1: 173 80% 48%;
     --chart-2: 219 82% 62%;
     --chart-3: 38 92% 55%;
     --chart-4: 142 71% 50%;
