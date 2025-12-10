@@ -165,8 +165,12 @@ export default function Analytics() {
 
   const fetchVatData = async () => {
     const currentDate = new Date();
-    const currentMonthStart = `${selectedYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
-    const currentMonthEnd = `${selectedYear}-${String(currentMonth + 1).padStart(2, '0')}-31`;
+    const actualCurrentYear = currentDate.getFullYear();
+    const actualCurrentMonth = currentDate.getMonth();
+    
+    // Always use actual current date for "current period"
+    const currentMonthStart = `${actualCurrentYear}-${String(actualCurrentMonth + 1).padStart(2, '0')}-01`;
+    const currentMonthEnd = `${actualCurrentYear}-${String(actualCurrentMonth + 1).padStart(2, '0')}-31`;
     
     // Comparison month (selected from chart year)
     const compMonthStart = `${selectedYear}-${String(comparisonMonth + 1).padStart(2, '0')}-01`;
