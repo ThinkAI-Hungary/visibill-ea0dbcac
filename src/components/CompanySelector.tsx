@@ -177,7 +177,7 @@ const CompanySelector = () => {
         <SelectTrigger className="w-[200px] h-9">
           <SelectValue placeholder="Válassz céget" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-h-none">
           {companies.map((company) => (
             <SelectItem key={company.id} value={company.id}>
               {company.name}
