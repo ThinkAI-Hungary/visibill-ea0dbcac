@@ -208,7 +208,7 @@ const CompanySelector = () => {
       )}
 
       {/* Delete button */}
-      {selectedCompany && companies.length > 1 && (
+      {selectedCompany && (
         <Button
           variant="ghost"
           size="icon"
