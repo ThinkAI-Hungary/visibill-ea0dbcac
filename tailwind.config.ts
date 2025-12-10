@@ -112,10 +112,32 @@ export default {
             height: "0",
           },
         },
+        "rotate-in": {
+          from: {
+            transform: "rotate(-90deg) scale(0)",
+            opacity: "0",
+          },
+          to: {
+            transform: "rotate(0deg) scale(1)",
+            opacity: "1",
+          },
+        },
+        "rotate-out": {
+          from: {
+            transform: "rotate(0deg) scale(1)",
+            opacity: "1",
+          },
+          to: {
+            transform: "rotate(90deg) scale(0)",
+            opacity: "0",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "rotate-in": "rotate-in 0.3s ease-out forwards",
+        "rotate-out": "rotate-out 0.3s ease-out forwards",
       },
     },
   },
