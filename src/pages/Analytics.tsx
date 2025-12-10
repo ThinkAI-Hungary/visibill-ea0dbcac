@@ -23,6 +23,18 @@ interface MonthlyData {
   salaries: number;
 }
 
+interface RawInvoice {
+  invoice_issue_date: string | null;
+  invoice_direction: string | null;
+  invoice_gross_amount: number | null;
+  invoice_net_amount: number | null;
+}
+
+interface RawSalary {
+  dátum: string | null;
+  összeg: number;
+}
+
 interface VatCategoryData {
   rate: string;
   vatAmount: number;
@@ -49,8 +61,9 @@ export default function Analytics() {
   // Current vs previous period toggle
   const [showCurrentPeriod, setShowCurrentPeriod] = useState(true);
   
-  // Data states
-  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  // Raw data states (for recalculation on brutto/netto toggle)
+  const [rawInvoices, setRawInvoices] = useState<RawInvoice[]>([]);
+  const [rawSalaries, setRawSalaries] = useState<RawSalary[]>([]);
   const [outboundVatCategories, setOutboundVatCategories] = useState<VatCategoryData[]>([]);
   const [inboundVatCategories, setInboundVatCategories] = useState<VatCategoryData[]>([]);
   const [totalOutboundVat, setTotalOutboundVat] = useState(0);
@@ -71,7 +84,7 @@ export default function Analytics() {
     setLoading(true);
     try {
       await Promise.all([
-        fetchMonthlyData(),
+        fetchRawData(),
         fetchVatData()
       ]);
     } catch (error) {
@@ -81,14 +94,14 @@ export default function Analytics() {
     }
   };
 
-  const fetchMonthlyData = async () => {
+  const fetchRawData = async () => {
     const yearStart = `${selectedYear}-01-01`;
     const yearEnd = `${selectedYear}-12-31`;
 
     // Fetch NAV invoices for the year
     const { data: navInvoices } = await supabase
       .from("nav_invoices")
-      .select("*")
+      .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount")
       .eq("company_id", selectedCompany?.id)
       .gte("invoice_issue_date", yearStart)
       .lte("invoice_issue_date", yearEnd);
@@ -101,7 +114,12 @@ export default function Analytics() {
       .gte("dátum", yearStart)
       .lte("dátum", yearEnd);
 
-    // Initialize monthly data
+    setRawInvoices(navInvoices || []);
+    setRawSalaries((salaries || []).map(s => ({ dátum: s.dátum, összeg: s.összeg })));
+  };
+
+  // Calculate monthly data based on showBrutto toggle using useMemo
+  const monthlyData = useMemo(() => {
     const monthlyMap: { [key: number]: MonthlyData } = {};
     for (let i = 0; i < 12; i++) {
       monthlyMap[i] = {
@@ -114,7 +132,7 @@ export default function Analytics() {
     }
 
     // Process NAV invoices
-    navInvoices?.forEach(inv => {
+    rawInvoices.forEach(inv => {
       if (inv.invoice_issue_date) {
         const date = parseISO(inv.invoice_issue_date);
         const monthIndex = date.getMonth();
@@ -131,7 +149,7 @@ export default function Analytics() {
     });
 
     // Process salaries
-    salaries?.forEach(sal => {
+    rawSalaries.forEach(sal => {
       if (sal.dátum) {
         const date = parseISO(sal.dátum);
         const monthIndex = date.getMonth();
@@ -139,8 +157,8 @@ export default function Analytics() {
       }
     });
 
-    setMonthlyData(Object.values(monthlyMap));
-  };
+    return Object.values(monthlyMap);
+  }, [rawInvoices, rawSalaries, showBrutto]);
 
   const fetchVatData = async () => {
     const currentDate = new Date();
