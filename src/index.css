@@ -30,10 +30,10 @@ All colors MUST be HSL.
     --muted: 220 14% 96%;
     --muted-foreground: 215 16% 47%;
 
-    /* Accent: Your blue brand color #387CEB */
-    --accent: 219 82% 57%;
-    --accent-foreground: 0 0% 100%;
-    --accent-subtle: 219 82% 97%;
+    /* Accent: Teal-based hover/accent color */
+    --accent: 173 60% 92%;
+    --accent-foreground: 173 80% 25%;
+    --accent-subtle: 173 80% 97%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -79,9 +79,9 @@ All colors MUST be HSL.
 
     --sidebar-primary-foreground: 0 0% 98%;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent: 173 60% 92%;
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-accent-foreground: 173 80% 25%;
 
     --sidebar-border: 220 13% 91%;
 
@@ -109,10 +109,10 @@ All colors MUST be HSL.
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
 
-    /* Accent: Adapted for dark mode */
-    --accent: 219 82% 62%;
-    --accent-foreground: 222 47% 4%;
-    --accent-subtle: 219 82% 8%;
+    /* Accent: Teal-based hover/accent for dark mode */
+    --accent: 173 50% 18%;
+    --accent-foreground: 173 80% 70%;
+    --accent-subtle: 173 80% 10%;
 
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
@@ -144,8 +144,8 @@ All colors MUST be HSL.
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-accent: 173 50% 18%;
+    --sidebar-accent-foreground: 173 80% 70%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
