@@ -167,24 +167,32 @@ const CompanySelector = () => {
     );
   }
 
+  const hasNoCompanies = companies.length === 0;
+
   return (
     <div className="flex items-center gap-2">
       <Building2 className="h-4 w-4 text-muted-foreground" />
-      <Select
-        value={selectedCompany?.id || ''}
-        onValueChange={handleCompanyChange}
-      >
-        <SelectTrigger className="w-[200px] h-9">
-          <SelectValue placeholder="Válassz céget" />
-        </SelectTrigger>
-        <SelectContent>
-          {companies.map((company) => (
-            <SelectItem key={company.id} value={company.id}>
-              {company.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {hasNoCompanies ? (
+        <div className="flex-1 px-3 py-2 text-sm text-muted-foreground bg-muted/30 rounded-md border border-dashed">
+          NINCS REGISZTRÁLT CÉG
+        </div>
+      ) : (
+        <Select
+          value={selectedCompany?.id || ''}
+          onValueChange={handleCompanyChange}
+        >
+          <SelectTrigger className="w-[200px] h-9">
+            <SelectValue placeholder="Válassz céget" />
+          </SelectTrigger>
+          <SelectContent>
+            {companies.map((company) => (
+              <SelectItem key={company.id} value={company.id}>
+                {company.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
 
       {/* Edit button */}
       {selectedCompany && (
