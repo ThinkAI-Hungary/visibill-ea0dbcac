@@ -20,11 +20,11 @@ export function useUnsavedChanges(hasChanges: boolean) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasChanges]);
 
-  // Intercept link clicks
+  // Intercept link clicks only when there are unsaved changes
   useEffect(() => {
+    if (!hasChanges) return; // Don't add listener if no changes
+    
     const handleClick = (e: MouseEvent) => {
-      if (!hasChanges) return;
-      
       const target = e.target as HTMLElement;
       const link = target.closest('a');
       
