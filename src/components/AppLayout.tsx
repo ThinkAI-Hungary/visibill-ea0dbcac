@@ -11,10 +11,10 @@ export function AppLayout({ children }: AppLayoutProps) {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
           
           {/* Main Content */}
-          <main className="flex-1">
+          <main className="flex-1 w-full">
             {children}
           </main>
         </div>

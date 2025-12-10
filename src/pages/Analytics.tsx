@@ -303,8 +303,8 @@ export default function Analytics() {
 
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8 space-y-6">
+    <div className="min-h-screen bg-background w-full overflow-x-hidden">
+      <main className="w-full max-w-7xl mx-auto px-4 py-8 space-y-6">
         {/* ÁFA Section */}
         <Collapsible open={vatSectionOpen} onOpenChange={setVatSectionOpen}>
           <Card>
