@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCompany } from "@/contexts/CompanyContext";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +16,12 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { 
   LayoutDashboard, 
   FileText, 
@@ -96,9 +103,11 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { selectedCompany } = useCompany();
   const currentPath = location.pathname;
 
   const isCollapsed = state === "collapsed";
+  const hasNoCompany = !selectedCompany;
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -155,28 +164,57 @@ export function AppSidebar() {
           <SidebarGroupLabel>Navigáció</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.url)}
-                  >
-                    <Link
-                      to={item.url}
+              <TooltipProvider delayDuration={0}>
+                {navigationItems.map((item) => {
+                  const isDisabled = hasNoCompany;
+                  
+                  const linkContent = (
+                    <div
+                      onClick={(e) => {
+                        if (isDisabled) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }
+                      }}
                       className={`flex items-center w-full px-3 py-2 rounded-md text-sm transition-colors ${
-                        isActive(item.url) 
-                          ? 'bg-primary/10 text-primary font-medium' 
-                          : 'hover:bg-muted/50'
+                        isDisabled
+                          ? 'grayscale opacity-50 cursor-not-allowed'
+                          : isActive(item.url) 
+                            ? 'bg-primary/10 text-primary font-medium' 
+                            : 'hover:bg-muted/50'
                       }`}
                     >
                       <item.icon className={`h-4 w-4 ${isCollapsed ? '' : 'mr-3'}`} />
                       {!isCollapsed && (
                         <span>{item.title}</span>
                       )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                    </div>
+                  );
+
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      {isDisabled ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuButton asChild isActive={false}>
+                              {linkContent}
+                            </SidebarMenuButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[250px]">
+                            <p>Ezek a funkciók csak akkor elérhetőek, ha van már legalább 1 cég regisztrálva a fiókhoz.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                          <Link to={item.url}>
+                            {linkContent}
+                          </Link>
+                        </SidebarMenuButton>
+                      )}
+                    </SidebarMenuItem>
+                  );
+                })}
+              </TooltipProvider>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
