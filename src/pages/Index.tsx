@@ -1067,7 +1067,7 @@ const Index = () => {
             </Button>
           </Card>
           <Card className="p-6 text-center hover:bg-muted/50 transition-colors flex flex-col">
-            <Upload className="h-8 w-8 mx-auto mb-3 text-accent" />
+            <Upload className="h-8 w-8 mx-auto mb-3 text-primary" />
             <h3 className="font-semibold mb-2">Számlák feltöltése</h3>
             <p className="text-sm text-muted-foreground mb-4 flex-1">
               Új számlák kézi feltöltése
