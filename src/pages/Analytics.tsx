@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,8 +15,6 @@ import {
 import { ChevronUp, Download, Loader2 } from "lucide-react";
 import { format, parseISO, subMonths } from "date-fns";
 import { hu } from "date-fns/locale";
-import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
 
 interface MonthlyData {
   month: string;
@@ -71,52 +69,12 @@ export default function Analytics() {
   const [totalOutboundVat, setTotalOutboundVat] = useState(0);
   const [totalInboundVat, setTotalInboundVat] = useState(0);
   const [previousPeriodVat, setPreviousPeriodVat] = useState(0);
-  const [exportingVatPdf, setExportingVatPdf] = useState(false);
 
   const vatChartRef = useRef<HTMLDivElement>(null);
 
   const years = [2024, 2025];
   const currentMonth = new Date().getMonth();
   const currentMonthName = MONTH_NAMES[currentMonth];
-
-  const exportVatChartToPdf = useCallback(async () => {
-    if (!vatChartRef.current) return;
-    
-    setExportingVatPdf(true);
-    try {
-      const canvas = await html2canvas(vatChartRef.current, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min((pdfWidth - 20) / imgWidth, (pdfHeight - 30) / imgHeight);
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      const imgY = 15;
-      
-      // Add title
-      pdf.setFontSize(16);
-      pdf.text(`ÁFA Analitika - ${currentMonthName} ${selectedYear}`, pdfWidth / 2, 10, { align: 'center' });
-      
-      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-      pdf.save(`afa-analitika-${selectedYear}-${currentMonth + 1}.pdf`);
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
-    } finally {
-      setExportingVatPdf(false);
-    }
-  }, [currentMonthName, selectedYear, currentMonth]);
 
   useEffect(() => {
     if (user && selectedCompany) {
@@ -408,15 +366,9 @@ export default function Analytics() {
                     <Button 
                       variant="link" 
                       className="mt-6 text-orange-500 p-0"
-                      onClick={exportVatChartToPdf}
-                      disabled={exportingVatPdf}
                     >
-                      {exportingVatPdf ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Download className="h-4 w-4 mr-2" />
-                      )}
-                      {exportingVatPdf ? 'Exportálás...' : 'Grafikon letöltése (PDF)'}
+                      <Download className="h-4 w-4 mr-2" />
+                      Grafikon letöltése
                     </Button>
                   </div>
 
