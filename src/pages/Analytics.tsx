@@ -594,11 +594,12 @@ export default function Analytics() {
                     />
                     <YAxis 
                       tickFormatter={(v) => {
-                        if (v >= 1000000) return `${(v / 1000000).toFixed(1)} M Ft`;
-                        if (v >= 1000) return `${(v / 1000).toFixed(0)} 000 Ft`;
-                        return `${v} Ft`;
+                        if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
+                        if (v >= 1000) return `${(v / 1000).toFixed(0)}k`;
+                        return `${v}`;
                       }}
                       tick={{ fontSize: 12 }}
+                      width={50}
                       axisLine={false}
                       tickLine={false}
                     />
