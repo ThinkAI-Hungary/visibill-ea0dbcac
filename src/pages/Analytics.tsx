@@ -309,21 +309,21 @@ export default function Analytics() {
                 <div className="flex justify-end mb-4">
                   <div className="inline-flex rounded-lg border p-1 bg-muted/30 gap-1">
                     <Button
-                      variant={showCurrentPeriod ? "default" : "ghost"}
+                      variant="ghost"
                       size="sm"
                       onClick={() => setShowCurrentPeriod(true)}
-                      className="transition-colors duration-300"
+                      className={`transition-all duration-300 ease-out ${showCurrentPeriod ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                     >
-                      {showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-fade-in" />}
+                      {showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
                       Aktuális időszak
                     </Button>
                     <Button
-                      variant={!showCurrentPeriod ? "default" : "ghost"}
+                      variant="ghost"
                       size="sm"
                       onClick={() => setShowCurrentPeriod(false)}
-                      className="transition-colors duration-300"
+                      className={`transition-all duration-300 ease-out ${!showCurrentPeriod ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                     >
-                      {!showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-fade-in" />}
+                      {!showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
                       Előző időszak
                     </Button>
                   </div>
@@ -527,21 +527,21 @@ export default function Analytics() {
                     
                     <div className="inline-flex rounded-lg border p-1 bg-muted/30 gap-1">
                       <Button
-                        variant={showBrutto ? "default" : "ghost"}
+                        variant="ghost"
                         size="sm"
                         onClick={() => setShowBrutto(true)}
-                        className="transition-colors duration-300"
+                        className={`transition-all duration-300 ease-out ${showBrutto ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                       >
-                        {showBrutto && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-fade-in" />}
+                        {showBrutto && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
                         bruttó
                       </Button>
                       <Button
-                        variant={!showBrutto ? "default" : "ghost"}
+                        variant="ghost"
                         size="sm"
                         onClick={() => setShowBrutto(false)}
-                        className="transition-colors duration-300"
+                        className={`transition-all duration-300 ease-out ${!showBrutto ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                       >
-                        {!showBrutto && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-fade-in" />}
+                        {!showBrutto && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
                         nettó
                       </Button>
                     </div>
