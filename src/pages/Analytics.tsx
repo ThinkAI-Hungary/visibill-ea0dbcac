@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   AreaChart, Area, BarChart, Bar,
@@ -514,22 +515,21 @@ export default function Analytics() {
                       <span className="text-sm text-muted-foreground">Fizetett bér</span>
                     </label>
                   </div>
-                  
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-muted-foreground">Időszak</span>
-                      <div className="inline-flex rounded-lg border p-1">
-                        {years.map(year => (
-                          <Button
-                            key={year}
-                            variant={selectedYear === year ? "default" : "ghost"}
-                            size="sm"
-                            onClick={() => setSelectedYear(year)}
-                          >
-                            {year}
-                          </Button>
-                        ))}
-                      </div>
+                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                        <SelectTrigger className="w-24">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map(year => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     
                     <div className="inline-flex rounded-lg border p-1">
