@@ -1,71 +1,65 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+  AreaChart, Area, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from "recharts";
-import { 
-  TrendingUp, TrendingDown, Users, Building2, Clock, 
-  AlertCircle, Receipt, Percent, CalendarDays 
-} from "lucide-react";
-import { format, subMonths, startOfMonth, endOfMonth, differenceInDays, parseISO } from "date-fns";
+import { ChevronUp, Download } from "lucide-react";
+import { format, parseISO, subMonths } from "date-fns";
 import { hu } from "date-fns/locale";
 
-interface RevenueData {
+interface MonthlyData {
   month: string;
+  monthIndex: number;
   revenue: number;
   expenses: number;
+  salaries: number;
 }
 
-interface VatBreakdown {
+interface VatCategoryData {
   rate: string;
-  amount: number;
-  count: number;
+  vatAmount: number;
+  netAmount: number;
 }
 
-interface PartnerData {
-  name: string;
-  taxNumber: string;
-  totalAmount: number;
-  invoiceCount: number;
-}
-
-interface PaymentStats {
-  avgPaymentDays: number;
-  overdueCount: number;
-  overdueAmount: number;
-  receivablesAmount: number;
-}
-
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+const MONTH_NAMES = ["január", "február", "március", "április", "május", "június", "július", "augusztus", "szeptember", "október", "november", "december"];
 
 export default function Analytics() {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const [loading, setLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [showBrutto, setShowBrutto] = useState(true);
+  const [vatSectionOpen, setVatSectionOpen] = useState(true);
+  const [revenueSectionOpen, setRevenueSectionOpen] = useState(true);
+  
+  // Filter toggles
+  const [showRevenue, setShowRevenue] = useState(true);
+  const [showPayable, setShowPayable] = useState(true);
+  const [showPaidExpenses, setShowPaidExpenses] = useState(true);
+  const [showPaidSalaries, setShowPaidSalaries] = useState(false);
+  
+  // Current vs previous period toggle
+  const [showCurrentPeriod, setShowCurrentPeriod] = useState(true);
   
   // Data states
-  const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
-  const [vatBreakdown, setVatBreakdown] = useState<VatBreakdown[]>([]);
-  const [topCustomers, setTopCustomers] = useState<PartnerData[]>([]);
-  const [topSuppliers, setTopSuppliers] = useState<PartnerData[]>([]);
-  const [paymentStats, setPaymentStats] = useState<PaymentStats>({
-    avgPaymentDays: 0,
-    overdueCount: 0,
-    overdueAmount: 0,
-    receivablesAmount: 0
-  });
-  const [totalVat, setTotalVat] = useState({ outbound: 0, inbound: 0 });
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  const [outboundVatCategories, setOutboundVatCategories] = useState<VatCategoryData[]>([]);
+  const [inboundVatCategories, setInboundVatCategories] = useState<VatCategoryData[]>([]);
+  const [totalOutboundVat, setTotalOutboundVat] = useState(0);
+  const [totalInboundVat, setTotalInboundVat] = useState(0);
+  const [previousPeriodVat, setPreviousPeriodVat] = useState(0);
 
-  const years = Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() - i).toString());
+  const years = [2024, 2025];
+  const currentMonth = new Date().getMonth();
+  const currentMonthName = MONTH_NAMES[currentMonth];
 
   useEffect(() => {
     if (user && selectedCompany) {
@@ -77,10 +71,8 @@ export default function Analytics() {
     setLoading(true);
     try {
       await Promise.all([
-        fetchRevenueData(),
-        fetchVatBreakdown(),
-        fetchTopPartners(),
-        fetchPaymentStats()
+        fetchMonthlyData(),
+        fetchVatData()
       ]);
     } catch (error) {
       console.error("Error fetching analytics:", error);
@@ -89,7 +81,7 @@ export default function Analytics() {
     }
   };
 
-  const fetchRevenueData = async () => {
+  const fetchMonthlyData = async () => {
     const yearStart = `${selectedYear}-01-01`;
     const yearEnd = `${selectedYear}-12-31`;
 
@@ -101,289 +93,181 @@ export default function Analytics() {
       .gte("invoice_issue_date", yearStart)
       .lte("invoice_issue_date", yearEnd);
 
-    // Group by month
-    const monthlyData: { [key: string]: { revenue: number; expenses: number } } = {};
-    
+    // Fetch salaries
+    const { data: salaries } = await supabase
+      .from("salary")
+      .select("*")
+      .eq("company_id", selectedCompany?.id)
+      .gte("dátum", yearStart)
+      .lte("dátum", yearEnd);
+
+    // Initialize monthly data
+    const monthlyMap: { [key: number]: MonthlyData } = {};
     for (let i = 0; i < 12; i++) {
-      const monthKey = format(new Date(parseInt(selectedYear), i, 1), "MMM", { locale: hu });
-      monthlyData[monthKey] = { revenue: 0, expenses: 0 };
+      monthlyMap[i] = {
+        month: MONTH_NAMES[i],
+        monthIndex: i,
+        revenue: 0,
+        expenses: 0,
+        salaries: 0
+      };
     }
 
+    // Process NAV invoices
     navInvoices?.forEach(inv => {
       if (inv.invoice_issue_date) {
         const date = parseISO(inv.invoice_issue_date);
-        const monthKey = format(date, "MMM", { locale: hu });
-        const amount = inv.invoice_gross_amount || 0;
+        const monthIndex = date.getMonth();
+        const amount = showBrutto 
+          ? (inv.invoice_gross_amount || 0)
+          : (inv.invoice_net_amount || 0);
         
         if (inv.invoice_direction === "OUTBOUND") {
-          monthlyData[monthKey].revenue += amount;
+          monthlyMap[monthIndex].revenue += amount;
         } else {
-          monthlyData[monthKey].expenses += amount;
+          monthlyMap[monthIndex].expenses += amount;
         }
       }
     });
 
-    const data = Object.entries(monthlyData).map(([month, values]) => ({
-      month,
-      revenue: Math.round(values.revenue),
-      expenses: Math.round(values.expenses)
-    }));
+    // Process salaries
+    salaries?.forEach(sal => {
+      if (sal.dátum) {
+        const date = parseISO(sal.dátum);
+        const monthIndex = date.getMonth();
+        monthlyMap[monthIndex].salaries += sal.összeg || 0;
+      }
+    });
 
-    setRevenueData(data);
-
-    // Calculate total VAT
-    const outboundVat = navInvoices
-      ?.filter(i => i.invoice_direction === "OUTBOUND")
-      .reduce((sum, i) => sum + (i.invoice_vat_amount || 0), 0) || 0;
-    const inboundVat = navInvoices
-      ?.filter(i => i.invoice_direction === "INBOUND")
-      .reduce((sum, i) => sum + (i.invoice_vat_amount || 0), 0) || 0;
-    
-    setTotalVat({ outbound: outboundVat, inbound: inboundVat });
+    setMonthlyData(Object.values(monthlyMap));
   };
 
-  const fetchVatBreakdown = async () => {
-    const yearStart = `${selectedYear}-01-01`;
-    const yearEnd = `${selectedYear}-12-31`;
+  const fetchVatData = async () => {
+    const currentDate = new Date();
+    const currentMonthStart = `${selectedYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
+    const currentMonthEnd = `${selectedYear}-${String(currentMonth + 1).padStart(2, '0')}-31`;
+    
+    // Previous month for comparison
+    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const prevYear = currentMonth === 0 ? selectedYear - 1 : selectedYear;
+    const prevMonthStart = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-01`;
+    const prevMonthEnd = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-31`;
 
-    const { data: invoices } = await supabase
-      .from("invoices")
-      .select("afa_kulcsok_bontasban, afa_osszeg_osszesen")
+    // Current period data
+    const { data: currentNavInvoices } = await supabase
+      .from("nav_invoices")
+      .select("*")
       .eq("company_id", selectedCompany?.id)
-      .gte("kibocsatas_datuma", yearStart)
-      .lte("kibocsatas_datuma", yearEnd);
+      .gte("invoice_issue_date", currentMonthStart)
+      .lte("invoice_issue_date", currentMonthEnd);
 
-    // Parse VAT rates from invoices
-    const vatMap: { [rate: string]: { amount: number; count: number } } = {
-      "27%": { amount: 0, count: 0 },
-      "18%": { amount: 0, count: 0 },
-      "5%": { amount: 0, count: 0 },
-      "0%/AM": { amount: 0, count: 0 }
-    };
+    // Previous period data
+    const { data: prevNavInvoices } = await supabase
+      .from("nav_invoices")
+      .select("*")
+      .eq("company_id", selectedCompany?.id)
+      .gte("invoice_issue_date", prevMonthStart)
+      .lte("invoice_issue_date", prevMonthEnd);
 
-    invoices?.forEach(inv => {
-      // Simple estimation based on total VAT
-      const vatAmount = inv.afa_osszeg_osszesen || 0;
-      if (vatAmount > 0) {
-        vatMap["27%"].amount += vatAmount;
-        vatMap["27%"].count += 1;
+    // Calculate current period VAT
+    let outboundVat = 0;
+    let outboundNet = 0;
+    let inboundVat = 0;
+    let inboundNet = 0;
+
+    currentNavInvoices?.forEach(inv => {
+      if (inv.invoice_direction === "OUTBOUND") {
+        outboundVat += inv.invoice_vat_amount || 0;
+        outboundNet += inv.invoice_net_amount || 0;
       } else {
-        vatMap["0%/AM"].count += 1;
+        inboundVat += inv.invoice_vat_amount || 0;
+        inboundNet += inv.invoice_net_amount || 0;
       }
     });
 
-    setVatBreakdown(
-      Object.entries(vatMap)
-        .filter(([_, v]) => v.count > 0)
-        .map(([rate, values]) => ({
-          rate,
-          amount: Math.round(values.amount),
-          count: values.count
-        }))
-    );
-  };
-
-  const fetchTopPartners = async () => {
-    const yearStart = `${selectedYear}-01-01`;
-    const yearEnd = `${selectedYear}-12-31`;
-
-    // First, fetch cached partners from the partners table
-    const { data: cachedPartners } = await supabase
-      .from("partners")
-      .select("tax_number, name, partner_type")
-      .eq("company_id", selectedCompany?.id);
-
-    // Build name lookup map from cached partners
-    const partnerNameMap: { [taxNumber: string]: string } = {};
-    cachedPartners?.forEach(p => {
-      partnerNameMap[p.tax_number] = p.name;
-    });
-
-    // Fetch invoices table as fallback for uncached names
-    const { data: allInvoices } = await supabase
-      .from("invoices")
-      .select("elado_nev, elado_vat_id, vevo_nev, vevo_vat_id")
-      .eq("company_id", selectedCompany?.id);
-
-    // Build fallback name maps from invoices (only for tax numbers not in cache)
-    const newPartnersToCache: { tax_number: string; name: string; partner_type: string }[] = [];
-    
-    allInvoices?.forEach(inv => {
-      // Customers (vevo)
-      if (inv.vevo_vat_id && inv.vevo_nev) {
-        const taxPrefix = inv.vevo_vat_id.substring(0, 8);
-        if (!partnerNameMap[taxPrefix]) {
-          partnerNameMap[taxPrefix] = inv.vevo_nev;
-          newPartnersToCache.push({ tax_number: taxPrefix, name: inv.vevo_nev, partner_type: 'customer' });
-        }
-      }
-      // Suppliers (elado)
-      if (inv.elado_vat_id && inv.elado_nev) {
-        const taxPrefix = inv.elado_vat_id.substring(0, 8);
-        if (!partnerNameMap[taxPrefix]) {
-          partnerNameMap[taxPrefix] = inv.elado_nev;
-          newPartnersToCache.push({ tax_number: taxPrefix, name: inv.elado_nev, partner_type: 'supplier' });
-        }
+    // Calculate previous period VAT position
+    let prevOutboundVat = 0;
+    let prevInboundVat = 0;
+    prevNavInvoices?.forEach(inv => {
+      if (inv.invoice_direction === "OUTBOUND") {
+        prevOutboundVat += inv.invoice_vat_amount || 0;
+      } else {
+        prevInboundVat += inv.invoice_vat_amount || 0;
       }
     });
 
-    // Cache new partners in the background (don't await)
-    if (newPartnersToCache.length > 0 && user && selectedCompany) {
-      const partnersToInsert = newPartnersToCache.map(p => ({
-        user_id: user.id,
-        company_id: selectedCompany.id,
-        tax_number: p.tax_number,
-        name: p.name,
-        partner_type: p.partner_type
-      }));
-      
-      supabase
-        .from("partners")
-        .upsert(partnersToInsert, { onConflict: 'company_id,tax_number', ignoreDuplicates: true })
-        .then(() => console.log(`Cached ${newPartnersToCache.length} new partners`));
+    setTotalOutboundVat(outboundVat);
+    setTotalInboundVat(inboundVat);
+    setPreviousPeriodVat(prevOutboundVat - prevInboundVat);
+
+    // VAT categories (simplified - in real implementation would parse from invoice data)
+    const outboundCategories: VatCategoryData[] = [];
+    const inboundCategories: VatCategoryData[] = [];
+
+    if (outboundVat > 0) {
+      outboundCategories.push({
+        rate: "27%",
+        vatAmount: outboundVat,
+        netAmount: outboundNet
+      });
     }
 
-    // Top customers (outbound invoices)
-    const { data: outboundInvoices } = await supabase
-      .from("nav_invoices")
-      .select("*")
-      .eq("company_id", selectedCompany?.id)
-      .eq("invoice_direction", "OUTBOUND")
-      .gte("invoice_issue_date", yearStart)
-      .lte("invoice_issue_date", yearEnd);
-
-    // Group by customer tax number
-    const customerMap: { [key: string]: PartnerData } = {};
-    outboundInvoices?.forEach(inv => {
-      const taxNumber = inv.customer_tax_number || "";
-      const taxPrefix = taxNumber.substring(0, 8); // Hungarian tax numbers: first 8 chars are the ID
-      const key = taxNumber || "Ismeretlen";
-      const name = partnerNameMap[taxPrefix] || partnerNameMap[taxNumber] || taxNumber || "Ismeretlen";
-      
-      if (!customerMap[key]) {
-        customerMap[key] = {
-          name,
-          taxNumber,
-          totalAmount: 0,
-          invoiceCount: 0
-        };
-      }
-      customerMap[key].totalAmount += inv.invoice_gross_amount || 0;
-      customerMap[key].invoiceCount += 1;
-    });
-
-    const sortedCustomers = Object.values(customerMap)
-      .sort((a, b) => b.totalAmount - a.totalAmount)
-      .slice(0, 10);
-    setTopCustomers(sortedCustomers);
-
-    // Top suppliers (inbound invoices)
-    const { data: inboundInvoices } = await supabase
-      .from("nav_invoices")
-      .select("*")
-      .eq("company_id", selectedCompany?.id)
-      .eq("invoice_direction", "INBOUND")
-      .gte("invoice_issue_date", yearStart)
-      .lte("invoice_issue_date", yearEnd);
-
-    const supplierMap: { [key: string]: PartnerData } = {};
-    inboundInvoices?.forEach(inv => {
-      const taxNumber = inv.supplier_tax_number || "";
-      const taxPrefix = taxNumber.substring(0, 8); // Hungarian tax numbers: first 8 chars are the ID
-      const key = taxNumber || "Ismeretlen";
-      const name = partnerNameMap[taxPrefix] || partnerNameMap[taxNumber] || taxNumber || "Ismeretlen";
-      
-      if (!supplierMap[key]) {
-        supplierMap[key] = {
-          name,
-          taxNumber,
-          totalAmount: 0,
-          invoiceCount: 0
-        };
-      }
-      supplierMap[key].totalAmount += inv.invoice_gross_amount || 0;
-      supplierMap[key].invoiceCount += 1;
-    });
-
-    const sortedSuppliers = Object.values(supplierMap)
-      .sort((a, b) => b.totalAmount - a.totalAmount)
-      .slice(0, 10);
-    setTopSuppliers(sortedSuppliers);
-  };
-
-  const fetchPaymentStats = async () => {
-    const today = new Date();
-    
-    // Get unpaid invoices for payment analysis
-    const { data: unpaidInvoices } = await supabase
-      .from("invoices")
-      .select("*")
-      .eq("company_id", selectedCompany?.id)
-      .eq("fizetve", false);
-
-    let overdueCount = 0;
-    let overdueAmount = 0;
-    let receivablesAmount = 0;
-    let totalPaymentDays = 0;
-    let paidCount = 0;
-
-    unpaidInvoices?.forEach(inv => {
-      const amount = inv.brutto_vegosszeg || inv.fizetendo_osszeg || 0;
-      receivablesAmount += amount;
-
-      if (inv.fizetesi_hatarido) {
-        const dueDate = parseISO(inv.fizetesi_hatarido);
-        if (dueDate < today) {
-          overdueCount += 1;
-          overdueAmount += amount;
+    if (inboundVat > 0 || inboundNet > 0) {
+      // Estimate 0% and 27% split based on VAT ratio
+      const vatRatio = inboundNet > 0 ? inboundVat / inboundNet : 0;
+      if (vatRatio < 0.27) {
+        const estimatedZeroNet = inboundNet - (inboundVat / 0.27);
+        if (estimatedZeroNet > 0) {
+          inboundCategories.push({
+            rate: "0%",
+            vatAmount: 0,
+            netAmount: Math.round(estimatedZeroNet)
+          });
         }
       }
-    });
-
-    // Get paid invoices for average payment time
-    const { data: paidInvoices } = await supabase
-      .from("invoices")
-      .select("kibocsatas_datuma, feldolgozva")
-      .eq("company_id", selectedCompany?.id)
-      .eq("fizetve", true)
-      .not("feldolgozva", "is", null);
-
-    paidInvoices?.forEach(inv => {
-      if (inv.kibocsatas_datuma && inv.feldolgozva) {
-        const issueDate = parseISO(inv.kibocsatas_datuma);
-        const paidDate = parseISO(inv.feldolgozva);
-        totalPaymentDays += differenceInDays(paidDate, issueDate);
-        paidCount += 1;
+      if (inboundVat > 0) {
+        inboundCategories.push({
+          rate: "27%",
+          vatAmount: inboundVat,
+          netAmount: Math.round(inboundVat / 0.27)
+        });
       }
-    });
+    }
 
-    setPaymentStats({
-      avgPaymentDays: paidCount > 0 ? Math.round(totalPaymentDays / paidCount) : 0,
-      overdueCount,
-      overdueAmount: Math.round(overdueAmount),
-      receivablesAmount: Math.round(receivablesAmount)
-    });
+    setOutboundVatCategories(outboundCategories);
+    setInboundVatCategories(inboundCategories);
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number, compact = false) => {
+    if (compact && Math.abs(amount) >= 1000000) {
+      return `${(amount / 1000000).toFixed(2).replace('.', ',')} M Ft`;
+    }
     return new Intl.NumberFormat("hu-HU", {
-      style: "currency",
-      currency: "HUF",
       maximumFractionDigits: 0
-    }).format(amount);
+    }).format(amount) + " Ft";
   };
 
-  const netVat = totalVat.outbound - totalVat.inbound;
+  const netVatPosition = totalOutboundVat - totalInboundVat;
+  const maxVatValue = Math.max(totalOutboundVat, totalInboundVat, Math.abs(netVatPosition));
+
+  // Chart data for VAT bars
+  const vatBarData = [
+    { name: "Kimenő ÁFA", value: totalOutboundVat, color: "#F59E0B" },
+    { name: "Bejövő ÁFA", value: totalInboundVat, color: "#8B5CF6" },
+    { name: "Becsült ÁFA pozíció", value: netVatPosition, color: "#A78BFA" }
+  ];
+
+  // Calculate totals for VAT categories
+  const outboundTotalVat = outboundVatCategories.reduce((sum, c) => sum + c.vatAmount, 0);
+  const outboundTotalNet = outboundVatCategories.reduce((sum, c) => sum + c.netAmount, 0);
+  const inboundTotalVat = inboundVatCategories.reduce((sum, c) => sum + c.vatAmount, 0);
+  const inboundTotalNet = inboundVatCategories.reduce((sum, c) => sum + c.netAmount, 0);
 
   if (loading) {
     return (
       <div className="p-6 space-y-6">
         <Skeleton className="h-10 w-64" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
-            <Skeleton key={i} className="h-32" />
-          ))}
-        </div>
+        <Skeleton className="h-64" />
         <Skeleton className="h-96" />
       </div>
     );
@@ -392,322 +276,378 @@ export default function Analytics() {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Elemzések</h1>
-          <p className="text-muted-foreground">
-            Részletes pénzügyi elemzések és kimutatások
-          </p>
-        </div>
-        <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="w-32">
-            <CalendarDays className="h-4 w-4 mr-2" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {years.map(year => (
-              <SelectItem key={year} value={year}>{year}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+        {/* ÁFA Section */}
+        <Collapsible open={vatSectionOpen} onOpenChange={setVatSectionOpen}>
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="bg-purple-600 text-white text-xs px-3 py-1 rounded-full font-medium">
+                    pénzügyi támogatás
+                  </span>
+                  <span className="text-sm">
+                    ÁFA (Live): <span className="text-purple-600 font-semibold">{formatCurrency(netVatPosition)}</span> az aktuális ÁFA pozíciód a hiányos költségszámlákat is figyelembe véve, az előző időszak ÁFA pozíciója <span className="text-purple-600 font-semibold">{formatCurrency(previousPeriodVat)}</span>
+                  </span>
+                </div>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <ChevronUp className={`h-4 w-4 transition-transform ${vatSectionOpen ? '' : 'rotate-180'}`} />
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+            </CardHeader>
+            
+            <CollapsibleContent>
+              <CardContent className="pt-4">
+                {/* Period toggle */}
+                <div className="flex justify-end mb-4">
+                  <div className="inline-flex rounded-lg border p-1">
+                    <Button
+                      variant={showCurrentPeriod ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setShowCurrentPeriod(true)}
+                      className="relative"
+                    >
+                      {showCurrentPeriod && <span className="absolute left-2 w-2 h-2 bg-orange-500 rounded-full" />}
+                      <span className={showCurrentPeriod ? "ml-3" : ""}>Aktuális időszak</span>
+                    </Button>
+                    <Button
+                      variant={!showCurrentPeriod ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setShowCurrentPeriod(false)}
+                    >
+                      Előző időszak
+                    </Button>
+                  </div>
+                </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Éves bevétel (bruttó)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {formatCurrency(revenueData.reduce((sum, d) => sum + d.revenue, 0))}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <TrendingDown className="h-4 w-4" />
-              Éves kiadás (bruttó)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {formatCurrency(revenueData.reduce((sum, d) => sum + d.expenses, 0))}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <Percent className="h-4 w-4" />
-              Fizetendő ÁFA
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-2xl font-bold ${netVat > 0 ? 'text-orange-500' : 'text-green-500'}`}>
-              {formatCurrency(netVat)}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Kimenő: {formatCurrency(totalVat.outbound)} | Bejövő: {formatCurrency(totalVat.inbound)}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
-              Kintlévőségek
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{formatCurrency(paymentStats.receivablesAmount)}</p>
-            {paymentStats.overdueCount > 0 && (
-              <Badge variant="destructive" className="mt-1">
-                {paymentStats.overdueCount} lejárt
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tabs */}
-      <Tabs defaultValue="revenue" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="revenue">Bevétel & ÁFA</TabsTrigger>
-          <TabsTrigger value="partners">Partnerek</TabsTrigger>
-          <TabsTrigger value="payments">Fizetések</TabsTrigger>
-        </TabsList>
-
-        {/* Revenue & VAT Tab */}
-        <TabsContent value="revenue" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Havi bevétel és kiadás trend</CardTitle>
-                <CardDescription>Kimenő és bejövő számlák összege havonta</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={revenueData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="month" className="text-xs" />
-                    <YAxis 
-                      tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`}
-                      className="text-xs"
-                    />
-                    <Tooltip 
-                      formatter={(value: number) => formatCurrency(value)}
-                      labelStyle={{ color: 'hsl(var(--foreground))' }}
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--background))',
-                        border: '1px solid hsl(var(--border))'
-                      }}
-                    />
-                    <Legend />
-                    <Bar dataKey="revenue" name="Bevétel" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="expenses" name="Kiadás" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>ÁFA bontás</CardTitle>
-                <CardDescription>Számlák ÁFA-kulcs szerint</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {vatBreakdown.length > 0 ? (
-                  <>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <PieChart>
-                        <Pie
-                          data={vatBreakdown}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={40}
-                          outerRadius={80}
-                          dataKey="count"
-                          nameKey="rate"
-                          label={({ rate }) => rate}
-                        >
-                          {vatBreakdown.map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="space-y-2 mt-4">
-                      {vatBreakdown.map((vat, i) => (
-                        <div key={vat.rate} className="flex justify-between items-center text-sm">
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: COLORS[i % COLORS.length] }}
-                            />
-                            <span>{vat.rate}</span>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Left side - VAT bar chart */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-purple-600 mb-6">
+                      {formatCurrency(netVatPosition)} fizetendő ÁFA ({currentMonthName})
+                    </h3>
+                    
+                    <div className="space-y-6">
+                      {vatBarData.map((item, index) => (
+                        <div key={item.name} className="space-y-2">
+                          <div className="flex items-center gap-4">
+                            <div className="w-3 h-full bg-purple-200" style={{ minHeight: '40px' }} />
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm text-muted-foreground">{item.name}</span>
+                                <span className="font-semibold">{formatCurrency(item.value)}</span>
+                              </div>
+                              <div className="h-8 bg-muted rounded overflow-hidden">
+                                <div 
+                                  className="h-full rounded transition-all"
+                                  style={{ 
+                                    width: maxVatValue > 0 ? `${(Math.abs(item.value) / maxVatValue) * 100}%` : '0%',
+                                    backgroundColor: item.color
+                                  }}
+                                />
+                              </div>
+                            </div>
                           </div>
-                          <span className="font-medium">{vat.count} db</span>
                         </div>
                       ))}
                     </div>
-                  </>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">
-                    Nincs adat a kiválasztott időszakra
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
 
-        {/* Partners Tab */}
-        <TabsContent value="partners" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Top 10 vevő
-                </CardTitle>
-                <CardDescription>Legnagyobb bevételt hozó ügyfelek</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {topCustomers.length > 0 ? (
-                  <div className="space-y-3">
-                    {topCustomers.map((customer, index) => (
-                      <div key={customer.taxNumber || index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg font-bold text-muted-foreground w-6">
-                            {index + 1}.
-                          </span>
-                          <div>
-                            <p className="font-medium text-sm">{customer.taxNumber || "Ismeretlen"}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {customer.invoiceCount} számla
-                            </p>
-                          </div>
-                        </div>
-                        <p className="font-bold">{formatCurrency(customer.totalAmount)}</p>
-                      </div>
-                    ))}
+                    <Button variant="link" className="mt-6 text-orange-500 p-0">
+                      <Download className="h-4 w-4 mr-2" />
+                      Grafikon letöltése
+                    </Button>
                   </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">
-                    Nincs adat a kiválasztott időszakra
-                  </p>
-                )}
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  Top 10 szállító
-                </CardTitle>
-                <CardDescription>Legnagyobb költséget jelentő beszállítók</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {topSuppliers.length > 0 ? (
-                  <div className="space-y-3">
-                    {topSuppliers.map((supplier, index) => (
-                      <div key={supplier.taxNumber || index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg font-bold text-muted-foreground w-6">
-                            {index + 1}.
-                          </span>
-                          <div>
-                            <p className="font-medium text-sm">{supplier.taxNumber || "Ismeretlen"}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {supplier.invoiceCount} számla
-                            </p>
-                          </div>
-                        </div>
-                        <p className="font-bold">{formatCurrency(supplier.totalAmount)}</p>
+                  {/* Right side - VAT breakdown tables */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-6">ÁFA analitika ({currentMonthName})</h3>
+                    
+                    {/* Outbound invoices VAT */}
+                    <div className="mb-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-1 h-5 bg-purple-600 rounded" />
+                        <h4 className="font-medium">Kimenő számlák ÁFA tartalma</h4>
                       </div>
-                    ))}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-muted-foreground">
+                              <th className="text-left py-2">ÁFA kategóriák:</th>
+                              <th className="text-right py-2">Fizetendő ÁFA:</th>
+                              <th className="text-right py-2">Árbevétel:</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {outboundVatCategories.length > 0 ? (
+                              <>
+                                {outboundVatCategories.map(cat => (
+                                  <tr key={cat.rate}>
+                                    <td className="py-1">{cat.rate}:</td>
+                                    <td className="text-right">{formatCurrency(cat.vatAmount)}</td>
+                                    <td className="text-right">{formatCurrency(cat.netAmount + cat.vatAmount)}</td>
+                                  </tr>
+                                ))}
+                                <tr className="font-medium border-t">
+                                  <td className="py-1">Összesen:</td>
+                                  <td className="text-right">{formatCurrency(outboundTotalVat)}</td>
+                                  <td className="text-right">{formatCurrency(outboundTotalNet + outboundTotalVat)}</td>
+                                </tr>
+                              </>
+                            ) : (
+                              <tr>
+                                <td colSpan={3} className="text-center py-4 text-muted-foreground">
+                                  Nincs adat
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Inbound invoices VAT */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-1 h-5 bg-purple-600 rounded" />
+                        <h4 className="font-medium">Bejövő számlák ÁFA tartalma</h4>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-muted-foreground">
+                              <th className="text-left py-2">ÁFA kategóriák:</th>
+                              <th className="text-right py-2">Levonható ÁFA:</th>
+                              <th className="text-right py-2">Költségek:</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {inboundVatCategories.length > 0 ? (
+                              <>
+                                {inboundVatCategories.map(cat => (
+                                  <tr key={cat.rate}>
+                                    <td className="py-1">{cat.rate}:</td>
+                                    <td className="text-right">{formatCurrency(cat.vatAmount)}</td>
+                                    <td className="text-right">{formatCurrency(cat.netAmount + cat.vatAmount)}</td>
+                                  </tr>
+                                ))}
+                                <tr className="font-medium border-t">
+                                  <td className="py-1">Összesen:</td>
+                                  <td className="text-right">{formatCurrency(inboundTotalVat)}</td>
+                                  <td className="text-right">{formatCurrency(inboundTotalNet + inboundTotalVat)}</td>
+                                </tr>
+                              </>
+                            ) : (
+                              <tr>
+                                <td colSpan={3} className="text-center py-4 text-muted-foreground">
+                                  Nincs adat
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">
-                    Nincs adat a kiválasztott időszakra
-                  </p>
-                )}
+                </div>
               </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Payments Tab */}
-        <TabsContent value="payments" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Átlagos fizetési idő
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-4xl font-bold">{paymentStats.avgPaymentDays}</p>
-                <p className="text-muted-foreground">nap</p>
-              </CardContent>
-            </Card>
-
-            <Card className={paymentStats.overdueCount > 0 ? "border-destructive" : ""}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-destructive" />
-                  Lejárt számlák
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-4xl font-bold text-destructive">{paymentStats.overdueCount}</p>
-                <p className="text-muted-foreground">
-                  {formatCurrency(paymentStats.overdueAmount)} összértékben
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Receipt className="h-5 w-5" />
-                  Összes kintlévőség
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-4xl font-bold">{formatCurrency(paymentStats.receivablesAmount)}</p>
-                <p className="text-muted-foreground">fizetésre vár</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Kintlévőség előrejelzés</CardTitle>
-              <CardDescription>
-                A rendszer a lejárt és hamarosan lejáró számlák alapján mutatja a kintlévőségeket
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center py-12 text-muted-foreground">
-                <p>Részletes előrejelzés hamarosan elérhető</p>
-              </div>
-            </CardContent>
+            </CollapsibleContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </Collapsible>
+
+        {/* Revenue & Expenses Section */}
+        <Collapsible open={revenueSectionOpen} onOpenChange={setRevenueSectionOpen}>
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="bg-purple-600 text-white text-xs px-3 py-1 rounded-full font-medium">
+                    pénzügyi támogatás
+                  </span>
+                  <span className="text-lg font-medium">Kiadások és bevételek {selectedYear}. évben</span>
+                </div>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <ChevronUp className={`h-4 w-4 transition-transform ${revenueSectionOpen ? '' : 'rotate-180'}`} />
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+            </CardHeader>
+            
+            <CollapsibleContent>
+              <CardContent className="pt-4">
+                {/* Filters row */}
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                  <div className="flex flex-wrap items-center gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox 
+                        checked={showRevenue} 
+                        onCheckedChange={(checked) => setShowRevenue(!!checked)}
+                        className="border-orange-500 data-[state=checked]:bg-orange-500"
+                      />
+                      <span className="text-sm">Bevétel</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox 
+                        checked={showPayable} 
+                        onCheckedChange={(checked) => setShowPayable(!!checked)}
+                        className="border-blue-500 data-[state=checked]:bg-blue-500"
+                      />
+                      <span className="text-sm">Fizetendő</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox 
+                        checked={showPaidExpenses} 
+                        onCheckedChange={(checked) => setShowPaidExpenses(!!checked)}
+                        className="border-green-500 data-[state=checked]:bg-green-500"
+                      />
+                      <span className="text-sm">Fizetett kiadás</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox 
+                        checked={showPaidSalaries} 
+                        onCheckedChange={(checked) => setShowPaidSalaries(!!checked)}
+                      />
+                      <span className="text-sm text-muted-foreground">Fizetett bér</span>
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Időszak</span>
+                      <div className="inline-flex rounded-lg border p-1">
+                        {years.map(year => (
+                          <Button
+                            key={year}
+                            variant={selectedYear === year ? "default" : "ghost"}
+                            size="sm"
+                            onClick={() => setSelectedYear(year)}
+                          >
+                            {year}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="inline-flex rounded-lg border p-1">
+                      <Button
+                        variant={showBrutto ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setShowBrutto(true)}
+                        className="relative"
+                      >
+                        {showBrutto && <span className="absolute left-2 w-2 h-2 bg-orange-500 rounded-full" />}
+                        <span className={showBrutto ? "ml-3" : ""}>bruttó</span>
+                      </Button>
+                      <Button
+                        variant={!showBrutto ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setShowBrutto(false)}
+                      >
+                        nettó
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Monthly summary row */}
+                <div className="grid grid-cols-12 gap-2 mb-2 text-center">
+                  <div className="font-semibold text-left">{selectedYear}. év</div>
+                  {MONTH_NAMES.map((month, i) => (
+                    <div key={month} className="text-sm font-medium">{month}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-12 gap-2 mb-6 text-center">
+                  <div className="text-orange-500 font-medium text-left">Eredmény</div>
+                  {monthlyData.map((data, i) => {
+                    const result = data.revenue - data.expenses - data.salaries;
+                    return (
+                      <div key={i} className="text-sm text-purple-600 font-medium">
+                        {result === 0 ? "0 Ft" : formatCurrency(result, true)}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Area Chart */}
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={monthlyData}>
+                    <defs>
+                      <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#F97316" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#F97316" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="expensesGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="month" 
+                      tick={{ fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      tickFormatter={(v) => {
+                        if (v >= 1000000) return `${(v / 1000000).toFixed(1)} M Ft`;
+                        if (v >= 1000) return `${(v / 1000).toFixed(0)} 000 Ft`;
+                        return `${v} Ft`;
+                      }}
+                      tick={{ fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => [formatCurrency(value), name]}
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    {showRevenue && (
+                      <Area 
+                        type="monotone" 
+                        dataKey="revenue" 
+                        name="Bevétel"
+                        stroke="#F97316" 
+                        strokeWidth={2}
+                        fill="url(#revenueGradient)"
+                      />
+                    )}
+                    {(showPayable || showPaidExpenses) && (
+                      <Area 
+                        type="monotone" 
+                        dataKey="expenses" 
+                        name="Kiadás"
+                        stroke="#F59E0B" 
+                        strokeWidth={2}
+                        fill="url(#expensesGradient)"
+                      />
+                    )}
+                    {showPaidSalaries && (
+                      <Area 
+                        type="monotone" 
+                        dataKey="salaries" 
+                        name="Bérek"
+                        stroke="#8B5CF6" 
+                        strokeWidth={2}
+                        fill="none"
+                      />
+                    )}
+                  </AreaChart>
+                </ResponsiveContainer>
+
+                <Button variant="link" className="mt-4 text-orange-500 p-0">
+                  <Download className="h-4 w-4 mr-2" />
+                  Grafikon letöltése
+                </Button>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
       </main>
     </div>
   );
