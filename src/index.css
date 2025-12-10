@@ -103,10 +103,10 @@ All colors MUST be HSL.
     --primary-foreground: 0 0% 100%;
     --primary-subtle: 173 80% 10%;
 
-    --secondary: 217 33% 17%;
+    --secondary: 215 20% 18%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217 33% 17%;
+    --muted: 215 20% 18%;
     --muted-foreground: 215 20% 65%;
 
     /* Accent: Teal-based hover/accent for dark mode */
@@ -114,11 +114,11 @@ All colors MUST be HSL.
     --accent-foreground: 173 80% 70%;
     --accent-subtle: 173 80% 10%;
 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
+    --border: 215 20% 18%;
+    --input: 215 20% 18%;
     --ring: 173 80% 48%;
 
     /* Dashboard specific colors for dark mode */
