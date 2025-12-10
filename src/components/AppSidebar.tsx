@@ -172,41 +172,26 @@ export function AppSidebar() {
                 const isDisabled = hasNoCompany;
                 const active = isActive(item.url);
                 
-                const menuButton = (
-                  <SidebarMenuButton 
-                    asChild={!isDisabled}
-                    isActive={active}
-                    tooltip={isCollapsed ? item.title : undefined}
-                    className={isDisabled ? 'grayscale opacity-50 cursor-not-allowed' : ''}
-                  >
-                    {isDisabled ? (
-                      <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''} w-full`}>
-                        <item.icon className="h-4 w-4 shrink-0" />
-                        {!isCollapsed && <span className="ml-3">{item.title}</span>}
-                      </div>
-                    ) : (
-                      <Link to={item.url} className={`flex items-center ${isCollapsed ? 'justify-center' : ''} w-full`}>
-                        <item.icon className="h-4 w-4 shrink-0" />
-                        {!isCollapsed && <span className="ml-3">{item.title}</span>}
-                      </Link>
-                    )}
-                  </SidebarMenuButton>
-                );
-
                 return (
                   <SidebarMenuItem key={item.title}>
-                    {isDisabled && !isCollapsed ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          {menuButton}
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="max-w-[250px]">
-                          <p>Ezek a funkciók csak akkor elérhetőek, ha van már legalább 1 cég regisztrálva a fiókhoz.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      menuButton
-                    )}
+                    <SidebarMenuButton 
+                      asChild={!isDisabled}
+                      isActive={active}
+                      tooltip={item.title}
+                      className={isDisabled ? 'grayscale opacity-50 cursor-not-allowed' : ''}
+                    >
+                      {isDisabled ? (
+                        <div className="flex items-center gap-2 w-full">
+                          <item.icon className="h-4 w-4 shrink-0" />
+                          <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                        </div>
+                      ) : (
+                        <Link to={item.url} className="flex items-center gap-2 w-full">
+                          <item.icon className="h-4 w-4 shrink-0" />
+                          <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                        </Link>
+                      )}
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
               })}
