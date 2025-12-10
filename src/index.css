@@ -156,14 +156,20 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
-  /* Remove focus ring globally */
+  /* Remove focus ring and active states globally */
   *:focus,
   *:focus-visible,
-  *:focus-within {
+  *:focus-within,
+  *:active {
     @apply outline-none;
     box-shadow: none !important;
     --tw-ring-shadow: none !important;
     --tw-ring-offset-shadow: none !important;
+  }
+  
+  /* Remove selection highlight on containers */
+  [data-state] {
+    @apply outline-none;
   }
 
   body {
