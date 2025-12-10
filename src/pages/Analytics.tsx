@@ -58,8 +58,13 @@ export default function Analytics() {
   const [showPaidExpenses, setShowPaidExpenses] = useState(true);
   const [showPaidSalaries, setShowPaidSalaries] = useState(false);
   
+  const years = [2024, 2025];
+  const currentMonth = new Date().getMonth();
+  const currentMonthName = MONTH_NAMES[currentMonth];
+
   // Current vs previous period toggle
   const [showCurrentPeriod, setShowCurrentPeriod] = useState(true);
+  const [comparisonMonth, setComparisonMonth] = useState(currentMonth > 0 ? currentMonth - 1 : 11);
   
   // Raw data states (for recalculation on brutto/netto toggle)
   const [rawInvoices, setRawInvoices] = useState<RawInvoice[]>([]);
@@ -68,19 +73,15 @@ export default function Analytics() {
   const [inboundVatCategories, setInboundVatCategories] = useState<VatCategoryData[]>([]);
   const [totalOutboundVat, setTotalOutboundVat] = useState(0);
   const [totalInboundVat, setTotalInboundVat] = useState(0);
-  const [previousPeriodVat, setPreviousPeriodVat] = useState(0);
+  const [comparisonPeriodVat, setComparisonPeriodVat] = useState(0);
 
   const vatChartRef = useRef<HTMLDivElement>(null);
-
-  const years = [2024, 2025];
-  const currentMonth = new Date().getMonth();
-  const currentMonthName = MONTH_NAMES[currentMonth];
 
   useEffect(() => {
     if (user && selectedCompany) {
       fetchAnalyticsData();
     }
-  }, [user, selectedCompany, selectedYear]);
+  }, [user, selectedCompany, selectedYear, comparisonMonth]);
 
   const fetchAnalyticsData = async () => {
     setLoading(true);
@@ -167,11 +168,9 @@ export default function Analytics() {
     const currentMonthStart = `${selectedYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
     const currentMonthEnd = `${selectedYear}-${String(currentMonth + 1).padStart(2, '0')}-31`;
     
-    // Previous month for comparison
-    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-    const prevYear = currentMonth === 0 ? selectedYear - 1 : selectedYear;
-    const prevMonthStart = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-01`;
-    const prevMonthEnd = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-31`;
+    // Comparison month (selected from chart year)
+    const compMonthStart = `${selectedYear}-${String(comparisonMonth + 1).padStart(2, '0')}-01`;
+    const compMonthEnd = `${selectedYear}-${String(comparisonMonth + 1).padStart(2, '0')}-31`;
 
     // Current period data
     const { data: currentNavInvoices } = await supabase
@@ -181,13 +180,13 @@ export default function Analytics() {
       .gte("invoice_issue_date", currentMonthStart)
       .lte("invoice_issue_date", currentMonthEnd);
 
-    // Previous period data
-    const { data: prevNavInvoices } = await supabase
+    // Comparison period data (selected month from chart year)
+    const { data: compNavInvoices } = await supabase
       .from("nav_invoices")
       .select("*")
       .eq("company_id", selectedCompany?.id)
-      .gte("invoice_issue_date", prevMonthStart)
-      .lte("invoice_issue_date", prevMonthEnd);
+      .gte("invoice_issue_date", compMonthStart)
+      .lte("invoice_issue_date", compMonthEnd);
 
     // Calculate current period VAT
     let outboundVat = 0;
@@ -205,20 +204,20 @@ export default function Analytics() {
       }
     });
 
-    // Calculate previous period VAT position
-    let prevOutboundVat = 0;
-    let prevInboundVat = 0;
-    prevNavInvoices?.forEach(inv => {
+    // Calculate comparison period VAT position
+    let compOutboundVat = 0;
+    let compInboundVat = 0;
+    compNavInvoices?.forEach(inv => {
       if (inv.invoice_direction === "OUTBOUND") {
-        prevOutboundVat += inv.invoice_vat_amount || 0;
+        compOutboundVat += inv.invoice_vat_amount || 0;
       } else {
-        prevInboundVat += inv.invoice_vat_amount || 0;
+        compInboundVat += inv.invoice_vat_amount || 0;
       }
     });
 
     setTotalOutboundVat(outboundVat);
     setTotalInboundVat(inboundVat);
-    setPreviousPeriodVat(prevOutboundVat - prevInboundVat);
+    setComparisonPeriodVat(compOutboundVat - compInboundVat);
 
     // VAT categories (simplified - in real implementation would parse from invoice data)
     const outboundCategories: VatCategoryData[] = [];
@@ -294,7 +293,7 @@ export default function Analytics() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="text-sm">
-                    ÁFA (Live): <span className="text-purple-600 font-semibold">{formatCurrency(netVatPosition)}</span> az aktuális ÁFA pozíciód a hiányos költségszámlákat is figyelembe véve, az előző időszak ÁFA pozíciója <span className="text-purple-600 font-semibold">{formatCurrency(previousPeriodVat)}</span>
+                    ÁFA (Live): <span className="text-purple-600 font-semibold">{formatCurrency(netVatPosition)}</span> az aktuális ÁFA pozíciód a hiányos költségszámlákat is figyelembe véve, {MONTH_NAMES[comparisonMonth]} ({selectedYear}) ÁFA pozíciója <span className="text-purple-600 font-semibold">{formatCurrency(comparisonPeriodVat)}</span>
                   </span>
                 </div>
                 <CollapsibleTrigger asChild>
@@ -308,7 +307,7 @@ export default function Analytics() {
             <CollapsibleContent>
               <CardContent className="pt-4">
                 {/* Period toggle */}
-                <div className="flex justify-end mb-4">
+                <div className="flex justify-end mb-4 gap-2 items-center">
                   <div className="inline-flex rounded-lg border p-1 bg-muted/30 gap-1">
                     <Button
                       variant="ghost"
@@ -326,7 +325,24 @@ export default function Analytics() {
                       className={`transition-all duration-300 ease-out ${!showCurrentPeriod ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                     >
                       {!showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
-                      Előző időszak
+                      <Select 
+                        value={comparisonMonth.toString()} 
+                        onValueChange={(v) => {
+                          setComparisonMonth(parseInt(v));
+                          setShowCurrentPeriod(false);
+                        }}
+                      >
+                        <SelectTrigger className="border-0 bg-transparent p-0 h-auto shadow-none focus:ring-0 min-w-[80px]">
+                          <SelectValue>{MONTH_NAMES[comparisonMonth]}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MONTH_NAMES.map((month, i) => (
+                            <SelectItem key={i} value={i.toString()}>
+                              {month} ({selectedYear})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </Button>
                   </div>
                 </div>
