@@ -134,32 +134,19 @@ const Index = () => {
   const [showRevenue, setShowRevenue] = useState(true);
   const [showPaidExpenses, setShowPaidExpenses] = useState(true);
   const [showPaidSalaries, setShowPaidSalaries] = useState(false);
-  const [showCurrentPeriod, setShowCurrentPeriod] = useState(true);
-  const [comparisonMonth, setComparisonMonth] = useState(new Date().getMonth() > 0 ? new Date().getMonth() - 1 : 11);
   const [rawInvoices, setRawInvoices] = useState<RawInvoice[]>([]);
   const [rawSalaries, setRawSalaries] = useState<RawSalary[]>([]);
-  const [currentOutboundVatCategories, setCurrentOutboundVatCategories] = useState<VatCategoryData[]>([]);
-  const [currentInboundVatCategories, setCurrentInboundVatCategories] = useState<VatCategoryData[]>([]);
-  const [currentTotalOutboundVat, setCurrentTotalOutboundVat] = useState(0);
-  const [currentTotalInboundVat, setCurrentTotalInboundVat] = useState(0);
-  const [compOutboundVatCategories, setCompOutboundVatCategories] = useState<VatCategoryData[]>([]);
-  const [compInboundVatCategories, setCompInboundVatCategories] = useState<VatCategoryData[]>([]);
-  const [compTotalOutboundVat, setCompTotalOutboundVat] = useState(0);
-  const [compTotalInboundVat, setCompTotalInboundVat] = useState(0);
+  const [outboundVatCategories, setOutboundVatCategories] = useState<VatCategoryData[]>([]);
+  const [inboundVatCategories, setInboundVatCategories] = useState<VatCategoryData[]>([]);
+  const [totalOutboundVat, setTotalOutboundVat] = useState(0);
+  const [totalInboundVat, setTotalInboundVat] = useState(0);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
   const vatChartRef = useRef<HTMLDivElement>(null);
-  const currentMonthName = MONTH_NAMES[new Date().getMonth()];
-  const currentYear = new Date().getFullYear();
-  const years = [2024, 2025];
 
-  // Displayed data based on toggle
-  const displayedMonthName = showCurrentPeriod ? currentMonthName : MONTH_NAMES[comparisonMonth];
-  const displayedYear = showCurrentPeriod ? currentYear : parseInt(selectedYear);
-  const outboundVatCategories = showCurrentPeriod ? currentOutboundVatCategories : compOutboundVatCategories;
-  const inboundVatCategories = showCurrentPeriod ? currentInboundVatCategories : compInboundVatCategories;
-  const totalOutboundVat = showCurrentPeriod ? currentTotalOutboundVat : compTotalOutboundVat;
-  const totalInboundVat = showCurrentPeriod ? currentTotalInboundVat : compTotalInboundVat;
+  // Displayed month/year from unified selector
+  const displayedMonthName = MONTH_NAMES[parseInt(selectedMonth) - 1];
+  const displayedYear = parseInt(selectedYear);
   
   const selectedVatMonth = `${selectedYear}-${selectedMonth}`;
 
@@ -185,7 +172,7 @@ const Index = () => {
     if (user && selectedCompany) {
       fetchAnalyticsData();
     }
-  }, [user, selectedCompany, selectedYear, comparisonMonth]);
+  }, [user, selectedCompany, selectedYear, selectedMonth]);
 
   const fetchExchangeRates = async () => {
     try {
@@ -289,31 +276,18 @@ const Index = () => {
   }, [rawInvoices, rawSalaries, showBrutto]);
 
   const fetchVatData = async () => {
-    const currentDate = new Date();
-    const actualCurrentYear = currentDate.getFullYear();
-    const actualCurrentMonth = currentDate.getMonth();
-    
-    const currentMonthStart = `${actualCurrentYear}-${String(actualCurrentMonth + 1).padStart(2, '0')}-01`;
-    const currentMonthEnd = `${actualCurrentYear}-${String(actualCurrentMonth + 1).padStart(2, '0')}-31`;
-    
-    const compMonthStart = `${selectedYear}-${String(comparisonMonth + 1).padStart(2, '0')}-01`;
-    const compMonthEnd = `${selectedYear}-${String(comparisonMonth + 1).padStart(2, '0')}-31`;
+    // Use unified selectedYear and selectedMonth
+    const monthStart = `${selectedYear}-${selectedMonth}-01`;
+    const monthEnd = `${selectedYear}-${selectedMonth}-31`;
 
-    const { data: currentNavInvoices } = await supabase
+    const { data: navInvoices } = await supabase
       .from("nav_invoices")
       .select("*")
       .eq("company_id", selectedCompany?.id)
-      .gte("invoice_issue_date", currentMonthStart)
-      .lte("invoice_issue_date", currentMonthEnd);
+      .gte("invoice_issue_date", monthStart)
+      .lte("invoice_issue_date", monthEnd);
 
-    const { data: compNavInvoices } = await supabase
-      .from("nav_invoices")
-      .select("*")
-      .eq("company_id", selectedCompany?.id)
-      .gte("invoice_issue_date", compMonthStart)
-      .lte("invoice_issue_date", compMonthEnd);
-
-    const processInvoices = (invoices: typeof currentNavInvoices) => {
+    const processInvoices = (invoices: typeof navInvoices) => {
       let outboundVat = 0;
       let outboundNet = 0;
       let inboundVat = 0;
@@ -364,17 +338,11 @@ const Index = () => {
       return { outboundVat, inboundVat, outboundCategories, inboundCategories };
     };
 
-    const currentData = processInvoices(currentNavInvoices);
-    setCurrentTotalOutboundVat(currentData.outboundVat);
-    setCurrentTotalInboundVat(currentData.inboundVat);
-    setCurrentOutboundVatCategories(currentData.outboundCategories);
-    setCurrentInboundVatCategories(currentData.inboundCategories);
-
-    const compData = processInvoices(compNavInvoices);
-    setCompTotalOutboundVat(compData.outboundVat);
-    setCompTotalInboundVat(compData.inboundVat);
-    setCompOutboundVatCategories(compData.outboundCategories);
-    setCompInboundVatCategories(compData.inboundCategories);
+    const data = processInvoices(navInvoices);
+    setTotalOutboundVat(data.outboundVat);
+    setTotalInboundVat(data.inboundVat);
+    setOutboundVatCategories(data.outboundCategories);
+    setInboundVatCategories(data.inboundCategories);
   };
 
   const formatAnalyticsCurrency = (amount: number, compact = false) => {
@@ -704,48 +672,6 @@ const Index = () => {
             
             <CollapsibleContent>
               <CardContent className="pt-4">
-                {/* Period toggle */}
-                <div className="flex justify-end mb-4 gap-2 items-center">
-                  <div className="inline-flex rounded-lg border p-1 bg-muted/30 gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowCurrentPeriod(true)}
-                      className={`transition-all duration-300 ease-out ${showCurrentPeriod ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
-                    >
-                      {showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
-                      Aktuális időszak
-                    </Button>
-                    <div className={`inline-flex items-center rounded-md transition-all duration-300 ease-out ${!showCurrentPeriod ? 'bg-primary text-primary-foreground' : ''}`}>
-                      <button
-                        type="button"
-                        onClick={() => setShowCurrentPeriod(false)}
-                        className={`flex items-center px-3 py-1.5 text-sm font-medium rounded-l-md transition-colors ${!showCurrentPeriod ? 'hover:bg-primary/90' : 'hover:bg-accent'}`}
-                      >
-                        {!showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
-                        {MONTH_NAMES[comparisonMonth]}
-                      </button>
-                      <Select 
-                        value={comparisonMonth.toString()} 
-                        onValueChange={(v) => {
-                          setComparisonMonth(parseInt(v));
-                          setShowCurrentPeriod(false);
-                        }}
-                      >
-                        <SelectTrigger className={`border-0 bg-transparent p-0 px-2 py-1.5 h-auto shadow-none focus:ring-0 rounded-l-none rounded-r-md border-l w-auto min-w-0 ${!showCurrentPeriod ? 'border-primary-foreground/20 hover:bg-primary/90' : 'border-border hover:bg-accent'}`} />
-                        
-                        <SelectContent className="max-h-none">
-                          {MONTH_NAMES.map((month, i) => (
-                            <SelectItem key={i} value={i.toString()}>
-                              {month} ({selectedYear})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8" ref={vatChartRef}>
                   {/* Left side - VAT bar chart */}
                   <div>
@@ -921,22 +847,6 @@ const Index = () => {
                     </label>
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">Időszak</span>
-                      <Select value={selectedYear} onValueChange={setSelectedYear}>
-                        <SelectTrigger className="w-24">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {years.map(year => (
-                            <SelectItem key={year} value={year.toString()}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
                     <div className="inline-flex rounded-lg border p-1 bg-muted/30 gap-1">
                       <Button
                         variant="ghost"
