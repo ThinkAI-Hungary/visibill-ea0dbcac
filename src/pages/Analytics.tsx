@@ -54,7 +54,6 @@ export default function Analytics() {
   
   // Filter toggles
   const [showRevenue, setShowRevenue] = useState(true);
-  const [showPayable, setShowPayable] = useState(true);
   const [showPaidExpenses, setShowPaidExpenses] = useState(true);
   const [showPaidSalaries, setShowPaidSalaries] = useState(false);
   
@@ -501,14 +500,6 @@ export default function Analytics() {
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <Checkbox 
-                        checked={showPayable} 
-                        onCheckedChange={(checked) => setShowPayable(!!checked)}
-                        className="border-blue-500 data-[state=checked]:bg-blue-500"
-                      />
-                      <span className="text-sm">Fizetendő</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox 
                         checked={showPaidExpenses} 
                         onCheckedChange={(checked) => setShowPaidExpenses(!!checked)}
                         className="border-orange-500 data-[state=checked]:bg-orange-500"
@@ -629,7 +620,7 @@ export default function Analytics() {
                         fill="url(#revenueGradient)"
                       />
                     )}
-                    {(showPayable || showPaidExpenses) && (
+                    {showPaidExpenses && (
                       <Area 
                         type="monotone" 
                         dataKey="expenses" 
