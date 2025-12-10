@@ -495,7 +495,7 @@ export default function Analytics() {
                       <Checkbox 
                         checked={showRevenue} 
                         onCheckedChange={(checked) => setShowRevenue(!!checked)}
-                        className="border-orange-500 data-[state=checked]:bg-orange-500"
+                        className="border-green-500 data-[state=checked]:bg-green-500"
                       />
                       <span className="text-sm">Bevétel</span>
                     </label>
@@ -511,7 +511,7 @@ export default function Analytics() {
                       <Checkbox 
                         checked={showPaidExpenses} 
                         onCheckedChange={(checked) => setShowPaidExpenses(!!checked)}
-                        className="border-green-500 data-[state=checked]:bg-green-500"
+                        className="border-orange-500 data-[state=checked]:bg-orange-500"
                       />
                       <span className="text-sm">Fizetett kiadás</span>
                     </label>
@@ -586,12 +586,12 @@ export default function Analytics() {
                   <AreaChart data={monthlyData}>
                     <defs>
                       <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#F97316" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#F97316" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#22C55E" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#22C55E" stopOpacity={0}/>
                       </linearGradient>
                       <linearGradient id="expensesGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#F97316" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#F97316" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -624,7 +624,7 @@ export default function Analytics() {
                         type="monotone" 
                         dataKey="revenue" 
                         name="Bevétel"
-                        stroke="#F97316" 
+                        stroke="#22C55E" 
                         strokeWidth={2}
                         fill="url(#revenueGradient)"
                       />
@@ -634,7 +634,7 @@ export default function Analytics() {
                         type="monotone" 
                         dataKey="expenses" 
                         name="Kiadás"
-                        stroke="#F59E0B" 
+                        stroke="#F97316" 
                         strokeWidth={2}
                         fill="url(#expensesGradient)"
                       />
