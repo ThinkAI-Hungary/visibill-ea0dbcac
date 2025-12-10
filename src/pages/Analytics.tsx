@@ -336,13 +336,15 @@ export default function Analytics() {
                       {showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
                       Aktuális időszak
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowCurrentPeriod(false)}
-                      className={`transition-all duration-300 ease-out ${!showCurrentPeriod ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
-                    >
-                      {!showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
+                    <div className={`inline-flex items-center rounded-md transition-all duration-300 ease-out ${!showCurrentPeriod ? 'bg-primary text-primary-foreground' : ''}`}>
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPeriod(false)}
+                        className={`flex items-center px-3 py-1.5 text-sm font-medium rounded-l-md transition-colors ${!showCurrentPeriod ? 'hover:bg-primary/90' : 'hover:bg-accent'}`}
+                      >
+                        {!showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
+                        {MONTH_NAMES[comparisonMonth]}
+                      </button>
                       <Select 
                         value={comparisonMonth.toString()} 
                         onValueChange={(v) => {
@@ -350,8 +352,8 @@ export default function Analytics() {
                           setShowCurrentPeriod(false);
                         }}
                       >
-                        <SelectTrigger className="border-0 bg-transparent p-0 h-auto shadow-none focus:ring-0 min-w-[80px]">
-                          <SelectValue>{MONTH_NAMES[comparisonMonth]}</SelectValue>
+                        <SelectTrigger className={`border-0 bg-transparent p-0 px-2 py-1.5 h-auto shadow-none focus:ring-0 rounded-l-none rounded-r-md border-l ${!showCurrentPeriod ? 'border-primary-foreground/20 hover:bg-primary/90' : 'border-border hover:bg-accent'}`}>
+                          <ChevronUp className="h-4 w-4 rotate-180" />
                         </SelectTrigger>
                         <SelectContent>
                           {MONTH_NAMES.map((month, i) => (
@@ -361,7 +363,7 @@ export default function Analytics() {
                           ))}
                         </SelectContent>
                       </Select>
-                    </Button>
+                    </div>
                   </div>
                 </div>
 
