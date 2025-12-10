@@ -523,20 +523,27 @@ export default function Analytics() {
                       </Select>
                     </div>
                     
-                    <div className="inline-flex rounded-lg border p-1">
+                    <div className="inline-flex rounded-lg border p-1 relative">
+                      <div 
+                        className="absolute top-1 bottom-1 rounded-md bg-primary transition-all duration-200 ease-out"
+                        style={{
+                          left: showBrutto ? '4px' : '50%',
+                          width: 'calc(50% - 4px)'
+                        }}
+                      />
                       <Button
-                        variant={showBrutto ? "default" : "ghost"}
+                        variant="ghost"
                         size="sm"
                         onClick={() => setShowBrutto(true)}
-                        className="relative"
+                        className={`relative z-10 transition-colors duration-200 ${showBrutto ? 'text-primary-foreground hover:bg-transparent hover:text-primary-foreground' : ''}`}
                       >
-                        {showBrutto && <span className="absolute left-2 w-2 h-2 bg-orange-500 rounded-full" />}
-                        <span className={showBrutto ? "ml-3" : ""}>bruttó</span>
+                        bruttó
                       </Button>
                       <Button
-                        variant={!showBrutto ? "default" : "ghost"}
+                        variant="ghost"
                         size="sm"
                         onClick={() => setShowBrutto(false)}
+                        className={`relative z-10 transition-colors duration-200 ${!showBrutto ? 'text-primary-foreground hover:bg-transparent hover:text-primary-foreground' : ''}`}
                       >
                         nettó
                       </Button>
