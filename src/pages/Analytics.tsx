@@ -379,13 +379,6 @@ export default function Analytics() {
                       ))}
                     </div>
 
-                    <Button 
-                      variant="link" 
-                      className="mt-6 text-orange-500 p-0"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Grafikon letöltése
-                    </Button>
                   </div>
 
                   {/* Right side - VAT breakdown tables */}
