@@ -12,7 +12,7 @@ import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from "recharts";
-import { ChevronUp, Download } from "lucide-react";
+import { ChevronUp, Download, Loader2 } from "lucide-react";
 import { format, parseISO, subMonths } from "date-fns";
 import { hu } from "date-fns/locale";
 
@@ -281,15 +281,6 @@ export default function Analytics() {
   const inboundTotalVat = inboundVatCategories.reduce((sum, c) => sum + c.vatAmount, 0);
   const inboundTotalNet = inboundVatCategories.reduce((sum, c) => sum + c.netAmount, 0);
 
-  if (loading) {
-    return (
-      <div className="p-6 space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-64" />
-        <Skeleton className="h-96" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -573,7 +564,13 @@ export default function Analytics() {
                 </div>
 
                 {/* Area Chart */}
-                <ResponsiveContainer width="100%" height={300}>
+                <div className="relative">
+                  {loading && (
+                    <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10 rounded-lg">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  )}
+                  <ResponsiveContainer width="100%" height={300}>
                   <AreaChart data={monthlyData}>
                     <defs>
                       <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
@@ -643,6 +640,7 @@ export default function Analytics() {
                     )}
                   </AreaChart>
                 </ResponsiveContainer>
+                </div>
 
                 <Button variant="link" className="mt-4 text-orange-500 p-0">
                   <Download className="h-4 w-4 mr-2" />
