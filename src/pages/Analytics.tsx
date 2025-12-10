@@ -60,6 +60,7 @@ export default function Analytics() {
   
   const years = [2024, 2025];
   const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
   const currentMonthName = MONTH_NAMES[currentMonth];
 
   // Current vs previous period toggle
@@ -69,19 +70,35 @@ export default function Analytics() {
   // Raw data states (for recalculation on brutto/netto toggle)
   const [rawInvoices, setRawInvoices] = useState<RawInvoice[]>([]);
   const [rawSalaries, setRawSalaries] = useState<RawSalary[]>([]);
-  const [outboundVatCategories, setOutboundVatCategories] = useState<VatCategoryData[]>([]);
-  const [inboundVatCategories, setInboundVatCategories] = useState<VatCategoryData[]>([]);
-  const [totalOutboundVat, setTotalOutboundVat] = useState(0);
-  const [totalInboundVat, setTotalInboundVat] = useState(0);
-  const [comparisonPeriodVat, setComparisonPeriodVat] = useState(0);
+  
+  // Current period VAT data
+  const [currentOutboundVatCategories, setCurrentOutboundVatCategories] = useState<VatCategoryData[]>([]);
+  const [currentInboundVatCategories, setCurrentInboundVatCategories] = useState<VatCategoryData[]>([]);
+  const [currentTotalOutboundVat, setCurrentTotalOutboundVat] = useState(0);
+  const [currentTotalInboundVat, setCurrentTotalInboundVat] = useState(0);
+  
+  // Comparison period VAT data
+  const [compOutboundVatCategories, setCompOutboundVatCategories] = useState<VatCategoryData[]>([]);
+  const [compInboundVatCategories, setCompInboundVatCategories] = useState<VatCategoryData[]>([]);
+  const [compTotalOutboundVat, setCompTotalOutboundVat] = useState(0);
+  const [compTotalInboundVat, setCompTotalInboundVat] = useState(0);
 
   const vatChartRef = useRef<HTMLDivElement>(null);
+
+  // Displayed data based on toggle
+  const displayedMonthName = showCurrentPeriod ? currentMonthName : MONTH_NAMES[comparisonMonth];
+  const displayedYear = showCurrentPeriod ? currentYear : selectedYear;
+  const outboundVatCategories = showCurrentPeriod ? currentOutboundVatCategories : compOutboundVatCategories;
+  const inboundVatCategories = showCurrentPeriod ? currentInboundVatCategories : compInboundVatCategories;
+  const totalOutboundVat = showCurrentPeriod ? currentTotalOutboundVat : compTotalOutboundVat;
+  const totalInboundVat = showCurrentPeriod ? currentTotalInboundVat : compTotalInboundVat;
 
   useEffect(() => {
     if (user && selectedCompany) {
       fetchAnalyticsData();
     }
   }, [user, selectedCompany, selectedYear, comparisonMonth]);
+
 
   const fetchAnalyticsData = async () => {
     setLoading(true);
@@ -192,73 +209,71 @@ export default function Analytics() {
       .gte("invoice_issue_date", compMonthStart)
       .lte("invoice_issue_date", compMonthEnd);
 
-    // Calculate current period VAT
-    let outboundVat = 0;
-    let outboundNet = 0;
-    let inboundVat = 0;
-    let inboundNet = 0;
+    // Helper function to process invoices and create VAT categories
+    const processInvoices = (invoices: typeof currentNavInvoices) => {
+      let outboundVat = 0;
+      let outboundNet = 0;
+      let inboundVat = 0;
+      let inboundNet = 0;
 
-    currentNavInvoices?.forEach(inv => {
-      if (inv.invoice_direction === "OUTBOUND") {
-        outboundVat += inv.invoice_vat_amount || 0;
-        outboundNet += inv.invoice_net_amount || 0;
-      } else {
-        inboundVat += inv.invoice_vat_amount || 0;
-        inboundNet += inv.invoice_net_amount || 0;
-      }
-    });
-
-    // Calculate comparison period VAT position
-    let compOutboundVat = 0;
-    let compInboundVat = 0;
-    compNavInvoices?.forEach(inv => {
-      if (inv.invoice_direction === "OUTBOUND") {
-        compOutboundVat += inv.invoice_vat_amount || 0;
-      } else {
-        compInboundVat += inv.invoice_vat_amount || 0;
-      }
-    });
-
-    setTotalOutboundVat(outboundVat);
-    setTotalInboundVat(inboundVat);
-    setComparisonPeriodVat(compOutboundVat - compInboundVat);
-
-    // VAT categories (simplified - in real implementation would parse from invoice data)
-    const outboundCategories: VatCategoryData[] = [];
-    const inboundCategories: VatCategoryData[] = [];
-
-    if (outboundVat > 0) {
-      outboundCategories.push({
-        rate: "27%",
-        vatAmount: outboundVat,
-        netAmount: outboundNet
+      invoices?.forEach(inv => {
+        if (inv.invoice_direction === "OUTBOUND") {
+          outboundVat += inv.invoice_vat_amount || 0;
+          outboundNet += inv.invoice_net_amount || 0;
+        } else {
+          inboundVat += inv.invoice_vat_amount || 0;
+          inboundNet += inv.invoice_net_amount || 0;
+        }
       });
-    }
 
-    if (inboundVat > 0 || inboundNet > 0) {
-      // Estimate 0% and 27% split based on VAT ratio
-      const vatRatio = inboundNet > 0 ? inboundVat / inboundNet : 0;
-      if (vatRatio < 0.27) {
-        const estimatedZeroNet = inboundNet - (inboundVat / 0.27);
-        if (estimatedZeroNet > 0) {
+      const outboundCategories: VatCategoryData[] = [];
+      const inboundCategories: VatCategoryData[] = [];
+
+      if (outboundVat > 0) {
+        outboundCategories.push({
+          rate: "27%",
+          vatAmount: outboundVat,
+          netAmount: outboundNet
+        });
+      }
+
+      if (inboundVat > 0 || inboundNet > 0) {
+        const vatRatio = inboundNet > 0 ? inboundVat / inboundNet : 0;
+        if (vatRatio < 0.27) {
+          const estimatedZeroNet = inboundNet - (inboundVat / 0.27);
+          if (estimatedZeroNet > 0) {
+            inboundCategories.push({
+              rate: "0%",
+              vatAmount: 0,
+              netAmount: Math.round(estimatedZeroNet)
+            });
+          }
+        }
+        if (inboundVat > 0) {
           inboundCategories.push({
-            rate: "0%",
-            vatAmount: 0,
-            netAmount: Math.round(estimatedZeroNet)
+            rate: "27%",
+            vatAmount: inboundVat,
+            netAmount: Math.round(inboundVat / 0.27)
           });
         }
       }
-      if (inboundVat > 0) {
-        inboundCategories.push({
-          rate: "27%",
-          vatAmount: inboundVat,
-          netAmount: Math.round(inboundVat / 0.27)
-        });
-      }
-    }
 
-    setOutboundVatCategories(outboundCategories);
-    setInboundVatCategories(inboundCategories);
+      return { outboundVat, inboundVat, outboundCategories, inboundCategories };
+    };
+
+    // Process current period
+    const currentData = processInvoices(currentNavInvoices);
+    setCurrentTotalOutboundVat(currentData.outboundVat);
+    setCurrentTotalInboundVat(currentData.inboundVat);
+    setCurrentOutboundVatCategories(currentData.outboundCategories);
+    setCurrentInboundVatCategories(currentData.inboundCategories);
+
+    // Process comparison period
+    const compData = processInvoices(compNavInvoices);
+    setCompTotalOutboundVat(compData.outboundVat);
+    setCompTotalInboundVat(compData.inboundVat);
+    setCompOutboundVatCategories(compData.outboundCategories);
+    setCompInboundVatCategories(compData.inboundCategories);
   };
 
   const formatCurrency = (amount: number, compact = false) => {
@@ -297,7 +312,7 @@ export default function Analytics() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="text-sm">
-                    ÁFA (Live): <span className="text-purple-600 font-semibold">{formatCurrency(netVatPosition)}</span> az aktuális ÁFA pozíciód a hiányos költségszámlákat is figyelembe véve, {MONTH_NAMES[comparisonMonth]} ({selectedYear}) ÁFA pozíciója <span className="text-purple-600 font-semibold">{formatCurrency(comparisonPeriodVat)}</span>
+                    ÁFA ({displayedMonthName} {displayedYear}): <span className="text-purple-600 font-semibold">{formatCurrency(netVatPosition)}</span> a kiválasztott időszak ÁFA pozíciója
                   </span>
                 </div>
                 <CollapsibleTrigger asChild>
@@ -355,7 +370,7 @@ export default function Analytics() {
                   {/* Left side - VAT bar chart */}
                   <div>
                     <h3 className="text-lg font-semibold text-purple-600 mb-6">
-                      {formatCurrency(netVatPosition)} fizetendő ÁFA ({currentMonthName})
+                      {formatCurrency(netVatPosition)} fizetendő ÁFA ({displayedMonthName} {displayedYear})
                     </h3>
                     
                     <div className="space-y-6">
@@ -387,7 +402,7 @@ export default function Analytics() {
 
                   {/* Right side - VAT breakdown tables */}
                   <div>
-                    <h3 className="text-lg font-semibold mb-6">ÁFA analitika ({currentMonthName})</h3>
+                    <h3 className="text-lg font-semibold mb-6">ÁFA analitika ({displayedMonthName} {displayedYear})</h3>
                     
                     {/* Outbound invoices VAT */}
                     <div className="mb-6">
