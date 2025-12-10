@@ -354,7 +354,7 @@ export default function Analytics() {
                       >
                         <SelectTrigger className={`border-0 bg-transparent p-0 px-2 py-1.5 h-auto shadow-none focus:ring-0 rounded-l-none rounded-r-md border-l w-auto min-w-0 ${!showCurrentPeriod ? 'border-primary-foreground/20 hover:bg-primary/90' : 'border-border hover:bg-accent'}`} />
                         
-                        <SelectContent>
+                        <SelectContent className="max-h-none">
                           {MONTH_NAMES.map((month, i) => (
                             <SelectItem key={i} value={i.toString()}>
                               {month} ({selectedYear})
