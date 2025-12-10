@@ -307,22 +307,23 @@ export default function Analytics() {
               <CardContent className="pt-4">
                 {/* Period toggle */}
                 <div className="flex justify-end mb-4">
-                  <div className="inline-flex rounded-lg border p-1 relative bg-muted/30">
+                  <div className="inline-flex rounded-lg border p-1 bg-muted/30 gap-1">
                     <Button
                       variant={showCurrentPeriod ? "default" : "ghost"}
                       size="sm"
                       onClick={() => setShowCurrentPeriod(true)}
-                      className="relative transition-all duration-200"
+                      className="transition-colors duration-300"
                     >
-                      {showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
+                      {showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-fade-in" />}
                       Aktuális időszak
                     </Button>
                     <Button
                       variant={!showCurrentPeriod ? "default" : "ghost"}
                       size="sm"
                       onClick={() => setShowCurrentPeriod(false)}
-                      className="relative transition-all duration-200"
+                      className="transition-colors duration-300"
                     >
+                      {!showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-fade-in" />}
                       Előző időszak
                     </Button>
                   </div>
@@ -524,22 +525,23 @@ export default function Analytics() {
                       </Select>
                     </div>
                     
-                    <div className="inline-flex rounded-lg border p-1 bg-muted/30">
+                    <div className="inline-flex rounded-lg border p-1 bg-muted/30 gap-1">
                       <Button
                         variant={showBrutto ? "default" : "ghost"}
                         size="sm"
                         onClick={() => setShowBrutto(true)}
-                        className="relative transition-all duration-200"
+                        className="transition-colors duration-300"
                       >
-                        {showBrutto && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
+                        {showBrutto && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-fade-in" />}
                         bruttó
                       </Button>
                       <Button
                         variant={!showBrutto ? "default" : "ghost"}
                         size="sm"
                         onClick={() => setShowBrutto(false)}
-                        className="relative transition-all duration-200"
+                        className="transition-colors duration-300"
                       >
+                        {!showBrutto && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-fade-in" />}
                         nettó
                       </Button>
                     </div>
