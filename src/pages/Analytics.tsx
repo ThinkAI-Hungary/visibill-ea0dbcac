@@ -307,20 +307,28 @@ export default function Analytics() {
               <CardContent className="pt-4">
                 {/* Period toggle */}
                 <div className="flex justify-end mb-4">
-                  <div className="inline-flex rounded-lg border p-1">
+                  <div className="inline-flex rounded-lg border p-1 relative">
+                    <div 
+                      className="absolute top-1 bottom-1 rounded-md bg-primary transition-all duration-200 ease-out"
+                      style={{
+                        left: showCurrentPeriod ? '4px' : 'calc(50% + 2px)',
+                        width: 'calc(50% - 6px)'
+                      }}
+                    />
                     <Button
-                      variant={showCurrentPeriod ? "default" : "ghost"}
+                      variant="ghost"
                       size="sm"
                       onClick={() => setShowCurrentPeriod(true)}
-                      className="relative"
+                      className={`relative z-10 transition-colors duration-200 ${showCurrentPeriod ? 'text-primary-foreground hover:bg-transparent hover:text-primary-foreground' : ''}`}
                     >
-                      {showCurrentPeriod && <span className="absolute left-2 w-2 h-2 bg-orange-500 rounded-full" />}
-                      <span className={showCurrentPeriod ? "ml-3" : ""}>Aktuális időszak</span>
+                      <span className={`w-2 h-2 rounded-full bg-orange-500 mr-2 transition-opacity duration-200 ${showCurrentPeriod ? 'opacity-100' : 'opacity-0'}`} />
+                      Aktuális időszak
                     </Button>
                     <Button
-                      variant={!showCurrentPeriod ? "default" : "ghost"}
+                      variant="ghost"
                       size="sm"
                       onClick={() => setShowCurrentPeriod(false)}
+                      className={`relative z-10 transition-colors duration-200 ${!showCurrentPeriod ? 'text-primary-foreground hover:bg-transparent hover:text-primary-foreground' : ''}`}
                     >
                       Előző időszak
                     </Button>
@@ -527,8 +535,8 @@ export default function Analytics() {
                       <div 
                         className="absolute top-1 bottom-1 rounded-md bg-primary transition-all duration-200 ease-out"
                         style={{
-                          left: showBrutto ? '4px' : '50%',
-                          width: 'calc(50% - 4px)'
+                          left: showBrutto ? '4px' : 'calc(50% + 2px)',
+                          width: 'calc(50% - 6px)'
                         }}
                       />
                       <Button
@@ -537,6 +545,7 @@ export default function Analytics() {
                         onClick={() => setShowBrutto(true)}
                         className={`relative z-10 transition-colors duration-200 ${showBrutto ? 'text-primary-foreground hover:bg-transparent hover:text-primary-foreground' : ''}`}
                       >
+                        <span className={`w-2 h-2 rounded-full bg-orange-500 mr-2 transition-opacity duration-200 ${showBrutto ? 'opacity-100' : 'opacity-0'}`} />
                         bruttó
                       </Button>
                       <Button
