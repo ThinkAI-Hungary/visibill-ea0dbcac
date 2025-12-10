@@ -156,35 +156,6 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
-  /* Remove focus ring and active states globally */
-  *:focus,
-  *:focus-visible,
-  *:focus-within,
-  *:active {
-    @apply outline-none;
-    box-shadow: none !important;
-    --tw-ring-shadow: none !important;
-    --tw-ring-offset-shadow: none !important;
-  }
-  
-  /* Remove selection highlight on containers */
-  [data-state] {
-    @apply outline-none;
-  }
-  
-  /* Remove tap highlight on mobile and click highlight */
-  * {
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-  }
-  
-  /* Remove any white border/outline on click */
-  *:focus-visible,
-  *:-webkit-focus-ring-color {
-    outline: none !important;
-    outline-color: transparent !important;
-  }
-
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-size: 1.125rem;

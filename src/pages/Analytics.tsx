@@ -315,7 +315,7 @@ export default function Analytics() {
                       onClick={() => setShowCurrentPeriod(true)}
                       className={`transition-all duration-300 ease-out ${showCurrentPeriod ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                     >
-                      <span className={`w-2 h-2 rounded-full bg-orange-500 mr-2 transition-opacity ${showCurrentPeriod ? 'opacity-100' : 'opacity-0'}`} />
+                      {showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
                       Aktuális időszak
                     </Button>
                     <Button
@@ -324,7 +324,7 @@ export default function Analytics() {
                       onClick={() => setShowCurrentPeriod(false)}
                       className={`transition-all duration-300 ease-out ${!showCurrentPeriod ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                     >
-                      <span className={`w-2 h-2 rounded-full bg-orange-500 mr-2 transition-opacity ${!showCurrentPeriod ? 'opacity-100' : 'opacity-0'}`} />
+                      {!showCurrentPeriod && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
                       <Select 
                         value={comparisonMonth.toString()} 
                         onValueChange={(v) => {
@@ -332,10 +332,10 @@ export default function Analytics() {
                           setShowCurrentPeriod(false);
                         }}
                       >
-                        <SelectTrigger className="border-0 bg-transparent p-0 h-auto shadow-none focus:ring-0 focus:ring-offset-0 focus:outline-none min-w-[100px] gap-3">
+                        <SelectTrigger className="border-0 bg-transparent p-0 h-auto shadow-none focus:ring-0 min-w-[80px]">
                           <SelectValue>{MONTH_NAMES[comparisonMonth]}</SelectValue>
                         </SelectTrigger>
-                        <SelectContent className="max-h-none">
+                        <SelectContent>
                           {MONTH_NAMES.map((month, i) => (
                             <SelectItem key={i} value={i.toString()}>
                               {month} ({selectedYear})
@@ -546,7 +546,7 @@ export default function Analytics() {
                         onClick={() => setShowBrutto(true)}
                         className={`transition-all duration-300 ease-out ${showBrutto ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                       >
-                        <span className={`w-2 h-2 rounded-full bg-orange-500 mr-2 transition-opacity ${showBrutto ? 'opacity-100' : 'opacity-0'}`} />
+                        {showBrutto && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
                         bruttó
                       </Button>
                       <Button
@@ -555,7 +555,7 @@ export default function Analytics() {
                         onClick={() => setShowBrutto(false)}
                         className={`transition-all duration-300 ease-out ${!showBrutto ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                       >
-                        <span className={`w-2 h-2 rounded-full bg-orange-500 mr-2 transition-opacity ${!showBrutto ? 'opacity-100' : 'opacity-0'}`} />
+                        {!showBrutto && <span className="w-2 h-2 rounded-full bg-orange-500 mr-2" />}
                         nettó
                       </Button>
                     </div>
