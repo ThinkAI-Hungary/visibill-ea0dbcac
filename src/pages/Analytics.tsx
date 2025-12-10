@@ -282,9 +282,6 @@ export default function Analytics() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="bg-purple-600 text-white text-xs px-3 py-1 rounded-full font-medium">
-                    pénzügyi támogatás
-                  </span>
                   <span className="text-sm">
                     ÁFA (Live): <span className="text-purple-600 font-semibold">{formatCurrency(netVatPosition)}</span> az aktuális ÁFA pozíciód a hiányos költségszámlákat is figyelembe véve, az előző időszak ÁFA pozíciója <span className="text-purple-600 font-semibold">{formatCurrency(previousPeriodVat)}</span>
                   </span>
@@ -461,9 +458,6 @@ export default function Analytics() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="bg-purple-600 text-white text-xs px-3 py-1 rounded-full font-medium">
-                    pénzügyi támogatás
-                  </span>
                   <span className="text-lg font-medium">Kiadások és bevételek {selectedYear}. évben</span>
                 </div>
                 <CollapsibleTrigger asChild>
