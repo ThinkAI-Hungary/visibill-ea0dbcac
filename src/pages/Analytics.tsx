@@ -303,7 +303,7 @@ export default function Analytics() {
 
 
   return (
-    <main className="container mx-auto px-4 py-8 space-y-6">
+    <main className="container mx-auto px-4 pt-6 pb-2 space-y-6">
         {/* ÁFA Section */}
         <Collapsible open={vatSectionOpen} onOpenChange={setVatSectionOpen}>
           <Card>
