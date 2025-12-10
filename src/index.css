@@ -171,6 +171,19 @@ All colors MUST be HSL.
   [data-state] {
     @apply outline-none;
   }
+  
+  /* Remove tap highlight on mobile and click highlight */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+  
+  /* Remove any white border/outline on click */
+  *:focus-visible,
+  *:-webkit-focus-ring-color {
+    outline: none !important;
+    outline-color: transparent !important;
+  }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
