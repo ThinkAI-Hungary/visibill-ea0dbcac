@@ -332,7 +332,7 @@ export default function Analytics() {
                           setShowCurrentPeriod(false);
                         }}
                       >
-                        <SelectTrigger className="border-0 bg-transparent p-0 h-auto shadow-none focus:ring-0 min-w-[80px]">
+                        <SelectTrigger className="border-0 bg-transparent p-0 h-auto shadow-none focus:ring-0 min-w-[100px] gap-3">
                           <SelectValue>{MONTH_NAMES[comparisonMonth]}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
