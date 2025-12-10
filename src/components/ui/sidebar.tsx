@@ -462,6 +462,11 @@ const SidebarMenuButton = React.forwardRef<
       data-size={size}
       data-active={isActive}
       className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+      onClick={(e: React.MouseEvent) => {
+        // Prevent any tooltip or sidebar state changes from click propagation
+        e.stopPropagation();
+        props.onClick?.(e as any);
+      }}
       {...props}
     />
   );
