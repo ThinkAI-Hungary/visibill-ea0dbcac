@@ -226,7 +226,7 @@ const Integrations = () => {
                         </div>
                       </div>
                       
-                      <div className="p-4">
+                      <div className="p-4 pb-2">
                         {logsLoading ? (
                           <LogsSkeleton />
                         ) : syncLogs.length === 0 ? (
@@ -234,7 +234,7 @@ const Integrations = () => {
                             Még nincsenek szinkronizálási logok.
                           </div>
                         ) : (
-                          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                          <div className="space-y-2 overflow-y-auto">
                             {syncLogs.map((log) => (
                               <div key={log.id} className="p-3 rounded-lg bg-muted/30 border border-border/50 space-y-2">
                                 <div className="flex items-center justify-between">
