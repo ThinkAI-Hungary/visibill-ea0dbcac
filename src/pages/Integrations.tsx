@@ -113,7 +113,7 @@ const Integrations = () => {
         </div>
 
         {/* Two Column Grid */}
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-2 gap-6 items-start">
           {/* Email Alias Section */}
           <Card className="border-primary/10 hover:border-primary/20 transition-colors">
             <CardHeader>
