@@ -230,11 +230,11 @@ export function AppSidebar() {
                   </div>
                 </Button>
               </div>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2 w-full">
                 <Button 
                   variant="outline" 
                   asChild
-                  className="flex-1 w-full h-8 px-3 text-xs"
+                  className="w-full h-8 px-3 text-xs justify-center"
                 >
                   <Link to="/settings">
                     <Settings className="h-4 w-4 mr-2" />
@@ -244,7 +244,7 @@ export function AppSidebar() {
                 <Button 
                   variant="outline" 
                   onClick={handleSignOut}
-                  className="flex-1 w-full h-8 px-3 text-xs"
+                  className="w-full h-8 px-3 text-xs justify-center"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Kilépés
