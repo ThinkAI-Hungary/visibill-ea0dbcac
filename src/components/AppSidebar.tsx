@@ -231,24 +231,32 @@ export function AppSidebar() {
                 </Button>
               </div>
               <div className="grid grid-cols-2 gap-2 w-full">
-                <Button 
-                  variant="outline" 
-                  asChild
-                  className="w-full h-8 px-3 text-xs justify-center"
-                >
-                <Link to="/settings">
-                    <Settings className="h-4 w-4 mr-1" />
-                    Beállítások
-                  </Link>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleSignOut}
-                  className="w-full h-8 px-3 text-xs justify-center"
-                >
-                  <LogOut className="h-4 w-4 mr-1" />
-                  Kilépés
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      asChild
+                      className="w-full aspect-square justify-center"
+                    >
+                      <Link to="/settings">
+                        <Settings className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Beállítások</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleSignOut}
+                      className="w-full aspect-square justify-center"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Kilépés</TooltipContent>
+                </Tooltip>
               </div>
             </div>
           ) : (
