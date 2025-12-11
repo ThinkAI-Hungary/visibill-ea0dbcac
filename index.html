@@ -24,6 +24,19 @@
   </head>
 
   <body>
+    <script>
+      // Prevent FOUC (Flash of Unstyled Content) by applying theme immediately
+      (function() {
+        const theme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (theme === 'dark' || (theme === 'system' && prefersDark) || (!theme && prefersDark)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.add('light');
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
