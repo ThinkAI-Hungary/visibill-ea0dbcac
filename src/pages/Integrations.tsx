@@ -98,7 +98,7 @@ const Integrations = () => {
           <Card className="border-primary/10 hover:border-primary/20 transition-colors">
             <Collapsible open={emailSectionOpen} onOpenChange={setEmailSectionOpen}>
               <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg">
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg pb-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center border border-primary/20">
@@ -156,7 +156,7 @@ const Integrations = () => {
           <Card className="border-primary/10 hover:border-primary/20 transition-colors">
             <Collapsible open={navSectionOpen} onOpenChange={setNavSectionOpen}>
               <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg">
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg pb-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center border border-primary/20">
