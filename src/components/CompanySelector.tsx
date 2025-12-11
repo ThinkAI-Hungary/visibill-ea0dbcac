@@ -181,7 +181,7 @@ const CompanySelector = () => {
           value={selectedCompany?.id || ''}
           onValueChange={handleCompanyChange}
         >
-          <SelectTrigger className="min-w-[140px] max-w-[220px] h-9 justify-between">
+          <SelectTrigger className="min-w-[140px] max-w-[220px] h-9 [&>span]:text-left [&>span]:flex-1">
             <SelectValue placeholder="Válassz céget">
               {selectedCompany?.name}
             </SelectValue>
