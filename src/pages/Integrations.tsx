@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, Zap, Shield, AtSign, Info, Activity, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Mail, Zap, Shield, AtSign, Info, Activity, CheckCircle, XCircle, Clock, AlertTriangle, Loader2 } from 'lucide-react';
 import EmailAliasManager from '@/components/EmailAliasManager';
 import NavCredentialsForm from '@/components/nav/NavCredentialsForm';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -28,6 +29,7 @@ const Integrations = () => {
   const { toast } = useToast();
   const { selectedCompany } = useCompany();
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(true);
   const [activeNavTab, setActiveNavTab] = useState('credentials');
 
   useEffect(() => {
@@ -38,6 +40,7 @@ const Integrations = () => {
 
   const loadSyncLogs = async () => {
     if (!selectedCompany) return;
+    setLogsLoading(true);
     try {
       const { data, error } = await supabase
         .from('nav_sync_logs')
@@ -50,6 +53,8 @@ const Integrations = () => {
       setSyncLogs(data || []);
     } catch (error: any) {
       console.error('Error loading sync logs:', error);
+    } finally {
+      setLogsLoading(false);
     }
   };
 
@@ -69,6 +74,26 @@ const Integrations = () => {
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('hu-HU');
   };
+
+  const LogsSkeleton = () => (
+    <div className="space-y-2">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="p-3 rounded-lg bg-muted/30 border border-border/50 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-5 w-20" />
+            </div>
+            <Skeleton className="h-4 w-16" />
+          </div>
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-3 w-8" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -177,66 +202,72 @@ const Integrations = () => {
                   <TabsTrigger value="logs">Logok</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="credentials" className="mt-0">
-                  <NavCredentialsForm 
-                    companyId={selectedCompany?.id}
-                    onCredentialsSaved={() => {
-                      toast({
-                        title: 'Hitelesítő adatok frissítve',
-                        description: 'A NAV API hitelesítő adatok sikeresen frissítve',
-                      });
-                    }} 
-                  />
-                </TabsContent>
-                
-                <TabsContent value="logs" className="mt-0">
-                  <div className="rounded-lg border bg-card">
-                    <div className="p-4 border-b">
-                      <div className="flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-primary" />
-                        <span className="font-medium text-sm">Szinkronizálási Logok</span>
+                {/* Fixed min-height container to prevent jumping */}
+                <div className="min-h-[300px]">
+                  <TabsContent value="credentials" className="mt-0">
+                    <NavCredentialsForm 
+                      companyId={selectedCompany?.id}
+                      onCredentialsSaved={() => {
+                        toast({
+                          title: 'Hitelesítő adatok frissítve',
+                          description: 'A NAV API hitelesítő adatok sikeresen frissítve',
+                        });
+                      }} 
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="logs" className="mt-0">
+                    <div className="rounded-lg border bg-card">
+                      <div className="p-4 border-b">
+                        <div className="flex items-center gap-2">
+                          <Activity className="w-4 h-4 text-primary" />
+                          <span className="font-medium text-sm">Szinkronizálási Logok</span>
+                          {logsLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
+                        </div>
+                      </div>
+                      
+                      <div className="p-4">
+                        {logsLoading ? (
+                          <LogsSkeleton />
+                        ) : syncLogs.length === 0 ? (
+                          <div className="text-center py-8 text-muted-foreground text-sm">
+                            Még nincsenek szinkronizálási logok.
+                          </div>
+                        ) : (
+                          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                            {syncLogs.map((log) => (
+                              <div key={log.id} className="p-3 rounded-lg bg-muted/30 border border-border/50 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant={log.invoice_direction === 'OUTBOUND' ? 'default' : 'secondary'} className="text-xs">
+                                      {log.invoice_direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő'}
+                                    </Badge>
+                                    {getStatusBadge(log.status)}
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">
+                                    {log.invoices_fetched} számla
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                  <span>{formatDate(log.started_at)}</span>
+                                  <span>{log.duration_ms ? `${Math.round(log.duration_ms / 1000)}s` : '-'}</span>
+                                </div>
+                                {log.error_message && (
+                                  <div className="mt-2 p-2 rounded bg-destructive/10 border border-destructive/20">
+                                    <div className="flex items-start gap-2">
+                                      <AlertTriangle className="w-3.5 h-3.5 text-destructive mt-0.5 flex-shrink-0" />
+                                      <p className="text-xs text-destructive/90 break-all">{log.error_message}</p>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    
-                    <div className="p-4">
-                      {syncLogs.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground text-sm">
-                          Még nincsenek szinkronizálási logok.
-                        </div>
-                      ) : (
-                        <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                          {syncLogs.map((log) => (
-                            <div key={log.id} className="p-3 rounded-lg bg-muted/30 border border-border/50 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant={log.invoice_direction === 'OUTBOUND' ? 'default' : 'secondary'} className="text-xs">
-                                    {log.invoice_direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő'}
-                                  </Badge>
-                                  {getStatusBadge(log.status)}
-                                </div>
-                                <span className="text-xs text-muted-foreground">
-                                  {log.invoices_fetched} számla
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                <span>{formatDate(log.started_at)}</span>
-                                <span>{log.duration_ms ? `${Math.round(log.duration_ms / 1000)}s` : '-'}</span>
-                              </div>
-                              {log.error_message && (
-                                <div className="mt-2 p-2 rounded bg-destructive/10 border border-destructive/20">
-                                  <div className="flex items-start gap-2">
-                                    <AlertTriangle className="w-3.5 h-3.5 text-destructive mt-0.5 flex-shrink-0" />
-                                    <p className="text-xs text-destructive/90 break-all">{log.error_message}</p>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </TabsContent>
+                  </TabsContent>
+                </div>
               </Tabs>
             </CardContent>
           </Card>
