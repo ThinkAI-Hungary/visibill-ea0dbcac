@@ -239,7 +239,7 @@ export function AppSidebar() {
                       className="w-full aspect-square justify-center"
                     >
                       <Link to="/settings">
-                        <Settings className="h-4 w-4" />
+                        <Settings className="h-5 w-5" />
                       </Link>
                     </Button>
                   </TooltipTrigger>
@@ -252,7 +252,7 @@ export function AppSidebar() {
                       onClick={handleSignOut}
                       className="w-full aspect-square justify-center"
                     >
-                      <LogOut className="h-4 w-4" />
+                      <LogOut className="h-5 w-5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">Kilépés</TooltipContent>
