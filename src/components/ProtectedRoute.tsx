@@ -57,9 +57,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (loading || profileLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex-1 flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
           <p className="mt-2 text-muted-foreground">Betöltés...</p>
         </div>
       </div>

@@ -1,5 +1,4 @@
 import { Toaster } from "@/components/ui/toaster";
-// Removed Sonner toaster to avoid export mismatch
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -27,6 +26,16 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Wrapper component that combines ProtectedRoute with page content
+function ProtectedPage({ children }: { children: React.ReactNode }) {
+  return <ProtectedRoute>{children}</ProtectedRoute>;
+}
+
+// Wrapper for AuthGuard pages
+function AuthGuardPage({ children }: { children: React.ReactNode }) {
+  return <AuthGuard>{children}</AuthGuard>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -34,98 +43,80 @@ const App = () => (
         <CompanyProvider>
           <SubscriptionProvider>
             <TooltipProvider>
-            <Toaster />
-        
-        <BrowserRouter>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/onboarding" element={
-              <AuthGuard>
-                <AppLayout>
-                  <Onboarding />
-                </AppLayout>
-              </AuthGuard>
-            } />
-            <Route path="/upload" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ManualUpload />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/invoices" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <InvoicesPage />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/integrations" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Integrations />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/settings" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Settings />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/projects" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Projects />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/pricing" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Pricing />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/nav-testing" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <NavTesting />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/exchange-rates" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <ExchangeRates />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/salaries" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <SalariesPage />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/analytics" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Analytics />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="/" element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Index />
-                </AppLayout>
-              </ProtectedRoute>
-            } />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+              <Toaster />
+              
+              <BrowserRouter>
+                <Routes>
+                  {/* Auth route without layout */}
+                  <Route path="/auth" element={<Auth />} />
+                  
+                  {/* All routes with AppLayout - layout renders once */}
+                  <Route element={<AppLayout />}>
+                    <Route path="/onboarding" element={
+                      <AuthGuardPage>
+                        <Onboarding />
+                      </AuthGuardPage>
+                    } />
+                    <Route path="/upload" element={
+                      <ProtectedPage>
+                        <ManualUpload />
+                      </ProtectedPage>
+                    } />
+                    <Route path="/invoices" element={
+                      <ProtectedPage>
+                        <InvoicesPage />
+                      </ProtectedPage>
+                    } />
+                    <Route path="/integrations" element={
+                      <ProtectedPage>
+                        <Integrations />
+                      </ProtectedPage>
+                    } />
+                    <Route path="/settings" element={
+                      <ProtectedPage>
+                        <Settings />
+                      </ProtectedPage>
+                    } />
+                    <Route path="/projects" element={
+                      <ProtectedPage>
+                        <Projects />
+                      </ProtectedPage>
+                    } />
+                    <Route path="/pricing" element={
+                      <ProtectedPage>
+                        <Pricing />
+                      </ProtectedPage>
+                    } />
+                    <Route path="/nav-testing" element={
+                      <ProtectedPage>
+                        <NavTesting />
+                      </ProtectedPage>
+                    } />
+                    <Route path="/exchange-rates" element={
+                      <ProtectedPage>
+                        <ExchangeRates />
+                      </ProtectedPage>
+                    } />
+                    <Route path="/salaries" element={
+                      <ProtectedPage>
+                        <SalariesPage />
+                      </ProtectedPage>
+                    } />
+                    <Route path="/analytics" element={
+                      <ProtectedPage>
+                        <Analytics />
+                      </ProtectedPage>
+                    } />
+                    <Route path="/" element={
+                      <ProtectedPage>
+                        <Index />
+                      </ProtectedPage>
+                    } />
+                  </Route>
+                  
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
             </TooltipProvider>
           </SubscriptionProvider>
         </CompanyProvider>
