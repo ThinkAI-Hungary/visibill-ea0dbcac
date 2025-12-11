@@ -223,8 +223,8 @@ All colors MUST be HSL.
   }
 }
 
-/* Custom Scrollbar Styling */
-@layer components {
+/* Custom Scrollbar Styling - Global */
+@layer base {
   /* Webkit browsers (Chrome, Safari, Edge) */
   ::-webkit-scrollbar {
     width: 8px;
@@ -260,20 +260,24 @@ All colors MUST be HSL.
     scrollbar-color: hsl(var(--muted-foreground) / 0.3) hsl(var(--muted) / 0.3);
   }
 
-  /* Dark mode adjustments */
+  /* Dark mode - Teal scrollbar */
   .dark ::-webkit-scrollbar-track {
-    background: hsl(var(--muted) / 0.2);
+    background: hsl(var(--primary) / 0.1);
   }
 
   .dark ::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground) / 0.25);
-  }
-
-  .dark ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--primary) / 0.4);
   }
 
-  .dark ::-webkit-scrollbar-thumb:active {
+  .dark ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--primary) / 0.6);
+  }
+
+  .dark ::-webkit-scrollbar-thumb:active {
+    background: hsl(var(--primary) / 0.8);
+  }
+
+  .dark * {
+    scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--primary) / 0.1);
   }
 }
