@@ -234,7 +234,7 @@ export function AppSidebar() {
                 <Button 
                   variant="outline" 
                   asChild
-                  className="flex-1 h-8 px-3 text-xs"
+                  className="flex-1 w-full h-8 px-3 text-xs"
                 >
                   <Link to="/settings">
                     <Settings className="h-4 w-4 mr-2" />
@@ -244,7 +244,7 @@ export function AppSidebar() {
                 <Button 
                   variant="outline" 
                   onClick={handleSignOut}
-                  className="flex-1 h-8 px-3 text-xs"
+                  className="flex-1 w-full h-8 px-3 text-xs"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   Kilépés
