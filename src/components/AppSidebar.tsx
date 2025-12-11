@@ -236,8 +236,8 @@ export function AppSidebar() {
                   asChild
                   className="w-full h-8 px-3 text-xs justify-center"
                 >
-                  <Link to="/settings">
-                    <Settings className="h-4 w-4 mr-2" />
+                <Link to="/settings">
+                    <Settings className="h-4 w-4 mr-1" />
                     Beállítások
                   </Link>
                 </Button>
@@ -246,7 +246,7 @@ export function AppSidebar() {
                   onClick={handleSignOut}
                   className="w-full h-8 px-3 text-xs justify-center"
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
+                  <LogOut className="h-4 w-4 mr-1" />
                   Kilépés
                 </Button>
               </div>
