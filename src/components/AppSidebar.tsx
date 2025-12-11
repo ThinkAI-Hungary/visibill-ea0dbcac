@@ -140,7 +140,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         {/* Header */}
-        <div className={`p-4 border-b ${isCollapsed ? 'flex justify-center' : ''}`}>
+        <div className={`p-4 border-b border-primary/30 ${isCollapsed ? 'flex justify-center' : ''}`}>
           {!isCollapsed ? (
             <div className="flex items-center gap-3">
               <span className="text-2xl font-black bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent tracking-tight">
@@ -158,7 +158,7 @@ export function AppSidebar() {
 
         {/* Company Selector */}
         {!isCollapsed && (
-          <div className="p-3 border-b">
+          <div className="p-3 border-b border-primary/30">
             <CompanySelector />
           </div>
         )}
@@ -200,7 +200,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* User Section */}
-        <div className="mt-auto border-t">
+        <div className="mt-auto border-t border-primary/30">
           {!isCollapsed ? (
             <div className="p-4 space-y-3">
               <div className="flex items-center gap-3">
@@ -314,7 +314,7 @@ export function AppSidebar() {
           )}
           
           {/* Sidebar Toggle */}
-          <div className={`p-2 border-t ${isCollapsed ? 'flex justify-center' : ''}`}>
+          <div className={`p-2 border-t border-primary/30 ${isCollapsed ? 'flex justify-center' : ''}`}>
             <SidebarTrigger className={isCollapsed ? '' : 'w-full hover:bg-muted'} />
           </div>
         </div>
