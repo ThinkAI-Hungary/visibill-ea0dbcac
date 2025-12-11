@@ -236,7 +236,7 @@ export function AppSidebar() {
                     <Button 
                       variant="outline" 
                       asChild
-                      className="w-full aspect-square justify-center"
+                      className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30"
                     >
                       <Link to="/settings">
                         <Settings className="h-5 w-5" />
@@ -250,7 +250,7 @@ export function AppSidebar() {
                     <Button 
                       variant="outline" 
                       onClick={handleSignOut}
-                      className="w-full aspect-square justify-center"
+                      className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30"
                     >
                       <LogOut className="h-5 w-5" />
                     </Button>
@@ -288,7 +288,7 @@ export function AppSidebar() {
                   <Button 
                     variant="outline" 
                     asChild
-                    className="w-8 h-8 p-0"
+                    className="w-8 h-8 p-0 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
                   >
                     <Link to="/settings">
                       <Settings className="h-4 w-4" />
@@ -303,7 +303,7 @@ export function AppSidebar() {
                     variant="outline" 
                     size="icon"
                     onClick={handleSignOut}
-                    className="w-8 h-8"
+                    className="w-8 h-8 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
                   >
                     <LogOut className="h-4 w-4" />
                   </Button>
@@ -315,7 +315,7 @@ export function AppSidebar() {
           
           {/* Sidebar Toggle */}
           <div className={`p-2 border-t border-primary/30 ${isCollapsed ? 'flex justify-center' : ''}`}>
-            <SidebarTrigger className={isCollapsed ? '' : 'w-full hover:bg-muted'} />
+            <SidebarTrigger className={`hover:bg-primary/10 hover:text-primary ${isCollapsed ? '' : 'w-full'}`} />
           </div>
         </div>
       </SidebarContent>
