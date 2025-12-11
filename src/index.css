@@ -222,3 +222,58 @@ All colors MUST be HSL.
     transition: background-color 5000s ease-in-out 0s;
   }
 }
+
+/* Custom Scrollbar Styling */
+@layer components {
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.3);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 4px;
+    transition: background 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.5);
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: hsl(var(--primary) / 0.7);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) hsl(var(--muted) / 0.3);
+  }
+
+  /* Dark mode adjustments */
+  .dark ::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.2);
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.25);
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.4);
+  }
+
+  .dark ::-webkit-scrollbar-thumb:active {
+    background: hsl(var(--primary) / 0.6);
+  }
+}
