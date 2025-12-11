@@ -135,11 +135,17 @@ const Integrations = () => {
                       </div>
                     </div>
                   </div>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary self-start">
-                      {emailSectionOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                  </CollapsibleTrigger>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 hover:bg-primary/10 hover:text-primary self-start"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEmailSectionOpen(!emailSectionOpen);
+                    }}
+                  >
+                    {emailSectionOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
                 </div>
               </CardHeader>
               
@@ -188,11 +194,17 @@ const Integrations = () => {
                       </div>
                     </div>
                   </div>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary self-start">
-                      {navSectionOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                  </CollapsibleTrigger>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 hover:bg-primary/10 hover:text-primary self-start"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setNavSectionOpen(!navSectionOpen);
+                    }}
+                  >
+                    {navSectionOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </Button>
                 </div>
               </CardHeader>
               
