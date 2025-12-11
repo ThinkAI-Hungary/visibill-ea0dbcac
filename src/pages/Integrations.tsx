@@ -202,9 +202,9 @@ const Integrations = () => {
                   <TabsTrigger value="logs">Logok</TabsTrigger>
                 </TabsList>
                 
-                {/* Fixed min-height container to prevent jumping */}
-                <div className="min-h-[300px]">
-                  <TabsContent value="credentials" className="mt-0">
+                {/* Fixed height container to prevent jumping */}
+                <div className="h-[420px] overflow-hidden">
+                  <TabsContent value="credentials" className="mt-0 h-full overflow-y-auto">
                     <NavCredentialsForm 
                       companyId={selectedCompany?.id}
                       onCredentialsSaved={() => {
@@ -216,9 +216,9 @@ const Integrations = () => {
                     />
                   </TabsContent>
                   
-                  <TabsContent value="logs" className="mt-0">
-                    <div className="rounded-lg border bg-card">
-                      <div className="p-4 border-b">
+                  <TabsContent value="logs" className="mt-0 h-full overflow-y-auto">
+                    <div className="rounded-lg border bg-card h-full flex flex-col">
+                      <div className="p-4 border-b flex-shrink-0">
                         <div className="flex items-center gap-2">
                           <Activity className="w-4 h-4 text-primary" />
                           <span className="font-medium text-sm">Szinkronizálási Logok</span>
@@ -226,7 +226,7 @@ const Integrations = () => {
                         </div>
                       </div>
                       
-                      <div className="p-4 pb-2">
+                      <div className="p-4 pb-2 flex-1 overflow-y-auto">
                         {logsLoading ? (
                           <LogsSkeleton />
                         ) : syncLogs.length === 0 ? (
@@ -234,7 +234,7 @@ const Integrations = () => {
                             Még nincsenek szinkronizálási logok.
                           </div>
                         ) : (
-                          <div className="space-y-2 overflow-y-auto">
+                          <div className="space-y-2">
                             {syncLogs.map((log) => (
                               <div key={log.id} className="p-3 rounded-lg bg-muted/30 border border-border/50 space-y-2">
                                 <div className="flex items-center justify-between">
