@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, CheckCircle, Shield, Key, RefreshCw, XCircle, Clock, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -16,6 +17,7 @@ interface NavCredentialsFormProps {
 
 const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, onCredentialsSaved }) => {
   const { toast } = useToast();
+  const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(false);
   const [validationStatus, setValidationStatus] = useState<'pending' | 'valid' | 'invalid' | 'error'>('pending');
@@ -45,8 +47,10 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, onCr
   }, [companyId]);
 
   const loadCredentialInfo = async () => {
+    setInitialLoading(true);
     if (!companyId) {
       setCredentialInfo(null);
+      setInitialLoading(false);
       return;
     }
     try {
@@ -64,6 +68,8 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, onCr
       }
     } catch (error) {
       console.error('Error loading credential info:', error);
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -353,6 +359,16 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, onCr
       </Card>
     );
   };
+
+  // Loading skeleton
+  if (initialLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-24 w-full rounded-lg" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
 
   // If connection is valid, show only status card and disconnect button
   if (credentialInfo?.validation_status === 'valid') {

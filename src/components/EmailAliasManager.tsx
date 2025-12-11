@@ -9,6 +9,7 @@ import { useCompany, Company } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Mail, Plus, Trash2, Copy, CheckCircle, Building2, Link2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -217,14 +218,11 @@ const EmailAliasManager = () => {
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
-            <span className="ml-2">Email aliasok betöltése...</span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <Skeleton className="h-16 w-full rounded-lg" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-2/3" />
+      </div>
     );
   }
 
