@@ -98,13 +98,13 @@ const Integrations = () => {
           <Card className="border-primary/10 hover:border-primary/20 transition-colors">
             <Collapsible open={emailSectionOpen} onOpenChange={setEmailSectionOpen}>
               <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg pb-6">
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center border border-primary/20">
                         <AtSign className="w-6 h-6 text-primary" />
                       </div>
-                      <div>
+                      <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <CardTitle className="text-lg">Email Alias-ok</CardTitle>
                           <Tooltip>
@@ -119,9 +119,24 @@ const Integrations = () => {
                         <CardDescription className="text-sm">
                           Automatikus számla fogadás
                         </CardDescription>
+                        {/* Feature Pills - inside header */}
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-medium">
+                            <Mail className="h-3 w-3" />
+                            Dedikált címek
+                          </div>
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-medium">
+                            <Zap className="h-3 w-3" />
+                            Azonnali feldolgozás
+                          </div>
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-medium">
+                            <Shield className="h-3 w-3" />
+                            Biztonságos
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary self-start">
                       {emailSectionOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </Button>
                   </div>
@@ -129,23 +144,7 @@ const Integrations = () => {
               </CollapsibleTrigger>
               
               <CollapsibleContent>
-                <CardContent className="pt-0 space-y-4">
-                  {/* Feature Pills */}
-                  <div className="flex flex-wrap gap-2">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-medium">
-                      <Mail className="h-3.5 w-3.5" />
-                      Dedikált címek
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-medium">
-                      <Zap className="h-3.5 w-3.5" />
-                      Azonnali feldolgozás
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-medium">
-                      <Shield className="h-3.5 w-3.5" />
-                      Biztonságos
-                    </div>
-                  </div>
-
+                <CardContent className="pt-4">
                   <EmailAliasManager />
                 </CardContent>
               </CollapsibleContent>
@@ -156,13 +155,13 @@ const Integrations = () => {
           <Card className="border-primary/10 hover:border-primary/20 transition-colors">
             <Collapsible open={navSectionOpen} onOpenChange={setNavSectionOpen}>
               <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg pb-6">
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center border border-primary/20">
                         <Shield className="w-6 h-6 text-primary" />
                       </div>
-                      <div>
+                      <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <CardTitle className="text-lg">NAV Online Számla</CardTitle>
                           <Tooltip>
@@ -177,9 +176,20 @@ const Integrations = () => {
                         <CardDescription className="text-sm">
                           Magyar NAV integráció
                         </CardDescription>
+                        {/* Feature Pills - inside header */}
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                            <Shield className="h-3 w-3" />
+                            Biztonságos
+                          </div>
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                            <Zap className="h-3 w-3" />
+                            Automatikus sync
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary self-start">
                       {navSectionOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </Button>
                   </div>
@@ -187,18 +197,7 @@ const Integrations = () => {
               </CollapsibleTrigger>
               
               <CollapsibleContent>
-                <CardContent className="pt-0 space-y-4">
-                  {/* Feature Pills */}
-                  <div className="flex flex-wrap gap-2">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                      <Shield className="h-3.5 w-3.5" />
-                      Biztonságos
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                      <Zap className="h-3.5 w-3.5" />
-                      Automatikus sync
-                    </div>
-                  </div>
+                <CardContent className="pt-4">
 
                   <Tabs value={activeNavTab} onValueChange={setActiveNavTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-2 mb-4">
