@@ -160,7 +160,7 @@ const Integrations = () => {
           </Card>
 
           {/* NAV Integration Section */}
-          <Card className="border-primary/10 hover:border-primary/20 transition-colors">
+          <Card className="border-primary/10 hover:border-primary/20 transition-colors flex flex-col">
             <CardHeader>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center border border-primary/20">
@@ -195,15 +195,14 @@ const Integrations = () => {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-4">
-              <Tabs value={activeNavTab} onValueChange={setActiveNavTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
+            <CardContent className="pt-4 flex-1 flex flex-col min-h-0">
+              <Tabs value={activeNavTab} onValueChange={setActiveNavTab} className="w-full flex-1 flex flex-col min-h-0">
+                <TabsList className="grid w-full grid-cols-2 mb-4 flex-shrink-0">
                   <TabsTrigger value="credentials">Hitelesítés</TabsTrigger>
                   <TabsTrigger value="logs">Logok</TabsTrigger>
                 </TabsList>
                 
-                {/* Fixed height container to prevent jumping */}
-                <div className="h-[420px] overflow-hidden">
+                <div className="flex-1 min-h-0">
                   <TabsContent value="credentials" className="mt-0 h-full overflow-y-auto">
                     <NavCredentialsForm 
                       companyId={selectedCompany?.id}
@@ -216,8 +215,8 @@ const Integrations = () => {
                     />
                   </TabsContent>
                   
-                  <TabsContent value="logs" className="mt-0 h-full overflow-y-auto">
-                    <div className="rounded-lg border bg-card h-full flex flex-col">
+                  <TabsContent value="logs" className="mt-0 h-full flex flex-col">
+                    <div className="rounded-lg border bg-card flex-1 flex flex-col min-h-0">
                       <div className="p-4 border-b flex-shrink-0">
                         <div className="flex items-center gap-2">
                           <Activity className="w-4 h-4 text-primary" />
@@ -226,7 +225,7 @@ const Integrations = () => {
                         </div>
                       </div>
                       
-                      <div className="p-4 pb-2 flex-1 overflow-y-auto">
+                      <div className="p-4 pb-2 flex-1 overflow-y-auto min-h-0">
                         {logsLoading ? (
                           <LogsSkeleton />
                         ) : syncLogs.length === 0 ? (
