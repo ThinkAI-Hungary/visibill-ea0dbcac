@@ -740,7 +740,9 @@ export type Database = {
           invoice_number: string
           invoice_operation: string | null
           invoice_vat_amount: number | null
+          paid: boolean | null
           payment_method: string | null
+          submitted: boolean | null
           supplier_tax_number: string | null
           user_id: string | null
         }
@@ -759,7 +761,9 @@ export type Database = {
           invoice_number: string
           invoice_operation?: string | null
           invoice_vat_amount?: number | null
+          paid?: boolean | null
           payment_method?: string | null
+          submitted?: boolean | null
           supplier_tax_number?: string | null
           user_id?: string | null
         }
@@ -778,7 +782,9 @@ export type Database = {
           invoice_number?: string
           invoice_operation?: string | null
           invoice_vat_amount?: number | null
+          paid?: boolean | null
           payment_method?: string | null
+          submitted?: boolean | null
           supplier_tax_number?: string | null
           user_id?: string | null
         }
