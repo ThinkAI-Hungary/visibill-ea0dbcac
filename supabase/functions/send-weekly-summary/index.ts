@@ -233,7 +233,7 @@ serve(async (req: Request): Promise<Response> => {
         
         // Send email
         const { error: sendError } = await resend.emails.send({
-          from: "Visibill <noreply@in.visibill.hu>",
+          from: "Visibill <noreply@mail.visibill.hu>",
           to: [uc.userEmail],
           subject: `Visibill Heti Összesítő - ${uc.companyName} (${formatDate(weekStart)} - ${formatDate(weekEnd)})`,
           html,
