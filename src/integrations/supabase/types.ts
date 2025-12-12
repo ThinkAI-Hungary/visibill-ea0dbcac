@@ -1369,6 +1369,7 @@ export type Database = {
           subscription_warnings: boolean | null
           updated_at: string | null
           user_id: string
+          weekly_summary: boolean | null
         }
         Insert: {
           created_at?: string | null
@@ -1379,6 +1380,7 @@ export type Database = {
           subscription_warnings?: boolean | null
           updated_at?: string | null
           user_id: string
+          weekly_summary?: boolean | null
         }
         Update: {
           created_at?: string | null
@@ -1389,6 +1391,7 @@ export type Database = {
           subscription_warnings?: boolean | null
           updated_at?: string | null
           user_id?: string
+          weekly_summary?: boolean | null
         }
         Relationships: []
       }

@@ -12,6 +12,7 @@ interface EmailPreferences {
   invoice_failed: boolean;
   subscription_warnings: boolean;
   monthly_summary: boolean;
+  weekly_summary: boolean;
 }
 
 export function EmailPreferences() {
@@ -23,6 +24,7 @@ export function EmailPreferences() {
     invoice_failed: true,
     subscription_warnings: true,
     monthly_summary: false,
+    weekly_summary: true,
   });
 
   useEffect(() => {
@@ -50,6 +52,7 @@ export function EmailPreferences() {
           invoice_failed: (data as any).invoice_failed ?? true,
           subscription_warnings: (data as any).subscription_warnings ?? true,
           monthly_summary: (data as any).monthly_summary ?? false,
+          weekly_summary: (data as any).weekly_summary ?? true,
         });
       }
     } catch (error) {
@@ -147,6 +150,21 @@ export function EmailPreferences() {
             id="subscription_warnings"
             checked={preferences.subscription_warnings}
             onCheckedChange={(value) => updatePreference('subscription_warnings', value)}
+            disabled={saving}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="weekly_summary">Heti összesítők</Label>
+            <p className="text-sm text-muted-foreground">
+              Heti összesítő a pénzügyi helyzetedről, teendőkről és aktivitásról
+            </p>
+          </div>
+          <Switch
+            id="weekly_summary"
+            checked={preferences.weekly_summary}
+            onCheckedChange={(value) => updatePreference('weekly_summary', value)}
             disabled={saving}
           />
         </div>
