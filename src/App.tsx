@@ -22,6 +22,7 @@ import NavTesting from "./pages/NavTesting";
 import ExchangeRates from "./pages/ExchangeRates";
 import SalariesPage from "./pages/SalariesPage";
 import Analytics from "./pages/Analytics";
+import PartnersPage from "./pages/PartnersPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -80,6 +81,11 @@ const App = () => (
                     <Route path="/projects" element={
                       <ProtectedPage>
                         <Projects />
+                      </ProtectedPage>
+                    } />
+                    <Route path="/partners" element={
+                      <ProtectedPage>
+                        <PartnersPage />
                       </ProtectedPage>
                     } />
                     <Route path="/pricing" element={
