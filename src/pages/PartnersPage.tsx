@@ -31,7 +31,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Search, Plus, Pencil, Trash2, Users } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Users, ChevronLeft, ChevronRight } from "lucide-react";
+
+const ITEMS_PER_PAGE = 15;
 
 interface Partner {
   id: string;
@@ -51,6 +53,7 @@ export default function PartnersPage() {
   const queryClient = useQueryClient();
   
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
   const [formData, setFormData] = useState({
@@ -60,27 +63,23 @@ export default function PartnersPage() {
     partner_type: "both",
   });
 
-  // Fetch partners
+  // Fetch partners - company scoped (required)
   const { data: partners, isLoading } = useQuery({
     queryKey: ["partners", user?.id, selectedCompany?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id || !selectedCompany?.id) return [];
       
-      let query = supabase
+      const { data, error } = await supabase
         .from("partners")
         .select("*")
         .eq("user_id", user.id)
+        .eq("company_id", selectedCompany.id)
         .order("name", { ascending: true });
       
-      if (selectedCompany?.id) {
-        query = query.eq("company_id", selectedCompany.id);
-      }
-      
-      const { data, error } = await query;
       if (error) throw error;
       return data as Partner[];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!selectedCompany?.id,
   });
 
   // Create/Update mutation
@@ -152,18 +151,33 @@ export default function PartnersPage() {
     },
   });
 
-  // Filter partners by search query
-  const filteredPartners = useMemo(() => {
-    if (!partners) return [];
-    if (!searchQuery.trim()) return partners;
+  // Filter partners by search query and paginate
+  const { paginatedPartners, totalPages, totalFiltered } = useMemo(() => {
+    if (!partners) return { paginatedPartners: [], totalPages: 0, totalFiltered: 0 };
     
-    const query = searchQuery.toLowerCase();
-    return partners.filter(
-      (p) =>
-        p.name.toLowerCase().includes(query) ||
-        p.tax_number.toLowerCase().includes(query)
-    );
-  }, [partners, searchQuery]);
+    let filtered = partners;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = partners.filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          p.tax_number.toLowerCase().includes(query)
+      );
+    }
+    
+    const totalFiltered = filtered.length;
+    const totalPages = Math.ceil(totalFiltered / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const paginatedPartners = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    
+    return { paginatedPartners, totalPages, totalFiltered };
+  }, [partners, searchQuery, currentPage]);
+
+  // Reset page when search changes
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
 
   const handleOpenDialog = (partner?: Partner) => {
     if (partner) {
@@ -255,21 +269,21 @@ export default function PartnersPage() {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Partnerek ({filteredPartners.length})
+              Partnerek ({totalFiltered})
             </CardTitle>
             <div className="relative w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Keresés név vagy adószám alapján..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10"
               />
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          {filteredPartners.length === 0 ? (
+        <CardContent className="space-y-4">
+          {paginatedPartners.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               {searchQuery ? (
                 <p>Nincs találat a keresésre: "{searchQuery}"</p>
@@ -278,6 +292,7 @@ export default function PartnersPage() {
               )}
             </div>
           ) : (
+            <>
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -290,7 +305,7 @@ export default function PartnersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredPartners.map((partner) => (
+                  {paginatedPartners.map((partner) => (
                     <TableRow key={partner.id}>
                       <TableCell className="font-medium">{partner.name}</TableCell>
                       <TableCell className="font-mono text-sm">{partner.tax_number}</TableCell>
@@ -323,6 +338,39 @@ export default function PartnersPage() {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4">
+                <p className="text-sm text-muted-foreground">
+                  {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, totalFiltered)} / {totalFiltered} partner
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Előző
+                  </Button>
+                  <span className="text-sm text-muted-foreground px-2">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Következő
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            </>
           )}
         </CardContent>
       </Card>
