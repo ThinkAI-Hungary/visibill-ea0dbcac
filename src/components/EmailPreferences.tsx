@@ -108,52 +108,7 @@ export function EmailPreferences() {
           Válaszd ki, mely email értesítéseket szeretnéd fogadni
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label htmlFor="invoice_processed">Számla feldolgozva</Label>
-            <p className="text-sm text-muted-foreground">
-              Értesítés a sikeresen feldolgozott számlákról
-            </p>
-          </div>
-          <Switch
-            id="invoice_processed"
-            checked={preferences.invoice_processed}
-            onCheckedChange={(value) => updatePreference('invoice_processed', value)}
-            disabled={saving}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label htmlFor="invoice_failed">Számla feldolgozási hibák</Label>
-            <p className="text-sm text-muted-foreground">
-              Értesítés a sikertelen számla feldolgozásokról
-            </p>
-          </div>
-          <Switch
-            id="invoice_failed"
-            checked={preferences.invoice_failed}
-            onCheckedChange={(value) => updatePreference('invoice_failed', value)}
-            disabled={saving}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label htmlFor="subscription_warnings">Használati figyelmeztetések</Label>
-            <p className="text-sm text-muted-foreground">
-              Értesítés a számla limit közeledésekor
-            </p>
-          </div>
-          <Switch
-            id="subscription_warnings"
-            checked={preferences.subscription_warnings}
-            onCheckedChange={(value) => updatePreference('subscription_warnings', value)}
-            disabled={saving}
-          />
-        </div>
-
+      <CardContent>
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
             <Label htmlFor="weekly_summary">Heti összesítők</Label>
@@ -165,21 +120,6 @@ export function EmailPreferences() {
             id="weekly_summary"
             checked={preferences.weekly_summary}
             onCheckedChange={(value) => updatePreference('weekly_summary', value)}
-            disabled={saving}
-          />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label htmlFor="monthly_summary">Havi összesítők</Label>
-            <p className="text-sm text-muted-foreground">
-              Havi összesítő a számláidról és adóidról
-            </p>
-          </div>
-          <Switch
-            id="monthly_summary"
-            checked={preferences.monthly_summary}
-            onCheckedChange={(value) => updatePreference('monthly_summary', value)}
             disabled={saving}
           />
         </div>
