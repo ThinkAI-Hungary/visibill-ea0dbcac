@@ -2,20 +2,14 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Outlet } from "react-router-dom";
 import { Suspense } from "react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface AppLayoutProps {
   children?: React.ReactNode;
 }
 
 function ContentLoader() {
-  return (
-    <div className="flex-1 flex items-center justify-center bg-background">
-      <div className="text-center">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-        <p className="mt-2 text-muted-foreground">Betöltés...</p>
-      </div>
-    </div>
-  );
+  return <LoadingSpinner />;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {

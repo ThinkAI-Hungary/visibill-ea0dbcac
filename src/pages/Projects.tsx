@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -200,14 +201,7 @@ const Projects = () => {
   };
 
   if (initialLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center space-y-2">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Projektek betöltése...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message="Projektek betöltése..." />;
   }
 
   return (

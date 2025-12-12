@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import EmptyStateDashboard from '@/components/dashboard/EmptyStateDashboard';
 import { supabase } from '@/integrations/supabase/client';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -508,14 +509,7 @@ const Index = () => {
 
   // Show loading spinner only while company data is being fetched
   if (companyLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-          <p className="mt-2 text-muted-foreground">Betöltés...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   // Show empty state dashboard when no companies exist
