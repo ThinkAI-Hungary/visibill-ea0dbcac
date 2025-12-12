@@ -134,6 +134,8 @@ const Index = () => {
   const [navVatData, setNavVatData] = useState<NavVatData | null>(null);
   const [dateFrom, setDateFrom] = useState<Date>(startOfMonth(new Date()));
   const [dateTo, setDateTo] = useState<Date>(endOfMonth(new Date()));
+  const [dateFromOpen, setDateFromOpen] = useState(false);
+  const [dateToOpen, setDateToOpen] = useState(false);
   
   // Analytics states
   const [showBrutto, setShowBrutto] = useState(true);
@@ -537,7 +539,7 @@ const Index = () => {
           <div className="flex gap-2 items-center flex-wrap">
             <div className="flex gap-2 items-center">
               <span className="text-sm text-muted-foreground">Időszak:</span>
-              <Popover>
+              <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -554,14 +556,19 @@ const Index = () => {
                   <CalendarComponent
                     mode="single"
                     selected={dateFrom}
-                    onSelect={(date) => date && setDateFrom(date)}
+                    onSelect={(date) => {
+                      if (date) {
+                        setDateFrom(date);
+                        setDateFromOpen(false);
+                      }
+                    }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
                   />
                 </PopoverContent>
               </Popover>
-              <span className="text-sm text-muted-foreground">-</span>
-              <Popover>
+              <span className="text-sm text-muted-foreground">-ig</span>
+              <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -574,11 +581,16 @@ const Index = () => {
                     {dateTo ? format(dateTo, "yyyy. MMM dd.", { locale: hu }) : <span>Záró dátum</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0" align="end">
                   <CalendarComponent
                     mode="single"
                     selected={dateTo}
-                    onSelect={(date) => date && setDateTo(date)}
+                    onSelect={(date) => {
+                      if (date) {
+                        setDateTo(date);
+                        setDateToOpen(false);
+                      }
+                    }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
                   />
