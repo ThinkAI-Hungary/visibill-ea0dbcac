@@ -226,6 +226,9 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, onCr
             title: 'Sikeres validálás',
             description: result.message,
           });
+          
+          // Trigger 1 year data sync after successful validation
+          await triggerInitialSync(session.access_token);
         }
       } else {
         setValidationStatus('error');
@@ -242,6 +245,87 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, onCr
       });
     } finally {
       setValidating(false);
+    }
+  };
+
+  const triggerInitialSync = async (accessToken: string) => {
+    try {
+      console.log('[NavCredentialsForm] Triggering 1-year initial sync');
+      
+      // Calculate date range for 1 year back
+      const dateTo = new Date();
+      const dateFrom = new Date();
+      dateFrom.setFullYear(dateFrom.getFullYear() - 1);
+      
+      const dateToStr = dateTo.toISOString().split('T')[0];
+      const dateFromStr = dateFrom.toISOString().split('T')[0];
+      
+      toast({
+        title: 'Adatok szinkronizálása',
+        description: 'NAV számlák letöltése 1 évre visszamenőleg...',
+      });
+
+      // Sync OUTBOUND invoices - split into 35-day chunks (NAV API limit)
+      await syncInChunks(accessToken, dateFromStr, dateToStr, 'OUTBOUND');
+      
+      // Sync INBOUND invoices - split into 35-day chunks
+      await syncInChunks(accessToken, dateFromStr, dateToStr, 'INBOUND');
+      
+      toast({
+        title: 'Szinkronizálás kész',
+        description: '1 év NAV számla adatai sikeresen letöltve.',
+      });
+      
+    } catch (error: any) {
+      console.error('[NavCredentialsForm] Initial sync error:', error);
+      toast({
+        title: 'Szinkronizálási hiba',
+        description: 'Az adatok letöltése részlegesen sikertelen. Próbálja újra később.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const syncInChunks = async (accessToken: string, dateFrom: string, dateTo: string, direction: 'OUTBOUND' | 'INBOUND') => {
+    const fromDate = new Date(dateFrom);
+    const toDate = new Date(dateTo);
+    const chunkDays = 35; // NAV API max is 35 days
+    
+    let currentFrom = new Date(fromDate);
+    
+    while (currentFrom < toDate) {
+      const currentTo = new Date(currentFrom);
+      currentTo.setDate(currentTo.getDate() + chunkDays - 1);
+      
+      // Don't exceed the end date
+      if (currentTo > toDate) {
+        currentTo.setTime(toDate.getTime());
+      }
+      
+      const chunkFromStr = currentFrom.toISOString().split('T')[0];
+      const chunkToStr = currentTo.toISOString().split('T')[0];
+      
+      console.log(`[NavCredentialsForm] Syncing ${direction} chunk: ${chunkFromStr} to ${chunkToStr}`);
+      
+      try {
+        await supabase.functions.invoke('nav-query-outbound-invoices', {
+          body: {
+            dateFrom: chunkFromStr,
+            dateTo: chunkToStr,
+            invoiceDirection: direction,
+            companyId: companyId
+          },
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        });
+      } catch (chunkError) {
+        console.error(`[NavCredentialsForm] Chunk sync error for ${direction} ${chunkFromStr}-${chunkToStr}:`, chunkError);
+        // Continue with next chunk even if one fails
+      }
+      
+      // Move to next chunk
+      currentFrom.setDate(currentFrom.getDate() + chunkDays);
     }
   };
 
