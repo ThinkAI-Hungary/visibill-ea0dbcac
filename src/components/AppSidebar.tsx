@@ -39,7 +39,8 @@ import {
   TrendingUp,
   Wallet,
   Sun,
-  Moon
+  Moon,
+  Users
 } from "lucide-react";
 import CompanySelector from "./CompanySelector";
 
@@ -58,6 +59,11 @@ const navigationItems = [
     title: "Projektek",
     url: "/projects",
     icon: FolderKanban,
+  },
+  {
+    title: "Partnertörzs",
+    url: "/partners",
+    icon: Users,
   },
   {
     title: "Számlák",
