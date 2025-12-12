@@ -123,7 +123,6 @@ const InvoiceStatusTables = () => {
               <TableHead>Kibocsátás</TableHead>
               <TableHead>Szállító</TableHead>
               <TableHead className="text-right">Bruttó</TableHead>
-              <TableHead className="text-center">Státusz</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -142,17 +141,6 @@ const InvoiceStatusTables = () => {
                 </TableCell>
                 <TableCell className="text-right">
                   {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
-                </TableCell>
-                <TableCell className="text-center">
-                  {activeTab === 'payable' ? (
-                    <Badge variant={invoice.paid ? "default" : "destructive"}>
-                      {invoice.paid ? 'Fizetve' : 'Fizetendő'}
-                    </Badge>
-                  ) : (
-                    <Badge variant={invoice.submitted ? "default" : "secondary"}>
-                      {invoice.submitted ? 'Beküldve' : 'Hiányzik'}
-                    </Badge>
-                  )}
                 </TableCell>
               </TableRow>
             ))}
