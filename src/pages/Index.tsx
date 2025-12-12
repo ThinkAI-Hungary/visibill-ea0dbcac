@@ -12,17 +12,20 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { User, Building, Briefcase, Upload, FileText, Euro, TrendingUp, Calendar, BarChart3, PieChart, ChevronUp, Loader2 } from 'lucide-react';
+import { User, Building, Briefcase, Upload, FileText, Euro, TrendingUp, Calendar, BarChart3, PieChart, ChevronUp, Loader2, CalendarIcon } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import MetricCard from '@/components/dashboard/MetricCard';
 import RecentInvoices from '@/components/dashboard/RecentInvoices';
 import ProjectBreakdown from '@/components/dashboard/ProjectBreakdown';
 import SubscriptionUsage from '@/components/SubscriptionUsage';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
-import { parseISO } from 'date-fns';
+import { parseISO, format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { hu } from 'date-fns/locale';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 interface Profile {
   name: string;
@@ -126,8 +129,8 @@ const Index = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [navVatData, setNavVatData] = useState<NavVatData | null>(null);
-  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
-  const [selectedMonth, setSelectedMonth] = useState<string>((new Date().getMonth() + 1).toString().padStart(2, '0'));
+  const [dateFrom, setDateFrom] = useState<Date>(startOfMonth(new Date()));
+  const [dateTo, setDateTo] = useState<Date>(endOfMonth(new Date()));
   
   // Analytics states
   const [showBrutto, setShowBrutto] = useState(true);
@@ -146,11 +149,10 @@ const Index = () => {
 
   const vatChartRef = useRef<HTMLDivElement>(null);
 
-  // Displayed month/year from unified selector
-  const displayedMonthName = MONTH_NAMES[parseInt(selectedMonth) - 1];
-  const displayedYear = parseInt(selectedYear);
-  
-  const selectedVatMonth = `${selectedYear}-${selectedMonth}`;
+  // Displayed date range info
+  const dateFromFormatted = format(dateFrom, 'yyyy-MM-dd');
+  const dateToFormatted = format(dateTo, 'yyyy-MM-dd');
+  const displayedPeriod = `${format(dateFrom, 'yyyy. MMM dd.', { locale: hu })} - ${format(dateTo, 'yyyy. MMM dd.', { locale: hu })}`;
 
   const currencies = [
     { code: 'HUF', name: 'Magyar Forint', flag: '🇭🇺' },
@@ -168,13 +170,13 @@ const Index = () => {
   useEffect(() => {
     fetchDashboardData();
     fetchExchangeRates();
-  }, [user, selectedCompany, selectedYear, selectedMonth]);
+  }, [user, selectedCompany, dateFrom, dateTo]);
 
   useEffect(() => {
     if (user && selectedCompany) {
       fetchAnalyticsData();
     }
-  }, [user, selectedCompany, selectedYear, selectedMonth]);
+  }, [user, selectedCompany, dateFrom, dateTo]);
 
   const fetchExchangeRates = async () => {
     try {
@@ -217,8 +219,8 @@ const Index = () => {
   };
 
   const fetchRawData = async () => {
-    const yearStart = `${selectedYear}-01-01`;
-    const yearEnd = `${selectedYear}-12-31`;
+    const yearStart = format(dateFrom, 'yyyy-01-01');
+    const yearEnd = format(dateTo, 'yyyy-12-31');
 
     const { data: navInvoices } = await supabase
       .from("nav_invoices")
@@ -278,9 +280,9 @@ const Index = () => {
   }, [rawInvoices, rawSalaries, showBrutto]);
 
   const fetchVatData = async () => {
-    // Use unified selectedYear and selectedMonth
-    const monthStart = `${selectedYear}-${selectedMonth}-01`;
-    const monthEnd = `${selectedYear}-${selectedMonth}-31`;
+    // Use date range
+    const monthStart = dateFromFormatted;
+    const monthEnd = dateToFormatted;
 
     const { data: navInvoices } = await supabase
       .from("nav_invoices")
@@ -407,7 +409,7 @@ const Index = () => {
       }));
       setInvoices(formattedInvoices);
 
-      const [yearNum, monthNum] = selectedVatMonth.split('-').map(Number);
+      // Use date range for filtering
       
       const { data: allInvoicesData, error: metricsError } = await supabase
         .from('invoices')
@@ -416,39 +418,36 @@ const Index = () => {
 
       if (metricsError) throw metricsError;
 
-      const selectedMonthInvoices = (allInvoicesData || []).filter(invoice => {
+      const selectedPeriodInvoices = (allInvoicesData || []).filter(invoice => {
         const invoiceDate = new Date(invoice.kibocsatas_datuma);
-        return invoiceDate.getMonth() === monthNum - 1 && invoiceDate.getFullYear() === yearNum;
+        return invoiceDate >= dateFrom && invoiceDate <= dateTo;
       });
 
-      const selectedMonthAmountByCurrency: { [key: string]: number } = {};
+      const selectedPeriodAmountByCurrency: { [key: string]: number } = {};
       
-      selectedMonthInvoices.forEach(invoice => {
+      selectedPeriodInvoices.forEach(invoice => {
         const currency = invoice.penznem || 'HUF';
-        selectedMonthAmountByCurrency[currency] = (selectedMonthAmountByCurrency[currency] || 0) + invoice.brutto_vegosszeg;
+        selectedPeriodAmountByCurrency[currency] = (selectedPeriodAmountByCurrency[currency] || 0) + invoice.brutto_vegosszeg;
       });
 
-      const processingCount = selectedMonthInvoices.filter(invoice => invoice.statusz === 'feldolgozas_alatt').length;
-      const completedCount = selectedMonthInvoices.filter(invoice => invoice.statusz === 'feldolgozva').length;
+      const processingCount = selectedPeriodInvoices.filter(invoice => invoice.statusz === 'feldolgozas_alatt').length;
+      const completedCount = selectedPeriodInvoices.filter(invoice => invoice.statusz === 'feldolgozva').length;
 
       setMetrics({
-        totalInvoices: selectedMonthInvoices.length,
-        totalAmountByCurrency: selectedMonthAmountByCurrency,
-        thisMonthAmountByCurrency: selectedMonthAmountByCurrency,
+        totalInvoices: selectedPeriodInvoices.length,
+        totalAmountByCurrency: selectedPeriodAmountByCurrency,
+        thisMonthAmountByCurrency: selectedPeriodAmountByCurrency,
         averageInvoiceAmount: 0,
         processingCount,
         completedCount
       });
 
-      const firstDayOfSelectedMonth = new Date(yearNum, monthNum - 1, 1).toISOString().split('T')[0];
-      const lastDayOfSelectedMonth = new Date(yearNum, monthNum, 0).toISOString().split('T')[0];
-
       const { data: navInvoicesData, error: navInvoicesError } = await supabase
         .from('nav_invoices')
         .select('invoice_direction, invoice_vat_amount, invoice_net_amount, invoice_gross_amount, currency')
         .eq('company_id', selectedCompany.id)
-        .gte('invoice_issue_date', firstDayOfSelectedMonth)
-        .lte('invoice_issue_date', lastDayOfSelectedMonth);
+        .gte('invoice_issue_date', dateFromFormatted)
+        .lte('invoice_issue_date', dateToFormatted);
 
       if (navInvoicesError) throw navInvoicesError;
 
@@ -528,39 +527,56 @@ const Index = () => {
               Itt van a vállalkozásod teljes áttekintése
             </p>
           </div>
-          <div className="flex gap-2 items-center">
-            <div className="flex gap-2">
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-[100px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 5 }, (_, i) => {
-                    const year = new Date().getFullYear() - i;
-                    return (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="max-h-none">
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const monthNum = (i + 1).toString().padStart(2, '0');
-                    const monthName = new Date(2024, i, 1).toLocaleDateString('hu-HU', { month: 'long' });
-                    return (
-                      <SelectItem key={monthNum} value={monthNum}>
-                        {monthName.charAt(0).toUpperCase() + monthName.slice(1)}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+          <div className="flex gap-2 items-center flex-wrap">
+            <div className="flex gap-2 items-center">
+              <span className="text-sm text-muted-foreground">Időszak:</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[160px] justify-start text-left font-normal",
+                      !dateFrom && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateFrom ? format(dateFrom, "yyyy. MMM dd.", { locale: hu }) : <span>Kezdő dátum</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={dateFrom}
+                    onSelect={(date) => date && setDateFrom(date)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              <span className="text-sm text-muted-foreground">-</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[160px] justify-start text-left font-normal",
+                      !dateTo && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateTo ? format(dateTo, "yyyy. MMM dd.", { locale: hu }) : <span>Záró dátum</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={dateTo}
+                    onSelect={(date) => date && setDateTo(date)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="w-[200px]">
               <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
@@ -660,7 +676,7 @@ const Index = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="text-sm">
-                    ÁFA ({displayedMonthName} {displayedYear}): <span className="text-purple-600 font-semibold">{formatAnalyticsCurrency(netVatPosition)}</span> a kiválasztott időszak ÁFA pozíciója
+                    ÁFA ({displayedPeriod}): <span className="text-purple-600 font-semibold">{formatAnalyticsCurrency(netVatPosition)}</span> a kiválasztott időszak ÁFA pozíciója
                   </span>
                 </div>
                 <CollapsibleTrigger asChild>
@@ -677,7 +693,7 @@ const Index = () => {
                   {/* Left side - VAT bar chart */}
                   <div>
                     <h3 className="text-lg font-semibold text-purple-600 mb-6">
-                      {formatAnalyticsCurrency(netVatPosition)} fizetendő ÁFA ({displayedMonthName} {displayedYear})
+                      {formatAnalyticsCurrency(netVatPosition)} fizetendő ÁFA ({displayedPeriod})
                     </h3>
                     
                     <div className="space-y-6">
@@ -708,7 +724,7 @@ const Index = () => {
 
                   {/* Right side - VAT breakdown tables */}
                   <div>
-                    <h3 className="text-lg font-semibold mb-6">ÁFA analitika ({displayedMonthName} {displayedYear})</h3>
+                    <h3 className="text-lg font-semibold mb-6">ÁFA analitika ({displayedPeriod})</h3>
                     
                     {/* Outbound invoices VAT */}
                     <div className="mb-6">
@@ -808,7 +824,7 @@ const Index = () => {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-lg font-medium">Kiadások és bevételek {selectedYear}. évben</span>
+                  <span className="text-lg font-medium">Kiadások és bevételek ({format(dateFrom, 'yyyy', { locale: hu })}. évben)</span>
                 </div>
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm">
@@ -873,7 +889,7 @@ const Index = () => {
 
                 {/* Monthly summary row */}
                 <div className="grid gap-2 mb-2 text-center" style={{ gridTemplateColumns: 'minmax(80px, auto) repeat(12, 1fr)' }}>
-                  <div className="font-semibold text-left">{selectedYear}. év</div>
+                  <div className="font-semibold text-left">{format(dateFrom, 'yyyy', { locale: hu })}. év</div>
                   {MONTH_NAMES.map((month, i) => (
                     <div key={month} className="text-sm font-medium">{month.slice(0, 3)}.</div>
                   ))}
