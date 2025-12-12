@@ -567,7 +567,7 @@ const Index = () => {
                   />
                 </PopoverContent>
               </Popover>
-              <span className="text-sm text-muted-foreground">-ig</span>
+              <span className="text-sm text-muted-foreground">-től</span>
               <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -596,6 +596,7 @@ const Index = () => {
                   />
                 </PopoverContent>
               </Popover>
+              <span className="text-sm text-muted-foreground">-ig</span>
             </div>
             <div className="w-[200px]">
               <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
