@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CreditCard, FileQuestion } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, CreditCard, FileQuestion, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
@@ -30,6 +32,7 @@ interface Partner {
 }
 
 const InvoiceStatusTables = () => {
+  const navigate = useNavigate();
   const { selectedCompany } = useCompany();
   const [activeTab, setActiveTab] = useState<'payable' | 'missing'>('payable');
   const [payableInvoices, setPayableInvoices] = useState<NavInvoice[]>([]);
@@ -198,10 +201,18 @@ const InvoiceStatusTables = () => {
 
           <TabsContent value="missing">
             {missingInvoices.length > 0 && (
-              <div className="mb-4 p-3 bg-warning/10 rounded-lg border border-warning/20">
+              <div className="mb-4 p-3 bg-warning/10 rounded-lg border border-warning/20 flex items-center justify-between">
                 <p className="text-sm font-medium text-warning">
                   {missingCount} számla vár beküldésre
                 </p>
+                <Button 
+                  size="sm" 
+                  onClick={() => navigate('/manual-upload')}
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Beküldés
+                </Button>
               </div>
             )}
             {renderInvoiceTable(missingInvoices)}
