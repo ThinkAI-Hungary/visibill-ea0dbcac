@@ -23,7 +23,7 @@ import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { formatCurrency, cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
-import { parseISO, format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { parseISO, format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, isSameDay } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -537,8 +537,41 @@ const Index = () => {
             </p>
           </div>
           <div className="flex gap-2 items-center flex-wrap">
+            {/* Quick period buttons */}
+            <div className="flex gap-1 items-center">
+              <Button
+                variant={isSameDay(dateFrom, startOfMonth(new Date())) && isSameDay(dateTo, endOfMonth(new Date())) ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setDateFrom(startOfMonth(new Date()));
+                  setDateTo(endOfMonth(new Date()));
+                }}
+              >
+                Ez a hónap
+              </Button>
+              <Button
+                variant={isSameDay(dateFrom, startOfMonth(subMonths(new Date(), 1))) && isSameDay(dateTo, endOfMonth(subMonths(new Date(), 1))) ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setDateFrom(startOfMonth(subMonths(new Date(), 1)));
+                  setDateTo(endOfMonth(subMonths(new Date(), 1)));
+                }}
+              >
+                Előző hónap
+              </Button>
+              <Button
+                variant={isSameDay(dateFrom, startOfYear(new Date())) && isSameDay(dateTo, endOfYear(new Date())) ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setDateFrom(startOfYear(new Date()));
+                  setDateTo(endOfYear(new Date()));
+                }}
+              >
+                Ez az év
+              </Button>
+            </div>
+            <span className="text-muted-foreground mx-1">|</span>
             <div className="flex gap-2 items-center">
-              <span className="text-sm text-muted-foreground">Időszak:</span>
               <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -567,7 +600,7 @@ const Index = () => {
                   />
                 </PopoverContent>
               </Popover>
-              <span className="text-sm text-muted-foreground">-től</span>
+              <span className="text-sm text-muted-foreground">-</span>
               <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -596,7 +629,6 @@ const Index = () => {
                   />
                 </PopoverContent>
               </Popover>
-              <span className="text-sm text-muted-foreground">-ig</span>
             </div>
             <div className="w-[200px]">
               <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
