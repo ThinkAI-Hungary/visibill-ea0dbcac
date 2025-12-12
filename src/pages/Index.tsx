@@ -224,79 +224,51 @@ const Index = () => {
   };
 
   const fetchRawData = async () => {
+    const yearStart = format(dateFrom, 'yyyy-01-01');
+    const yearEnd = format(dateTo, 'yyyy-12-31');
+
     const { data: navInvoices } = await supabase
       .from("nav_invoices")
       .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount")
       .eq("company_id", selectedCompany?.id)
-      .gte("invoice_issue_date", dateFromFormatted)
-      .lte("invoice_issue_date", dateToFormatted);
+      .gte("invoice_issue_date", yearStart)
+      .lte("invoice_issue_date", yearEnd);
 
     const { data: salaries } = await supabase
       .from("salary")
       .select("*")
       .eq("company_id", selectedCompany?.id)
-      .gte("dátum", dateFromFormatted)
-      .lte("dátum", dateToFormatted);
+      .gte("dátum", yearStart)
+      .lte("dátum", yearEnd);
 
     setRawInvoices(navInvoices || []);
     setRawSalaries((salaries || []).map(s => ({ dátum: s.dátum, összeg: s.összeg })));
   };
 
   const monthlyData = useMemo(() => {
-    // Get start and end months from the date range
-    const startMonth = dateFrom.getMonth();
-    const startYear = dateFrom.getFullYear();
-    const endMonth = dateTo.getMonth();
-    const endYear = dateTo.getFullYear();
-    
-    // Build array of months in the selected range
-    const monthsInRange: { year: number; month: number; label: string }[] = [];
-    let currentYear = startYear;
-    let currentMonth = startMonth;
-    
-    while (currentYear < endYear || (currentYear === endYear && currentMonth <= endMonth)) {
-      const label = startYear === endYear 
-        ? MONTH_NAMES[currentMonth]
-        : `${MONTH_NAMES[currentMonth]} ${currentYear}`;
-      monthsInRange.push({ year: currentYear, month: currentMonth, label });
-      
-      currentMonth++;
-      if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
-      }
-    }
-    
-    // Initialize data for each month in range
-    const monthlyMap: { [key: string]: MonthlyData } = {};
-    monthsInRange.forEach(({ year, month, label }) => {
-      const key = `${year}-${month}`;
-      monthlyMap[key] = {
-        month: label,
-        monthIndex: month,
+    const monthlyMap: { [key: number]: MonthlyData } = {};
+    for (let i = 0; i < 12; i++) {
+      monthlyMap[i] = {
+        month: MONTH_NAMES[i],
+        monthIndex: i,
         revenue: 0,
         expenses: 0,
         salaries: 0
       };
-    });
+    }
 
     rawInvoices.forEach(inv => {
       if (inv.invoice_issue_date) {
         const date = parseISO(inv.invoice_issue_date);
-        const year = date.getFullYear();
         const monthIndex = date.getMonth();
-        const key = `${year}-${monthIndex}`;
+        const amount = showBrutto 
+          ? (inv.invoice_gross_amount || 0)
+          : (inv.invoice_net_amount || 0);
         
-        if (monthlyMap[key]) {
-          const amount = showBrutto 
-            ? (inv.invoice_gross_amount || 0)
-            : (inv.invoice_net_amount || 0);
-          
-          if (inv.invoice_direction === "OUTBOUND") {
-            monthlyMap[key].revenue += amount;
-          } else {
-            monthlyMap[key].expenses += amount;
-          }
+        if (inv.invoice_direction === "OUTBOUND") {
+          monthlyMap[monthIndex].revenue += amount;
+        } else {
+          monthlyMap[monthIndex].expenses += amount;
         }
       }
     });
@@ -304,19 +276,13 @@ const Index = () => {
     rawSalaries.forEach(sal => {
       if (sal.dátum) {
         const date = parseISO(sal.dátum);
-        const year = date.getFullYear();
         const monthIndex = date.getMonth();
-        const key = `${year}-${monthIndex}`;
-        
-        if (monthlyMap[key]) {
-          monthlyMap[key].salaries += sal.összeg || 0;
-        }
+        monthlyMap[monthIndex].salaries += sal.összeg || 0;
       }
     });
 
-    // Return in correct order based on monthsInRange
-    return monthsInRange.map(({ year, month }) => monthlyMap[`${year}-${month}`]);
-  }, [rawInvoices, rawSalaries, showBrutto, dateFrom, dateTo]);
+    return Object.values(monthlyMap);
+  }, [rawInvoices, rawSalaries, showBrutto]);
 
   const fetchVatData = async () => {
     // Use date range
