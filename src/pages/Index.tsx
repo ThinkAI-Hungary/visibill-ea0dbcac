@@ -11,8 +11,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { User, Building, Briefcase, Upload, FileText, Euro, TrendingUp, Calendar, BarChart3, PieChart, ChevronUp, Loader2, CalendarIcon } from 'lucide-react';
+import { User, Building, Briefcase, Upload, FileText, Euro, TrendingUp, Calendar, BarChart3, PieChart, ChevronUp, Loader2, CalendarIcon, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import MetricCard from '@/components/dashboard/MetricCard';
 import RecentInvoices from '@/components/dashboard/RecentInvoices';
@@ -85,6 +86,8 @@ interface NavVatData {
   outboundVat: { [currency: string]: number };
   revenueNet: { [currency: string]: number };
   revenueGross: { [currency: string]: number };
+  expensesNet: { [currency: string]: number };
+  expensesGross: { [currency: string]: number };
 }
 
 interface MonthlyData {
@@ -455,6 +458,8 @@ const Index = () => {
       const outboundVat: { [currency: string]: number } = {};
       const revenueNet: { [currency: string]: number } = {};
       const revenueGross: { [currency: string]: number } = {};
+      const expensesNet: { [currency: string]: number } = {};
+      const expensesGross: { [currency: string]: number } = {};
 
       (navInvoicesData || []).forEach(invoice => {
         const currency = invoice.currency || 'HUF';
@@ -462,6 +467,8 @@ const Index = () => {
 
         if (invoice.invoice_direction === 'INBOUND') {
           inboundVat[currency] = (inboundVat[currency] || 0) + vatAmount;
+          expensesNet[currency] = (expensesNet[currency] || 0) + (invoice.invoice_net_amount || 0);
+          expensesGross[currency] = (expensesGross[currency] || 0) + (invoice.invoice_gross_amount || 0);
         } else if (invoice.invoice_direction === 'OUTBOUND') {
           outboundVat[currency] = (outboundVat[currency] || 0) + vatAmount;
           revenueNet[currency] = (revenueNet[currency] || 0) + (invoice.invoice_net_amount || 0);
@@ -469,7 +476,7 @@ const Index = () => {
         }
       });
 
-      setNavVatData({ inboundVat, outboundVat, revenueNet, revenueGross });
+      setNavVatData({ inboundVat, outboundVat, revenueNet, revenueGross, expensesNet, expensesGross });
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -595,14 +602,20 @@ const Index = () => {
           </div>
         </div>
 
+        {/* Nettó/Bruttó Toggle */}
+        <div className="flex items-center gap-3">
+          <span className={cn("text-sm font-medium", !showBrutto && "text-primary")}>Nettó</span>
+          <Switch
+            checked={showBrutto}
+            onCheckedChange={setShowBrutto}
+          />
+          <span className={cn("text-sm font-medium", showBrutto && "text-primary")}>Bruttó</span>
+        </div>
+
         {/* Metrics Cards */}
         {metrics && (
           <>
             {(() => {
-              const totalInSelectedCurrency = Object.entries(metrics.totalAmountByCurrency).reduce((total, [currency, amount]) => {
-                return total + convertToSelectedCurrency(amount, currency);
-              }, 0);
-
               let payableVat = 0;
               if (navVatData) {
                 const inboundTotal = Object.entries(navVatData.inboundVat).reduce((total, [currency, amount]) => {
@@ -614,50 +627,47 @@ const Index = () => {
                 payableVat = outboundTotal - inboundTotal;
               }
 
+              // Get the appropriate revenue data based on nettó/bruttó toggle
+              const revenueData = showBrutto ? navVatData?.revenueGross : navVatData?.revenueNet;
+              const expensesData = showBrutto ? navVatData?.expensesGross : navVatData?.expensesNet;
+
               return (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 items-stretch">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-stretch">
                   <MetricCard
-                    title="Összes számla"
+                    title="Feltöltött számlák"
                     value={metrics.totalInvoices}
                     description={`${metrics.completedCount} feldolgozva`}
-                    icon={FileText}
+                    icon={Upload}
                     variant="default"
                   />
                   <MetricCard
-                    title="Kimenő számlaösszeg (nettó)"
+                    title={`Kimenő számlaösszeg (${showBrutto ? 'bruttó' : 'nettó'})`}
                     value={
-                      navVatData && Object.keys(navVatData.revenueNet).length > 0
-                        ? Object.entries(navVatData.revenueNet)
+                      revenueData && Object.keys(revenueData).length > 0
+                        ? Object.entries(revenueData)
                             .map(([currency, amount]) => formatCurrency(amount, currency))
                             .join(' | ')
                         : '0 Ft'
                     }
-                    description="Kimenő számlák nettó összege"
-                    icon={Euro}
+                    description="NAV OUTBOUND"
+                    icon={ArrowUpRight}
                     variant="success"
                   />
                   <MetricCard
-                    title="Kimenő számlaösszeg (bruttó)"
+                    title={`Bejövő számlaösszeg (${showBrutto ? 'bruttó' : 'nettó'})`}
                     value={
-                      navVatData && Object.keys(navVatData.revenueGross).length > 0
-                        ? Object.entries(navVatData.revenueGross)
+                      expensesData && Object.keys(expensesData).length > 0
+                        ? Object.entries(expensesData)
                             .map(([currency, amount]) => formatCurrency(amount, currency))
                             .join(' | ')
                         : '0 Ft'
                     }
-                    description="Kimenő számlák bruttó összege"
-                    icon={TrendingUp}
+                    description="NAV INBOUND"
+                    icon={ArrowDownLeft}
                     variant="warning"
                   />
                   <MetricCard
-                    title="Összesített érték"
-                    value={formatCurrency(totalInSelectedCurrency, selectedCurrency)}
-                    description="Minden számla átváltva"
-                    icon={TrendingUp}
-                    variant="default"
-                  />
-                  <MetricCard
-                    title="Kifizetendő ÁFA"
+                    title="ÁFA összeg"
                     value={formatCurrency(payableVat, selectedCurrency)}
                     description="OUTBOUND - INBOUND"
                     icon={PieChart}
