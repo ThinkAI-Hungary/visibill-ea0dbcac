@@ -70,10 +70,13 @@ export function EmailPreferences() {
       setSaving(true);
       const { error } = await supabase
         .from('user_email_preferences' as any)
-        .upsert({
-          user_id: user.id,
-          [key]: value,
-        });
+        .upsert(
+          {
+            user_id: user.id,
+            [key]: value,
+          },
+          { onConflict: 'user_id' }
+        );
 
       if (error) throw error;
 
