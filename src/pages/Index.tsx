@@ -20,6 +20,7 @@ import RecentInvoices from '@/components/dashboard/RecentInvoices';
 import ProjectBreakdown from '@/components/dashboard/ProjectBreakdown';
 import SubscriptionUsage from '@/components/SubscriptionUsage';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
+import InvoiceStatusTables from '@/components/dashboard/InvoiceStatusTables';
 import { formatCurrency, cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
@@ -872,6 +873,9 @@ const Index = () => {
             </CollapsibleContent>
           </Card>
         </Collapsible>
+
+        {/* Invoice Status Tables */}
+        <InvoiceStatusTables />
 
         {/* Revenue & Expenses Section */}
         <Collapsible open={revenueSectionOpen} onOpenChange={setRevenueSectionOpen}>
