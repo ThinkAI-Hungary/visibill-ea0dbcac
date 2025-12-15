@@ -21,7 +21,11 @@ const EmptyStateDashboard = () => {
   const [isCreating, setIsCreating] = useState(false);
 
   const handleCreateCompany = async () => {
-    if (!newCompanyName.trim() || !user) return;
+    if (!newCompanyName.trim() || !newCompanyTaxNumber.trim() || !user) {
+      if (!newCompanyName.trim()) toast.error('A cég neve kötelező!');
+      if (!newCompanyTaxNumber.trim()) toast.error('Az adószám kötelező!');
+      return;
+    }
 
     setIsCreating(true);
     try {
@@ -211,7 +215,7 @@ const EmptyStateDashboard = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tax-number">Adószám</Label>
+              <Label htmlFor="tax-number">Adószám *</Label>
               <Input
                 id="tax-number"
                 value={newCompanyTaxNumber}
@@ -233,7 +237,7 @@ const EmptyStateDashboard = () => {
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
               Mégse
             </Button>
-            <Button onClick={handleCreateCompany} disabled={!newCompanyName.trim() || isCreating}>
+            <Button onClick={handleCreateCompany} disabled={!newCompanyName.trim() || !newCompanyTaxNumber.trim() || isCreating}>
               {isCreating ? 'Létrehozás...' : 'Létrehozás'}
             </Button>
           </DialogFooter>

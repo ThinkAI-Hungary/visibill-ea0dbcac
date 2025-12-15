@@ -43,7 +43,11 @@ const CompanySelector = () => {
   };
 
   const handleCreateCompany = async () => {
-    if (!newCompanyName.trim() || !user) return;
+    if (!newCompanyName.trim() || !newCompanyTaxNumber.trim() || !user) {
+      if (!newCompanyName.trim()) toast.error('A cég neve kötelező!');
+      if (!newCompanyTaxNumber.trim()) toast.error('Az adószám kötelező!');
+      return;
+    }
 
     setIsCreating(true);
     try {
@@ -84,7 +88,11 @@ const CompanySelector = () => {
   };
 
   const handleUpdateCompany = async () => {
-    if (!editName.trim() || !editingCompany) return;
+    if (!editName.trim() || !editTaxNumber.trim() || !editingCompany) {
+      if (!editName.trim()) toast.error('A cég neve kötelező!');
+      if (!editTaxNumber.trim()) toast.error('Az adószám kötelező!');
+      return;
+    }
 
     setIsUpdating(true);
     try {
@@ -247,7 +255,7 @@ const CompanySelector = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="newTaxNumber">Adószám</Label>
+              <Label htmlFor="newTaxNumber">Adószám *</Label>
               <Input
                 id="newTaxNumber"
                 value={newCompanyTaxNumber}
@@ -266,7 +274,7 @@ const CompanySelector = () => {
             </div>
             <Button
               onClick={handleCreateCompany}
-              disabled={!newCompanyName.trim() || isCreating}
+              disabled={!newCompanyName.trim() || !newCompanyTaxNumber.trim() || isCreating}
               className="w-full"
             >
               {isCreating ? 'Létrehozás...' : 'Cég létrehozása'}
@@ -295,7 +303,7 @@ const CompanySelector = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editTaxNumber">Adószám</Label>
+              <Label htmlFor="editTaxNumber">Adószám *</Label>
               <Input
                 id="editTaxNumber"
                 value={editTaxNumber}
@@ -314,7 +322,7 @@ const CompanySelector = () => {
             </div>
             <Button
               onClick={handleUpdateCompany}
-              disabled={!editName.trim() || isUpdating}
+              disabled={!editName.trim() || !editTaxNumber.trim() || isUpdating}
               className="w-full"
             >
               {isUpdating ? 'Mentés...' : 'Változások mentése'}
