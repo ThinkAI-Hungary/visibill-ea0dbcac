@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   Table,
@@ -152,8 +153,8 @@ export default function PartnersPage() {
   });
 
   // Filter partners by search query and paginate
-  const { paginatedPartners, totalPages, totalFiltered } = useMemo(() => {
-    if (!partners) return { paginatedPartners: [], totalPages: 0, totalFiltered: 0 };
+  const { paginatedPartners, totalPages, totalFiltered, hasAnyAddress } = useMemo(() => {
+    if (!partners) return { paginatedPartners: [], totalPages: 0, totalFiltered: 0, hasAnyAddress: false };
     
     let filtered = partners;
     if (searchQuery.trim()) {
@@ -169,8 +170,9 @@ export default function PartnersPage() {
     const totalPages = Math.ceil(totalFiltered / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const paginatedPartners = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    const hasAnyAddress = partners.some(p => p.address);
     
-    return { paginatedPartners, totalPages, totalFiltered };
+    return { paginatedPartners, totalPages, totalFiltered, hasAnyAddress };
   }, [partners, searchQuery, currentPage]);
 
   // Reset page when search changes
@@ -296,25 +298,39 @@ export default function PartnersPage() {
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Név</TableHead>
-                    <TableHead>Adószám</TableHead>
-                    <TableHead>Cím</TableHead>
-                    <TableHead>Típus</TableHead>
-                    <TableHead className="w-[100px]">Műveletek</TableHead>
+                  <TableRow className="h-10">
+                    <TableHead className="py-2 px-3">Név</TableHead>
+                    <TableHead className="py-2 px-3">Adószám</TableHead>
+                    {hasAnyAddress && <TableHead className="py-2 px-3">Cím</TableHead>}
+                    <TableHead className="py-2 px-3">Típus</TableHead>
+                    <TableHead className="py-2 px-3 text-right w-[100px]">Műveletek</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedPartners.map((partner) => (
-                    <TableRow key={partner.id}>
-                      <TableCell className="font-medium">{partner.name}</TableCell>
-                      <TableCell className="font-mono text-sm">{partner.tax_number}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {partner.address || "-"}
+                    <TableRow key={partner.id} className="h-10 hover:bg-muted/50 transition-colors">
+                      <TableCell className="py-2 px-3 font-medium">{partner.name}</TableCell>
+                      <TableCell className="py-2 px-3 font-mono text-sm">{partner.tax_number}</TableCell>
+                      {hasAnyAddress && (
+                        <TableCell className="py-2 px-3 text-muted-foreground">
+                          {partner.address || "-"}
+                        </TableCell>
+                      )}
+                      <TableCell className="py-2 px-3">
+                        {partner.partner_type === 'customer' && (
+                          <Badge variant="success">Vevő</Badge>
+                        )}
+                        {partner.partner_type === 'supplier' && (
+                          <Badge className="bg-blue-500/15 text-blue-500 border-blue-500/20 hover:bg-blue-500/25">
+                            Szállító
+                          </Badge>
+                        )}
+                        {partner.partner_type === 'both' && (
+                          <Badge variant="secondary">Mindkettő</Badge>
+                        )}
                       </TableCell>
-                      <TableCell>{getPartnerTypeLabel(partner.partner_type)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
+                      <TableCell className="py-2 px-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
