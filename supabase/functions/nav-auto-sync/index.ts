@@ -514,10 +514,13 @@ function parseInvoicesFromXML(xml: string): any[] {
       invoiceOperation: extractTag(digest, 'invoiceOperation'),
       invoiceNetAmount: parseFloat(extractTag(digest, 'invoiceNetAmount') || '0'),
       invoiceVatAmount: parseFloat(extractTag(digest, 'invoiceVatAmount') || '0'),
-      invoiceGrossAmount: parseFloat(extractTag(digest, 'invoiceGrossAmount') || '0'),
       paymentMethod: extractTag(digest, 'paymentMethod'),
       currency: extractTag(digest, 'currency') || 'HUF'
     };
+
+    // Fallback: ha a gross 0 vagy hiányzik, számítsuk ki net + vat-ból
+    const rawGrossAmount = parseFloat(extractTag(digest, 'invoiceGrossAmount') || '0');
+    invoice.invoiceGrossAmount = rawGrossAmount > 0 ? rawGrossAmount : (invoice.invoiceNetAmount + invoice.invoiceVatAmount);
 
     invoices.push(invoice);
   }
