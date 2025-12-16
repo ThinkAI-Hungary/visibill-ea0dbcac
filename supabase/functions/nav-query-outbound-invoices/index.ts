@@ -18,6 +18,19 @@ interface NavCredentials {
   is_test_environment: boolean;
 }
 
+interface InvoiceLineItem {
+  lineNumber: number;
+  lineDescription?: string;
+  quantity?: number;
+  unitOfMeasure?: string;
+  unitPrice?: number;
+  netAmount?: number;
+  vatRate?: string;
+  vatAmount?: number;
+  grossAmount?: number;
+  productCode?: string;
+}
+
 interface InvoiceDetails {
   supplierName?: string;
   supplierAddress?: string;
@@ -25,6 +38,7 @@ interface InvoiceDetails {
   customerAddress?: string;
   paymentDate?: string;
   invoiceGrossAmount?: number;
+  lineItems?: InvoiceLineItem[];
 }
 
 // Rate limiting helper
@@ -574,6 +588,39 @@ async function fetchInvoiceDetails(
           if (updateError) {
             console.error(`[NAV-QUERY-OUTBOUND] Error updating invoice ${invoice.invoice_number}:`, updateError);
           } else {
+            // Save line items if available
+            if (details.lineItems && details.lineItems.length > 0) {
+              // Delete existing line items first (in case of re-fetch)
+              await supabase
+                .from('nav_invoice_items')
+                .delete()
+                .eq('nav_invoice_id', invoice.id);
+
+              // Insert new line items
+              const lineItemsToInsert = details.lineItems.map(item => ({
+                nav_invoice_id: invoice.id,
+                line_number: item.lineNumber,
+                line_description: item.lineDescription,
+                quantity: item.quantity,
+                unit_of_measure: item.unitOfMeasure,
+                unit_price: item.unitPrice,
+                net_amount: item.netAmount,
+                vat_rate: item.vatRate,
+                vat_amount: item.vatAmount,
+                gross_amount: item.grossAmount,
+                product_code: item.productCode
+              }));
+
+              const { error: itemsError } = await supabase
+                .from('nav_invoice_items')
+                .insert(lineItemsToInsert);
+
+              if (itemsError) {
+                console.error(`[NAV-QUERY-OUTBOUND] Error inserting line items for ${invoice.invoice_number}:`, itemsError);
+              } else {
+                console.log(`[NAV-QUERY-OUTBOUND] Saved ${details.lineItems.length} line items for ${invoice.invoice_number}`);
+              }
+            }
             successCount++;
           }
         }
@@ -735,11 +782,81 @@ function parseInvoiceDataFromXML(xml: string): InvoiceDetails | null {
       details.invoiceGrossAmount = parseFloat(invoiceGrossAmount);
     }
 
+    // Extract invoice line items
+    details.lineItems = parseInvoiceLines(decodedData);
+
     return details;
   } catch (error) {
     console.error('[NAV-QUERY-OUTBOUND] Error parsing invoice data:', error);
     return null;
   }
+}
+
+// Parse invoice line items from XML
+function parseInvoiceLines(xml: string): InvoiceLineItem[] {
+  const lineItems: InvoiceLineItem[] = [];
+  
+  // Find all line elements - NAV uses <line> tags within <invoiceLines>
+  const lineRegex = /<line>[\s\S]*?<\/line>/gi;
+  const lineMatches = xml.match(lineRegex);
+  
+  if (!lineMatches) {
+    return lineItems;
+  }
+
+  lineMatches.forEach((lineXml, index) => {
+    const item: InvoiceLineItem = {
+      lineNumber: index + 1
+    };
+
+    // Extract line number from XML if available
+    const lineNumberStr = extractTag(lineXml, 'lineNumber');
+    if (lineNumberStr) {
+      item.lineNumber = parseInt(lineNumberStr, 10);
+    }
+
+    // Extract line description (lineDescription or lineNatureIndicator or lineExpressionIndicator)
+    const lineDescription = extractTag(lineXml, 'lineDescription') || 
+                           extractTag(lineXml, 'lineNatureIndicator') ||
+                           extractTag(lineXml, 'productFeeSummary');
+    if (lineDescription) item.lineDescription = lineDescription;
+
+    // Extract quantity
+    const quantity = extractTag(lineXml, 'quantity');
+    if (quantity) item.quantity = parseFloat(quantity);
+
+    // Extract unit of measure
+    const unitOfMeasure = extractTag(lineXml, 'unitOfMeasure') || extractTag(lineXml, 'unitOfMeasureOwn');
+    if (unitOfMeasure) item.unitOfMeasure = unitOfMeasure;
+
+    // Extract unit price
+    const unitPrice = extractTag(lineXml, 'unitPrice') || extractTag(lineXml, 'unitPriceHUF');
+    if (unitPrice) item.unitPrice = parseFloat(unitPrice);
+
+    // Extract net amount
+    const netAmount = extractTag(lineXml, 'lineNetAmount') || extractTag(lineXml, 'lineNetAmountData');
+    if (netAmount) item.netAmount = parseFloat(netAmount);
+
+    // Extract VAT rate
+    const vatRate = extractTag(lineXml, 'vatPercentage') || extractTag(lineXml, 'vatRate') || extractTag(lineXml, 'vatExemption');
+    if (vatRate) item.vatRate = vatRate;
+
+    // Extract VAT amount
+    const vatAmount = extractTag(lineXml, 'lineVatAmount') || extractTag(lineXml, 'lineVatAmountHUF');
+    if (vatAmount) item.vatAmount = parseFloat(vatAmount);
+
+    // Extract gross amount
+    const grossAmount = extractTag(lineXml, 'lineGrossAmount') || extractTag(lineXml, 'lineGrossAmountData');
+    if (grossAmount) item.grossAmount = parseFloat(grossAmount);
+
+    // Extract product code
+    const productCode = extractTag(lineXml, 'productCodeValue') || extractTag(lineXml, 'productCodeOwnValue');
+    if (productCode) item.productCode = productCode;
+
+    lineItems.push(item);
+  });
+
+  return lineItems;
 }
 
 // Build address string from XML address block
