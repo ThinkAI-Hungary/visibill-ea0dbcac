@@ -91,6 +91,8 @@ interface NavVatData {
   expensesGross: { [currency: string]: number };
   unpaidInboundNet: { [currency: string]: number };
   unpaidInboundGross: { [currency: string]: number };
+  unpaidOutboundNet: { [currency: string]: number };
+  unpaidOutboundGross: { [currency: string]: number };
 }
 
 interface MonthlyData {
@@ -467,6 +469,8 @@ const Index = () => {
       const expensesGross: { [currency: string]: number } = {};
       const unpaidInboundNet: { [currency: string]: number } = {};
       const unpaidInboundGross: { [currency: string]: number } = {};
+      const unpaidOutboundNet: { [currency: string]: number } = {};
+      const unpaidOutboundGross: { [currency: string]: number } = {};
 
       (navInvoicesData || []).forEach(invoice => {
         const currency = invoice.currency || 'HUF';
@@ -491,10 +495,16 @@ const Index = () => {
           outboundVat[currency] = (outboundVat[currency] || 0) + vatAmount;
           revenueNet[currency] = (revenueNet[currency] || 0) + netAmount;
           revenueGross[currency] = (revenueGross[currency] || 0) + grossAmount;
+          
+          // Track unpaid outbound invoices (paid is false or null)
+          if (invoice.paid === false || invoice.paid === null) {
+            unpaidOutboundNet[currency] = (unpaidOutboundNet[currency] || 0) + netAmount;
+            unpaidOutboundGross[currency] = (unpaidOutboundGross[currency] || 0) + grossAmount;
+          }
         }
       });
 
-      setNavVatData({ inboundVat, outboundVat, revenueNet, revenueGross, expensesNet, expensesGross, unpaidInboundNet, unpaidInboundGross });
+      setNavVatData({ inboundVat, outboundVat, revenueNet, revenueGross, expensesNet, expensesGross, unpaidInboundNet, unpaidInboundGross, unpaidOutboundNet, unpaidOutboundGross });
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -691,10 +701,11 @@ const Index = () => {
               // Get the appropriate revenue data based on nettó/bruttó toggle
               const revenueData = showBrutto ? navVatData?.revenueGross : navVatData?.revenueNet;
               const expensesData = showBrutto ? navVatData?.expensesGross : navVatData?.expensesNet;
-              const unpaidData = showBrutto ? navVatData?.unpaidInboundGross : navVatData?.unpaidInboundNet;
+              const unpaidInboundData = showBrutto ? navVatData?.unpaidInboundGross : navVatData?.unpaidInboundNet;
+              const unpaidOutboundData = showBrutto ? navVatData?.unpaidOutboundGross : navVatData?.unpaidOutboundNet;
 
               return (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 items-stretch">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6 items-stretch">
                   <MetricCard
                     title="Feltöltött számlák"
                     value={metrics.totalInvoices}
@@ -714,6 +725,19 @@ const Index = () => {
                     description="NAV OUTBOUND"
                     icon={ArrowUpRight}
                     variant="success"
+                  />
+                  <MetricCard
+                    title={`Kintlévőség (${showBrutto ? 'bruttó' : 'nettó'})`}
+                    value={
+                      unpaidOutboundData && Object.keys(unpaidOutboundData).length > 0
+                        ? Object.entries(unpaidOutboundData)
+                            .map(([currency, amount]) => formatCurrency(amount, currency))
+                            .join(' | ')
+                        : '0 Ft'
+                    }
+                    description="Kifizetetlen kimenő számlák"
+                    icon={TrendingUp}
+                    variant="warning"
                   />
                   <MetricCard
                     title={`Bejövő számlaösszeg (${showBrutto ? 'bruttó' : 'nettó'})`}
@@ -738,8 +762,8 @@ const Index = () => {
                   <MetricCard
                     title={`Fizetendő (${showBrutto ? 'bruttó' : 'nettó'})`}
                     value={
-                      unpaidData && Object.keys(unpaidData).length > 0
-                        ? Object.entries(unpaidData)
+                      unpaidInboundData && Object.keys(unpaidInboundData).length > 0
+                        ? Object.entries(unpaidInboundData)
                             .map(([currency, amount]) => formatCurrency(amount, currency))
                             .join(' | ')
                         : '0 Ft'
