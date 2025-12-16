@@ -802,6 +802,7 @@ export type Database = {
           paid: boolean | null
           payment_date: string | null
           payment_method: string | null
+          project_id: string | null
           submitted: boolean | null
           supplier_address: string | null
           supplier_name: string | null
@@ -829,6 +830,7 @@ export type Database = {
           paid?: boolean | null
           payment_date?: string | null
           payment_method?: string | null
+          project_id?: string | null
           submitted?: boolean | null
           supplier_address?: string | null
           supplier_name?: string | null
@@ -856,6 +858,7 @@ export type Database = {
           paid?: boolean | null
           payment_date?: string | null
           payment_method?: string | null
+          project_id?: string | null
           submitted?: boolean | null
           supplier_address?: string | null
           supplier_name?: string | null
@@ -868,6 +871,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nav_invoices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]

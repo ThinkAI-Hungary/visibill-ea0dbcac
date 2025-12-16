@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
@@ -10,10 +11,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info } from 'lucide-react';
+import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
+import { formatCurrency } from '@/lib/utils';
 
 interface Project {
   id?: string;
@@ -26,13 +28,22 @@ interface Project {
   end_date?: string;
 }
 
+interface ProjectFinancials {
+  projectId: string;
+  outboundTotal: number;
+  inboundTotal: number;
+  profit: number;
+}
+
 const Projects = () => {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [projectFinancials, setProjectFinancials] = useState<ProjectFinancials[]>([]);
   const { user } = useAuth();
+  const { selectedCompany } = useCompany();
   const { toast } = useToast();
 
   const emptyProject: Project = {
@@ -47,7 +58,7 @@ const Projects = () => {
 
   useEffect(() => {
     loadProjects();
-  }, [user]);
+  }, [user, selectedCompany]);
 
   const loadProjects = async () => {
     if (!user) return;
@@ -61,6 +72,46 @@ const Projects = () => {
 
       if (error) throw error;
       setProjects((data || []) as Project[]);
+
+      // Fetch project financials from nav_invoices
+      if (selectedCompany) {
+        const { data: invoiceData, error: invoiceError } = await supabase
+          .from('nav_invoices')
+          .select('project_id, invoice_direction, invoice_gross_amount')
+          .eq('company_id', selectedCompany.id)
+          .not('project_id', 'is', null);
+
+        if (invoiceError) throw invoiceError;
+
+        // Calculate financials per project
+        const financialsMap = new Map<string, { outbound: number; inbound: number }>();
+        
+        (invoiceData || []).forEach((inv: any) => {
+          if (!inv.project_id) return;
+          
+          if (!financialsMap.has(inv.project_id)) {
+            financialsMap.set(inv.project_id, { outbound: 0, inbound: 0 });
+          }
+          
+          const current = financialsMap.get(inv.project_id)!;
+          const amount = inv.invoice_gross_amount || 0;
+          
+          if (inv.invoice_direction === 'OUTBOUND') {
+            current.outbound += amount;
+          } else if (inv.invoice_direction === 'INBOUND') {
+            current.inbound += amount;
+          }
+        });
+
+        const financials: ProjectFinancials[] = Array.from(financialsMap.entries()).map(([projectId, data]) => ({
+          projectId,
+          outboundTotal: data.outbound,
+          inboundTotal: data.inbound,
+          profit: data.outbound - data.inbound
+        }));
+
+        setProjectFinancials(financials);
+      }
     } catch (error) {
       console.error('Error loading projects:', error);
       toast({
@@ -71,6 +122,10 @@ const Projects = () => {
     } finally {
       setInitialLoading(false);
     }
+  };
+
+  const getProjectFinancials = (projectId: string): ProjectFinancials | undefined => {
+    return projectFinancials.find(f => f.projectId === projectId);
   };
 
   const handleSaveProject = async () => {
@@ -363,70 +418,114 @@ const Projects = () => {
               </CardContent>
             </Card>
           ) : (
-            projects.map((project) => (
-              <Card key={project.id} className="flex flex-col">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg truncate">{project.name}</CardTitle>
-                      <CardDescription className="flex items-center gap-1 mt-1">
-                        <Building2 className="h-3 w-3" />
-                        {project.client_name}
-                      </CardDescription>
+            projects.map((project) => {
+              const financials = getProjectFinancials(project.id!);
+              
+              return (
+                <Card key={project.id} className="flex flex-col">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-lg truncate">{project.name}</CardTitle>
+                        <CardDescription className="flex items-center gap-1 mt-1">
+                          <Building2 className="h-3 w-3" />
+                          {project.client_name}
+                        </CardDescription>
+                      </div>
+                      <Badge variant={getStatusVariant(project.status)}>
+                        {getStatusLabel(project.status)}
+                      </Badge>
                     </div>
-                    <Badge variant={getStatusVariant(project.status)}>
-                      {getStatusLabel(project.status)}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1 space-y-4">
-                  {project.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {project.description}
-                    </p>
-                  )}
+                  </CardHeader>
+                  <CardContent className="flex-1 space-y-4">
+                    {project.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {project.description}
+                      </p>
+                    )}
 
-                  <div className="space-y-2">
-                    {project.budget && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">
-                          {new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF' }).format(project.budget)}
+                    <div className="space-y-2">
+                      {project.budget && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">
+                            {formatCurrency(project.budget, 'HUF')}
+                          </span>
+                        </div>
+                      )}
+                      {project.start_date && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">
+                            {format(new Date(project.start_date), 'yyyy. MM. dd.', { locale: hu })}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Financial Summary */}
+                    <div className="rounded-lg bg-muted/50 p-3 space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <TrendingUp className="h-3 w-3 text-green-500" />
+                          Bevétel
+                        </span>
+                        <span className="font-medium text-green-600">
+                          {formatCurrency(financials?.outboundTotal || 0, 'HUF')}
                         </span>
                       </div>
-                    )}
-                    {project.start_date && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">
-                          {format(new Date(project.start_date), 'yyyy. MM. dd.', { locale: hu })}
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <TrendingDown className="h-3 w-3 text-red-500" />
+                          Kiadás
+                        </span>
+                        <span className="font-medium text-red-600">
+                          {formatCurrency(financials?.inboundTotal || 0, 'HUF')}
                         </span>
                       </div>
-                    )}
-                  </div>
+                      <div className="border-t pt-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          {(financials?.profit || 0) > 0 ? (
+                            <TrendingUp className="h-3 w-3" />
+                          ) : (financials?.profit || 0) < 0 ? (
+                            <TrendingDown className="h-3 w-3" />
+                          ) : (
+                            <Minus className="h-3 w-3" />
+                          )}
+                          Eredmény
+                        </span>
+                        <Badge 
+                          variant={(financials?.profit || 0) > 0 ? 'default' : (financials?.profit || 0) < 0 ? 'destructive' : 'secondary'}
+                          className={(financials?.profit || 0) > 0 ? 'bg-green-500/20 text-green-700 border-green-500/30' : ''}
+                        >
+                          {(financials?.profit || 0) > 0 ? '+' : ''}{formatCurrency(financials?.profit || 0, 'HUF')}
+                        </Badge>
+                      </div>
+                    </div>
 
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => setEditingProject(project)}
-                      disabled={!!editingProject || isCreating}
-                    >
-                      Szerkesztés
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteProject(project.id!)}
-                      disabled={loading}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setEditingProject(project)}
+                        disabled={!!editingProject || isCreating}
+                      >
+                        Szerkesztés
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteProject(project.id!)}
+                        disabled={loading}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </div>
       </div>
