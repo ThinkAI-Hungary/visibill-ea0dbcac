@@ -50,6 +50,7 @@ interface NavInvoice {
   user_id: string | null;
   created_at: string | null;
   fetched_at: string | null;
+  project_id: string | null;
 }
 
 interface SubmittedInvoice {
@@ -92,6 +93,7 @@ interface NavFilters {
   currency: string;
   paid: string;
   submitted: string;
+  project: string;
 }
 
 interface SubmittedFilters {
@@ -135,7 +137,8 @@ const InvoicesPage = () => {
     amountMax: '',
     currency: 'all',
     paid: 'all',
-    submitted: 'all'
+    submitted: 'all',
+    project: 'all'
   });
 
   const [submittedFilters, setSubmittedFilters] = useState<SubmittedFilters>({
@@ -292,6 +295,11 @@ const InvoicesPage = () => {
         if (navFilters.submitted === 'no' && isSubmitted) return false;
       }
 
+      if (navFilters.project !== 'all') {
+        if (navFilters.project === 'none' && invoice.project_id !== null) return false;
+        if (navFilters.project !== 'none' && invoice.project_id !== navFilters.project) return false;
+      }
+
       return true;
     });
 
@@ -395,8 +403,28 @@ const InvoicesPage = () => {
       amountMax: '',
       currency: 'all',
       paid: 'all',
-      submitted: 'all'
+      submitted: 'all',
+      project: 'all'
     });
+  };
+
+  const handleProjectChange = async (invoiceId: string, projectId: string | null) => {
+    try {
+      const { error } = await supabase
+        .from('nav_invoices')
+        .update({ project_id: projectId === 'none' ? null : projectId })
+        .eq('id', invoiceId);
+
+      if (error) throw error;
+
+      setInvoices(prev => prev.map(inv => 
+        inv.id === invoiceId ? { ...inv, project_id: projectId === 'none' ? null : projectId } : inv
+      ));
+      toast.success('Projekt hozzárendelve');
+    } catch (error) {
+      console.error('Error updating project:', error);
+      toast.error('Hiba a projekt hozzárendelésekor');
+    }
   };
 
   const clearSubmittedFilters = () => {
@@ -714,6 +742,27 @@ const InvoicesPage = () => {
                     )}
 
                     <div className="space-y-2">
+                      <label className="text-sm font-medium">Projekt</label>
+                      <Select
+                        value={navFilters.project}
+                        onValueChange={(value) => setNavFilters(prev => ({ ...prev, project: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Mind" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Mind</SelectItem>
+                          <SelectItem value="none">Nincs projekt</SelectItem>
+                          {projects.map((project) => (
+                            <SelectItem key={project.id} value={project.id}>
+                              {project.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
                       <label className="text-sm font-medium">Összeg tartomány</label>
                       <div className="flex gap-2">
                         <Input
@@ -834,13 +883,14 @@ const InvoicesPage = () => {
                           {activeTab === 'INBOUND' && (
                             <TableHead className="text-center">Beküldve</TableHead>
                           )}
+                          <TableHead>Projekt</TableHead>
                           <TableHead className="text-center">Tételek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredAndSortedNavInvoices.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={activeTab === 'INBOUND' ? 10 : 9} className="text-center py-8 text-muted-foreground">
+                            <TableCell colSpan={activeTab === 'INBOUND' ? 11 : 10} className="text-center py-8 text-muted-foreground">
                               Nincs megjeleníthető számla a megadott szűrők alapján.
                             </TableCell>
                           </TableRow>
@@ -899,6 +949,24 @@ const InvoicesPage = () => {
                                     />
                                   </TableCell>
                                 )}
+                                <TableCell>
+                                  <Select
+                                    value={invoice.project_id || 'none'}
+                                    onValueChange={(value) => handleProjectChange(invoice.id, value)}
+                                  >
+                                    <SelectTrigger className="w-[140px] h-8">
+                                      <SelectValue placeholder="Válassz..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">-</SelectItem>
+                                      {projects.map((project) => (
+                                        <SelectItem key={project.id} value={project.id}>
+                                          {project.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
                                 <TableCell className="text-center">
                                   <TooltipProvider>
                                     <Tooltip>
