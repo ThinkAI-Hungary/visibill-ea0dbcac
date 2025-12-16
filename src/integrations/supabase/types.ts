@@ -724,6 +724,62 @@ export type Database = {
           },
         ]
       }
+      nav_invoice_items: {
+        Row: {
+          created_at: string | null
+          gross_amount: number | null
+          id: string
+          line_description: string | null
+          line_number: number
+          nav_invoice_id: string
+          net_amount: number | null
+          product_code: string | null
+          quantity: number | null
+          unit_of_measure: string | null
+          unit_price: number | null
+          vat_amount: number | null
+          vat_rate: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          gross_amount?: number | null
+          id?: string
+          line_description?: string | null
+          line_number: number
+          nav_invoice_id: string
+          net_amount?: number | null
+          product_code?: string | null
+          quantity?: number | null
+          unit_of_measure?: string | null
+          unit_price?: number | null
+          vat_amount?: number | null
+          vat_rate?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          gross_amount?: number | null
+          id?: string
+          line_description?: string | null
+          line_number?: number
+          nav_invoice_id?: string
+          net_amount?: number | null
+          product_code?: string | null
+          quantity?: number | null
+          unit_of_measure?: string | null
+          unit_price?: number | null
+          vat_amount?: number | null
+          vat_rate?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nav_invoice_items_nav_invoice_id_fkey"
+            columns: ["nav_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "nav_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nav_invoices: {
         Row: {
           company_id: string | null

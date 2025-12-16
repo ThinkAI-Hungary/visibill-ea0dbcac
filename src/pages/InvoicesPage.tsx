@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CalendarIcon, Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Eye, Pencil } from 'lucide-react';
+import { CalendarIcon, Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Eye, Pencil, Package } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import InvoiceFullEditDialog from '@/components/InvoiceFullEditDialog';
+import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
 
 interface NavInvoice {
   id: string;
@@ -122,7 +123,9 @@ const InvoicesPage = () => {
   // Dialog states
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [itemsDialogOpen, setItemsDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<SubmittedInvoice | null>(null);
+  const [selectedNavInvoice, setSelectedNavInvoice] = useState<NavInvoice | null>(null);
   
   const [navFilters, setNavFilters] = useState<NavFilters>({
     search: '',
@@ -831,12 +834,13 @@ const InvoicesPage = () => {
                           {activeTab === 'INBOUND' && (
                             <TableHead className="text-center">Beküldve</TableHead>
                           )}
+                          <TableHead className="text-center">Tételek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredAndSortedNavInvoices.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={activeTab === 'INBOUND' ? 9 : 8} className="text-center py-8 text-muted-foreground">
+                            <TableCell colSpan={activeTab === 'INBOUND' ? 10 : 9} className="text-center py-8 text-muted-foreground">
                               Nincs megjeleníthető számla a megadott szűrők alapján.
                             </TableCell>
                           </TableRow>
@@ -895,6 +899,28 @@ const InvoicesPage = () => {
                                     />
                                   </TableCell>
                                 )}
+                                <TableCell className="text-center">
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8"
+                                          onClick={() => {
+                                            setSelectedNavInvoice(invoice);
+                                            setItemsDialogOpen(true);
+                                          }}
+                                        >
+                                          <Package className="h-4 w-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Számlatételek megtekintése</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </TableCell>
                               </TableRow>
                             );
                           })
@@ -1210,6 +1236,18 @@ const InvoicesPage = () => {
           setSelectedInvoice(null);
         }}
         onSave={handleEditSave}
+      />
+
+      {/* Invoice Items Dialog */}
+      <InvoiceItemsDialog
+        open={itemsDialogOpen}
+        onOpenChange={(open) => {
+          setItemsDialogOpen(open);
+          if (!open) setSelectedNavInvoice(null);
+        }}
+        invoiceId={selectedNavInvoice?.id || ''}
+        invoiceNumber={selectedNavInvoice?.invoice_number || ''}
+        currency={selectedNavInvoice?.currency || 'HUF'}
       />
     </div>
   );
