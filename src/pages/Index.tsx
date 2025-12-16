@@ -98,9 +98,11 @@ interface NavVatData {
 interface MonthlyData {
   month: string;
   monthIndex: number;
-  revenue: number;
-  expenses: number;
-  salaries: number;
+  revenuePaid: number;      // Fizetett bevétel (pozitív)
+  revenueUnpaid: number;    // Kintlévőségek (pozitív)
+  expensesPaid: number;     // Fizetett kiadás (negatív!)
+  expensesUnpaid: number;   // Követelések (negatív!)
+  salaries: number;         // Bérek (negatív!)
 }
 
 interface RawInvoice {
@@ -108,6 +110,7 @@ interface RawInvoice {
   invoice_direction: string | null;
   invoice_gross_amount: number | null;
   invoice_net_amount: number | null;
+  paid: boolean | null;
 }
 
 interface RawSalary {
@@ -146,9 +149,11 @@ const Index = () => {
   const [showBrutto, setShowBrutto] = useState(true);
   const [vatSectionOpen, setVatSectionOpen] = useState(true);
   const [revenueSectionOpen, setRevenueSectionOpen] = useState(true);
-  const [showRevenue, setShowRevenue] = useState(true);
-  const [showPaidExpenses, setShowPaidExpenses] = useState(true);
-  const [showPaidSalaries, setShowPaidSalaries] = useState(false);
+  const [showRevenuePaid, setShowRevenuePaid] = useState(true);
+  const [showRevenueUnpaid, setShowRevenueUnpaid] = useState(true);
+  const [showExpensesPaid, setShowExpensesPaid] = useState(true);
+  const [showExpensesUnpaid, setShowExpensesUnpaid] = useState(true);
+  const [showSalaries, setShowSalaries] = useState(true);
   const [rawInvoices, setRawInvoices] = useState<RawInvoice[]>([]);
   const [rawSalaries, setRawSalaries] = useState<RawSalary[]>([]);
   const [outboundVatCategories, setOutboundVatCategories] = useState<VatCategoryData[]>([]);
@@ -234,7 +239,7 @@ const Index = () => {
 
     const { data: navInvoices } = await supabase
       .from("nav_invoices")
-      .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount")
+      .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, paid")
       .eq("company_id", selectedCompany?.id)
       .gte("invoice_issue_date", yearStart)
       .lte("invoice_issue_date", yearEnd);
@@ -256,8 +261,10 @@ const Index = () => {
       monthlyMap[i] = {
         month: MONTH_NAMES[i],
         monthIndex: i,
-        revenue: 0,
-        expenses: 0,
+        revenuePaid: 0,
+        revenueUnpaid: 0,
+        expensesPaid: 0,
+        expensesUnpaid: 0,
         salaries: 0
       };
     }
@@ -271,9 +278,17 @@ const Index = () => {
           : (inv.invoice_net_amount || 0);
         
         if (inv.invoice_direction === "OUTBOUND") {
-          monthlyMap[monthIndex].revenue += amount;
-        } else {
-          monthlyMap[monthIndex].expenses += amount;
+          if (inv.paid === true) {
+            monthlyMap[monthIndex].revenuePaid += amount;
+          } else {
+            monthlyMap[monthIndex].revenueUnpaid += amount;
+          }
+        } else { // INBOUND
+          if (inv.paid === true) {
+            monthlyMap[monthIndex].expensesPaid -= amount; // NEGATÍV
+          } else {
+            monthlyMap[monthIndex].expensesUnpaid -= amount; // NEGATÍV
+          }
         }
       }
     });
@@ -282,7 +297,7 @@ const Index = () => {
       if (sal.dátum) {
         const date = parseISO(sal.dátum);
         const monthIndex = date.getMonth();
-        monthlyMap[monthIndex].salaries += sal.összeg || 0;
+        monthlyMap[monthIndex].salaries -= (sal.összeg || 0); // NEGATÍV - kiadásokhoz
       }
     });
 
@@ -953,26 +968,43 @@ const Index = () => {
                   <div className="flex flex-wrap items-center gap-4">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <Checkbox 
-                        checked={showRevenue} 
-                        onCheckedChange={(checked) => setShowRevenue(!!checked)}
-                        className="border-green-500 data-[state=checked]:bg-green-500"
+                        checked={showRevenuePaid} 
+                        onCheckedChange={(checked) => setShowRevenuePaid(!!checked)}
+                        className="border-green-600 data-[state=checked]:bg-green-600"
                       />
-                      <span className="text-sm">Bevétel</span>
+                      <span className="text-sm text-green-600">Bevétel (fizetett)</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <Checkbox 
-                        checked={showPaidExpenses} 
-                        onCheckedChange={(checked) => setShowPaidExpenses(!!checked)}
-                        className="border-orange-500 data-[state=checked]:bg-orange-500"
+                        checked={showRevenueUnpaid} 
+                        onCheckedChange={(checked) => setShowRevenueUnpaid(!!checked)}
+                        className="border-green-400 data-[state=checked]:bg-green-400"
                       />
-                      <span className="text-sm">Fizetett kiadás</span>
+                      <span className="text-sm text-green-400">Kintlévőségek</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <Checkbox 
-                        checked={showPaidSalaries} 
-                        onCheckedChange={(checked) => setShowPaidSalaries(!!checked)}
+                        checked={showExpensesPaid} 
+                        onCheckedChange={(checked) => setShowExpensesPaid(!!checked)}
+                        className="border-red-600 data-[state=checked]:bg-red-600"
                       />
-                      <span className="text-sm text-muted-foreground">Fizetett bér</span>
+                      <span className="text-sm text-red-600">Kiadás (fizetett)</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox 
+                        checked={showExpensesUnpaid} 
+                        onCheckedChange={(checked) => setShowExpensesUnpaid(!!checked)}
+                        className="border-red-400 data-[state=checked]:bg-red-400"
+                      />
+                      <span className="text-sm text-red-400">Követelések</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox 
+                        checked={showSalaries} 
+                        onCheckedChange={(checked) => setShowSalaries(!!checked)}
+                        className="border-purple-500 data-[state=checked]:bg-purple-500"
+                      />
+                      <span className="text-sm text-purple-500">Bérek</span>
                     </label>
                   </div>
                   <div className="flex items-center gap-4">
@@ -1009,9 +1041,9 @@ const Index = () => {
                 <div className="grid gap-2 mb-6 text-center" style={{ gridTemplateColumns: 'minmax(80px, auto) repeat(12, 1fr)' }}>
                   <div className="text-orange-500 font-medium text-left">Eredmény</div>
                   {monthlyData.map((data, i) => {
-                    const result = data.revenue - data.expenses - data.salaries;
+                    const result = data.revenuePaid + data.revenueUnpaid + data.expensesPaid + data.expensesUnpaid + data.salaries;
                     return (
-                      <div key={i} className="text-sm text-purple-600 font-medium">
+                      <div key={i} className={cn("text-sm font-medium", result >= 0 ? "text-green-600" : "text-red-600")}>
                         {result === 0 ? "0 Ft" : formatAnalyticsCurrency(result, true)}
                       </div>
                     );
@@ -1025,16 +1057,31 @@ const Index = () => {
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                   )}
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ResponsiveContainer width="100%" height={350}>
                     <AreaChart data={monthlyData}>
                       <defs>
-                        <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#22C55E" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#22C55E" stopOpacity={0}/>
+                        {/* Bevételi gradiensek (zöld árnyalatok - felfelé) */}
+                        <linearGradient id="revenuePaidGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#16A34A" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#16A34A" stopOpacity={0.05}/>
                         </linearGradient>
-                        <linearGradient id="expensesGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#F97316" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#F97316" stopOpacity={0}/>
+                        <linearGradient id="revenueUnpaidGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#4ADE80" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#4ADE80" stopOpacity={0.05}/>
+                        </linearGradient>
+                        {/* Kiadási gradiensek (piros árnyalatok - lefelé, negatív tartomány) */}
+                        <linearGradient id="expensesPaidGradient" x1="0" y1="1" x2="0" y2="0">
+                          <stop offset="5%" stopColor="#DC2626" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#DC2626" stopOpacity={0.05}/>
+                        </linearGradient>
+                        <linearGradient id="expensesUnpaidGradient" x1="0" y1="1" x2="0" y2="0">
+                          <stop offset="5%" stopColor="#F87171" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#F87171" stopOpacity={0.05}/>
+                        </linearGradient>
+                        {/* Bérek gradiens (lila - lefelé, negatív tartomány) */}
+                        <linearGradient id="salariesGradient" x1="0" y1="1" x2="0" y2="0">
+                          <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.05}/>
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -1045,52 +1092,81 @@ const Index = () => {
                         tickLine={false}
                       />
                       <YAxis 
+                        domain={['auto', 'auto']}
                         tickFormatter={(v) => {
-                          if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
-                          if (v >= 1000) return `${(v / 1000).toFixed(0)}k`;
+                          const absV = Math.abs(v);
+                          if (absV >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
+                          if (absV >= 1000) return `${(v / 1000).toFixed(0)}k`;
                           return `${v}`;
                         }}
                         tick={{ fontSize: 12 }}
-                        width={50}
+                        width={60}
                         axisLine={false}
                         tickLine={false}
                       />
                       <RechartsTooltip 
-                        formatter={(value: number, name: string) => [formatAnalyticsCurrency(value), name]}
+                        formatter={(value: number, name: string) => [formatAnalyticsCurrency(Math.abs(value)) + (value < 0 ? ' (kiadás)' : ''), name]}
                         contentStyle={{ 
                           backgroundColor: 'hsl(var(--background))',
                           border: '1px solid hsl(var(--border))',
                           borderRadius: '8px'
                         }}
                       />
-                      {showRevenue && (
+                      {/* Pozitív tartomány - Bevételek (zöld) */}
+                      {showRevenuePaid && (
                         <Area 
                           type="monotone" 
-                          dataKey="revenue" 
-                          name="Bevétel"
-                          stroke="#22C55E" 
+                          dataKey="revenuePaid" 
+                          name="Bevétel (fizetett)"
+                          stroke="#16A34A" 
                           strokeWidth={2}
-                          fill="url(#revenueGradient)"
+                          fill="url(#revenuePaidGradient)"
+                          stackId="positive"
                         />
                       )}
-                      {showPaidExpenses && (
+                      {showRevenueUnpaid && (
                         <Area 
                           type="monotone" 
-                          dataKey="expenses" 
-                          name="Kiadás"
-                          stroke="#F97316" 
+                          dataKey="revenueUnpaid" 
+                          name="Kintlévőségek"
+                          stroke="#4ADE80" 
                           strokeWidth={2}
-                          fill="url(#expensesGradient)"
+                          fill="url(#revenueUnpaidGradient)"
+                          stackId="positive"
                         />
                       )}
-                      {showPaidSalaries && (
+                      {/* Negatív tartomány - Kiadások (piros) és Bérek (lila) */}
+                      {showExpensesPaid && (
+                        <Area 
+                          type="monotone" 
+                          dataKey="expensesPaid" 
+                          name="Kiadás (fizetett)"
+                          stroke="#DC2626" 
+                          strokeWidth={2}
+                          fill="url(#expensesPaidGradient)"
+                          stackId="negative"
+                        />
+                      )}
+                      {showExpensesUnpaid && (
+                        <Area 
+                          type="monotone" 
+                          dataKey="expensesUnpaid" 
+                          name="Követelések"
+                          stroke="#F87171" 
+                          strokeWidth={2}
+                          fill="url(#expensesUnpaidGradient)"
+                          stackId="negative"
+                        />
+                      )}
+                      {showSalaries && (
                         <Area 
                           type="monotone" 
                           dataKey="salaries" 
                           name="Bérek"
                           stroke="#8B5CF6" 
                           strokeWidth={2}
-                          fill="none"
+                          fill="url(#salariesGradient)"
+                          stackId="negative"
                         />
                       )}
                     </AreaChart>
