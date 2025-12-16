@@ -471,21 +471,26 @@ const Index = () => {
       (navInvoicesData || []).forEach(invoice => {
         const currency = invoice.currency || 'HUF';
         const vatAmount = invoice.invoice_vat_amount || 0;
+        const netAmount = invoice.invoice_net_amount || 0;
+        // Fallback: ha a gross 0 vagy hiányzik, számítsuk ki net + vat-ból
+        const grossAmount = (invoice.invoice_gross_amount && invoice.invoice_gross_amount > 0)
+          ? invoice.invoice_gross_amount
+          : netAmount + vatAmount;
 
         if (invoice.invoice_direction === 'INBOUND') {
           inboundVat[currency] = (inboundVat[currency] || 0) + vatAmount;
-          expensesNet[currency] = (expensesNet[currency] || 0) + (invoice.invoice_net_amount || 0);
-          expensesGross[currency] = (expensesGross[currency] || 0) + (invoice.invoice_gross_amount || 0);
+          expensesNet[currency] = (expensesNet[currency] || 0) + netAmount;
+          expensesGross[currency] = (expensesGross[currency] || 0) + grossAmount;
           
           // Track unpaid inbound invoices (paid is false or null)
           if (invoice.paid === false || invoice.paid === null) {
-            unpaidInboundNet[currency] = (unpaidInboundNet[currency] || 0) + (invoice.invoice_net_amount || 0);
-            unpaidInboundGross[currency] = (unpaidInboundGross[currency] || 0) + (invoice.invoice_gross_amount || 0);
+            unpaidInboundNet[currency] = (unpaidInboundNet[currency] || 0) + netAmount;
+            unpaidInboundGross[currency] = (unpaidInboundGross[currency] || 0) + grossAmount;
           }
         } else if (invoice.invoice_direction === 'OUTBOUND') {
           outboundVat[currency] = (outboundVat[currency] || 0) + vatAmount;
-          revenueNet[currency] = (revenueNet[currency] || 0) + (invoice.invoice_net_amount || 0);
-          revenueGross[currency] = (revenueGross[currency] || 0) + (invoice.invoice_gross_amount || 0);
+          revenueNet[currency] = (revenueNet[currency] || 0) + netAmount;
+          revenueGross[currency] = (revenueGross[currency] || 0) + grossAmount;
         }
       });
 
