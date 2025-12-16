@@ -749,9 +749,10 @@ function parseInvoiceDataFromXML(xml: string): InvoiceDetails | null {
   }
 
   try {
-    // Decode Base64
+    // Decode Base64 with proper UTF-8 handling
     const base64Data = invoiceDataMatch[1];
-    const decodedData = atob(base64Data);
+    const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    const decodedData = new TextDecoder('utf-8').decode(binaryData);
     
     // Parse the decoded invoice XML
     const details: InvoiceDetails = {};
