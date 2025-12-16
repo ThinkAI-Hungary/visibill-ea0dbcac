@@ -729,7 +729,10 @@ export type Database = {
           company_id: string | null
           created_at: string | null
           currency: string | null
+          customer_address: string | null
+          customer_name: string | null
           customer_tax_number: string | null
+          details_fetched: boolean | null
           fetched_at: string | null
           id: string
           invoice_delivery_date: string | null
@@ -741,8 +744,11 @@ export type Database = {
           invoice_operation: string | null
           invoice_vat_amount: number | null
           paid: boolean | null
+          payment_date: string | null
           payment_method: string | null
           submitted: boolean | null
+          supplier_address: string | null
+          supplier_name: string | null
           supplier_tax_number: string | null
           user_id: string | null
         }
@@ -750,7 +756,10 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           currency?: string | null
+          customer_address?: string | null
+          customer_name?: string | null
           customer_tax_number?: string | null
+          details_fetched?: boolean | null
           fetched_at?: string | null
           id?: string
           invoice_delivery_date?: string | null
@@ -762,8 +771,11 @@ export type Database = {
           invoice_operation?: string | null
           invoice_vat_amount?: number | null
           paid?: boolean | null
+          payment_date?: string | null
           payment_method?: string | null
           submitted?: boolean | null
+          supplier_address?: string | null
+          supplier_name?: string | null
           supplier_tax_number?: string | null
           user_id?: string | null
         }
@@ -771,7 +783,10 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           currency?: string | null
+          customer_address?: string | null
+          customer_name?: string | null
           customer_tax_number?: string | null
+          details_fetched?: boolean | null
           fetched_at?: string | null
           id?: string
           invoice_delivery_date?: string | null
@@ -783,8 +798,11 @@ export type Database = {
           invoice_operation?: string | null
           invoice_vat_amount?: number | null
           paid?: boolean | null
+          payment_date?: string | null
           payment_method?: string | null
           submitted?: boolean | null
+          supplier_address?: string | null
+          supplier_name?: string | null
           supplier_tax_number?: string | null
           user_id?: string | null
         }

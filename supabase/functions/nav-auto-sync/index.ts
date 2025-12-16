@@ -23,8 +23,48 @@ interface UserWithCredentials {
   nav_username: string;
 }
 
+interface InvoiceDetails {
+  supplierName?: string;
+  supplierAddress?: string;
+  customerName?: string;
+  customerAddress?: string;
+  paymentDate?: string;
+  invoiceGrossAmount?: number;
+}
+
 // Rate limiting helper
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Parallel execution with concurrency limit
+async function parallelLimit<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = [];
+  const executing: Promise<void>[] = [];
+  
+  for (const item of items) {
+    const p = fn(item).then(result => {
+      results.push(result);
+    });
+    executing.push(p);
+    
+    if (executing.length >= limit) {
+      await Promise.race(executing);
+      // Remove completed promises
+      for (let i = executing.length - 1; i >= 0; i--) {
+        const status = await Promise.race([executing[i], Promise.resolve('pending')]);
+        if (status !== 'pending') {
+          executing.splice(i, 1);
+        }
+      }
+    }
+  }
+  
+  await Promise.all(executing);
+  return results;
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -231,7 +271,7 @@ async function syncInvoices(
 
     console.log(`📊 Total invoices fetched: ${allInvoices.length}`);
 
-    // Upsert invoices to database
+    // Upsert invoices to database (details_fetched defaults to false for new records)
     if (allInvoices.length > 0) {
       const invoicesToInsert = allInvoices.map(inv => ({
         user_id: userId,
@@ -248,7 +288,10 @@ async function syncInvoices(
         invoice_gross_amount: inv.invoiceGrossAmount,
         payment_method: inv.paymentMethod,
         currency: inv.currency || 'HUF',
-        fetched_at: new Date().toISOString()
+        fetched_at: new Date().toISOString(),
+        // Include names from digest if available
+        supplier_name: inv.supplierName || null,
+        customer_name: inv.customerName || null
       }));
 
       const { error: upsertError } = await supabase
@@ -265,6 +308,19 @@ async function syncInvoices(
       // Cache partners from NAV data
       await cachePartnersFromInvoices(supabase, userId, companyId, allInvoices, direction);
     }
+
+    // Fetch details for invoices that don't have them yet (incremental)
+    const detailsFetchedCount = await fetchInvoiceDetails(
+      supabase,
+      userId,
+      companyId,
+      credentials,
+      token,
+      navApiUrl,
+      direction
+    );
+    
+    console.log(`🔍 Fetched details for ${detailsFetchedCount} invoices`);
 
     // Update sync log with success
     const duration = Date.now() - startTime;
@@ -297,6 +353,283 @@ async function syncInvoices(
 
     throw error;
   }
+}
+
+// Fetch detailed invoice data for invoices without details (incremental)
+async function fetchInvoiceDetails(
+  supabase: any,
+  userId: string,
+  companyId: string,
+  credentials: NavCredentials,
+  token: string,
+  navApiUrl: string,
+  direction: 'OUTBOUND' | 'INBOUND'
+): Promise<number> {
+  // Get invoices that need details fetched (max 50 per sync to avoid timeout)
+  const { data: invoicesNeedingDetails, error: fetchError } = await supabase
+    .from('nav_invoices')
+    .select('id, invoice_number')
+    .eq('user_id', userId)
+    .eq('company_id', companyId)
+    .eq('invoice_direction', direction)
+    .or('details_fetched.is.null,details_fetched.eq.false')
+    .limit(50);
+
+  if (fetchError) {
+    console.error('Error fetching invoices needing details:', fetchError);
+    return 0;
+  }
+
+  if (!invoicesNeedingDetails || invoicesNeedingDetails.length === 0) {
+    console.log(`📋 No invoices need detail fetch for ${direction}`);
+    return 0;
+  }
+
+  console.log(`🔍 Fetching details for ${invoicesNeedingDetails.length} ${direction} invoices`);
+
+  let successCount = 0;
+
+  // Process invoices with limited parallelism (max 3 concurrent)
+  // and rate limiting (500ms between batches)
+  const batchSize = 3;
+  
+  for (let i = 0; i < invoicesNeedingDetails.length; i += batchSize) {
+    const batch = invoicesNeedingDetails.slice(i, i + batchSize);
+    
+    const batchPromises = batch.map(async (invoice: any) => {
+      try {
+        const details = await queryInvoiceData(
+          credentials,
+          token,
+          navApiUrl,
+          invoice.invoice_number,
+          direction
+        );
+
+        if (details) {
+          // Update invoice with details
+          const updateData: any = {
+            details_fetched: true
+          };
+
+          if (details.supplierName) updateData.supplier_name = details.supplierName;
+          if (details.supplierAddress) updateData.supplier_address = details.supplierAddress;
+          if (details.customerName) updateData.customer_name = details.customerName;
+          if (details.customerAddress) updateData.customerAddress = details.customerAddress;
+          if (details.paymentDate) updateData.payment_date = details.paymentDate;
+          if (details.invoiceGrossAmount && details.invoiceGrossAmount > 0) {
+            updateData.invoice_gross_amount = details.invoiceGrossAmount;
+          }
+
+          const { error: updateError } = await supabase
+            .from('nav_invoices')
+            .update(updateData)
+            .eq('id', invoice.id);
+
+          if (updateError) {
+            console.error(`Error updating invoice ${invoice.invoice_number}:`, updateError);
+          } else {
+            successCount++;
+          }
+        }
+      } catch (error) {
+        console.error(`Error fetching details for ${invoice.invoice_number}:`, error.message);
+        // Mark as fetched anyway to avoid retry loops on permanent errors
+        await supabase
+          .from('nav_invoices')
+          .update({ details_fetched: true })
+          .eq('id', invoice.id);
+      }
+    });
+
+    await Promise.all(batchPromises);
+    
+    // Rate limiting between batches
+    if (i + batchSize < invoicesNeedingDetails.length) {
+      await delay(500);
+    }
+  }
+
+  return successCount;
+}
+
+// Query detailed invoice data from NAV
+async function queryInvoiceData(
+  credentials: NavCredentials,
+  token: string,
+  navApiUrl: string,
+  invoiceNumber: string,
+  direction: string
+): Promise<InvoiceDetails | null> {
+  const requestId = generateRequestId();
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const compactTimestamp = getCompactTimestamp(now);
+
+  const passwordHash = await sha512Hash(credentials.nav_password);
+  const signatureInput = `${requestId}${compactTimestamp}${credentials.nav_sign_key}`;
+  const signature = sha3Hash(signatureInput);
+
+  const queryXml = buildQueryInvoiceDataXML(
+    credentials.nav_username,
+    passwordHash,
+    credentials.nav_tax_number,
+    signature,
+    requestId,
+    timestamp,
+    token,
+    credentials.software_id,
+    credentials.software_dev_name || '',
+    credentials.software_dev_contact || '',
+    invoiceNumber,
+    direction
+  );
+
+  const response = await fetch(`${navApiUrl}/queryInvoiceData`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/xml',
+      'Accept': 'application/xml'
+    },
+    body: queryXml
+  });
+
+  const responseText = await response.text();
+
+  if (!response.ok) {
+    const errorCode = extractTag(responseText, 'funcCode') || extractTag(responseText, 'resultCode');
+    const errorMessage = extractTag(responseText, 'message') || extractTag(responseText, 'errorDetail');
+    console.error(`NAV queryInvoiceData error for ${invoiceNumber}: ${errorCode} - ${errorMessage}`);
+    throw new Error(`NAV queryInvoiceData failed: ${errorCode || 'UNKNOWN'} - ${errorMessage || 'No details'}`);
+  }
+
+  return parseInvoiceDataFromXML(responseText);
+}
+
+function buildQueryInvoiceDataXML(
+  username: string,
+  passwordHash: string,
+  taxNumber: string,
+  signature: string,
+  requestId: string,
+  timestamp: string,
+  token: string,
+  softwareId: string,
+  devName: string,
+  devContact: string,
+  invoiceNumber: string,
+  direction: string
+): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<QueryInvoiceDataRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api" xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common">
+  <common:header>
+    <common:requestId>${requestId}</common:requestId>
+    <common:timestamp>${timestamp}</common:timestamp>
+    <common:requestVersion>3.0</common:requestVersion>
+    <common:headerVersion>1.0</common:headerVersion>
+  </common:header>
+  <common:user>
+    <common:login>${username}</common:login>
+    <common:passwordHash cryptoType="SHA-512">${passwordHash}</common:passwordHash>
+    <common:taxNumber>${taxNumber}</common:taxNumber>
+    <common:requestSignature cryptoType="SHA3-512">${signature}</common:requestSignature>
+  </common:user>
+  <software>
+    <softwareId>${softwareId}</softwareId>
+    <softwareName>Visibill</softwareName>
+    <softwareOperation>ONLINE_SERVICE</softwareOperation>
+    <softwareMainVersion>1.0</softwareMainVersion>
+    <softwareDevName>${devName || 'Visibill'}</softwareDevName>
+    <softwareDevContact>${devContact || 'support@visibill.hu'}</softwareDevContact>
+  </software>
+  <invoiceNumberQuery>
+    <invoiceNumber>${invoiceNumber}</invoiceNumber>
+    <invoiceDirection>${direction}</invoiceDirection>
+  </invoiceNumberQuery>
+</QueryInvoiceDataRequest>`;
+}
+
+// Parse detailed invoice data from queryInvoiceData response
+function parseInvoiceDataFromXML(xml: string): InvoiceDetails | null {
+  // The invoiceData is Base64 encoded in the response
+  const invoiceDataMatch = xml.match(/<(?:\w+:)?invoiceData>([^<]+)<\/(?:\w+:)?invoiceData>/);
+  
+  if (!invoiceDataMatch) {
+    console.log('No invoiceData found in response');
+    return null;
+  }
+
+  try {
+    // Decode Base64
+    const base64Data = invoiceDataMatch[1];
+    const decodedData = atob(base64Data);
+    
+    // Parse the decoded invoice XML
+    const details: InvoiceDetails = {};
+
+    // Extract supplier info
+    const supplierName = extractTag(decodedData, 'supplierName');
+    if (supplierName) details.supplierName = supplierName;
+
+    // Extract supplier address
+    const supplierAddress = buildAddressString(decodedData, 'supplierAddress');
+    if (supplierAddress) details.supplierAddress = supplierAddress;
+
+    // Extract customer info
+    const customerName = extractTag(decodedData, 'customerName');
+    if (customerName) details.customerName = customerName;
+
+    // Extract customer address
+    const customerAddress = buildAddressString(decodedData, 'customerAddress');
+    if (customerAddress) details.customerAddress = customerAddress;
+
+    // Extract payment date
+    const paymentDate = extractTag(decodedData, 'paymentDate');
+    if (paymentDate) details.paymentDate = paymentDate;
+
+    // Extract gross amount from summary
+    const invoiceGrossAmount = extractTag(decodedData, 'invoiceGrossAmount');
+    if (invoiceGrossAmount) {
+      details.invoiceGrossAmount = parseFloat(invoiceGrossAmount);
+    }
+
+    return details;
+  } catch (error) {
+    console.error('Error parsing invoice data:', error);
+    return null;
+  }
+}
+
+// Build address string from XML address block
+function buildAddressString(xml: string, addressTag: string): string {
+  // Try to find the address block
+  const addressBlockMatch = xml.match(new RegExp(`<${addressTag}[^>]*>([\\s\\S]*?)<\\/${addressTag}>`, 'i'));
+  if (!addressBlockMatch) return '';
+
+  const addressBlock = addressBlockMatch[1];
+
+  // Try detailed address first
+  const postalCode = extractTag(addressBlock, 'postalCode');
+  const city = extractTag(addressBlock, 'city');
+  const streetName = extractTag(addressBlock, 'streetName');
+  const publicPlaceCategory = extractTag(addressBlock, 'publicPlaceCategory');
+  const number = extractTag(addressBlock, 'number');
+
+  if (postalCode && city) {
+    let address = `${postalCode} ${city}`;
+    if (streetName) {
+      address += `, ${streetName}`;
+      if (publicPlaceCategory) address += ` ${publicPlaceCategory}`;
+      if (number) address += ` ${number}`;
+    }
+    return address;
+  }
+
+  // Try simple address
+  const simpleAddress = extractTag(addressBlock, 'simpleAddress') || extractTag(addressBlock, 'additionalAddressDetail');
+  if (simpleAddress) return simpleAddress;
+
+  return '';
 }
 
 async function getNavToken(credentials: NavCredentials, navApiUrl: string): Promise<string> {

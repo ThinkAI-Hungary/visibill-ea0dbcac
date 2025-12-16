@@ -30,15 +30,21 @@ interface NavInvoice {
   invoice_issue_date: string | null;
   invoice_delivery_date: string | null;
   supplier_tax_number: string | null;
+  supplier_name: string | null;
+  supplier_address: string | null;
   customer_tax_number: string | null;
+  customer_name: string | null;
+  customer_address: string | null;
   invoice_net_amount: number | null;
   invoice_gross_amount: number | null;
   invoice_vat_amount: number | null;
   currency: string | null;
   payment_method: string | null;
   invoice_operation: string | null;
+  payment_date: string | null;
   paid: boolean | null;
   submitted: boolean | null;
+  details_fetched: boolean | null;
   company_id: string | null;
   user_id: string | null;
   created_at: string | null;
@@ -209,6 +215,19 @@ const InvoicesPage = () => {
     return partner?.name || taxNumber;
   };
 
+  // Get partner name from invoice - prefers direct name fields, falls back to partners lookup
+  const getInvoicePartnerName = (invoice: NavInvoice): string => {
+    if (invoice.invoice_direction === 'INBOUND') {
+      // For inbound, the partner is the supplier
+      if (invoice.supplier_name) return invoice.supplier_name;
+      return getPartnerName(invoice.supplier_tax_number);
+    } else {
+      // For outbound, the partner is the customer
+      if (invoice.customer_name) return invoice.customer_name;
+      return getPartnerName(invoice.customer_tax_number);
+    }
+  };
+
   const getPartnerTaxNumber = (invoice: NavInvoice): string | null => {
     if (invoice.invoice_direction === 'INBOUND') {
       return invoice.supplier_tax_number;
@@ -236,7 +255,7 @@ const InvoicesPage = () => {
       if (navFilters.search) {
         const searchLower = navFilters.search.toLowerCase();
         const partnerTaxNumber = getPartnerTaxNumber(invoice);
-        const partnerName = getPartnerName(partnerTaxNumber);
+        const partnerName = getInvoicePartnerName(invoice);
         const matchesSearch = 
           invoice.invoice_number?.toLowerCase().includes(searchLower) ||
           partnerTaxNumber?.toLowerCase().includes(searchLower) ||
@@ -446,7 +465,7 @@ const InvoicesPage = () => {
         invoice.invoice_number || '',
         invoice.invoice_issue_date || '',
         invoice.invoice_delivery_date || '',
-        getPartnerName(partnerTaxNumber),
+        getInvoicePartnerName(invoice),
         partnerTaxNumber || '',
         invoice.invoice_net_amount?.toString() || '0',
         invoice.invoice_gross_amount?.toString() || '0',
@@ -824,7 +843,7 @@ const InvoicesPage = () => {
                         ) : (
                           filteredAndSortedNavInvoices.map((invoice) => {
                             const partnerTaxNumber = getPartnerTaxNumber(invoice);
-                            const partnerName = getPartnerName(partnerTaxNumber);
+                            const partnerName = getInvoicePartnerName(invoice);
                             
                             return (
                               <TableRow key={invoice.id}>
