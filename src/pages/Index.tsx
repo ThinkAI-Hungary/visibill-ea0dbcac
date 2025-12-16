@@ -305,73 +305,90 @@ const Index = () => {
   }, [rawInvoices, rawSalaries, showBrutto]);
 
   const fetchVatData = async () => {
-    // Use date range
     const monthStart = dateFromFormatted;
     const monthEnd = dateToFormatted;
 
-    const { data: navInvoices } = await supabase
-      .from("nav_invoices")
-      .select("*")
-      .eq("company_id", selectedCompany?.id)
-      .gte("invoice_issue_date", monthStart)
-      .lte("invoice_issue_date", monthEnd);
+    // Fetch VAT data from nav_invoice_items with actual vat_rate field
+    const { data: vatItems } = await supabase
+      .from("nav_invoice_items")
+      .select(`
+        vat_rate,
+        net_amount,
+        vat_amount,
+        nav_invoices!inner (
+          invoice_direction,
+          invoice_issue_date,
+          company_id
+        )
+      `)
+      .eq("nav_invoices.company_id", selectedCompany?.id)
+      .gte("nav_invoices.invoice_issue_date", monthStart)
+      .lte("nav_invoices.invoice_issue_date", monthEnd);
 
-    const processInvoices = (invoices: typeof navInvoices) => {
-      let outboundVat = 0;
-      let outboundNet = 0;
-      let inboundVat = 0;
-      let inboundNet = 0;
+    // Process VAT breakdown by actual rates
+    const outboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
+    const inboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
 
-      invoices?.forEach(inv => {
-        if (inv.invoice_direction === "OUTBOUND") {
-          outboundVat += inv.invoice_vat_amount || 0;
-          outboundNet += inv.invoice_net_amount || 0;
-        } else {
-          inboundVat += inv.invoice_vat_amount || 0;
-          inboundNet += inv.invoice_net_amount || 0;
-        }
+    vatItems?.forEach(item => {
+      const navInvoice = item.nav_invoices as unknown as { invoice_direction: string };
+      const direction = navInvoice?.invoice_direction;
+      
+      // Format rate label
+      let rateLabel: string;
+      if (item.vat_rate === null || item.vat_rate === undefined) {
+        rateLabel = 'ÁFA mentes';
+      } else {
+        const ratePercent = Math.round(Number(item.vat_rate) * 100);
+        rateLabel = `${ratePercent}%`;
+      }
+      
+      const target = direction === 'OUTBOUND' ? outboundByRate : inboundByRate;
+      
+      if (!target[rateLabel]) {
+        target[rateLabel] = { netAmount: 0, vatAmount: 0 };
+      }
+      target[rateLabel].netAmount += item.net_amount || 0;
+      target[rateLabel].vatAmount += item.vat_amount || 0;
+    });
+
+    // Sort order for VAT rates
+    const sortOrder = ['ÁFA mentes', '5%', '18%', '27%'];
+    const sortCategories = (categories: VatCategoryData[]) => {
+      return categories.sort((a, b) => {
+        const indexA = sortOrder.indexOf(a.rate);
+        const indexB = sortOrder.indexOf(b.rate);
+        if (indexA === -1 && indexB === -1) return a.rate.localeCompare(b.rate);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
       });
-
-      const outboundCategories: VatCategoryData[] = [];
-      const inboundCategories: VatCategoryData[] = [];
-
-      if (outboundVat > 0) {
-        outboundCategories.push({
-          rate: "27%",
-          vatAmount: outboundVat,
-          netAmount: outboundNet
-        });
-      }
-
-      if (inboundVat > 0 || inboundNet > 0) {
-        const vatRatio = inboundNet > 0 ? inboundVat / inboundNet : 0;
-        if (vatRatio < 0.27) {
-          const estimatedZeroNet = inboundNet - (inboundVat / 0.27);
-          if (estimatedZeroNet > 0) {
-            inboundCategories.push({
-              rate: "0%",
-              vatAmount: 0,
-              netAmount: Math.round(estimatedZeroNet)
-            });
-          }
-        }
-        if (inboundVat > 0) {
-          inboundCategories.push({
-            rate: "27%",
-            vatAmount: inboundVat,
-            netAmount: Math.round(inboundVat / 0.27)
-          });
-        }
-      }
-
-      return { outboundVat, inboundVat, outboundCategories, inboundCategories };
     };
 
-    const data = processInvoices(navInvoices);
-    setTotalOutboundVat(data.outboundVat);
-    setTotalInboundVat(data.inboundVat);
-    setOutboundVatCategories(data.outboundCategories);
-    setInboundVatCategories(data.inboundCategories);
+    // Convert to VatCategoryData arrays
+    const outboundCategories = sortCategories(
+      Object.entries(outboundByRate).map(([rate, data]) => ({
+        rate,
+        netAmount: data.netAmount,
+        vatAmount: data.vatAmount
+      }))
+    );
+
+    const inboundCategories = sortCategories(
+      Object.entries(inboundByRate).map(([rate, data]) => ({
+        rate,
+        netAmount: data.netAmount,
+        vatAmount: data.vatAmount
+      }))
+    );
+
+    // Calculate totals
+    const totalOutbound = outboundCategories.reduce((sum, c) => sum + c.vatAmount, 0);
+    const totalInbound = inboundCategories.reduce((sum, c) => sum + c.vatAmount, 0);
+
+    setTotalOutboundVat(totalOutbound);
+    setTotalInboundVat(totalInbound);
+    setOutboundVatCategories(outboundCategories);
+    setInboundVatCategories(inboundCategories);
   };
 
   const formatAnalyticsCurrency = (amount: number, compact = false) => {
