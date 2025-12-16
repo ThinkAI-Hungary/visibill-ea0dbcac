@@ -760,7 +760,7 @@ const Index = () => {
                     variant={payableVat > 0 ? "warning" : "success"}
                   />
                   <MetricCard
-                    title={`Fizetendő (${showBrutto ? 'bruttó' : 'nettó'})`}
+                    title={`Követelés (${showBrutto ? 'bruttó' : 'nettó'})`}
                     value={
                       unpaidInboundData && Object.keys(unpaidInboundData).length > 0
                         ? Object.entries(unpaidInboundData)
