@@ -753,7 +753,7 @@ const Index = () => {
                     variant="warning"
                   />
                   <MetricCard
-                    title="ÁFA összeg"
+                    title="Várható ÁFA"
                     value={formatCurrency(payableVat, selectedCurrency)}
                     description="OUTBOUND - INBOUND"
                     icon={PieChart}
