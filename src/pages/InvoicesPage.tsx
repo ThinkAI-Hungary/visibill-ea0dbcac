@@ -869,11 +869,11 @@ const InvoicesPage = () => {
 
                   {/* NAV Invoice Table */}
                   <div className="rounded-lg border border-border/50 overflow-x-auto">
-                    <Table>
+                    <Table className="table-fixed">
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
                           <TableHead 
-                            className="cursor-pointer hover:bg-muted/50 font-semibold"
+                            className="cursor-pointer hover:bg-muted/50 font-semibold w-[12%]"
                             onClick={() => handleSort('invoice_number')}
                           >
                             <div className="flex items-center gap-2">
@@ -882,7 +882,7 @@ const InvoicesPage = () => {
                             </div>
                           </TableHead>
                           <TableHead 
-                            className="cursor-pointer hover:bg-muted/50 font-semibold"
+                            className="cursor-pointer hover:bg-muted/50 font-semibold w-[9%]"
                             onClick={() => handleSort('invoice_issue_date')}
                           >
                             <div className="flex items-center gap-2">
@@ -891,7 +891,7 @@ const InvoicesPage = () => {
                             </div>
                           </TableHead>
                           <TableHead 
-                            className="cursor-pointer hover:bg-muted/50 font-semibold"
+                            className="cursor-pointer hover:bg-muted/50 font-semibold w-[9%]"
                             onClick={() => handleSort('invoice_delivery_date')}
                           >
                             <div className="flex items-center gap-2">
@@ -899,16 +899,16 @@ const InvoicesPage = () => {
                               <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                           </TableHead>
-                          <TableHead className="font-semibold">Partner</TableHead>
-                          <TableHead className="text-right font-semibold">Nettó</TableHead>
-                          <TableHead className="text-right font-semibold">Bruttó</TableHead>
-                          <TableHead className="text-right font-semibold">ÁFA</TableHead>
-                          <TableHead className="text-center font-semibold">Státusz</TableHead>
+                          <TableHead className="font-semibold w-[15%]">Partner</TableHead>
+                          <TableHead className="text-right font-semibold w-[10%]">Nettó</TableHead>
+                          <TableHead className="text-right font-semibold w-[10%]">Bruttó</TableHead>
+                          <TableHead className="text-right font-semibold w-[9%]">ÁFA</TableHead>
+                          <TableHead className="text-center font-semibold w-[8%]">Státusz</TableHead>
                           {activeTab === 'INBOUND' && (
-                            <TableHead className="text-center font-semibold">Beküldve</TableHead>
+                            <TableHead className="text-center font-semibold w-[6%]">Beküldve</TableHead>
                           )}
-                          <TableHead className="text-center font-semibold">Projekt</TableHead>
-                          <TableHead className="text-center font-semibold">Tételek</TableHead>
+                          <TableHead className="text-center font-semibold w-[12%]">Projekt</TableHead>
+                          <TableHead className="text-center font-semibold w-[6%]">Tételek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1204,11 +1204,11 @@ const InvoicesPage = () => {
 
                 {/* Submitted Invoice Table */}
                 <div className="rounded-lg border border-border/50 overflow-x-auto">
-                  <Table>
+                  <Table className="table-fixed">
                     <TableHeader>
                       <TableRow className="bg-muted/30 hover:bg-muted/30">
                         <TableHead 
-                          className="cursor-pointer hover:bg-muted/50 font-semibold"
+                          className="cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
                           onClick={() => handleSort('kibocsatas_datuma')}
                         >
                           <div className="flex items-center gap-2">
@@ -1216,12 +1216,12 @@ const InvoicesPage = () => {
                             <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                           </div>
                         </TableHead>
-                        <TableHead className="font-semibold">Teljesítés</TableHead>
-                        <TableHead className="font-semibold">Eladó</TableHead>
-                        <TableHead className="font-semibold">Vevő</TableHead>
-                        <TableHead className="text-right font-semibold">Nettó</TableHead>
+                        <TableHead className="font-semibold w-[10%]">Teljesítés</TableHead>
+                        <TableHead className="font-semibold w-[13%]">Eladó</TableHead>
+                        <TableHead className="font-semibold w-[13%]">Vevő</TableHead>
+                        <TableHead className="text-right font-semibold w-[10%]">Nettó</TableHead>
                         <TableHead 
-                          className="text-right cursor-pointer hover:bg-muted/50 font-semibold"
+                          className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
                           onClick={() => handleSort('brutto_vegosszeg')}
                         >
                           <div className="flex items-center justify-end gap-2">
@@ -1229,10 +1229,10 @@ const InvoicesPage = () => {
                             <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                           </div>
                         </TableHead>
-                        <TableHead className="text-right font-semibold">ÁFA</TableHead>
-                        <TableHead className="font-semibold">Kategória</TableHead>
-                        <TableHead className="font-semibold">Projekt</TableHead>
-                        <TableHead className="text-center font-semibold">Műveletek</TableHead>
+                        <TableHead className="text-right font-semibold w-[9%]">ÁFA</TableHead>
+                        <TableHead className="font-semibold w-[10%]">Kategória</TableHead>
+                        <TableHead className="font-semibold w-[10%]">Projekt</TableHead>
+                        <TableHead className="text-center font-semibold w-[5%]">Műveletek</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
