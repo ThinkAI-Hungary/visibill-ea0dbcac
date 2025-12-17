@@ -562,7 +562,7 @@ export default function SalariesPage() {
                     return (
                       <TableRow 
                         key={salary.id} 
-                        className="hover:bg-muted/40 transition-colors"
+                        className="hover:bg-muted/40 transition-colors h-[52px]"
                       >
                         <TableCell className="py-4 px-4">
                           <div className="flex items-center gap-3">
@@ -616,6 +616,16 @@ export default function SalariesPage() {
                       </TableRow>
                     );
                   })}
+                  {/* Empty placeholder rows to maintain consistent table height */}
+                  {Array.from({ length: Math.max(0, ITEMS_PER_PAGE - paginatedSalaries.length) }).map((_, index) => (
+                    <TableRow key={`empty-${index}`} className="h-[52px]">
+                      <TableCell className="py-4 px-4">&nbsp;</TableCell>
+                      <TableCell className="py-4 px-4">&nbsp;</TableCell>
+                      <TableCell className="py-4 px-4">&nbsp;</TableCell>
+                      <TableCell className="py-4 px-4">&nbsp;</TableCell>
+                      <TableCell className="py-4 px-4">&nbsp;</TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
