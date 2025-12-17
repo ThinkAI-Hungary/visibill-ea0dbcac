@@ -303,10 +303,38 @@ const Auth = () => {
 
       {/* Right Side - Visual Showcase (hidden on mobile) */}
       <div className="hidden lg:flex lg:w-[55%] bg-gradient-to-br from-primary/10 via-primary/5 to-background relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-40 right-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+        {/* Edge Gradient - Smooth transition from left panel */}
+        <div className="absolute left-0 top-0 bottom-0 w-48 bg-gradient-to-r from-background via-background/50 to-transparent z-20 pointer-events-none" />
+        
+        {/* Background Pattern - Glowing orbs */}
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-primary/30 rounded-full blur-3xl" />
+          <div className="absolute bottom-40 right-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
+        </div>
+
+        {/* Mock Dashboard Background Shapes (visible texture) */}
+        <div className="absolute inset-0 blur-sm">
+          {/* Fake Sidebar */}
+          <div className="absolute left-8 top-12 bottom-12 w-16 rounded-xl bg-foreground/5 dark:bg-white/10" />
+          
+          {/* Fake Top Bar */}
+          <div className="absolute left-28 top-12 right-8 h-12 rounded-xl bg-foreground/5 dark:bg-white/8" />
+          
+          {/* Fake Card Grid */}
+          <div className="absolute left-28 top-28 right-8 grid grid-cols-3 gap-4">
+            <div className="h-24 rounded-xl bg-foreground/5 dark:bg-white/8" />
+            <div className="h-24 rounded-xl bg-foreground/5 dark:bg-white/8" />
+            <div className="h-24 rounded-xl bg-foreground/5 dark:bg-white/8" />
+          </div>
+          
+          {/* Fake Large Chart Card */}
+          <div className="absolute left-28 top-56 right-8 h-48 rounded-xl bg-foreground/5 dark:bg-white/10" />
+          
+          {/* Fake Bottom Cards */}
+          <div className="absolute left-28 bottom-12 right-8 grid grid-cols-2 gap-4">
+            <div className="h-32 rounded-xl bg-foreground/5 dark:bg-white/8" />
+            <div className="h-32 rounded-xl bg-foreground/5 dark:bg-white/8" />
+          </div>
         </div>
 
         {/* Content */}
@@ -324,7 +352,7 @@ const Auth = () => {
           <div className="space-y-4">
             {/* Stats Row */}
             <div className="flex gap-4">
-              <div className="bg-background/80 backdrop-blur-sm rounded-xl p-4 flex-1 shadow-lg border border-border/50">
+              <div className="bg-background/90 backdrop-blur-md rounded-xl p-4 flex-1 shadow-xl border border-border/50">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-muted-foreground">Bevétel</span>
                   <ArrowUpRight className="h-4 w-4 text-emerald-500" />
@@ -332,7 +360,7 @@ const Auth = () => {
                 <p className="text-2xl font-bold text-foreground">2,4M Ft</p>
                 <p className="text-xs text-emerald-500">+12.5%</p>
               </div>
-              <div className="bg-background/80 backdrop-blur-sm rounded-xl p-4 flex-1 shadow-lg border border-border/50">
+              <div className="bg-background/90 backdrop-blur-md rounded-xl p-4 flex-1 shadow-xl border border-border/50">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-muted-foreground">Kiadás</span>
                   <ArrowDownRight className="h-4 w-4 text-rose-500" />
@@ -343,7 +371,7 @@ const Auth = () => {
             </div>
 
             {/* Chart Preview */}
-            <div className="bg-background/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-border/50">
+            <div className="bg-background/90 backdrop-blur-md rounded-xl p-6 shadow-2xl border border-border/50">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-sm font-medium text-foreground">Havi áttekintés</span>
                 <div className="flex gap-2">
@@ -377,7 +405,7 @@ const Auth = () => {
               {['NAV integráció', 'Automatikus feldolgozás', 'Valós idejű elemzés'].map((feature) => (
                 <span
                   key={feature}
-                  className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-medium rounded-full"
+                  className="px-3 py-1.5 bg-primary/15 text-primary text-xs font-medium rounded-full border border-primary/20"
                 >
                   {feature}
                 </span>
