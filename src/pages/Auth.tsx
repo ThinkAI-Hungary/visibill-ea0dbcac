@@ -73,7 +73,7 @@ const Auth = () => {
   return (
     <div className="flex min-h-screen">
       {/* Left Side - Form Area */}
-      <div className="relative flex w-full flex-col justify-center px-8 py-12 lg:w-[45%] lg:px-16 xl:px-24 bg-background">
+      <div className="relative flex w-full flex-col items-center justify-center px-8 py-12 lg:w-[45%] lg:px-16 xl:px-24 bg-background">
         {/* Theme Toggle - Top Right */}
         <button
           onClick={toggleTheme}
@@ -87,55 +87,56 @@ const Auth = () => {
           )}
         </button>
 
-        {/* Logo */}
-        <div className="mb-12">
-          <span className="text-3xl font-black bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight">
-            Visibill
-          </span>
-        </div>
-
-        {/* Welcome Text */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            {activeTab === 'signin' ? 'Üdv újra!' : 'Kezdjük el!'}
-          </h1>
-          <p className="text-muted-foreground">
-            {activeTab === 'signin' 
-              ? 'Jelentkezz be a fiókodba a folytatáshoz' 
-              : 'Hozd létre a fiókodat néhány egyszerű lépésben'}
-          </p>
-        </div>
-
-        {/* Segmented Control Tabs */}
-        <div className="mb-8">
-          <div className="inline-flex rounded-lg bg-secondary/50 p-1">
-            <button
-              onClick={() => setActiveTab('signin')}
-              className={cn(
-                "px-6 py-2 text-sm font-medium rounded-md transition-all duration-200",
-                activeTab === 'signin'
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Bejelentkezés
-            </button>
-            <button
-              onClick={() => setActiveTab('signup')}
-              className={cn(
-                "px-6 py-2 text-sm font-medium rounded-md transition-all duration-200",
-                activeTab === 'signup'
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Regisztráció
-            </button>
-          </div>
-        </div>
-
-        {/* Form */}
+        {/* Centered Content Wrapper */}
         <div className="w-full max-w-sm">
+          {/* Logo */}
+          <div className="mb-12">
+            <span className="text-3xl font-black bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight">
+              Visibill
+            </span>
+          </div>
+
+          {/* Welcome Text */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              {activeTab === 'signin' ? 'Üdv újra!' : 'Kezdjük el!'}
+            </h1>
+            <p className="text-muted-foreground">
+              {activeTab === 'signin' 
+                ? 'Jelentkezz be a fiókodba a folytatáshoz' 
+                : 'Hozd létre a fiókodat néhány egyszerű lépésben'}
+            </p>
+          </div>
+
+          {/* Segmented Control Tabs */}
+          <div className="mb-8">
+            <div className="inline-flex rounded-lg bg-secondary/50 p-1">
+              <button
+                onClick={() => setActiveTab('signin')}
+                className={cn(
+                  "px-6 py-2 text-sm font-medium rounded-md transition-all duration-200",
+                  activeTab === 'signin'
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Bejelentkezés
+              </button>
+              <button
+                onClick={() => setActiveTab('signup')}
+                className={cn(
+                  "px-6 py-2 text-sm font-medium rounded-md transition-all duration-200",
+                  activeTab === 'signup'
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Regisztráció
+              </button>
+            </div>
+          </div>
+
+          {/* Form */}
           {activeTab === 'signin' ? (
             <form onSubmit={handleSignIn} className="space-y-5">
               <div className="space-y-2">
