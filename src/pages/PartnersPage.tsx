@@ -3,11 +3,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   Table,
@@ -32,7 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Search, Plus, Pencil, Trash2, Users, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const ITEMS_PER_PAGE = 15;
 
@@ -47,6 +47,40 @@ interface Partner {
   created_at: string;
   updated_at: string;
 }
+
+// Helper to decode HTML entities
+const decodeHtmlEntities = (text: string): string => {
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+};
+
+// Helper to get initials from name
+const getInitials = (name: string): string => {
+  const decoded = decodeHtmlEntities(name);
+  const words = decoded.trim().split(/\s+/);
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  return decoded.slice(0, 2).toUpperCase();
+};
+
+// Generate consistent color based on name
+const getAvatarColor = (name: string): string => {
+  const colors = [
+    'bg-primary/20 text-primary',
+    'bg-blue-500/20 text-blue-500',
+    'bg-purple-500/20 text-purple-500',
+    'bg-amber-500/20 text-amber-500',
+    'bg-emerald-500/20 text-emerald-500',
+    'bg-rose-500/20 text-rose-500',
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
 
 export default function PartnersPage() {
   const { user } = useAuth();
@@ -230,20 +264,8 @@ export default function PartnersPage() {
   };
 
   const handleDelete = (partner: Partner) => {
-    if (confirm(`Biztosan törölni szeretnéd a "${partner.name}" partnert?`)) {
+    if (confirm(`Biztosan törölni szeretnéd a "${decodeHtmlEntities(partner.name)}" partnert?`)) {
       deleteMutation.mutate(partner.id);
-    }
-  };
-
-  const getPartnerTypeLabel = (type: string) => {
-    switch (type) {
-      case "customer":
-        return "Vevő";
-      case "supplier":
-        return "Szállító";
-      case "both":
-      default:
-        return "Mindkettő";
     }
   };
 
@@ -253,40 +275,42 @@ export default function PartnersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Partnertörzs</h1>
-          <p className="text-muted-foreground">
-            Vevők és szállítók kezelése
-          </p>
-        </div>
-        <Button onClick={() => handleOpenDialog()}>
-          <Plus className="h-4 w-4 mr-2" />
-          Új partner
-        </Button>
+      {/* Page Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Partnertörzs</h1>
+        <p className="text-muted-foreground">
+          Vevők és szállítók kezelése
+        </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Partnerek ({totalFiltered})
-            </CardTitle>
-            <div className="relative w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Keresés név vagy adószám alapján..."
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-10"
-              />
+      {/* Main Card */}
+      <Card className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm">
+        <CardContent className="p-6">
+          {/* Unified Toolbar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <h2 className="text-lg font-semibold">
+              Partnerek <span className="text-muted-foreground font-normal">({totalFiltered})</span>
+            </h2>
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 sm:w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Keresés név vagy adószám alapján..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-10 bg-background/50"
+                />
+              </div>
+              <Button onClick={() => handleOpenDialog()} className="shrink-0">
+                <Plus className="h-4 w-4 mr-2" />
+                Új partner
+              </Button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
+
+          {/* Table or Empty State */}
           {paginatedPartners.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
+            <div className="text-center py-16 text-muted-foreground">
               {searchQuery ? (
                 <p>Nincs találat a keresésre: "{searchQuery}"</p>
               ) : (
@@ -295,97 +319,132 @@ export default function PartnersPage() {
             </div>
           ) : (
             <>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow className="h-10">
-                    <TableHead className="py-2 px-3">Név</TableHead>
-                    <TableHead className="py-2 px-3">Adószám</TableHead>
-                    {hasAnyAddress && <TableHead className="py-2 px-3">Cím</TableHead>}
-                    <TableHead className="py-2 px-3">Típus</TableHead>
-                    <TableHead className="py-2 px-3 text-right w-[100px]">Műveletek</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedPartners.map((partner) => (
-                    <TableRow key={partner.id} className="h-10 hover:bg-muted/50 transition-colors">
-                      <TableCell className="py-2 px-3 font-medium">{partner.name}</TableCell>
-                      <TableCell className="py-2 px-3 font-mono text-sm">{partner.tax_number}</TableCell>
+              <div className="rounded-lg border border-border/50 overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/30 hover:bg-muted/30">
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Név
+                      </TableHead>
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Adószám
+                      </TableHead>
                       {hasAnyAddress && (
-                        <TableCell className="py-2 px-3 text-muted-foreground">
-                          {partner.address || "-"}
-                        </TableCell>
+                        <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Cím
+                        </TableHead>
                       )}
-                      <TableCell className="py-2 px-3">
-                        {partner.partner_type === 'customer' && (
-                          <Badge variant="success">Vevő</Badge>
-                        )}
-                        {partner.partner_type === 'supplier' && (
-                          <Badge className="bg-blue-500/15 text-blue-500 border-blue-500/20 hover:bg-blue-500/25">
-                            Szállító
-                          </Badge>
-                        )}
-                        {partner.partner_type === 'both' && (
-                          <Badge variant="secondary">Mindkettő</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="py-2 px-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleOpenDialog(partner)}
-                            className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(partner)}
-                            className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Típus
+                      </TableHead>
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[100px]">
+                        Műveletek
+                      </TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-4">
-                <p className="text-sm text-muted-foreground">
-                  {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, totalFiltered)} / {totalFiltered} partner
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Előző
-                  </Button>
-                  <span className="text-sm text-muted-foreground px-2">
-                    {currentPage} / {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Következő
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedPartners.map((partner) => {
+                      const decodedName = decodeHtmlEntities(partner.name);
+                      return (
+                        <TableRow 
+                          key={partner.id} 
+                          className="hover:bg-muted/40 transition-colors"
+                        >
+                          <TableCell className="py-4 px-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9 shrink-0">
+                                <AvatarFallback className={`text-xs font-medium ${getAvatarColor(partner.name)}`}>
+                                  {getInitials(partner.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium">{decodedName}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-4 px-4">
+                            <span className="font-mono text-sm text-muted-foreground">
+                              {partner.tax_number}
+                            </span>
+                          </TableCell>
+                          {hasAnyAddress && (
+                            <TableCell className="py-4 px-4 text-muted-foreground text-sm">
+                              {partner.address ? decodeHtmlEntities(partner.address) : "—"}
+                            </TableCell>
+                          )}
+                          <TableCell className="py-4 px-4">
+                            {partner.partner_type === 'customer' && (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-500">
+                                Vevő
+                              </span>
+                            )}
+                            {partner.partner_type === 'supplier' && (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-500/10 text-blue-500">
+                                Szállító
+                              </span>
+                            )}
+                            {partner.partner_type === 'both' && (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground">
+                                Mindkettő
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="py-4 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenDialog(partner)}
+                                className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDelete(partner)}
+                                className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </div>
-            )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-6">
+                  <p className="text-sm text-muted-foreground">
+                    {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, totalFiltered)} / {totalFiltered} partner
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      Előző
+                    </Button>
+                    <span className="text-sm text-muted-foreground px-3">
+                      {currentPage} / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Következő
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </CardContent>
