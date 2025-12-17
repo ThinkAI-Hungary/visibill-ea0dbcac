@@ -350,7 +350,7 @@ const NavTesting: React.FC = () => {
             </div>
           ) : (
             <>
-              <div className="rounded-lg border border-border/50 overflow-hidden">
+              <div className="rounded-lg border border-border/50 overflow-hidden flex flex-col">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/30 hover:bg-muted/30">
@@ -383,11 +383,11 @@ const NavTesting: React.FC = () => {
                       </TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
+                  <TableBody className="min-h-[720px]">
                     {navInvoices.map((invoice) => {
                       const status = getInvoiceStatus(invoice);
                       return (
-                        <TableRow key={invoice.id} className="hover:bg-muted/50 transition-colors">
+                        <TableRow key={invoice.id} className="hover:bg-muted/50 transition-colors h-12">
                           <TableCell className="py-3 px-4 font-medium">
                             {invoice.invoice_number}
                           </TableCell>
@@ -421,16 +421,17 @@ const NavTesting: React.FC = () => {
                           </TableCell>
                           <TableCell className="py-3 px-4">
                             {status.variant === 'success' ? (
-                              <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-0">
+                              <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-0 min-w-[100px] justify-center">
                                 <FileCheck className="w-3 h-3 mr-1" />
                                 {status.label}
                               </Badge>
                             ) : status.variant === 'info' ? (
-                              <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-0">
+                              <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-0 min-w-[100px] justify-center">
+                                <FileCheck className="w-3 h-3 mr-1" />
                                 {status.label}
                               </Badge>
                             ) : (
-                              <Badge className="bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border-0">
+                              <Badge className="bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border-0 min-w-[100px] justify-center">
                                 <Clock className="w-3 h-3 mr-1" />
                                 {status.label}
                               </Badge>
@@ -446,9 +447,9 @@ const NavTesting: React.FC = () => {
                 </Table>
               </div>
 
-              {/* Pagination Controls */}
+              {/* Pagination Controls - Always visible at bottom */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-4">
+                <div className="flex items-center justify-between pt-4 mt-auto">
                   <div className="text-sm text-muted-foreground">
                     {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount)} / {totalCount} számla
                   </div>
