@@ -21,6 +21,7 @@ import ProjectBreakdown from '@/components/dashboard/ProjectBreakdown';
 import SubscriptionUsage from '@/components/SubscriptionUsage';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import InvoiceStatusTables from '@/components/dashboard/InvoiceStatusTables';
+import { MetricsGridSkeleton, VatChartSkeleton, RevenueChartSkeleton, InvoiceStatusTablesSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import { formatCurrency, cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
@@ -716,7 +717,9 @@ const Index = () => {
         </div>
 
         {/* Metrics Cards */}
-        {metrics && (
+        {!metrics || analyticsLoading ? (
+          <MetricsGridSkeleton />
+        ) : (
           <>
             {(() => {
               let payableVat = 0;
@@ -811,6 +814,9 @@ const Index = () => {
         )}
 
         {/* ÁFA Section */}
+        {analyticsLoading && outboundVatCategories.length === 0 && inboundVatCategories.length === 0 ? (
+          <VatChartSkeleton />
+        ) : (
         <Collapsible open={vatSectionOpen} onOpenChange={setVatSectionOpen}>
           <Card>
             <CardHeader className="pb-2">
@@ -958,11 +964,15 @@ const Index = () => {
             </CollapsibleContent>
           </Card>
         </Collapsible>
+        )}
 
         {/* Invoice Status Tables */}
         <InvoiceStatusTables />
 
         {/* Revenue & Expenses Section */}
+        {analyticsLoading && rawInvoices.length === 0 && rawSalaries.length === 0 ? (
+          <RevenueChartSkeleton />
+        ) : (
         <Collapsible open={revenueSectionOpen} onOpenChange={setRevenueSectionOpen}>
           <Card>
             <CardHeader className="pb-2">
@@ -1193,6 +1203,7 @@ const Index = () => {
             </CollapsibleContent>
           </Card>
         </Collapsible>
+        )}
 
         {/* Main Dashboard Grid */}
         <div className="grid gap-6 lg:grid-cols-3">
