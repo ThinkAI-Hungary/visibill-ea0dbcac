@@ -135,6 +135,7 @@ const Index = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [selectedCurrency, setSelectedCurrency] = useState<string>('HUF');
   const [exchangeRates, setExchangeRates] = useState<{[key: string]: number}>({});
@@ -418,6 +419,7 @@ const Index = () => {
   const fetchDashboardData = async () => {
     if (!user || !selectedCompany) return;
     
+    setMetricsLoading(true);
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -543,6 +545,7 @@ const Index = () => {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
+      setMetricsLoading(false);
     }
   };
 
@@ -717,7 +720,7 @@ const Index = () => {
         </div>
 
         {/* Metrics Cards */}
-        {!metrics || analyticsLoading ? (
+        {metricsLoading ? (
           <MetricsGridSkeleton />
         ) : (
           <>
