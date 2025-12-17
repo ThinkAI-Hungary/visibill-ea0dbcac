@@ -40,8 +40,9 @@ export default function ExchangeRates() {
   const [lastUpdate, setLastUpdate] = useState<string>("");
   
   // Converter state
-  const [hufAmount, setHufAmount] = useState<string>("100000");
-  const [selectedCurrency, setSelectedCurrency] = useState<string>("EUR");
+  const [amount, setAmount] = useState<string>("100000");
+  const [sourceCurrency, setSourceCurrency] = useState<string>("HUF");
+  const [targetCurrency, setTargetCurrency] = useState<string>("EUR");
 
   useEffect(() => {
     fetchExchangeRates();
@@ -87,11 +88,39 @@ export default function ExchangeRates() {
   }, [rates]);
 
   const convertedAmount = useMemo(() => {
-    const rate = rates.find(r => r.currency === selectedCurrency);
-    if (!rate || !hufAmount) return "0.00";
-    const amount = parseFloat(hufAmount.replace(/\s/g, "")) || 0;
-    return (amount * rate.rate).toFixed(2);
-  }, [rates, selectedCurrency, hufAmount]);
+    const parsedAmount = parseFloat(amount.replace(/\s/g, "")) || 0;
+    if (parsedAmount === 0) return "0.00";
+    
+    // If source is HUF, convert directly to target
+    if (sourceCurrency === "HUF") {
+      const targetRate = rates.find(r => r.currency === targetCurrency);
+      if (!targetRate) return "0.00";
+      return (parsedAmount * targetRate.rate).toFixed(2);
+    }
+    
+    // If target is HUF, convert from source to HUF
+    if (targetCurrency === "HUF") {
+      const sourceRate = rates.find(r => r.currency === sourceCurrency);
+      if (!sourceRate) return "0.00";
+      return (parsedAmount / sourceRate.rate).toFixed(2);
+    }
+    
+    // Convert source -> HUF -> target
+    const sourceRate = rates.find(r => r.currency === sourceCurrency);
+    const targetRate = rates.find(r => r.currency === targetCurrency);
+    if (!sourceRate || !targetRate) return "0.00";
+    const hufValue = parsedAmount / sourceRate.rate;
+    return (hufValue * targetRate.rate).toFixed(2);
+  }, [rates, sourceCurrency, targetCurrency, amount]);
+
+  const swapCurrencies = () => {
+    setSourceCurrency(targetCurrency);
+    setTargetCurrency(sourceCurrency);
+  };
+
+  const allCurrencies = useMemo(() => {
+    return [{ currency: "HUF", currencyName: "Magyar Forint", flag: "🇭🇺", rate: 1, mockChange: 0 }, ...rates];
+  }, [rates]);
 
   const formatHuf = (value: string) => {
     const num = parseFloat(value);
@@ -251,29 +280,52 @@ export default function ExchangeRates() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="huf-amount" className="text-sm text-muted-foreground">
-                  Összeg (HUF)
+                <Label htmlFor="amount" className="text-sm text-muted-foreground">
+                  Összeg
                 </Label>
-                <Input
-                  id="huf-amount"
-                  type="text"
-                  value={hufAmount}
-                  onChange={(e) => setHufAmount(e.target.value.replace(/[^0-9]/g, ''))}
-                  className="text-lg font-semibold tabular-nums h-12"
-                  placeholder="100000"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="amount"
+                    type="text"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                    className="text-lg font-semibold tabular-nums h-12 flex-1"
+                    placeholder="100000"
+                  />
+                  <Select value={sourceCurrency} onValueChange={setSourceCurrency}>
+                    <SelectTrigger className="h-12 w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allCurrencies.map((rate) => (
+                        <SelectItem key={rate.currency} value={rate.currency}>
+                          <div className="flex items-center gap-2">
+                            <span>{rate.flag}</span>
+                            <span>{rate.currency}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex justify-center">
+                <Button variant="ghost" size="icon" onClick={swapCurrencies} className="rounded-full h-8 w-8 hover:bg-primary/10 hover:text-primary">
+                  <ArrowRightLeft className="h-4 w-4 rotate-90" />
+                </Button>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="currency-select" className="text-sm text-muted-foreground">
+                <Label htmlFor="target-currency" className="text-sm text-muted-foreground">
                   Célvaluta
                 </Label>
-                <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-                  <SelectTrigger id="currency-select" className="h-12">
+                <Select value={targetCurrency} onValueChange={setTargetCurrency}>
+                  <SelectTrigger id="target-currency" className="h-12">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {rates.map((rate) => (
+                    {allCurrencies.map((rate) => (
                       <SelectItem key={rate.currency} value={rate.currency}>
                         <div className="flex items-center gap-2">
                           <span>{rate.flag}</span>
@@ -292,7 +344,7 @@ export default function ExchangeRates() {
                   <span className="text-3xl font-bold tabular-nums text-primary">
                     {parseFloat(convertedAmount).toLocaleString('hu-HU', { minimumFractionDigits: 2 })}
                   </span>
-                  <span className="text-lg text-muted-foreground">{selectedCurrency}</span>
+                  <span className="text-lg text-muted-foreground">{targetCurrency}</span>
                 </div>
               </div>
             </CardContent>
