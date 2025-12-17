@@ -5,7 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sun, Moon, Mail, Lock, User, TrendingUp, PieChart, BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Sun, Moon, Mail, Lock, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -301,105 +301,92 @@ const Auth = () => {
       </div>
 
       {/* Right Side - Visual Showcase (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-muted/30">
-        {/* Realistic Blurred Dashboard Background */}
-        <div className="absolute inset-0 overflow-hidden blur-md opacity-80 scale-105">
-          {/* Sidebar - matches actual AppSidebar structure */}
-          <div className="absolute left-0 top-0 bottom-0 w-[200px] bg-background border-r border-border/50">
-            {/* Logo area */}
-            <div className="h-16 border-b border-border/50 flex items-center px-4">
-              <div className="w-20 h-6 bg-primary/40 rounded" />
-            </div>
-            {/* Company selector area */}
-            <div className="h-14 border-b border-border/50 flex items-center px-4">
-              <div className="w-full h-8 bg-muted/60 rounded" />
-            </div>
-            {/* Navigation items */}
-            <div className="p-3 space-y-1">
-              <div className="h-3 w-16 bg-muted-foreground/20 rounded mb-3" />
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className={`h-9 rounded flex items-center gap-3 px-3 ${i === 0 ? 'bg-primary/20' : 'bg-transparent'}`}>
-                  <div className="w-4 h-4 bg-muted-foreground/30 rounded" />
-                  <div className={`h-3 rounded ${i === 0 ? 'w-20 bg-primary/50' : 'w-16 bg-muted-foreground/20'}`} />
+      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-background">
+        {/* Grayscale Dashboard Background - matching EmptyStateDashboard style */}
+        <div className="absolute inset-0 overflow-hidden grayscale opacity-30 blur-[2px] pointer-events-none select-none p-8">
+          {/* Welcome Section */}
+          <div className="space-y-2 mb-8">
+            <h2 className="text-3xl font-bold text-foreground">Üdvözöljük!</h2>
+            <p className="text-muted-foreground">Itt van a vállalkozásod teljes áttekintése</p>
+          </div>
+
+          {/* Metrics Cards Row - 5 cards like dashboard */}
+          <div className="grid grid-cols-5 gap-4 mb-8">
+            {[
+              { title: 'Összes számla', value: '---' },
+              { title: 'Kimenő számlaösszeg (nettó)', value: '0 Ft' },
+              { title: 'Kimenő számlaösszeg (bruttó)', value: '0 Ft' },
+              { title: 'Összesített érték', value: '0 Ft' },
+              { title: 'Fizetendő', value: '0 Ft' },
+            ].map((card, i) => (
+              <div key={i} className="bg-card rounded-xl p-4 border border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-muted-foreground">{card.title}</span>
+                  <div className="w-4 h-4 bg-muted rounded" />
                 </div>
-              ))}
-            </div>
-            {/* User section at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 border-t border-border/50 p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-muted/60" />
-                <div className="flex-1 space-y-1">
-                  <div className="h-3 w-20 bg-muted-foreground/30 rounded" />
-                  <div className="h-2 w-28 bg-muted-foreground/20 rounded" />
+                <p className="text-2xl font-bold">{card.value}</p>
+                <p className="text-xs text-muted-foreground mt-1">0 feldolgozva</p>
+              </div>
+            ))}
+          </div>
+
+          {/* ÁFA Section */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold mb-4">ÁFA Összesítés</h3>
+            <div className="grid grid-cols-2 gap-6">
+              {/* VAT Bar Chart Mock */}
+              <div className="bg-card rounded-xl p-5 border border-border">
+                <div className="flex items-end gap-8 h-40 justify-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-16 bg-primary/40 rounded-t" style={{ height: '60%' }} />
+                    <span className="text-xs text-muted-foreground">Kimenő</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-16 bg-rose-500/40 rounded-t" style={{ height: '45%' }} />
+                    <span className="text-xs text-muted-foreground">Bejövő</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-16 bg-emerald-500/40 rounded-t" style={{ height: '30%' }} />
+                    <span className="text-xs text-muted-foreground">Becsült</span>
+                  </div>
+                </div>
+              </div>
+              {/* VAT Breakdown Table Mock */}
+              <div className="bg-card rounded-xl p-5 border border-border">
+                <div className="space-y-3">
+                  {['27%', '18%', '5%', 'ÁFA mentes'].map((rate, i) => (
+                    <div key={i} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                      <span className="text-sm">{rate}</span>
+                      <span className="text-sm font-medium">0 Ft</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Main Content Area */}
-          <div className="absolute left-[200px] top-0 right-0 bottom-0 p-6 space-y-6">
-            {/* Welcome header */}
-            <div className="space-y-1">
-              <div className="h-8 w-48 bg-foreground/15 rounded" />
-              <div className="h-4 w-32 bg-muted-foreground/20 rounded" />
+          {/* Revenue Chart Section */}
+          <div className="bg-card rounded-xl p-5 border border-border">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Kiadások és Bevételek</h3>
+              <div className="flex gap-2">
+                <div className="h-8 w-20 bg-muted rounded" />
+                <div className="h-8 w-24 bg-muted rounded" />
+              </div>
             </div>
-
-            {/* Date selectors row */}
-            <div className="flex gap-3">
-              <div className="h-9 w-28 bg-primary/20 rounded" />
-              <div className="h-9 w-28 bg-primary/20 rounded" />
-              <div className="h-9 w-28 bg-muted/50 rounded" />
-              <div className="flex-1" />
-              <div className="h-9 w-32 bg-muted/50 rounded" />
-              <div className="h-9 w-32 bg-muted/50 rounded" />
-            </div>
-
-            {/* Metric Cards - 2 rows of 3 */}
-            <div className="grid grid-cols-3 gap-4">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-background/80 rounded-xl p-4 border border-border/30 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                      <div className="h-3 w-20 bg-muted-foreground/30 rounded" />
-                      <div className="h-6 w-24 bg-foreground/20 rounded" />
-                    </div>
-                    <div className="w-8 h-8 rounded-lg bg-primary/20" />
-                  </div>
-                  <div className="h-2 w-16 bg-muted-foreground/20 rounded" />
+            {/* Mock Area Chart */}
+            <div className="h-48 flex items-end gap-2">
+              {[30, 45, 35, 60, 50, 75, 55, 80, 65, 70, 85, 60].map((h, i) => (
+                <div key={i} className="flex-1 flex flex-col justify-end">
+                  <div className="bg-primary/30 rounded-t" style={{ height: `${h}%` }} />
                 </div>
               ))}
-            </div>
-
-            {/* Chart Area */}
-            <div className="bg-background/80 rounded-xl p-5 border border-border/30">
-              <div className="flex justify-between items-center mb-4">
-                <div className="h-5 w-40 bg-foreground/15 rounded" />
-                <div className="flex gap-2">
-                  <div className="h-7 w-16 bg-muted/50 rounded" />
-                  <div className="h-7 w-20 bg-muted/50 rounded" />
-                </div>
-              </div>
-              {/* Mock chart bars */}
-              <div className="flex items-end gap-3 h-36 pt-4">
-                {[45, 70, 35, 85, 55, 90, 65, 78, 50, 88, 72, 60].map((h, i) => (
-                  <div key={i} className="flex-1 flex flex-col justify-end gap-1">
-                    <div className="bg-primary/40 rounded-t" style={{ height: `${h}%` }} />
-                    <div className="bg-rose-500/30 rounded-b" style={{ height: `${(100 - h) * 0.4}%` }} />
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </div>
 
         {/* Gradient Transition Overlay (fade from left edge only) */}
-        <div className="absolute top-0 bottom-0 left-0 w-40 z-[1] bg-gradient-to-r from-background via-background/80 to-transparent pointer-events-none" />
-
-        {/* Subtle ambient gradient */}
-        <div className="absolute inset-0 opacity-40 pointer-events-none">
-          <div className="absolute top-20 left-40 w-72 h-72 bg-primary/30 rounded-full blur-3xl" />
-          <div className="absolute bottom-40 right-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
-        </div>
+        <div className="absolute top-0 bottom-0 left-0 w-48 z-[1] bg-gradient-to-r from-background via-background/90 to-transparent pointer-events-none" />
 
         {/* Foreground Content */}
         <div className="relative z-10 flex flex-col justify-center px-16 xl:px-24">
@@ -412,69 +399,16 @@ const Auth = () => {
             </p>
           </div>
 
-          {/* Mock Dashboard Preview */}
-          <div className="space-y-4">
-            {/* Stats Row */}
-            <div className="flex gap-4">
-              <div className="bg-background/80 backdrop-blur-sm rounded-xl p-4 flex-1 shadow-lg border border-border/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-muted-foreground">Bevétel</span>
-                  <ArrowUpRight className="h-4 w-4 text-emerald-500" />
-                </div>
-                <p className="text-2xl font-bold text-foreground">2,4M Ft</p>
-                <p className="text-xs text-emerald-500">+12.5%</p>
-              </div>
-              <div className="bg-background/80 backdrop-blur-sm rounded-xl p-4 flex-1 shadow-lg border border-border/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-muted-foreground">Kiadás</span>
-                  <ArrowDownRight className="h-4 w-4 text-rose-500" />
-                </div>
-                <p className="text-2xl font-bold text-foreground">890K Ft</p>
-                <p className="text-xs text-rose-500">-3.2%</p>
-              </div>
-            </div>
-
-            {/* Chart Preview */}
-            <div className="bg-background/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-border/50">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-medium text-foreground">Havi áttekintés</span>
-                <div className="flex gap-2">
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                  <PieChart className="h-4 w-4 text-muted-foreground" />
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                </div>
-              </div>
-              {/* Mock Chart Bars */}
-              <div className="flex items-end gap-2 h-24">
-                {[40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 95, 80].map((height, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 rounded-t bg-gradient-to-t from-primary/60 to-primary transition-all hover:from-primary/80 hover:to-primary"
-                    style={{ height: `${height}%` }}
-                  />
-                ))}
-              </div>
-              <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                <span>Jan</span>
-                <span>Márc</span>
-                <span>Máj</span>
-                <span>Júl</span>
-                <span>Szept</span>
-                <span>Nov</span>
-              </div>
-            </div>
-
-            {/* Features */}
-            <div className="flex gap-3">
-              {['NAV integráció', 'Automatikus feldolgozás', 'Valós idejű elemzés'].map((feature) => (
-                <span
-                  key={feature}
-                  className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-medium rounded-full"
-                >
-                  {feature}
-                </span>
-              ))}
-            </div>
+          {/* Feature Pills */}
+          <div className="flex flex-wrap gap-3">
+            {['NAV integráció', 'Automatikus feldolgozás', 'Valós idejű elemzés'].map((feature) => (
+              <span
+                key={feature}
+                className="px-4 py-2 bg-primary/15 text-primary text-sm font-medium rounded-full border border-primary/20"
+              >
+                {feature}
+              </span>
+            ))}
           </div>
         </div>
       </div>
