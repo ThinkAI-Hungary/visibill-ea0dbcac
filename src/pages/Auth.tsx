@@ -302,62 +302,86 @@ const Auth = () => {
 
       {/* Right Side - Visual Showcase (hidden on mobile) */}
       <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-background">
-        {/* Grayscale Dashboard Background - matching EmptyStateDashboard style */}
-        <div className="absolute inset-0 overflow-hidden grayscale opacity-30 blur-[2px] pointer-events-none select-none p-8">
+        {/* Grayscale Dashboard Background with sample data */}
+        <div className="absolute inset-0 overflow-hidden grayscale opacity-30 blur-[2px] pointer-events-none select-none p-6 overflow-y-auto">
           {/* Welcome Section */}
-          <div className="space-y-2 mb-8">
-            <h2 className="text-3xl font-bold text-foreground">Üdvözöljük!</h2>
-            <p className="text-muted-foreground">Itt van a vállalkozásod teljes áttekintése</p>
+          <div className="space-y-1 mb-6">
+            <h2 className="text-2xl font-bold text-foreground">Jó napot, János!</h2>
+            <p className="text-sm text-muted-foreground">Itt van a vállalkozásod teljes áttekintése</p>
           </div>
 
-          {/* Metrics Cards Row - 5 cards like dashboard */}
-          <div className="grid grid-cols-5 gap-4 mb-8">
+          {/* Date selectors row */}
+          <div className="flex gap-2 mb-6">
+            <div className="px-3 py-1.5 bg-primary/20 rounded text-xs font-medium">Ez a hónap</div>
+            <div className="px-3 py-1.5 bg-muted rounded text-xs">Előző hónap</div>
+            <div className="px-3 py-1.5 bg-muted rounded text-xs">Ez az év</div>
+            <div className="flex-1" />
+            <div className="px-3 py-1.5 bg-muted rounded text-xs">2024.12.01</div>
+            <div className="px-3 py-1.5 bg-muted rounded text-xs">2024.12.17</div>
+          </div>
+
+          {/* Metrics Cards Row - 2 rows of 3 */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
             {[
-              { title: 'Összes számla', value: '---' },
-              { title: 'Kimenő számlaösszeg (nettó)', value: '0 Ft' },
-              { title: 'Kimenő számlaösszeg (bruttó)', value: '0 Ft' },
-              { title: 'Összesített érték', value: '0 Ft' },
-              { title: 'Fizetendő', value: '0 Ft' },
+              { title: 'Feltöltött számlák', value: '127', sub: '12 feldolgozás alatt' },
+              { title: 'Kimenő számlaösszeg', value: '4 250 000 Ft', sub: 'OUTBOUND' },
+              { title: 'Bejövő számlaösszeg', value: '1 890 000 Ft', sub: 'INBOUND' },
+              { title: 'ÁFA összeg', value: '637 500 Ft', sub: 'Becsült fizetendő' },
+              { title: 'Fizetendő', value: '425 000 Ft', sub: '3 nyitott számla' },
+              { title: 'Eredmény', value: '2 360 000 Ft', sub: '+15.3% előző hónaphoz' },
             ].map((card, i) => (
-              <div key={i} className="bg-card rounded-xl p-4 border border-border">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">{card.title}</span>
-                  <div className="w-4 h-4 bg-muted rounded" />
+              <div key={i} className="bg-card rounded-lg p-3 border border-border">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <span className="text-xs text-muted-foreground block mb-1">{card.title}</span>
+                    <p className="text-lg font-bold">{card.value}</p>
+                  </div>
+                  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                    <div className="w-4 h-4 bg-primary/40 rounded" />
+                  </div>
                 </div>
-                <p className="text-2xl font-bold">{card.value}</p>
-                <p className="text-xs text-muted-foreground mt-1">0 feldolgozva</p>
+                <p className="text-xs text-muted-foreground mt-1">{card.sub}</p>
               </div>
             ))}
           </div>
 
           {/* ÁFA Section */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold mb-4">ÁFA Összesítés</h3>
-            <div className="grid grid-cols-2 gap-6">
-              {/* VAT Bar Chart Mock */}
-              <div className="bg-card rounded-xl p-5 border border-border">
-                <div className="flex items-end gap-8 h-40 justify-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-16 bg-primary/40 rounded-t" style={{ height: '60%' }} />
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold mb-3">ÁFA Összesítés</h3>
+            <div className="grid grid-cols-2 gap-4">
+              {/* VAT Bar Chart */}
+              <div className="bg-card rounded-lg p-4 border border-border">
+                <div className="flex items-end gap-6 h-32 justify-center px-4">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-xs font-medium mb-1">1 147 500 Ft</span>
+                    <div className="w-14 bg-primary/50 rounded-t" style={{ height: '85%' }} />
                     <span className="text-xs text-muted-foreground">Kimenő</span>
                   </div>
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-16 bg-rose-500/40 rounded-t" style={{ height: '45%' }} />
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-xs font-medium mb-1">510 300 Ft</span>
+                    <div className="w-14 bg-rose-500/50 rounded-t" style={{ height: '55%' }} />
                     <span className="text-xs text-muted-foreground">Bejövő</span>
                   </div>
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-16 bg-emerald-500/40 rounded-t" style={{ height: '30%' }} />
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-xs font-medium mb-1">637 200 Ft</span>
+                    <div className="w-14 bg-emerald-500/50 rounded-t" style={{ height: '40%' }} />
                     <span className="text-xs text-muted-foreground">Becsült</span>
                   </div>
                 </div>
               </div>
-              {/* VAT Breakdown Table Mock */}
-              <div className="bg-card rounded-xl p-5 border border-border">
-                <div className="space-y-3">
-                  {['27%', '18%', '5%', 'ÁFA mentes'].map((rate, i) => (
-                    <div key={i} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                      <span className="text-sm">{rate}</span>
-                      <span className="text-sm font-medium">0 Ft</span>
+              {/* VAT Breakdown Table */}
+              <div className="bg-card rounded-lg p-4 border border-border">
+                <div className="space-y-2">
+                  {[
+                    { rate: '27%', outbound: '892 350 Ft', inbound: '398 250 Ft' },
+                    { rate: '18%', outbound: '156 000 Ft', inbound: '72 000 Ft' },
+                    { rate: '5%', outbound: '99 150 Ft', inbound: '40 050 Ft' },
+                    { rate: 'ÁFA mentes', outbound: '0 Ft', inbound: '0 Ft' },
+                  ].map((row, i) => (
+                    <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0 text-xs">
+                      <span className="font-medium w-20">{row.rate}</span>
+                      <span className="text-primary">{row.outbound}</span>
+                      <span className="text-rose-500">{row.inbound}</span>
                     </div>
                   ))}
                 </div>
@@ -366,21 +390,56 @@ const Auth = () => {
           </div>
 
           {/* Revenue Chart Section */}
-          <div className="bg-card rounded-xl p-5 border border-border">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Kiadások és Bevételek</h3>
+          <div className="bg-card rounded-lg p-4 border border-border">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold">Kiadások és Bevételek</h3>
               <div className="flex gap-2">
-                <div className="h-8 w-20 bg-muted rounded" />
-                <div className="h-8 w-24 bg-muted rounded" />
+                <span className="px-2 py-1 bg-primary/20 rounded text-xs">2024</span>
+                <span className="px-2 py-1 bg-muted rounded text-xs">Bruttó</span>
               </div>
             </div>
-            {/* Mock Area Chart */}
-            <div className="h-48 flex items-end gap-2">
-              {[30, 45, 35, 60, 50, 75, 55, 80, 65, 70, 85, 60].map((h, i) => (
-                <div key={i} className="flex-1 flex flex-col justify-end">
-                  <div className="bg-primary/30 rounded-t" style={{ height: `${h}%` }} />
-                </div>
-              ))}
+            {/* Mock Area Chart with labels */}
+            <div className="relative h-36">
+              <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-xs text-muted-foreground">
+                <span>5M</span>
+                <span>2.5M</span>
+                <span>0</span>
+              </div>
+              <div className="ml-8 h-full flex items-end gap-1.5 pb-6">
+                {[
+                  { h: 35, label: 'Jan' },
+                  { h: 48, label: 'Feb' },
+                  { h: 42, label: 'Már' },
+                  { h: 65, label: 'Ápr' },
+                  { h: 58, label: 'Máj' },
+                  { h: 72, label: 'Jún' },
+                  { h: 68, label: 'Júl' },
+                  { h: 85, label: 'Aug' },
+                  { h: 78, label: 'Szept' },
+                  { h: 90, label: 'Okt' },
+                  { h: 82, label: 'Nov' },
+                  { h: 75, label: 'Dec' },
+                ].map((bar, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center">
+                    <div className="w-full flex flex-col justify-end h-24">
+                      <div className="bg-primary/40 rounded-t w-full" style={{ height: `${bar.h}%` }} />
+                      <div className="bg-rose-500/30 rounded-b w-full" style={{ height: `${bar.h * 0.4}%` }} />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground mt-1">{bar.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Legend */}
+            <div className="flex gap-4 mt-2 justify-center">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded bg-primary/40" />
+                <span className="text-xs text-muted-foreground">Bevétel</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded bg-rose-500/30" />
+                <span className="text-xs text-muted-foreground">Kiadás</span>
+              </div>
             </div>
           </div>
         </div>
