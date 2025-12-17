@@ -348,7 +348,7 @@ export default function PartnersPage() {
                       return (
                         <TableRow 
                           key={partner.id} 
-                          className="hover:bg-muted/40 transition-colors"
+                          className="hover:bg-muted/40 transition-colors h-[52px]"
                         >
                           <TableCell className="py-4 px-4">
                             <div className="flex items-center gap-3">
@@ -410,6 +410,16 @@ export default function PartnersPage() {
                         </TableRow>
                       );
                     })}
+                    {/* Empty placeholder rows to maintain consistent table height */}
+                    {Array.from({ length: Math.max(0, ITEMS_PER_PAGE - paginatedPartners.length) }).map((_, index) => (
+                      <TableRow key={`empty-${index}`} className="h-[52px]">
+                        <TableCell className="py-4 px-4">&nbsp;</TableCell>
+                        <TableCell className="py-4 px-4">&nbsp;</TableCell>
+                        {hasAnyAddress && <TableCell className="py-4 px-4">&nbsp;</TableCell>}
+                        <TableCell className="py-4 px-4">&nbsp;</TableCell>
+                        <TableCell className="py-4 px-4">&nbsp;</TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>
