@@ -123,7 +123,7 @@ const InvoicesPage = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   
   // Pagination state
-  const ITEMS_PER_PAGE = 20;
+  const ITEMS_PER_PAGE = 10;
   const [navCurrentPage, setNavCurrentPage] = useState(1);
   const [submittedCurrentPage, setSubmittedCurrentPage] = useState(1);
   
