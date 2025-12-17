@@ -37,7 +37,7 @@ const NavTesting: React.FC = () => {
   
   const [filters, setFilters] = useState({
     direction: 'ALL' as 'ALL' | 'OUTBOUND' | 'INBOUND',
-    dateFrom: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     dateTo: new Date().toISOString().split('T')[0]
   });
 
