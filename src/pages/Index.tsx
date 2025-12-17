@@ -576,14 +576,18 @@ const Index = () => {
     await signOut();
   };
 
+  // Debug logging
+  console.log('Index render - companyLoading:', companyLoading, 'companies:', companies.length, 'metricsLoading:', metricsLoading);
+
+  // Show empty state dashboard when no companies exist (check FIRST before any loading states)
+  if (!companyLoading && companies.length === 0) {
+    console.log('Showing EmptyStateDashboard');
+    return <EmptyStateDashboard />;
+  }
+
   // Show loading spinner while company data is being fetched
   if (companyLoading) {
     return <LoadingSpinner message="Irányítópult betöltése..." />;
-  }
-
-  // Show empty state dashboard when no companies exist (check BEFORE metrics loading)
-  if (companies.length === 0) {
-    return <EmptyStateDashboard />;
   }
 
   // Show loading spinner while metrics data is being fetched
