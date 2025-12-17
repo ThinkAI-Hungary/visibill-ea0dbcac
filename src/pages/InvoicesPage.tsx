@@ -1039,6 +1039,22 @@ const InvoicesPage = () => {
                             );
                           })
                         )}
+                        {/* Empty placeholder rows to maintain consistent table height */}
+                        {paginatedNavInvoices.length > 0 && Array.from({ length: Math.max(0, ITEMS_PER_PAGE - paginatedNavInvoices.length) }).map((_, index) => (
+                          <TableRow key={`empty-${index}`} className="h-[52px]">
+                            <TableCell>&nbsp;</TableCell>
+                            <TableCell>&nbsp;</TableCell>
+                            <TableCell>&nbsp;</TableCell>
+                            <TableCell>&nbsp;</TableCell>
+                            <TableCell>&nbsp;</TableCell>
+                            <TableCell>&nbsp;</TableCell>
+                            <TableCell>&nbsp;</TableCell>
+                            <TableCell>&nbsp;</TableCell>
+                            {activeTab === 'INBOUND' && <TableCell>&nbsp;</TableCell>}
+                            <TableCell>&nbsp;</TableCell>
+                            <TableCell>&nbsp;</TableCell>
+                          </TableRow>
+                        ))}
                       </TableBody>
                     </Table>
                   </div>
@@ -1331,6 +1347,21 @@ const InvoicesPage = () => {
                           </TableRow>
                         ))
                       )}
+                      {/* Empty placeholder rows to maintain consistent table height */}
+                      {paginatedSubmittedInvoices.length > 0 && Array.from({ length: Math.max(0, ITEMS_PER_PAGE - paginatedSubmittedInvoices.length) }).map((_, index) => (
+                        <TableRow key={`empty-${index}`} className="h-[52px]">
+                          <TableCell>&nbsp;</TableCell>
+                          <TableCell>&nbsp;</TableCell>
+                          <TableCell>&nbsp;</TableCell>
+                          <TableCell>&nbsp;</TableCell>
+                          <TableCell>&nbsp;</TableCell>
+                          <TableCell>&nbsp;</TableCell>
+                          <TableCell>&nbsp;</TableCell>
+                          <TableCell>&nbsp;</TableCell>
+                          <TableCell>&nbsp;</TableCell>
+                          <TableCell>&nbsp;</TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 </div>
