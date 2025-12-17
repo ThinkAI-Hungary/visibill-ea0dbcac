@@ -40,9 +40,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Session error:', error.message);
+        // If refresh token is invalid, clear local storage and reset state
+        if (error.message.includes('Refresh Token') || error.message.includes('refresh_token')) {
+          console.log('Invalid refresh token detected, clearing session...');
+          localStorage.removeItem('sb-vxxgvdlqvvchtlmqnrqf-auth-token');
+          setSession(null);
+          setUser(null);
+        }
+      } else {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
+      setLoading(false);
+    }).catch((err) => {
+      console.error('Failed to get session:', err);
       setLoading(false);
     });
 
