@@ -134,8 +134,8 @@ export default function ExchangeRates() {
             <Clock className="h-3 w-3" />
             {lastUpdate}
           </Badge>
-          <Button variant="outline" size="sm" onClick={fetchExchangeRates} className="gap-2">
-            <RefreshCw className="h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={fetchExchangeRates} disabled={loading} className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Frissítés
           </Button>
         </div>
