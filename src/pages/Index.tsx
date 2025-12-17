@@ -738,7 +738,7 @@ const Index = () => {
           const unpaidOutboundData = showBrutto ? navVatData?.unpaidOutboundGross : navVatData?.unpaidOutboundNet;
 
           return (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6 items-stretch">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 items-stretch">
               <MetricCard
                 title="Feltöltött számlák"
                 value={metrics.totalInvoices}
