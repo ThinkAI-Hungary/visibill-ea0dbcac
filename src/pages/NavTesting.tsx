@@ -28,7 +28,7 @@ interface NavInvoice {
   details_fetched: boolean | null;
 }
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 20;
 
 const NavTesting: React.FC = () => {
   const { toast } = useToast();
@@ -383,7 +383,7 @@ const NavTesting: React.FC = () => {
                       </TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody className="min-h-[720px]">
+                  <TableBody className="min-h-[960px]">
                     {navInvoices.map((invoice) => {
                       const status = getInvoiceStatus(invoice);
                       return (
