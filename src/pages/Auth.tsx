@@ -73,7 +73,7 @@ const Auth = () => {
   return (
     <div className="flex min-h-screen">
       {/* Left Side - Form Area */}
-      <div className="relative flex w-full flex-col items-center justify-center px-8 py-12 lg:w-[45%] lg:px-16 xl:px-24 bg-background">
+      <div className="relative flex w-full flex-col items-center justify-start px-8 py-12 lg:w-[45%] lg:px-16 xl:px-24 bg-background min-h-screen pt-[15vh]">
         {/* Theme Toggle - Top Right */}
         <button
           onClick={toggleTheme}
