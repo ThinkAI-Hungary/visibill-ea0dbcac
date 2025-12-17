@@ -23,6 +23,13 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { 
   Plus, 
@@ -32,12 +39,25 @@ import {
   Wallet, 
   Users, 
   TrendingUp, 
-  ChevronLeft, 
-  ChevronRight,
   Calendar
 } from "lucide-react";
-import { format, startOfMonth, endOfMonth, subMonths, addMonths } from "date-fns";
+import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { hu } from "date-fns/locale";
+
+const MONTHS = [
+  { value: "0", label: "Január" },
+  { value: "1", label: "Február" },
+  { value: "2", label: "Március" },
+  { value: "3", label: "Április" },
+  { value: "4", label: "Május" },
+  { value: "5", label: "Június" },
+  { value: "6", label: "Július" },
+  { value: "7", label: "Augusztus" },
+  { value: "8", label: "Szeptember" },
+  { value: "9", label: "Október" },
+  { value: "10", label: "November" },
+  { value: "11", label: "December" },
+];
 
 interface Salary {
   id: string;
@@ -289,30 +309,50 @@ export default function SalariesPage() {
         </div>
         
         <div className="flex items-center gap-3">
-          {/* Month Selector */}
-          <div className="flex items-center gap-1 bg-muted/30 rounded-lg p-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setSelectedMonth(subMonths(selectedMonth, 1))}
+          {/* Year & Month Selector */}
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Select
+              value={selectedMonth.getFullYear().toString()}
+              onValueChange={(year) => {
+                const newDate = new Date(selectedMonth);
+                newDate.setFullYear(parseInt(year));
+                setSelectedMonth(newDate);
+              }}
             >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <div className="flex items-center gap-2 px-3 min-w-[160px] justify-center">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">
-                {format(selectedMonth, "yyyy. MMMM", { locale: hu })}
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setSelectedMonth(addMonths(selectedMonth, 1))}
+              <SelectTrigger className="w-[100px] bg-muted/30">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 10 }, (_, i) => {
+                  const year = new Date().getFullYear() - 5 + i;
+                  return (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            <Select
+              value={selectedMonth.getMonth().toString()}
+              onValueChange={(month) => {
+                const newDate = new Date(selectedMonth);
+                newDate.setMonth(parseInt(month));
+                setSelectedMonth(newDate);
+              }}
             >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+              <SelectTrigger className="w-[140px] bg-muted/30">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTHS.map((month) => (
+                  <SelectItem key={month.value} value={month.value}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <Dialog open={dialogOpen} onOpenChange={(open) => {
