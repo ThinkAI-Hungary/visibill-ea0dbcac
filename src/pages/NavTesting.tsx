@@ -410,13 +410,13 @@ const NavTesting: React.FC = () => {
                           <TableCell className="py-3 px-4 tabular-nums">
                             {formatDate(invoice.invoice_issue_date)}
                           </TableCell>
-                          <TableCell className="py-3 px-4 text-right font-mono tabular-nums">
+                          <TableCell className="py-3 px-4 text-right tabular-nums">
                             {formatAmount(invoice.invoice_net_amount)}
                           </TableCell>
-                          <TableCell className="py-3 px-4 text-right font-mono tabular-nums">
+                          <TableCell className="py-3 px-4 text-right tabular-nums">
                             {formatAmount(invoice.invoice_vat_amount)}
                           </TableCell>
-                          <TableCell className="py-3 px-4 text-right font-mono tabular-nums">
+                          <TableCell className="py-3 px-4 text-right tabular-nums">
                             {formatAmount(invoice.invoice_gross_amount)}
                           </TableCell>
                           <TableCell className="py-3 px-4">
