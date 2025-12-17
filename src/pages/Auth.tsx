@@ -301,14 +301,37 @@ const Auth = () => {
       </div>
 
       {/* Right Side - Visual Showcase (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-[55%] bg-gradient-to-br from-primary/10 via-primary/5 to-background relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-30">
+      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden">
+        {/* Blurred Mock Dashboard Background */}
+        <div className="absolute inset-0 -z-10 overflow-hidden blur-2xl opacity-40">
+          {/* Sidebar mock */}
+          <div className="absolute left-0 top-0 bottom-0 w-16 bg-muted/60" />
+          {/* Header mock */}
+          <div className="absolute left-16 top-0 right-0 h-14 bg-muted/50" />
+          {/* Main content area with cards */}
+          <div className="absolute left-20 top-20 right-8 bottom-8 grid grid-cols-3 gap-4 p-4">
+            {/* Large card */}
+            <div className="col-span-2 row-span-2 bg-muted/70 rounded-xl" />
+            {/* Small cards */}
+            <div className="bg-muted/60 rounded-xl" />
+            <div className="bg-muted/50 rounded-xl" />
+            <div className="col-span-2 bg-muted/60 rounded-xl" />
+            <div className="bg-muted/70 rounded-xl" />
+            {/* Chart area */}
+            <div className="col-span-3 bg-muted/50 rounded-xl h-32" />
+          </div>
+        </div>
+
+        {/* Gradient Transition Overlay (fade from left) */}
+        <div className="absolute top-0 bottom-0 left-0 w-32 z-0 bg-gradient-to-r from-background to-transparent" />
+
+        {/* Subtle ambient gradient */}
+        <div className="absolute inset-0 -z-5 opacity-60">
           <div className="absolute top-20 left-20 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
           <div className="absolute bottom-40 right-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
         </div>
 
-        {/* Content */}
+        {/* Foreground Content */}
         <div className="relative z-10 flex flex-col justify-center px-16 xl:px-24">
           <div className="mb-8">
             <h2 className="text-4xl font-bold text-foreground mb-4">
