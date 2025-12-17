@@ -73,7 +73,7 @@ const Auth = () => {
   return (
     <div className="flex min-h-screen">
       {/* Left Side - Form Area */}
-      <div className="relative flex w-full flex-col justify-center px-8 py-12 lg:w-[45%] lg:px-16 xl:px-24 bg-background">
+      <div className="relative flex w-full min-h-screen flex-col justify-center px-8 py-12 lg:w-[45%] lg:px-16 xl:px-24 bg-background">
         {/* Theme Toggle - Top Right */}
         <button
           onClick={toggleTheme}
@@ -301,34 +301,34 @@ const Auth = () => {
       </div>
 
       {/* Right Side - Visual Showcase (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-muted/20">
         {/* Blurred Mock Dashboard Background */}
-        <div className="absolute inset-0 -z-10 overflow-hidden blur-2xl opacity-40">
+        <div className="absolute inset-0 overflow-hidden blur-lg opacity-70">
           {/* Sidebar mock */}
-          <div className="absolute left-0 top-0 bottom-0 w-16 bg-muted/60" />
+          <div className="absolute left-0 top-0 bottom-0 w-20 bg-foreground/10 dark:bg-white/10" />
           {/* Header mock */}
-          <div className="absolute left-16 top-0 right-0 h-14 bg-muted/50" />
+          <div className="absolute left-20 top-0 right-0 h-16 bg-foreground/8 dark:bg-white/8" />
           {/* Main content area with cards */}
-          <div className="absolute left-20 top-20 right-8 bottom-8 grid grid-cols-3 gap-4 p-4">
+          <div className="absolute left-24 top-20 right-8 bottom-8 grid grid-cols-3 gap-4 p-4">
             {/* Large card */}
-            <div className="col-span-2 row-span-2 bg-muted/70 rounded-xl" />
+            <div className="col-span-2 row-span-2 bg-foreground/15 dark:bg-white/15 rounded-xl" />
             {/* Small cards */}
-            <div className="bg-muted/60 rounded-xl" />
-            <div className="bg-muted/50 rounded-xl" />
-            <div className="col-span-2 bg-muted/60 rounded-xl" />
-            <div className="bg-muted/70 rounded-xl" />
+            <div className="bg-foreground/12 dark:bg-white/12 rounded-xl" />
+            <div className="bg-foreground/10 dark:bg-white/10 rounded-xl" />
+            <div className="col-span-2 bg-foreground/12 dark:bg-white/12 rounded-xl" />
+            <div className="bg-foreground/15 dark:bg-white/15 rounded-xl" />
             {/* Chart area */}
-            <div className="col-span-3 bg-muted/50 rounded-xl h-32" />
+            <div className="col-span-3 bg-foreground/10 dark:bg-white/10 rounded-xl h-32" />
           </div>
         </div>
 
-        {/* Gradient Transition Overlay (fade from left) */}
-        <div className="absolute top-0 bottom-0 left-0 w-32 z-0 bg-gradient-to-r from-background to-transparent" />
+        {/* Gradient Transition Overlay (fade from left edge only) */}
+        <div className="absolute top-0 bottom-0 left-0 w-32 z-[1] bg-gradient-to-r from-background to-transparent pointer-events-none" />
 
         {/* Subtle ambient gradient */}
-        <div className="absolute inset-0 -z-5 opacity-60">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-40 right-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute inset-0 opacity-50 pointer-events-none">
+          <div className="absolute top-20 left-40 w-72 h-72 bg-primary/30 rounded-full blur-3xl" />
+          <div className="absolute bottom-40 right-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
         </div>
 
         {/* Foreground Content */}
