@@ -43,6 +43,9 @@ export default function ExchangeRates() {
   const [amount, setAmount] = useState<string>("100000");
   const [sourceCurrency, setSourceCurrency] = useState<string>("HUF");
   const [targetCurrency, setTargetCurrency] = useState<string>("EUR");
+  
+  // Hero cards state
+  const [heroCurrencies, setHeroCurrencies] = useState<string[]>(["EUR", "USD", "GBP"]);
 
   useEffect(() => {
     fetchExchangeRates();
@@ -80,12 +83,20 @@ export default function ExchangeRates() {
   };
 
   const heroRates = useMemo(() => {
-    return rates.filter(r => ["EUR", "USD", "GBP"].includes(r.currency));
-  }, [rates]);
+    return heroCurrencies.map(code => rates.find(r => r.currency === code)).filter(Boolean) as ExchangeRate[];
+  }, [rates, heroCurrencies]);
 
   const tableRates = useMemo(() => {
-    return rates.filter(r => !["EUR", "USD", "GBP"].includes(r.currency));
-  }, [rates]);
+    return rates.filter(r => !heroCurrencies.includes(r.currency));
+  }, [rates, heroCurrencies]);
+
+  const updateHeroCurrency = (index: number, newCurrency: string) => {
+    setHeroCurrencies(prev => {
+      const updated = [...prev];
+      updated[index] = newCurrency;
+      return updated;
+    });
+  };
 
   const convertedAmount = useMemo(() => {
     const parsedAmount = parseFloat(amount.replace(/\s/g, "")) || 0;
@@ -172,12 +183,12 @@ export default function ExchangeRates() {
 
       {/* Hero Cards - Key Currencies */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {heroRates.map((rate) => {
+        {heroRates.map((rate, index) => {
           const hufValue = parseFloat(calculateHufValue(rate.rate));
           const isPositive = rate.mockChange >= 0;
           
           return (
-            <Card key={rate.currency} className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/50">
+            <Card key={index} className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/50">
               <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
                 <span className="text-[120px] leading-none">{rate.flag}</span>
               </div>
@@ -186,10 +197,25 @@ export default function ExchangeRates() {
                   <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center text-2xl">
                     {rate.flag}
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">{rate.currencyName}</p>
-                    <p className="font-semibold text-lg">{rate.currency}</p>
-                  </div>
+                  <Select value={rate.currency} onValueChange={(value) => updateHeroCurrency(index, value)}>
+                    <SelectTrigger className="w-auto border-0 bg-transparent p-0 h-auto hover:bg-muted/50 rounded-md px-2 py-1 -ml-2">
+                      <div className="text-left">
+                        <p className="text-sm text-muted-foreground">{rate.currencyName}</p>
+                        <p className="font-semibold text-lg">{rate.currency}</p>
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {rates.map((r) => (
+                        <SelectItem key={r.currency} value={r.currency} disabled={heroCurrencies.includes(r.currency)}>
+                          <div className="flex items-center gap-2">
+                            <span>{r.flag}</span>
+                            <span>{r.currency}</span>
+                            <span className="text-muted-foreground">- {r.currencyName}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="space-y-2">
