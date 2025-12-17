@@ -345,7 +345,7 @@ export default function SalariesPage() {
               <SelectTrigger className="w-[140px] bg-muted/30">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-none">
                 {MONTHS.map((month) => (
                   <SelectItem key={month.value} value={month.value}>
                     {month.label}
