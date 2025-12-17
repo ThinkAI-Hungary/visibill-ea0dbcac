@@ -34,7 +34,7 @@ import { toast } from "@/hooks/use-toast";
 import { Search, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-const ITEMS_PER_PAGE = 15;
+const ITEMS_PER_PAGE = 13;
 
 interface Partner {
   id: string;
