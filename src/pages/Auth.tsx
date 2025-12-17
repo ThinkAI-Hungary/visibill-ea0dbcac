@@ -302,72 +302,94 @@ const Auth = () => {
       </div>
 
       {/* Right Side - Visual Showcase (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-[55%] bg-gradient-to-br from-primary/10 via-primary/5 to-background relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[55%] bg-gradient-to-br from-primary/5 via-background to-background relative overflow-hidden">
         {/* Edge Gradient - Smooth transition from left panel */}
-        <div className="absolute left-0 top-0 bottom-0 w-48 bg-gradient-to-r from-background via-background/50 to-transparent z-20 pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-64 bg-gradient-to-r from-background via-background/80 to-transparent z-20 pointer-events-none" />
         
-        {/* Background Pattern - Glowing orbs */}
+        {/* Background Pattern - Subtle glowing orbs */}
         <div className="absolute inset-0">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-primary/30 rounded-full blur-3xl" />
-          <div className="absolute bottom-40 right-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
         </div>
 
-        {/* Floating Financial Analytics Layer - Abstract Chart Cards */}
-        <div className="absolute inset-0 overflow-hidden">
-          
-          {/* Chart 1: Area Chart - Top Right */}
-          <div className="absolute -top-8 -right-12 w-80 h-56 rounded-2xl bg-background/30 dark:bg-white/5 backdrop-blur-sm rotate-12 opacity-40 border border-primary/10 p-4">
-            <div className="h-full flex flex-col justify-end">
-              <svg viewBox="0 0 200 80" className="w-full h-full" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="areaGradient1" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <path d="M0 80 L0 60 Q25 40 50 50 T100 30 T150 45 T200 20 L200 80 Z" fill="url(#areaGradient1)" />
-                <path d="M0 60 Q25 40 50 50 T100 30 T150 45 T200 20" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.6" />
-              </svg>
+        {/* Isometric Dashboard Perspective - Single cohesive tilted dashboard */}
+        <div 
+          className="absolute -right-20 top-10 w-[150%] h-[150%] blur-[2px] opacity-30"
+          style={{ transform: 'rotate(-12deg) skewY(12deg) scale(1.1)' }}
+        >
+          {/* Mock App Interface */}
+          <div className="w-full h-full p-8">
+            {/* Sidebar Strip */}
+            <div className="absolute left-0 top-0 bottom-0 w-16 bg-foreground/5 dark:bg-white/5 border-r border-foreground/5 dark:border-white/5">
+              {/* Sidebar icons placeholder */}
+              <div className="flex flex-col items-center gap-4 pt-8">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="w-8 h-8 rounded-lg bg-foreground/10 dark:bg-white/10" />
+                ))}
+              </div>
+            </div>
+            
+            {/* Header Strip */}
+            <div className="absolute left-16 top-0 right-0 h-14 bg-foreground/5 dark:bg-white/5 border-b border-foreground/5 dark:border-white/5 flex items-center px-6 gap-4">
+              <div className="w-32 h-6 rounded bg-foreground/10 dark:bg-white/10" />
+              <div className="flex-1" />
+              <div className="w-24 h-6 rounded bg-foreground/10 dark:bg-white/10" />
+              <div className="w-8 h-8 rounded-full bg-foreground/10 dark:bg-white/10" />
+            </div>
+            
+            {/* Main Content Area */}
+            <div className="absolute left-20 top-20 right-8 bottom-8 p-6">
+              {/* Top Stats Row */}
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-24 rounded-xl bg-foreground/5 dark:bg-white/5 border border-foreground/5 dark:border-white/5 p-4">
+                    <div className="w-16 h-3 rounded bg-foreground/10 dark:bg-white/10 mb-3" />
+                    <div className="w-24 h-6 rounded bg-foreground/10 dark:bg-white/10 mb-2" />
+                    <div className="w-12 h-3 rounded bg-primary/20" />
+                  </div>
+                ))}
+              </div>
+              
+              {/* Main Chart Card */}
+              <div className="h-64 rounded-xl bg-foreground/5 dark:bg-white/5 border border-foreground/5 dark:border-white/5 p-6 mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="w-32 h-4 rounded bg-foreground/10 dark:bg-white/10" />
+                  <div className="flex gap-2">
+                    <div className="w-16 h-6 rounded bg-foreground/10 dark:bg-white/10" />
+                    <div className="w-16 h-6 rounded bg-foreground/10 dark:bg-white/10" />
+                  </div>
+                </div>
+                {/* Chart skeleton */}
+                <div className="flex items-end gap-3 h-40 pt-4">
+                  {[40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 95, 80].map((h, i) => (
+                    <div 
+                      key={i} 
+                      className="flex-1 rounded-t bg-primary/20" 
+                      style={{ height: `${h}%` }} 
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              {/* Bottom Cards Row */}
+              <div className="grid grid-cols-2 gap-4">
+                {[...Array(2)].map((_, i) => (
+                  <div key={i} className="h-40 rounded-xl bg-foreground/5 dark:bg-white/5 border border-foreground/5 dark:border-white/5 p-4">
+                    <div className="w-24 h-4 rounded bg-foreground/10 dark:bg-white/10 mb-4" />
+                    <div className="space-y-2">
+                      {[...Array(4)].map((_, j) => (
+                        <div key={j} className="flex items-center gap-3">
+                          <div className="w-3 h-3 rounded-full bg-primary/30" />
+                          <div className="flex-1 h-3 rounded bg-foreground/10 dark:bg-white/10" />
+                          <div className="w-12 h-3 rounded bg-foreground/10 dark:bg-white/10" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-
-          {/* Chart 2: Bar Chart - Bottom Left */}
-          <div className="absolute -bottom-16 -left-8 w-72 h-48 rounded-2xl bg-background/30 dark:bg-white/5 backdrop-blur-sm -rotate-6 opacity-30 border border-primary/10 p-4">
-            <div className="h-full flex items-end justify-around gap-2 pb-2">
-              {[35, 55, 40, 70, 50, 85, 60].map((h, i) => (
-                <div 
-                  key={i} 
-                  className="flex-1 rounded-t bg-gradient-to-t from-primary/40 to-primary/60" 
-                  style={{ height: `${h}%` }} 
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Chart 3: Donut Chart - Center Background */}
-          <div className="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 opacity-20 blur-[2px]">
-            <svg viewBox="0 0 200 200" className="w-full h-full rotate-45">
-              <circle cx="100" cy="100" r="70" fill="none" stroke="hsl(var(--primary))" strokeWidth="20" strokeDasharray="220 440" opacity="0.5" />
-              <circle cx="100" cy="100" r="70" fill="none" stroke="hsl(var(--primary))" strokeWidth="20" strokeDasharray="110 440" strokeDashoffset="-220" opacity="0.3" />
-              <circle cx="100" cy="100" r="70" fill="none" stroke="hsl(var(--primary))" strokeWidth="20" strokeDasharray="80 440" strokeDashoffset="-330" opacity="0.2" />
-            </svg>
-          </div>
-
-          {/* Chart 4: Line Chart - Mid Right */}
-          <div className="absolute top-1/3 -right-20 w-64 h-40 rounded-2xl bg-background/20 dark:bg-white/5 backdrop-blur-sm rotate-6 opacity-25 border border-primary/10 p-4">
-            <svg viewBox="0 0 150 60" className="w-full h-full" preserveAspectRatio="none">
-              <path d="M0 50 L20 40 L40 45 L60 25 L80 35 L100 15 L120 25 L150 10" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.7" />
-              <circle cx="60" cy="25" r="4" fill="hsl(var(--primary))" opacity="0.5" />
-              <circle cx="100" cy="15" r="4" fill="hsl(var(--primary))" opacity="0.5" />
-              <circle cx="150" cy="10" r="4" fill="hsl(var(--primary))" opacity="0.5" />
-            </svg>
-          </div>
-
-          {/* Floating data points / particles */}
-          <div className="absolute top-20 right-1/3 w-3 h-3 rounded-full bg-primary/40 blur-[1px]" />
-          <div className="absolute bottom-1/3 right-20 w-2 h-2 rounded-full bg-primary/50 blur-[1px]" />
-          <div className="absolute top-1/2 right-1/4 w-4 h-4 rounded-full bg-primary/30 blur-[1px]" />
         </div>
 
         {/* Content */}
