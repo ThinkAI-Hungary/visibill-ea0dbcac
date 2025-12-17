@@ -74,10 +74,10 @@ const Auth = () => {
     <div className="flex min-h-screen">
       {/* Left Side - Form Area */}
       <div className="relative flex w-full flex-col items-center justify-start px-8 py-12 lg:w-[45%] lg:px-16 xl:px-24 bg-background min-h-screen pt-[15vh]">
-        {/* Theme Toggle - Top Right */}
+        {/* Theme Toggle - Top Left */}
         <button
           onClick={toggleTheme}
-          className="absolute right-6 top-6 p-2 rounded-full hover:bg-secondary/80 transition-colors"
+          className="absolute left-6 top-6 p-2 rounded-full hover:bg-secondary/80 transition-colors"
           aria-label="Toggle theme"
         >
           {currentTheme === 'dark' ? (
