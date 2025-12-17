@@ -310,31 +310,64 @@ const Auth = () => {
         <div className="absolute inset-0">
           <div className="absolute top-20 left-20 w-72 h-72 bg-primary/30 rounded-full blur-3xl" />
           <div className="absolute bottom-40 right-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
         </div>
 
-        {/* Mock Dashboard Background Shapes (visible texture) */}
-        <div className="absolute inset-0 blur-sm">
-          {/* Fake Sidebar */}
-          <div className="absolute left-8 top-12 bottom-12 w-16 rounded-xl bg-foreground/5 dark:bg-white/10" />
+        {/* Floating Financial Analytics Layer - Abstract Chart Cards */}
+        <div className="absolute inset-0 overflow-hidden">
           
-          {/* Fake Top Bar */}
-          <div className="absolute left-28 top-12 right-8 h-12 rounded-xl bg-foreground/5 dark:bg-white/8" />
-          
-          {/* Fake Card Grid */}
-          <div className="absolute left-28 top-28 right-8 grid grid-cols-3 gap-4">
-            <div className="h-24 rounded-xl bg-foreground/5 dark:bg-white/8" />
-            <div className="h-24 rounded-xl bg-foreground/5 dark:bg-white/8" />
-            <div className="h-24 rounded-xl bg-foreground/5 dark:bg-white/8" />
+          {/* Chart 1: Area Chart - Top Right */}
+          <div className="absolute -top-8 -right-12 w-80 h-56 rounded-2xl bg-background/30 dark:bg-white/5 backdrop-blur-sm rotate-12 opacity-40 border border-primary/10 p-4">
+            <div className="h-full flex flex-col justify-end">
+              <svg viewBox="0 0 200 80" className="w-full h-full" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="areaGradient1" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <path d="M0 80 L0 60 Q25 40 50 50 T100 30 T150 45 T200 20 L200 80 Z" fill="url(#areaGradient1)" />
+                <path d="M0 60 Q25 40 50 50 T100 30 T150 45 T200 20" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.6" />
+              </svg>
+            </div>
           </div>
-          
-          {/* Fake Large Chart Card */}
-          <div className="absolute left-28 top-56 right-8 h-48 rounded-xl bg-foreground/5 dark:bg-white/10" />
-          
-          {/* Fake Bottom Cards */}
-          <div className="absolute left-28 bottom-12 right-8 grid grid-cols-2 gap-4">
-            <div className="h-32 rounded-xl bg-foreground/5 dark:bg-white/8" />
-            <div className="h-32 rounded-xl bg-foreground/5 dark:bg-white/8" />
+
+          {/* Chart 2: Bar Chart - Bottom Left */}
+          <div className="absolute -bottom-16 -left-8 w-72 h-48 rounded-2xl bg-background/30 dark:bg-white/5 backdrop-blur-sm -rotate-6 opacity-30 border border-primary/10 p-4">
+            <div className="h-full flex items-end justify-around gap-2 pb-2">
+              {[35, 55, 40, 70, 50, 85, 60].map((h, i) => (
+                <div 
+                  key={i} 
+                  className="flex-1 rounded-t bg-gradient-to-t from-primary/40 to-primary/60" 
+                  style={{ height: `${h}%` }} 
+                />
+              ))}
+            </div>
           </div>
+
+          {/* Chart 3: Donut Chart - Center Background */}
+          <div className="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 opacity-20 blur-[2px]">
+            <svg viewBox="0 0 200 200" className="w-full h-full rotate-45">
+              <circle cx="100" cy="100" r="70" fill="none" stroke="hsl(var(--primary))" strokeWidth="20" strokeDasharray="220 440" opacity="0.5" />
+              <circle cx="100" cy="100" r="70" fill="none" stroke="hsl(var(--primary))" strokeWidth="20" strokeDasharray="110 440" strokeDashoffset="-220" opacity="0.3" />
+              <circle cx="100" cy="100" r="70" fill="none" stroke="hsl(var(--primary))" strokeWidth="20" strokeDasharray="80 440" strokeDashoffset="-330" opacity="0.2" />
+            </svg>
+          </div>
+
+          {/* Chart 4: Line Chart - Mid Right */}
+          <div className="absolute top-1/3 -right-20 w-64 h-40 rounded-2xl bg-background/20 dark:bg-white/5 backdrop-blur-sm rotate-6 opacity-25 border border-primary/10 p-4">
+            <svg viewBox="0 0 150 60" className="w-full h-full" preserveAspectRatio="none">
+              <path d="M0 50 L20 40 L40 45 L60 25 L80 35 L100 15 L120 25 L150 10" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.7" />
+              <circle cx="60" cy="25" r="4" fill="hsl(var(--primary))" opacity="0.5" />
+              <circle cx="100" cy="15" r="4" fill="hsl(var(--primary))" opacity="0.5" />
+              <circle cx="150" cy="10" r="4" fill="hsl(var(--primary))" opacity="0.5" />
+            </svg>
+          </div>
+
+          {/* Floating data points / particles */}
+          <div className="absolute top-20 right-1/3 w-3 h-3 rounded-full bg-primary/40 blur-[1px]" />
+          <div className="absolute bottom-1/3 right-20 w-2 h-2 rounded-full bg-primary/50 blur-[1px]" />
+          <div className="absolute top-1/2 right-1/4 w-4 h-4 rounded-full bg-primary/30 blur-[1px]" />
         </div>
 
         {/* Content */}
