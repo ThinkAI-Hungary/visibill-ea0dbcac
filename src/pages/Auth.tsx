@@ -91,7 +91,7 @@ const Auth = () => {
         <div className="w-full max-w-sm">
           {/* Logo */}
           <div className="mb-12">
-            <span className="text-3xl font-black bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight">
+            <span className="text-5xl font-black bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight">
               Visibill
             </span>
           </div>
