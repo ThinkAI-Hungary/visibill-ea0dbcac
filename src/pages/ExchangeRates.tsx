@@ -36,7 +36,8 @@ const currencyData = [
 
 export default function ExchangeRates() {
   const [rates, setRates] = useState<ExchangeRate[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<string>("");
   
   // Converter state
@@ -51,9 +52,13 @@ export default function ExchangeRates() {
     fetchExchangeRates();
   }, []);
 
-  const fetchExchangeRates = async () => {
+  const fetchExchangeRates = async (isRefresh = false) => {
     try {
-      setLoading(true);
+      if (isRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setInitialLoading(true);
+      }
       const response = await fetch('https://api.exchangerate-api.com/v4/latest/HUF');
       if (!response.ok) {
         throw new Error('Failed to fetch exchange rates');
@@ -74,7 +79,8 @@ export default function ExchangeRates() {
     } catch (error) {
       console.error('Error fetching exchange rates:', error);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -139,7 +145,7 @@ export default function ExchangeRates() {
     return num.toLocaleString('hu-HU');
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="container mx-auto py-4 px-4 space-y-4">
         <div className="flex items-center justify-between">
@@ -160,7 +166,7 @@ export default function ExchangeRates() {
   }
 
   return (
-    <div className="container mx-auto py-4 px-4 space-y-4">
+    <div className="container mx-auto py-4 px-4 space-y-4 relative">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -174,12 +180,22 @@ export default function ExchangeRates() {
             <Clock className="h-3 w-3" />
             {lastUpdate}
           </Badge>
-          <Button variant="outline" size="sm" onClick={fetchExchangeRates} disabled={loading} className="gap-2">
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="sm" onClick={() => fetchExchangeRates(true)} disabled={isRefreshing} className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             Frissítés
           </Button>
         </div>
       </div>
+
+      {/* Refresh Loading Overlay */}
+      {isRefreshing && (
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
+          <div className="flex flex-col items-center gap-3">
+            <RefreshCw className="h-10 w-10 animate-spin text-primary" />
+            <p className="text-muted-foreground">Árfolyamok frissítése...</p>
+          </div>
+        </div>
+      )}
 
       {/* Hero Cards - Key Currencies */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
