@@ -106,7 +106,7 @@ export default function SalariesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 12;
+  const ITEMS_PER_PAGE = 11;
   
   const [formData, setFormData] = useState({
     név: "",
