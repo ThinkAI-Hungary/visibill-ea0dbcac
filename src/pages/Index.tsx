@@ -576,9 +576,9 @@ const Index = () => {
     await signOut();
   };
 
-  // Show loading spinner only while company data is being fetched
-  if (companyLoading) {
-    return <LoadingSpinner />;
+  // Show loading spinner while company or metrics data is being fetched
+  if (companyLoading || metricsLoading) {
+    return <LoadingSpinner message="Irányítópult betöltése..." />;
   }
 
   // Show empty state dashboard when no companies exist
@@ -719,110 +719,97 @@ const Index = () => {
         </div>
 
         {/* Metrics Cards */}
-        {metricsLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <LoadingSpinner message="Betöltés..." fullPage={false} />
-          </div>
-        ) : (
-          <>
-            {(() => {
-              let payableVat = 0;
-              if (navVatData) {
-                const inboundTotal = Object.entries(navVatData.inboundVat).reduce((total, [currency, amount]) => {
-                  return total + convertToSelectedCurrency(amount, currency);
-                }, 0);
-                const outboundTotal = Object.entries(navVatData.outboundVat).reduce((total, [currency, amount]) => {
-                  return total + convertToSelectedCurrency(amount, currency);
-                }, 0);
-                payableVat = outboundTotal - inboundTotal;
-              }
+        {metrics && (() => {
+          let payableVat = 0;
+          if (navVatData) {
+            const inboundTotal = Object.entries(navVatData.inboundVat).reduce((total, [currency, amount]) => {
+              return total + convertToSelectedCurrency(amount, currency);
+            }, 0);
+            const outboundTotal = Object.entries(navVatData.outboundVat).reduce((total, [currency, amount]) => {
+              return total + convertToSelectedCurrency(amount, currency);
+            }, 0);
+            payableVat = outboundTotal - inboundTotal;
+          }
 
-              // Get the appropriate revenue data based on nettó/bruttó toggle
-              const revenueData = showBrutto ? navVatData?.revenueGross : navVatData?.revenueNet;
-              const expensesData = showBrutto ? navVatData?.expensesGross : navVatData?.expensesNet;
-              const unpaidInboundData = showBrutto ? navVatData?.unpaidInboundGross : navVatData?.unpaidInboundNet;
-              const unpaidOutboundData = showBrutto ? navVatData?.unpaidOutboundGross : navVatData?.unpaidOutboundNet;
+          // Get the appropriate revenue data based on nettó/bruttó toggle
+          const revenueData = showBrutto ? navVatData?.revenueGross : navVatData?.revenueNet;
+          const expensesData = showBrutto ? navVatData?.expensesGross : navVatData?.expensesNet;
+          const unpaidInboundData = showBrutto ? navVatData?.unpaidInboundGross : navVatData?.unpaidInboundNet;
+          const unpaidOutboundData = showBrutto ? navVatData?.unpaidOutboundGross : navVatData?.unpaidOutboundNet;
 
-              return (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6 items-stretch">
-                  <MetricCard
-                    title="Feltöltött számlák"
-                    value={metrics.totalInvoices}
-                    description={`${metrics.completedCount} feldolgozva`}
-                    icon={Upload}
-                    variant="default"
-                  />
-                  <MetricCard
-                    title={`Kimenő számlaösszeg (${showBrutto ? 'bruttó' : 'nettó'})`}
-                    value={
-                      revenueData && Object.keys(revenueData).length > 0
-                        ? Object.entries(revenueData)
-                            .map(([currency, amount]) => formatCurrency(amount, currency))
-                            .join(' | ')
-                        : '0 Ft'
-                    }
-                    description="NAV OUTBOUND"
-                    icon={ArrowUpRight}
-                    variant="success"
-                  />
-                  <MetricCard
-                    title={`Kintlévőség (${showBrutto ? 'bruttó' : 'nettó'})`}
-                    value={
-                      unpaidOutboundData && Object.keys(unpaidOutboundData).length > 0
-                        ? Object.entries(unpaidOutboundData)
-                            .map(([currency, amount]) => formatCurrency(amount, currency))
-                            .join(' | ')
-                        : '0 Ft'
-                    }
-                    description="Kifizetetlen kimenő számlák"
-                    icon={TrendingUp}
-                    variant="warning"
-                  />
-                  <MetricCard
-                    title={`Bejövő számlaösszeg (${showBrutto ? 'bruttó' : 'nettó'})`}
-                    value={
-                      expensesData && Object.keys(expensesData).length > 0
-                        ? Object.entries(expensesData)
-                            .map(([currency, amount]) => formatCurrency(amount, currency))
-                            .join(' | ')
-                        : '0 Ft'
-                    }
-                    description="NAV INBOUND"
-                    icon={ArrowDownLeft}
-                    variant="warning"
-                  />
-                  <MetricCard
-                    title="Várható ÁFA"
-                    value={formatCurrency(payableVat, selectedCurrency)}
-                    description="OUTBOUND - INBOUND"
-                    icon={PieChart}
-                    variant={payableVat > 0 ? "warning" : "success"}
-                  />
-                  <MetricCard
-                    title={`Követelés (${showBrutto ? 'bruttó' : 'nettó'})`}
-                    value={
-                      unpaidInboundData && Object.keys(unpaidInboundData).length > 0
-                        ? Object.entries(unpaidInboundData)
-                            .map(([currency, amount]) => formatCurrency(amount, currency))
-                            .join(' | ')
-                        : '0 Ft'
-                    }
-                    description="Kifizetetlen bejövő számlák"
-                    icon={Wallet}
-                    variant="destructive"
-                  />
-                </div>
-              );
-            })()}
-          </>
-        )}
+          return (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6 items-stretch">
+              <MetricCard
+                title="Feltöltött számlák"
+                value={metrics.totalInvoices}
+                description={`${metrics.completedCount} feldolgozva`}
+                icon={Upload}
+                variant="default"
+              />
+              <MetricCard
+                title={`Kimenő számlaösszeg (${showBrutto ? 'bruttó' : 'nettó'})`}
+                value={
+                  revenueData && Object.keys(revenueData).length > 0
+                    ? Object.entries(revenueData)
+                        .map(([currency, amount]) => formatCurrency(amount, currency))
+                        .join(' | ')
+                    : '0 Ft'
+                }
+                description="NAV OUTBOUND"
+                icon={ArrowUpRight}
+                variant="success"
+              />
+              <MetricCard
+                title={`Kintlévőség (${showBrutto ? 'bruttó' : 'nettó'})`}
+                value={
+                  unpaidOutboundData && Object.keys(unpaidOutboundData).length > 0
+                    ? Object.entries(unpaidOutboundData)
+                        .map(([currency, amount]) => formatCurrency(amount, currency))
+                        .join(' | ')
+                    : '0 Ft'
+                }
+                description="Kifizetetlen kimenő számlák"
+                icon={TrendingUp}
+                variant="warning"
+              />
+              <MetricCard
+                title={`Bejövő számlaösszeg (${showBrutto ? 'bruttó' : 'nettó'})`}
+                value={
+                  expensesData && Object.keys(expensesData).length > 0
+                    ? Object.entries(expensesData)
+                        .map(([currency, amount]) => formatCurrency(amount, currency))
+                        .join(' | ')
+                    : '0 Ft'
+                }
+                description="NAV INBOUND"
+                icon={ArrowDownLeft}
+                variant="warning"
+              />
+              <MetricCard
+                title="Várható ÁFA"
+                value={formatCurrency(payableVat, selectedCurrency)}
+                description="OUTBOUND - INBOUND"
+                icon={PieChart}
+                variant={payableVat > 0 ? "warning" : "success"}
+              />
+              <MetricCard
+                title={`Követelés (${showBrutto ? 'bruttó' : 'nettó'})`}
+                value={
+                  unpaidInboundData && Object.keys(unpaidInboundData).length > 0
+                    ? Object.entries(unpaidInboundData)
+                        .map(([currency, amount]) => formatCurrency(amount, currency))
+                        .join(' | ')
+                    : '0 Ft'
+                }
+                description="Kifizetetlen bejövő számlák"
+                icon={Wallet}
+                variant="destructive"
+              />
+            </div>
+          );
+        })()}
 
         {/* ÁFA Section */}
-        {analyticsLoading && outboundVatCategories.length === 0 && inboundVatCategories.length === 0 ? (
-          <Card className="flex items-center justify-center py-16">
-            <LoadingSpinner message="ÁFA adatok betöltése..." fullPage={false} />
-          </Card>
-        ) : (
         <Collapsible open={vatSectionOpen} onOpenChange={setVatSectionOpen}>
           <Card>
             <CardHeader className="pb-2">
@@ -970,17 +957,11 @@ const Index = () => {
             </CollapsibleContent>
           </Card>
         </Collapsible>
-        )}
 
         {/* Invoice Status Tables */}
         <InvoiceStatusTables />
 
         {/* Revenue & Expenses Section */}
-        {analyticsLoading && rawInvoices.length === 0 && rawSalaries.length === 0 ? (
-          <Card className="flex items-center justify-center py-16">
-            <LoadingSpinner message="Bevétel/kiadás adatok betöltése..." fullPage={false} />
-          </Card>
-        ) : (
         <Collapsible open={revenueSectionOpen} onOpenChange={setRevenueSectionOpen}>
           <Card>
             <CardHeader className="pb-2">
@@ -1211,7 +1192,6 @@ const Index = () => {
             </CollapsibleContent>
           </Card>
         </Collapsible>
-        )}
 
         {/* Main Dashboard Grid */}
         <div className="grid gap-6 lg:grid-cols-3">
