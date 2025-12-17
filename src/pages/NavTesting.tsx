@@ -276,14 +276,14 @@ const NavTesting: React.FC = () => {
                 type="date"
                 value={filters.dateFrom}
                 onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
-                className="w-[140px] bg-background/50"
+                className="w-[150px] bg-background/50 pr-3"
               />
               
               <Input
                 type="date"
                 value={filters.dateTo}
                 onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
-                className="w-[140px] bg-background/50"
+                className="w-[150px] bg-background/50 pr-3"
               />
               
               <Button onClick={handleSync} disabled={loading}>
