@@ -206,7 +206,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, onCr
       if (!session) throw new Error('Not authenticated');
       
       const { data, error } = await supabase.functions.invoke('nav-token', {
-        body: { action: 'validate_credentials' },
+        body: { action: 'validate_credentials', company_id: companyId },
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }

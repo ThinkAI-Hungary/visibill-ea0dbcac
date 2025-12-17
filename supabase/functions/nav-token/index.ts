@@ -48,13 +48,13 @@ serve(async (req) => {
 
     console.log('[NAV-TOKEN] Processing request for user:', user.id);
 
-    const { action } = await req.json();
+    const { action, company_id } = await req.json();
 
     switch (action) {
       case 'validate_credentials':
-        return await validateCredentials(supabaseClient, user.id);
+        return await validateCredentials(supabaseClient, user.id, company_id);
       case 'request_token':
-        return await requestToken(supabaseClient, user.id);
+        return await requestToken(supabaseClient, user.id, company_id);
       default:
         throw new Error('Invalid action');
     }
@@ -111,14 +111,15 @@ function createSignature(credentials: NavCredentials, requestId: string, timesta
     .toUpperCase();
 }
 
-async function validateCredentials(supabaseClient: any, userId: string) {
-  console.log('[NAV-TOKEN] Validating credentials for user:', userId);
+async function validateCredentials(supabaseClient: any, userId: string, companyId?: string) {
+  console.log('[NAV-TOKEN] Validating credentials for user:', userId, 'company:', companyId);
 
   // Get decrypted credentials
   const { data: credsResult, error: credsError } = await supabaseClient
-    .rpc('get_nav_credentials', { p_user_id: userId });
+    .rpc('get_nav_credentials', { p_user_id: userId, p_company_id: companyId || null });
 
   if (credsError || !credsResult || credsResult.error) {
+    console.error('[NAV-TOKEN] Credentials retrieval failed:', credsError || credsResult?.error);
     throw new Error('Could not retrieve credentials');
   }
 
@@ -207,6 +208,10 @@ async function validateCredentials(supabaseClient: any, userId: string) {
     const validationStatus = isValid ? 'valid' : 'invalid';
     const validationError = !isValid ? parseNAVError(xmlResponse) : null;
 
+    const updateFilter = companyId 
+      ? { user_id: userId, company_id: companyId }
+      : { user_id: userId };
+    
     await supabaseClient
       .from('user_nav_credentials')
       .update({
@@ -214,7 +219,7 @@ async function validateCredentials(supabaseClient: any, userId: string) {
         validation_error: validationError,
         last_validated_at: new Date().toISOString()
       })
-      .eq('user_id', userId);
+      .match(updateFilter);
 
     return new Response(
       JSON.stringify({
@@ -232,6 +237,10 @@ async function validateCredentials(supabaseClient: any, userId: string) {
   } catch (error) {
     console.error('[NAV-TOKEN] Validation error:', error);
     
+    const updateFilter = companyId 
+      ? { user_id: userId, company_id: companyId }
+      : { user_id: userId };
+    
     await supabaseClient
       .from('user_nav_credentials')
       .update({
@@ -239,20 +248,21 @@ async function validateCredentials(supabaseClient: any, userId: string) {
         validation_error: error.message,
         last_validated_at: new Date().toISOString()
       })
-      .eq('user_id', userId);
+      .match(updateFilter);
 
     throw new Error(`Validation failed: ${error.message}`);
   }
 }
 
-async function requestToken(supabaseClient: any, userId: string) {
-  console.log('[NAV-TOKEN] Requesting token for user:', userId);
+async function requestToken(supabaseClient: any, userId: string, companyId?: string) {
+  console.log('[NAV-TOKEN] Requesting token for user:', userId, 'company:', companyId);
 
   // Get decrypted credentials
   const { data: credsResult, error: credsError } = await supabaseClient
-    .rpc('get_nav_credentials', { p_user_id: userId });
+    .rpc('get_nav_credentials', { p_user_id: userId, p_company_id: companyId || null });
 
   if (credsError || !credsResult || credsResult.error) {
+    console.error('[NAV-TOKEN] Credentials retrieval failed:', credsError || credsResult?.error);
     throw new Error('Could not retrieve credentials');
   }
 
