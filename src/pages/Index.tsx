@@ -1267,7 +1267,7 @@ const Index = () => {
 
         {/* Quick Actions */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="p-6 text-center hover:bg-muted/50 transition-colors flex flex-col">
+          <Card className="p-6 text-center flex flex-col">
             <BarChart3 className="h-8 w-8 mx-auto mb-3 text-primary" />
             <h3 className="font-semibold mb-2">Számlák áttekintése</h3>
             <p className="text-sm text-muted-foreground mb-4 flex-1">
@@ -1281,7 +1281,7 @@ const Index = () => {
               Számlák megtekintése
             </Button>
           </Card>
-          <Card className="p-6 text-center hover:bg-muted/50 transition-colors flex flex-col">
+          <Card className="p-6 text-center flex flex-col">
             <Upload className="h-8 w-8 mx-auto mb-3 text-primary" />
             <h3 className="font-semibold mb-2">Számlák feltöltése</h3>
             <p className="text-sm text-muted-foreground mb-4 flex-1">
@@ -1295,7 +1295,7 @@ const Index = () => {
               Fájlok feltöltése
             </Button>
           </Card>
-          <Card className="p-6 text-center hover:bg-muted/50 transition-colors flex flex-col">
+          <Card className="p-6 text-center flex flex-col">
             <PieChart className="h-8 w-8 mx-auto mb-3 text-warning" />
             <h3 className="font-semibold mb-2">Projekt Kezelés</h3>
             <p className="text-sm text-muted-foreground mb-4 flex-1">
