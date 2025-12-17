@@ -9,6 +9,7 @@ import { RefreshCw, Shield, Database, ArrowDownLeft, ArrowUpRight, FileCheck, Cl
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface NavInvoice {
   id: string;
@@ -33,6 +34,7 @@ const PAGE_SIZE = 20;
 const NavTesting: React.FC = () => {
   const { toast } = useToast();
   const { selectedCompany } = useCompany();
+  const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [navInvoices, setNavInvoices] = useState<NavInvoice[]>([]);
   const [credentialsExist, setCredentialsExist] = useState(false);
@@ -66,6 +68,7 @@ const NavTesting: React.FC = () => {
   const checkCredentialsExist = async () => {
     if (!selectedCompany) {
       setCredentialsExist(false);
+      setInitialLoading(false);
       return;
     }
     try {
@@ -78,6 +81,8 @@ const NavTesting: React.FC = () => {
       setCredentialsExist(!error && !!data);
     } catch (error) {
       setCredentialsExist(false);
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -257,6 +262,10 @@ const NavTesting: React.FC = () => {
     }
     return decodeHtmlEntities(invoice.supplier_name || invoice.supplier_tax_number || null);
   };
+
+  if (initialLoading) {
+    return <LoadingSpinner message="NAV számlák betöltése..." />;
+  }
 
   if (!credentialsExist) {
     return (
