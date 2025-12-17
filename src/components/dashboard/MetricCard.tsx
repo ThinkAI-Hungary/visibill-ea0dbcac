@@ -37,8 +37,8 @@ const MetricCard = ({
   };
 
   return (
-    <Card className={cn('relative overflow-hidden min-h-[160px] flex flex-col', variantStyles[variant])}>
-      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3 min-h-[72px]">
+    <Card className={cn('relative overflow-hidden h-[180px] flex flex-col', variantStyles[variant])}>
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 h-[80px] shrink-0">
         <CardTitle className="text-sm font-medium leading-tight pr-2">{title}</CardTitle>
         <Icon className={cn('h-4 w-4 mt-0.5 shrink-0', iconStyles[variant])} />
       </CardHeader>
