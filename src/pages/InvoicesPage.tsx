@@ -659,8 +659,8 @@ const InvoicesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="w-full max-w-none px-6 py-8">
+    <div className="h-full bg-background">
+      <main className="w-full max-w-none px-6 py-4">
         <Card>
           <CardHeader>
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
