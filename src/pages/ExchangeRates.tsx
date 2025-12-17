@@ -130,7 +130,7 @@ export default function ExchangeRates() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-8 px-4 space-y-6">
+      <div className="container mx-auto py-4 px-4 space-y-4">
         <div className="flex items-center justify-between">
           <Skeleton className="h-10 w-48" />
           <Skeleton className="h-6 w-32" />
@@ -149,7 +149,7 @@ export default function ExchangeRates() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 space-y-6">
+    <div className="container mx-auto py-4 px-4 space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
