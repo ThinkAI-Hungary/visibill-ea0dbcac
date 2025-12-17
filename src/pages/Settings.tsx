@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { EmailPreferences } from "@/components/EmailPreferences";
@@ -392,6 +393,9 @@ export default function Settings() {
     }
   };
 
+  if (!initialDataLoaded || companiesLoading) {
+    return <LoadingSpinner message="Beállítások betöltése..." />;
+  }
 
   return (
     <div className="container mx-auto py-8 px-6">
