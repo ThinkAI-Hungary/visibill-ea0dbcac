@@ -412,7 +412,7 @@ export default function PartnersPage() {
                     })}
                     {/* Empty placeholder rows to maintain consistent table height */}
                     {Array.from({ length: Math.max(0, ITEMS_PER_PAGE - paginatedPartners.length) }).map((_, index) => (
-                      <TableRow key={`empty-${index}`} className="h-[52px]">
+                      <TableRow key={`empty-${index}`} className="h-[65px]">
                         <TableCell className="py-4 px-4">&nbsp;</TableCell>
                         <TableCell className="py-4 px-4">&nbsp;</TableCell>
                         {hasAnyAddress && <TableCell className="py-4 px-4">&nbsp;</TableCell>}
