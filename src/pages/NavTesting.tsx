@@ -192,14 +192,21 @@ const NavTesting: React.FC = () => {
   const formatAmount = (amount: number | null) => {
     if (amount === null || amount === undefined) return '—';
     return new Intl.NumberFormat('hu-HU', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '—';
     return dateStr.split('T')[0];
+  };
+
+  const decodeHtmlEntities = (str: string | null) => {
+    if (!str) return '—';
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = str;
+    return textarea.value;
   };
 
   const getInvoiceStatus = (invoice: NavInvoice) => {
@@ -214,9 +221,9 @@ const NavTesting: React.FC = () => {
 
   const getPartnerName = (invoice: NavInvoice) => {
     if (invoice.invoice_direction === 'OUTBOUND') {
-      return invoice.customer_name || invoice.customer_tax_number || '—';
+      return decodeHtmlEntities(invoice.customer_name || invoice.customer_tax_number || null);
     }
-    return invoice.supplier_name || invoice.supplier_tax_number || '—';
+    return decodeHtmlEntities(invoice.supplier_name || invoice.supplier_tax_number || null);
   };
 
   if (!credentialsExist) {
@@ -327,13 +334,13 @@ const NavTesting: React.FC = () => {
                       Keltezés
                     </TableHead>
                     <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
-                      Nettó
+                      Nettó (Ft)
                     </TableHead>
                     <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
-                      ÁFA
+                      ÁFA (Ft)
                     </TableHead>
                     <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
-                      Bruttó
+                      Bruttó (Ft)
                     </TableHead>
                     <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Státusz
@@ -370,17 +377,14 @@ const NavTesting: React.FC = () => {
                         <TableCell className="py-3 px-4 tabular-nums">
                           {formatDate(invoice.invoice_issue_date)}
                         </TableCell>
-                        <TableCell className="py-3 px-4 text-right font-mono">
+                        <TableCell className="py-3 px-4 text-right font-mono tabular-nums">
                           {formatAmount(invoice.invoice_net_amount)}
-                          <span className="text-muted-foreground ml-1">{invoice.currency || 'Ft'}</span>
                         </TableCell>
-                        <TableCell className="py-3 px-4 text-right font-mono">
+                        <TableCell className="py-3 px-4 text-right font-mono tabular-nums">
                           {formatAmount(invoice.invoice_vat_amount)}
-                          <span className="text-muted-foreground ml-1">{invoice.currency || 'Ft'}</span>
                         </TableCell>
-                        <TableCell className="py-3 px-4 text-right font-mono font-semibold">
+                        <TableCell className="py-3 px-4 text-right font-mono tabular-nums font-semibold">
                           {formatAmount(invoice.invoice_gross_amount)}
-                          <span className="text-muted-foreground font-normal ml-1">{invoice.currency || 'Ft'}</span>
                         </TableCell>
                         <TableCell className="py-3 px-4">
                           {status.variant === 'success' ? (
