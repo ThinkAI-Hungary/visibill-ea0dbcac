@@ -315,7 +315,7 @@ export default function SalariesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-full space-y-4 px-2 py-2">
       {/* Header with Month Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
