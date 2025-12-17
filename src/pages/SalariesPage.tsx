@@ -39,7 +39,9 @@ import {
   Wallet, 
   Users, 
   TrendingUp, 
-  Calendar
+  Calendar,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { hu } from "date-fns/locale";
@@ -103,6 +105,8 @@ export default function SalariesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
   
   const [formData, setFormData] = useState({
     név: "",
@@ -156,6 +160,19 @@ export default function SalariesPage() {
       return matchesSearch;
     });
   }, [salaries, searchTerm, selectedMonth]);
+
+  // Paginated salaries
+  const paginatedSalaries = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredSalaries.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredSalaries, currentPage]);
+
+  const totalPages = Math.ceil(filteredSalaries.length / ITEMS_PER_PAGE);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedMonth]);
 
   // Calculate metrics
   const metrics = useMemo(() => {
@@ -540,7 +557,7 @@ export default function SalariesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredSalaries.map((salary) => {
+                  {paginatedSalaries.map((salary) => {
                     const status = getPaymentStatus(salary.dátum);
                     return (
                       <TableRow 
@@ -601,6 +618,35 @@ export default function SalariesPage() {
                   })}
                 </TableBody>
               </Table>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-sm text-muted-foreground">
+                Összesen {filteredSalaries.length} bejegyzés, {currentPage}. oldal / {totalPages}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Előző
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Következő
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
