@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { RefreshCw, Shield, Database, ArrowDownLeft, ArrowUpRight, FileCheck, Clock } from 'lucide-react';
+import { RefreshCw, Shield, Database, ArrowDownLeft, ArrowUpRight, FileCheck, Clock, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -28,12 +28,16 @@ interface NavInvoice {
   details_fetched: boolean | null;
 }
 
+const PAGE_SIZE = 15;
+
 const NavTesting: React.FC = () => {
   const { toast } = useToast();
   const { selectedCompany } = useCompany();
   const [loading, setLoading] = useState(false);
   const [navInvoices, setNavInvoices] = useState<NavInvoice[]>([]);
   const [credentialsExist, setCredentialsExist] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   
   const [filters, setFilters] = useState({
     direction: 'ALL' as 'ALL' | 'OUTBOUND' | 'INBOUND',
@@ -49,9 +53,15 @@ const NavTesting: React.FC = () => {
 
   useEffect(() => {
     if (credentialsExist && selectedCompany) {
-      loadNavInvoices();
+      setCurrentPage(1);
     }
   }, [filters, credentialsExist, selectedCompany]);
+
+  useEffect(() => {
+    if (credentialsExist && selectedCompany) {
+      loadNavInvoices();
+    }
+  }, [currentPage, filters, credentialsExist, selectedCompany]);
 
   const checkCredentialsExist = async () => {
     if (!selectedCompany) {
@@ -74,13 +84,33 @@ const NavTesting: React.FC = () => {
   const loadNavInvoices = async () => {
     if (!selectedCompany) return;
     try {
+      // First get total count
+      let countQuery = supabase
+        .from('nav_invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', selectedCompany.id)
+        .gte('invoice_issue_date', filters.dateFrom)
+        .lte('invoice_issue_date', filters.dateTo);
+
+      if (filters.direction !== 'ALL') {
+        countQuery = countQuery.eq('invoice_direction', filters.direction);
+      }
+
+      const { count } = await countQuery;
+      setTotalCount(count || 0);
+
+      // Then get paginated data
+      const from = (currentPage - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
       let query = supabase
         .from('nav_invoices')
         .select('*')
         .eq('company_id', selectedCompany.id)
         .gte('invoice_issue_date', filters.dateFrom)
         .lte('invoice_issue_date', filters.dateTo)
-        .order('invoice_issue_date', { ascending: false });
+        .order('invoice_issue_date', { ascending: false })
+        .range(from, to);
 
       if (filters.direction !== 'ALL') {
         query = query.eq('invoice_direction', filters.direction);
@@ -94,6 +124,8 @@ const NavTesting: React.FC = () => {
       console.error('Error loading nav invoices:', error);
     }
   };
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const handleSync = async () => {
     if (!selectedCompany) {
@@ -258,7 +290,7 @@ const NavTesting: React.FC = () => {
             <div className="flex items-center gap-3">
               <Database className="w-5 h-5 text-primary" />
               <h1 className="text-xl font-semibold">
-                NAV Számlák <span className="text-muted-foreground font-normal">({navInvoices.length})</span>
+                NAV Számlák <span className="text-muted-foreground font-normal">({totalCount})</span>
               </h1>
             </div>
             
@@ -317,101 +349,153 @@ const NavTesting: React.FC = () => {
               <p className="text-sm mt-1">Kattints a Szinkronizálás gombra a számlák letöltéséhez</p>
             </div>
           ) : (
-            <div className="rounded-lg border border-border/50 overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Számlaszám
-                    </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Irány
-                    </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Partner
-                    </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Keltezés
-                    </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
-                      Nettó (Ft)
-                    </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
-                      ÁFA (Ft)
-                    </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
-                      Bruttó (Ft)
-                    </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Státusz
-                    </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Letöltve
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {navInvoices.map((invoice) => {
-                    const status = getInvoiceStatus(invoice);
-                    return (
-                      <TableRow key={invoice.id} className="hover:bg-muted/50 transition-colors">
-                        <TableCell className="py-3 px-4 font-medium">
-                          {invoice.invoice_number}
-                        </TableCell>
-                        <TableCell className="py-3 px-4">
-                          {invoice.invoice_direction === 'OUTBOUND' ? (
-                            <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-0">
-                              <ArrowUpRight className="w-3 h-3 mr-1" />
-                              Kimenő
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-0">
-                              <ArrowDownLeft className="w-3 h-3 mr-1" />
-                              Bejövő
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="py-3 px-4 max-w-[200px] truncate" title={getPartnerName(invoice)}>
-                          {getPartnerName(invoice)}
-                        </TableCell>
-                        <TableCell className="py-3 px-4 tabular-nums">
-                          {formatDate(invoice.invoice_issue_date)}
-                        </TableCell>
-                        <TableCell className="py-3 px-4 text-right font-mono tabular-nums">
-                          {formatAmount(invoice.invoice_net_amount)}
-                        </TableCell>
-                        <TableCell className="py-3 px-4 text-right font-mono tabular-nums">
-                          {formatAmount(invoice.invoice_vat_amount)}
-                        </TableCell>
-                        <TableCell className="py-3 px-4 text-right font-mono tabular-nums">
-                          {formatAmount(invoice.invoice_gross_amount)}
-                        </TableCell>
-                        <TableCell className="py-3 px-4">
-                          {status.variant === 'success' ? (
-                            <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-0">
-                              <FileCheck className="w-3 h-3 mr-1" />
-                              {status.label}
-                            </Badge>
-                          ) : status.variant === 'info' ? (
-                            <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-0">
-                              {status.label}
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border-0">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {status.label}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="py-3 px-4 text-sm text-muted-foreground tabular-nums">
-                          {formatDate(invoice.fetched_at)}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+            <>
+              <div className="rounded-lg border border-border/50 overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/30 hover:bg-muted/30">
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Számlaszám
+                      </TableHead>
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Irány
+                      </TableHead>
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Partner
+                      </TableHead>
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Keltezés
+                      </TableHead>
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
+                        Nettó (Ft)
+                      </TableHead>
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
+                        ÁFA (Ft)
+                      </TableHead>
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
+                        Bruttó (Ft)
+                      </TableHead>
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Státusz
+                      </TableHead>
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Letöltve
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {navInvoices.map((invoice) => {
+                      const status = getInvoiceStatus(invoice);
+                      return (
+                        <TableRow key={invoice.id} className="hover:bg-muted/50 transition-colors">
+                          <TableCell className="py-3 px-4 font-medium">
+                            {invoice.invoice_number}
+                          </TableCell>
+                          <TableCell className="py-3 px-4">
+                            {invoice.invoice_direction === 'OUTBOUND' ? (
+                              <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-0">
+                                <ArrowUpRight className="w-3 h-3 mr-1" />
+                                Kimenő
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-0">
+                                <ArrowDownLeft className="w-3 h-3 mr-1" />
+                                Bejövő
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="py-3 px-4 max-w-[200px] truncate" title={getPartnerName(invoice)}>
+                            {getPartnerName(invoice)}
+                          </TableCell>
+                          <TableCell className="py-3 px-4 tabular-nums">
+                            {formatDate(invoice.invoice_issue_date)}
+                          </TableCell>
+                          <TableCell className="py-3 px-4 text-right font-mono tabular-nums">
+                            {formatAmount(invoice.invoice_net_amount)}
+                          </TableCell>
+                          <TableCell className="py-3 px-4 text-right font-mono tabular-nums">
+                            {formatAmount(invoice.invoice_vat_amount)}
+                          </TableCell>
+                          <TableCell className="py-3 px-4 text-right font-mono tabular-nums">
+                            {formatAmount(invoice.invoice_gross_amount)}
+                          </TableCell>
+                          <TableCell className="py-3 px-4">
+                            {status.variant === 'success' ? (
+                              <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-0">
+                                <FileCheck className="w-3 h-3 mr-1" />
+                                {status.label}
+                              </Badge>
+                            ) : status.variant === 'info' ? (
+                              <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-0">
+                                {status.label}
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border-0">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {status.label}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="py-3 px-4 text-sm text-muted-foreground tabular-nums">
+                            {formatDate(invoice.fetched_at)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4">
+                  <div className="text-sm text-muted-foreground">
+                    {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount)} / {totalCount} számla
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronsLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="px-3 text-sm tabular-nums">
+                      {currentPage} / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronsRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
