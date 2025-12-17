@@ -301,32 +301,102 @@ const Auth = () => {
       </div>
 
       {/* Right Side - Visual Showcase (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-muted/20">
-        {/* Blurred Mock Dashboard Background */}
-        <div className="absolute inset-0 overflow-hidden blur-lg opacity-70">
-          {/* Sidebar mock */}
-          <div className="absolute left-0 top-0 bottom-0 w-20 bg-foreground/10 dark:bg-white/10" />
-          {/* Header mock */}
-          <div className="absolute left-20 top-0 right-0 h-16 bg-foreground/8 dark:bg-white/8" />
-          {/* Main content area with cards */}
-          <div className="absolute left-24 top-20 right-8 bottom-8 grid grid-cols-3 gap-4 p-4">
-            {/* Large card */}
-            <div className="col-span-2 row-span-2 bg-foreground/15 dark:bg-white/15 rounded-xl" />
-            {/* Small cards */}
-            <div className="bg-foreground/12 dark:bg-white/12 rounded-xl" />
-            <div className="bg-foreground/10 dark:bg-white/10 rounded-xl" />
-            <div className="col-span-2 bg-foreground/12 dark:bg-white/12 rounded-xl" />
-            <div className="bg-foreground/15 dark:bg-white/15 rounded-xl" />
-            {/* Chart area */}
-            <div className="col-span-3 bg-foreground/10 dark:bg-white/10 rounded-xl h-32" />
+      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-muted/30">
+        {/* Realistic Blurred Dashboard Background */}
+        <div className="absolute inset-0 overflow-hidden blur-md opacity-80 scale-105">
+          {/* Sidebar - matches actual AppSidebar structure */}
+          <div className="absolute left-0 top-0 bottom-0 w-[200px] bg-background border-r border-border/50">
+            {/* Logo area */}
+            <div className="h-16 border-b border-border/50 flex items-center px-4">
+              <div className="w-20 h-6 bg-primary/40 rounded" />
+            </div>
+            {/* Company selector area */}
+            <div className="h-14 border-b border-border/50 flex items-center px-4">
+              <div className="w-full h-8 bg-muted/60 rounded" />
+            </div>
+            {/* Navigation items */}
+            <div className="p-3 space-y-1">
+              <div className="h-3 w-16 bg-muted-foreground/20 rounded mb-3" />
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className={`h-9 rounded flex items-center gap-3 px-3 ${i === 0 ? 'bg-primary/20' : 'bg-transparent'}`}>
+                  <div className="w-4 h-4 bg-muted-foreground/30 rounded" />
+                  <div className={`h-3 rounded ${i === 0 ? 'w-20 bg-primary/50' : 'w-16 bg-muted-foreground/20'}`} />
+                </div>
+              ))}
+            </div>
+            {/* User section at bottom */}
+            <div className="absolute bottom-0 left-0 right-0 border-t border-border/50 p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-muted/60" />
+                <div className="flex-1 space-y-1">
+                  <div className="h-3 w-20 bg-muted-foreground/30 rounded" />
+                  <div className="h-2 w-28 bg-muted-foreground/20 rounded" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="absolute left-[200px] top-0 right-0 bottom-0 p-6 space-y-6">
+            {/* Welcome header */}
+            <div className="space-y-1">
+              <div className="h-8 w-48 bg-foreground/15 rounded" />
+              <div className="h-4 w-32 bg-muted-foreground/20 rounded" />
+            </div>
+
+            {/* Date selectors row */}
+            <div className="flex gap-3">
+              <div className="h-9 w-28 bg-primary/20 rounded" />
+              <div className="h-9 w-28 bg-primary/20 rounded" />
+              <div className="h-9 w-28 bg-muted/50 rounded" />
+              <div className="flex-1" />
+              <div className="h-9 w-32 bg-muted/50 rounded" />
+              <div className="h-9 w-32 bg-muted/50 rounded" />
+            </div>
+
+            {/* Metric Cards - 2 rows of 3 */}
+            <div className="grid grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-background/80 rounded-xl p-4 border border-border/30 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <div className="h-3 w-20 bg-muted-foreground/30 rounded" />
+                      <div className="h-6 w-24 bg-foreground/20 rounded" />
+                    </div>
+                    <div className="w-8 h-8 rounded-lg bg-primary/20" />
+                  </div>
+                  <div className="h-2 w-16 bg-muted-foreground/20 rounded" />
+                </div>
+              ))}
+            </div>
+
+            {/* Chart Area */}
+            <div className="bg-background/80 rounded-xl p-5 border border-border/30">
+              <div className="flex justify-between items-center mb-4">
+                <div className="h-5 w-40 bg-foreground/15 rounded" />
+                <div className="flex gap-2">
+                  <div className="h-7 w-16 bg-muted/50 rounded" />
+                  <div className="h-7 w-20 bg-muted/50 rounded" />
+                </div>
+              </div>
+              {/* Mock chart bars */}
+              <div className="flex items-end gap-3 h-36 pt-4">
+                {[45, 70, 35, 85, 55, 90, 65, 78, 50, 88, 72, 60].map((h, i) => (
+                  <div key={i} className="flex-1 flex flex-col justify-end gap-1">
+                    <div className="bg-primary/40 rounded-t" style={{ height: `${h}%` }} />
+                    <div className="bg-rose-500/30 rounded-b" style={{ height: `${(100 - h) * 0.4}%` }} />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Gradient Transition Overlay (fade from left edge only) */}
-        <div className="absolute top-0 bottom-0 left-0 w-32 z-[1] bg-gradient-to-r from-background to-transparent pointer-events-none" />
+        <div className="absolute top-0 bottom-0 left-0 w-40 z-[1] bg-gradient-to-r from-background via-background/80 to-transparent pointer-events-none" />
 
         {/* Subtle ambient gradient */}
-        <div className="absolute inset-0 opacity-50 pointer-events-none">
+        <div className="absolute inset-0 opacity-40 pointer-events-none">
           <div className="absolute top-20 left-40 w-72 h-72 bg-primary/30 rounded-full blur-3xl" />
           <div className="absolute bottom-40 right-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
         </div>
