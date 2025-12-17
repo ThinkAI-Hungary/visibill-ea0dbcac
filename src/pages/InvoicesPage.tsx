@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CalendarIcon, Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Eye, Pencil, Package } from 'lucide-react';
+import { CalendarIcon, Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Eye, Pencil, Package, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -121,6 +121,11 @@ const InvoicesPage = () => {
   const [activeTab, setActiveTab] = useState<InvoiceTab>('OUTBOUND');
   const [sortField, setSortField] = useState<string>('invoice_issue_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  
+  // Pagination state
+  const ITEMS_PER_PAGE = 20;
+  const [navCurrentPage, setNavCurrentPage] = useState(1);
+  const [submittedCurrentPage, setSubmittedCurrentPage] = useState(1);
   
   // Dialog states
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -325,6 +330,14 @@ const InvoicesPage = () => {
     return filtered;
   }, [invoices, navFilters, sortField, sortDirection, partners, activeTab]);
 
+  // Paginated NAV invoices
+  const paginatedNavInvoices = useMemo(() => {
+    const startIndex = (navCurrentPage - 1) * ITEMS_PER_PAGE;
+    return filteredAndSortedNavInvoices.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredAndSortedNavInvoices, navCurrentPage]);
+
+  const navTotalPages = Math.ceil(filteredAndSortedNavInvoices.length / ITEMS_PER_PAGE);
+
   const filteredAndSortedSubmittedInvoices = useMemo(() => {
     let filtered = submittedInvoices.filter(invoice => {
       if (submittedFilters.search) {
@@ -384,6 +397,23 @@ const InvoicesPage = () => {
 
     return filtered;
   }, [submittedInvoices, submittedFilters, sortField, sortDirection]);
+
+  // Paginated submitted invoices
+  const paginatedSubmittedInvoices = useMemo(() => {
+    const startIndex = (submittedCurrentPage - 1) * ITEMS_PER_PAGE;
+    return filteredAndSortedSubmittedInvoices.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredAndSortedSubmittedInvoices, submittedCurrentPage]);
+
+  const submittedTotalPages = Math.ceil(filteredAndSortedSubmittedInvoices.length / ITEMS_PER_PAGE);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setNavCurrentPage(1);
+  }, [navFilters, activeTab]);
+
+  useEffect(() => {
+    setSubmittedCurrentPage(1);
+  }, [submittedFilters]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -888,14 +918,14 @@ const InvoicesPage = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredAndSortedNavInvoices.length === 0 ? (
+                        {paginatedNavInvoices.length === 0 ? (
                           <TableRow>
                             <TableCell colSpan={activeTab === 'INBOUND' ? 11 : 10} className="text-center py-8 text-muted-foreground">
                               Nincs megjeleníthető számla a megadott szűrők alapján.
                             </TableCell>
                           </TableRow>
                         ) : (
-                          filteredAndSortedNavInvoices.map((invoice) => {
+                          paginatedNavInvoices.map((invoice) => {
                             const partnerTaxNumber = getPartnerTaxNumber(invoice);
                             const partnerName = getInvoicePartnerName(invoice);
                             
@@ -996,6 +1026,35 @@ const InvoicesPage = () => {
                       </TableBody>
                     </Table>
                   </div>
+
+                  {/* NAV Pagination */}
+                  {navTotalPages > 1 && (
+                    <div className="flex items-center justify-between px-2">
+                      <p className="text-sm text-muted-foreground">
+                        Összesen {filteredAndSortedNavInvoices.length} számla, {navCurrentPage}. oldal / {navTotalPages}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setNavCurrentPage(prev => Math.max(1, prev - 1))}
+                          disabled={navCurrentPage === 1}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          Előző
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setNavCurrentPage(prev => Math.min(navTotalPages, prev + 1))}
+                          disabled={navCurrentPage === navTotalPages}
+                        >
+                          Következő
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </TabsContent>
               )}
 
@@ -1193,14 +1252,14 @@ const InvoicesPage = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredAndSortedSubmittedInvoices.length === 0 ? (
+                      {paginatedSubmittedInvoices.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                             Nincs megjeleníthető számla a megadott szűrők alapján.
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredAndSortedSubmittedInvoices.map((invoice) => (
+                        paginatedSubmittedInvoices.map((invoice) => (
                           <TableRow key={invoice.id}>
                             <TableCell>
                               {invoice.kibocsatas_datuma 
@@ -1269,6 +1328,35 @@ const InvoicesPage = () => {
                     </TableBody>
                   </Table>
                 </div>
+
+                {/* Submitted Pagination */}
+                {submittedTotalPages > 1 && (
+                  <div className="flex items-center justify-between px-2">
+                    <p className="text-sm text-muted-foreground">
+                      Összesen {filteredAndSortedSubmittedInvoices.length} számla, {submittedCurrentPage}. oldal / {submittedTotalPages}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSubmittedCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={submittedCurrentPage === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Előző
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSubmittedCurrentPage(prev => Math.min(submittedTotalPages, prev + 1))}
+                        disabled={submittedCurrentPage === submittedTotalPages}
+                      >
+                        Következő
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>
