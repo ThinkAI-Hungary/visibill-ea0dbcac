@@ -320,24 +320,24 @@ export default function PartnersPage() {
           ) : (
             <>
               <div className="rounded-lg border border-border/50 overflow-hidden">
-                <Table>
+                <Table className="table-fixed">
                   <TableHeader>
                     <TableRow className="bg-muted/30 hover:bg-muted/30">
-                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[35%]">
                         Név
                       </TableHead>
-                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">
                         Adószám
                       </TableHead>
                       {hasAnyAddress && (
-                        <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">
                           Cím
                         </TableHead>
                       )}
-                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">
                         Típus
                       </TableHead>
-                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[100px]">
+                      <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[10%]">
                         Műveletek
                       </TableHead>
                     </TableRow>
