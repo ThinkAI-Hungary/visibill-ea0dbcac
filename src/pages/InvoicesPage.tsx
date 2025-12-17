@@ -660,7 +660,7 @@ const InvoicesPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8">
+      <main className="w-full max-w-none px-6 py-8">
         <Card>
           <CardHeader>
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -737,7 +737,7 @@ const InvoicesPage = () => {
                         placeholder="Keresés..."
                         value={navFilters.search}
                         onChange={(e) => setNavFilters(prev => ({ ...prev, search: e.target.value }))}
-                        className="pl-9 h-9 bg-transparent border-border/40 focus:border-primary/50"
+                        className="pl-9 h-9 bg-secondary/50 border border-white/10 focus:border-primary/50"
                       />
                     </div>
 
@@ -745,7 +745,7 @@ const InvoicesPage = () => {
                       value={navFilters.currency}
                       onValueChange={(value) => setNavFilters(prev => ({ ...prev, currency: value }))}
                     >
-                      <SelectTrigger className="h-9 bg-transparent border-border/40">
+                      <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
                         <SelectValue placeholder="Pénznem" />
                       </SelectTrigger>
                       <SelectContent>
@@ -762,7 +762,7 @@ const InvoicesPage = () => {
                       value={navFilters.paid}
                       onValueChange={(value) => setNavFilters(prev => ({ ...prev, paid: value }))}
                     >
-                      <SelectTrigger className="h-9 bg-transparent border-border/40">
+                      <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
                         <SelectValue placeholder="Fizetve" />
                       </SelectTrigger>
                       <SelectContent>
@@ -777,7 +777,7 @@ const InvoicesPage = () => {
                         value={navFilters.submitted}
                         onValueChange={(value) => setNavFilters(prev => ({ ...prev, submitted: value }))}
                       >
-                        <SelectTrigger className="h-9 bg-transparent border-border/40">
+                        <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
                           <SelectValue placeholder="Beküldve" />
                         </SelectTrigger>
                         <SelectContent>
@@ -792,7 +792,7 @@ const InvoicesPage = () => {
                       value={navFilters.project}
                       onValueChange={(value) => setNavFilters(prev => ({ ...prev, project: value }))}
                     >
-                      <SelectTrigger className="h-9 bg-transparent border-border/40">
+                      <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
                         <SelectValue placeholder="Projekt" />
                       </SelectTrigger>
                       <SelectContent>
@@ -812,7 +812,7 @@ const InvoicesPage = () => {
                           variant="outline"
                           size="sm"
                           className={cn(
-                            "h-9 justify-start text-left font-normal bg-transparent border-border/40",
+                            "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
                             !navFilters.dateFrom && "text-muted-foreground"
                           )}
                         >
@@ -837,7 +837,7 @@ const InvoicesPage = () => {
                           variant="outline"
                           size="sm"
                           className={cn(
-                            "h-9 justify-start text-left font-normal bg-transparent border-border/40",
+                            "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
                             !navFilters.dateTo && "text-muted-foreground"
                           )}
                         >
@@ -1084,7 +1084,7 @@ const InvoicesPage = () => {
                       placeholder="Keresés..."
                       value={submittedFilters.search}
                       onChange={(e) => setSubmittedFilters(prev => ({ ...prev, search: e.target.value }))}
-                      className="pl-9 h-9 bg-transparent border-border/40 focus:border-primary/50"
+                      className="pl-9 h-9 bg-secondary/50 border border-white/10 focus:border-primary/50"
                     />
                   </div>
 
@@ -1092,7 +1092,7 @@ const InvoicesPage = () => {
                     value={submittedFilters.currency}
                     onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, currency: value }))}
                   >
-                    <SelectTrigger className="h-9 bg-transparent border-border/40">
+                    <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
                       <SelectValue placeholder="Pénznem" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1109,7 +1109,7 @@ const InvoicesPage = () => {
                     value={submittedFilters.category}
                     onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, category: value }))}
                   >
-                    <SelectTrigger className="h-9 bg-transparent border-border/40">
+                    <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
                       <SelectValue placeholder="Kategória" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1127,7 +1127,7 @@ const InvoicesPage = () => {
                     value={submittedFilters.project}
                     onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, project: value }))}
                   >
-                    <SelectTrigger className="h-9 bg-transparent border-border/40">
+                    <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
                       <SelectValue placeholder="Projekt" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1147,7 +1147,7 @@ const InvoicesPage = () => {
                         variant="outline"
                         size="sm"
                         className={cn(
-                          "h-9 justify-start text-left font-normal bg-transparent border-border/40",
+                          "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
                           !submittedFilters.dateFrom && "text-muted-foreground"
                         )}
                       >
@@ -1172,7 +1172,7 @@ const InvoicesPage = () => {
                         variant="outline"
                         size="sm"
                         className={cn(
-                          "h-9 justify-start text-left font-normal bg-transparent border-border/40",
+                          "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
                           !submittedFilters.dateTo && "text-muted-foreground"
                         )}
                       >
