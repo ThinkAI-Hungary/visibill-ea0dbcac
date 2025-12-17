@@ -907,7 +907,7 @@ const InvoicesPage = () => {
                           {activeTab === 'INBOUND' && (
                             <TableHead className="text-center font-semibold">Beküldve</TableHead>
                           )}
-                          <TableHead className="font-semibold">Projekt</TableHead>
+                          <TableHead className="text-center font-semibold">Projekt</TableHead>
                           <TableHead className="text-center font-semibold">Tételek</TableHead>
                         </TableRow>
                       </TableHeader>
