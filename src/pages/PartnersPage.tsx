@@ -274,7 +274,7 @@ export default function PartnersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-full space-y-4 px-2 py-2">
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Partnertörzs</h1>
