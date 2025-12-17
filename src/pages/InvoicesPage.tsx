@@ -13,6 +13,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
 import { CalendarIcon, Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Eye, Pencil, Package, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -23,6 +24,34 @@ import * as XLSX from 'xlsx';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import InvoiceFullEditDialog from '@/components/InvoiceFullEditDialog';
 import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
+
+// Helper to generate initials from name
+const getInitials = (name: string): string => {
+  if (!name || name === '-') return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
+// Helper to generate consistent color from name
+const getAvatarColor = (name: string): string => {
+  const colors = [
+    'bg-blue-500/20 text-blue-400',
+    'bg-emerald-500/20 text-emerald-400',
+    'bg-amber-500/20 text-amber-400',
+    'bg-purple-500/20 text-purple-400',
+    'bg-rose-500/20 text-rose-400',
+    'bg-cyan-500/20 text-cyan-400',
+    'bg-orange-500/20 text-orange-400',
+    'bg-indigo-500/20 text-indigo-400',
+  ];
+  if (!name) return colors[0];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
 
 interface NavInvoice {
   id: string;
@@ -699,50 +728,57 @@ const InvoicesPage = () => {
 
               {/* NAV Invoice Tabs (OUTBOUND & INBOUND) */}
               {(activeTab === 'OUTBOUND' || activeTab === 'INBOUND') && (
-                <TabsContent value={activeTab} className="space-y-6 mt-4">
-                  {/* NAV Filters */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Keresés</label>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                        <Input
-                          placeholder="Számlaszám, partner..."
-                          value={navFilters.search}
-                          onChange={(e) => setNavFilters(prev => ({ ...prev, search: e.target.value }))}
-                          className="pl-10"
-                        />
-                      </div>
+                <TabsContent value={activeTab} className="space-y-4 mt-4">
+                  {/* NAV Filters - Compact Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 p-4 bg-muted/20 rounded-lg border border-border/30">
+                    <div className="relative col-span-2 md:col-span-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        placeholder="Keresés..."
+                        value={navFilters.search}
+                        onChange={(e) => setNavFilters(prev => ({ ...prev, search: e.target.value }))}
+                        className="pl-9 h-9 bg-transparent border-border/40 focus:border-primary/50"
+                      />
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Pénznem</label>
-                      <Select
-                        value={navFilters.currency}
-                        onValueChange={(value) => setNavFilters(prev => ({ ...prev, currency: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Minden pénznem" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Minden pénznem</SelectItem>
-                          {Array.from(new Set(invoices.map(inv => inv.currency).filter(Boolean))).sort().map((currency) => (
-                            <SelectItem key={currency} value={currency!}>
-                              {currency}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <Select
+                      value={navFilters.currency}
+                      onValueChange={(value) => setNavFilters(prev => ({ ...prev, currency: value }))}
+                    >
+                      <SelectTrigger className="h-9 bg-transparent border-border/40">
+                        <SelectValue placeholder="Pénznem" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Minden pénznem</SelectItem>
+                        {Array.from(new Set(invoices.map(inv => inv.currency).filter(Boolean))).sort().map((currency) => (
+                          <SelectItem key={currency} value={currency!}>
+                            {currency}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Fizetve</label>
+                    <Select
+                      value={navFilters.paid}
+                      onValueChange={(value) => setNavFilters(prev => ({ ...prev, paid: value }))}
+                    >
+                      <SelectTrigger className="h-9 bg-transparent border-border/40">
+                        <SelectValue placeholder="Fizetve" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Mind</SelectItem>
+                        <SelectItem value="yes">Kifizetve</SelectItem>
+                        <SelectItem value="no">Nyitott</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {activeTab === 'INBOUND' && (
                       <Select
-                        value={navFilters.paid}
-                        onValueChange={(value) => setNavFilters(prev => ({ ...prev, paid: value }))}
+                        value={navFilters.submitted}
+                        onValueChange={(value) => setNavFilters(prev => ({ ...prev, submitted: value }))}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Mind" />
+                        <SelectTrigger className="h-9 bg-transparent border-border/40">
+                          <SelectValue placeholder="Beküldve" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Mind</SelectItem>
@@ -750,171 +786,129 @@ const InvoicesPage = () => {
                           <SelectItem value="no">Nem</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-
-                    {activeTab === 'INBOUND' && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Beküldve</label>
-                        <Select
-                          value={navFilters.submitted}
-                          onValueChange={(value) => setNavFilters(prev => ({ ...prev, submitted: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Mind" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Mind</SelectItem>
-                            <SelectItem value="yes">Igen</SelectItem>
-                            <SelectItem value="no">Nem</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
                     )}
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Projekt</label>
-                      <Select
-                        value={navFilters.project}
-                        onValueChange={(value) => setNavFilters(prev => ({ ...prev, project: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Mind" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Mind</SelectItem>
-                          <SelectItem value="none">Nincs projekt</SelectItem>
-                          {projects.map((project) => (
-                            <SelectItem key={project.id} value={project.id}>
-                              {project.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <Select
+                      value={navFilters.project}
+                      onValueChange={(value) => setNavFilters(prev => ({ ...prev, project: value }))}
+                    >
+                      <SelectTrigger className="h-9 bg-transparent border-border/40">
+                        <SelectValue placeholder="Projekt" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Minden projekt</SelectItem>
+                        <SelectItem value="none">Nincs projekt</SelectItem>
+                        {projects.map((project) => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Összeg tartomány</label>
-                      <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          placeholder="Min"
-                          value={navFilters.amountMin}
-                          onChange={(e) => setNavFilters(prev => ({ ...prev, amountMin: e.target.value }))}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Max"
-                          value={navFilters.amountMax}
-                          onChange={(e) => setNavFilters(prev => ({ ...prev, amountMax: e.target.value }))}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 lg:col-span-2">
-                      <label className="text-sm font-medium">Dátum tartomány</label>
-                      <div className="flex gap-2 flex-wrap">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "justify-start text-left font-normal",
-                                !navFilters.dateFrom && "text-muted-foreground"
-                              )}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {navFilters.dateFrom ? format(navFilters.dateFrom, "yyyy. MM. dd.", { locale: hu }) : "Kezdő"}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={navFilters.dateFrom}
-                              onSelect={(date) => setNavFilters(prev => ({ ...prev, dateFrom: date }))}
-                              initialFocus
-                              className="pointer-events-auto"
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "justify-start text-left font-normal",
-                                !navFilters.dateTo && "text-muted-foreground"
-                              )}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {navFilters.dateTo ? format(navFilters.dateTo, "yyyy. MM. dd.", { locale: hu }) : "Befejező"}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={navFilters.dateTo}
-                              onSelect={(date) => setNavFilters(prev => ({ ...prev, dateTo: date }))}
-                              initialFocus
-                              className="pointer-events-auto"
-                            />
-                          </PopoverContent>
-                        </Popover>
-
-                        <Button 
-                          variant="outline" 
-                          onClick={clearNavFilters}
-                          className="flex items-center gap-2"
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={cn(
+                            "h-9 justify-start text-left font-normal bg-transparent border-border/40",
+                            !navFilters.dateFrom && "text-muted-foreground"
+                          )}
                         >
-                          <X className="h-4 w-4" />
-                          Szűrők törlése
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {navFilters.dateFrom ? format(navFilters.dateFrom, "MM.dd.", { locale: hu }) : "Kezdő"}
                         </Button>
-                      </div>
-                    </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={navFilters.dateFrom}
+                          onSelect={(date) => setNavFilters(prev => ({ ...prev, dateFrom: date }))}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={cn(
+                            "h-9 justify-start text-left font-normal bg-transparent border-border/40",
+                            !navFilters.dateTo && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {navFilters.dateTo ? format(navFilters.dateTo, "MM.dd.", { locale: hu }) : "Befejező"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={navFilters.dateTo}
+                          onSelect={(date) => setNavFilters(prev => ({ ...prev, dateTo: date }))}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={clearNavFilters}
+                      className="h-9 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Törlés
+                    </Button>
                   </div>
 
                   {/* NAV Invoice Table */}
-                  <div className="rounded-md border overflow-x-auto">
+                  <div className="rounded-lg border border-border/50 overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
+                        <TableRow className="bg-muted/30 hover:bg-muted/30">
                           <TableHead 
-                            className="cursor-pointer hover:bg-muted/50"
+                            className="cursor-pointer hover:bg-muted/50 font-semibold"
                             onClick={() => handleSort('invoice_number')}
                           >
                             <div className="flex items-center gap-2">
                               Számlaszám
-                              <ArrowUpDown className="h-4 w-4" />
+                              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                           </TableHead>
                           <TableHead 
-                            className="cursor-pointer hover:bg-muted/50"
+                            className="cursor-pointer hover:bg-muted/50 font-semibold"
                             onClick={() => handleSort('invoice_issue_date')}
                           >
                             <div className="flex items-center gap-2">
                               Kibocsátás
-                              <ArrowUpDown className="h-4 w-4" />
+                              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                           </TableHead>
                           <TableHead 
-                            className="cursor-pointer hover:bg-muted/50"
+                            className="cursor-pointer hover:bg-muted/50 font-semibold"
                             onClick={() => handleSort('invoice_delivery_date')}
                           >
                             <div className="flex items-center gap-2">
                               Teljesítés
-                              <ArrowUpDown className="h-4 w-4" />
+                              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                           </TableHead>
-                          <TableHead>Partner</TableHead>
-                          <TableHead className="text-right">Nettó</TableHead>
-                          <TableHead className="text-right">Bruttó</TableHead>
-                          <TableHead className="text-right">ÁFA</TableHead>
-                          <TableHead className="text-center">Fizetve</TableHead>
+                          <TableHead className="font-semibold">Partner</TableHead>
+                          <TableHead className="text-right font-semibold">Nettó</TableHead>
+                          <TableHead className="text-right font-semibold">Bruttó</TableHead>
+                          <TableHead className="text-right font-semibold">ÁFA</TableHead>
+                          <TableHead className="text-center font-semibold">Státusz</TableHead>
                           {activeTab === 'INBOUND' && (
-                            <TableHead className="text-center">Beküldve</TableHead>
+                            <TableHead className="text-center font-semibold">Beküldve</TableHead>
                           )}
-                          <TableHead>Projekt</TableHead>
-                          <TableHead className="text-center">Tételek</TableHead>
+                          <TableHead className="font-semibold">Projekt</TableHead>
+                          <TableHead className="text-center font-semibold">Tételek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -930,16 +924,16 @@ const InvoicesPage = () => {
                             const partnerName = getInvoicePartnerName(invoice);
                             
                             return (
-                              <TableRow key={invoice.id}>
-                                <TableCell className="font-medium">
+                              <TableRow key={invoice.id} className="group">
+                                <TableCell className="font-mono text-sm font-medium">
                                   {invoice.invoice_number}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="text-muted-foreground">
                                   {invoice.invoice_issue_date 
                                     ? format(new Date(invoice.invoice_issue_date), 'yyyy. MM. dd.', { locale: hu })
                                     : '-'}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="text-muted-foreground">
                                   {invoice.invoice_delivery_date 
                                     ? format(new Date(invoice.invoice_delivery_date), 'yyyy. MM. dd.', { locale: hu })
                                     : '-'}
@@ -948,28 +942,50 @@ const InvoicesPage = () => {
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <span className="cursor-help">{partnerName}</span>
+                                        <div className="flex items-center gap-2.5 cursor-help">
+                                          <div className={cn(
+                                            "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
+                                            getAvatarColor(partnerName)
+                                          )}>
+                                            {getInitials(partnerName)}
+                                          </div>
+                                          <span className="font-medium truncate max-w-[180px]">{partnerName}</span>
+                                        </div>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p>Adószám: {partnerTaxNumber || '-'}</p>
+                                        <p className="font-medium">{partnerName}</p>
+                                        <p className="text-xs text-muted-foreground">Adószám: {partnerTaxNumber || '-'}</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
                                 </TableCell>
-                                <TableCell className="text-right">
+                                <TableCell className="text-right font-mono tabular-nums">
                                   {formatCurrency(invoice.invoice_net_amount || 0, invoice.currency || 'HUF')}
                                 </TableCell>
-                                <TableCell className="text-right font-medium">
+                                <TableCell className="text-right font-mono tabular-nums font-medium">
                                   {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
                                 </TableCell>
-                                <TableCell className="text-right">
+                                <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
                                   {formatCurrency(invoice.invoice_vat_amount || 0, invoice.currency || 'HUF')}
                                 </TableCell>
                                 <TableCell className="text-center">
-                                  <Checkbox
-                                    checked={invoice.paid === true}
-                                    onCheckedChange={() => handleTogglePaid(invoice)}
-                                  />
+                                  {invoice.paid === true ? (
+                                    <Badge 
+                                      variant="outline" 
+                                      className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 cursor-pointer hover:bg-emerald-500/20"
+                                      onClick={() => handleTogglePaid(invoice)}
+                                    >
+                                      Kifizetve
+                                    </Badge>
+                                  ) : (
+                                    <Badge 
+                                      variant="outline" 
+                                      className="bg-amber-500/10 text-amber-500 border-amber-500/20 cursor-pointer hover:bg-amber-500/20"
+                                      onClick={() => handleTogglePaid(invoice)}
+                                    >
+                                      Nyitott
+                                    </Badge>
+                                  )}
                                 </TableCell>
                                 {activeTab === 'INBOUND' && (
                                   <TableCell className="text-center">
@@ -984,7 +1000,7 @@ const InvoicesPage = () => {
                                     value={invoice.project_id || 'none'}
                                     onValueChange={(value) => handleProjectChange(invoice.id, value)}
                                   >
-                                    <SelectTrigger className="w-[140px] h-8">
+                                    <SelectTrigger className="w-[130px] h-8 bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors">
                                       <SelectValue placeholder="Válassz..." />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1004,7 +1020,7 @@ const InvoicesPage = () => {
                                         <Button
                                           variant="ghost"
                                           size="icon"
-                                          className="h-8 w-8"
+                                          className="h-8 w-8 opacity-70 group-hover:opacity-100"
                                           onClick={() => {
                                             setSelectedNavInvoice(invoice);
                                             setItemsDialogOpen(true);
@@ -1059,196 +1075,164 @@ const InvoicesPage = () => {
               )}
 
               {/* Submitted Invoices Tab */}
-              <TabsContent value="SUBMITTED" className="space-y-6 mt-4">
-                {/* Submitted Filters */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Keresés</label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                      <Input
-                        placeholder="Eladó, vevő neve..."
-                        value={submittedFilters.search}
-                        onChange={(e) => setSubmittedFilters(prev => ({ ...prev, search: e.target.value }))}
-                        className="pl-10"
-                      />
-                    </div>
+              <TabsContent value="SUBMITTED" className="space-y-4 mt-4">
+                {/* Submitted Filters - Compact Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-muted/20 rounded-lg border border-border/30">
+                  <div className="relative col-span-2 md:col-span-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      placeholder="Keresés..."
+                      value={submittedFilters.search}
+                      onChange={(e) => setSubmittedFilters(prev => ({ ...prev, search: e.target.value }))}
+                      className="pl-9 h-9 bg-transparent border-border/40 focus:border-primary/50"
+                    />
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Pénznem</label>
-                    <Select
-                      value={submittedFilters.currency}
-                      onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, currency: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Minden pénznem" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Minden pénznem</SelectItem>
-                        {Array.from(new Set(submittedInvoices.map(inv => inv.penznem).filter(Boolean))).sort().map((currency) => (
-                          <SelectItem key={currency} value={currency!}>
-                            {currency}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select
+                    value={submittedFilters.currency}
+                    onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, currency: value }))}
+                  >
+                    <SelectTrigger className="h-9 bg-transparent border-border/40">
+                      <SelectValue placeholder="Pénznem" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Minden pénznem</SelectItem>
+                      {Array.from(new Set(submittedInvoices.map(inv => inv.penznem).filter(Boolean))).sort().map((currency) => (
+                        <SelectItem key={currency} value={currency!}>
+                          {currency}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Kategória</label>
-                    <Select
-                      value={submittedFilters.category}
-                      onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, category: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Mind" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Mind</SelectItem>
-                        <SelectItem value="none">Nincs kategória</SelectItem>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select
+                    value={submittedFilters.category}
+                    onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, category: value }))}
+                  >
+                    <SelectTrigger className="h-9 bg-transparent border-border/40">
+                      <SelectValue placeholder="Kategória" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Minden kategória</SelectItem>
+                      <SelectItem value="none">Nincs kategória</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Projekt</label>
-                    <Select
-                      value={submittedFilters.project}
-                      onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, project: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Mind" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Mind</SelectItem>
-                        <SelectItem value="none">Nincs projekt</SelectItem>
-                        {projects.map((project) => (
-                          <SelectItem key={project.id} value={project.id}>
-                            {project.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select
+                    value={submittedFilters.project}
+                    onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, project: value }))}
+                  >
+                    <SelectTrigger className="h-9 bg-transparent border-border/40">
+                      <SelectValue placeholder="Projekt" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Minden projekt</SelectItem>
+                      <SelectItem value="none">Nincs projekt</SelectItem>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Összeg tartomány</label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="number"
-                        placeholder="Min"
-                        value={submittedFilters.amountMin}
-                        onChange={(e) => setSubmittedFilters(prev => ({ ...prev, amountMin: e.target.value }))}
-                      />
-                      <Input
-                        type="number"
-                        placeholder="Max"
-                        value={submittedFilters.amountMax}
-                        onChange={(e) => setSubmittedFilters(prev => ({ ...prev, amountMax: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 lg:col-span-2">
-                    <label className="text-sm font-medium">Dátum tartomány</label>
-                    <div className="flex gap-2 flex-wrap">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "justify-start text-left font-normal",
-                              !submittedFilters.dateFrom && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {submittedFilters.dateFrom ? format(submittedFilters.dateFrom, "yyyy. MM. dd.", { locale: hu }) : "Kezdő"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={submittedFilters.dateFrom}
-                            onSelect={(date) => setSubmittedFilters(prev => ({ ...prev, dateFrom: date }))}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "justify-start text-left font-normal",
-                              !submittedFilters.dateTo && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {submittedFilters.dateTo ? format(submittedFilters.dateTo, "yyyy. MM. dd.", { locale: hu }) : "Befejező"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={submittedFilters.dateTo}
-                            onSelect={(date) => setSubmittedFilters(prev => ({ ...prev, dateTo: date }))}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-
-                      <Button 
-                        variant="outline" 
-                        onClick={clearSubmittedFilters}
-                        className="flex items-center gap-2"
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          "h-9 justify-start text-left font-normal bg-transparent border-border/40",
+                          !submittedFilters.dateFrom && "text-muted-foreground"
+                        )}
                       >
-                        <X className="h-4 w-4" />
-                        Szűrők törlése
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {submittedFilters.dateFrom ? format(submittedFilters.dateFrom, "MM.dd.", { locale: hu }) : "Kezdő"}
                       </Button>
-                    </div>
-                  </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={submittedFilters.dateFrom}
+                        onSelect={(date) => setSubmittedFilters(prev => ({ ...prev, dateFrom: date }))}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          "h-9 justify-start text-left font-normal bg-transparent border-border/40",
+                          !submittedFilters.dateTo && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {submittedFilters.dateTo ? format(submittedFilters.dateTo, "MM.dd.", { locale: hu }) : "Befejező"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={submittedFilters.dateTo}
+                        onSelect={(date) => setSubmittedFilters(prev => ({ ...prev, dateTo: date }))}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={clearSubmittedFilters}
+                    className="h-9 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Törlés
+                  </Button>
                 </div>
 
                 {/* Submitted Invoice Table */}
-                <div className="rounded-md border overflow-x-auto">
+                <div className="rounded-lg border border-border/50 overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow>
+                      <TableRow className="bg-muted/30 hover:bg-muted/30">
                         <TableHead 
-                          className="cursor-pointer hover:bg-muted/50"
+                          className="cursor-pointer hover:bg-muted/50 font-semibold"
                           onClick={() => handleSort('kibocsatas_datuma')}
                         >
                           <div className="flex items-center gap-2">
                             Kibocsátás
-                            <ArrowUpDown className="h-4 w-4" />
+                            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                           </div>
                         </TableHead>
-                        <TableHead>Teljesítés</TableHead>
-                        <TableHead>Eladó</TableHead>
-                        <TableHead>Vevő</TableHead>
-                        <TableHead className="text-right">Nettó</TableHead>
+                        <TableHead className="font-semibold">Teljesítés</TableHead>
+                        <TableHead className="font-semibold">Eladó</TableHead>
+                        <TableHead className="font-semibold">Vevő</TableHead>
+                        <TableHead className="text-right font-semibold">Nettó</TableHead>
                         <TableHead 
-                          className="text-right cursor-pointer hover:bg-muted/50"
+                          className="text-right cursor-pointer hover:bg-muted/50 font-semibold"
                           onClick={() => handleSort('brutto_vegosszeg')}
                         >
                           <div className="flex items-center justify-end gap-2">
                             Bruttó
-                            <ArrowUpDown className="h-4 w-4" />
+                            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                           </div>
                         </TableHead>
-                        <TableHead className="text-right">ÁFA</TableHead>
-                        <TableHead>Kategória</TableHead>
-                        <TableHead>Projekt</TableHead>
-                        <TableHead className="text-center">Műveletek</TableHead>
+                        <TableHead className="text-right font-semibold">ÁFA</TableHead>
+                        <TableHead className="font-semibold">Kategória</TableHead>
+                        <TableHead className="font-semibold">Projekt</TableHead>
+                        <TableHead className="text-center font-semibold">Műveletek</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1260,30 +1244,50 @@ const InvoicesPage = () => {
                         </TableRow>
                       ) : (
                         paginatedSubmittedInvoices.map((invoice) => (
-                          <TableRow key={invoice.id}>
-                            <TableCell>
+                          <TableRow key={invoice.id} className="group">
+                            <TableCell className="text-muted-foreground">
                               {invoice.kibocsatas_datuma 
                                 ? format(new Date(invoice.kibocsatas_datuma), 'yyyy. MM. dd.', { locale: hu })
                                 : '-'}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-muted-foreground">
                               {invoice.teljesites_datuma 
                                 ? format(new Date(invoice.teljesites_datuma), 'yyyy. MM. dd.', { locale: hu })
                                 : '-'}
                             </TableCell>
-                            <TableCell>{invoice.elado_nev || '-'}</TableCell>
-                            <TableCell>{invoice.vevo_nev || '-'}</TableCell>
-                            <TableCell className="text-right">
+                            <TableCell>
+                              <div className="flex items-center gap-2.5">
+                                <div className={cn(
+                                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
+                                  getAvatarColor(invoice.elado_nev)
+                                )}>
+                                  {getInitials(invoice.elado_nev)}
+                                </div>
+                                <span className="font-medium truncate max-w-[140px]">{invoice.elado_nev || '-'}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2.5">
+                                <div className={cn(
+                                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
+                                  getAvatarColor(invoice.vevo_nev)
+                                )}>
+                                  {getInitials(invoice.vevo_nev)}
+                                </div>
+                                <span className="font-medium truncate max-w-[140px]">{invoice.vevo_nev || '-'}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right font-mono tabular-nums">
                               {formatCurrency(invoice.adoalap_osszesen || 0, invoice.penznem || 'HUF')}
                             </TableCell>
-                            <TableCell className="text-right font-medium">
+                            <TableCell className="text-right font-mono tabular-nums font-medium">
                               {formatCurrency(invoice.brutto_vegosszeg || 0, invoice.penznem || 'HUF')}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
                               {formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || 'HUF')}
                             </TableCell>
-                            <TableCell>{getCategoryName(invoice.category_id)}</TableCell>
-                            <TableCell>{getProjectName(invoice.project_id)}</TableCell>
+                            <TableCell className="text-muted-foreground">{getCategoryName(invoice.category_id)}</TableCell>
+                            <TableCell className="text-muted-foreground">{getProjectName(invoice.project_id)}</TableCell>
                             <TableCell>
                               <div className="flex justify-center gap-1">
                                 {(invoice.image_url || invoice.melleklet_url) && (
@@ -1293,6 +1297,7 @@ const InvoicesPage = () => {
                                         <Button 
                                           size="sm" 
                                           variant="ghost" 
+                                          className="h-8 w-8 opacity-70 group-hover:opacity-100"
                                           onClick={() => openImageDialog(invoice)}
                                         >
                                           <Eye className="h-4 w-4" />
@@ -1310,6 +1315,7 @@ const InvoicesPage = () => {
                                       <Button 
                                         size="sm" 
                                         variant="ghost" 
+                                        className="h-8 w-8 opacity-70 group-hover:opacity-100"
                                         onClick={() => openEditDialog(invoice)}
                                       >
                                         <Pencil className="h-4 w-4" />
