@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -311,7 +312,7 @@ export default function SalariesPage() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-full">Betöltés...</div>;
+    return <LoadingSpinner message="Bérek betöltése..." />;
   }
 
   return (

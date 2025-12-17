@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface SyncLog {
   id: string;
@@ -27,16 +28,21 @@ interface SyncLog {
 
 const Integrations = () => {
   const { toast } = useToast();
-  const { selectedCompany } = useCompany();
+  const { selectedCompany, loading: companyLoading } = useCompany();
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(true);
   const [activeNavTab, setActiveNavTab] = useState('credentials');
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
-    if (selectedCompany) {
-      loadSyncLogs();
+    if (!companyLoading) {
+      if (selectedCompany) {
+        loadSyncLogs();
+      } else {
+        setInitialLoading(false);
+      }
     }
-  }, [selectedCompany]);
+  }, [selectedCompany, companyLoading]);
 
   const loadSyncLogs = async () => {
     if (!selectedCompany) return;
@@ -55,8 +61,13 @@ const Integrations = () => {
       console.error('Error loading sync logs:', error);
     } finally {
       setLogsLoading(false);
+      setInitialLoading(false);
     }
   };
+
+  if (initialLoading || companyLoading) {
+    return <LoadingSpinner message="Integrációk betöltése..." />;
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
