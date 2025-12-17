@@ -353,7 +353,7 @@ export default function ExchangeRates() {
           {/* Info Card */}
           <Card className="bg-muted/20 border-border/30">
             <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Az árfolyamok tájékoztató jellegűek. A napi változás adatok szimuláltak.
                 Tranzakciók előtt mindig ellenőrizze a bankjánál az aktuális árfolyamokat.
               </p>
