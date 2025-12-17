@@ -576,14 +576,19 @@ const Index = () => {
     await signOut();
   };
 
-  // Show loading spinner while company or metrics data is being fetched
-  if (companyLoading || metricsLoading) {
+  // Show loading spinner while company data is being fetched
+  if (companyLoading) {
     return <LoadingSpinner message="Irányítópult betöltése..." />;
   }
 
-  // Show empty state dashboard when no companies exist
+  // Show empty state dashboard when no companies exist (check BEFORE metrics loading)
   if (companies.length === 0) {
     return <EmptyStateDashboard />;
+  }
+
+  // Show loading spinner while metrics data is being fetched
+  if (metricsLoading) {
+    return <LoadingSpinner message="Irányítópult betöltése..." />;
   }
 
   return (
