@@ -21,7 +21,6 @@ import ProjectBreakdown from '@/components/dashboard/ProjectBreakdown';
 import SubscriptionUsage from '@/components/SubscriptionUsage';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import InvoiceStatusTables from '@/components/dashboard/InvoiceStatusTables';
-import { MetricsGridSkeleton, VatChartSkeleton, RevenueChartSkeleton, InvoiceStatusTablesSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import { formatCurrency, cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
@@ -721,7 +720,9 @@ const Index = () => {
 
         {/* Metrics Cards */}
         {metricsLoading ? (
-          <MetricsGridSkeleton />
+          <div className="flex items-center justify-center py-16">
+            <LoadingSpinner message="Betöltés..." fullPage={false} />
+          </div>
         ) : (
           <>
             {(() => {
@@ -818,7 +819,9 @@ const Index = () => {
 
         {/* ÁFA Section */}
         {analyticsLoading && outboundVatCategories.length === 0 && inboundVatCategories.length === 0 ? (
-          <VatChartSkeleton />
+          <Card className="flex items-center justify-center py-16">
+            <LoadingSpinner message="ÁFA adatok betöltése..." fullPage={false} />
+          </Card>
         ) : (
         <Collapsible open={vatSectionOpen} onOpenChange={setVatSectionOpen}>
           <Card>
@@ -974,7 +977,9 @@ const Index = () => {
 
         {/* Revenue & Expenses Section */}
         {analyticsLoading && rawInvoices.length === 0 && rawSalaries.length === 0 ? (
-          <RevenueChartSkeleton />
+          <Card className="flex items-center justify-center py-16">
+            <LoadingSpinner message="Bevétel/kiadás adatok betöltése..." fullPage={false} />
+          </Card>
         ) : (
         <Collapsible open={revenueSectionOpen} onOpenChange={setRevenueSectionOpen}>
           <Card>
