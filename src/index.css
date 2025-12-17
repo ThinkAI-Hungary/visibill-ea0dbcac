@@ -202,7 +202,7 @@ All colors MUST be HSL.
     @apply scale-[1.02] shadow-lg;
   }
 
-  /* Override browser autofill background */
+  /* Override browser autofill background - Light mode */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
@@ -215,10 +215,30 @@ All colors MUST be HSL.
   select:-webkit-autofill:hover,
   select:-webkit-autofill:focus,
   select:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px hsl(var(--background)) inset !important;
-    -webkit-text-fill-color: hsl(var(--foreground)) !important;
-    background-color: hsl(var(--background)) !important;
-    caret-color: hsl(var(--foreground)) !important;
+    -webkit-box-shadow: 0 0 0 30px hsl(220 14% 96%) inset !important;
+    -webkit-text-fill-color: hsl(222 47% 11%) !important;
+    background-color: transparent !important;
+    caret-color: hsl(222 47% 11%) !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  /* Override browser autofill background - Dark mode */
+  .dark input:-webkit-autofill,
+  .dark input:-webkit-autofill:hover,
+  .dark input:-webkit-autofill:focus,
+  .dark input:-webkit-autofill:active,
+  .dark textarea:-webkit-autofill,
+  .dark textarea:-webkit-autofill:hover,
+  .dark textarea:-webkit-autofill:focus,
+  .dark textarea:-webkit-autofill:active,
+  .dark select:-webkit-autofill,
+  .dark select:-webkit-autofill:hover,
+  .dark select:-webkit-autofill:focus,
+  .dark select:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px hsl(215 20% 14%) inset !important;
+    -webkit-text-fill-color: hsl(210 40% 98%) !important;
+    background-color: transparent !important;
+    caret-color: hsl(210 40% 98%) !important;
     transition: background-color 5000s ease-in-out 0s;
   }
 
