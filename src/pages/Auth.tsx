@@ -392,13 +392,13 @@ const Auth = () => {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-center px-16 xl:px-24">
+        {/* Content - Above all background layers */}
+        <div className="relative z-30 flex flex-col justify-center px-16 xl:px-24">
           <div className="mb-8">
-            <h2 className="text-4xl font-bold text-foreground mb-4">
+            <h2 className="text-4xl font-bold text-foreground dark:text-white mb-4">
               Tartsd kézben a pénzügyeidet
             </h2>
-            <p className="text-lg text-muted-foreground max-w-md">
+            <p className="text-lg text-muted-foreground dark:text-slate-300 max-w-md">
               Automatizált számlakezelés, NAV integráció és valós idejű pénzügyi áttekintés egy helyen.
             </p>
           </div>
