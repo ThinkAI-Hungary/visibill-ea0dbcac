@@ -1,24 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  TestTube, 
-  RefreshCw, 
-  Download, 
-  CheckCircle, 
-  XCircle, 
-  Clock,
-  Shield,
-  Database,
-  Info
-} from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { RefreshCw, Shield, Database, ArrowDownLeft, ArrowUpRight, FileCheck, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -29,12 +16,16 @@ interface NavInvoice {
   invoice_direction: string;
   supplier_tax_number: string;
   customer_tax_number: string;
+  supplier_name: string | null;
+  customer_name: string | null;
   invoice_issue_date: string;
   invoice_net_amount: number;
   invoice_vat_amount: number;
   invoice_gross_amount: number;
   currency: string;
   fetched_at: string;
+  submitted: boolean | null;
+  details_fetched: boolean | null;
 }
 
 const NavTesting: React.FC = () => {
@@ -44,12 +35,7 @@ const NavTesting: React.FC = () => {
   const [navInvoices, setNavInvoices] = useState<NavInvoice[]>([]);
   const [credentialsExist, setCredentialsExist] = useState(false);
   
-  const [syncParams, setSyncParams] = useState({
-    dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    dateTo: new Date().toISOString().split('T')[0]
-  });
-
-  const [invoiceFilters, setInvoiceFilters] = useState({
+  const [filters, setFilters] = useState({
     direction: 'ALL' as 'ALL' | 'OUTBOUND' | 'INBOUND',
     dateFrom: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     dateTo: new Date().toISOString().split('T')[0]
@@ -65,7 +51,7 @@ const NavTesting: React.FC = () => {
     if (credentialsExist && selectedCompany) {
       loadNavInvoices();
     }
-  }, [invoiceFilters, credentialsExist, selectedCompany]);
+  }, [filters, credentialsExist, selectedCompany]);
 
   const checkCredentialsExist = async () => {
     if (!selectedCompany) {
@@ -92,12 +78,12 @@ const NavTesting: React.FC = () => {
         .from('nav_invoices')
         .select('*')
         .eq('company_id', selectedCompany.id)
-        .gte('invoice_issue_date', invoiceFilters.dateFrom)
-        .lte('invoice_issue_date', invoiceFilters.dateTo)
+        .gte('invoice_issue_date', filters.dateFrom)
+        .lte('invoice_issue_date', filters.dateTo)
         .order('invoice_issue_date', { ascending: false });
 
-      if (invoiceFilters.direction !== 'ALL') {
-        query = query.eq('invoice_direction', invoiceFilters.direction);
+      if (filters.direction !== 'ALL') {
+        query = query.eq('invoice_direction', filters.direction);
       }
 
       const { data, error } = await query;
@@ -128,8 +114,8 @@ const NavTesting: React.FC = () => {
         supabase.functions.invoke('nav-query-outbound-invoices', {
           body: {
             invoiceDirection: 'OUTBOUND',
-            dateFrom: syncParams.dateFrom,
-            dateTo: syncParams.dateTo,
+            dateFrom: filters.dateFrom,
+            dateTo: filters.dateTo,
             companyId: selectedCompany.id
           },
           headers: {
@@ -139,8 +125,8 @@ const NavTesting: React.FC = () => {
         supabase.functions.invoke('nav-query-outbound-invoices', {
           body: {
             invoiceDirection: 'INBOUND',
-            dateFrom: syncParams.dateFrom,
-            dateTo: syncParams.dateTo,
+            dateFrom: filters.dateFrom,
+            dateTo: filters.dateTo,
             companyId: selectedCompany.id
           },
           headers: {
@@ -203,102 +189,104 @@ const NavTesting: React.FC = () => {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = 'HUF') => {
+  const formatAmount = (amount: number | null) => {
+    if (amount === null || amount === undefined) return '—';
     return new Intl.NumberFormat('hu-HU', {
-      style: 'currency',
-      currency: currency
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString('hu-HU');
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return '—';
+    return dateStr.split('T')[0];
+  };
+
+  const getInvoiceStatus = (invoice: NavInvoice) => {
+    if (invoice.submitted) {
+      return { label: 'Feldolgozva', variant: 'success' as const };
+    }
+    if (invoice.details_fetched) {
+      return { label: 'Importálva', variant: 'info' as const };
+    }
+    return { label: 'Új', variant: 'warning' as const };
+  };
+
+  const getPartnerName = (invoice: NavInvoice) => {
+    if (invoice.invoice_direction === 'OUTBOUND') {
+      return invoice.customer_name || invoice.customer_tax_number || '—';
+    }
+    return invoice.supplier_name || invoice.supplier_tax_number || '—';
   };
 
   if (!credentialsExist) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex items-center gap-2">
-          <TestTube className="w-6 h-6 text-primary" />
-          <h1 className="text-2xl font-bold">NAV API Tesztelés</h1>
-        </div>
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold tracking-tight">NAV Számlák</h1>
         
-        <div className="text-center py-12">
-          <Shield className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Először állítsa be a NAV hitelesítő adatokat</h2>
-          <p className="text-muted-foreground mb-6">
-            A tesztelés megkezdéséhez szükséges a NAV API hozzáférési adatok megadása az Integrációk oldalon
-          </p>
-          <Button asChild>
-            <a href="/integrations">Ugrás az Integrációkhoz</a>
-          </Button>
-        </div>
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <CardContent className="py-16">
+            <div className="text-center">
+              <Shield className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+              <h2 className="text-xl font-semibold mb-2">NAV hitelesítő adatok szükségesek</h2>
+              <p className="text-muted-foreground mb-6">
+                A számlák megtekintéséhez állítsa be a NAV API hozzáférési adatokat
+              </p>
+              <Button asChild>
+                <a href="/integrations">Ugrás az Integrációkhoz</a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-2">
-        <TestTube className="w-6 h-6 text-primary" />
-        <h1 className="text-2xl font-bold">NAV API Tesztelés</h1>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="h-5 w-5 text-muted-foreground cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p>Teszteld a NAV kapcsolatot és szinkronizáld a számlaidat.</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
-      <Tabs defaultValue="sync" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="sync">Szinkronizálás</TabsTrigger>
-          <TabsTrigger value="invoices">NAV Számlák</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="sync" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Download className="w-5 h-5" />
-                Számlák Szinkronizálása
-              </CardTitle>
-              <CardDescription>
-                Számlák letöltése a NAV online számla rendszerből
-              </CardDescription>
-            </CardHeader>
+    <div className="space-y-6">
+      <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+        <CardContent className="p-6">
+          {/* Header Row - Title + Filters */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <Database className="w-5 h-5 text-primary" />
+              <h1 className="text-xl font-semibold">
+                NAV Számlák <span className="text-muted-foreground font-normal">({navInvoices.length})</span>
+              </h1>
+            </div>
             
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="dateFrom">Kezdő dátum</Label>
-                  <Input
-                    id="dateFrom"
-                    type="date"
-                    value={syncParams.dateFrom}
-                    onChange={(e) => setSyncParams(prev => ({ ...prev, dateFrom: e.target.value }))}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="dateTo">Végső dátum</Label>
-                  <Input
-                    id="dateTo"
-                    type="date"
-                    value={syncParams.dateTo}
-                    onChange={(e) => setSyncParams(prev => ({ ...prev, dateTo: e.target.value }))}
-                  />
-                </div>
-              </div>
-              
-              <Button 
-                onClick={handleSync} 
-                disabled={loading}
-                className="w-full"
+            <div className="flex flex-wrap items-center gap-3">
+              <Select
+                value={filters.direction}
+                onValueChange={(value: 'ALL' | 'OUTBOUND' | 'INBOUND') => 
+                  setFilters(prev => ({ ...prev, direction: value }))
+                }
               >
+                <SelectTrigger className="w-[140px] bg-background/50">
+                  <SelectValue placeholder="Irány" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Mindkettő</SelectItem>
+                  <SelectItem value="OUTBOUND">Kimenő</SelectItem>
+                  <SelectItem value="INBOUND">Bejövő</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Input
+                type="date"
+                value={filters.dateFrom}
+                onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
+                className="w-[140px] bg-background/50"
+              />
+              
+              <Input
+                type="date"
+                value={filters.dateTo}
+                onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
+                className="w-[140px] bg-background/50"
+              />
+              
+              <Button onClick={handleSync} disabled={loading}>
                 {loading ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -306,113 +294,123 @@ const NavTesting: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <Download className="w-4 h-4 mr-2" />
-                    Számlák Szinkronizálása
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Szinkronizálás
                   </>
                 )}
               </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </div>
 
-        <TabsContent value="invoices" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="w-5 h-5" />
-                NAV Számlák ({navInvoices.length})
-              </CardTitle>
-              <CardDescription>
-                A NAV API-ból letöltött számlák listája
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                  <Label htmlFor="filterDirection">Irány</Label>
-                  <Select
-                    value={invoiceFilters.direction}
-                    onValueChange={(value: 'ALL' | 'OUTBOUND' | 'INBOUND') => 
-                      setInvoiceFilters(prev => ({ ...prev, direction: value }))
-                    }
-                  >
-                    <SelectTrigger id="filterDirection">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ALL">Mindkettő</SelectItem>
-                      <SelectItem value="OUTBOUND">Kimenő (Eladási)</SelectItem>
-                      <SelectItem value="INBOUND">Bejövő (Beszerzési)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="filterDateFrom">Kezdő dátum</Label>
-                  <Input
-                    id="filterDateFrom"
-                    type="date"
-                    value={invoiceFilters.dateFrom}
-                    onChange={(e) => setInvoiceFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="filterDateTo">Végső dátum</Label>
-                  <Input
-                    id="filterDateTo"
-                    type="date"
-                    value={invoiceFilters.dateTo}
-                    onChange={(e) => setInvoiceFilters(prev => ({ ...prev, dateTo: e.target.value }))}
-                  />
-                </div>
-              </div>
-              
-              {navInvoices.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Még nincsenek letöltött számlák. Indítson szinkronizálást a fenti lapon.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Számlaszám</TableHead>
-                        <TableHead>Irány</TableHead>
-                        <TableHead>Keltezés</TableHead>
-                        <TableHead>Nettó</TableHead>
-                        <TableHead>ÁFA</TableHead>
-                        <TableHead>Bruttó</TableHead>
-                        <TableHead>Letöltve</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {navInvoices.slice(0, 20).map((invoice) => (
-                        <TableRow key={invoice.id}>
-                          <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
-                          <TableCell>
-                            <Badge variant={invoice.invoice_direction === 'OUTBOUND' ? 'default' : 'secondary'}>
-                              {invoice.invoice_direction === 'OUTBOUND' ? 'Kimenő' : 'Bejövő'}
+          {/* Table */}
+          {navInvoices.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
+              <Database className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>Még nincsenek letöltött számlák</p>
+              <p className="text-sm mt-1">Kattints a Szinkronizálás gombra a számlák letöltéséhez</p>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-border/50 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Számlaszám
+                    </TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Irány
+                    </TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Partner
+                    </TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Keltezés
+                    </TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
+                      Nettó
+                    </TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
+                      ÁFA
+                    </TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">
+                      Bruttó
+                    </TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Státusz
+                    </TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Letöltve
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {navInvoices.map((invoice) => {
+                    const status = getInvoiceStatus(invoice);
+                    return (
+                      <TableRow key={invoice.id} className="hover:bg-muted/50 transition-colors">
+                        <TableCell className="py-3 px-4 font-medium">
+                          {invoice.invoice_number}
+                        </TableCell>
+                        <TableCell className="py-3 px-4">
+                          {invoice.invoice_direction === 'OUTBOUND' ? (
+                            <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-0">
+                              <ArrowUpRight className="w-3 h-3 mr-1" />
+                              Kimenő
                             </Badge>
-                          </TableCell>
-                          <TableCell>{invoice.invoice_issue_date}</TableCell>
-                          <TableCell>{formatCurrency(invoice.invoice_net_amount, invoice.currency)}</TableCell>
-                          <TableCell>{formatCurrency(invoice.invoice_vat_amount, invoice.currency)}</TableCell>
-                          <TableCell>{formatCurrency(invoice.invoice_gross_amount, invoice.currency)}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {formatDate(invoice.fetched_at)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                          ) : (
+                            <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-0">
+                              <ArrowDownLeft className="w-3 h-3 mr-1" />
+                              Bejövő
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3 px-4 max-w-[200px] truncate" title={getPartnerName(invoice)}>
+                          {getPartnerName(invoice)}
+                        </TableCell>
+                        <TableCell className="py-3 px-4 tabular-nums">
+                          {formatDate(invoice.invoice_issue_date)}
+                        </TableCell>
+                        <TableCell className="py-3 px-4 text-right font-mono">
+                          {formatAmount(invoice.invoice_net_amount)}
+                          <span className="text-muted-foreground ml-1">{invoice.currency || 'Ft'}</span>
+                        </TableCell>
+                        <TableCell className="py-3 px-4 text-right font-mono">
+                          {formatAmount(invoice.invoice_vat_amount)}
+                          <span className="text-muted-foreground ml-1">{invoice.currency || 'Ft'}</span>
+                        </TableCell>
+                        <TableCell className="py-3 px-4 text-right font-mono font-semibold">
+                          {formatAmount(invoice.invoice_gross_amount)}
+                          <span className="text-muted-foreground font-normal ml-1">{invoice.currency || 'Ft'}</span>
+                        </TableCell>
+                        <TableCell className="py-3 px-4">
+                          {status.variant === 'success' ? (
+                            <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-0">
+                              <FileCheck className="w-3 h-3 mr-1" />
+                              {status.label}
+                            </Badge>
+                          ) : status.variant === 'info' ? (
+                            <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-0">
+                              {status.label}
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border-0">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {status.label}
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3 px-4 text-sm text-muted-foreground tabular-nums">
+                          {formatDate(invoice.fetched_at)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
