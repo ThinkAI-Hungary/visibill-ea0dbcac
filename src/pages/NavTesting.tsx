@@ -260,7 +260,7 @@ const NavTesting: React.FC = () => {
 
   if (!credentialsExist) {
     return (
-      <div className="space-y-6">
+      <div className="h-full space-y-2 px-2 pt-0 pb-0">
         <h1 className="text-2xl font-bold tracking-tight">NAV Számlák</h1>
         
         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
@@ -282,7 +282,7 @@ const NavTesting: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-full space-y-2 px-2 pt-0 pb-0">
       <Card className="bg-card/50 backdrop-blur-sm border-border/50">
         <CardContent className="p-6">
           {/* Header Row - Title + Filters */}
