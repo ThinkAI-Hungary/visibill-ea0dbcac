@@ -995,9 +995,9 @@ const Index = () => {
                       <Checkbox 
                         checked={showRevenueUnpaid} 
                         onCheckedChange={(checked) => setShowRevenueUnpaid(!!checked)}
-                        className="border-green-400 data-[state=checked]:bg-green-400"
+                        className="border-cyan-500 data-[state=checked]:bg-cyan-500"
                       />
-                      <span className="text-sm text-green-400">Kintlévőségek</span>
+                      <span className="text-sm text-cyan-500">Kintlévőségek</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <Checkbox 
@@ -1011,9 +1011,9 @@ const Index = () => {
                       <Checkbox 
                         checked={showExpensesUnpaid} 
                         onCheckedChange={(checked) => setShowExpensesUnpaid(!!checked)}
-                        className="border-red-400 data-[state=checked]:bg-red-400"
+                        className="border-amber-500 data-[state=checked]:bg-amber-500"
                       />
-                      <span className="text-sm text-red-400">Követelések</span>
+                      <span className="text-sm text-amber-500">Követelések</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <Checkbox 
@@ -1083,8 +1083,8 @@ const Index = () => {
                           <stop offset="95%" stopColor="#16A34A" stopOpacity={0.05}/>
                         </linearGradient>
                         <linearGradient id="revenueUnpaidGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#4ADE80" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#4ADE80" stopOpacity={0.05}/>
+                          <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.05}/>
                         </linearGradient>
                         {/* Kiadási gradiensek (piros árnyalatok - lefelé, negatív tartomány) */}
                         <linearGradient id="expensesPaidGradient" x1="0" y1="1" x2="0" y2="0">
@@ -1092,8 +1092,8 @@ const Index = () => {
                           <stop offset="95%" stopColor="#DC2626" stopOpacity={0.05}/>
                         </linearGradient>
                         <linearGradient id="expensesUnpaidGradient" x1="0" y1="1" x2="0" y2="0">
-                          <stop offset="5%" stopColor="#F87171" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#F87171" stopOpacity={0.05}/>
+                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.05}/>
                         </linearGradient>
                         {/* Bérek gradiens (lila - lefelé, negatív tartomány) */}
                         <linearGradient id="salariesGradient" x1="0" y1="1" x2="0" y2="0">
@@ -1146,7 +1146,7 @@ const Index = () => {
                           type="monotone" 
                           dataKey="revenueUnpaid" 
                           name="Kintlévőségek"
-                          stroke="#4ADE80" 
+                          stroke="#06b6d4" 
                           strokeWidth={2}
                           fill="url(#revenueUnpaidGradient)"
                           stackId="positive"
@@ -1169,7 +1169,7 @@ const Index = () => {
                           type="monotone" 
                           dataKey="expensesUnpaid" 
                           name="Követelések"
-                          stroke="#F87171" 
+                          stroke="#f59e0b" 
                           strokeWidth={2}
                           fill="url(#expensesUnpaidGradient)"
                           stackId="negative"
