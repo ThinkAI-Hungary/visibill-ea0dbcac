@@ -37,17 +37,14 @@ const MetricCard = ({
   };
 
   return (
-    <Card className={cn('relative overflow-hidden h-[160px] flex flex-col', variantStyles[variant])}>
-      {/* Fixed height header section for title alignment */}
-      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-0 h-[60px] shrink-0">
-        <CardTitle className="text-sm font-medium leading-tight pr-2 line-clamp-3">{title}</CardTitle>
+    <Card className={cn('relative overflow-hidden min-h-[160px] flex flex-col', variantStyles[variant])}>
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3 min-h-[72px]">
+        <CardTitle className="text-sm font-medium leading-tight pr-2">{title}</CardTitle>
         <Icon className={cn('h-4 w-4 mt-0.5 shrink-0', iconStyles[variant])} />
       </CardHeader>
-      
-      {/* Value section - starts at exactly the same position on all cards */}
-      <CardContent className="flex flex-col flex-1 pt-2">
+      <CardContent className="flex flex-col flex-1">
         <div className="text-2xl font-bold">{value}</div>
-        <div className="mt-auto">
+        <div className="mt-auto pt-2">
           {description && (
             <p className="text-xs text-muted-foreground">{description}</p>
           )}
