@@ -948,7 +948,8 @@ function buildQueryXML(
 function parseInvoicesFromXML(xml: string): any[] {
   const invoices: any[] = [];
   
-  const invoiceDigestRegex = /<invoiceDigest>([\s\S]*?)<\/invoiceDigest>/g;
+  // Handle both prefixed and non-prefixed tags (e.g., <ns2:invoiceDigest> or <invoiceDigest>)
+  const invoiceDigestRegex = /<(?:\w+:)?invoiceDigest>([\s\S]*?)<\/(?:\w+:)?invoiceDigest>/g;
   let match;
 
   while ((match = invoiceDigestRegex.exec(xml)) !== null) {
