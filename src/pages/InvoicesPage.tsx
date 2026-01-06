@@ -15,7 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CalendarIcon, Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Eye, Pencil, Package, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarIcon, Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Eye, Pencil, Package, ChevronLeft, ChevronRight, RefreshCw, Shield } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -151,6 +151,10 @@ const InvoicesPage = () => {
   const [sortField, setSortField] = useState<string>('invoice_issue_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   
+  // NAV sync state
+  const [credentialsExist, setCredentialsExist] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  
   // Pagination state
   const ITEMS_PER_PAGE = 10;
   const [navCurrentPage, setNavCurrentPage] = useState(1);
@@ -188,7 +192,109 @@ const InvoicesPage = () => {
 
   useEffect(() => {
     fetchData();
+    checkCredentialsExist();
   }, [user, selectedCompany]);
+
+  const checkCredentialsExist = async () => {
+    if (!selectedCompany) {
+      setCredentialsExist(false);
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from('user_nav_credentials')
+        .select('id')
+        .eq('company_id', selectedCompany.id)
+        .maybeSingle();
+      
+      setCredentialsExist(!error && !!data);
+    } catch (error) {
+      setCredentialsExist(false);
+    }
+  };
+
+  const handleSync = async () => {
+    if (!selectedCompany) {
+      toast.error('Nincs kiválasztott cég');
+      return;
+    }
+    
+    setSyncing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      // Last 30 days
+      const dateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const dateTo = new Date().toISOString().split('T')[0];
+
+      const [outboundResult, inboundResult] = await Promise.allSettled([
+        supabase.functions.invoke('nav-query-outbound-invoices', {
+          body: {
+            invoiceDirection: 'OUTBOUND',
+            dateFrom,
+            dateTo,
+            companyId: selectedCompany.id
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        }),
+        supabase.functions.invoke('nav-query-outbound-invoices', {
+          body: {
+            invoiceDirection: 'INBOUND',
+            dateFrom,
+            dateTo,
+            companyId: selectedCompany.id
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        })
+      ]);
+
+      let totalInvoices = 0;
+      const errors: string[] = [];
+
+      if (outboundResult.status === 'fulfilled') {
+        const { data, error } = outboundResult.value;
+        if (error || data?.error) {
+          errors.push(`Kimenő: ${error?.message || data?.error}`);
+        } else if (data?.success) {
+          totalInvoices += data.totalInvoices || 0;
+        }
+      } else {
+        errors.push(`Kimenő: ${outboundResult.reason?.message || 'Ismeretlen hiba'}`);
+      }
+
+      if (inboundResult.status === 'fulfilled') {
+        const { data, error } = inboundResult.value;
+        if (error || data?.error) {
+          errors.push(`Bejövő: ${error?.message || data?.error}`);
+        } else if (data?.success) {
+          totalInvoices += data.totalInvoices || 0;
+        }
+      } else {
+        errors.push(`Bejövő: ${inboundResult.reason?.message || 'Ismeretlen hiba'}`);
+      }
+
+      if (errors.length === 2) {
+        throw new Error(errors.join('; '));
+      } else if (errors.length === 1) {
+        toast.info(`${totalInvoices} számla letöltve. Hibák: ${errors.join('; ')}`);
+      } else {
+        toast.success(`${totalInvoices} számla szinkronizálva`);
+      }
+      
+      fetchData();
+
+    } catch (error: any) {
+      console.error('Sync error:', error);
+      toast.error(error.message || 'Nem sikerült szinkronizálni a számlákat');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const fetchData = async () => {
     if (!user || !selectedCompany) return;
@@ -683,6 +789,27 @@ const InvoicesPage = () => {
                 </CardDescription>
               </div>
               <div className="flex gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleSync}
+                        disabled={syncing || !credentialsExist}
+                      >
+                        <RefreshCw className={cn("h-4 w-4 mr-2", syncing && "animate-spin")} />
+                        {syncing ? 'Szinkronizálás...' : 'Szinkronizálás'}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {credentialsExist 
+                        ? 'NAV számlák szinkronizálása (utolsó 30 nap)'
+                        : 'Állítsd be a NAV integrációt az Integrációk oldalon'
+                      }
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

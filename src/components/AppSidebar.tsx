@@ -34,7 +34,6 @@ import {
   FolderKanban,
   Plug,
   CreditCard,
-  TestTube,
   Tags,
   TrendingUp,
   Wallet,
@@ -84,11 +83,6 @@ const navigationItems = [
     title: "Integrációk",
     url: "/integrations",
     icon: Plug,
-  },
-  {
-    title: "NAV Tesztelés",
-    url: "/nav-testing",
-    icon: TestTube,
   },
   {
     title: "Árfolyamok",

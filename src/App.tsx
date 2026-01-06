@@ -18,7 +18,7 @@ import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
 import Projects from "./pages/Projects";
 import Pricing from "./pages/Pricing";
-import NavTesting from "./pages/NavTesting";
+
 import ExchangeRates from "./pages/ExchangeRates";
 import SalariesPage from "./pages/SalariesPage";
 import Analytics from "./pages/Analytics";
@@ -91,11 +91,6 @@ const App = () => (
                     <Route path="/pricing" element={
                       <ProtectedPage>
                         <Pricing />
-                      </ProtectedPage>
-                    } />
-                    <Route path="/nav-testing" element={
-                      <ProtectedPage>
-                        <NavTesting />
                       </ProtectedPage>
                     } />
                     <Route path="/exchange-rates" element={
