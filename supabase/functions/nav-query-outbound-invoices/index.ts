@@ -453,63 +453,9 @@ Deno.serve(async (req) => {
 
     console.log('[NAV-QUERY-OUTBOUND] Sync log updated');
 
-    // Trigger N8N categorization webhook
-    const webhookUrl = Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL');
-    console.log(`[NAV-QUERY-OUTBOUND] Webhook URL: ${webhookUrl ? `SET (ends: ...${webhookUrl.slice(-30)})` : 'NOT SET'}`);
-
-    if (webhookUrl && webhookUrl.startsWith('http') && allInvoices.length > 0) {
-      try {
-        const invoiceNumbers = allInvoices.map(inv => inv.invoiceNumber);
-        
-        // Fetch invoices with line items for categorization
-        const { data: invoicesWithItems } = await serviceClient
-          .from('nav_invoices')
-          .select(`
-            id,
-            invoice_number,
-            invoice_direction,
-            supplier_name,
-            customer_name,
-            company_id,
-            nav_invoice_items (
-              line_description,
-              product_code,
-              net_amount
-            )
-          `)
-          .in('invoice_number', invoiceNumbers)
-          .eq('user_id', user.id)
-          .eq('company_id', companyId);
-        
-        const payload = {
-          syncType: 'manual',
-          invoiceDirection: invoiceDirection,
-          userId: user.id,
-          companyId: companyId,
-          invoices: invoicesWithItems || []
-        };
-        
-        console.log(`[NAV-QUERY-OUTBOUND] Webhook payload: ${JSON.stringify(payload).slice(0, 500)}...`);
-        
-        // Single webhook call
-        try {
-          console.log(`[NAV-QUERY-OUTBOUND] Calling webhook: ...${webhookUrl.slice(-40)}`);
-          const response = await fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          const responseText = await response.text();
-          console.log(`[NAV-QUERY-OUTBOUND] Webhook response - Status: ${response.status}, Body: ${responseText.slice(0, 200)}`);
-        } catch (fetchErr) {
-          console.error(`[NAV-QUERY-OUTBOUND] Webhook fetch error:`, fetchErr);
-        }
-        
-        console.log(`[NAV-QUERY-OUTBOUND] N8N categorization webhook triggered for ${invoicesWithItems?.length || 0} invoices`);
-      } catch (webhookError) {
-        console.error('[NAV-QUERY-OUTBOUND] Webhook prep failed:', webhookError);
-      }
-    }
+    // NOTE: Webhook triggering moved to trigger-nav-categorization edge function
+    // This function no longer calls webhooks directly - frontend calls trigger-nav-categorization
+    // after both OUTBOUND and INBOUND syncs complete
 
     return new Response(
       JSON.stringify({

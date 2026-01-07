@@ -289,6 +289,25 @@ const InvoicesPage = () => {
         toast.success(`${totalInvoices} számla szinkronizálva`);
       }
       
+      // Trigger single categorization webhook after both syncs complete
+      if (totalInvoices > 0) {
+        try {
+          await supabase.functions.invoke('trigger-nav-categorization', {
+            body: {
+              companyId: selectedCompany.id,
+              syncType: 'manual'
+            },
+            headers: {
+              Authorization: `Bearer ${session.access_token}`
+            }
+          });
+          console.log('Categorization webhook triggered');
+        } catch (categorizationError) {
+          console.error('Categorization webhook failed:', categorizationError);
+          // Don't show error to user - sync succeeded, categorization is secondary
+        }
+      }
+      
       fetchData();
 
     } catch (error: any) {
