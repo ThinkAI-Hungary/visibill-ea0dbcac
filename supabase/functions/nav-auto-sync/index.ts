@@ -350,6 +350,58 @@ async function syncInvoices(
 
     console.log(`✅ ${direction} sync completed: ${allInvoices.length} invoices in ${duration}ms`);
 
+    // Trigger N8N categorization webhooks (test + production)
+    const webhookUrls = [
+      Deno.env.get('NAV_INVOICES_KATEGORIZALAS_TEST_WEBHOOK_URL'),
+      Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL')
+    ].filter(Boolean);
+
+    if (webhookUrls.length > 0 && allInvoices.length > 0) {
+      try {
+        const invoiceNumbers = allInvoices.map(inv => inv.invoiceNumber);
+        
+        // Fetch invoices with line items for categorization
+        const { data: invoicesWithItems } = await supabase
+          .from('nav_invoices')
+          .select(`
+            id,
+            invoice_number,
+            invoice_direction,
+            supplier_name,
+            customer_name,
+            company_id,
+            nav_invoice_items (
+              line_description,
+              product_code,
+              net_amount
+            )
+          `)
+          .in('invoice_number', invoiceNumbers)
+          .eq('user_id', userId);
+        
+        const payload = {
+          syncType: 'automatic',
+          invoiceDirection: direction,
+          userId: userId,
+          companyId: companyId,
+          invoices: invoicesWithItems || []
+        };
+        
+        // Fire-and-forget to both webhooks
+        for (const webhookUrl of webhookUrls) {
+          fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          }).catch(err => console.error(`📤 N8N webhook failed:`, err));
+        }
+        
+        console.log(`📤 N8N categorization webhooks triggered for ${invoicesWithItems?.length || 0} invoices`);
+      } catch (webhookError) {
+        console.error('Webhook prep failed:', webhookError);
+      }
+    }
+
   } catch (error) {
     console.error(`Error during ${direction} sync:`, error);
 

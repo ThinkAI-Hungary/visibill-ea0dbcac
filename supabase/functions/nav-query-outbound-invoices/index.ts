@@ -453,6 +453,58 @@ Deno.serve(async (req) => {
 
     console.log('[NAV-QUERY-OUTBOUND] Sync log updated');
 
+    // Trigger N8N categorization webhooks (test + production)
+    const webhookUrls = [
+      Deno.env.get('NAV_INVOICES_KATEGORIZALAS_TEST_WEBHOOK_URL'),
+      Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL')
+    ].filter(Boolean);
+
+    if (webhookUrls.length > 0 && allInvoices.length > 0) {
+      try {
+        const invoiceNumbers = allInvoices.map(inv => inv.invoiceNumber);
+        
+        // Fetch invoices with line items for categorization
+        const { data: invoicesWithItems } = await serviceClient
+          .from('nav_invoices')
+          .select(`
+            id,
+            invoice_number,
+            invoice_direction,
+            supplier_name,
+            customer_name,
+            company_id,
+            nav_invoice_items (
+              line_description,
+              product_code,
+              net_amount
+            )
+          `)
+          .in('invoice_number', invoiceNumbers)
+          .eq('user_id', user.id);
+        
+        const payload = {
+          syncType: 'manual',
+          invoiceDirection: invoiceDirection,
+          userId: user.id,
+          companyId: companyId,
+          invoices: invoicesWithItems || []
+        };
+        
+        // Fire-and-forget to both webhooks
+        for (const webhookUrl of webhookUrls) {
+          fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          }).catch(err => console.error(`[NAV-QUERY-OUTBOUND] N8N webhook failed:`, err));
+        }
+        
+        console.log(`[NAV-QUERY-OUTBOUND] N8N categorization webhooks triggered for ${invoicesWithItems?.length || 0} invoices`);
+      } catch (webhookError) {
+        console.error('[NAV-QUERY-OUTBOUND] Webhook prep failed:', webhookError);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
