@@ -167,12 +167,52 @@ serve(async (req) => {
 
     console.log('Found alias for user:', alias.user_id, 'company:', alias.company_name, 'company_id:', alias.company_id);
 
+    // Helper: Érvényes számla csatolmány-e?
+    const isValidInvoiceAttachment = (file: File): boolean => {
+      const fileName = file.name.toLowerCase();
+      const fileType = file.type.toLowerCase();
+      
+      // Minimális fájlméret (1KB) - túl kicsi fájlok kiszűrése
+      if (file.size < 1024) {
+        console.log(`Skipping too small file: ${file.name} (${file.size} bytes)`);
+        return false;
+      }
+      
+      // Engedélyezett MIME típusok
+      const allowedTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/jpg', 
+        'image/png',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
+        'application/vnd.ms-excel', // xls
+      ];
+      
+      // Engedélyezett kiterjesztések (fallback ha a MIME type nem pontos)
+      const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.xlsx', '.xls'];
+      
+      const hasAllowedType = allowedTypes.includes(fileType);
+      const hasAllowedExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+      
+      if (!hasAllowedType && !hasAllowedExtension) {
+        console.log(`Skipping unsupported file: ${file.name} (type: ${fileType})`);
+        return false;
+      }
+      
+      return true;
+    };
+
     // Process attachments (only available with multipart/form-data)
     if (attachments.length > 0) {
       console.log('Processing', attachments.length, 'attachments');
       
       for (const attachment of attachments) {
-        console.log(`Processing attachment: ${attachment.name}, type: ${attachment.type}, size: ${attachment.size}`);
+        // Szűrés: csak releváns formátumok és min 1KB méret
+        if (!isValidInvoiceAttachment(attachment)) {
+          continue;
+        }
+        
+        console.log(`Processing valid attachment: ${attachment.name}, type: ${attachment.type}, size: ${attachment.size}`);
         
         // Upload to Supabase storage
         const fileName = `${alias.user_id}/${Date.now()}-${attachment.name}`;
