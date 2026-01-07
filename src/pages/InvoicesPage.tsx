@@ -85,6 +85,7 @@ interface NavInvoice {
 
 interface SubmittedInvoice {
   id: string;
+  szamlaszam: string | null;
   kibocsatas_datuma: string;
   teljesites_datuma: string | null;
   elado_nev: string;
@@ -335,7 +336,7 @@ const InvoicesPage = () => {
       // Fetch submitted invoices from invoices table
       const { data: submittedData, error: submittedError } = await supabase
         .from('invoices')
-        .select('id, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url')
+        .select('id, szamlaszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url')
         .eq('company_id', selectedCompany.id)
         .order('kibocsatas_datuma', { ascending: false });
 
@@ -1406,8 +1407,9 @@ const InvoicesPage = () => {
                   <Table className="table-fixed">
                     <TableHeader>
                       <TableRow className="bg-muted/30 hover:bg-muted/30">
+                        <TableHead className="font-semibold w-[12%]">Számlaszám</TableHead>
                         <TableHead 
-                          className="cursor-pointer hover:bg-muted/50 font-semibold w-[12%]"
+                          className="cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
                           onClick={() => handleSort('kibocsatas_datuma')}
                         >
                           <div className="flex items-center gap-2">
@@ -1415,12 +1417,12 @@ const InvoicesPage = () => {
                             <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                           </div>
                         </TableHead>
-                        <TableHead className="font-semibold w-[12%]">Teljesítés</TableHead>
-                        <TableHead className="font-semibold w-[16%]">Eladó</TableHead>
-                        <TableHead className="font-semibold w-[16%]">Vevő</TableHead>
-                        <TableHead className="text-right font-semibold w-[12%]">Nettó</TableHead>
+                        <TableHead className="font-semibold w-[10%]">Teljesítés</TableHead>
+                        <TableHead className="font-semibold w-[14%]">Eladó</TableHead>
+                        <TableHead className="font-semibold w-[14%]">Vevő</TableHead>
+                        <TableHead className="text-right font-semibold w-[10%]">Nettó</TableHead>
                         <TableHead 
-                          className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[12%]"
+                          className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
                           onClick={() => handleSort('brutto_vegosszeg')}
                         >
                           <div className="flex items-center justify-end gap-2">
@@ -1428,20 +1430,23 @@ const InvoicesPage = () => {
                             <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                           </div>
                         </TableHead>
-                        <TableHead className="text-right font-semibold w-[12%]">ÁFA</TableHead>
-                        <TableHead className="text-center font-semibold w-[8%]">Műveletek</TableHead>
+                        <TableHead className="text-right font-semibold w-[10%]">ÁFA</TableHead>
+                        <TableHead className="text-center font-semibold w-[10%]">Műveletek</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paginatedSubmittedInvoices.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                             Nincs megjeleníthető számla a megadott szűrők alapján.
                           </TableCell>
                         </TableRow>
                       ) : (
                         paginatedSubmittedInvoices.map((invoice) => (
                           <TableRow key={invoice.id} className="group">
+                            <TableCell className="font-medium truncate max-w-[120px]">
+                              {invoice.szamlaszam || '-'}
+                            </TableCell>
                             <TableCell className="text-muted-foreground">
                               {invoice.kibocsatas_datuma 
                                 ? format(new Date(invoice.kibocsatas_datuma), 'yyyy. MM. dd.', { locale: hu })
