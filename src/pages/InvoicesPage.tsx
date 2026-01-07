@@ -184,6 +184,9 @@ const InvoicesPage = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<SubmittedInvoice | null>(null);
   const [selectedNavInvoice, setSelectedNavInvoice] = useState<NavInvoice | null>(null);
   
+  // Row selection state for recategorization
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
+  
   const [navFilters, setNavFilters] = useState<NavFilters>({
     search: '',
     dateFrom: undefined,
@@ -213,6 +216,11 @@ const InvoicesPage = () => {
     checkCredentialsExist();
   }, [user, selectedCompany]);
 
+  // Clear selection when tab changes
+  useEffect(() => {
+    setSelectedInvoiceIds(new Set());
+  }, [activeTab]);
+
   const checkCredentialsExist = async () => {
     if (!selectedCompany) {
       setCredentialsExist(false);
@@ -240,6 +248,19 @@ const InvoicesPage = () => {
     if (!lastSyncTime || canSync) return 0;
     return Math.ceil((SYNC_COOLDOWN_MS - (Date.now() - lastSyncTime)) / 1000 / 60);
   }, [lastSyncTime, canSync]);
+
+  // Row selection helpers - defined after paginatedNavInvoices
+  const handleRowSelect = (invoiceId: string, checked: boolean) => {
+    setSelectedInvoiceIds(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(invoiceId);
+      } else {
+        newSet.delete(invoiceId);
+      }
+      return newSet;
+    });
+  };
 
   const handleSync = async () => {
     if (!selectedCompany) {
@@ -331,24 +352,30 @@ const InvoicesPage = () => {
         });
       }
       
-      // Trigger single categorization webhook after both syncs complete
-      if (totalInvoices > 0) {
+      // Capture selected invoice IDs for force recategorization
+      const forceRecategorizeIds = Array.from(selectedInvoiceIds);
+      
+      // Trigger categorization webhook - include force recategorize IDs
+      if (totalInvoices > 0 || forceRecategorizeIds.length > 0) {
         try {
           await supabase.functions.invoke('trigger-nav-categorization', {
             body: {
               companyId: selectedCompany.id,
-              syncType: 'manual'
+              syncType: 'manual',
+              forceRecategorizeIds
             },
             headers: {
               Authorization: `Bearer ${session.access_token}`
             }
           });
-          console.log('Categorization webhook triggered');
+          console.log('Categorization webhook triggered', { forceRecategorizeIds: forceRecategorizeIds.length });
         } catch (categorizationError) {
           console.error('Categorization webhook failed:', categorizationError);
-          // Don't show error to user - sync succeeded, categorization is secondary
         }
       }
+      
+      // Clear selection after sync
+      setSelectedInvoiceIds(new Set());
       
       fetchData();
 
@@ -541,6 +568,24 @@ const InvoicesPage = () => {
   }, [filteredAndSortedNavInvoices, navCurrentPage]);
 
   const navTotalPages = Math.ceil(filteredAndSortedNavInvoices.length / ITEMS_PER_PAGE);
+
+  // Row selection helpers (must be after paginatedNavInvoices)
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const newSet = new Set(selectedInvoiceIds);
+      paginatedNavInvoices.forEach(inv => newSet.add(inv.id));
+      setSelectedInvoiceIds(newSet);
+    } else {
+      const newSet = new Set(selectedInvoiceIds);
+      paginatedNavInvoices.forEach(inv => newSet.delete(inv.id));
+      setSelectedInvoiceIds(newSet);
+    }
+  };
+
+  const allVisibleSelected = useMemo(() => {
+    if (paginatedNavInvoices.length === 0) return false;
+    return paginatedNavInvoices.every(inv => selectedInvoiceIds.has(inv.id));
+  }, [paginatedNavInvoices, selectedInvoiceIds]);
 
   const filteredAndSortedSubmittedInvoices = useMemo(() => {
     let filtered = submittedInvoices.filter(invoice => {
@@ -896,7 +941,9 @@ const InvoicesPage = () => {
                         ? 'Állítsd be a NAV integrációt az Integrációk oldalon'
                         : !canSync 
                           ? `Legközelebb ${remainingCooldown} perc múlva szinkronizálhatsz`
-                          : 'NAV számlák szinkronizálása (utolsó 30 nap)'
+                          : selectedInvoiceIds.size > 0
+                            ? `NAV szinkronizálás + ${selectedInvoiceIds.size} kijelölt számla újrakategorizálása`
+                            : 'NAV számlák szinkronizálása (utolsó 30 nap)'
                       }
                     </TooltipContent>
                   </Tooltip>
@@ -1110,8 +1157,15 @@ const InvoicesPage = () => {
                     <Table className="table-fixed">
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
+                          <TableHead className="w-[40px]">
+                            <Checkbox
+                              checked={allVisibleSelected}
+                              onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                              aria-label="Összes kijelölése"
+                            />
+                          </TableHead>
                           <TableHead 
-                            className="cursor-pointer hover:bg-muted/50 font-semibold w-[12%]"
+                            className="cursor-pointer hover:bg-muted/50 font-semibold w-[11%]"
                             onClick={() => handleSort('invoice_number')}
                           >
                             <div className="flex items-center gap-2">
@@ -1137,11 +1191,11 @@ const InvoicesPage = () => {
                               <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                           </TableHead>
-                          <TableHead className="font-semibold w-[15%]">Partner</TableHead>
-                          <TableHead className="text-right font-semibold w-[10%]">Nettó</TableHead>
-                          <TableHead className="text-right font-semibold w-[10%]">Bruttó</TableHead>
-                          <TableHead className="text-right font-semibold w-[9%]">ÁFA</TableHead>
-                          <TableHead className="text-center font-semibold w-[8%]">Státusz</TableHead>
+                          <TableHead className="font-semibold w-[14%]">Partner</TableHead>
+                          <TableHead className="text-right font-semibold w-[9%]">Nettó</TableHead>
+                          <TableHead className="text-right font-semibold w-[9%]">Bruttó</TableHead>
+                          <TableHead className="text-right font-semibold w-[8%]">ÁFA</TableHead>
+                          <TableHead className="text-center font-semibold w-[7%]">Státusz</TableHead>
                           {activeTab === 'INBOUND' && (
                             <TableHead className="text-center font-semibold w-[6%]">Beküldve</TableHead>
                           )}
@@ -1149,13 +1203,13 @@ const InvoicesPage = () => {
                             <TableHead className="text-center font-semibold w-[10%]">Kategória</TableHead>
                           )}
                           <TableHead className="text-center font-semibold w-[10%]">Projekt</TableHead>
-                          <TableHead className="text-center font-semibold w-[6%]">Tételek</TableHead>
+                          <TableHead className="text-center font-semibold w-[5%]">Tételek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {paginatedNavInvoices.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={activeTab === 'INBOUND' ? 12 : 10} className="text-center py-8 text-muted-foreground">
+                            <TableCell colSpan={activeTab === 'INBOUND' ? 13 : 11} className="text-center py-8 text-muted-foreground">
                               Nincs megjeleníthető számla a megadott szűrők alapján.
                             </TableCell>
                           </TableRow>
@@ -1165,7 +1219,14 @@ const InvoicesPage = () => {
                             const partnerName = getInvoicePartnerName(invoice);
                             
                             return (
-                              <TableRow key={invoice.id} className="group">
+                              <TableRow key={invoice.id} className={cn("group", selectedInvoiceIds.has(invoice.id) && "bg-primary/5")}>
+                                <TableCell>
+                                  <Checkbox
+                                    checked={selectedInvoiceIds.has(invoice.id)}
+                                    onCheckedChange={(checked) => handleRowSelect(invoice.id, !!checked)}
+                                    aria-label={`${invoice.invoice_number} kijelölése`}
+                                  />
+                                </TableCell>
                                 <TableCell className="font-mono text-sm font-medium">
                                   {invoice.invoice_number}
                                 </TableCell>
@@ -1311,6 +1372,8 @@ const InvoicesPage = () => {
                             <TableCell>&nbsp;</TableCell>
                             <TableCell>&nbsp;</TableCell>
                             <TableCell>&nbsp;</TableCell>
+                            <TableCell>&nbsp;</TableCell>
+                            {activeTab === 'INBOUND' && <TableCell>&nbsp;</TableCell>}
                             {activeTab === 'INBOUND' && <TableCell>&nbsp;</TableCell>}
                             <TableCell>&nbsp;</TableCell>
                             <TableCell>&nbsp;</TableCell>
@@ -1320,12 +1383,30 @@ const InvoicesPage = () => {
                     </Table>
                   </div>
 
-                  {/* NAV Pagination */}
-                  {navTotalPages > 1 && (
-                    <div className="flex items-center justify-between px-2">
-                      <p className="text-sm text-muted-foreground">
-                        Összesen {filteredAndSortedNavInvoices.length} számla, {navCurrentPage}. oldal / {navTotalPages}
-                      </p>
+                  {/* Selection indicator and NAV Pagination */}
+                  <div className="flex items-center justify-between px-2">
+                    <div className="flex items-center gap-4">
+                      {selectedInvoiceIds.size > 0 && (
+                        <div className="flex items-center gap-2 text-sm text-primary">
+                          <span className="font-medium">{selectedInvoiceIds.size} számla kijelölve újrakategorizálásra</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                            onClick={() => setSelectedInvoiceIds(new Set())}
+                          >
+                            <X className="h-3 w-3 mr-1" />
+                            Törlés
+                          </Button>
+                        </div>
+                      )}
+                      {navTotalPages > 1 && (
+                        <p className="text-sm text-muted-foreground">
+                          Összesen {filteredAndSortedNavInvoices.length} számla, {navCurrentPage}. oldal / {navTotalPages}
+                        </p>
+                      )}
+                    </div>
+                    {navTotalPages > 1 && (
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
@@ -1346,8 +1427,8 @@ const InvoicesPage = () => {
                           <ChevronRight className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </TabsContent>
               )}
 
