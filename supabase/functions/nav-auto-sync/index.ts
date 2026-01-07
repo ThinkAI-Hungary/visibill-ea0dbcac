@@ -351,10 +351,10 @@ async function syncInvoices(
     console.log(`✅ ${direction} sync completed: ${allInvoices.length} invoices in ${duration}ms`);
 
     // Trigger N8N categorization webhooks (test + production)
-    const webhookUrls = [
-      Deno.env.get('NAV_INVOICES_KATEGORIZALAS_TEST_WEBHOOK_URL'),
-      Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL')
-    ].filter(Boolean);
+      const webhookUrls = [
+        Deno.env.get('NAV_INVOICES_KATEGORIZALAS_TEST_WEBHOOK_URL'),
+        Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL')
+      ].filter(url => url && url.startsWith('http'));
 
     if (webhookUrls.length > 0 && allInvoices.length > 0) {
       try {
