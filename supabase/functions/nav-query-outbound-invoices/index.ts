@@ -454,10 +454,12 @@ Deno.serve(async (req) => {
     console.log('[NAV-QUERY-OUTBOUND] Sync log updated');
 
     // Trigger N8N categorization webhooks (test + production)
-      const webhookUrls = [
-        Deno.env.get('NAV_INVOICES_KATEGORIZALAS_TEST_WEBHOOK_URL'),
-        Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL')
-      ].filter(url => url && url.startsWith('http'));
+    const testWebhookUrl = Deno.env.get('NAV_INVOICES_KATEGORIZALAS_TEST_WEBHOOK_URL');
+    const prodWebhookUrl = Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL');
+    console.log(`[NAV-QUERY-OUTBOUND] Webhook URLs - Test: ${testWebhookUrl ? 'SET' : 'NOT SET'}, Prod: ${prodWebhookUrl ? 'SET' : 'NOT SET'}`);
+    
+    const webhookUrls = [testWebhookUrl, prodWebhookUrl].filter(url => url && url.startsWith('http'));
+    console.log(`[NAV-QUERY-OUTBOUND] Valid webhook URLs count: ${webhookUrls.length}`);
 
     if (webhookUrls.length > 0 && allInvoices.length > 0) {
       try {
