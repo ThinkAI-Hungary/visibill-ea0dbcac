@@ -157,6 +157,8 @@ const InvoicesPage = () => {
   // NAV sync state
   const [credentialsExist, setCredentialsExist] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+  const SYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
   
   // Pagination state
   const ITEMS_PER_PAGE = 10;
@@ -217,9 +219,24 @@ const InvoicesPage = () => {
     }
   };
 
+  const canSync = useMemo(() => {
+    if (!lastSyncTime) return true;
+    return Date.now() - lastSyncTime >= SYNC_COOLDOWN_MS;
+  }, [lastSyncTime]);
+
+  const remainingCooldown = useMemo(() => {
+    if (!lastSyncTime || canSync) return 0;
+    return Math.ceil((SYNC_COOLDOWN_MS - (Date.now() - lastSyncTime)) / 1000 / 60);
+  }, [lastSyncTime, canSync]);
+
   const handleSync = async () => {
     if (!selectedCompany) {
       toast.error('Nincs kiválasztott cég');
+      return;
+    }
+
+    if (!canSync) {
+      toast.error(`Kérlek várj még ${remainingCooldown} percet a következő szinkronizálásig`);
       return;
     }
     
@@ -257,7 +274,8 @@ const InvoicesPage = () => {
         })
       ]);
 
-      let totalInvoices = 0;
+      let outboundCount = 0;
+      let inboundCount = 0;
       const errors: string[] = [];
 
       if (outboundResult.status === 'fulfilled') {
@@ -265,7 +283,7 @@ const InvoicesPage = () => {
         if (error || data?.error) {
           errors.push(`Kimenő: ${error?.message || data?.error}`);
         } else if (data?.success) {
-          totalInvoices += data.totalInvoices || 0;
+          outboundCount = data.totalInvoices || 0;
         }
       } else {
         errors.push(`Kimenő: ${outboundResult.reason?.message || 'Ismeretlen hiba'}`);
@@ -276,18 +294,27 @@ const InvoicesPage = () => {
         if (error || data?.error) {
           errors.push(`Bejövő: ${error?.message || data?.error}`);
         } else if (data?.success) {
-          totalInvoices += data.totalInvoices || 0;
+          inboundCount = data.totalInvoices || 0;
         }
       } else {
         errors.push(`Bejövő: ${inboundResult.reason?.message || 'Ismeretlen hiba'}`);
       }
 
+      const totalInvoices = outboundCount + inboundCount;
+
+      // Set last sync time
+      setLastSyncTime(Date.now());
+
       if (errors.length === 2) {
         throw new Error(errors.join('; '));
       } else if (errors.length === 1) {
-        toast.info(`${totalInvoices} számla letöltve. Hibák: ${errors.join('; ')}`);
+        toast.info(`Szinkronizálás részben sikeres`, {
+          description: `${totalInvoices} számla letöltve (${outboundCount} kimenő, ${inboundCount} bejövő). Hibák: ${errors.join('; ')}`
+        });
       } else {
-        toast.success(`${totalInvoices} számla szinkronizálva`);
+        toast.success(`Sikeres szinkronizálás!`, {
+          description: `Összesen ${totalInvoices} számla: ${outboundCount} kimenő, ${inboundCount} bejövő`
+        });
       }
       
       // Trigger single categorization webhook after both syncs complete
@@ -844,16 +871,18 @@ const InvoicesPage = () => {
                         variant="outline" 
                         size="sm" 
                         onClick={handleSync}
-                        disabled={syncing || !credentialsExist}
+                        disabled={syncing || !credentialsExist || !canSync}
                       >
                         <RefreshCw className={cn("h-4 w-4 mr-2", syncing && "animate-spin")} />
-                        {syncing ? 'Szinkronizálás...' : 'Szinkronizálás'}
+                        {syncing ? 'Szinkronizálás...' : !canSync ? `Várj ${remainingCooldown} percet` : 'Szinkronizálás'}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      {credentialsExist 
-                        ? 'NAV számlák szinkronizálása (utolsó 30 nap)'
-                        : 'Állítsd be a NAV integrációt az Integrációk oldalon'
+                      {!credentialsExist 
+                        ? 'Állítsd be a NAV integrációt az Integrációk oldalon'
+                        : !canSync 
+                          ? `Legközelebb ${remainingCooldown} perc múlva szinkronizálhatsz`
+                          : 'NAV számlák szinkronizálása (utolsó 30 nap)'
                       }
                     </TooltipContent>
                   </Tooltip>
