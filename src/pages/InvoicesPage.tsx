@@ -1179,7 +1179,7 @@ const InvoicesPage = () => {
                                       value={invoice.category_id || 'none'}
                                       onValueChange={(value) => handleCategoryChange(invoice.id, value)}
                                     >
-                                      <SelectTrigger className="w-[140px] h-8 bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0">
+                                      <SelectTrigger className="w-[120px] h-8 bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0">
                                         <SelectValue placeholder="Válassz..." />
                                       </SelectTrigger>
                                       <SelectContent>
@@ -1198,7 +1198,7 @@ const InvoicesPage = () => {
                                     value={invoice.project_id || 'none'}
                                     onValueChange={(value) => handleProjectChange(invoice.id, value)}
                                   >
-                                    <SelectTrigger className="w-[180px] h-8 bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0">
+                                    <SelectTrigger className="w-[120px] h-8 bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0">
                                       <SelectValue placeholder="Válassz..." />
                                     </SelectTrigger>
                                     <SelectContent>
