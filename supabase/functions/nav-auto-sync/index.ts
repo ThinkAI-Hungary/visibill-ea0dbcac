@@ -350,13 +350,10 @@ async function syncInvoices(
 
     console.log(`✅ ${direction} sync completed: ${allInvoices.length} invoices in ${duration}ms`);
 
-    // Trigger N8N categorization webhooks (test + production)
-      const webhookUrls = [
-        Deno.env.get('NAV_INVOICES_KATEGORIZALAS_TEST_WEBHOOK_URL'),
-        Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL')
-      ].filter(url => url && url.startsWith('http'));
+    // Trigger N8N categorization webhook
+    const webhookUrl = Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL');
 
-    if (webhookUrls.length > 0 && allInvoices.length > 0) {
+    if (webhookUrl && webhookUrl.startsWith('http') && allInvoices.length > 0) {
       try {
         const invoiceNumbers = allInvoices.map(inv => inv.invoiceNumber);
         
@@ -388,16 +385,14 @@ async function syncInvoices(
           invoices: invoicesWithItems || []
         };
         
-        // Fire-and-forget to both webhooks
-        for (const webhookUrl of webhookUrls) {
-          fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          }).catch(err => console.error(`📤 N8N webhook failed:`, err));
-        }
+        // Single webhook call (fire-and-forget)
+        fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).catch(err => console.error(`📤 N8N webhook failed:`, err));
         
-        console.log(`📤 N8N categorization webhooks triggered for ${invoicesWithItems?.length || 0} invoices`);
+        console.log(`📤 N8N categorization webhook triggered for ${invoicesWithItems?.length || 0} invoices`);
       } catch (webhookError) {
         console.error('Webhook prep failed:', webhookError);
       }
