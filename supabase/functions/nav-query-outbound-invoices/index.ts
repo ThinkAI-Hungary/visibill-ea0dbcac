@@ -453,16 +453,11 @@ Deno.serve(async (req) => {
 
     console.log('[NAV-QUERY-OUTBOUND] Sync log updated');
 
-    // Trigger N8N categorization webhooks (test + production)
-    const testWebhookUrl = Deno.env.get('NAV_INVOICES_KATEGORIZALAS_TEST_WEBHOOK_URL');
-    const prodWebhookUrl = Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL');
-    console.log(`[NAV-QUERY-OUTBOUND] Webhook URLs - Test: ${testWebhookUrl ? `SET (ends: ...${testWebhookUrl.slice(-30)})` : 'NOT SET'}`);
-    console.log(`[NAV-QUERY-OUTBOUND] Webhook URLs - Prod: ${prodWebhookUrl ? `SET (ends: ...${prodWebhookUrl.slice(-30)})` : 'NOT SET'}`);
-    
-    const webhookUrls = [testWebhookUrl, prodWebhookUrl].filter(url => url && url.startsWith('http'));
-    console.log(`[NAV-QUERY-OUTBOUND] Valid webhook URLs count: ${webhookUrls.length}`);
+    // Trigger N8N categorization webhook
+    const webhookUrl = Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL');
+    console.log(`[NAV-QUERY-OUTBOUND] Webhook URL: ${webhookUrl ? `SET (ends: ...${webhookUrl.slice(-30)})` : 'NOT SET'}`);
 
-    if (webhookUrls.length > 0 && allInvoices.length > 0) {
+    if (webhookUrl && webhookUrl.startsWith('http') && allInvoices.length > 0) {
       try {
         const invoiceNumbers = allInvoices.map(inv => inv.invoiceNumber);
         
@@ -496,23 +491,21 @@ Deno.serve(async (req) => {
         
         console.log(`[NAV-QUERY-OUTBOUND] Webhook payload: ${JSON.stringify(payload).slice(0, 500)}...`);
         
-        // Await webhook calls and log responses
-        for (const webhookUrl of webhookUrls) {
-          try {
-            console.log(`[NAV-QUERY-OUTBOUND] Calling webhook: ...${webhookUrl.slice(-40)}`);
-            const response = await fetch(webhookUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-            const responseText = await response.text();
-            console.log(`[NAV-QUERY-OUTBOUND] Webhook response - Status: ${response.status}, Body: ${responseText.slice(0, 200)}`);
-          } catch (fetchErr) {
-            console.error(`[NAV-QUERY-OUTBOUND] Webhook fetch error for ${webhookUrl.slice(-30)}:`, fetchErr);
-          }
+        // Single webhook call
+        try {
+          console.log(`[NAV-QUERY-OUTBOUND] Calling webhook: ...${webhookUrl.slice(-40)}`);
+          const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const responseText = await response.text();
+          console.log(`[NAV-QUERY-OUTBOUND] Webhook response - Status: ${response.status}, Body: ${responseText.slice(0, 200)}`);
+        } catch (fetchErr) {
+          console.error(`[NAV-QUERY-OUTBOUND] Webhook fetch error:`, fetchErr);
         }
         
-        console.log(`[NAV-QUERY-OUTBOUND] N8N categorization webhooks triggered for ${invoicesWithItems?.length || 0} invoices`);
+        console.log(`[NAV-QUERY-OUTBOUND] N8N categorization webhook triggered for ${invoicesWithItems?.length || 0} invoices`);
       } catch (webhookError) {
         console.error('[NAV-QUERY-OUTBOUND] Webhook prep failed:', webhookError);
       }
