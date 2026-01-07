@@ -645,6 +645,7 @@ export type Database = {
       }
       nav_invoices: {
         Row: {
+          ai_categorization_reason: string | null
           category_id: string | null
           company_id: string | null
           created_at: string | null
@@ -674,6 +675,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          ai_categorization_reason?: string | null
           category_id?: string | null
           company_id?: string | null
           created_at?: string | null
@@ -703,6 +705,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          ai_categorization_reason?: string | null
           category_id?: string | null
           company_id?: string | null
           created_at?: string | null
