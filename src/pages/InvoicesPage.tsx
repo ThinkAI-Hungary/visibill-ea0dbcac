@@ -157,8 +157,20 @@ const InvoicesPage = () => {
   // NAV sync state
   const [credentialsExist, setCredentialsExist] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
   const SYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+  const LAST_SYNC_STORAGE_KEY = 'nav_last_sync_time';
+  
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(() => {
+    const stored = localStorage.getItem(LAST_SYNC_STORAGE_KEY);
+    if (stored) {
+      const timestamp = parseInt(stored, 10);
+      if (Date.now() - timestamp < SYNC_COOLDOWN_MS) {
+        return timestamp;
+      }
+      localStorage.removeItem(LAST_SYNC_STORAGE_KEY);
+    }
+    return null;
+  });
   
   // Pagination state
   const ITEMS_PER_PAGE = 10;
@@ -302,8 +314,10 @@ const InvoicesPage = () => {
 
       const totalInvoices = outboundCount + inboundCount;
 
-      // Set last sync time
-      setLastSyncTime(Date.now());
+      // Set last sync time and persist to localStorage
+      const now = Date.now();
+      setLastSyncTime(now);
+      localStorage.setItem(LAST_SYNC_STORAGE_KEY, now.toString());
 
       if (errors.length === 2) {
         throw new Error(errors.join('; '));
