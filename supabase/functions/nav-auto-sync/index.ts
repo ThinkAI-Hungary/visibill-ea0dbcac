@@ -377,7 +377,8 @@ async function syncInvoices(
             )
           `)
           .in('invoice_number', invoiceNumbers)
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .eq('company_id', companyId);
         
         const payload = {
           syncType: 'automatic',

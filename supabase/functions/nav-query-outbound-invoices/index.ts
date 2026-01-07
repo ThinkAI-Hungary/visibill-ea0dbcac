@@ -480,7 +480,8 @@ Deno.serve(async (req) => {
             )
           `)
           .in('invoice_number', invoiceNumbers)
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .eq('company_id', companyId);
         
         const payload = {
           syncType: 'manual',
