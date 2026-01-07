@@ -111,6 +111,7 @@ interface RawInvoice {
   invoice_gross_amount: number | null;
   invoice_net_amount: number | null;
   paid: boolean | null;
+  currency: string | null;
 }
 
 interface RawSalary {
@@ -240,7 +241,7 @@ const Index = () => {
 
     const { data: navInvoices } = await supabase
       .from("nav_invoices")
-      .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, paid")
+      .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, paid, currency")
       .eq("company_id", selectedCompany?.id)
       .gte("invoice_issue_date", yearStart)
       .lte("invoice_issue_date", yearEnd);
@@ -257,6 +258,18 @@ const Index = () => {
   };
 
   const monthlyData = useMemo(() => {
+    // Helper: HUF-ba konvertál tetszőleges pénznemből
+    const convertToHUF = (amount: number, fromCurrency: string | null): number => {
+      const currency = fromCurrency || 'HUF';
+      if (currency === 'HUF') return amount;
+      
+      // exchangeRates a HUF-hoz képest vannak (pl. EUR = 0.0026)
+      // Tehát: EUR összeg → HUF = összeg / exchangeRates['EUR']
+      const rate = exchangeRates[currency];
+      if (!rate || rate === 0) return amount; // fallback ha nincs árfolyam
+      return amount / rate;
+    };
+
     const monthlyMap: { [key: number]: MonthlyData } = {};
     for (let i = 0; i < 12; i++) {
       monthlyMap[i] = {
@@ -274,9 +287,12 @@ const Index = () => {
       if (inv.invoice_issue_date) {
         const date = parseISO(inv.invoice_issue_date);
         const monthIndex = date.getMonth();
-        const amount = showBrutto 
+        const originalAmount = showBrutto 
           ? (inv.invoice_gross_amount || 0)
           : (inv.invoice_net_amount || 0);
+        
+        // Konvertálás HUF-ba
+        const amount = convertToHUF(originalAmount, inv.currency);
         
         if (inv.invoice_direction === "OUTBOUND") {
           if (inv.paid === true) {
@@ -294,6 +310,7 @@ const Index = () => {
       }
     });
 
+    // Bérek már HUF-ban vannak
     rawSalaries.forEach(sal => {
       if (sal.dátum) {
         const date = parseISO(sal.dátum);
@@ -303,7 +320,7 @@ const Index = () => {
     });
 
     return Object.values(monthlyMap);
-  }, [rawInvoices, rawSalaries, showBrutto]);
+  }, [rawInvoices, rawSalaries, showBrutto, exchangeRates]);
 
   const fetchVatData = async () => {
     const monthStart = dateFromFormatted;
