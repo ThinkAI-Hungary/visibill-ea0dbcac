@@ -1248,41 +1248,7 @@ const InvoicesPage = () => {
                     </SelectContent>
                   </Select>
 
-                  <Select
-                    value={submittedFilters.category}
-                    onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, category: value }))}
-                  >
-                    <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
-                      <SelectValue placeholder="Kategória" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Minden kategória</SelectItem>
-                      <SelectItem value="none">Nincs kategória</SelectItem>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
 
-                  <Select
-                    value={submittedFilters.project}
-                    onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, project: value }))}
-                  >
-                    <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
-                      <SelectValue placeholder="Projekt" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Minden projekt</SelectItem>
-                      <SelectItem value="none">Nincs projekt</SelectItem>
-                      {projects.map((project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
 
                   <Popover>
                     <PopoverTrigger asChild>
@@ -1351,7 +1317,7 @@ const InvoicesPage = () => {
                     <TableHeader>
                       <TableRow className="bg-muted/30 hover:bg-muted/30">
                         <TableHead 
-                          className="cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
+                          className="cursor-pointer hover:bg-muted/50 font-semibold w-[12%]"
                           onClick={() => handleSort('kibocsatas_datuma')}
                         >
                           <div className="flex items-center gap-2">
@@ -1359,12 +1325,12 @@ const InvoicesPage = () => {
                             <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                           </div>
                         </TableHead>
-                        <TableHead className="font-semibold w-[10%]">Teljesítés</TableHead>
-                        <TableHead className="font-semibold w-[13%]">Eladó</TableHead>
-                        <TableHead className="font-semibold w-[13%]">Vevő</TableHead>
-                        <TableHead className="text-right font-semibold w-[10%]">Nettó</TableHead>
+                        <TableHead className="font-semibold w-[12%]">Teljesítés</TableHead>
+                        <TableHead className="font-semibold w-[16%]">Eladó</TableHead>
+                        <TableHead className="font-semibold w-[16%]">Vevő</TableHead>
+                        <TableHead className="text-right font-semibold w-[12%]">Nettó</TableHead>
                         <TableHead 
-                          className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
+                          className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[12%]"
                           onClick={() => handleSort('brutto_vegosszeg')}
                         >
                           <div className="flex items-center justify-end gap-2">
@@ -1372,16 +1338,14 @@ const InvoicesPage = () => {
                             <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                           </div>
                         </TableHead>
-                        <TableHead className="text-right font-semibold w-[9%]">ÁFA</TableHead>
-                        <TableHead className="font-semibold w-[10%]">Kategória</TableHead>
-                        <TableHead className="font-semibold w-[10%]">Projekt</TableHead>
-                        <TableHead className="text-center font-semibold w-[5%]">Műveletek</TableHead>
+                        <TableHead className="text-right font-semibold w-[12%]">ÁFA</TableHead>
+                        <TableHead className="text-center font-semibold w-[8%]">Műveletek</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paginatedSubmittedInvoices.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                          <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                             Nincs megjeleníthető számla a megadott szűrők alapján.
                           </TableCell>
                         </TableRow>
@@ -1429,8 +1393,6 @@ const InvoicesPage = () => {
                             <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
                               {formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || 'HUF')}
                             </TableCell>
-                            <TableCell className="text-muted-foreground">{getCategoryName(invoice.category_id)}</TableCell>
-                            <TableCell className="text-muted-foreground">{getProjectName(invoice.project_id)}</TableCell>
                             <TableCell>
                               <div className="flex justify-center gap-1">
                                 {(invoice.image_url || invoice.melleklet_url) && (
