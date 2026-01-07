@@ -80,6 +80,7 @@ interface NavInvoice {
   created_at: string | null;
   fetched_at: string | null;
   project_id: string | null;
+  category_id: string | null;
 }
 
 interface SubmittedInvoice {
@@ -123,6 +124,7 @@ interface NavFilters {
   paid: string;
   submitted: string;
   project: string;
+  category: string;
 }
 
 interface SubmittedFilters {
@@ -176,7 +178,8 @@ const InvoicesPage = () => {
     currency: 'all',
     paid: 'all',
     submitted: 'all',
-    project: 'all'
+    project: 'all',
+    category: 'all'
   });
 
   const [submittedFilters, setSubmittedFilters] = useState<SubmittedFilters>({
@@ -440,6 +443,11 @@ const InvoicesPage = () => {
         if (navFilters.project !== 'none' && invoice.project_id !== navFilters.project) return false;
       }
 
+      if (navFilters.category !== 'all') {
+        if (navFilters.category === 'none' && invoice.category_id !== null) return false;
+        if (navFilters.category !== 'none' && invoice.category_id !== navFilters.category) return false;
+      }
+
       return true;
     });
 
@@ -569,7 +577,8 @@ const InvoicesPage = () => {
       currency: 'all',
       paid: 'all',
       submitted: 'all',
-      project: 'all'
+      project: 'all',
+      category: 'all'
     });
   };
 
@@ -589,6 +598,25 @@ const InvoicesPage = () => {
     } catch (error) {
       console.error('Error updating project:', error);
       toast.error('Hiba a projekt hozzárendelésekor');
+    }
+  };
+
+  const handleCategoryChange = async (invoiceId: string, categoryId: string | null) => {
+    try {
+      const { error } = await supabase
+        .from('nav_invoices')
+        .update({ category_id: categoryId === 'none' ? null : categoryId })
+        .eq('id', invoiceId);
+
+      if (error) throw error;
+
+      setInvoices(prev => prev.map(inv => 
+        inv.id === invoiceId ? { ...inv, category_id: categoryId === 'none' ? null : categoryId } : inv
+      ));
+      toast.success('Kategória hozzárendelve');
+    } catch (error) {
+      console.error('Error updating category:', error);
+      toast.error('Hiba a kategória hozzárendelésekor');
     }
   };
 
@@ -915,6 +943,26 @@ const InvoicesPage = () => {
                       </Select>
                     )}
 
+                    {activeTab === 'INBOUND' && (
+                      <Select
+                        value={navFilters.category}
+                        onValueChange={(value) => setNavFilters(prev => ({ ...prev, category: value }))}
+                      >
+                        <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
+                          <SelectValue placeholder="Kategória" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Minden kategória</SelectItem>
+                          <SelectItem value="none">Nincs kategória</SelectItem>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+
                     <Select
                       value={navFilters.project}
                       onValueChange={(value) => setNavFilters(prev => ({ ...prev, project: value }))}
@@ -1034,14 +1082,17 @@ const InvoicesPage = () => {
                           {activeTab === 'INBOUND' && (
                             <TableHead className="text-center font-semibold w-[6%]">Beküldve</TableHead>
                           )}
-                          <TableHead className="text-center font-semibold w-[12%]">Projekt</TableHead>
+                          {activeTab === 'INBOUND' && (
+                            <TableHead className="text-center font-semibold w-[10%]">Kategória</TableHead>
+                          )}
+                          <TableHead className="text-center font-semibold w-[10%]">Projekt</TableHead>
                           <TableHead className="text-center font-semibold w-[6%]">Tételek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {paginatedNavInvoices.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={activeTab === 'INBOUND' ? 11 : 10} className="text-center py-8 text-muted-foreground">
+                            <TableCell colSpan={activeTab === 'INBOUND' ? 12 : 10} className="text-center py-8 text-muted-foreground">
                               Nincs megjeleníthető számla a megadott szűrők alapján.
                             </TableCell>
                           </TableRow>
@@ -1120,6 +1171,26 @@ const InvoicesPage = () => {
                                       checked={invoice.submitted === true}
                                       onCheckedChange={() => handleToggleSubmitted(invoice)}
                                     />
+                                  </TableCell>
+                                )}
+                                {activeTab === 'INBOUND' && (
+                                  <TableCell>
+                                    <Select
+                                      value={invoice.category_id || 'none'}
+                                      onValueChange={(value) => handleCategoryChange(invoice.id, value)}
+                                    >
+                                      <SelectTrigger className="w-[140px] h-8 bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0">
+                                        <SelectValue placeholder="Válassz..." />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none">-</SelectItem>
+                                        {categories.map((category) => (
+                                          <SelectItem key={category.id} value={category.id}>
+                                            {category.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
                                   </TableCell>
                                 )}
                                 <TableCell>

@@ -645,6 +645,7 @@ export type Database = {
       }
       nav_invoices: {
         Row: {
+          category_id: string | null
           company_id: string | null
           created_at: string | null
           currency: string | null
@@ -673,6 +674,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          category_id?: string | null
           company_id?: string | null
           created_at?: string | null
           currency?: string | null
@@ -701,6 +703,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          category_id?: string | null
           company_id?: string | null
           created_at?: string | null
           currency?: string | null
@@ -729,6 +732,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "nav_invoices_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "nav_invoices_company_id_fkey"
             columns: ["company_id"]
