@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
 
     // Parse request body
     const body = await req.json();
-    const { companyId, syncType = 'manual', invoiceNumbers } = body;
+    const { companyId, syncType = 'manual', invoiceNumbers, forceRecategorizeIds = [] } = body;
 
     if (!companyId) {
       return new Response(
@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`[TRIGGER-NAV-CATEGORIZATION] Starting for company ${companyId}, syncType: ${syncType}`);
+    console.log(`[TRIGGER-NAV-CATEGORIZATION] Starting for company ${companyId}, syncType: ${syncType}, forceRecategorizeIds: ${forceRecategorizeIds.length}`);
 
     // Get webhook URL
     const webhookUrl = Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL');
@@ -79,44 +79,76 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Fetch invoices with line items - only uncategorized ones (missing category_id OR project_id)
-    let query = serviceClient
+    // Common select fields for invoices with items
+    const selectFields = `
+      id,
+      invoice_number,
+      invoice_direction,
+      supplier_name,
+      customer_name,
+      company_id,
+      category_id,
+      project_id,
+      nav_invoice_items (
+        line_description,
+        product_code,
+        net_amount
+      )
+    `;
+
+    // 1. Fetch uncategorized invoices (missing category_id OR project_id)
+    let uncategorizedQuery = serviceClient
       .from('nav_invoices')
-      .select(`
-        id,
-        invoice_number,
-        invoice_direction,
-        supplier_name,
-        customer_name,
-        company_id,
-        category_id,
-        project_id,
-        nav_invoice_items (
-          line_description,
-          product_code,
-          net_amount
-        )
-      `)
+      .select(selectFields)
       .eq('user_id', user.id)
       .eq('company_id', companyId)
       .or('category_id.is.null,project_id.is.null');
 
     // If specific invoice numbers provided, filter by them
     if (invoiceNumbers && invoiceNumbers.length > 0) {
-      query = query.in('invoice_number', invoiceNumbers);
+      uncategorizedQuery = uncategorizedQuery.in('invoice_number', invoiceNumbers);
     }
 
-    const { data: invoicesWithItems, error: fetchError } = await query;
+    const { data: uncategorizedInvoices, error: uncatError } = await uncategorizedQuery;
 
-    if (fetchError) {
-      console.error('[TRIGGER-NAV-CATEGORIZATION] Failed to fetch invoices:', fetchError);
+    if (uncatError) {
+      console.error('[TRIGGER-NAV-CATEGORIZATION] Failed to fetch uncategorized invoices:', uncatError);
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch invoices', details: fetchError.message }),
+        JSON.stringify({ error: 'Failed to fetch invoices', details: uncatError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (!invoicesWithItems || invoicesWithItems.length === 0) {
+    // 2. Fetch force recategorize invoices (if any IDs provided)
+    let forceInvoices: InvoiceWithItems[] = [];
+    if (forceRecategorizeIds && forceRecategorizeIds.length > 0) {
+      const { data: forceData, error: forceError } = await serviceClient
+        .from('nav_invoices')
+        .select(selectFields)
+        .eq('user_id', user.id)
+        .eq('company_id', companyId)
+        .in('id', forceRecategorizeIds);
+
+      if (forceError) {
+        console.error('[TRIGGER-NAV-CATEGORIZATION] Failed to fetch force recategorize invoices:', forceError);
+      } else if (forceData) {
+        forceInvoices = forceData as InvoiceWithItems[];
+        console.log(`[TRIGGER-NAV-CATEGORIZATION] Found ${forceInvoices.length} force recategorize invoices`);
+      }
+    }
+
+    // 3. Combine and deduplicate invoices by ID
+    const allInvoiceIds = new Set<string>();
+    const invoicesWithItems: InvoiceWithItems[] = [];
+
+    [...(uncategorizedInvoices || []), ...forceInvoices].forEach((inv: InvoiceWithItems) => {
+      if (!allInvoiceIds.has(inv.id)) {
+        allInvoiceIds.add(inv.id);
+        invoicesWithItems.push(inv);
+      }
+    });
+
+    if (invoicesWithItems.length === 0) {
       console.log('[TRIGGER-NAV-CATEGORIZATION] No invoices to process');
       return new Response(
         JSON.stringify({ success: true, message: 'No invoices to process', webhookTriggered: false }),
@@ -140,7 +172,7 @@ Deno.serve(async (req) => {
       invoices: invoicesWithItems
     };
 
-    console.log(`[TRIGGER-NAV-CATEGORIZATION] Payload: ${outboundInvoices.length} OUTBOUND, ${inboundInvoices.length} INBOUND, ${invoicesWithItems.length} uncategorized invoices to process`);
+    console.log(`[TRIGGER-NAV-CATEGORIZATION] Payload: ${outboundInvoices.length} OUTBOUND, ${inboundInvoices.length} INBOUND, ${invoicesWithItems.length} total (${forceRecategorizeIds.length} force recategorize)`);
 
     // Single webhook call
     try {
@@ -160,7 +192,8 @@ Deno.serve(async (req) => {
           outboundCount: outboundInvoices.length,
           inboundCount: inboundInvoices.length,
           totalCount: invoicesWithItems.length,
-          filteredMessage: 'Only uncategorized invoices sent',
+          forceRecategorizeCount: forceRecategorizeIds.length,
+          filteredMessage: 'Uncategorized + force recategorize invoices sent',
           webhookStatus: response.status
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
