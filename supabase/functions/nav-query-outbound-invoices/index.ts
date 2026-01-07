@@ -456,7 +456,8 @@ Deno.serve(async (req) => {
     // Trigger N8N categorization webhooks (test + production)
     const testWebhookUrl = Deno.env.get('NAV_INVOICES_KATEGORIZALAS_TEST_WEBHOOK_URL');
     const prodWebhookUrl = Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL');
-    console.log(`[NAV-QUERY-OUTBOUND] Webhook URLs - Test: ${testWebhookUrl ? 'SET' : 'NOT SET'}, Prod: ${prodWebhookUrl ? 'SET' : 'NOT SET'}`);
+    console.log(`[NAV-QUERY-OUTBOUND] Webhook URLs - Test: ${testWebhookUrl ? `SET (ends: ...${testWebhookUrl.slice(-30)})` : 'NOT SET'}`);
+    console.log(`[NAV-QUERY-OUTBOUND] Webhook URLs - Prod: ${prodWebhookUrl ? `SET (ends: ...${prodWebhookUrl.slice(-30)})` : 'NOT SET'}`);
     
     const webhookUrls = [testWebhookUrl, prodWebhookUrl].filter(url => url && url.startsWith('http'));
     console.log(`[NAV-QUERY-OUTBOUND] Valid webhook URLs count: ${webhookUrls.length}`);
@@ -493,13 +494,22 @@ Deno.serve(async (req) => {
           invoices: invoicesWithItems || []
         };
         
-        // Fire-and-forget to both webhooks
+        console.log(`[NAV-QUERY-OUTBOUND] Webhook payload: ${JSON.stringify(payload).slice(0, 500)}...`);
+        
+        // Await webhook calls and log responses
         for (const webhookUrl of webhookUrls) {
-          fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          }).catch(err => console.error(`[NAV-QUERY-OUTBOUND] N8N webhook failed:`, err));
+          try {
+            console.log(`[NAV-QUERY-OUTBOUND] Calling webhook: ...${webhookUrl.slice(-40)}`);
+            const response = await fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const responseText = await response.text();
+            console.log(`[NAV-QUERY-OUTBOUND] Webhook response - Status: ${response.status}, Body: ${responseText.slice(0, 200)}`);
+          } catch (fetchErr) {
+            console.error(`[NAV-QUERY-OUTBOUND] Webhook fetch error for ${webhookUrl.slice(-30)}:`, fetchErr);
+          }
         }
         
         console.log(`[NAV-QUERY-OUTBOUND] N8N categorization webhooks triggered for ${invoicesWithItems?.length || 0} invoices`);
