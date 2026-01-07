@@ -135,6 +135,10 @@ Deno.serve(async (req) => {
     const dateToStr = dateTo.toISOString().split('T')[0];
     const dateFromStr = dateFrom.toISOString().split('T')[0];
 
+    // Get webhook URL for consolidated calls
+    const webhookUrl = Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL');
+    console.log(`📤 Webhook URL: ${webhookUrl ? `SET (ends: ...${webhookUrl.slice(-30)})` : 'NOT SET'}`);
+
     // Process each company with rate limiting
     for (const company of companiesWithCreds) {
       console.log(`\n👤 Processing company: ${company.company_id} (user: ${company.user_id})`);
@@ -157,20 +161,71 @@ Deno.serve(async (req) => {
 
         const credentials = credsData as NavCredentials;
 
-        // Sync OUTBOUND invoices
-        await syncInvoices(supabase, company.user_id, company.company_id, credentials, 'OUTBOUND', dateFromStr, dateToStr);
-        console.log(`✅ OUTBOUND sync completed for company ${company.company_id}`);
+        // Sync OUTBOUND invoices - returns invoice numbers
+        const outboundInvoiceNumbers = await syncInvoices(supabase, company.user_id, company.company_id, credentials, 'OUTBOUND', dateFromStr, dateToStr);
+        console.log(`✅ OUTBOUND sync completed for company ${company.company_id}: ${outboundInvoiceNumbers?.length || 0} invoices`);
 
-        // Sync INBOUND invoices
-        await syncInvoices(supabase, company.user_id, company.company_id, credentials, 'INBOUND', dateFromStr, dateToStr);
-        console.log(`✅ INBOUND sync completed for company ${company.company_id}`);
+        // Sync INBOUND invoices - returns invoice numbers
+        const inboundInvoiceNumbers = await syncInvoices(supabase, company.user_id, company.company_id, credentials, 'INBOUND', dateFromStr, dateToStr);
+        console.log(`✅ INBOUND sync completed for company ${company.company_id}: ${inboundInvoiceNumbers?.length || 0} invoices`);
+
+        // Trigger single consolidated webhook for this company
+        const allInvoiceNumbers = [...(outboundInvoiceNumbers || []), ...(inboundInvoiceNumbers || [])];
+        
+        if (webhookUrl && webhookUrl.startsWith('http') && allInvoiceNumbers.length > 0) {
+          try {
+            // Fetch all invoices with line items for categorization
+            const { data: invoicesWithItems } = await supabase
+              .from('nav_invoices')
+              .select(`
+                id,
+                invoice_number,
+                invoice_direction,
+                supplier_name,
+                customer_name,
+                company_id,
+                nav_invoice_items (
+                  line_description,
+                  product_code,
+                  net_amount
+                )
+              `)
+              .in('invoice_number', allInvoiceNumbers)
+              .eq('user_id', company.user_id)
+              .eq('company_id', company.company_id);
+            
+            const payload = {
+              syncType: 'automatic',
+              userId: company.user_id,
+              companyId: company.company_id,
+              invoiceDirections: ['OUTBOUND', 'INBOUND'],
+              outboundCount: outboundInvoiceNumbers?.length || 0,
+              inboundCount: inboundInvoiceNumbers?.length || 0,
+              totalCount: invoicesWithItems?.length || 0,
+              invoices: invoicesWithItems || []
+            };
+            
+            // Fire-and-forget webhook call
+            fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            }).catch(err => console.error(`📤 N8N webhook failed:`, err));
+            
+            console.log(`📤 N8N categorization webhook triggered for ${invoicesWithItems?.length || 0} invoices (company: ${company.company_id})`);
+          } catch (webhookError) {
+            console.error('Webhook prep failed:', webhookError);
+          }
+        }
 
         results.successful++;
         results.details.push({
           company_id: company.company_id,
           user_id: company.user_id,
           username: company.nav_username,
-          status: 'success'
+          status: 'success',
+          outbound_count: outboundInvoiceNumbers?.length || 0,
+          inbound_count: inboundInvoiceNumbers?.length || 0
         });
 
       } catch (error) {
@@ -350,53 +405,8 @@ async function syncInvoices(
 
     console.log(`✅ ${direction} sync completed: ${allInvoices.length} invoices in ${duration}ms`);
 
-    // Trigger N8N categorization webhook
-    const webhookUrl = Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL');
-
-    if (webhookUrl && webhookUrl.startsWith('http') && allInvoices.length > 0) {
-      try {
-        const invoiceNumbers = allInvoices.map(inv => inv.invoiceNumber);
-        
-        // Fetch invoices with line items for categorization
-        const { data: invoicesWithItems } = await supabase
-          .from('nav_invoices')
-          .select(`
-            id,
-            invoice_number,
-            invoice_direction,
-            supplier_name,
-            customer_name,
-            company_id,
-            nav_invoice_items (
-              line_description,
-              product_code,
-              net_amount
-            )
-          `)
-          .in('invoice_number', invoiceNumbers)
-          .eq('user_id', userId)
-          .eq('company_id', companyId);
-        
-        const payload = {
-          syncType: 'automatic',
-          invoiceDirection: direction,
-          userId: userId,
-          companyId: companyId,
-          invoices: invoicesWithItems || []
-        };
-        
-        // Single webhook call (fire-and-forget)
-        fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        }).catch(err => console.error(`📤 N8N webhook failed:`, err));
-        
-        console.log(`📤 N8N categorization webhook triggered for ${invoicesWithItems?.length || 0} invoices`);
-      } catch (webhookError) {
-        console.error('Webhook prep failed:', webhookError);
-      }
-    }
+    // Return invoice numbers for consolidated webhook call
+    return allInvoices.map(inv => inv.invoiceNumber);
 
   } catch (error) {
     console.error(`Error during ${direction} sync:`, error);
