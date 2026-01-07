@@ -174,7 +174,7 @@ Deno.serve(async (req) => {
         
         if (webhookUrl && webhookUrl.startsWith('http') && allInvoiceNumbers.length > 0) {
           try {
-            // Fetch all invoices with line items for categorization
+            // Fetch only uncategorized invoices (missing category_id OR project_id) for AI categorization
             const { data: invoicesWithItems } = await supabase
               .from('nav_invoices')
               .select(`
@@ -184,6 +184,8 @@ Deno.serve(async (req) => {
                 supplier_name,
                 customer_name,
                 company_id,
+                category_id,
+                project_id,
                 nav_invoice_items (
                   line_description,
                   product_code,
@@ -192,27 +194,34 @@ Deno.serve(async (req) => {
               `)
               .in('invoice_number', allInvoiceNumbers)
               .eq('user_id', company.user_id)
-              .eq('company_id', company.company_id);
+              .eq('company_id', company.company_id)
+              .or('category_id.is.null,project_id.is.null');
             
-            const payload = {
-              syncType: 'automatic',
-              userId: company.user_id,
-              companyId: company.company_id,
-              invoiceDirections: ['OUTBOUND', 'INBOUND'],
-              outboundCount: outboundInvoiceNumbers?.length || 0,
-              inboundCount: inboundInvoiceNumbers?.length || 0,
-              totalCount: invoicesWithItems?.length || 0,
-              invoices: invoicesWithItems || []
-            };
-            
-            // Fire-and-forget webhook call
-            fetch(webhookUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            }).catch(err => console.error(`📤 N8N webhook failed:`, err));
-            
-            console.log(`📤 N8N categorization webhook triggered for ${invoicesWithItems?.length || 0} invoices (company: ${company.company_id})`);
+            // Only call webhook if there are uncategorized invoices
+            if (invoicesWithItems && invoicesWithItems.length > 0) {
+              const payload = {
+                syncType: 'automatic',
+                userId: company.user_id,
+                companyId: company.company_id,
+                invoiceDirections: ['OUTBOUND', 'INBOUND'],
+                outboundCount: outboundInvoiceNumbers?.length || 0,
+                inboundCount: inboundInvoiceNumbers?.length || 0,
+                totalCount: invoicesWithItems.length,
+                filteredMessage: 'Only uncategorized invoices sent',
+                invoices: invoicesWithItems
+              };
+              
+              // Fire-and-forget webhook call
+              fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              }).catch(err => console.error(`📤 N8N webhook failed:`, err));
+              
+              console.log(`📤 N8N webhook: ${invoicesWithItems.length} uncategorized invoices sent (company: ${company.company_id})`);
+            } else {
+              console.log(`⏭️ N8N webhook skipped: all invoices already categorized (company: ${company.company_id})`);
+            }
           } catch (webhookError) {
             console.error('Webhook prep failed:', webhookError);
           }

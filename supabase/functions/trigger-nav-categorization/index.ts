@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Fetch invoices with line items
+    // Fetch invoices with line items - only uncategorized ones (missing category_id OR project_id)
     let query = serviceClient
       .from('nav_invoices')
       .select(`
@@ -89,6 +89,8 @@ Deno.serve(async (req) => {
         supplier_name,
         customer_name,
         company_id,
+        category_id,
+        project_id,
         nav_invoice_items (
           line_description,
           product_code,
@@ -96,7 +98,8 @@ Deno.serve(async (req) => {
         )
       `)
       .eq('user_id', user.id)
-      .eq('company_id', companyId);
+      .eq('company_id', companyId)
+      .or('category_id.is.null,project_id.is.null');
 
     // If specific invoice numbers provided, filter by them
     if (invoiceNumbers && invoiceNumbers.length > 0) {
@@ -137,7 +140,7 @@ Deno.serve(async (req) => {
       invoices: invoicesWithItems
     };
 
-    console.log(`[TRIGGER-NAV-CATEGORIZATION] Payload: ${outboundInvoices.length} OUTBOUND, ${inboundInvoices.length} INBOUND, ${invoicesWithItems.length} total`);
+    console.log(`[TRIGGER-NAV-CATEGORIZATION] Payload: ${outboundInvoices.length} OUTBOUND, ${inboundInvoices.length} INBOUND, ${invoicesWithItems.length} uncategorized invoices to process`);
 
     // Single webhook call
     try {
@@ -157,6 +160,7 @@ Deno.serve(async (req) => {
           outboundCount: outboundInvoices.length,
           inboundCount: inboundInvoices.length,
           totalCount: invoicesWithItems.length,
+          filteredMessage: 'Only uncategorized invoices sent',
           webhookStatus: response.status
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
