@@ -4,12 +4,11 @@ import Joyride, {
   STATUS, 
   Step, 
   ACTIONS,
-  EVENTS,
-  Styles
+  EVENTS
 } from 'react-joyride';
-import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { ProductTourTooltip } from './ProductTourTooltip';
 
 interface ProductTourProps {
   run: boolean;
@@ -102,12 +101,8 @@ const TOUR_STEPS: Step[] = [
 const FINAL_STEP_INDEX = TOUR_STEPS.length - 1;
 
 export function ProductTour({ run, onComplete }: ProductTourProps) {
-  const { theme } = useTheme();
   const { user } = useAuth();
   const [stepIndex, setStepIndex] = useState(0);
-  
-  const isDark = theme === 'dark' || 
-    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   // Reset step index when tour starts
   useEffect(() => {
@@ -153,74 +148,26 @@ export function ProductTour({ run, onComplete }: ProductTourProps) {
     }
   };
 
-  // Theme-based styles
-  const styles: Partial<Styles> = {
-    options: {
-      primaryColor: 'hsl(173, 80%, 40%)',
-      backgroundColor: isDark ? 'hsl(222, 47%, 8%)' : 'hsl(0, 0%, 100%)',
-      textColor: isDark ? 'hsl(210, 40%, 98%)' : 'hsl(222, 47%, 11%)',
-      overlayColor: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.5)',
-      arrowColor: isDark ? 'hsl(222, 47%, 8%)' : 'hsl(0, 0%, 100%)',
-      zIndex: 10000,
-    },
-    tooltip: {
-      borderRadius: 12,
-      padding: 20,
-    },
-    tooltipTitle: {
-      fontSize: 18,
-      fontWeight: 600,
-      marginBottom: 8,
-    },
-    tooltipContent: {
-      fontSize: 14,
-      lineHeight: 1.5,
-    },
-    buttonNext: {
-      backgroundColor: 'hsl(173, 80%, 40%)',
-      borderRadius: 8,
-      padding: '10px 20px',
-      fontSize: 14,
-      fontWeight: 500,
-    },
-    buttonBack: {
-      color: isDark ? 'hsl(210, 40%, 98%)' : 'hsl(222, 47%, 11%)',
-      marginRight: 'auto',
-      fontSize: 14,
-    },
-    buttonSkip: {
-      color: isDark ? 'hsl(215, 16%, 60%)' : 'hsl(215, 16%, 47%)',
-      fontSize: 14,
-    },
-    spotlight: {
-      borderRadius: 12,
-    },
-  };
-
-  const locale = {
-    back: 'Vissza',
-    close: 'Bezárás',
-    last: 'Befejezés',
-    next: 'Tovább',
-    skip: 'Kihagyás',
-  };
-
   return (
     <Joyride
       steps={TOUR_STEPS}
       run={run}
       stepIndex={stepIndex}
       continuous
-      showSkipButton={stepIndex < FINAL_STEP_INDEX}
-      showProgress
       callback={handleJoyrideCallback}
-      styles={styles}
-      locale={locale}
+      tooltipComponent={ProductTourTooltip}
       spotlightClicks={false}
       disableOverlayClose
-      hideCloseButton
       scrollToFirstStep
       disableScrolling={false}
+      styles={{
+        options: {
+          zIndex: 10000,
+        },
+        spotlight: {
+          borderRadius: 12,
+        },
+      }}
     />
   );
 }
