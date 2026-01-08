@@ -16,22 +16,36 @@ Deno.serve(async (req) => {
     // Generate debugId for correlation
     const debugId = `save-${Date.now()}-${Math.random().toString(36).substring(7)}`
     
+    // Check for Authorization header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      console.error(`[SAVE-CREDS][${debugId}] Missing or invalid Authorization header`)
+      return new Response(
+        JSON.stringify({ code: 'UNAUTHORIZED', error: 'Missing authorization header', debugId }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+      { global: { headers: { Authorization: authHeader } } }
     )
 
-    // Get user
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
-    if (userError || !user) {
-      console.error(`[SAVE-CREDS][${debugId}] Unauthorized`)
+    // Validate JWT and get claims
+    const token = authHeader.replace('Bearer ', '')
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token)
+    
+    if (claimsError || !claimsData?.claims) {
+      console.error(`[SAVE-CREDS][${debugId}] JWT validation failed:`, claimsError?.message)
       return new Response(
-        JSON.stringify({ code: 'UNAUTHORIZED', error: 'Unauthorized', debugId }),
+        JSON.stringify({ code: 'UNAUTHORIZED', error: 'Invalid or expired token', debugId }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    const userId = claimsData.claims.sub
 
     // Parse request body
     const body = await req.json()
@@ -56,7 +70,7 @@ Deno.serve(async (req) => {
 
     // Log entry with privacy-safe data
     console.log(`[SAVE-CREDS][${debugId}] Entry:`, {
-      userId: user.id,
+      userId,
       companyId,
       taxNumberMasked: taxNumber.length >= 4 ? taxNumber.substring(0, 2) + '******' + taxNumber.substring(taxNumber.length - 2) : '***',
       usernameLength: username.length,
