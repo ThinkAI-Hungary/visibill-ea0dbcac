@@ -114,6 +114,22 @@ export function ProductTour({ run, onComplete }: ProductTourProps) {
   const handleJoyrideCallback = async (data: CallBackProps) => {
     const { action, index, status, type } = data;
     
+    // Close button (X) clicked → exit tour immediately
+    if (action === ACTIONS.CLOSE) {
+      if (user) {
+        try {
+          await supabase
+            .from('profiles')
+            .update({ has_completed_tour: true })
+            .eq('user_id', user.id);
+        } catch (error) {
+          console.error('Failed to update tour status:', error);
+        }
+      }
+      onComplete();
+      return;
+    }
+    
     // Skip button clicked → jump to final step
     if (action === ACTIONS.SKIP) {
       setStepIndex(FINAL_STEP_INDEX);
