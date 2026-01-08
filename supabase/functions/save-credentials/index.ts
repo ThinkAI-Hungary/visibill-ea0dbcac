@@ -26,25 +26,32 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create Supabase client with service role key for auth verification
+    // Create Supabase client with anon key and auth header for JWT verification
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
     )
 
-    // Get user from token
+    // Verify token using getClaims
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token)
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token)
     
-    if (userError || !user) {
-      console.error(`[SAVE-CREDS][${debugId}] Auth failed:`, userError?.message)
+    if (claimsError || !claimsData?.claims) {
+      console.error(`[SAVE-CREDS][${debugId}] Auth failed:`, claimsError?.message)
       return new Response(
         JSON.stringify({ code: 'UNAUTHORIZED', error: 'Invalid or expired token', debugId }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const userId = user.id
+    const userId = claimsData.claims.sub
+    
+    // Create service role client for DB operations (bypasses RLS)
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
     // Parse request body
     const body = await req.json()
@@ -119,7 +126,7 @@ Deno.serve(async (req) => {
     console.log(`[SAVE-CREDS][${debugId}] Validation passed, calling RPC`)
 
     // Call the database function to save credentials with sanitized values
-    const { data, error } = await supabaseClient.rpc('save_nav_credentials', {
+    const { data, error } = await serviceClient.rpc('save_nav_credentials', {
       p_nav_username: username,
       p_nav_password: password,
       p_nav_tax_number: taxNumber,
