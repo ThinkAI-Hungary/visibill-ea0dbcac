@@ -769,7 +769,8 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
   const isNextDisabled = () => {
     if (currentStep === 1) return !isStep1Valid;
     if (currentStep === 2) return !isStep2Valid;
-    return false; // Step 3, 4, and 5 are optional
+    if (currentStep === 4) return !isStep4Valid; // NAV is required
+    return false; // Step 3 and 5 are optional
   };
 
   return (
