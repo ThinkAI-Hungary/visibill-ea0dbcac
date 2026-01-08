@@ -48,51 +48,61 @@ const navigationItems = [
     title: "Irányítópult",
     url: "/",
     icon: LayoutDashboard,
+    tourId: "dashboard",
   },
   {
     title: "Kategóriák",
     url: "/onboarding",
     icon: Tags,
+    tourId: "categories",
   },
   {
     title: "Projektek",
     url: "/projects",
     icon: FolderKanban,
+    tourId: "projects",
   },
   {
     title: "Partnertörzs",
     url: "/partners",
     icon: Users,
+    tourId: "partners",
   },
   {
     title: "Számlák",
     url: "/invoices", 
     icon: FileText,
+    tourId: "invoices",
   },
   {
     title: "Feltöltés",
     url: "/upload",
     icon: Upload,
+    tourId: "upload",
   },
   {
     title: "Bérek/járulékok",
     url: "/salaries",
     icon: Wallet,
+    tourId: "salaries",
   },
   {
     title: "Integrációk",
     url: "/integrations",
     icon: Plug,
+    tourId: "integrations",
   },
   {
     title: "Árfolyamok",
     url: "/exchange-rates",
     icon: TrendingUp,
+    tourId: "exchange-rates",
   },
   {
     title: "Előfizetés",
     url: "/pricing",
     icon: CreditCard,
+    tourId: "subscription",
   },
 ];
 
@@ -158,7 +168,7 @@ export function AppSidebar() {
 
         {/* Company Selector */}
         {!isCollapsed && (
-          <div className="p-3 border-b border-primary/30">
+          <div className="p-3 border-b border-primary/30" data-tour="company-selector">
             <CompanySelector />
           </div>
         )}
@@ -173,7 +183,7 @@ export function AppSidebar() {
                 const active = isActive(item.url);
                 
                 return (
-                  <SidebarMenuItem key={item.title}>
+                  <SidebarMenuItem key={item.title} data-tour={item.tourId}>
                     <SidebarMenuButton 
                       asChild={!isDisabled}
                       isActive={active}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import EmptyStateDashboard from '@/components/dashboard/EmptyStateDashboard';
+import { ProductTour } from '@/components/ProductTour';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
@@ -163,6 +164,9 @@ const Index = () => {
   const [totalOutboundVat, setTotalOutboundVat] = useState(0);
   const [totalInboundVat, setTotalInboundVat] = useState(0);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  
+  // Product Tour state
+  const [showTour, setShowTour] = useState(false);
 
   const vatChartRef = useRef<HTMLDivElement>(null);
 
@@ -188,6 +192,30 @@ const Index = () => {
     fetchDashboardData();
     fetchExchangeRates();
   }, [user, selectedCompany, dateFrom, dateTo]);
+
+  // Check if user needs to see the product tour
+  useEffect(() => {
+    const checkTourStatus = async () => {
+      if (!user || !selectedCompany) return;
+      
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('has_completed_tour')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (data && data.has_completed_tour === false) {
+          // Small delay to ensure UI is rendered
+          setTimeout(() => setShowTour(true), 500);
+        }
+      } catch (error) {
+        console.error('Error checking tour status:', error);
+      }
+    };
+    
+    checkTourStatus();
+  }, [user, selectedCompany]);
 
   useEffect(() => {
     if (user && selectedCompany) {
@@ -596,10 +624,15 @@ const Index = () => {
   // Debug logging
   console.log('Index render - companyLoading:', companyLoading, 'companies:', companies.length, 'metricsLoading:', metricsLoading);
 
+  // Handle onboarding complete - trigger product tour
+  const handleOnboardingComplete = () => {
+    setTimeout(() => setShowTour(true), 500);
+  };
+
   // Show empty state dashboard when no companies exist (check FIRST before any loading states)
   if (!companyLoading && companies.length === 0) {
     console.log('Showing EmptyStateDashboard');
-    return <EmptyStateDashboard />;
+    return <EmptyStateDashboard onOnboardingComplete={handleOnboardingComplete} />;
   }
 
   // Show loading spinner while company data is being fetched
@@ -1344,6 +1377,12 @@ const Index = () => {
           setIsDialogOpen(false);
           setSelectedInvoice(null);
         }}
+      />
+      
+      {/* Product Tour */}
+      <ProductTour 
+        run={showTour} 
+        onComplete={() => setShowTour(false)} 
       />
     </div>
   );

@@ -72,7 +72,11 @@ const StepIndicator = ({ currentStep }: { currentStep: number }) => {
   );
 };
 
-const EmptyStateDashboard = () => {
+interface EmptyStateDashboardProps {
+  onOnboardingComplete?: () => void;
+}
+
+const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps) => {
   const { user } = useAuth();
   const { refreshCompanies, setSelectedCompany } = useCompany();
   
@@ -337,6 +341,9 @@ const EmptyStateDashboard = () => {
       await refreshCompanies();
       setSelectedCompany(companyData);
       toast.success('Beállítás sikeres! Üdvözöljük a Visibillben!');
+      
+      // Trigger the product tour after successful onboarding
+      onOnboardingComplete?.();
     } catch (error) {
       console.error('Error during onboarding:', error);
       toast.error('Hiba történt a beállítás során');
