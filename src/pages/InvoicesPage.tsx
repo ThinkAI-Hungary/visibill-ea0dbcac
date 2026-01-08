@@ -157,11 +157,12 @@ const InvoicesPage = () => {
   // NAV sync state
   const [credentialsExist, setCredentialsExist] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const SYNC_COOLDOWN_MINUTES = 5;
+  const SYNC_COOLDOWN_MINUTES = 2;
   
   // Server-side cooldown state
   const [serverLastSyncTime, setServerLastSyncTime] = useState<Date | null>(null);
   const [cooldownCheckLoading, setCooldownCheckLoading] = useState(true);
+  const [cooldownSeconds, setCooldownSeconds] = useState<number>(0);
   
   // Check server-side cooldown on load and periodically
   const checkServerCooldown = async () => {
@@ -195,22 +196,37 @@ const InvoicesPage = () => {
   
   useEffect(() => {
     checkServerCooldown();
-    const interval = setInterval(checkServerCooldown, 30000); // Check every 30 seconds
+    const interval = setInterval(checkServerCooldown, 30000);
     return () => clearInterval(interval);
   }, [selectedCompany?.id]);
 
-  const canSync = useMemo(() => {
-    if (!serverLastSyncTime) return true;
-    const diffMs = Date.now() - serverLastSyncTime.getTime();
-    return diffMs >= SYNC_COOLDOWN_MINUTES * 60 * 1000;
+  // Real-time countdown effect
+  useEffect(() => {
+    if (!serverLastSyncTime) {
+      setCooldownSeconds(0);
+      return;
+    }
+    
+    const calculateRemaining = () => {
+      const diffMs = Date.now() - serverLastSyncTime.getTime();
+      const cooldownMs = SYNC_COOLDOWN_MINUTES * 60 * 1000;
+      const remaining = Math.max(0, Math.ceil((cooldownMs - diffMs) / 1000));
+      setCooldownSeconds(remaining);
+    };
+    
+    calculateRemaining();
+    const interval = setInterval(calculateRemaining, 1000);
+    
+    return () => clearInterval(interval);
   }, [serverLastSyncTime]);
 
-  const remainingCooldown = useMemo(() => {
-    if (!serverLastSyncTime || canSync) return 0;
-    const diffMs = Date.now() - serverLastSyncTime.getTime();
-    const cooldownMs = SYNC_COOLDOWN_MINUTES * 60 * 1000;
-    return Math.ceil((cooldownMs - diffMs) / 1000 / 60);
-  }, [serverLastSyncTime, canSync]);
+  const canSync = useMemo(() => cooldownSeconds === 0, [cooldownSeconds]);
+
+  const formatCooldown = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
   
   // Pagination state
   const ITEMS_PER_PAGE = 10;
@@ -299,7 +315,7 @@ const InvoicesPage = () => {
     }
 
     if (!canSync) {
-      toast.error(`Kérlek várj még ${remainingCooldown} percet a következő szinkronizálásig`);
+      toast.error(`Kérlek várj még ${formatCooldown(cooldownSeconds)} a következő szinkronizálásig`);
       return;
     }
     
@@ -961,14 +977,14 @@ const InvoicesPage = () => {
                         disabled={syncing || !credentialsExist || !canSync}
                       >
                         <RefreshCw className={cn("h-4 w-4 mr-2", syncing && "animate-spin")} />
-                        {syncing ? 'Szinkronizálás...' : !canSync ? `Várj ${remainingCooldown} percet` : 'Szinkronizálás'}
+                        {syncing ? 'Szinkronizálás...' : !canSync ? `Várj ${formatCooldown(cooldownSeconds)}` : 'Szinkronizálás'}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
                       {!credentialsExist 
                         ? 'Állítsd be a NAV integrációt az Integrációk oldalon'
                         : !canSync 
-                          ? `Legközelebb ${remainingCooldown} perc múlva szinkronizálhatsz`
+                          ? `Legközelebb ${formatCooldown(cooldownSeconds)} múlva szinkronizálhatsz`
                           : selectedInvoiceIds.size > 0
                             ? `NAV szinkronizálás + ${selectedInvoiceIds.size} kijelölt számla újrakategorizálása`
                             : 'NAV számlák szinkronizálása (utolsó 30 nap)'
