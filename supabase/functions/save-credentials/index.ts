@@ -26,26 +26,25 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create Supabase client
+    // Create Supabase client with user's auth header
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: authHeader } } }
     )
 
-    // Validate JWT and get claims
-    const token = authHeader.replace('Bearer ', '')
-    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token)
+    // Verify user is authenticated
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     
-    if (claimsError || !claimsData?.claims) {
-      console.error(`[SAVE-CREDS][${debugId}] JWT validation failed:`, claimsError?.message)
+    if (userError || !user) {
+      console.error(`[SAVE-CREDS][${debugId}] Auth failed:`, userError?.message)
       return new Response(
         JSON.stringify({ code: 'UNAUTHORIZED', error: 'Invalid or expired token', debugId }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const userId = claimsData.claims.sub
+    const userId = user.id
 
     // Parse request body
     const body = await req.json()
