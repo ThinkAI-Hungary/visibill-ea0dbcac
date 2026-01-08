@@ -1,11 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags } from 'lucide-react';
-import { useState } from 'react';
+import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, Mail, Copy, RefreshCw, CheckCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -24,28 +23,38 @@ interface OnboardingCategory {
   description: string;
 }
 
+interface NavCredentialsData {
+  nav_username: string;
+  nav_password: string;
+  nav_tax_number: string;
+  nav_sign_key: string;
+  nav_exchange_key: string;
+}
+
 const StepIndicator = ({ currentStep }: { currentStep: number }) => {
   const steps = [
     { num: 1, label: 'Cég' },
     { num: 2, label: 'Projektek' },
     { num: 3, label: 'Kategóriák' },
+    { num: 4, label: 'NAV' },
+    { num: 5, label: 'Email' },
   ];
 
   return (
-    <div className="flex items-center justify-center gap-2 mb-6">
+    <div className="flex items-center justify-center gap-1 mb-6">
       {steps.map((step, index) => (
-        <div key={step.num} className="flex items-center gap-2">
+        <div key={step.num} className="flex items-center gap-1">
           <div className="flex flex-col items-center gap-1">
             <div className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all",
+              "w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium transition-all",
               step.num < currentStep ? "bg-primary text-primary-foreground" :
               step.num === currentStep ? "bg-primary/20 border-2 border-primary text-primary" :
               "bg-muted text-muted-foreground"
             )}>
-              {step.num < currentStep ? <Check className="h-5 w-5" /> : step.num}
+              {step.num < currentStep ? <Check className="h-4 w-4" /> : step.num}
             </div>
             <span className={cn(
-              "text-xs font-medium",
+              "text-[10px] font-medium",
               step.num === currentStep ? "text-primary" : "text-muted-foreground"
             )}>
               {step.label}
@@ -53,7 +62,7 @@ const StepIndicator = ({ currentStep }: { currentStep: number }) => {
           </div>
           {index < steps.length - 1 && (
             <div className={cn(
-              "w-12 h-0.5 mb-5",
+              "w-6 h-0.5 mb-5",
               step.num < currentStep ? "bg-primary" : "bg-muted"
             )} />
           )}
@@ -89,9 +98,37 @@ const EmptyStateDashboard = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryDescription, setNewCategoryDescription] = useState('');
 
+  // Step 4: NAV credentials data
+  const [navCredentials, setNavCredentials] = useState<NavCredentialsData>({
+    nav_username: '',
+    nav_password: '',
+    nav_tax_number: '',
+    nav_sign_key: '',
+    nav_exchange_key: '',
+  });
+  const [navValidationStatus, setNavValidationStatus] = useState<'pending' | 'valid' | 'invalid' | 'validating'>('pending');
+  const [navValidationError, setNavValidationError] = useState<string | null>(null);
+
+  // Step 5: Email alias data
+  const [aliasName, setAliasName] = useState('');
+  const [createdAliasEmail, setCreatedAliasEmail] = useState<string | null>(null);
+  const [creatingAlias, setCreatingAlias] = useState(false);
+
   // Validation
   const isStep1Valid = companyName.trim() && companyTaxNumber.trim();
   const isStep2Valid = projects.length >= 3;
+  
+  const isNavFormComplete = useMemo(() => {
+    return (
+      navCredentials.nav_username.trim() !== '' &&
+      navCredentials.nav_password.trim() !== '' &&
+      /^\d{8}$/.test(navCredentials.nav_tax_number) &&
+      navCredentials.nav_sign_key.trim() !== '' &&
+      navCredentials.nav_exchange_key.trim() !== ''
+    );
+  }, [navCredentials]);
+
+  const isStep4Valid = navValidationStatus === 'valid';
 
   const handleAddProject = () => {
     if (!newProjectName.trim() || !newProjectClient.trim()) {
@@ -136,6 +173,80 @@ const EmptyStateDashboard = () => {
     setCategories(categories.filter((_, i) => i !== index));
   };
 
+  const handleValidateNav = async () => {
+    if (!isNavFormComplete) return;
+    
+    setNavValidationStatus('validating');
+    setNavValidationError(null);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Nincs bejelentkezve');
+
+      // First save credentials temporarily (without company_id)
+      const { error: saveError } = await supabase.functions.invoke('save-credentials', {
+        body: {
+          navUsername: navCredentials.nav_username,
+          navPassword: navCredentials.nav_password,
+          navTaxNumber: navCredentials.nav_tax_number,
+          navSignKey: navCredentials.nav_sign_key,
+          navExchangeKey: navCredentials.nav_exchange_key,
+        },
+      });
+
+      if (saveError) throw saveError;
+
+      // Now validate against NAV API
+      const { data, error } = await supabase.functions.invoke('nav-token', {
+        body: { action: 'validate_credentials' },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        setNavValidationStatus('valid');
+        toast.success('NAV kapcsolat sikeresen ellenőrizve!');
+      } else {
+        setNavValidationStatus('invalid');
+        setNavValidationError(data?.error || 'A megadott adatok hibásak');
+        toast.error(data?.error || 'NAV validálás sikertelen');
+      }
+    } catch (error: any) {
+      console.error('NAV validation error:', error);
+      setNavValidationStatus('invalid');
+      setNavValidationError(error.message || 'Hiba történt a validálás során');
+      toast.error(error.message || 'NAV validálás sikertelen');
+    }
+  };
+
+  const handleCreateEmailAlias = async () => {
+    if (!aliasName.trim()) return;
+    
+    setCreatingAlias(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-email-alias', {
+        body: { company_name: aliasName },
+      });
+
+      if (error) throw error;
+
+      setCreatedAliasEmail(data.alias.alias_email);
+      toast.success('Email alias sikeresen létrehozva!');
+    } catch (error: any) {
+      console.error('Error creating alias:', error);
+      toast.error(error.message || 'Nem sikerült létrehozni az email aliast');
+    } finally {
+      setCreatingAlias(false);
+    }
+  };
+
+  const handleCopyAlias = () => {
+    if (createdAliasEmail) {
+      navigator.clipboard.writeText(createdAliasEmail);
+      toast.success('Email cím vágólapra másolva!');
+    }
+  };
+
   const handleFinishOnboarding = async () => {
     if (!user) return;
 
@@ -175,6 +286,7 @@ const EmptyStateDashboard = () => {
       if (categories.length > 0) {
         const categoriesToInsert = categories.map(c => ({
           user_id: user.id,
+          company_id: companyData.id,
           name: c.name,
           description: c.description || null,
         }));
@@ -184,6 +296,42 @@ const EmptyStateDashboard = () => {
           .insert(categoriesToInsert);
 
         if (categoriesError) throw categoriesError;
+      }
+
+      // 4. Update NAV credentials with company_id
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Re-save credentials with company_id
+        const { error: navError } = await supabase.functions.invoke('save-credentials', {
+          body: {
+            navUsername: navCredentials.nav_username,
+            navPassword: navCredentials.nav_password,
+            navTaxNumber: navCredentials.nav_tax_number,
+            navSignKey: navCredentials.nav_sign_key,
+            navExchangeKey: navCredentials.nav_exchange_key,
+            companyId: companyData.id,
+          },
+        });
+
+        if (navError) {
+          console.error('NAV credentials update error:', navError);
+        }
+      }
+
+      // 5. Assign email alias to company (if created)
+      if (createdAliasEmail) {
+        const { data: aliasData } = await supabase
+          .from('email_aliases')
+          .select('id')
+          .eq('alias_email', createdAliasEmail)
+          .single();
+        
+        if (aliasData) {
+          await supabase
+            .from('email_aliases')
+            .update({ company_id: companyData.id })
+            .eq('id', aliasData.id);
+        }
       }
 
       await refreshCompanies();
@@ -416,6 +564,208 @@ const EmptyStateDashboard = () => {
     </div>
   );
 
+  const renderStep4 = () => (
+    <div className="space-y-4">
+      <div className="text-center mb-4">
+        <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+          <Shield className="h-7 w-7 text-primary" />
+        </div>
+        <h3 className="text-xl font-semibold">NAV Integráció</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Kösd össze a NAV Online Számla rendszerrel
+        </p>
+      </div>
+
+      {/* Validation status card */}
+      {navValidationStatus === 'valid' && (
+        <div className="p-4 bg-green-50 dark:bg-green-950/20 border-2 border-green-500 rounded-lg flex items-center gap-3">
+          <CheckCircle className="h-6 w-6 text-green-600 shrink-0" />
+          <div>
+            <p className="font-semibold text-green-700 dark:text-green-400">Sikeres kapcsolat!</p>
+            <p className="text-sm text-green-600 dark:text-green-500">A NAV API sikeresen validálva</p>
+          </div>
+        </div>
+      )}
+
+      {/* NAV form fields */}
+      <div className="space-y-3 p-4 border border-dashed border-border rounded-lg">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">NAV felhasználónév *</Label>
+            <Input
+              value={navCredentials.nav_username}
+              onChange={(e) => setNavCredentials({...navCredentials, nav_username: e.target.value})}
+              placeholder="Technikai felhasználó"
+              className="h-9"
+              disabled={navValidationStatus === 'valid'}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Adószám (8 számjegy) *</Label>
+            <Input
+              value={navCredentials.nav_tax_number}
+              onChange={(e) => setNavCredentials({...navCredentials, nav_tax_number: e.target.value.replace(/\D/g, '').slice(0, 8)})}
+              placeholder="12345678"
+              maxLength={8}
+              className="h-9"
+              disabled={navValidationStatus === 'valid'}
+            />
+          </div>
+        </div>
+        
+        <div className="space-y-1">
+          <Label className="text-xs">NAV jelszó *</Label>
+          <Input
+            type="password"
+            value={navCredentials.nav_password}
+            onChange={(e) => setNavCredentials({...navCredentials, nav_password: e.target.value})}
+            placeholder="••••••••"
+            className="h-9"
+            disabled={navValidationStatus === 'valid'}
+          />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Aláíró kulcs *</Label>
+            <Input
+              type="password"
+              value={navCredentials.nav_sign_key}
+              onChange={(e) => setNavCredentials({...navCredentials, nav_sign_key: e.target.value})}
+              placeholder="Aláíró kulcs"
+              className="h-9"
+              disabled={navValidationStatus === 'valid'}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Csere kulcs *</Label>
+            <Input
+              type="password"
+              value={navCredentials.nav_exchange_key}
+              onChange={(e) => setNavCredentials({...navCredentials, nav_exchange_key: e.target.value})}
+              placeholder="Csere kulcs"
+              className="h-9"
+              disabled={navValidationStatus === 'valid'}
+            />
+          </div>
+        </div>
+
+        {navValidationStatus !== 'valid' && (
+          <Button
+            onClick={handleValidateNav}
+            className="w-full"
+            disabled={navValidationStatus === 'validating' || !isNavFormComplete}
+          >
+            {navValidationStatus === 'validating' ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Ellenőrzés...
+              </>
+            ) : (
+              <>
+                <Shield className="h-4 w-4 mr-2" />
+                Kapcsolat tesztelése
+              </>
+            )}
+          </Button>
+        )}
+
+        {navValidationStatus === 'invalid' && navValidationError && (
+          <p className="text-sm text-destructive text-center">
+            {navValidationError}
+          </p>
+        )}
+      </div>
+      
+      <p className="text-xs text-muted-foreground text-center">
+        A NAV adataidat az Integrációk menüben később is módosíthatod.
+      </p>
+    </div>
+  );
+
+  const renderStep5 = () => (
+    <div className="space-y-4">
+      <div className="text-center mb-4">
+        <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+          <Mail className="h-7 w-7 text-primary" />
+        </div>
+        <h3 className="text-xl font-semibold">Email Alias (opcionális)</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Hozz létre egy dedikált email címet a számlák fogadásához
+        </p>
+      </div>
+
+      {createdAliasEmail ? (
+        <div className="p-4 bg-green-50 dark:bg-green-950/20 border-2 border-green-500 rounded-lg">
+          <div className="flex items-center gap-3 mb-3">
+            <CheckCircle className="h-6 w-6 text-green-600 shrink-0" />
+            <p className="font-semibold text-green-700 dark:text-green-400">Email alias létrehozva!</p>
+          </div>
+          <div className="flex items-center gap-2 p-2 bg-white dark:bg-background rounded border">
+            <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+            <code className="text-sm flex-1 truncate">{createdAliasEmail}</code>
+            <Button variant="ghost" size="sm" onClick={handleCopyAlias} className="h-8 w-8 p-0 shrink-0">
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+          <p className="text-xs text-green-600 dark:text-green-500 mt-2">
+            A számlafogadó partnereidnek ezt az email címet add meg.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3 p-4 border border-dashed border-border rounded-lg">
+          <div className="space-y-1">
+            <Label className="text-xs">Alias neve (azonosításhoz)</Label>
+            <Input
+              value={aliasName}
+              onChange={(e) => setAliasName(e.target.value)}
+              placeholder={`pl. ${companyName || 'Cég'} számlák`}
+              className="h-9"
+            />
+          </div>
+          <Button
+            onClick={handleCreateEmailAlias}
+            variant="outline"
+            className="w-full"
+            disabled={!aliasName.trim() || creatingAlias}
+          >
+            {creatingAlias ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Létrehozás...
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-2" />
+                Email alias létrehozása
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      <p className="text-xs text-muted-foreground text-center">
+        Az email aliasokat később is létrehozhatod az Integrációk menüben.
+      </p>
+    </div>
+  );
+
+  // Get button text for current step
+  const getNextButtonText = () => {
+    if (currentStep === 3 || currentStep === 5) {
+      return 'Kihagyás / Tovább';
+    }
+    return 'Tovább';
+  };
+
+  // Check if next button should be disabled
+  const isNextDisabled = () => {
+    if (currentStep === 1) return !isStep1Valid;
+    if (currentStep === 2) return !isStep2Valid;
+    if (currentStep === 4) return !isStep4Valid;
+    return false; // Step 3 and 5 are optional
+  };
+
   return (
     <div className="min-h-screen bg-background relative">
       {/* Grayed out teaser dashboard */}
@@ -556,7 +906,7 @@ const EmptyStateDashboard = () => {
           </Card>
         ) : (
           // Onboarding stepper
-          <Card className="w-full max-w-lg mx-4 border-primary/20 shadow-xl">
+          <Card className="w-full max-w-lg mx-4 border-primary/20 shadow-xl max-h-[90vh] overflow-y-auto">
             <CardHeader className="pb-2">
               <StepIndicator currentStep={currentStep} />
             </CardHeader>
@@ -564,6 +914,8 @@ const EmptyStateDashboard = () => {
               {currentStep === 1 && renderStep1()}
               {currentStep === 2 && renderStep2()}
               {currentStep === 3 && renderStep3()}
+              {currentStep === 4 && renderStep4()}
+              {currentStep === 5 && renderStep5()}
 
               {/* Navigation buttons */}
               <div className="flex justify-between mt-6 pt-4 border-t border-border">
@@ -575,12 +927,12 @@ const EmptyStateDashboard = () => {
                   {currentStep === 1 ? 'Vissza' : 'Előző'}
                 </Button>
 
-                {currentStep < 3 ? (
+                {currentStep < 5 ? (
                   <Button
                     onClick={() => setCurrentStep(currentStep + 1)}
-                    disabled={currentStep === 1 ? !isStep1Valid : !isStep2Valid}
+                    disabled={isNextDisabled()}
                   >
-                    Tovább
+                    {getNextButtonText()}
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 ) : (
