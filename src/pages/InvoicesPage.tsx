@@ -157,20 +157,60 @@ const InvoicesPage = () => {
   // NAV sync state
   const [credentialsExist, setCredentialsExist] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const SYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
-  const LAST_SYNC_STORAGE_KEY = 'nav_last_sync_time';
+  const SYNC_COOLDOWN_MINUTES = 5;
   
-  const [lastSyncTime, setLastSyncTime] = useState<number | null>(() => {
-    const stored = localStorage.getItem(LAST_SYNC_STORAGE_KEY);
-    if (stored) {
-      const timestamp = parseInt(stored, 10);
-      if (Date.now() - timestamp < SYNC_COOLDOWN_MS) {
-        return timestamp;
-      }
-      localStorage.removeItem(LAST_SYNC_STORAGE_KEY);
+  // Server-side cooldown state
+  const [serverLastSyncTime, setServerLastSyncTime] = useState<Date | null>(null);
+  const [cooldownCheckLoading, setCooldownCheckLoading] = useState(true);
+  
+  // Check server-side cooldown on load and periodically
+  const checkServerCooldown = async () => {
+    if (!selectedCompany?.id) {
+      setServerLastSyncTime(null);
+      setCooldownCheckLoading(false);
+      return;
     }
-    return null;
-  });
+    
+    try {
+      const { data, error } = await supabase
+        .from('nav_sync_logs')
+        .select('started_at')
+        .eq('company_id', selectedCompany.id)
+        .in('status', ['completed', 'running'])
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (!error && data?.started_at) {
+        setServerLastSyncTime(new Date(data.started_at));
+      } else {
+        setServerLastSyncTime(null);
+      }
+    } catch (err) {
+      console.error('Failed to check cooldown:', err);
+    } finally {
+      setCooldownCheckLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    checkServerCooldown();
+    const interval = setInterval(checkServerCooldown, 30000); // Check every 30 seconds
+    return () => clearInterval(interval);
+  }, [selectedCompany?.id]);
+
+  const canSync = useMemo(() => {
+    if (!serverLastSyncTime) return true;
+    const diffMs = Date.now() - serverLastSyncTime.getTime();
+    return diffMs >= SYNC_COOLDOWN_MINUTES * 60 * 1000;
+  }, [serverLastSyncTime]);
+
+  const remainingCooldown = useMemo(() => {
+    if (!serverLastSyncTime || canSync) return 0;
+    const diffMs = Date.now() - serverLastSyncTime.getTime();
+    const cooldownMs = SYNC_COOLDOWN_MINUTES * 60 * 1000;
+    return Math.ceil((cooldownMs - diffMs) / 1000 / 60);
+  }, [serverLastSyncTime, canSync]);
   
   // Pagination state
   const ITEMS_PER_PAGE = 10;
@@ -238,16 +278,6 @@ const InvoicesPage = () => {
       setCredentialsExist(false);
     }
   };
-
-  const canSync = useMemo(() => {
-    if (!lastSyncTime) return true;
-    return Date.now() - lastSyncTime >= SYNC_COOLDOWN_MS;
-  }, [lastSyncTime]);
-
-  const remainingCooldown = useMemo(() => {
-    if (!lastSyncTime || canSync) return 0;
-    return Math.ceil((SYNC_COOLDOWN_MS - (Date.now() - lastSyncTime)) / 1000 / 60);
-  }, [lastSyncTime, canSync]);
 
   // Row selection helpers - defined after paginatedNavInvoices
   const handleRowSelect = (invoiceId: string, checked: boolean) => {
@@ -335,10 +365,8 @@ const InvoicesPage = () => {
 
       const totalInvoices = outboundCount + inboundCount;
 
-      // Set last sync time and persist to localStorage
-      const now = Date.now();
-      setLastSyncTime(now);
-      localStorage.setItem(LAST_SYNC_STORAGE_KEY, now.toString());
+      // Update server-side cooldown state
+      setServerLastSyncTime(new Date());
 
       if (errors.length === 2) {
         throw new Error(errors.join('; '));
