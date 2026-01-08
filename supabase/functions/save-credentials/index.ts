@@ -26,15 +26,15 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create Supabase client with user's auth header
+    // Create Supabase client with service role key for auth verification
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Verify user is authenticated
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+    // Get user from token
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token)
     
     if (userError || !user) {
       console.error(`[SAVE-CREDS][${debugId}] Auth failed:`, userError?.message)
