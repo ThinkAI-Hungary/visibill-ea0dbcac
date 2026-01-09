@@ -46,44 +46,60 @@ const InvoiceStatusTables = () => {
     }
   }, [selectedCompany]);
 
+  const fetchAllInboundInvoices = async (mode: 'payable' | 'missing') => {
+    if (!selectedCompany) return [] as NavInvoice[];
+
+    const PAGE_SIZE = 1000;
+    const all: NavInvoice[] = [];
+    let from = 0;
+
+    while (true) {
+      let query = supabase
+        .from('nav_invoices')
+        .select('id, invoice_number, invoice_issue_date, invoice_delivery_date, supplier_tax_number, invoice_net_amount, invoice_gross_amount, invoice_vat_amount, currency, paid, submitted')
+        .eq('company_id', selectedCompany.id)
+        .eq('invoice_direction', 'INBOUND')
+        .order('invoice_issue_date', { ascending: false })
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (mode === 'payable') {
+        query = query.or('paid.is.null,paid.eq.false');
+      } else {
+        query = query.or('submitted.is.null,submitted.eq.false');
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const page = (data || []) as NavInvoice[];
+      all.push(...page);
+
+      if (page.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
+    }
+
+    return all;
+  };
+
   const fetchData = async () => {
     if (!selectedCompany) return;
-    
+
     setLoading(true);
     try {
-      // Fetch payable invoices (INBOUND where paid is false or null)
-      const { data: payableData, error: payableError } = await supabase
-        .from('nav_invoices')
-        .select('*')
-        .eq('company_id', selectedCompany.id)
-        .eq('invoice_direction', 'INBOUND')
-        .or('paid.is.null,paid.eq.false')
-        .order('invoice_issue_date', { ascending: false });
+      const [payableData, missingData, partnersResult] = await Promise.all([
+        fetchAllInboundInvoices('payable'),
+        fetchAllInboundInvoices('missing'),
+        supabase
+          .from('partners')
+          .select('tax_number, name')
+          .eq('company_id', selectedCompany.id)
+      ]);
 
-      if (payableError) throw payableError;
       setPayableInvoices(payableData || []);
-
-      // Fetch missing invoices (INBOUND where submitted is false or null)
-      const { data: missingData, error: missingError } = await supabase
-        .from('nav_invoices')
-        .select('*')
-        .eq('company_id', selectedCompany.id)
-        .eq('invoice_direction', 'INBOUND')
-        .or('submitted.is.null,submitted.eq.false')
-        .order('invoice_issue_date', { ascending: false });
-
-      if (missingError) throw missingError;
       setMissingInvoices(missingData || []);
 
-      // Fetch partners for name lookup
-      const { data: partnersData, error: partnersError } = await supabase
-        .from('partners')
-        .select('tax_number, name')
-        .eq('company_id', selectedCompany.id);
-
-      if (partnersError) throw partnersError;
-      setPartners(partnersData || []);
-
+      if (partnersResult.error) throw partnersResult.error;
+      setPartners(partnersResult.data || []);
     } catch (error) {
       console.error('Error fetching invoice status data:', error);
     } finally {
