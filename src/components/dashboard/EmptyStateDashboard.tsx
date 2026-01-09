@@ -284,34 +284,68 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
           // Don't throw - company is created, just log the error
         } else {
           // Trigger initial NAV sync in background (last 90 days)
-          const dateFrom = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          const dateTo = new Date().toISOString().split('T')[0];
-
-          Promise.allSettled([
-            supabase.functions.invoke('nav-query-outbound-invoices', {
-              body: {
-                invoiceDirection: 'OUTBOUND',
-                dateFrom,
-                dateTo,
-                companyId: companyData.id
-              }
-            }),
-            supabase.functions.invoke('nav-query-outbound-invoices', {
-              body: {
-                invoiceDirection: 'INBOUND',
-                dateFrom,
-                dateTo,
-                companyId: companyData.id
-              }
-            })
-          ]).then(([outbound, inbound]) => {
-            const outboundOk = outbound.status === 'fulfilled' && !outbound.value.error;
-            const inboundOk = inbound.status === 'fulfilled' && !inbound.value.error;
+          // Split into 35-day chunks due to NAV API limit
+          const splitDateRange = (startDate: Date, endDate: Date, maxDays: number = 35): Array<{from: string, to: string}> => {
+            const chunks: Array<{from: string, to: string}> = [];
+            let currentStart = new Date(startDate);
             
-            if (outboundOk || inboundOk) {
+            while (currentStart < endDate) {
+              const chunkEnd = new Date(currentStart);
+              chunkEnd.setDate(chunkEnd.getDate() + maxDays - 1);
+              
+              const actualEnd = chunkEnd > endDate ? endDate : chunkEnd;
+              
+              chunks.push({
+                from: currentStart.toISOString().split('T')[0],
+                to: actualEnd.toISOString().split('T')[0]
+              });
+              
+              currentStart = new Date(actualEnd);
+              currentStart.setDate(currentStart.getDate() + 1);
+            }
+            
+            return chunks;
+          };
+
+          const endDate = new Date();
+          const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+          const dateChunks = splitDateRange(startDate, endDate);
+          
+          console.log('[Onboarding] NAV sync: splitting 90 days into', dateChunks.length, 'chunks');
+
+          // Process all chunks sequentially in background
+          (async () => {
+            let successCount = 0;
+            for (const chunk of dateChunks) {
+              const [outbound, inbound] = await Promise.allSettled([
+                supabase.functions.invoke('nav-query-outbound-invoices', {
+                  body: {
+                    invoiceDirection: 'OUTBOUND',
+                    dateFrom: chunk.from,
+                    dateTo: chunk.to,
+                    companyId: companyData.id
+                  }
+                }),
+                supabase.functions.invoke('nav-query-outbound-invoices', {
+                  body: {
+                    invoiceDirection: 'INBOUND',
+                    dateFrom: chunk.from,
+                    dateTo: chunk.to,
+                    companyId: companyData.id
+                  }
+                })
+              ]);
+              
+              if ((outbound.status === 'fulfilled' && !outbound.value.error) ||
+                  (inbound.status === 'fulfilled' && !inbound.value.error)) {
+                successCount++;
+              }
+            }
+            
+            if (successCount > 0) {
               toast.success('NAV számlák szinkronizálása elindult a háttérben');
             }
-          });
+          })();
         }
       }
 
