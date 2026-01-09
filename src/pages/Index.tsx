@@ -371,70 +371,104 @@ const Index = () => {
       .gte("nav_invoices.invoice_issue_date", monthStart)
       .lte("nav_invoices.invoice_issue_date", monthEnd);
 
-    // Process VAT breakdown by actual rates
-    const outboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
-    const inboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
+    // If we have detailed line items, use them for breakdown by VAT rate
+    if (vatItems && vatItems.length > 0) {
+      const outboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
+      const inboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
 
-    vatItems?.forEach(item => {
-      const navInvoice = item.nav_invoices as unknown as { invoice_direction: string };
-      const direction = navInvoice?.invoice_direction;
-      
-      // Format rate label
-      let rateLabel: string;
-      if (item.vat_rate === null || item.vat_rate === undefined) {
-        rateLabel = 'ÁFA mentes';
-      } else {
-        const ratePercent = Math.round(Number(item.vat_rate) * 100);
-        rateLabel = `${ratePercent}%`;
-      }
-      
-      const target = direction === 'OUTBOUND' ? outboundByRate : inboundByRate;
-      
-      if (!target[rateLabel]) {
-        target[rateLabel] = { netAmount: 0, vatAmount: 0 };
-      }
-      target[rateLabel].netAmount += item.net_amount || 0;
-      target[rateLabel].vatAmount += item.vat_amount || 0;
-    });
-
-    // Sort order for VAT rates
-    const sortOrder = ['ÁFA mentes', '5%', '18%', '27%'];
-    const sortCategories = (categories: VatCategoryData[]) => {
-      return categories.sort((a, b) => {
-        const indexA = sortOrder.indexOf(a.rate);
-        const indexB = sortOrder.indexOf(b.rate);
-        if (indexA === -1 && indexB === -1) return a.rate.localeCompare(b.rate);
-        if (indexA === -1) return 1;
-        if (indexB === -1) return -1;
-        return indexA - indexB;
+      vatItems.forEach(item => {
+        const navInvoice = item.nav_invoices as unknown as { invoice_direction: string };
+        const direction = navInvoice?.invoice_direction;
+        
+        let rateLabel: string;
+        if (item.vat_rate === null || item.vat_rate === undefined) {
+          rateLabel = 'ÁFA mentes';
+        } else {
+          const ratePercent = Math.round(Number(item.vat_rate) * 100);
+          rateLabel = `${ratePercent}%`;
+        }
+        
+        const target = direction === 'OUTBOUND' ? outboundByRate : inboundByRate;
+        
+        if (!target[rateLabel]) {
+          target[rateLabel] = { netAmount: 0, vatAmount: 0 };
+        }
+        target[rateLabel].netAmount += item.net_amount || 0;
+        target[rateLabel].vatAmount += item.vat_amount || 0;
       });
-    };
 
-    // Convert to VatCategoryData arrays
-    const outboundCategories = sortCategories(
-      Object.entries(outboundByRate).map(([rate, data]) => ({
-        rate,
-        netAmount: data.netAmount,
-        vatAmount: data.vatAmount
-      }))
-    );
+      const sortOrder = ['ÁFA mentes', '5%', '18%', '27%'];
+      const sortCategories = (categories: VatCategoryData[]) => {
+        return categories.sort((a, b) => {
+          const indexA = sortOrder.indexOf(a.rate);
+          const indexB = sortOrder.indexOf(b.rate);
+          if (indexA === -1 && indexB === -1) return a.rate.localeCompare(b.rate);
+          if (indexA === -1) return 1;
+          if (indexB === -1) return -1;
+          return indexA - indexB;
+        });
+      };
 
-    const inboundCategories = sortCategories(
-      Object.entries(inboundByRate).map(([rate, data]) => ({
-        rate,
-        netAmount: data.netAmount,
-        vatAmount: data.vatAmount
-      }))
-    );
+      const outboundCategories = sortCategories(
+        Object.entries(outboundByRate).map(([rate, data]) => ({
+          rate,
+          netAmount: data.netAmount,
+          vatAmount: data.vatAmount
+        }))
+      );
 
-    // Calculate totals
-    const totalOutbound = outboundCategories.reduce((sum, c) => sum + c.vatAmount, 0);
-    const totalInbound = inboundCategories.reduce((sum, c) => sum + c.vatAmount, 0);
+      const inboundCategories = sortCategories(
+        Object.entries(inboundByRate).map(([rate, data]) => ({
+          rate,
+          netAmount: data.netAmount,
+          vatAmount: data.vatAmount
+        }))
+      );
 
-    setTotalOutboundVat(totalOutbound);
-    setTotalInboundVat(totalInbound);
-    setOutboundVatCategories(outboundCategories);
-    setInboundVatCategories(inboundCategories);
+      const totalOutbound = outboundCategories.reduce((sum, c) => sum + c.vatAmount, 0);
+      const totalInbound = inboundCategories.reduce((sum, c) => sum + c.vatAmount, 0);
+
+      setTotalOutboundVat(totalOutbound);
+      setTotalInboundVat(totalInbound);
+      setOutboundVatCategories(outboundCategories);
+      setInboundVatCategories(inboundCategories);
+    } else {
+      // Fallback: use nav_invoices table for aggregated VAT totals
+      const { data: navInvoices } = await supabase
+        .from("nav_invoices")
+        .select("invoice_direction, invoice_vat_amount, invoice_net_amount")
+        .eq("company_id", selectedCompany?.id)
+        .gte("invoice_issue_date", monthStart)
+        .lte("invoice_issue_date", monthEnd);
+
+      let outboundVatTotal = 0;
+      let inboundVatTotal = 0;
+      let outboundNetTotal = 0;
+      let inboundNetTotal = 0;
+
+      navInvoices?.forEach(inv => {
+        if (inv.invoice_direction === 'OUTBOUND') {
+          outboundVatTotal += inv.invoice_vat_amount || 0;
+          outboundNetTotal += inv.invoice_net_amount || 0;
+        } else {
+          inboundVatTotal += inv.invoice_vat_amount || 0;
+          inboundNetTotal += inv.invoice_net_amount || 0;
+        }
+      });
+
+      setTotalOutboundVat(outboundVatTotal);
+      setTotalInboundVat(inboundVatTotal);
+      setOutboundVatCategories([{ 
+        rate: 'Összesített', 
+        vatAmount: outboundVatTotal, 
+        netAmount: outboundNetTotal 
+      }]);
+      setInboundVatCategories([{ 
+        rate: 'Összesített', 
+        vatAmount: inboundVatTotal, 
+        netAmount: inboundNetTotal 
+      }]);
+    }
   };
 
   const formatAnalyticsCurrency = (amount: number, compact = false) => {
