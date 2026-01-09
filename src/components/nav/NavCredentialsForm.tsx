@@ -291,6 +291,25 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, onCr
         }
       });
       
+      // Trigger categorization webhook for initial sync
+      if (companyId) {
+        try {
+          console.log('[NavCredentialsForm] Triggering categorization webhook for initial sync');
+          await supabase.functions.invoke('trigger-nav-categorization', {
+            body: {
+              companyId: companyId,
+              syncType: 'initial'
+            },
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          });
+          console.log('[NavCredentialsForm] Categorization webhook triggered successfully');
+        } catch (categorizationError) {
+          console.error('[NavCredentialsForm] Categorization webhook failed:', categorizationError);
+        }
+      }
+      
       toast({
         title: 'Szinkronizálás kész',
         description: 'Az elmúlt 30 nap NAV számlái és tételei sikeresen letöltve.',
