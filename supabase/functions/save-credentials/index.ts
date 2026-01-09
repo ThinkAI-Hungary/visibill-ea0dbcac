@@ -126,7 +126,8 @@ Deno.serve(async (req) => {
     console.log(`[SAVE-CREDS][${debugId}] Validation passed, calling RPC`)
 
     // Call the database function to save credentials with sanitized values
-    const { data, error } = await serviceClient.rpc('save_nav_credentials', {
+    // Use supabaseClient (with user JWT) so auth.uid() works in the RPC function
+    const { data, error } = await supabaseClient.rpc('save_nav_credentials', {
       p_nav_username: username,
       p_nav_password: password,
       p_nav_tax_number: taxNumber,
