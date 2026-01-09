@@ -87,11 +87,21 @@ export function InvoiceItemsDialog({
     return unit ? `${formatted} ${unit}` : formatted;
   };
 
+  // Calculate gross from net + vat if gross_amount is null
+  const getGrossAmount = (item: InvoiceLineItem) => {
+    if (item.gross_amount !== null) return item.gross_amount;
+    if (item.net_amount !== null && item.vat_amount !== null) {
+      return item.net_amount + item.vat_amount;
+    }
+    if (item.net_amount !== null) return item.net_amount;
+    return null;
+  };
+
   // Calculate totals
   const totals = {
     net: items.reduce((sum, item) => sum + (item.net_amount || 0), 0),
     vat: items.reduce((sum, item) => sum + (item.vat_amount || 0), 0),
-    gross: items.reduce((sum, item) => sum + (item.gross_amount || 0), 0),
+    gross: items.reduce((sum, item) => sum + (getGrossAmount(item) || 0), 0),
   };
 
   return (
@@ -176,7 +186,7 @@ export function InvoiceItemsDialog({
                         {formatAmount(item.vat_amount)}
                       </TableCell>
                       <TableCell className="text-right font-mono font-medium">
-                        {formatAmount(item.gross_amount)}
+                        {formatAmount(getGrossAmount(item))}
                       </TableCell>
                     </TableRow>
                   ))}
