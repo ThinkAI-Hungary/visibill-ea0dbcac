@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { sha3_512 } from "https://esm.sh/@noble/hashes@1.3.0/sha3";
 
 const corsHeaders = {
@@ -19,7 +18,7 @@ interface NavCredentials {
   is_test_environment: boolean;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -48,11 +47,15 @@ serve(async (req) => {
 
     console.log('[NAV-TOKEN] Processing request for user:', user.id);
 
-    const { action, company_id } = await req.json();
+    const body = await req.json();
+    const { action, company_id, credentials } = body;
 
     switch (action) {
       case 'validate_credentials':
         return await validateCredentials(supabaseClient, user.id, company_id);
+      case 'validate_credentials_inline':
+        // Validate credentials passed directly in request (without saving to DB)
+        return await validateCredentialsInline(credentials);
       case 'request_token':
         return await requestToken(supabaseClient, user.id, company_id);
       default:
@@ -109,6 +112,94 @@ function createSignature(credentials: NavCredentials, requestId: string, timesta
     .map(b => b.toString(16).padStart(2, '0'))
     .join('')
     .toUpperCase();
+}
+
+// Inline validation - validates credentials passed directly without saving to DB
+async function validateCredentialsInline(credentials: any) {
+  console.log('[NAV-TOKEN] Validating credentials inline (no DB save)');
+
+  if (!credentials) {
+    throw new Error('No credentials provided');
+  }
+
+  // Sanitize inputs
+  const nav_username = credentials.nav_username?.trim() || '';
+  const nav_password = credentials.nav_password?.trim() || '';
+  const nav_tax_number = credentials.nav_tax_number?.trim() || '';
+  const nav_sign_key = credentials.nav_sign_key?.trim() || '';
+  const nav_exchange_key = credentials.nav_exchange_key?.trim() || '';
+  
+  // Validate inputs
+  if (!nav_username || !nav_password || !nav_tax_number || !nav_sign_key || !nav_exchange_key) {
+    throw new Error('Missing required credentials');
+  }
+  
+  if (!/^\d{8}$/.test(nav_tax_number)) {
+    throw new Error('Invalid tax number format - must be exactly 8 digits');
+  }
+  
+  // Generate temporary software_id for validation
+  const software_id = 'HU' + nav_tax_number + 'TEMP0000';
+  
+  const sanitizedCreds: NavCredentials = {
+    nav_username,
+    nav_password,
+    nav_tax_number,
+    nav_sign_key,
+    nav_exchange_key,
+    software_id,
+    is_test_environment: false,
+  };
+  
+  const baseUrl = 'https://api.onlineszamla.nav.gov.hu/invoiceService/v3';
+
+  try {
+    const timestamp = new Date().toISOString();
+    const requestId = generateRequestId();
+    const passwordHash = await hashPassword(sanitizedCreds.nav_password);
+    const requestSignature = createSignature(sanitizedCreds, requestId, timestamp);
+
+    const xmlRequest = buildTokenXML(sanitizedCreds, requestId, timestamp, passwordHash, requestSignature);
+    
+    console.log('[NAV-TOKEN] ========== INLINE VALIDATION REQUEST ==========');
+    console.log('[NAV-TOKEN] Request ID:', requestId);
+
+    const testResponse = await fetch(`${baseUrl}/tokenExchange`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/xml; charset=UTF-8',
+        'Accept': 'application/xml'
+      },
+      body: xmlRequest
+    });
+
+    const xmlResponse = await testResponse.text();
+    
+    console.log('[NAV-TOKEN] ========== INLINE VALIDATION RESPONSE ==========');
+    console.log('[NAV-TOKEN] HTTP Status:', testResponse.status);
+    console.log('[NAV-TOKEN] XML Response:', xmlResponse);
+
+    // Check for success
+    const isValid = xmlResponse.includes('<funcCode>OK</funcCode>') || 
+                    xmlResponse.includes('<encodedExchangeToken>');
+    
+    const validationError = !isValid ? parseNAVError(xmlResponse) : null;
+
+    return new Response(
+      JSON.stringify({
+        success: isValid,
+        status: isValid ? 'valid' : 'invalid',
+        message: isValid ? 'Credentials validated successfully' : validationError || 'Invalid credentials',
+        error: validationError,
+        requestId,
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('[NAV-TOKEN] Inline validation error:', error);
+    throw new Error(`Validation failed: ${error.message}`);
+  }
 }
 
 async function validateCredentials(supabaseClient: any, userId: string, companyId?: string) {
