@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader2, CreditCard, FileQuestion, Upload } from 'lucide-react';
@@ -135,7 +136,7 @@ const InvoiceStatusTables = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Számlaszám</TableHead>
+              <TableHead className="min-w-[130px]">Számlaszám</TableHead>
               <TableHead>Kibocsátás</TableHead>
               <TableHead>Szállító</TableHead>
               <TableHead className="text-right">Bruttó</TableHead>
@@ -144,8 +145,19 @@ const InvoiceStatusTables = () => {
           <TableBody>
             {invoices.slice(0, 20).map((invoice) => (
               <TableRow key={invoice.id}>
-                <TableCell className="font-medium">
-                  {invoice.invoice_number}
+                <TableCell className="font-medium min-w-[130px]">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="block truncate max-w-[120px] cursor-help">
+                          {invoice.invoice_number}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="font-mono">{invoice.invoice_number}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </TableCell>
                 <TableCell>
                   {invoice.invoice_issue_date 

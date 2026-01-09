@@ -1274,7 +1274,7 @@ const InvoicesPage = () => {
                             />
                           </TableHead>
                           <TableHead 
-                            className="cursor-pointer hover:bg-muted/50 font-semibold w-[11%]"
+                            className="cursor-pointer hover:bg-muted/50 font-semibold min-w-[150px] w-[11%]"
                             onClick={() => handleSort('invoice_number')}
                           >
                             <div className="flex items-center gap-2">
@@ -1336,8 +1336,19 @@ const InvoicesPage = () => {
                                     aria-label={`${invoice.invoice_number} kijelölése`}
                                   />
                                 </TableCell>
-                                <TableCell className="font-mono text-sm font-medium">
-                                  {invoice.invoice_number}
+                                <TableCell className="font-mono text-sm font-medium min-w-[150px]">
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="block truncate max-w-[140px] cursor-help">
+                                          {invoice.invoice_number}
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="font-mono">{invoice.invoice_number}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                 </TableCell>
                                 <TableCell className="text-muted-foreground">
                                   {invoice.invoice_issue_date 
@@ -1640,7 +1651,7 @@ const InvoicesPage = () => {
                   <Table className="table-fixed">
                     <TableHeader>
                       <TableRow className="bg-muted/30 hover:bg-muted/30">
-                        <TableHead className="font-semibold w-[12%]">Számlaszám</TableHead>
+                        <TableHead className="font-semibold min-w-[150px] w-[12%]">Számlaszám</TableHead>
                         <TableHead 
                           className="cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
                           onClick={() => handleSort('kibocsatas_datuma')}
@@ -1677,8 +1688,19 @@ const InvoicesPage = () => {
                       ) : (
                         paginatedSubmittedInvoices.map((invoice) => (
                           <TableRow key={invoice.id} className="group">
-                            <TableCell className="font-medium truncate max-w-[120px]">
-                              {invoice.szamlaszam || '-'}
+                            <TableCell className="font-medium min-w-[150px]">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="block truncate max-w-[140px] cursor-help">
+                                      {invoice.szamlaszam || '-'}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="font-mono">{invoice.szamlaszam || '-'}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </TableCell>
                             <TableCell className="text-muted-foreground">
                               {invoice.kibocsatas_datuma 
