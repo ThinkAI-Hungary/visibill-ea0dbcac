@@ -279,6 +279,31 @@ Deno.serve(async (req) => {
   }
 });
 
+// Helper function to split date range into 35-day chunks (NAV API limit)
+function splitDateRange(startDateStr: string, endDateStr: string, maxDays: number = 35): Array<{from: string, to: string}> {
+  const chunks: Array<{from: string, to: string}> = [];
+  const startDate = new Date(startDateStr);
+  const endDate = new Date(endDateStr);
+  let currentStart = new Date(startDate);
+  
+  while (currentStart < endDate) {
+    const chunkEnd = new Date(currentStart);
+    chunkEnd.setDate(chunkEnd.getDate() + maxDays - 1);
+    
+    const actualEnd = chunkEnd > endDate ? endDate : chunkEnd;
+    
+    chunks.push({
+      from: currentStart.toISOString().split('T')[0],
+      to: actualEnd.toISOString().split('T')[0]
+    });
+    
+    currentStart = new Date(actualEnd);
+    currentStart.setDate(currentStart.getDate() + 1);
+  }
+  
+  return chunks;
+}
+
 async function syncInvoices(
   supabase: any,
   userId: string,
@@ -320,31 +345,43 @@ async function syncInvoices(
     const token = await getNavToken(credentials, navApiUrl);
     console.log(`🔑 Got NAV token for ${direction} sync`);
 
-    // Query invoices (fetch up to 3 pages)
+    // Split date range into 35-day chunks (NAV API limit)
+    const dateChunks = splitDateRange(dateFrom, dateTo, 35);
+    console.log(`📅 Split ${dateFrom} to ${dateTo} into ${dateChunks.length} chunks`);
+
+    // Query invoices from all chunks
     let allInvoices: any[] = [];
-    let currentPage = 1;
-    const maxPages = 3;
 
-    while (currentPage <= maxPages) {
-      const invoices = await queryInvoiceDigest(
-        credentials,
-        token,
-        navApiUrl,
-        direction,
-        dateFrom,
-        dateTo,
-        currentPage
-      );
+    for (const chunk of dateChunks) {
+      console.log(`📆 Processing chunk: ${chunk.from} to ${chunk.to}`);
+      
+      let currentPage = 1;
+      const maxPages = 3;
 
-      if (!invoices || invoices.length === 0) {
-        break;
+      while (currentPage <= maxPages) {
+        const invoices = await queryInvoiceDigest(
+          credentials,
+          token,
+          navApiUrl,
+          direction,
+          chunk.from,
+          chunk.to,
+          currentPage
+        );
+
+        if (!invoices || invoices.length === 0) {
+          break;
+        }
+
+        allInvoices = [...allInvoices, ...invoices];
+        console.log(`📄 Chunk ${chunk.from}-${chunk.to}, Page ${currentPage}: ${invoices.length} invoices`);
+
+        currentPage++;
+        await delay(100); // Small delay between pages
       }
-
-      allInvoices = [...allInvoices, ...invoices];
-      console.log(`📄 Fetched page ${currentPage}: ${invoices.length} invoices`);
-
-      currentPage++;
-      await delay(100); // Small delay between pages
+      
+      // Small delay between chunks to avoid rate limiting
+      await delay(200);
     }
 
     console.log(`📊 Total invoices fetched: ${allInvoices.length}`);

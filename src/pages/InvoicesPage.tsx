@@ -324,60 +324,90 @@ const InvoicesPage = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      // Last 90 days
-      const dateFrom = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      const dateTo = new Date().toISOString().split('T')[0];
+      // Helper function to split date range into 35-day chunks (NAV API limit)
+      const splitDateRange = (startDate: Date, endDate: Date, maxDays: number = 35): Array<{from: string, to: string}> => {
+        const chunks: Array<{from: string, to: string}> = [];
+        let currentStart = new Date(startDate);
+        
+        while (currentStart < endDate) {
+          const chunkEnd = new Date(currentStart);
+          chunkEnd.setDate(chunkEnd.getDate() + maxDays - 1);
+          
+          const actualEnd = chunkEnd > endDate ? endDate : chunkEnd;
+          
+          chunks.push({
+            from: currentStart.toISOString().split('T')[0],
+            to: actualEnd.toISOString().split('T')[0]
+          });
+          
+          currentStart = new Date(actualEnd);
+          currentStart.setDate(currentStart.getDate() + 1);
+        }
+        
+        return chunks;
+      };
 
-      const [outboundResult, inboundResult] = await Promise.allSettled([
-        supabase.functions.invoke('nav-query-outbound-invoices', {
-          body: {
-            invoiceDirection: 'OUTBOUND',
-            dateFrom,
-            dateTo,
-            companyId: selectedCompany.id
-          },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`
-          }
-        }),
-        supabase.functions.invoke('nav-query-outbound-invoices', {
-          body: {
-            invoiceDirection: 'INBOUND',
-            dateFrom,
-            dateTo,
-            companyId: selectedCompany.id
-          },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`
-          }
-        })
-      ]);
+      // Last 90 days - split into 35-day chunks due to NAV API limit
+      const endDate = new Date();
+      const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+      const dateChunks = splitDateRange(startDate, endDate);
+      
+      console.log('[InvoicesPage] NAV sync: splitting 90 days into', dateChunks.length, 'chunks');
 
-      let outboundCount = 0;
-      let inboundCount = 0;
+      // Process each chunk sequentially, running OUTBOUND and INBOUND in parallel per chunk
+      let totalOutbound = 0;
+      let totalInbound = 0;
       const errors: string[] = [];
 
-      if (outboundResult.status === 'fulfilled') {
-        const { data, error } = outboundResult.value;
-        if (error || data?.error) {
-          errors.push(`Kimenő: ${error?.message || data?.error}`);
-        } else if (data?.success) {
-          outboundCount = data.totalInvoices || 0;
+      for (const chunk of dateChunks) {
+        console.log('[InvoicesPage] Processing chunk:', chunk);
+        
+        const [outboundResult, inboundResult] = await Promise.allSettled([
+          supabase.functions.invoke('nav-query-outbound-invoices', {
+            body: {
+              invoiceDirection: 'OUTBOUND',
+              dateFrom: chunk.from,
+              dateTo: chunk.to,
+              companyId: selectedCompany.id
+            },
+            headers: {
+              Authorization: `Bearer ${session.access_token}`
+            }
+          }),
+          supabase.functions.invoke('nav-query-outbound-invoices', {
+            body: {
+              invoiceDirection: 'INBOUND',
+              dateFrom: chunk.from,
+              dateTo: chunk.to,
+              companyId: selectedCompany.id
+            },
+            headers: {
+              Authorization: `Bearer ${session.access_token}`
+            }
+          })
+        ]);
+
+        if (outboundResult.status === 'fulfilled') {
+          const { data, error } = outboundResult.value;
+          if (error || data?.error) {
+            errors.push(`Kimenő (${chunk.from}): ${error?.message || data?.error}`);
+          } else if (data?.success) {
+            totalOutbound += data.totalInvoices || 0;
+          }
         }
-      } else {
-        errors.push(`Kimenő: ${outboundResult.reason?.message || 'Ismeretlen hiba'}`);
+
+        if (inboundResult.status === 'fulfilled') {
+          const { data, error } = inboundResult.value;
+          if (error || data?.error) {
+            errors.push(`Bejövő (${chunk.from}): ${error?.message || data?.error}`);
+          } else if (data?.success) {
+            totalInbound += data.totalInvoices || 0;
+          }
+        }
       }
 
-      if (inboundResult.status === 'fulfilled') {
-        const { data, error } = inboundResult.value;
-        if (error || data?.error) {
-          errors.push(`Bejövő: ${error?.message || data?.error}`);
-        } else if (data?.success) {
-          inboundCount = data.totalInvoices || 0;
-        }
-      } else {
-        errors.push(`Bejövő: ${inboundResult.reason?.message || 'Ismeretlen hiba'}`);
-      }
+      const outboundCount = totalOutbound;
+      const inboundCount = totalInbound;
 
       const totalInvoices = outboundCount + inboundCount;
 
