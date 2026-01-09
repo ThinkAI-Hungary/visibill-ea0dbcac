@@ -6,7 +6,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { CompanyProvider } from "./contexts/CompanyContext";
-import { AppLayout } from "./components/AppLayout";
+import { ProtectedLayout } from "./components/ProtectedLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthGuard from "./components/AuthGuard";
 import Index from "./pages/Index";
@@ -51,8 +51,8 @@ const App = () => (
                   {/* Auth route without layout */}
                   <Route path="/auth" element={<Auth />} />
                   
-                  {/* All routes with AppLayout - layout renders once */}
-                  <Route element={<AppLayout />}>
+                  {/* All protected routes with ProtectedLayout - auth check before layout renders */}
+                  <Route element={<ProtectedLayout />}>
                     <Route path="/onboarding" element={
                       <AuthGuardPage>
                         <Onboarding />
