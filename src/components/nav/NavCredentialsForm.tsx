@@ -250,30 +250,50 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, onCr
 
   const triggerInitialSync = async (accessToken: string) => {
     try {
-      console.log('[NavCredentialsForm] Triggering 1-year initial sync');
+      console.log('[NavCredentialsForm] Triggering 1-month initial sync with full details');
       
-      // Calculate date range for 1 year back
+      // Calculate date range for 1 month back (30 days)
       const dateTo = new Date();
       const dateFrom = new Date();
-      dateFrom.setFullYear(dateFrom.getFullYear() - 1);
+      dateFrom.setDate(dateFrom.getDate() - 30);
       
       const dateToStr = dateTo.toISOString().split('T')[0];
       const dateFromStr = dateFrom.toISOString().split('T')[0];
       
       toast({
         title: 'Adatok szinkronizálása',
-        description: 'NAV számlák letöltése 1 évre visszamenőleg...',
+        description: 'NAV számlák letöltése az elmúlt 30 napra, minden tétellel együtt...',
       });
 
-      // Sync OUTBOUND invoices - split into 35-day chunks (NAV API limit)
-      await syncInChunks(accessToken, dateFromStr, dateToStr, 'OUTBOUND');
+      // Sync OUTBOUND invoices (30 days fits in one request, no chunking needed)
+      await supabase.functions.invoke('nav-query-outbound-invoices', {
+        body: {
+          dateFrom: dateFromStr,
+          dateTo: dateToStr,
+          invoiceDirection: 'OUTBOUND',
+          companyId: companyId
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
       
-      // Sync INBOUND invoices - split into 35-day chunks
-      await syncInChunks(accessToken, dateFromStr, dateToStr, 'INBOUND');
+      // Sync INBOUND invoices
+      await supabase.functions.invoke('nav-query-outbound-invoices', {
+        body: {
+          dateFrom: dateFromStr,
+          dateTo: dateToStr,
+          invoiceDirection: 'INBOUND',
+          companyId: companyId
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
       
       toast({
         title: 'Szinkronizálás kész',
-        description: '1 év NAV számla adatai sikeresen letöltve.',
+        description: 'Az elmúlt 30 nap NAV számlái és tételei sikeresen letöltve.',
       });
       
     } catch (error: any) {
@@ -286,48 +306,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, onCr
     }
   };
 
-  const syncInChunks = async (accessToken: string, dateFrom: string, dateTo: string, direction: 'OUTBOUND' | 'INBOUND') => {
-    const fromDate = new Date(dateFrom);
-    const toDate = new Date(dateTo);
-    const chunkDays = 35; // NAV API max is 35 days
-    
-    let currentFrom = new Date(fromDate);
-    
-    while (currentFrom < toDate) {
-      const currentTo = new Date(currentFrom);
-      currentTo.setDate(currentTo.getDate() + chunkDays - 1);
-      
-      // Don't exceed the end date
-      if (currentTo > toDate) {
-        currentTo.setTime(toDate.getTime());
-      }
-      
-      const chunkFromStr = currentFrom.toISOString().split('T')[0];
-      const chunkToStr = currentTo.toISOString().split('T')[0];
-      
-      console.log(`[NavCredentialsForm] Syncing ${direction} chunk: ${chunkFromStr} to ${chunkToStr}`);
-      
-      try {
-        await supabase.functions.invoke('nav-query-outbound-invoices', {
-          body: {
-            dateFrom: chunkFromStr,
-            dateTo: chunkToStr,
-            invoiceDirection: direction,
-            companyId: companyId
-          },
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        });
-      } catch (chunkError) {
-        console.error(`[NavCredentialsForm] Chunk sync error for ${direction} ${chunkFromStr}-${chunkToStr}:`, chunkError);
-        // Continue with next chunk even if one fails
-      }
-      
-      // Move to next chunk
-      currentFrom.setDate(currentFrom.getDate() + chunkDays);
-    }
-  };
+
 
   const handleDisconnect = async () => {
     if (!confirm('Biztosan le szeretné választani a NAV API kapcsolatot? Ez törli az összes mentett hitelesítő adatot.')) {

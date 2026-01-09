@@ -436,7 +436,7 @@ async function syncInvoices(
   }
 }
 
-// Fetch detailed invoice data for invoices without details (incremental)
+// Fetch detailed invoice data for ALL invoices without details (no limit - required for VAT breakdown)
 async function fetchInvoiceDetails(
   supabase: any,
   userId: string,
@@ -446,15 +446,14 @@ async function fetchInvoiceDetails(
   navApiUrl: string,
   direction: 'OUTBOUND' | 'INBOUND'
 ): Promise<number> {
-  // Get invoices that need details fetched (max 50 per sync to avoid timeout)
+  // Get ALL invoices that need details fetched (no limit - required for VAT breakdown)
   const { data: invoicesNeedingDetails, error: fetchError } = await supabase
     .from('nav_invoices')
     .select('id, invoice_number')
     .eq('user_id', userId)
     .eq('company_id', companyId)
     .eq('invoice_direction', direction)
-    .or('details_fetched.is.null,details_fetched.eq.false')
-    .limit(50);
+    .or('details_fetched.is.null,details_fetched.eq.false');
 
   if (fetchError) {
     console.error('Error fetching invoices needing details:', fetchError);
@@ -466,7 +465,7 @@ async function fetchInvoiceDetails(
     return 0;
   }
 
-  console.log(`🔍 Fetching details for ${invoicesNeedingDetails.length} ${direction} invoices`);
+  console.log(`🔍 Fetching details for ALL ${invoicesNeedingDetails.length} ${direction} invoices`);
 
   let successCount = 0;
 
