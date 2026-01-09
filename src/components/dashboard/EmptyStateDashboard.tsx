@@ -187,22 +187,19 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Nincs bejelentkezve');
 
-      // First save credentials temporarily (without company_id)
-      const { error: saveError } = await supabase.functions.invoke('save-credentials', {
-        body: {
-          navUsername: navCredentials.nav_username,
-          navPassword: navCredentials.nav_password,
-          navTaxNumber: navCredentials.nav_tax_number,
-          navSignKey: navCredentials.nav_sign_key,
-          navExchangeKey: navCredentials.nav_exchange_key,
-        },
-      });
-
-      if (saveError) throw saveError;
-
-      // Now validate against NAV API
+      // Validate credentials INLINE without saving to DB
+      // This avoids the duplicate key issue since company doesn't exist yet
       const { data, error } = await supabase.functions.invoke('nav-token', {
-        body: { action: 'validate_credentials' },
+        body: { 
+          action: 'validate_credentials_inline',
+          credentials: {
+            nav_username: navCredentials.nav_username,
+            nav_password: navCredentials.nav_password,
+            nav_tax_number: navCredentials.nav_tax_number,
+            nav_sign_key: navCredentials.nav_sign_key,
+            nav_exchange_key: navCredentials.nav_exchange_key,
+          }
+        },
       });
 
       if (error) throw error;
@@ -212,8 +209,8 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
         toast.success('NAV kapcsolat sikeresen ellenőrizve!');
       } else {
         setNavValidationStatus('invalid');
-        setNavValidationError(data?.error || 'A megadott adatok hibásak');
-        toast.error(data?.error || 'NAV validálás sikertelen');
+        setNavValidationError(data?.error || data?.message || 'A megadott adatok hibásak');
+        toast.error(data?.error || data?.message || 'NAV validálás sikertelen');
       }
     } catch (error: any) {
       console.error('NAV validation error:', error);
@@ -302,10 +299,9 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
         if (categoriesError) throw categoriesError;
       }
 
-      // 4. Update NAV credentials with company_id
+      // 4. Save NAV credentials with company_id (first and only save)
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Re-save credentials with company_id
         const { error: navError } = await supabase.functions.invoke('save-credentials', {
           body: {
             navUsername: navCredentials.nav_username,
@@ -318,7 +314,38 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
         });
 
         if (navError) {
-          console.error('NAV credentials update error:', navError);
+          console.error('NAV credentials save error:', navError);
+          // Don't throw - company is created, just log the error
+        } else {
+          // Trigger initial NAV sync in background (last 30 days)
+          const dateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          const dateTo = new Date().toISOString().split('T')[0];
+
+          Promise.allSettled([
+            supabase.functions.invoke('nav-query-outbound-invoices', {
+              body: {
+                invoiceDirection: 'OUTBOUND',
+                dateFrom,
+                dateTo,
+                companyId: companyData.id
+              }
+            }),
+            supabase.functions.invoke('nav-query-outbound-invoices', {
+              body: {
+                invoiceDirection: 'INBOUND',
+                dateFrom,
+                dateTo,
+                companyId: companyData.id
+              }
+            })
+          ]).then(([outbound, inbound]) => {
+            const outboundOk = outbound.status === 'fulfilled' && !outbound.value.error;
+            const inboundOk = inbound.status === 'fulfilled' && !inbound.value.error;
+            
+            if (outboundOk || inboundOk) {
+              toast.success('NAV számlák szinkronizálása elindult a háttérben');
+            }
+          });
         }
       }
 
