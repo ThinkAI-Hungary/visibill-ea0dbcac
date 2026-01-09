@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, Mail, Copy, RefreshCw, CheckCircle } from 'lucide-react';
+import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,7 +37,6 @@ const StepIndicator = ({ currentStep }: { currentStep: number }) => {
     { num: 2, label: 'Projektek' },
     { num: 3, label: 'Kategóriák' },
     { num: 4, label: 'NAV' },
-    { num: 5, label: 'Email' },
   ];
 
   return (
@@ -113,14 +112,9 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
   const [navValidationStatus, setNavValidationStatus] = useState<'pending' | 'valid' | 'invalid' | 'validating'>('pending');
   const [navValidationError, setNavValidationError] = useState<string | null>(null);
 
-  // Step 5: Email alias data
-  const [aliasName, setAliasName] = useState('');
-  const [createdAliasEmail, setCreatedAliasEmail] = useState<string | null>(null);
-  const [creatingAlias, setCreatingAlias] = useState(false);
-
   // Validation
   const isStep1Valid = companyName.trim() && companyTaxNumber.trim();
-  const isStep2Valid = projects.length >= 3;
+  const isStep2Valid = true; // Projects are now optional
   
   const isNavFormComplete = useMemo(() => {
     return (
@@ -220,34 +214,6 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
     }
   };
 
-  const handleCreateEmailAlias = async () => {
-    if (!aliasName.trim()) return;
-    
-    setCreatingAlias(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-email-alias', {
-        body: { company_name: aliasName },
-      });
-
-      if (error) throw error;
-
-      setCreatedAliasEmail(data.alias.alias_email);
-      toast.success('Email alias sikeresen létrehozva!');
-    } catch (error: any) {
-      console.error('Error creating alias:', error);
-      toast.error(error.message || 'Nem sikerült létrehozni az email aliast');
-    } finally {
-      setCreatingAlias(false);
-    }
-  };
-
-  const handleCopyAlias = () => {
-    if (createdAliasEmail) {
-      navigator.clipboard.writeText(createdAliasEmail);
-      toast.success('Email cím vágólapra másolva!');
-    }
-  };
-
   const handleFinishOnboarding = async () => {
     if (!user) return;
 
@@ -317,8 +283,8 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
           console.error('NAV credentials save error:', navError);
           // Don't throw - company is created, just log the error
         } else {
-          // Trigger initial NAV sync in background (last 30 days)
-          const dateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          // Trigger initial NAV sync in background (last 90 days)
+          const dateFrom = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
           const dateTo = new Date().toISOString().split('T')[0];
 
           Promise.allSettled([
@@ -346,22 +312,6 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
               toast.success('NAV számlák szinkronizálása elindult a háttérben');
             }
           });
-        }
-      }
-
-      // 5. Assign email alias to company (if created)
-      if (createdAliasEmail) {
-        const { data: aliasData } = await supabase
-          .from('email_aliases')
-          .select('id')
-          .eq('alias_email', createdAliasEmail)
-          .single();
-        
-        if (aliasData) {
-          await supabase
-            .from('email_aliases')
-            .update({ company_id: companyData.id })
-            .eq('id', aliasData.id);
         }
       }
 
@@ -427,9 +377,9 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
         <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
           <FolderOpen className="h-7 w-7 text-primary" />
         </div>
-        <h3 className="text-xl font-semibold">Projektek létrehozása</h3>
+        <h3 className="text-xl font-semibold">Projektek létrehozása (opcionális)</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Hozz létre legalább 3 projektet a számlák rendszerezéséhez
+          Hozz létre projekteket a számlák rendszerezéséhez, vagy hagyd ki ezt a lépést
         </p>
       </div>
 
@@ -455,13 +405,12 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
         </div>
       )}
 
-      {/* Progress indicator */}
-      <div className={cn(
-        "text-sm font-medium text-center py-2 rounded-lg",
-        projects.length >= 3 ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-      )}>
-        {projects.length} / 3 projekt {projects.length >= 3 && <Check className="inline h-4 w-4 ml-1" />}
-      </div>
+      {/* Project count indicator */}
+      {projects.length > 0 && (
+        <div className="text-sm font-medium text-center py-2 rounded-lg bg-primary/10 text-primary">
+          {projects.length} projekt hozzáadva <Check className="inline h-4 w-4 ml-1" />
+        </div>
+      )}
 
       {/* Add project form */}
       <div className="space-y-3 p-4 border border-dashed border-border rounded-lg">
@@ -717,76 +666,9 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
     </div>
   );
 
-  const renderStep5 = () => (
-    <div className="space-y-4">
-      <div className="text-center mb-4">
-        <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-          <Mail className="h-7 w-7 text-primary" />
-        </div>
-        <h3 className="text-xl font-semibold">Email Alias (opcionális)</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          Hozz létre egy dedikált email címet a számlák fogadásához
-        </p>
-      </div>
-
-      {createdAliasEmail ? (
-        <div className="p-4 bg-green-50 dark:bg-green-950/20 border-2 border-green-500 rounded-lg">
-          <div className="flex items-center gap-3 mb-3">
-            <CheckCircle className="h-6 w-6 text-green-600 shrink-0" />
-            <p className="font-semibold text-green-700 dark:text-green-400">Email alias létrehozva!</p>
-          </div>
-          <div className="flex items-center gap-2 p-2 bg-white dark:bg-background rounded border">
-            <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-            <code className="text-sm flex-1 truncate">{createdAliasEmail}</code>
-            <Button variant="ghost" size="sm" onClick={handleCopyAlias} className="h-8 w-8 p-0 shrink-0">
-              <Copy className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="text-xs text-green-600 dark:text-green-500 mt-2">
-            A számlafogadó partnereidnek ezt az email címet add meg.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3 p-4 border border-dashed border-border rounded-lg">
-          <div className="space-y-1">
-            <Label className="text-xs">Alias neve (azonosításhoz)</Label>
-            <Input
-              value={aliasName}
-              onChange={(e) => setAliasName(e.target.value)}
-              placeholder={`pl. ${companyName || 'Cég'} számlák`}
-              className="h-9"
-            />
-          </div>
-          <Button
-            onClick={handleCreateEmailAlias}
-            variant="outline"
-            className="w-full"
-            disabled={!aliasName.trim() || creatingAlias}
-          >
-            {creatingAlias ? (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Létrehozás...
-              </>
-            ) : (
-              <>
-                <Plus className="h-4 w-4 mr-2" />
-                Email alias létrehozása
-              </>
-            )}
-          </Button>
-        </div>
-      )}
-
-      <p className="text-xs text-muted-foreground text-center">
-        Az email aliasokat később is létrehozhatod az Integrációk menüben.
-      </p>
-    </div>
-  );
-
   // Get button text for current step
   const getNextButtonText = () => {
-    if (currentStep === 3 || currentStep === 5) {
+    if (currentStep === 2 || currentStep === 3) {
       return 'Kihagyás / Tovább';
     }
     return 'Tovább';
@@ -795,9 +677,8 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
   // Check if next button should be disabled
   const isNextDisabled = () => {
     if (currentStep === 1) return !isStep1Valid;
-    if (currentStep === 2) return !isStep2Valid;
-    if (currentStep === 4) return !isStep4Valid; // NAV is required
-    return false; // Step 3 and 5 are optional
+    // Steps 2 and 3 are optional
+    return false;
   };
 
   return (
@@ -949,7 +830,6 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
               {currentStep === 2 && renderStep2()}
               {currentStep === 3 && renderStep3()}
               {currentStep === 4 && renderStep4()}
-              {currentStep === 5 && renderStep5()}
 
               {/* Navigation buttons */}
               <div className="flex justify-between mt-6 pt-4 border-t border-border">
@@ -961,7 +841,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                   {currentStep === 1 ? 'Vissza' : 'Előző'}
                 </Button>
 
-                {currentStep < 5 ? (
+                {currentStep < 4 ? (
                   <Button
                     onClick={() => setCurrentStep(currentStep + 1)}
                     disabled={isNextDisabled()}
@@ -972,7 +852,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                 ) : (
                   <Button
                     onClick={handleFinishOnboarding}
-                    disabled={isCreating}
+                    disabled={isCreating || !isStep4Valid}
                   >
                     {isCreating ? 'Mentés...' : 'Befejezés'}
                     <Check className="h-4 w-4 ml-2" />

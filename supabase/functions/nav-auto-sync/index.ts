@@ -127,10 +127,10 @@ Deno.serve(async (req) => {
       details: [] as any[]
     };
 
-    // Calculate date range (last 30 days)
+    // Calculate date range (last 90 days)
     const dateTo = new Date();
     const dateFrom = new Date();
-    dateFrom.setDate(dateFrom.getDate() - 30);
+    dateFrom.setDate(dateFrom.getDate() - 90);
 
     const dateToStr = dateTo.toISOString().split('T')[0];
     const dateFromStr = dateFrom.toISOString().split('T')[0];
