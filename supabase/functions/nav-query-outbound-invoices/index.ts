@@ -424,6 +424,15 @@ Deno.serve(async (req) => {
       }
 
       console.log('[NAV-QUERY-OUTBOUND] Invoices stored successfully');
+
+      // Cache partners from invoices
+      await cachePartnersFromInvoices(
+        serviceClient,
+        user.id,
+        companyId,
+        allInvoices,
+        invoiceDirection
+      );
     }
 
     // Fetch detailed invoice data for invoices without details (incremental)
@@ -1070,4 +1079,72 @@ async function sha512Hash(input: string): Promise<string> {
   const hashBuffer = await crypto.subtle.digest('SHA-512', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+// Cache partners from NAV invoices to the partners table
+async function cachePartnersFromInvoices(
+  supabase: any,
+  userId: string,
+  companyId: string,
+  invoices: any[],
+  direction: 'OUTBOUND' | 'INBOUND'
+) {
+  try {
+    // Collect unique partners from invoices
+    const partnersMap = new Map<string, { taxNumber: string; name: string; type: 'customer' | 'supplier' }>();
+
+    for (const inv of invoices) {
+      // For OUTBOUND invoices, the customer is the partner
+      // For INBOUND invoices, the supplier is the partner
+      if (direction === 'OUTBOUND' && inv.customerTaxNumber) {
+        const taxNumber = inv.customerTaxNumber;
+        if (!partnersMap.has(taxNumber) && inv.customerName) {
+          partnersMap.set(taxNumber, {
+            taxNumber,
+            name: inv.customerName,
+            type: 'customer'
+          });
+        }
+      } else if (direction === 'INBOUND' && inv.supplierTaxNumber) {
+        const taxNumber = inv.supplierTaxNumber;
+        if (!partnersMap.has(taxNumber) && inv.supplierName) {
+          partnersMap.set(taxNumber, {
+            taxNumber,
+            name: inv.supplierName,
+            type: 'supplier'
+          });
+        }
+      }
+    }
+
+    if (partnersMap.size === 0) {
+      console.log('[NAV-QUERY-OUTBOUND] No new partners to cache from NAV data');
+      return;
+    }
+
+    // Upsert partners to database
+    const partnersToUpsert = Array.from(partnersMap.values()).map(p => ({
+      user_id: userId,
+      company_id: companyId,
+      tax_number: p.taxNumber,
+      name: p.name,
+      partner_type: p.type
+    }));
+
+    const { error: partnerError } = await supabase
+      .from('partners')
+      .upsert(partnersToUpsert, {
+        onConflict: 'company_id,tax_number',
+        ignoreDuplicates: false
+      });
+
+    if (partnerError) {
+      console.error('[NAV-QUERY-OUTBOUND] Error caching partners:', partnerError);
+    } else {
+      console.log(`[NAV-QUERY-OUTBOUND] Cached ${partnersMap.size} partners from ${direction} invoices`);
+    }
+  } catch (error) {
+    // Don't fail the sync if partner caching fails
+    console.error('[NAV-QUERY-OUTBOUND] Error in partner caching:', error);
+  }
 }
