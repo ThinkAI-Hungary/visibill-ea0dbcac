@@ -157,7 +157,7 @@ const InvoicesPage = () => {
   // NAV sync state
   const [credentialsExist, setCredentialsExist] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const SYNC_COOLDOWN_MINUTES = 2;
+  const SYNC_COOLDOWN_SECONDS = 10;
   
   // Server-side cooldown state
   const [serverLastSyncTime, setServerLastSyncTime] = useState<Date | null>(null);
@@ -209,7 +209,7 @@ const InvoicesPage = () => {
     
     const calculateRemaining = () => {
       const diffMs = Date.now() - serverLastSyncTime.getTime();
-      const cooldownMs = SYNC_COOLDOWN_MINUTES * 60 * 1000;
+      const cooldownMs = SYNC_COOLDOWN_SECONDS * 1000;
       const remaining = Math.max(0, Math.ceil((cooldownMs - diffMs) / 1000));
       setCooldownSeconds(remaining);
     };
@@ -435,26 +435,24 @@ const InvoicesPage = () => {
     if (!user || !selectedCompany) return;
     
     try {
-      // Calculate date range for query
-      // If user has set dateFrom filter, use that; otherwise default to current year start
-      const currentYear = new Date().getFullYear();
-      const defaultYearStart = `${currentYear}-01-01`;
-      
+      // Calculate date range for query - no default filter, show all invoices
       const queryDateFrom = navFilters.dateFrom 
         ? format(navFilters.dateFrom, 'yyyy-MM-dd') 
-        : defaultYearStart;
+        : undefined;
       
       const queryDateTo = navFilters.dateTo 
         ? format(navFilters.dateTo, 'yyyy-MM-dd') 
         : undefined;
 
-      // Fetch NAV invoices with date filtering
+      // Fetch NAV invoices with optional date filtering
       let navQuery = supabase
         .from('nav_invoices')
         .select('*')
-        .eq('company_id', selectedCompany.id)
-        .gte('invoice_issue_date', queryDateFrom);
+        .eq('company_id', selectedCompany.id);
       
+      if (queryDateFrom) {
+        navQuery = navQuery.gte('invoice_issue_date', queryDateFrom);
+      }
       if (queryDateTo) {
         navQuery = navQuery.lte('invoice_issue_date', queryDateTo);
       }
@@ -465,10 +463,10 @@ const InvoicesPage = () => {
       if (invoicesError) throw invoicesError;
       setInvoices(invoicesData || []);
 
-      // Fetch submitted invoices with date filtering
+      // Fetch submitted invoices with optional date filtering
       const submittedQueryDateFrom = submittedFilters.dateFrom 
         ? format(submittedFilters.dateFrom, 'yyyy-MM-dd') 
-        : defaultYearStart;
+        : undefined;
       
       const submittedQueryDateTo = submittedFilters.dateTo 
         ? format(submittedFilters.dateTo, 'yyyy-MM-dd') 
@@ -477,9 +475,11 @@ const InvoicesPage = () => {
       let submittedQuery = supabase
         .from('invoices')
         .select('id, szamlaszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url')
-        .eq('company_id', selectedCompany.id)
-        .gte('kibocsatas_datuma', submittedQueryDateFrom);
+        .eq('company_id', selectedCompany.id);
       
+      if (submittedQueryDateFrom) {
+        submittedQuery = submittedQuery.gte('kibocsatas_datuma', submittedQueryDateFrom);
+      }
       if (submittedQueryDateTo) {
         submittedQuery = submittedQuery.lte('kibocsatas_datuma', submittedQueryDateTo);
       }
