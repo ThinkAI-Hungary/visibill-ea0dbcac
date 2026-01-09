@@ -532,30 +532,34 @@ const Index = () => {
       }));
       setInvoices(formattedInvoices);
 
-      // Use date range for filtering - query with date filter to avoid 1000 row limit
-      const { data: allInvoicesData, error: metricsError } = await supabase
-        .from('invoices')
-        .select('brutto_vegosszeg, kibocsatas_datuma, statusz, penznem')
-        .eq('company_id', selectedCompany.id)
-        .gte('kibocsatas_datuma', dateFromFormatted)
-        .lte('kibocsatas_datuma', dateToFormatted);
+      // Use RPC functions for aggregation to avoid 1000 row limit
+      const { data: invoiceAggregates, error: invoiceAggError } = await supabase
+        .rpc('get_invoice_aggregates', {
+          p_company_id: selectedCompany.id,
+          p_date_from: dateFromFormatted,
+          p_date_to: dateToFormatted
+        });
 
-      if (metricsError) throw metricsError;
-
-      const selectedPeriodInvoices = allInvoicesData || [];
+      if (invoiceAggError) {
+        console.error('Invoice aggregation error:', invoiceAggError);
+        throw invoiceAggError;
+      }
 
       const selectedPeriodAmountByCurrency: { [key: string]: number } = {};
+      let totalInvoices = 0;
+      let processingCount = 0;
+      let completedCount = 0;
       
-      selectedPeriodInvoices.forEach(invoice => {
-        const currency = invoice.penznem || 'HUF';
-        selectedPeriodAmountByCurrency[currency] = (selectedPeriodAmountByCurrency[currency] || 0) + invoice.brutto_vegosszeg;
+      (invoiceAggregates || []).forEach((agg: { currency: string; total_gross: number; processing_count: number; completed_count: number; total_count: number }) => {
+        const currency = agg.currency || 'HUF';
+        selectedPeriodAmountByCurrency[currency] = (selectedPeriodAmountByCurrency[currency] || 0) + Number(agg.total_gross || 0);
+        totalInvoices += Number(agg.total_count || 0);
+        processingCount += Number(agg.processing_count || 0);
+        completedCount += Number(agg.completed_count || 0);
       });
 
-      const processingCount = selectedPeriodInvoices.filter(invoice => invoice.statusz === 'feldolgozas_alatt').length;
-      const completedCount = selectedPeriodInvoices.filter(invoice => invoice.statusz === 'feldolgozva').length;
-
       setMetrics({
-        totalInvoices: selectedPeriodInvoices.length,
+        totalInvoices,
         totalAmountByCurrency: selectedPeriodAmountByCurrency,
         thisMonthAmountByCurrency: selectedPeriodAmountByCurrency,
         averageInvoiceAmount: 0,
@@ -563,14 +567,18 @@ const Index = () => {
         completedCount
       });
 
-      const { data: navInvoicesData, error: navInvoicesError } = await supabase
-        .from('nav_invoices')
-        .select('invoice_direction, invoice_vat_amount, invoice_net_amount, invoice_gross_amount, currency, paid')
-        .eq('company_id', selectedCompany.id)
-        .gte('invoice_issue_date', dateFromFormatted)
-        .lte('invoice_issue_date', dateToFormatted);
+      // Use RPC function for NAV invoice aggregation to avoid 1000 row limit
+      const { data: navAggregates, error: navAggError } = await supabase
+        .rpc('get_nav_invoice_aggregates', {
+          p_company_id: selectedCompany.id,
+          p_date_from: dateFromFormatted,
+          p_date_to: dateToFormatted
+        });
 
-      if (navInvoicesError) throw navInvoicesError;
+      if (navAggError) {
+        console.error('NAV aggregation error:', navAggError);
+        throw navAggError;
+      }
 
       const inboundVat: { [currency: string]: number } = {};
       const outboundVat: { [currency: string]: number } = {};
@@ -583,35 +591,37 @@ const Index = () => {
       const unpaidOutboundNet: { [currency: string]: number } = {};
       const unpaidOutboundGross: { [currency: string]: number } = {};
 
-      (navInvoicesData || []).forEach(invoice => {
-        const currency = invoice.currency || 'HUF';
-        const vatAmount = invoice.invoice_vat_amount || 0;
-        const netAmount = invoice.invoice_net_amount || 0;
-        // Fallback: ha a gross 0 vagy hiányzik, számítsuk ki net + vat-ból
-        const grossAmount = (invoice.invoice_gross_amount && invoice.invoice_gross_amount > 0)
-          ? invoice.invoice_gross_amount
-          : netAmount + vatAmount;
+      (navAggregates || []).forEach((agg: { 
+        invoice_direction: string; 
+        currency: string; 
+        total_net: number; 
+        total_gross: number; 
+        total_vat: number;
+        paid_net: number;
+        paid_gross: number;
+        unpaid_net: number;
+        unpaid_gross: number;
+        invoice_count: number;
+      }) => {
+        const currency = agg.currency || 'HUF';
+        const vatAmount = Number(agg.total_vat || 0);
+        const netAmount = Number(agg.total_net || 0);
+        const grossAmount = Number(agg.total_gross || 0);
+        const unpaidNet = Number(agg.unpaid_net || 0);
+        const unpaidGross = Number(agg.unpaid_gross || 0);
 
-        if (invoice.invoice_direction === 'INBOUND') {
+        if (agg.invoice_direction === 'INBOUND') {
           inboundVat[currency] = (inboundVat[currency] || 0) + vatAmount;
           expensesNet[currency] = (expensesNet[currency] || 0) + netAmount;
           expensesGross[currency] = (expensesGross[currency] || 0) + grossAmount;
-          
-          // Track unpaid inbound invoices (paid is false or null)
-          if (invoice.paid === false || invoice.paid === null) {
-            unpaidInboundNet[currency] = (unpaidInboundNet[currency] || 0) + netAmount;
-            unpaidInboundGross[currency] = (unpaidInboundGross[currency] || 0) + grossAmount;
-          }
-        } else if (invoice.invoice_direction === 'OUTBOUND') {
+          unpaidInboundNet[currency] = (unpaidInboundNet[currency] || 0) + unpaidNet;
+          unpaidInboundGross[currency] = (unpaidInboundGross[currency] || 0) + unpaidGross;
+        } else if (agg.invoice_direction === 'OUTBOUND') {
           outboundVat[currency] = (outboundVat[currency] || 0) + vatAmount;
           revenueNet[currency] = (revenueNet[currency] || 0) + netAmount;
           revenueGross[currency] = (revenueGross[currency] || 0) + grossAmount;
-          
-          // Track unpaid outbound invoices (paid is false or null)
-          if (invoice.paid === false || invoice.paid === null) {
-            unpaidOutboundNet[currency] = (unpaidOutboundNet[currency] || 0) + netAmount;
-            unpaidOutboundGross[currency] = (unpaidOutboundGross[currency] || 0) + grossAmount;
-          }
+          unpaidOutboundNet[currency] = (unpaidOutboundNet[currency] || 0) + unpaidNet;
+          unpaidOutboundGross[currency] = (unpaidOutboundGross[currency] || 0) + unpaidGross;
         }
       });
 

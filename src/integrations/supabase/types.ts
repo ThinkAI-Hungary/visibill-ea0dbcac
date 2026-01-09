@@ -1545,9 +1545,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_invoice_aggregates: {
+        Args: { p_company_id: string; p_date_from: string; p_date_to: string }
+        Returns: {
+          completed_count: number
+          currency: string
+          processing_count: number
+          total_count: number
+          total_gross: number
+        }[]
+      }
       get_nav_credentials: {
         Args: { p_company_id?: string; p_user_id: string }
         Returns: Json
+      }
+      get_nav_invoice_aggregates: {
+        Args: { p_company_id: string; p_date_from: string; p_date_to: string }
+        Returns: {
+          currency: string
+          invoice_count: number
+          invoice_direction: string
+          paid_gross: number
+          paid_net: number
+          total_gross: number
+          total_net: number
+          total_vat: number
+          unpaid_gross: number
+          unpaid_net: number
+        }[]
       }
       increment_invoice_usage: { Args: { user_uuid: string }; Returns: boolean }
       reset_monthly_usage: { Args: never; Returns: number }
