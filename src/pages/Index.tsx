@@ -532,19 +532,17 @@ const Index = () => {
       }));
       setInvoices(formattedInvoices);
 
-      // Use date range for filtering
-      
+      // Use date range for filtering - query with date filter to avoid 1000 row limit
       const { data: allInvoicesData, error: metricsError } = await supabase
         .from('invoices')
         .select('brutto_vegosszeg, kibocsatas_datuma, statusz, penznem')
-        .eq('company_id', selectedCompany.id);
+        .eq('company_id', selectedCompany.id)
+        .gte('kibocsatas_datuma', dateFromFormatted)
+        .lte('kibocsatas_datuma', dateToFormatted);
 
       if (metricsError) throw metricsError;
 
-      const selectedPeriodInvoices = (allInvoicesData || []).filter(invoice => {
-        const invoiceDate = new Date(invoice.kibocsatas_datuma);
-        return invoiceDate >= dateFrom && invoiceDate <= dateTo;
-      });
+      const selectedPeriodInvoices = allInvoicesData || [];
 
       const selectedPeriodAmountByCurrency: { [key: string]: number } = {};
       
