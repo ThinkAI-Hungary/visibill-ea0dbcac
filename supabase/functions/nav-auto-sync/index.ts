@@ -1098,7 +1098,7 @@ async function cachePartnersFromInvoices(
     const { error: partnerError } = await supabase
       .from('partners')
       .upsert(partnersToUpsert, {
-        onConflict: 'user_id,tax_number',
+        onConflict: 'company_id,tax_number',
         ignoreDuplicates: false
       });
 
