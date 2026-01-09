@@ -270,7 +270,7 @@ const InvoicesPage = () => {
   useEffect(() => {
     fetchData();
     checkCredentialsExist();
-  }, [user, selectedCompany]);
+  }, [user, selectedCompany, navFilters.dateFrom, navFilters.dateTo, submittedFilters.dateFrom, submittedFilters.dateTo]);
 
   // Clear selection when tab changes
   useEffect(() => {
@@ -435,21 +435,56 @@ const InvoicesPage = () => {
     if (!user || !selectedCompany) return;
     
     try {
-      // Fetch NAV invoices
-      const { data: invoicesData, error: invoicesError } = await supabase
+      // Calculate date range for query
+      // If user has set dateFrom filter, use that; otherwise default to current year start
+      const currentYear = new Date().getFullYear();
+      const defaultYearStart = `${currentYear}-01-01`;
+      
+      const queryDateFrom = navFilters.dateFrom 
+        ? format(navFilters.dateFrom, 'yyyy-MM-dd') 
+        : defaultYearStart;
+      
+      const queryDateTo = navFilters.dateTo 
+        ? format(navFilters.dateTo, 'yyyy-MM-dd') 
+        : undefined;
+
+      // Fetch NAV invoices with date filtering
+      let navQuery = supabase
         .from('nav_invoices')
         .select('*')
         .eq('company_id', selectedCompany.id)
+        .gte('invoice_issue_date', queryDateFrom);
+      
+      if (queryDateTo) {
+        navQuery = navQuery.lte('invoice_issue_date', queryDateTo);
+      }
+      
+      const { data: invoicesData, error: invoicesError } = await navQuery
         .order('invoice_issue_date', { ascending: false });
 
       if (invoicesError) throw invoicesError;
       setInvoices(invoicesData || []);
 
-      // Fetch submitted invoices from invoices table
-      const { data: submittedData, error: submittedError } = await supabase
+      // Fetch submitted invoices with date filtering
+      const submittedQueryDateFrom = submittedFilters.dateFrom 
+        ? format(submittedFilters.dateFrom, 'yyyy-MM-dd') 
+        : defaultYearStart;
+      
+      const submittedQueryDateTo = submittedFilters.dateTo 
+        ? format(submittedFilters.dateTo, 'yyyy-MM-dd') 
+        : undefined;
+
+      let submittedQuery = supabase
         .from('invoices')
         .select('id, szamlaszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url')
         .eq('company_id', selectedCompany.id)
+        .gte('kibocsatas_datuma', submittedQueryDateFrom);
+      
+      if (submittedQueryDateTo) {
+        submittedQuery = submittedQuery.lte('kibocsatas_datuma', submittedQueryDateTo);
+      }
+
+      const { data: submittedData, error: submittedError } = await submittedQuery
         .order('kibocsatas_datuma', { ascending: false });
 
       if (submittedError) throw submittedError;
