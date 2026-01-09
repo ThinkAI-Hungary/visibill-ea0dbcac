@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,7 +12,7 @@ interface SyncParams {
   page?: number;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -177,7 +176,7 @@ async function fetchInvoicesFromNAV(
     ? 'https://api-test.onlineszamla.nav.gov.hu/invoiceService/v3'
     : 'https://api.onlineszamla.nav.gov.hu/invoiceService/v3';
 
-  const queryXML = createQueryInvoiceDataRequest(credentials, token, params);
+  const queryXML = await createQueryInvoiceDataRequest(credentials, token, params);
 
   console.log('[NAV-SYNC] Querying NAV API with:', queryXML);
 
@@ -201,13 +200,16 @@ async function fetchInvoicesFromNAV(
   return parseInvoiceDataResponse(xmlResponse);
 }
 
-function createQueryInvoiceDataRequest(
+async function createQueryInvoiceDataRequest(
   credentials: any,
   token: string,
   params: SyncParams
-): string {
+): Promise<string> {
   const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
   const requestId = crypto.randomUUID();
+
+  const passwordHash = await hashPassword(credentials.nav_password, requestId);
+  const signature = await createSignature(credentials, requestId, timestamp);
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <QueryInvoiceDataRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api">
@@ -219,9 +221,9 @@ function createQueryInvoiceDataRequest(
   </header>
   <user>
     <login>${credentials.nav_username}</login>
-    <passwordHash>${hashPassword(credentials.nav_password, requestId)}</passwordHash>
+    <passwordHash>${passwordHash}</passwordHash>
     <taxNumber>${credentials.nav_tax_number}</taxNumber>
-    <requestSignature>${createSignature(credentials, requestId, timestamp)}</requestSignature>
+    <requestSignature>${signature}</requestSignature>
   </user>
   <software>
     <softwareId>${credentials.software_id}</softwareId>
@@ -284,25 +286,25 @@ function extractXMLValue(xml: string, tagName: string): string | null {
   return match ? match[1].trim() : null;
 }
 
-function hashPassword(password: string, requestId: string): string {
+async function hashPassword(password: string, requestId: string): Promise<string> {
   // NAV requires SHA512 hash of password + requestId
   const encoder = new TextEncoder();
   const data = encoder.encode(requestId + password);
-  return crypto.subtle.digest('SHA-512', data)
-    .then(hash => Array.from(new Uint8Array(hash))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('')
-      .toUpperCase());
+  const hash = await crypto.subtle.digest('SHA-512', data);
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
 }
 
-function createSignature(credentials: any, requestId: string, timestamp: string): string {
+async function createSignature(credentials: any, requestId: string, timestamp: string): Promise<string> {
   // Simplified signature creation - in production, this would use proper cryptographic signing
   const signatureBase = `${requestId}${timestamp}${credentials.nav_sign_key}`;
   const encoder = new TextEncoder();
   const data = encoder.encode(signatureBase);
-  return crypto.subtle.digest('SHA-256', data)
-    .then(hash => Array.from(new Uint8Array(hash))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('')
-      .toUpperCase());
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
 }
