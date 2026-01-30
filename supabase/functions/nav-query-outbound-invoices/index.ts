@@ -447,6 +447,12 @@ Deno.serve(async (req) => {
     );
     console.log(`[NAV-QUERY-OUTBOUND] Fetched details for ${detailsFetchedCount} invoices`);
 
+    // Update partner addresses from the newly fetched invoice details
+    if (detailsFetchedCount > 0) {
+      console.log('[NAV-QUERY-OUTBOUND] Updating partner addresses...');
+      await updatePartnerAddresses(serviceClient, companyId);
+    }
+
     // Update sync log with success using service client
     if (syncLogId) {
       await serviceClient
@@ -1122,13 +1128,38 @@ async function cachePartnersFromInvoices(
       return;
     }
 
-    // Upsert partners to database
+    // Look up addresses from nav_invoices for these partners
+    const taxNumbers = Array.from(partnersMap.keys());
+    const addressField = direction === 'OUTBOUND' ? 'customer_address' : 'supplier_address';
+    const taxField = direction === 'OUTBOUND' ? 'customer_tax_number' : 'supplier_tax_number';
+    
+    const { data: invoicesWithAddresses } = await supabase
+      .from('nav_invoices')
+      .select(`${taxField}, ${addressField}`)
+      .eq('company_id', companyId)
+      .in(taxField, taxNumbers)
+      .not(addressField, 'is', null);
+
+    // Build address lookup map
+    const addressMap = new Map<string, string>();
+    if (invoicesWithAddresses) {
+      for (const inv of invoicesWithAddresses) {
+        const taxNum = inv[taxField];
+        const address = inv[addressField];
+        if (taxNum && address && !addressMap.has(taxNum)) {
+          addressMap.set(taxNum, address);
+        }
+      }
+    }
+
+    // Upsert partners to database with addresses
     const partnersToUpsert = Array.from(partnersMap.values()).map(p => ({
       user_id: userId,
       company_id: companyId,
       tax_number: p.taxNumber,
       name: p.name,
-      partner_type: p.type
+      partner_type: p.type,
+      address: addressMap.get(p.taxNumber) || null
     }));
 
     const { error: partnerError } = await supabase
@@ -1141,10 +1172,67 @@ async function cachePartnersFromInvoices(
     if (partnerError) {
       console.error('[NAV-QUERY-OUTBOUND] Error caching partners:', partnerError);
     } else {
-      console.log(`[NAV-QUERY-OUTBOUND] Cached ${partnersMap.size} partners from ${direction} invoices`);
+      console.log(`[NAV-QUERY-OUTBOUND] Cached ${partnersMap.size} partners from ${direction} invoices (${addressMap.size} with addresses)`);
     }
   } catch (error) {
     // Don't fail the sync if partner caching fails
     console.error('[NAV-QUERY-OUTBOUND] Error in partner caching:', error);
+  }
+}
+
+// Update partner addresses from nav_invoices after details are fetched
+async function updatePartnerAddresses(
+  supabase: any,
+  companyId: string
+) {
+  try {
+    // Get nav_invoices with addresses
+    const { data: invoicesWithAddresses, error: fetchError } = await supabase
+      .from('nav_invoices')
+      .select('supplier_tax_number, supplier_address, customer_tax_number, customer_address')
+      .eq('company_id', companyId)
+      .or('supplier_address.not.is.null,customer_address.not.is.null');
+
+    if (fetchError || !invoicesWithAddresses) {
+      console.log('[NAV-QUERY-OUTBOUND] No invoices with addresses found');
+      return;
+    }
+
+    // Build address updates for partners
+    const supplierAddresses = new Map<string, string>();
+    const customerAddresses = new Map<string, string>();
+
+    for (const inv of invoicesWithAddresses) {
+      if (inv.supplier_tax_number && inv.supplier_address) {
+        supplierAddresses.set(inv.supplier_tax_number, inv.supplier_address);
+      }
+      if (inv.customer_tax_number && inv.customer_address) {
+        customerAddresses.set(inv.customer_tax_number, inv.customer_address);
+      }
+    }
+
+    // Update supplier partners
+    for (const [taxNumber, address] of supplierAddresses) {
+      await supabase
+        .from('partners')
+        .update({ address })
+        .eq('company_id', companyId)
+        .eq('tax_number', taxNumber)
+        .is('address', null);
+    }
+
+    // Update customer partners
+    for (const [taxNumber, address] of customerAddresses) {
+      await supabase
+        .from('partners')
+        .update({ address })
+        .eq('company_id', companyId)
+        .eq('tax_number', taxNumber)
+        .is('address', null);
+    }
+
+    console.log(`[NAV-QUERY-OUTBOUND] Updated addresses for ${supplierAddresses.size + customerAddresses.size} partners`);
+  } catch (error) {
+    console.error('[NAV-QUERY-OUTBOUND] Error updating partner addresses:', error);
   }
 }
