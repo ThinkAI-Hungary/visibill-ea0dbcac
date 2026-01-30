@@ -66,17 +66,16 @@ const IosToggle = React.forwardRef<HTMLButtonElement, IosToggleProps>(
         )}
         {...props}
       >
-        {/* Label text inside the toggle - positioned to avoid knob overlap */}
-        <span
-          className={cn(
-            "absolute text-[9px] font-semibold uppercase tracking-tight transition-opacity duration-200",
-            checked 
-              ? "left-[5px] text-success-foreground" 
-              : "right-[5px] text-warning-foreground"
-          )}
-        >
-          {checked ? onLabel : offLabel}
-        </span>
+        {/* Label text - only show the label on the opposite side of the knob */}
+        {checked ? (
+          <span className="absolute left-[4px] top-1/2 -translate-y-1/2 text-[8px] font-bold uppercase tracking-tight text-success-foreground">
+            {onLabel}
+          </span>
+        ) : (
+          <span className="absolute right-[4px] top-1/2 -translate-y-1/2 text-[8px] font-bold uppercase tracking-tight text-warning-foreground">
+            {offLabel}
+          </span>
+        )}
         
         {/* The sliding thumb/knob */}
         <span
