@@ -66,11 +66,11 @@ const IosToggle = React.forwardRef<HTMLButtonElement, IosToggleProps>(
       >
         {/* Label text - only show the label on the opposite side of the knob */}
         {checked ? (
-          <span className="absolute left-[6px] top-1/2 -translate-y-1/2 text-[8px] font-bold uppercase tracking-tight text-success-foreground">
+          <span className="absolute left-[4px] top-1/2 -translate-y-1/2 text-[8px] font-bold uppercase tracking-tight text-success-foreground">
             {onLabel}
           </span>
         ) : (
-          <span className="absolute right-[6px] top-1/2 -translate-y-1/2 text-[8px] font-bold uppercase tracking-tight text-warning-foreground">
+          <span className="absolute right-[4px] top-1/2 -translate-y-1/2 text-[8px] font-bold uppercase tracking-tight text-warning-foreground">
             {offLabel}
           </span>
         )}
