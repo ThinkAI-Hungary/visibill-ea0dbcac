@@ -40,12 +40,11 @@ import {
   Wallet, 
   Users, 
   TrendingUp, 
-  Calendar,
-  ChevronLeft,
-  ChevronRight
+  Calendar
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { hu } from "date-fns/locale";
+import { UnifiedPagination } from "@/components/ui/unified-pagination";
 
 const MONTHS = [
   { value: "0", label: "Január" },
@@ -107,7 +106,7 @@ export default function SalariesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 11;
+  const [pageSize, setPageSize] = useState(20);
   
   const [formData, setFormData] = useState({
     név: "",
@@ -164,11 +163,11 @@ export default function SalariesPage() {
 
   // Paginated salaries
   const paginatedSalaries = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredSalaries.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredSalaries, currentPage]);
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredSalaries.slice(startIndex, startIndex + pageSize);
+  }, [filteredSalaries, currentPage, pageSize]);
 
-  const totalPages = Math.ceil(filteredSalaries.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredSalaries.length / pageSize);
 
   // Reset page when filters change
   useEffect(() => {
@@ -537,7 +536,7 @@ export default function SalariesPage() {
             </div>
           ) : (
             <div className="rounded-lg border border-border/50 overflow-hidden">
-              <Table className="table-fixed">
+              <Table className="table-fixed compact-table">
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
                     <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[40%]">
@@ -617,49 +616,20 @@ export default function SalariesPage() {
                       </TableRow>
                     );
                   })}
-                  {/* Empty placeholder rows to maintain consistent table height */}
-                  {Array.from({ length: Math.max(0, ITEMS_PER_PAGE - paginatedSalaries.length) }).map((_, index) => (
-                    <TableRow key={`empty-${index}`} className="h-[65px]">
-                      <TableCell className="py-4 px-4">&nbsp;</TableCell>
-                      <TableCell className="py-4 px-4">&nbsp;</TableCell>
-                      <TableCell className="py-4 px-4">&nbsp;</TableCell>
-                      <TableCell className="py-4 px-4">&nbsp;</TableCell>
-                      <TableCell className="py-4 px-4">&nbsp;</TableCell>
-                    </TableRow>
-                  ))}
                 </TableBody>
               </Table>
             </div>
           )}
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <p className="text-sm text-muted-foreground">
-                Összesen {filteredSalaries.length} bejegyzés, {currentPage}. oldal / {totalPages}
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Előző
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Következő
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
+          <UnifiedPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredSalaries.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+          />
         </CardContent>
       </Card>
     </div>

@@ -311,3 +311,26 @@ All colors MUST be HSL.
     scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--primary) / 0.1);
   }
 }
+
+/* Compact Table Styling - for dense list views */
+@layer components {
+  .compact-table {
+    @apply text-sm;
+  }
+
+  .compact-table th {
+    @apply py-2 px-3 text-xs;
+  }
+
+  .compact-table td {
+    @apply py-1.5 px-3;
+  }
+
+  .compact-table tr {
+    @apply h-[40px];
+  }
+
+  .compact-table .empty-row {
+    @apply h-[40px];
+  }
+}

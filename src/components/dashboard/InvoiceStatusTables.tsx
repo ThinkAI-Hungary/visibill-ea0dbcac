@@ -133,7 +133,7 @@ const InvoiceStatusTables = () => {
 
     return (
       <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-        <Table>
+        <Table className="compact-table">
           <TableHeader>
             <TableRow>
               <TableHead className="min-w-[130px]">Számlaszám</TableHead>
