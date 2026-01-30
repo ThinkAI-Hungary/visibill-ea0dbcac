@@ -48,8 +48,8 @@ const IosToggle = React.forwardRef<HTMLButtonElement, IosToggleProps>(
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         className={cn(
-          // Base styles - compact dimensions
-          "relative inline-flex h-[22px] w-[56px] shrink-0 cursor-pointer items-center rounded-full",
+          // Base styles - compact dimensions with extra width for text
+          "relative inline-flex h-[22px] w-[66px] shrink-0 cursor-pointer items-center rounded-full",
           // Transition for smooth animation
           "transition-all duration-200 ease-in-out",
           // Background colors based on state - green for ON, orange for OFF
@@ -82,8 +82,8 @@ const IosToggle = React.forwardRef<HTMLButtonElement, IosToggleProps>(
             "pointer-events-none absolute block h-[16px] w-[16px] rounded-full bg-white shadow-sm",
             // Transition for slide animation
             "transition-transform duration-200 ease-in-out",
-            // Position based on checked state
-            checked ? "translate-x-[37px]" : "translate-x-[3px]",
+            // Position based on checked state - adjusted for wider toggle
+            checked ? "translate-x-[47px]" : "translate-x-[3px]",
           )}
         />
       </button>
