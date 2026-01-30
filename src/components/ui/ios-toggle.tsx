@@ -5,8 +5,8 @@ export interface IosToggleProps {
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
   disabled?: boolean;
-  label?: string;
-  labelPosition?: "left" | "right";
+  onLabel?: string;
+  offLabel?: string;
   className?: string;
   "aria-label"?: string;
 }
@@ -17,8 +17,8 @@ const IosToggle = React.forwardRef<HTMLButtonElement, IosToggleProps>(
       checked = false,
       onCheckedChange,
       disabled = false,
-      label,
-      labelPosition = "right",
+      onLabel = "Fizetve",
+      offLabel = "Nyitott",
       className,
       "aria-label": ariaLabel,
       ...props
@@ -38,26 +38,26 @@ const IosToggle = React.forwardRef<HTMLButtonElement, IosToggleProps>(
       }
     };
 
-    const toggle = (
+    return (
       <button
         ref={ref}
         role="switch"
         aria-checked={checked}
-        aria-label={ariaLabel || label}
+        aria-label={ariaLabel || (checked ? onLabel : offLabel)}
         disabled={disabled}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         className={cn(
-          // Base styles - iOS-style dimensions
-          "relative inline-flex h-[32px] w-[52px] shrink-0 cursor-pointer items-center rounded-full",
+          // Base styles - compact dimensions
+          "relative inline-flex h-[22px] w-[56px] shrink-0 cursor-pointer items-center rounded-full",
           // Transition for smooth animation
-          "transition-all duration-300 ease-in-out",
-          // Background colors based on state
+          "transition-all duration-200 ease-in-out",
+          // Background colors based on state - green for ON, orange for OFF
           checked
-            ? "bg-primary"
-            : "bg-muted-foreground/30",
+            ? "bg-success"
+            : "bg-warning",
           // Focus styles (accessible)
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
           // Hover effect
           !disabled && "hover:opacity-90",
           // Disabled state
@@ -66,39 +66,30 @@ const IosToggle = React.forwardRef<HTMLButtonElement, IosToggleProps>(
         )}
         {...props}
       >
+        {/* Label text inside the toggle */}
+        <span
+          className={cn(
+            "absolute inset-0 flex items-center text-[9px] font-semibold uppercase tracking-tight transition-opacity duration-200",
+            checked ? "justify-start pl-1.5 text-success-foreground" : "justify-end pr-1.5 text-warning-foreground"
+          )}
+        >
+          {checked ? onLabel : offLabel}
+        </span>
+        
         {/* The sliding thumb/knob */}
         <span
           className={cn(
-            // Thumb base styles
-            "pointer-events-none absolute block h-[26px] w-[26px] rounded-full bg-white shadow-lg",
-            // iOS-style shadow
-            "shadow-[0_2px_4px_rgba(0,0,0,0.2)]",
+            // Thumb base styles - smaller knob
+            "pointer-events-none absolute block h-[16px] w-[16px] rounded-full bg-white shadow-sm",
             // Transition for slide animation
-            "transition-transform duration-300 ease-in-out",
+            "transition-transform duration-200 ease-in-out",
             // Position based on checked state
             checked
-              ? "translate-x-[23px]"
+              ? "translate-x-[37px]"
               : "translate-x-[3px]"
           )}
         />
       </button>
-    );
-
-    if (!label) return toggle;
-
-    return (
-      <div className={cn("flex items-center gap-3", labelPosition === "left" && "flex-row-reverse")}>
-        {toggle}
-        <span
-          className={cn(
-            "text-sm font-medium select-none",
-            disabled ? "text-muted-foreground" : "text-foreground cursor-pointer"
-          )}
-          onClick={!disabled ? handleClick : undefined}
-        >
-          {label}
-        </span>
-      </div>
     );
   }
 );
