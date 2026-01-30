@@ -23,7 +23,7 @@ const IosToggle = React.forwardRef<HTMLButtonElement, IosToggleProps>(
       "aria-label": ariaLabel,
       ...props
     },
-    ref
+    ref,
   ) => {
     const handleClick = () => {
       if (!disabled && onCheckedChange) {
@@ -53,30 +53,28 @@ const IosToggle = React.forwardRef<HTMLButtonElement, IosToggleProps>(
           // Transition for smooth animation
           "transition-all duration-200 ease-in-out",
           // Background colors based on state - green for ON, orange for OFF
-          checked
-            ? "bg-success"
-            : "bg-warning",
+          checked ? "bg-success" : "bg-warning",
           // Focus styles (accessible)
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
           // Hover effect
           !disabled && "hover:opacity-90",
           // Disabled state
           disabled && "cursor-not-allowed opacity-50",
-          className
+          className,
         )}
         {...props}
       >
         {/* Label text - only show the label on the opposite side of the knob */}
         {checked ? (
-          <span className="absolute left-[4px] top-1/2 -translate-y-1/2 text-[8px] font-bold uppercase tracking-tight text-success-foreground">
+          <span className="absolute left-[6px] top-1/2 -translate-y-1/2 text-[8px] font-bold uppercase tracking-tight text-success-foreground">
             {onLabel}
           </span>
         ) : (
-          <span className="absolute right-[4px] top-1/2 -translate-y-1/2 text-[8px] font-bold uppercase tracking-tight text-warning-foreground">
+          <span className="absolute right-[6px] top-1/2 -translate-y-1/2 text-[8px] font-bold uppercase tracking-tight text-warning-foreground">
             {offLabel}
           </span>
         )}
-        
+
         {/* The sliding thumb/knob */}
         <span
           className={cn(
@@ -85,14 +83,12 @@ const IosToggle = React.forwardRef<HTMLButtonElement, IosToggleProps>(
             // Transition for slide animation
             "transition-transform duration-200 ease-in-out",
             // Position based on checked state
-            checked
-              ? "translate-x-[37px]"
-              : "translate-x-[3px]"
+            checked ? "translate-x-[37px]" : "translate-x-[3px]",
           )}
         />
       </button>
     );
-  }
+  },
 );
 
 IosToggle.displayName = "IosToggle";
