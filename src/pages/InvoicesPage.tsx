@@ -1013,7 +1013,7 @@ const InvoicesPage = () => {
 
   return (
     <div className="h-full bg-background">
-      <main className="w-full max-w-none px-6 py-4">
+      <main className="w-full max-w-none px-4 py-4">
         <Card>
           <CardHeader>
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -1265,6 +1265,16 @@ const InvoicesPage = () => {
                     </Button>
                   </div>
 
+                  {/* Top Pagination */}
+                  <UnifiedPagination
+                    currentPage={navCurrentPage}
+                    totalPages={navTotalPages}
+                    totalItems={filteredAndSortedNavInvoices.length}
+                    pageSize={navPageSize}
+                    onPageChange={setNavCurrentPage}
+                    onPageSizeChange={(size) => { setNavPageSize(size); setNavCurrentPage(1); }}
+                  />
+
                   {/* NAV Invoice Table */}
                   <div className="rounded-lg border border-border/50 overflow-x-auto">
                     <Table className="table-fixed compact-table">
@@ -1304,11 +1314,25 @@ const InvoicesPage = () => {
                               <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                           </TableHead>
-                          <TableHead className="font-semibold w-[14%]">Partner</TableHead>
+                          <TableHead className="font-semibold w-[11%]">Partner</TableHead>
                           <TableHead className="text-right font-semibold w-[9%]">Nettó</TableHead>
                           <TableHead className="text-right font-semibold w-[9%]">Bruttó</TableHead>
                           <TableHead className="text-right font-semibold w-[8%]">ÁFA</TableHead>
-                          <TableHead className="text-center font-semibold w-[7%]">Státusz</TableHead>
+                          <TableHead className="text-center font-semibold w-[8%]">
+                            <div className="flex items-center justify-center gap-1">
+                              Státusz
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Zöld = Kifizetve, Narancs = Nyitott</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          </TableHead>
                           {activeTab === 'INBOUND' && (
                             <TableHead className="text-center font-semibold w-[6%]">Beküldve</TableHead>
                           )}
@@ -1359,9 +1383,9 @@ const InvoicesPage = () => {
                                     : '-'}
                                 </TableCell>
                                 <TableCell>
-                                  <div className="flex items-center gap-2.5">
+                                  <div className="flex items-center gap-1.5">
                                     <div className={cn(
-                                      "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
+                                      "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0",
                                       getAvatarColor(partnerName)
                                     )}>
                                       {getInitials(partnerName)}
@@ -1369,8 +1393,8 @@ const InvoicesPage = () => {
                                     <CopyableCell
                                       value={partnerName}
                                       truncate
-                                      maxWidth="180px"
-                                      className="font-medium"
+                                      maxWidth="100px"
+                                      className="font-medium text-xs"
                                       ariaLabel={`${partnerName} másolása`}
                                     />
                                   </div>
@@ -1482,7 +1506,7 @@ const InvoicesPage = () => {
                     </Table>
                   </div>
 
-                  {/* Top Pagination */}
+                  {/* Bottom Pagination */}
                   <UnifiedPagination
                     currentPage={navCurrentPage}
                     totalPages={navTotalPages}
@@ -1603,6 +1627,16 @@ const InvoicesPage = () => {
                     Törlés
                   </Button>
                 </div>
+
+                {/* Top Pagination */}
+                <UnifiedPagination
+                  currentPage={submittedCurrentPage}
+                  totalPages={submittedTotalPages}
+                  totalItems={filteredAndSortedSubmittedInvoices.length}
+                  pageSize={submittedPageSize}
+                  onPageChange={setSubmittedCurrentPage}
+                  onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}
+                />
 
                 {/* Submitted Invoice Table */}
                 <div className="rounded-lg border border-border/50 overflow-x-auto">
@@ -1748,7 +1782,7 @@ const InvoicesPage = () => {
                   </Table>
                 </div>
 
-                {/* Submitted Pagination */}
+                {/* Bottom Pagination */}
                 <UnifiedPagination
                   currentPage={submittedCurrentPage}
                   totalPages={submittedTotalPages}
