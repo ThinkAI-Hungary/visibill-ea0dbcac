@@ -1273,6 +1273,7 @@ const InvoicesPage = () => {
                     pageSize={navPageSize}
                     onPageChange={setNavCurrentPage}
                     onPageSizeChange={(size) => { setNavPageSize(size); setNavCurrentPage(1); }}
+                    className="mb-3"
                   />
 
                   {/* NAV Invoice Table */}
@@ -1318,8 +1319,8 @@ const InvoicesPage = () => {
                           <TableHead className="text-right font-semibold w-[9%]">Nettó</TableHead>
                           <TableHead className="text-right font-semibold w-[9%]">Bruttó</TableHead>
                           <TableHead className="text-right font-semibold w-[8%]">ÁFA</TableHead>
-                          <TableHead className="text-center font-semibold w-[8%]">
-                            <div className="flex items-center justify-center gap-1">
+                          <TableHead className="font-semibold w-[8%]">
+                            <div className="flex items-center gap-1">
                               Státusz
                               <TooltipProvider>
                                 <Tooltip>
@@ -1334,13 +1335,13 @@ const InvoicesPage = () => {
                             </div>
                           </TableHead>
                           {activeTab === 'INBOUND' && (
-                            <TableHead className="text-center font-semibold w-[6%]">Beküldve</TableHead>
+                            <TableHead className="font-semibold w-[6%]">Beküldve</TableHead>
                           )}
                           {activeTab === 'INBOUND' && (
-                            <TableHead className="text-center font-semibold w-[10%]">Kategória</TableHead>
+                            <TableHead className="font-semibold w-[10%]">Kategória</TableHead>
                           )}
-                          <TableHead className="text-center font-semibold w-[10%]">Projekt</TableHead>
-                          <TableHead className="text-center font-semibold w-[5%]">Tételek</TableHead>
+                          <TableHead className="font-semibold w-[10%]">Projekt</TableHead>
+                          <TableHead className="font-semibold w-[5%]">Tételek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1514,6 +1515,7 @@ const InvoicesPage = () => {
                     pageSize={navPageSize}
                     onPageChange={setNavCurrentPage}
                     onPageSizeChange={(size) => { setNavPageSize(size); setNavCurrentPage(1); }}
+                    className="mt-3"
                   />
 
                   {/* Selection indicator */}
@@ -1636,6 +1638,7 @@ const InvoicesPage = () => {
                   pageSize={submittedPageSize}
                   onPageChange={setSubmittedCurrentPage}
                   onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}
+                  className="mb-3"
                 />
 
                 {/* Submitted Invoice Table */}
@@ -1790,6 +1793,7 @@ const InvoicesPage = () => {
                   pageSize={submittedPageSize}
                   onPageChange={setSubmittedCurrentPage}
                   onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}
+                  className="mt-3"
                 />
               </TabsContent>
             </Tabs>
