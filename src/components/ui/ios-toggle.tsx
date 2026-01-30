@@ -66,11 +66,13 @@ const IosToggle = React.forwardRef<HTMLButtonElement, IosToggleProps>(
         )}
         {...props}
       >
-        {/* Label text inside the toggle */}
+        {/* Label text inside the toggle - positioned to avoid knob overlap */}
         <span
           className={cn(
-            "absolute inset-0 flex items-center text-[9px] font-semibold uppercase tracking-tight transition-opacity duration-200",
-            checked ? "justify-start pl-1.5 text-success-foreground" : "justify-end pr-1.5 text-warning-foreground"
+            "absolute text-[9px] font-semibold uppercase tracking-tight transition-opacity duration-200",
+            checked 
+              ? "left-[5px] text-success-foreground" 
+              : "right-[5px] text-warning-foreground"
           )}
         >
           {checked ? onLabel : offLabel}

@@ -136,6 +136,7 @@ export function UnifiedPagination({
 
       {/* Right: Page size selector */}
       <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground whitespace-nowrap">Oldalméret</span>
         <Select
           value={pageSize.toString()}
           onValueChange={(value) => onPageSizeChange(Number(value))}
