@@ -24,6 +24,7 @@ import * as XLSX from 'xlsx';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import InvoiceFullEditDialog from '@/components/InvoiceFullEditDialog';
 import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 // Helper to generate initials from name
 const getInitials = (name: string): string => {
@@ -229,7 +230,8 @@ const InvoicesPage = () => {
   };
   
   // Pagination state
-  const ITEMS_PER_PAGE = 10;
+  const [navPageSize, setNavPageSize] = useState(20);
+  const [submittedPageSize, setSubmittedPageSize] = useState(20);
   const [navCurrentPage, setNavCurrentPage] = useState(1);
   const [submittedCurrentPage, setSubmittedCurrentPage] = useState(1);
   
@@ -672,11 +674,11 @@ const InvoicesPage = () => {
 
   // Paginated NAV invoices
   const paginatedNavInvoices = useMemo(() => {
-    const startIndex = (navCurrentPage - 1) * ITEMS_PER_PAGE;
-    return filteredAndSortedNavInvoices.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredAndSortedNavInvoices, navCurrentPage]);
+    const startIndex = (navCurrentPage - 1) * navPageSize;
+    return filteredAndSortedNavInvoices.slice(startIndex, startIndex + navPageSize);
+  }, [filteredAndSortedNavInvoices, navCurrentPage, navPageSize]);
 
-  const navTotalPages = Math.ceil(filteredAndSortedNavInvoices.length / ITEMS_PER_PAGE);
+  const navTotalPages = Math.ceil(filteredAndSortedNavInvoices.length / navPageSize);
 
   // Row selection helpers (must be after paginatedNavInvoices)
   const handleSelectAll = (checked: boolean) => {
@@ -758,11 +760,11 @@ const InvoicesPage = () => {
 
   // Paginated submitted invoices
   const paginatedSubmittedInvoices = useMemo(() => {
-    const startIndex = (submittedCurrentPage - 1) * ITEMS_PER_PAGE;
-    return filteredAndSortedSubmittedInvoices.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredAndSortedSubmittedInvoices, submittedCurrentPage]);
+    const startIndex = (submittedCurrentPage - 1) * submittedPageSize;
+    return filteredAndSortedSubmittedInvoices.slice(startIndex, startIndex + submittedPageSize);
+  }, [filteredAndSortedSubmittedInvoices, submittedCurrentPage, submittedPageSize]);
 
-  const submittedTotalPages = Math.ceil(filteredAndSortedSubmittedInvoices.length / ITEMS_PER_PAGE);
+  const submittedTotalPages = Math.ceil(filteredAndSortedSubmittedInvoices.length / submittedPageSize);
 
   // Reset page when filters change
   useEffect(() => {
@@ -1263,7 +1265,7 @@ const InvoicesPage = () => {
 
                   {/* NAV Invoice Table */}
                   <div className="rounded-lg border border-border/50 overflow-x-auto">
-                    <Table className="table-fixed">
+                    <Table className="table-fixed compact-table">
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
                           <TableHead className="w-[40px]">
@@ -1481,74 +1483,35 @@ const InvoicesPage = () => {
                             );
                           })
                         )}
-                        {/* Empty placeholder rows to maintain consistent table height */}
-                        {paginatedNavInvoices.length > 0 && Array.from({ length: Math.max(0, ITEMS_PER_PAGE - paginatedNavInvoices.length) }).map((_, index) => (
-                          <TableRow key={`empty-${index}`} className="h-[52px]">
-                            <TableCell>&nbsp;</TableCell>
-                            <TableCell>&nbsp;</TableCell>
-                            <TableCell>&nbsp;</TableCell>
-                            <TableCell>&nbsp;</TableCell>
-                            <TableCell>&nbsp;</TableCell>
-                            <TableCell>&nbsp;</TableCell>
-                            <TableCell>&nbsp;</TableCell>
-                            <TableCell>&nbsp;</TableCell>
-                            <TableCell>&nbsp;</TableCell>
-                            {activeTab === 'INBOUND' && <TableCell>&nbsp;</TableCell>}
-                            {activeTab === 'INBOUND' && <TableCell>&nbsp;</TableCell>}
-                            <TableCell>&nbsp;</TableCell>
-                            <TableCell>&nbsp;</TableCell>
-                          </TableRow>
-                        ))}
                       </TableBody>
                     </Table>
                   </div>
 
-                  {/* Selection indicator and NAV Pagination */}
-                  <div className="flex items-center justify-between px-2">
-                    <div className="flex items-center gap-4">
-                      {selectedInvoiceIds.size > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-primary">
-                          <span className="font-medium">{selectedInvoiceIds.size} számla kijelölve újrakategorizálásra</span>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="h-7 px-2 text-muted-foreground hover:text-foreground"
-                            onClick={() => setSelectedInvoiceIds(new Set())}
-                          >
-                            <X className="h-3 w-3 mr-1" />
-                            Törlés
-                          </Button>
-                        </div>
-                      )}
-                      {navTotalPages > 1 && (
-                        <p className="text-sm text-muted-foreground">
-                          Összesen {filteredAndSortedNavInvoices.length} számla, {navCurrentPage}. oldal / {navTotalPages}
-                        </p>
-                      )}
+                  {/* Top Pagination */}
+                  <UnifiedPagination
+                    currentPage={navCurrentPage}
+                    totalPages={navTotalPages}
+                    totalItems={filteredAndSortedNavInvoices.length}
+                    pageSize={navPageSize}
+                    onPageChange={setNavCurrentPage}
+                    onPageSizeChange={(size) => { setNavPageSize(size); setNavCurrentPage(1); }}
+                  />
+
+                  {/* Selection indicator */}
+                  {selectedInvoiceIds.size > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-primary px-2">
+                      <span className="font-medium">{selectedInvoiceIds.size} számla kijelölve újrakategorizálásra</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setSelectedInvoiceIds(new Set())}
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Törlés
+                      </Button>
                     </div>
-                    {navTotalPages > 1 && (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setNavCurrentPage(prev => Math.max(1, prev - 1))}
-                          disabled={navCurrentPage === 1}
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                          Előző
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setNavCurrentPage(prev => Math.min(navTotalPages, prev + 1))}
-                          disabled={navCurrentPage === navTotalPages}
-                        >
-                          Következő
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </TabsContent>
               )}
 
@@ -1648,7 +1611,7 @@ const InvoicesPage = () => {
 
                 {/* Submitted Invoice Table */}
                 <div className="rounded-lg border border-border/50 overflow-x-auto">
-                  <Table className="table-fixed">
+                  <Table className="table-fixed compact-table">
                     <TableHeader>
                       <TableRow className="bg-muted/30 hover:bg-muted/30">
                         <TableHead className="font-semibold min-w-[150px] w-[12%]">Számlaszám</TableHead>
@@ -1786,53 +1749,19 @@ const InvoicesPage = () => {
                           </TableRow>
                         ))
                       )}
-                      {/* Empty placeholder rows to maintain consistent table height */}
-                      {paginatedSubmittedInvoices.length > 0 && Array.from({ length: Math.max(0, ITEMS_PER_PAGE - paginatedSubmittedInvoices.length) }).map((_, index) => (
-                        <TableRow key={`empty-${index}`} className="h-[52px]">
-                          <TableCell>&nbsp;</TableCell>
-                          <TableCell>&nbsp;</TableCell>
-                          <TableCell>&nbsp;</TableCell>
-                          <TableCell>&nbsp;</TableCell>
-                          <TableCell>&nbsp;</TableCell>
-                          <TableCell>&nbsp;</TableCell>
-                          <TableCell>&nbsp;</TableCell>
-                          <TableCell>&nbsp;</TableCell>
-                          <TableCell>&nbsp;</TableCell>
-                          <TableCell>&nbsp;</TableCell>
-                        </TableRow>
-                      ))}
                     </TableBody>
                   </Table>
                 </div>
 
                 {/* Submitted Pagination */}
-                {submittedTotalPages > 1 && (
-                  <div className="flex items-center justify-between px-2">
-                    <p className="text-sm text-muted-foreground">
-                      Összesen {filteredAndSortedSubmittedInvoices.length} számla, {submittedCurrentPage}. oldal / {submittedTotalPages}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSubmittedCurrentPage(prev => Math.max(1, prev - 1))}
-                        disabled={submittedCurrentPage === 1}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        Előző
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSubmittedCurrentPage(prev => Math.min(submittedTotalPages, prev + 1))}
-                        disabled={submittedCurrentPage === submittedTotalPages}
-                      >
-                        Következő
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                <UnifiedPagination
+                  currentPage={submittedCurrentPage}
+                  totalPages={submittedTotalPages}
+                  totalItems={filteredAndSortedSubmittedInvoices.length}
+                  pageSize={submittedPageSize}
+                  onPageChange={setSubmittedCurrentPage}
+                  onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}
+                />
               </TabsContent>
             </Tabs>
           </CardContent>
