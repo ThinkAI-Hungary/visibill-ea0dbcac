@@ -25,6 +25,8 @@ import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import InvoiceFullEditDialog from '@/components/InvoiceFullEditDialog';
 import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import { CopyableCell } from '@/components/ui/copyable-cell';
+import { IosToggle } from '@/components/ui/ios-toggle';
 
 // Helper to generate initials from name
 const getInitials = (name: string): string => {
@@ -1339,18 +1341,12 @@ const InvoicesPage = () => {
                                   />
                                 </TableCell>
                                 <TableCell className="font-mono text-sm font-medium min-w-[150px]">
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <span className="block truncate max-w-[140px] cursor-help">
-                                          {invoice.invoice_number}
-                                        </span>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p className="font-mono">{invoice.invoice_number}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
+                                  <CopyableCell
+                                    value={invoice.invoice_number}
+                                    truncate
+                                    maxWidth="140px"
+                                    ariaLabel={`${invoice.invoice_number} számlaszám másolása`}
+                                  />
                                 </TableCell>
                                 <TableCell className="text-muted-foreground">
                                   {invoice.invoice_issue_date 
@@ -1363,53 +1359,52 @@ const InvoicesPage = () => {
                                     : '-'}
                                 </TableCell>
                                 <TableCell>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <div className="flex items-center gap-2.5 cursor-help">
-                                          <div className={cn(
-                                            "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
-                                            getAvatarColor(partnerName)
-                                          )}>
-                                            {getInitials(partnerName)}
-                                          </div>
-                                          <span className="font-medium truncate max-w-[180px]">{partnerName}</span>
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p className="font-medium">{partnerName}</p>
-                                        <p className="text-xs text-muted-foreground">Adószám: {partnerTaxNumber || '-'}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
+                                  <div className="flex items-center gap-2.5">
+                                    <div className={cn(
+                                      "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
+                                      getAvatarColor(partnerName)
+                                    )}>
+                                      {getInitials(partnerName)}
+                                    </div>
+                                    <CopyableCell
+                                      value={partnerName}
+                                      truncate
+                                      maxWidth="180px"
+                                      className="font-medium"
+                                      ariaLabel={`${partnerName} másolása`}
+                                    />
+                                  </div>
                                 </TableCell>
                                 <TableCell className="text-right font-mono tabular-nums">
-                                  {formatCurrency(invoice.invoice_net_amount || 0, invoice.currency || 'HUF')}
+                                  <CopyableCell
+                                    value={(invoice.invoice_net_amount || 0).toString()}
+                                    displayValue={formatCurrency(invoice.invoice_net_amount || 0, invoice.currency || 'HUF')}
+                                    className="justify-end"
+                                    ariaLabel="Nettó összeg másolása"
+                                  />
                                 </TableCell>
                                 <TableCell className="text-right font-mono tabular-nums font-medium">
-                                  {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
+                                  <CopyableCell
+                                    value={(invoice.invoice_gross_amount || 0).toString()}
+                                    displayValue={formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
+                                    className="justify-end"
+                                    ariaLabel="Bruttó összeg másolása"
+                                  />
                                 </TableCell>
                                 <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
-                                  {formatCurrency(invoice.invoice_vat_amount || 0, invoice.currency || 'HUF')}
+                                  <CopyableCell
+                                    value={(invoice.invoice_vat_amount || 0).toString()}
+                                    displayValue={formatCurrency(invoice.invoice_vat_amount || 0, invoice.currency || 'HUF')}
+                                    className="justify-end"
+                                    ariaLabel="ÁFA összeg másolása"
+                                  />
                                 </TableCell>
                                 <TableCell className="text-center">
-                                  {invoice.paid === true ? (
-                                    <Badge 
-                                      variant="outline" 
-                                      className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 cursor-pointer hover:bg-emerald-500/20"
-                                      onClick={() => handleTogglePaid(invoice)}
-                                    >
-                                      Kifizetve
-                                    </Badge>
-                                  ) : (
-                                    <Badge 
-                                      variant="outline" 
-                                      className="bg-amber-500/10 text-amber-500 border-amber-500/20 cursor-pointer hover:bg-amber-500/20"
-                                      onClick={() => handleTogglePaid(invoice)}
-                                    >
-                                      Nyitott
-                                    </Badge>
-                                  )}
+                                  <IosToggle
+                                    checked={invoice.paid === true}
+                                    onCheckedChange={() => handleTogglePaid(invoice)}
+                                    aria-label={invoice.paid ? 'Számla fizetettnek jelölve' : 'Számla nyitottnak jelölve'}
+                                  />
                                 </TableCell>
                                 {activeTab === 'INBOUND' && (
                                   <TableCell className="text-center">
