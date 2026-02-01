@@ -46,8 +46,8 @@ serve(async (req) => {
       .eq('company_id', company_id)
       .maybeSingle();
 
-    if (existingAlias) {
-      // Return existing alias
+    // Return existing alias only if it has a valid (non-empty) alias_email
+    if (existingAlias && existingAlias.alias_email && existingAlias.alias_email.trim() !== '') {
       return new Response(
         JSON.stringify({ alias: existingAlias }),
         {
@@ -56,6 +56,10 @@ serve(async (req) => {
         }
       );
     }
+
+    // If alias record exists but alias_email is empty, we'll update it
+    const existingAliasId = existingAlias?.id;
+    const existingMailgunRouteId = existingAlias?.mailgun_route_id;
 
     // Get Mailgun credentials
     const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY');
@@ -136,20 +140,45 @@ serve(async (req) => {
     const routeData = await routeResponse.json();
     console.log('Mailgun route created:', routeData);
 
-    // Store in database with company_id
-    const { data: alias, error: dbError } = await supabase
-      .from('email_aliases')
-      .insert({
-        user_id: user.id,
-        alias_email: aliasEmail,
-        company_name,
-        company_id,
-        status: 'active',
-        mailgun_route_id: routeData.route?.id,
-        verified_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
+    // Store in database with company_id (update if exists with empty alias, otherwise insert)
+    let alias;
+    let dbError;
+
+    if (existingAliasId) {
+      // Update existing record with empty alias_email
+      const result = await supabase
+        .from('email_aliases')
+        .update({
+          alias_email: aliasEmail,
+          company_name,
+          status: 'active',
+          mailgun_route_id: routeData.route?.id,
+          verified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingAliasId)
+        .select()
+        .single();
+      alias = result.data;
+      dbError = result.error;
+    } else {
+      // Insert new record
+      const result = await supabase
+        .from('email_aliases')
+        .insert({
+          user_id: user.id,
+          alias_email: aliasEmail,
+          company_name,
+          company_id,
+          status: 'active',
+          mailgun_route_id: routeData.route?.id,
+          verified_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      alias = result.data;
+      dbError = result.error;
+    }
 
     if (dbError) {
       console.error('Database error:', dbError);
