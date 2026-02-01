@@ -671,7 +671,6 @@ export type Database = {
           submitted: boolean | null
           supplier_address: string | null
           supplier_name: string | null
-          supplier_partner_id: string | null
           supplier_tax_number: string | null
           user_id: string | null
         }
@@ -702,7 +701,6 @@ export type Database = {
           submitted?: boolean | null
           supplier_address?: string | null
           supplier_name?: string | null
-          supplier_partner_id?: string | null
           supplier_tax_number?: string | null
           user_id?: string | null
         }
@@ -733,7 +731,6 @@ export type Database = {
           submitted?: boolean | null
           supplier_address?: string | null
           supplier_name?: string | null
-          supplier_partner_id?: string | null
           supplier_tax_number?: string | null
           user_id?: string | null
         }
@@ -757,13 +754,6 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nav_invoices_supplier_partner_id_fkey"
-            columns: ["supplier_partner_id"]
-            isOneToOne: false
-            referencedRelation: "partners"
             referencedColumns: ["id"]
           },
         ]
@@ -868,7 +858,6 @@ export type Database = {
           address: string | null
           company_id: string | null
           created_at: string
-          default_project_id: string | null
           id: string
           name: string
           partner_type: string
@@ -880,7 +869,6 @@ export type Database = {
           address?: string | null
           company_id?: string | null
           created_at?: string
-          default_project_id?: string | null
           id?: string
           name: string
           partner_type?: string
@@ -892,7 +880,6 @@ export type Database = {
           address?: string | null
           company_id?: string | null
           created_at?: string
-          default_project_id?: string | null
           id?: string
           name?: string
           partner_type?: string
@@ -906,13 +893,6 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "partners_default_project_id_fkey"
-            columns: ["default_project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -1571,10 +1551,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      assign_supplier_default_projects: {
-        Args: { p_company_id: string }
-        Returns: number
-      }
       get_invoice_aggregates: {
         Args: { p_company_id: string; p_date_from: string; p_date_to: string }
         Returns: {

@@ -808,20 +808,7 @@ const InvoicesPage = () => {
         .update({ project_id: projectId === 'none' ? null : projectId })
         .eq('id', invoiceId);
 
-      if (error) {
-        // Handle the custom error from the trigger - now includes both ID and name
-        if (error.message?.includes('INVOICE_ALREADY_ASSIGNED::')) {
-          const parts = error.message.split('::');
-          // parts[1] = project_id, parts[2] = project_name
-          const existingProjectName = parts[2] || parts[1] || 'Ismeretlen projekt';
-          
-          toast.error(`Ez a számla már hozzá van rendelve`, {
-            description: `A számla a "${existingProjectName}" projekthez tartozik. Először távolítsd el onnan.`
-          });
-          return;
-        }
-        throw error;
-      }
+      if (error) throw error;
 
       setInvoices(prev => prev.map(inv => 
         inv.id === invoiceId ? { ...inv, project_id: projectId === 'none' ? null : projectId } : inv

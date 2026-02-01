@@ -369,15 +369,6 @@ Deno.serve(async (req) => {
     if (allInvoices.length > 0) {
       console.log('[NAV-QUERY-OUTBOUND] Storing invoices in database...');
       
-      // First, cache partners and get partner ID mapping
-      const partnerIdMap = await cachePartnersFromInvoices(
-        serviceClient,
-        user.id,
-        companyId,
-        allInvoices,
-        invoiceDirection
-      );
-      
       const invoicesToInsert = allInvoices.map(inv => ({
         user_id: user.id,
         company_id: companyId,
@@ -396,11 +387,7 @@ Deno.serve(async (req) => {
         fetched_at: new Date().toISOString(),
         // Include names from digest if available
         supplier_name: inv.supplierName || null,
-        customer_name: inv.customerName || null,
-        // Set supplier_partner_id for INBOUND invoices
-        supplier_partner_id: invoiceDirection === 'INBOUND' && inv.supplierTaxNumber
-          ? partnerIdMap.get(inv.supplierTaxNumber) || null
-          : null
+        customer_name: inv.customerName || null
       }));
 
       const { error: insertError } = await serviceClient
@@ -438,20 +425,14 @@ Deno.serve(async (req) => {
 
       console.log('[NAV-QUERY-OUTBOUND] Invoices stored successfully');
 
-      // For INBOUND invoices, assign default projects from suppliers
-      if (invoiceDirection === 'INBOUND') {
-        console.log('[NAV-QUERY-OUTBOUND] Assigning supplier default projects...');
-        const { data: assignedCount, error: projectAssignError } = await serviceClient.rpc(
-          'assign_supplier_default_projects',
-          { p_company_id: companyId }
-        );
-        
-        if (projectAssignError) {
-          console.error('[NAV-QUERY-OUTBOUND] Error assigning default projects:', projectAssignError);
-        } else {
-          console.log(`[NAV-QUERY-OUTBOUND] Assigned default projects to ${assignedCount || 0} invoices`);
-        }
-      }
+      // Cache partners from invoices
+      await cachePartnersFromInvoices(
+        serviceClient,
+        user.id,
+        companyId,
+        allInvoices,
+        invoiceDirection
+      );
     }
 
     // Fetch detailed invoice data for invoices without details (incremental)
@@ -1107,16 +1088,13 @@ async function sha512Hash(input: string): Promise<string> {
 }
 
 // Cache partners from NAV invoices to the partners table
-// Returns a Map of tax_number -> partner_id for use in setting supplier_partner_id
 async function cachePartnersFromInvoices(
   supabase: any,
   userId: string,
   companyId: string,
   invoices: any[],
   direction: 'OUTBOUND' | 'INBOUND'
-): Promise<Map<string, string>> {
-  const partnerIdMap = new Map<string, string>();
-  
+) {
   try {
     // Collect unique partners from invoices
     const partnersMap = new Map<string, { taxNumber: string; name: string; type: 'customer' | 'supplier' }>();
@@ -1147,7 +1125,7 @@ async function cachePartnersFromInvoices(
 
     if (partnersMap.size === 0) {
       console.log('[NAV-QUERY-OUTBOUND] No new partners to cache from NAV data');
-      return partnerIdMap;
+      return;
     }
 
     // Look up addresses from nav_invoices for these partners
@@ -1196,26 +1174,10 @@ async function cachePartnersFromInvoices(
     } else {
       console.log(`[NAV-QUERY-OUTBOUND] Cached ${partnersMap.size} partners from ${direction} invoices (${addressMap.size} with addresses)`);
     }
-
-    // Fetch partner IDs for the tax numbers we just upserted
-    const { data: partnerIds } = await supabase
-      .from('partners')
-      .select('id, tax_number')
-      .eq('company_id', companyId)
-      .in('tax_number', taxNumbers);
-
-    if (partnerIds) {
-      for (const p of partnerIds) {
-        partnerIdMap.set(p.tax_number, p.id);
-      }
-    }
-
   } catch (error) {
     // Don't fail the sync if partner caching fails
     console.error('[NAV-QUERY-OUTBOUND] Error in partner caching:', error);
   }
-  
-  return partnerIdMap;
 }
 
 // Update partner addresses from nav_invoices after details are fetched

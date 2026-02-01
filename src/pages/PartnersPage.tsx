@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -55,13 +54,6 @@ interface Partner {
   user_id: string;
   created_at: string;
   updated_at: string;
-  default_project_id: string | null;
-  projects?: { name: string } | null;
-}
-
-interface Project {
-  id: string;
-  name: string;
 }
 
 // Helper to decode HTML entities
@@ -114,25 +106,9 @@ export default function PartnersPage() {
     tax_number: "",
     address: "",
     partner_type: "both",
-    default_project_id: null as string | null,
   });
 
-  // Fetch projects for default project selector
-  const { data: projects } = useQuery({
-    queryKey: ["projects", selectedCompany?.id],
-    queryFn: async () => {
-      if (!selectedCompany?.id) return [];
-      const { data } = await supabase
-        .from("projects")
-        .select("id, name")
-        .eq("company_id", selectedCompany.id)
-        .order("name");
-      return (data || []) as Project[];
-    },
-    enabled: !!selectedCompany?.id,
-  });
-
-  // Fetch partners - company scoped (required) with project join
+  // Fetch partners - company scoped (required)
   const { data: partners, isLoading } = useQuery({
     queryKey: ["partners", user?.id, selectedCompany?.id],
     queryFn: async () => {
@@ -140,7 +116,7 @@ export default function PartnersPage() {
       
       const { data, error } = await supabase
         .from("partners")
-        .select("*, projects:default_project_id(name)")
+        .select("*")
         .eq("user_id", user.id)
         .eq("company_id", selectedCompany.id)
         .order("name", { ascending: true });
@@ -163,7 +139,6 @@ export default function PartnersPage() {
         partner_type: data.partner_type,
         user_id: user.id,
         company_id: selectedCompany?.id || null,
-        default_project_id: data.default_project_id,
       };
 
       if (data.id) {
@@ -277,7 +252,6 @@ export default function PartnersPage() {
         tax_number: partner.tax_number,
         address: partner.address || "",
         partner_type: partner.partner_type,
-        default_project_id: partner.default_project_id,
       });
     } else {
       setEditingPartner(null);
@@ -286,7 +260,6 @@ export default function PartnersPage() {
         tax_number: "",
         address: "",
         partner_type: "both",
-        default_project_id: null,
       });
     }
     setIsDialogOpen(true);
@@ -300,7 +273,6 @@ export default function PartnersPage() {
       tax_number: "",
       address: "",
       partner_type: "both",
-      default_project_id: null,
     });
   };
 
@@ -408,20 +380,17 @@ export default function PartnersPage() {
                 <Table className="table-fixed compact-table">
                   <TableHeader>
                     <TableRow className="bg-muted/30 hover:bg-muted/30">
-                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[24%]">
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[28%]">
                         Név
                       </TableHead>
-                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[14%]">
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[18%]">
                         Adószám
                       </TableHead>
-                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[18%]">
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[24%]">
                         Cím
                       </TableHead>
-                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[12%]">
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[14%]">
                         Típus
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[16%]">
-                        Alap. projekt
                       </TableHead>
                       <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[16%]">
                         Műveletek
@@ -488,15 +457,6 @@ export default function PartnersPage() {
                               <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground">
                                 Mindkettő
                               </span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {partner.projects?.name ? (
-                              <Badge variant="outline" className="text-xs">
-                                {partner.projects.name}
-                              </Badge>
-                            ) : (
-                              <span className="text-xs text-muted-foreground/50">—</span>
                             )}
                           </TableCell>
                           <TableCell className="text-right">
@@ -595,28 +555,6 @@ export default function PartnersPage() {
                 </SelectContent>
               </Select>
             </div>
-            {(formData.partner_type === 'supplier' || formData.partner_type === 'both') && (
-              <div className="space-y-2">
-                <Label htmlFor="default_project">Alapértelmezett projekt (opcionális)</Label>
-                <Select
-                  value={formData.default_project_id || "none"}
-                  onValueChange={(value) => setFormData({ ...formData, default_project_id: value === "none" ? null : value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Nincs" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Nincs</SelectItem>
-                    {projects?.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Ha beállítod, az ettől a szállítótól érkező új számlák automatikusan ehhez a projekthez rendelődnek.
-                </p>
-              </div>
-            )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
                 Mégse

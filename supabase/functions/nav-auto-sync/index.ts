@@ -388,9 +388,6 @@ async function syncInvoices(
 
     // Upsert invoices to database (details_fetched defaults to false for new records)
     if (allInvoices.length > 0) {
-      // First, cache partners and get partner ID mapping
-      const partnerIdMap = await cachePartnersFromInvoices(supabase, userId, companyId, allInvoices, direction);
-      
       const invoicesToInsert = allInvoices.map(inv => ({
         user_id: userId,
         company_id: companyId,
@@ -409,11 +406,7 @@ async function syncInvoices(
         fetched_at: new Date().toISOString(),
         // Include names from digest if available
         supplier_name: inv.supplierName || null,
-        customer_name: inv.customerName || null,
-        // Set supplier_partner_id for INBOUND invoices
-        supplier_partner_id: direction === 'INBOUND' && inv.supplierTaxNumber
-          ? partnerIdMap.get(inv.supplierTaxNumber) || null
-          : null
+        customer_name: inv.customerName || null
       }));
 
       const { error: upsertError } = await supabase
@@ -427,20 +420,8 @@ async function syncInvoices(
         throw new Error(`Failed to upsert invoices: ${upsertError.message}`);
       }
 
-      // For INBOUND invoices, assign default projects from suppliers
-      if (direction === 'INBOUND') {
-        console.log('🎯 Assigning supplier default projects...');
-        const { data: assignedCount, error: projectAssignError } = await supabase.rpc(
-          'assign_supplier_default_projects',
-          { p_company_id: companyId }
-        );
-        
-        if (projectAssignError) {
-          console.error('Error assigning default projects:', projectAssignError);
-        } else {
-          console.log(`🎯 Assigned default projects to ${assignedCount || 0} invoices`);
-        }
-      }
+      // Cache partners from NAV data
+      await cachePartnersFromInvoices(supabase, userId, companyId, allInvoices, direction);
     }
 
     // Fetch details for invoices that don't have them yet (incremental)
@@ -1102,17 +1083,13 @@ function parseInvoicesFromXML(xml: string): any[] {
   return invoices;
 }
 
-// Cache partners from NAV invoices to the partners table
-// Returns a Map of tax_number -> partner_id for use in setting supplier_partner_id
 async function cachePartnersFromInvoices(
   supabase: any,
   userId: string,
   companyId: string,
   invoices: any[],
   direction: 'OUTBOUND' | 'INBOUND'
-): Promise<Map<string, string>> {
-  const partnerIdMap = new Map<string, string>();
-  
+) {
   try {
     // Collect unique partners from invoices
     const partnersMap = new Map<string, { taxNumber: string; name: string; type: 'customer' | 'supplier' }>();
@@ -1143,7 +1120,7 @@ async function cachePartnersFromInvoices(
 
     if (partnersMap.size === 0) {
       console.log('📋 No new partners to cache from NAV data');
-      return partnerIdMap;
+      return;
     }
 
     // Upsert partners to database
@@ -1167,27 +1144,10 @@ async function cachePartnersFromInvoices(
     } else {
       console.log(`📋 Cached ${partnersMap.size} partners from ${direction} invoices`);
     }
-
-    // Fetch partner IDs for the tax numbers we just upserted
-    const taxNumbers = Array.from(partnersMap.keys());
-    const { data: partnerIds } = await supabase
-      .from('partners')
-      .select('id, tax_number')
-      .eq('company_id', companyId)
-      .in('tax_number', taxNumbers);
-
-    if (partnerIds) {
-      for (const p of partnerIds) {
-        partnerIdMap.set(p.tax_number, p.id);
-      }
-    }
-
   } catch (error) {
     // Don't fail the sync if partner caching fails
     console.error('Error in partner caching:', error);
   }
-  
-  return partnerIdMap;
 }
 
 function extractTag(xml: string, tagName: string): string {

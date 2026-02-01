@@ -106,11 +106,9 @@ export function SupplierInvoiceAssignment({
         .eq('id', invoiceId);
 
       if (error) {
-        // Handle the custom error from the trigger - now includes both ID and name
+        // Handle the custom error from the trigger
         if (error.message?.includes('INVOICE_ALREADY_ASSIGNED::')) {
-          const parts = error.message.split('::');
-          // parts[1] = project_id, parts[2] = project_name
-          const existingProjectName = parts[2] || parts[1] || 'Ismeretlen projekt';
+          const existingProjectName = error.message.split('::')[1];
           toast({
             variant: 'destructive',
             title: 'Hozzárendelés sikertelen',
