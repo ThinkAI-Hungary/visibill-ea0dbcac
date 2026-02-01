@@ -1001,6 +1001,7 @@ export type Database = {
           id: string
           name: string
           project_code: string | null
+          project_type: string
           start_date: string | null
           status: string
           updated_at: string
@@ -1016,6 +1017,7 @@ export type Database = {
           id?: string
           name: string
           project_code?: string | null
+          project_type?: string
           start_date?: string | null
           status?: string
           updated_at?: string
@@ -1031,6 +1033,7 @@ export type Database = {
           id?: string
           name?: string
           project_code?: string | null
+          project_type?: string
           start_date?: string | null
           status?: string
           updated_at?: string

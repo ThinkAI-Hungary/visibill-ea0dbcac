@@ -11,11 +11,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus, Hash } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
+import { PartnerCombobox } from '@/components/PartnerCombobox';
+import { SupplierInvoiceAssignment } from '@/components/SupplierInvoiceAssignment';
+import { CopyableCell } from '@/components/ui/copyable-cell';
 
 interface Project {
   id?: string;
@@ -26,6 +29,8 @@ interface Project {
   budget?: number;
   start_date?: string;
   end_date?: string;
+  project_code?: string;
+  project_type: 'one_time' | 'recurring';
 }
 
 interface ProjectFinancials {
@@ -54,6 +59,7 @@ const Projects = () => {
     budget: undefined,
     start_date: undefined,
     end_date: undefined,
+    project_type: 'one_time',
   };
 
   useEffect(() => {
@@ -71,7 +77,10 @@ const Projects = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProjects((data || []) as Project[]);
+      setProjects((data || []).map(p => ({
+        ...p,
+        project_type: p.project_type || 'one_time'
+      })) as Project[]);
 
       // Fetch project financials from nav_invoices
       if (selectedCompany) {
@@ -155,6 +164,7 @@ const Projects = () => {
             budget: editingProject.budget,
             start_date: editingProject.start_date,
             end_date: editingProject.end_date,
+            project_type: editingProject.project_type,
           })
           .eq('id', editingProject.id)
           .eq('user_id', user.id);
@@ -166,7 +176,7 @@ const Projects = () => {
           description: 'A változtatások sikeresen mentve.'
         });
       } else {
-        // Create new project
+        // Create new project (project_code is generated server-side)
         const { error } = await supabase
           .from('projects')
           .insert({
@@ -178,6 +188,7 @@ const Projects = () => {
             budget: editingProject.budget,
             start_date: editingProject.start_date,
             end_date: editingProject.end_date,
+            project_type: editingProject.project_type,
           });
 
         if (error) throw error;
@@ -255,6 +266,10 @@ const Projects = () => {
     return variants[status as keyof typeof variants] || 'default';
   };
 
+  const getProjectTypeLabel = (type: string) => {
+    return type === 'recurring' ? 'Ismétlődő' : 'Egyszeri';
+  };
+
   if (initialLoading) {
     return <LoadingSpinner message="Projektek betöltése..." />;
   }
@@ -303,39 +318,72 @@ const Projects = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Projekt neve *</Label>
-                    <Input
-                      id="name"
-                      placeholder="pl. Weboldal fejlesztés"
-                      value={editingProject?.name || ''}
-                      onChange={(e) => setEditingProject(prev => prev ? { ...prev, name: e.target.value } : null)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="client">Ügyfél neve *</Label>
-                    <Input
-                      id="client"
-                      placeholder="pl. Példa Kft."
-                      value={editingProject?.client_name || ''}
-                      onChange={(e) => setEditingProject(prev => prev ? { ...prev, client_name: e.target.value } : null)}
-                    />
-                  </div>
-                </div>
-
+                {/* Project name */}
                 <div className="space-y-2">
-                  <Label htmlFor="description">Leírás</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Projekt részletei..."
-                    rows={3}
-                    value={editingProject?.description || ''}
-                    onChange={(e) => setEditingProject(prev => prev ? { ...prev, description: e.target.value } : null)}
+                  <Label htmlFor="name">Projekt neve *</Label>
+                  <Input
+                    id="name"
+                    placeholder="pl. Weboldal fejlesztés"
+                    value={editingProject?.name || ''}
+                    onChange={(e) => setEditingProject(prev => prev ? { ...prev, name: e.target.value } : null)}
                   />
                 </div>
 
+                {/* Client selection with PartnerCombobox */}
+                <div className="space-y-2">
+                  <Label htmlFor="client">Ügyfél *</Label>
+                  <PartnerCombobox
+                    value={editingProject?.client_name || ''}
+                    onChange={(name) => setEditingProject(prev => prev ? { ...prev, client_name: name } : null)}
+                    companyId={selectedCompany?.id}
+                    placeholder="Partner keresése..."
+                  />
+                  <p className="text-xs text-muted-foreground flex items-start gap-1">
+                    <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                    Ha nem látod a partnert a listában, akkor küldj be/tölts fel egy olyan számlát, amin az új partner szerepel.
+                  </p>
+                </div>
+
+                {/* Project code (read-only), Type, Status */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Project Code - only show for existing projects */}
+                  <div className="space-y-2">
+                    <Label>Projektkód</Label>
+                    {editingProject?.project_code ? (
+                      <div className="flex items-center gap-2 h-10 px-3 rounded-md border bg-muted">
+                        <Hash className="h-4 w-4 text-muted-foreground" />
+                        <CopyableCell 
+                          value={editingProject.project_code} 
+                          className="font-mono text-sm"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center h-10 px-3 rounded-md border bg-muted text-muted-foreground text-sm">
+                        Mentés után generálódik
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Project Type */}
+                  <div className="space-y-2">
+                    <Label htmlFor="project_type">Típus</Label>
+                    <Select
+                      value={editingProject?.project_type || 'one_time'}
+                      onValueChange={(value: 'one_time' | 'recurring') => 
+                        setEditingProject(prev => prev ? { ...prev, project_type: value } : null)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="one_time">Egyszeri</SelectItem>
+                        <SelectItem value="recurring">Ismétlődő</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Status */}
                   <div className="space-y-2">
                     <Label htmlFor="status">Státusz</Label>
                     <Select
@@ -353,7 +401,10 @@ const Projects = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
 
+                {/* Budget and Dates */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="budget">Költségvetés (HUF)</Label>
                     <Input
@@ -374,7 +425,39 @@ const Projects = () => {
                       onChange={(e) => setEditingProject(prev => prev ? { ...prev, start_date: e.target.value } : null)}
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="end_date">Befejezés dátuma</Label>
+                    <Input
+                      id="end_date"
+                      type="date"
+                      value={editingProject?.end_date || ''}
+                      onChange={(e) => setEditingProject(prev => prev ? { ...prev, end_date: e.target.value } : null)}
+                    />
+                  </div>
                 </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="description">Leírás</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Projekt részletei..."
+                    rows={3}
+                    value={editingProject?.description || ''}
+                    onChange={(e) => setEditingProject(prev => prev ? { ...prev, description: e.target.value } : null)}
+                  />
+                </div>
+
+                {/* Supplier Invoice Assignment - only for existing projects */}
+                {editingProject?.id && selectedCompany && (
+                  <SupplierInvoiceAssignment
+                    projectId={editingProject.id}
+                    projectName={editingProject.name}
+                    companyId={selectedCompany.id}
+                    onAssignmentChange={loadProjects}
+                  />
+                )}
 
                 <div className="flex gap-2 justify-end">
                   <Button
@@ -432,10 +515,24 @@ const Projects = () => {
                           {project.client_name}
                         </CardDescription>
                       </div>
-                      <Badge variant={getStatusVariant(project.status)}>
-                        {getStatusLabel(project.status)}
-                      </Badge>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge variant={getStatusVariant(project.status)}>
+                          {getStatusLabel(project.status)}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {getProjectTypeLabel(project.project_type)}
+                        </Badge>
+                      </div>
                     </div>
+                    {/* Project code display */}
+                    {project.project_code && (
+                      <div className="mt-2">
+                        <CopyableCell 
+                          value={project.project_code}
+                          className="font-mono text-xs text-muted-foreground"
+                        />
+                      </div>
+                    )}
                   </CardHeader>
                   <CardContent className="flex-1 space-y-4">
                     {project.description && (
