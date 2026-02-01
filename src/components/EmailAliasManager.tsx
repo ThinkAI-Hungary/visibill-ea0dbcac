@@ -46,10 +46,10 @@ const EmailAliasManager = () => {
 
       if (error) throw error;
 
-      if (data) {
+      if (data && data.alias_email && data.alias_email.trim() !== '') {
         setAlias(data);
       } else {
-        // No alias exists, generate one
+        // No alias exists or alias_email is empty, generate one
         await generateAlias();
       }
     } catch (error: any) {
