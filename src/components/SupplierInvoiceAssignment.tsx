@@ -19,6 +19,7 @@ interface Invoice {
   invoice_issue_date: string | null;
   project_id: string | null;
   currency: string | null;
+  project_name: string | null;
 }
 
 interface SupplierInvoiceAssignmentProps {
@@ -52,17 +53,38 @@ export function SupplierInvoiceAssignment({
 
     setLoading(true);
     try {
-      // Get all INBOUND invoices: unassigned OR assigned to this project
+      // Get all INBOUND invoices with project names via join
       const { data, error } = await supabase
         .from('nav_invoices')
-        .select('id, invoice_number, supplier_name, invoice_gross_amount, invoice_issue_date, project_id, currency')
+        .select(`
+          id, 
+          invoice_number, 
+          supplier_name, 
+          invoice_gross_amount, 
+          invoice_issue_date, 
+          project_id, 
+          currency,
+          projects:project_id (name)
+        `)
         .eq('company_id', companyId)
         .eq('invoice_direction', 'INBOUND')
-        .or(`project_id.is.null,project_id.eq.${projectId}`)
         .order('invoice_issue_date', { ascending: false });
 
       if (error) throw error;
-      setInvoices(data || []);
+      
+      // Transform to flatten project name
+      const transformedData = (data || []).map((inv: any) => ({
+        id: inv.id,
+        invoice_number: inv.invoice_number,
+        supplier_name: inv.supplier_name,
+        invoice_gross_amount: inv.invoice_gross_amount,
+        invoice_issue_date: inv.invoice_issue_date,
+        project_id: inv.project_id,
+        currency: inv.currency,
+        project_name: inv.projects?.name || null,
+      }));
+      
+      setInvoices(transformedData);
     } catch (error) {
       console.error('Error loading invoices:', error);
       toast({
@@ -153,8 +175,20 @@ export function SupplierInvoiceAssignment({
     );
   }, [invoices, searchTerm]);
 
-  const assignedInvoices = filteredInvoices.filter((inv) => inv.project_id === projectId);
-  const unassignedInvoices = filteredInvoices.filter((inv) => inv.project_id === null);
+  // Categorize invoices
+  const assignedToThis = filteredInvoices.filter((inv) => inv.project_id === projectId);
+  const unassigned = filteredInvoices.filter((inv) => inv.project_id === null);
+  const assignedToOther = filteredInvoices.filter(
+    (inv) => inv.project_id !== null && inv.project_id !== projectId
+  );
+
+  const handleAssignConflicting = (invoice: Invoice) => {
+    toast({
+      variant: 'destructive',
+      title: 'Hozzárendelés sikertelen',
+      description: `Ez a számla már a(z) "${invoice.project_name}" projekthez van rendelve.`,
+    });
+  };
 
   if (loading) {
     return (
@@ -182,13 +216,13 @@ export function SupplierInvoiceAssignment({
       <ScrollArea className="h-[300px]">
         <div className="p-4 space-y-4">
           {/* Unassigned invoices */}
-          {unassignedInvoices.length > 0 && (
+          {unassigned.length > 0 && (
             <div>
               <h5 className="text-sm font-medium text-muted-foreground mb-2">
-                Hozzárendelhető számlák ({unassignedInvoices.length})
+                Hozzárendelhető számlák ({unassigned.length})
               </h5>
               <div className="space-y-2">
-                {unassignedInvoices.map((invoice) => (
+                {unassigned.map((invoice) => (
                   <div
                     key={invoice.id}
                     className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors"
@@ -227,14 +261,64 @@ export function SupplierInvoiceAssignment({
             </div>
           )}
 
-          {/* Assigned invoices */}
-          {assignedInvoices.length > 0 && (
+          {/* Invoices assigned to other projects */}
+          {assignedToOther.length > 0 && (
             <div>
               <h5 className="text-sm font-medium text-muted-foreground mb-2">
-                Már hozzárendelve ({assignedInvoices.length})
+                Más projekthez rendelve ({assignedToOther.length})
               </h5>
               <div className="space-y-2">
-                {assignedInvoices.map((invoice) => (
+                {assignedToOther.map((invoice) => (
+                  <div
+                    key={invoice.id}
+                    className="flex items-center justify-between p-2 rounded-md bg-destructive/5 border border-destructive/20"
+                  >
+                    <div className="flex-1 min-w-0 mr-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm truncate">
+                          {invoice.invoice_number}
+                        </span>
+                        {invoice.invoice_issue_date && (
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(invoice.invoice_issue_date), 'yyyy.MM.dd', { locale: hu })}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {invoice.supplier_name || 'Ismeretlen szállító'}
+                      </p>
+                      <p className="text-xs text-destructive mt-1">
+                        Ez a számla már a(z) "{invoice.project_name}" projekthez van rendelve.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium whitespace-nowrap">
+                        {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleAssignConflicting(invoice)}
+                        disabled
+                        className="opacity-50"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Invoices assigned to this project */}
+          {assignedToThis.length > 0 && (
+            <div>
+              <h5 className="text-sm font-medium text-muted-foreground mb-2">
+                Már hozzárendelve ({assignedToThis.length})
+              </h5>
+              <div className="space-y-2">
+                {assignedToThis.map((invoice) => (
                   <div
                     key={invoice.id}
                     className="flex items-center justify-between p-2 rounded-md bg-primary/5 border border-primary/20"
