@@ -29,10 +29,32 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { company_name } = await req.json();
+    const { company_name, company_id } = await req.json();
 
     if (!company_name) {
       throw new Error('Company name is required');
+    }
+
+    if (!company_id) {
+      throw new Error('Company ID is required');
+    }
+
+    // Check if alias already exists for this company
+    const { data: existingAlias } = await supabase
+      .from('email_aliases')
+      .select('*')
+      .eq('company_id', company_id)
+      .maybeSingle();
+
+    if (existingAlias) {
+      // Return existing alias
+      return new Response(
+        JSON.stringify({ alias: existingAlias }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
     }
 
     // Get Mailgun credentials
@@ -43,13 +65,36 @@ serve(async (req) => {
       throw new Error('Mailgun not configured');
     }
 
-    // Generate alias email (slug from company name)
-    const slug = company_name
+    // Generate slug from company name
+    const baseSlug = company_name
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-    
-    const aliasEmail = `${slug}@${mailgunDomain}`;
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+      .replace(/[^a-z0-9]+/g, '')
+      .substring(0, 20); // Limit length
+
+    // Find a unique slug by checking existing aliases
+    const { data: existingAliases } = await supabase
+      .from('email_aliases')
+      .select('alias_email')
+      .like('alias_email', `${baseSlug}%@${mailgunDomain}`);
+
+    let uniqueNumber = 1;
+    if (existingAliases && existingAliases.length > 0) {
+      // Extract numbers from existing aliases and find max
+      const numbers = existingAliases
+        .map(a => {
+          const match = a.alias_email.match(new RegExp(`^${baseSlug}(\\d+)@`));
+          return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter(n => n > 0);
+      
+      if (numbers.length > 0) {
+        uniqueNumber = Math.max(...numbers) + 1;
+      }
+    }
+
+    const aliasEmail = `${baseSlug}${uniqueNumber}@${mailgunDomain}`;
 
     // Create Mailgun route (EU region)
     const routeUrl = `https://api.eu.mailgun.net/v3/routes`;
@@ -91,13 +136,14 @@ serve(async (req) => {
     const routeData = await routeResponse.json();
     console.log('Mailgun route created:', routeData);
 
-    // Store in database
+    // Store in database with company_id
     const { data: alias, error: dbError } = await supabase
       .from('email_aliases')
       .insert({
         user_id: user.id,
         alias_email: aliasEmail,
         company_name,
+        company_id,
         status: 'active',
         mailgun_route_id: routeData.route?.id,
         verified_at: new Date().toISOString(),
