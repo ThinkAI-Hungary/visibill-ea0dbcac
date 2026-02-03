@@ -6,17 +6,20 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CalendarIcon, Search, X, Eye, CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { CalendarIcon, Search, X, Eye, CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, RefreshCw, Download, ChevronDown, FileText } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 
 interface Transaction {
   id: string;
@@ -86,13 +89,13 @@ const TransactionsPage = () => {
   const { selectedCompany } = useCompany();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [sortField, setSortField] = useState<string>('transaction_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   
   // Pagination state
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
-  
   
   const [filters, setFilters] = useState<TransactionFilters>({
     search: '',
@@ -256,6 +259,109 @@ const TransactionsPage = () => {
     setCurrentPage(1);
   }, [filters]);
 
+  // Sync function - triggers n8n webhook for transaction processing
+  const handleSync = async () => {
+    if (!selectedCompany) {
+      toast.error('Nincs kiválasztott cég');
+      return;
+    }
+
+    setSyncing(true);
+    try {
+      const webhookUrl = 'https://n8n.thinkaikontir.hu/webhook-test/supabase-transaction-sync-trigger';
+      
+      const webhookPayload = {
+        company_id: selectedCompany.id,
+        user_id: user?.id,
+        sync_type: 'manual'
+      };
+
+      console.log('Triggering transaction sync webhook:', webhookPayload);
+
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookPayload)
+      });
+
+      if (response.ok) {
+        toast.success('Szinkronizálás elindítva!', {
+          description: 'A tranzakciók feldolgozása folyamatban...'
+        });
+        // Refresh data after a short delay
+        setTimeout(() => fetchTransactions(), 2000);
+      } else {
+        throw new Error(`Webhook failed: ${response.status}`);
+      }
+    } catch (error: any) {
+      console.error('Sync error:', error);
+      toast.error('Szinkronizálás sikertelen', {
+        description: error.message || 'Hiba történt a szinkronizálás során'
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  // Export function
+  const handleExport = (exportFormat: 'csv' | 'xlsx') => {
+    const headers = [
+      'Dátum', 'Leírás', 'Összeg', 'Pénznem', 'Típus', 'Státusz', 'Pontszám'
+    ];
+
+    const exportData = filteredTransactions.map(transaction => {
+      const matchStatus = getMatchStatus(transaction);
+      const statusText = matchStatus === 'matched' ? 'Párosított' 
+        : matchStatus === 'suggested' ? 'Javasolt' 
+        : 'Párosítatlan';
+      
+      return [
+        transaction.transaction_date || '',
+        transaction.description || '',
+        transaction.amount?.toString() || '0',
+        transaction.currency || 'HUF',
+        transaction.type || '',
+        statusText,
+        transaction.confidence_score ? Math.round(transaction.confidence_score * 100).toString() + '%' : ''
+      ];
+    });
+
+    exportToFile(headers, exportData, exportFormat, 'tranzakciok');
+  };
+
+  const exportToFile = (headers: string[], data: string[][], exportFormat: 'csv' | 'xlsx', filename: string) => {
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+
+    if (exportFormat === 'csv') {
+      const csvContent = [
+        headers.join(','),
+        ...data.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${filename}_${timestamp}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Tranzakciók exportálva CSV formátumban");
+    } else {
+      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Tranzakciók');
+      
+      XLSX.writeFile(workbook, `${filename}_${timestamp}.xlsx`);
+      
+      toast.success("Tranzakciók exportálva XLSX formátumban");
+    }
+  };
+
   if (!selectedCompany) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
@@ -275,11 +381,63 @@ const TransactionsPage = () => {
   return (
     <div className="space-y-4 px-4">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Tranzakciók</h1>
-        <p className="text-muted-foreground text-sm">
-          Banki tranzakciók és számla párosítások
-        </p>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Tranzakciók</h1>
+          <p className="text-muted-foreground text-sm">
+            Banki tranzakciók és számla párosítások - {filteredTransactions.length} találat
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleSync}
+                  disabled={syncing}
+                >
+                  <RefreshCw className={cn("h-4 w-4 mr-2", syncing && "animate-spin")} />
+                  {syncing ? 'Szinkronizálás...' : 'Szinkronizálás'}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Tranzakciók szinkronizálása és feldolgozása</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Download className="h-4 w-4 mr-2" />
+                        Export
+                        <ChevronDown className="h-4 w-4 ml-2" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={() => handleExport('csv')}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        Export CSV
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExport('xlsx')}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        Export XLSX
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Exportálhatod a tranzakciókat CSV vagy Excel formátumban</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
 
       {/* Filters */}
