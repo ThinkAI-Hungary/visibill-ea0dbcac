@@ -319,18 +319,18 @@ All colors MUST be HSL.
   }
 
   .compact-table th {
-    @apply py-2 px-3 text-xs;
+    @apply py-1 px-2 text-xs;
   }
 
   .compact-table td {
-    @apply py-1.5 px-3;
+    @apply py-0.5 px-2;
   }
 
   .compact-table tr {
-    @apply h-[40px];
+    @apply h-[32px];
   }
 
   .compact-table .empty-row {
-    @apply h-[40px];
+    @apply h-[32px];
   }
 }

@@ -1399,6 +1399,7 @@ export type Database = {
       transactions: {
         Row: {
           amount: number
+          company_id: string
           confidence_score: number | null
           created_at: string | null
           currency: string | null
@@ -1413,6 +1414,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          company_id: string
           confidence_score?: number | null
           created_at?: string | null
           currency?: string | null
@@ -1427,6 +1429,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          company_id?: string
           confidence_score?: number | null
           created_at?: string | null
           currency?: string | null

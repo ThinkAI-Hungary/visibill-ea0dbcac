@@ -59,14 +59,14 @@ export function CopyableCell({
   const display = displayValue || value;
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={0}>
       <div className={cn("flex items-center gap-1 group", className)}>
         <Tooltip>
           <TooltipTrigger asChild>
             <span
               onClick={handleCopy}
               className={cn(
-                "cursor-pointer hover:text-primary transition-colors",
+                "cursor-pointer hover:text-primary transition-none",
                 truncate && "block truncate",
               )}
               style={truncate ? { maxWidth } : undefined}
