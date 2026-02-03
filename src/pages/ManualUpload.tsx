@@ -542,7 +542,15 @@ const ManualUpload = () => {
 
     setUploading(true);
     
+    // Show processing toast
+    const processingToast = toast({
+      title: "Feldolgozás...",
+      description: "Tranzakciók feltöltése és feldolgozásra küldése folyamatban..."
+    });
+    
     try {
+      let successfulUploads = 0;
+      
       for (const file of selectedTransactionFiles) {
         // Upload file to storage
         const uploadData = await uploadFileToStorage(file, 'transactions', user.id);
@@ -552,8 +560,8 @@ const ManualUpload = () => {
           .from('transactions')
           .getPublicUrl(uploadData.path);
 
-        // Save to transaction_uploads table for tracking
-        const { error: dbError } = await supabase
+        // Save to transaction_uploads table for tracking with pending status
+        const { data: uploadRecord, error: dbError } = await supabase
           .from('transaction_uploads')
           .insert({
             user_id: user.id,
@@ -564,19 +572,87 @@ const ManualUpload = () => {
             file_type: file.type,
             upload_status: 'uploaded',
             processing_status: 'pending'
-          });
+          })
+          .select()
+          .single();
 
         if (dbError) throw dbError;
+
+        // Trigger n8n webhook for processing
+        const webhookUrl = 'https://n8n.thinkaikontir.hu/webhook-test/supabase-transaction_storage-trigger';
+        
+        try {
+          const webhookPayload = {
+            file_url: urlData.publicUrl,
+            file_name: file.name,
+            upload_id: uploadRecord.id,
+            company_id: selectedCompany.id
+          };
+
+          console.log('Sending transaction webhook:', { webhookUrl, payload: webhookPayload });
+
+          const webhookResponse = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(webhookPayload)
+          });
+
+          if (webhookResponse.ok) {
+            // Update processing status to webhook_sent
+            await supabase
+              .from('transaction_uploads')
+              .update({ processing_status: 'webhook_sent' })
+              .eq('id', uploadRecord.id);
+            
+            successfulUploads++;
+          } else {
+            console.error('Webhook failed:', webhookResponse.status, webhookResponse.statusText);
+            
+            // Update status to webhook_failed
+            await supabase
+              .from('transaction_uploads')
+              .update({ 
+                processing_status: 'webhook_failed',
+                error_message: `Webhook failed: ${webhookResponse.status} ${webhookResponse.statusText}`
+              })
+              .eq('id', uploadRecord.id);
+          }
+        } catch (webhookError) {
+          console.error('Webhook trigger error:', webhookError);
+          
+          // Update status to webhook_failed
+          await supabase
+            .from('transaction_uploads')
+            .update({ 
+              processing_status: 'webhook_failed',
+              error_message: `Webhook error: ${webhookError instanceof Error ? webhookError.message : 'Unknown error'}`
+            })
+            .eq('id', uploadRecord.id);
+        }
       }
+
+      // Dismiss processing toast
+      processingToast.dismiss();
       
-      toast({
-        title: "Feltöltés sikeres!",
-        description: `${selectedTransactionFiles.length} tranzakció fájl feltöltve.`
-      });
-      
-      setSelectedTransactionFiles([]);
+      if (successfulUploads > 0) {
+        toast({
+          title: "Feltöltés sikeres!",
+          description: `${successfulUploads} tranzakció fájl feltöltve és feldolgozásra küldve.`
+        });
+        
+        setSelectedTransactionFiles([]);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Feldolgozás sikertelen",
+          description: "A fájlok feltöltve, de a webhook hívás sikertelen. Kérlek próbáld újra később."
+        });
+      }
     } catch (error) {
       console.error('Transaction upload error:', error);
+      processingToast.dismiss();
       toast({
         variant: "destructive",
         title: "Feltöltés sikertelen",
