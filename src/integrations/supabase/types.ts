@@ -1348,6 +1348,54 @@ export type Database = {
           },
         ]
       }
+      transaction_uploads: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          error_message: string | null
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          metadata: Json | null
+          processing_status: string | null
+          updated_at: string | null
+          upload_status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          error_message?: string | null
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          metadata?: Json | null
+          processing_status?: string | null
+          updated_at?: string | null
+          upload_status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          error_message?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          metadata?: Json | null
+          processing_status?: string | null
+          updated_at?: string | null
+          upload_status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -1361,6 +1409,7 @@ export type Database = {
           matched_invoice_id: string | null
           transaction_date: string
           type: string | null
+          upload_id: string | null
         }
         Insert: {
           amount: number
@@ -1374,6 +1423,7 @@ export type Database = {
           matched_invoice_id?: string | null
           transaction_date: string
           type?: string | null
+          upload_id?: string | null
         }
         Update: {
           amount?: number
@@ -1387,6 +1437,7 @@ export type Database = {
           matched_invoice_id?: string | null
           transaction_date?: string
           type?: string | null
+          upload_id?: string | null
         }
         Relationships: [
           {
@@ -1394,6 +1445,13 @@ export type Database = {
             columns: ["matched_invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "transaction_uploads"
             referencedColumns: ["id"]
           },
         ]
