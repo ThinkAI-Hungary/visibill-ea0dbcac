@@ -23,6 +23,7 @@ import ExchangeRates from "./pages/ExchangeRates";
 import SalariesPage from "./pages/SalariesPage";
 import Analytics from "./pages/Analytics";
 import PartnersPage from "./pages/PartnersPage";
+import TransactionsPage from "./pages/TransactionsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -86,6 +87,11 @@ const App = () => (
                     <Route path="/partners" element={
                       <ProtectedPage>
                         <PartnersPage />
+                      </ProtectedPage>
+                    } />
+                    <Route path="/transactions" element={
+                      <ProtectedPage>
+                        <TransactionsPage />
                       </ProtectedPage>
                     } />
                     <Route path="/pricing" element={
