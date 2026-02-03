@@ -1348,6 +1348,56 @@ export type Database = {
           },
         ]
       }
+      transactions: {
+        Row: {
+          amount: number
+          confidence_score: number | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          id: string
+          is_verified: boolean | null
+          match_type: string | null
+          matched_invoice_id: string | null
+          transaction_date: string
+          type: string | null
+        }
+        Insert: {
+          amount: number
+          confidence_score?: number | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          id?: string
+          is_verified?: boolean | null
+          match_type?: string | null
+          matched_invoice_id?: string | null
+          transaction_date: string
+          type?: string | null
+        }
+        Update: {
+          amount?: number
+          confidence_score?: number | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          id?: string
+          is_verified?: boolean | null
+          match_type?: string | null
+          matched_invoice_id?: string | null
+          transaction_date?: string
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_matched_invoice_id_fkey"
+            columns: ["matched_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_email_preferences: {
         Row: {
           created_at: string | null

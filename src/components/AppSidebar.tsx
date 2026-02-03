@@ -38,6 +38,7 @@ import {
   TrendingUp,
   Wallet,
   Sun,
+  Landmark,
   Moon,
   Users
 } from "lucide-react";
@@ -73,6 +74,12 @@ const navigationItems = [
     url: "/invoices", 
     icon: FileText,
     tourId: "invoices",
+  },
+  {
+    title: "Tranzakciók",
+    url: "/transactions",
+    icon: Landmark,
+    tourId: "transactions",
   },
   {
     title: "Feltöltés",
