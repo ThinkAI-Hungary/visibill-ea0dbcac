@@ -259,46 +259,16 @@ const TransactionsPage = () => {
     setCurrentPage(1);
   }, [filters]);
 
-  // Sync function - triggers n8n webhook for transaction processing
+  // Sync function - refreshes the transactions table
   const handleSync = async () => {
-    if (!selectedCompany) {
-      toast.error('Nincs kiválasztott cég');
-      return;
-    }
-
     setSyncing(true);
     try {
-      const webhookUrl = 'https://n8n.thinkaikontir.hu/webhook-test/supabase-transaction-sync-trigger';
-      
-      const webhookPayload = {
-        company_id: selectedCompany.id,
-        user_id: user?.id,
-        sync_type: 'manual'
-      };
-
-      console.log('Triggering transaction sync webhook:', webhookPayload);
-
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(webhookPayload)
-      });
-
-      if (response.ok) {
-        toast.success('Szinkronizálás elindítva!', {
-          description: 'A tranzakciók feldolgozása folyamatban...'
-        });
-        // Refresh data after a short delay
-        setTimeout(() => fetchTransactions(), 2000);
-      } else {
-        throw new Error(`Webhook failed: ${response.status}`);
-      }
+      await fetchTransactions();
+      toast.success('Tranzakciók frissítve!');
     } catch (error: any) {
       console.error('Sync error:', error);
-      toast.error('Szinkronizálás sikertelen', {
-        description: error.message || 'Hiba történt a szinkronizálás során'
+      toast.error('Frissítés sikertelen', {
+        description: error.message || 'Hiba történt a frissítés során'
       });
     } finally {
       setSyncing(false);
