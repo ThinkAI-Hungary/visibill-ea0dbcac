@@ -6,18 +6,17 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CalendarIcon, Search, Upload, X, Eye, CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown } from 'lucide-react';
+import { CalendarIcon, Search, X, Eye, CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
-import { BankStatementUploadDialog } from '@/components/BankStatementUploadDialog';
 
 interface Transaction {
   id: string;
@@ -94,8 +93,6 @@ const TransactionsPage = () => {
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   
-  // Dialog states
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   
   const [filters, setFilters] = useState<TransactionFilters>({
     search: '',
@@ -278,17 +275,11 @@ const TransactionsPage = () => {
   return (
     <div className="space-y-4 px-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Tranzakciók</h1>
-          <p className="text-muted-foreground text-sm">
-            Banki tranzakciók és számla párosítások
-          </p>
-        </div>
-        <Button onClick={() => setUploadDialogOpen(true)}>
-          <Upload className="h-4 w-4 mr-2" />
-          Bankkivonat feltöltése
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold">Tranzakciók</h1>
+        <p className="text-muted-foreground text-sm">
+          Banki tranzakciók és számla párosítások
+        </p>
       </div>
 
       {/* Filters */}
@@ -479,14 +470,7 @@ const TransactionsPage = () => {
                       <div className="flex flex-col items-center gap-2 text-muted-foreground">
                         <HelpCircle className="h-8 w-8" />
                         <p>Nincs tranzakció</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setUploadDialogOpen(true)}
-                        >
-                          <Upload className="h-4 w-4 mr-2" />
-                          Bankkivonat feltöltése
-                        </Button>
+                        <p className="text-xs">Tölts fel bankkivonatot a Feltöltés oldalon</p>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -569,13 +553,6 @@ const TransactionsPage = () => {
           setCurrentPage(1);
         }}
         className="mt-3"
-      />
-
-      {/* Upload Dialog */}
-      <BankStatementUploadDialog
-        open={uploadDialogOpen}
-        onOpenChange={setUploadDialogOpen}
-        onUploadComplete={fetchTransactions}
       />
     </div>
   );
