@@ -38,15 +38,14 @@ interface MatchedInvoice {
   penznem: string | null;
 }
 
-// Available invoices for manual matching (from nav_invoices)
+// Available invoices for manual matching (from invoices table)
 interface AvailableInvoice {
   id: string;
-  invoice_number: string;
-  invoice_gross_amount: number | null;
-  supplier_name: string | null;
-  customer_name: string | null;
-  currency: string | null;
-  invoice_issue_date: string | null;
+  szamlaszam: string;
+  brutto_vegosszeg: number;
+  elado_nev: string;
+  penznem: string | null;
+  kibocsatas_datuma: string;
   already_paid: number;
   remaining: number;
 }
@@ -122,18 +121,18 @@ export const TransactionDetailsDialog = ({
       const dateFrom = format(subDays(transactionDate, 30), 'yyyy-MM-dd');
       const dateTo = format(addDays(transactionDate, 7), 'yyyy-MM-dd');
 
-      const { data: navInvoices, error: navError } = await supabase
-        .from('nav_invoices')
-        .select('id, invoice_number, invoice_gross_amount, supplier_name, customer_name, currency, invoice_issue_date')
+      const { data: invoices, error } = await supabase
+        .from('invoices')
+        .select('id, szamlaszam, brutto_vegosszeg, elado_nev, penznem, kibocsatas_datuma')
         .eq('company_id', companyId)
-        .gte('invoice_issue_date', dateFrom)
-        .lte('invoice_issue_date', dateTo)
-        .order('invoice_issue_date', { ascending: false });
+        .gte('kibocsatas_datuma', dateFrom)
+        .lte('kibocsatas_datuma', dateTo)
+        .order('kibocsatas_datuma', { ascending: false });
 
-      if (navError) throw navError;
+      if (error) throw error;
 
       const invoicesWithPayments: AvailableInvoice[] = await Promise.all(
-        (navInvoices || []).map(async (inv) => {
+        (invoices || []).map(async (inv) => {
           const { data: matchedTransactions } = await supabase
             .from('transactions')
             .select('amount')
@@ -141,7 +140,7 @@ export const TransactionDetailsDialog = ({
             .eq('is_verified', true);
 
           const alreadyPaid = matchedTransactions?.reduce((sum, t) => sum + Math.abs(t.amount), 0) || 0;
-          const invoiceAmount = Math.abs(inv.invoice_gross_amount || 0);
+          const invoiceAmount = Math.abs(inv.brutto_vegosszeg || 0);
           const remaining = invoiceAmount - alreadyPaid;
 
           return {
@@ -247,10 +246,9 @@ export const TransactionDetailsDialog = ({
     if (!search) return availableInvoices;
     const searchLower = search.toLowerCase();
     return availableInvoices.filter(inv =>
-      inv.invoice_number.toLowerCase().includes(searchLower) ||
-      inv.supplier_name?.toLowerCase().includes(searchLower) ||
-      inv.customer_name?.toLowerCase().includes(searchLower) ||
-      inv.invoice_gross_amount?.toString().includes(search)
+      inv.szamlaszam.toLowerCase().includes(searchLower) ||
+      inv.elado_nev?.toLowerCase().includes(searchLower) ||
+      inv.brutto_vegosszeg?.toString().includes(search)
     );
   }, [availableInvoices, search]);
 
@@ -436,7 +434,7 @@ export const TransactionDetailsDialog = ({
                   <div className="p-1.5 space-y-1">
                     {filteredInvoices.slice(0, 5).map((invoice) => {
                       const isSelected = selectedInvoiceId === invoice.id;
-                      const isExactMatch = Math.abs((invoice.invoice_gross_amount || 0) - transactionAmount) < 1;
+                      const isExactMatch = Math.abs((invoice.brutto_vegosszeg || 0) - transactionAmount) < 1;
 
                       return (
                         <Card
@@ -450,14 +448,14 @@ export const TransactionDetailsDialog = ({
                         >
                           <div className="flex justify-between items-center text-xs">
                             <div>
-                              <p className="font-medium">{invoice.invoice_number}</p>
+                              <p className="font-medium font-mono">{invoice.szamlaszam}</p>
                               <p className="text-muted-foreground text-[10px]">
-                                {invoice.supplier_name || invoice.customer_name || '-'}
+                                {invoice.elado_nev || '-'}
                               </p>
                             </div>
                             <div className="text-right">
                               <p className="font-mono font-medium">
-                                {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
+                                {formatCurrency(invoice.brutto_vegosszeg || 0, invoice.penznem || 'HUF')}
                               </p>
                               {isExactMatch && (
                                 <Badge variant="success" className="text-[9px] h-4">Pontos</Badge>
