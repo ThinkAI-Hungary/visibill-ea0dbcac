@@ -660,6 +660,11 @@ const ManualUpload = () => {
       });
     } finally {
       setUploading(false);
+      // Reset file input to allow re-uploading
+      const inputElement = document.getElementById('transaction-file-input') as HTMLInputElement;
+      if (inputElement) {
+        inputElement.value = '';
+      }
     }
   };
 

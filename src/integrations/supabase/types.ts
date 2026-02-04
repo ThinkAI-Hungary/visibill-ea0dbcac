@@ -1408,6 +1408,7 @@ export type Database = {
           is_verified: boolean | null
           match_type: string | null
           matched_invoice_id: string | null
+          reason: string | null
           transaction_date: string
           type: string | null
           upload_id: string | null
@@ -1423,6 +1424,7 @@ export type Database = {
           is_verified?: boolean | null
           match_type?: string | null
           matched_invoice_id?: string | null
+          reason?: string | null
           transaction_date: string
           type?: string | null
           upload_id?: string | null
@@ -1438,6 +1440,7 @@ export type Database = {
           is_verified?: boolean | null
           match_type?: string | null
           matched_invoice_id?: string | null
+          reason?: string | null
           transaction_date?: string
           type?: string | null
           upload_id?: string | null
