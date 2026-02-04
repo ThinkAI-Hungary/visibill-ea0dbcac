@@ -6,20 +6,22 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CalendarIcon, Search, X, Eye, CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, RefreshCw, Download, ChevronDown, FileText } from 'lucide-react';
+import { CalendarIcon, Search, X, CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, RefreshCw, Download, ChevronDown, FileText, Link2, Check } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import { TransactionReasonCell } from '@/components/TransactionReasonCell';
+import { TransactionMatchDialog } from '@/components/TransactionMatchDialog';
 
 interface Transaction {
   id: string;
@@ -32,7 +34,9 @@ interface Transaction {
   confidence_score: number | null;
   is_verified: boolean | null;
   match_type: string | null;
+  reason: string | null;
   created_at: string | null;
+  company_id: string | null;
 }
 
 interface TransactionFilters {
@@ -56,6 +60,17 @@ const getMatchStatus = (transaction: Transaction): MatchStatus => {
     return 'suggested';
   }
   return 'unmatched';
+};
+
+const getMatchStatusIcon = (status: MatchStatus) => {
+  switch (status) {
+    case 'matched':
+      return <CheckCircle2 className="h-4 w-4 text-success" />;
+    case 'suggested':
+      return <AlertCircle className="h-4 w-4 text-warning" />;
+    case 'unmatched':
+      return <HelpCircle className="h-4 w-4 text-destructive" />;
+  }
 };
 
 const getMatchStatusBadge = (status: MatchStatus, confidenceScore?: number | null) => {
@@ -84,6 +99,16 @@ const getMatchStatusBadge = (status: MatchStatus, confidenceScore?: number | nul
   }
 };
 
+const getRowBackgroundClass = (transaction: Transaction): string => {
+  if (transaction.is_verified && transaction.matched_invoice_id) {
+    return 'bg-success/10 hover:bg-success/15';
+  }
+  if (transaction.matched_invoice_id && !transaction.is_verified) {
+    return 'bg-warning/10 hover:bg-warning/15';
+  }
+  return 'bg-destructive/10 hover:bg-destructive/15';
+};
+
 const TransactionsPage = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
@@ -96,6 +121,13 @@ const TransactionsPage = () => {
   // Pagination state
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Match dialog state
+  const [matchDialogOpen, setMatchDialogOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  
+  // Verifying state
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
   
   const [filters, setFilters] = useState<TransactionFilters>({
     search: '',
@@ -122,6 +154,10 @@ const TransactionsPage = () => {
         .select('*')
         .order('transaction_date', { ascending: false });
 
+      if (selectedCompany) {
+        query = query.eq('company_id', selectedCompany.id);
+      }
+
       const { data, error } = await query;
 
       if (error) throw error;
@@ -131,6 +167,35 @@ const TransactionsPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Verify transaction handler
+  const handleVerify = async (transactionId: string) => {
+    setVerifyingId(transactionId);
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({ is_verified: true })
+        .eq('id', transactionId);
+
+      if (error) throw error;
+
+      setTransactions(prev => prev.map(t => 
+        t.id === transactionId ? { ...t, is_verified: true } : t
+      ));
+      toast.success('Tranzakció jóváhagyva!');
+    } catch (error) {
+      console.error('Error verifying transaction:', error);
+      toast.error('Hiba a jóváhagyás során');
+    } finally {
+      setVerifyingId(null);
+    }
+  };
+
+  // Open match dialog
+  const handleOpenMatchDialog = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setMatchDialogOpen(true);
   };
 
   // Filtered and sorted transactions
@@ -278,7 +343,7 @@ const TransactionsPage = () => {
   // Export function
   const handleExport = (exportFormat: 'csv' | 'xlsx') => {
     const headers = [
-      'Dátum', 'Leírás', 'Összeg', 'Pénznem', 'Típus', 'Státusz', 'Pontszám'
+      'Dátum', 'Leírás', 'Összeg', 'Pénznem', 'Típus', 'Státusz', 'Pontszám', 'Indoklás'
     ];
 
     const exportData = filteredTransactions.map(transaction => {
@@ -294,7 +359,8 @@ const TransactionsPage = () => {
         transaction.currency || 'HUF',
         transaction.type || '',
         statusText,
-        transaction.confidence_score ? Math.round(transaction.confidence_score * 100).toString() + '%' : ''
+        transaction.confidence_score ? Math.round(transaction.confidence_score * 100).toString() + '%' : '',
+        transaction.reason || ''
       ];
     });
 
@@ -567,7 +633,7 @@ const TransactionsPage = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead 
-                    className="cursor-pointer hover:bg-muted/50 w-[120px]"
+                    className="cursor-pointer hover:bg-muted/50 w-[100px]"
                     onClick={() => handleSort('transaction_date')}
                   >
                     <div className="flex items-center gap-1">
@@ -575,9 +641,9 @@ const TransactionsPage = () => {
                       <ArrowUpDown className="h-3 w-3" />
                     </div>
                   </TableHead>
-                  <TableHead className="min-w-[250px]">Leírás</TableHead>
+                  <TableHead className="min-w-[200px]">Leírás</TableHead>
                   <TableHead 
-                    className="cursor-pointer hover:bg-muted/50 text-right w-[140px]"
+                    className="cursor-pointer hover:bg-muted/50 text-right w-[120px]"
                     onClick={() => handleSort('amount')}
                   >
                     <div className="flex items-center justify-end gap-1">
@@ -585,16 +651,17 @@ const TransactionsPage = () => {
                       <ArrowUpDown className="h-3 w-3" />
                     </div>
                   </TableHead>
-                  <TableHead className="w-[80px]">Pénznem</TableHead>
-                  <TableHead className="w-[100px]">Típus</TableHead>
-                  <TableHead className="w-[150px]">Státusz</TableHead>
-                  <TableHead className="w-[80px] text-center">Művelet</TableHead>
+                  <TableHead className="w-[70px]">Pénznem</TableHead>
+                  <TableHead className="w-[90px]">Típus</TableHead>
+                  <TableHead className="w-[50px] text-center">Státusz</TableHead>
+                  <TableHead className="w-[100px]">Indoklás</TableHead>
+                  <TableHead className="w-[140px] text-center">Művelet</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedTransactions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-32 text-center">
+                    <TableCell colSpan={8} className="h-32 text-center">
                       <div className="flex flex-col items-center gap-2 text-muted-foreground">
                         <HelpCircle className="h-8 w-8" />
                         <p>Nincs tranzakció</p>
@@ -605,51 +672,94 @@ const TransactionsPage = () => {
                 ) : (
                   paginatedTransactions.map((transaction) => {
                     const matchStatus = getMatchStatus(transaction);
+                    const showVerifyButton = matchStatus === 'suggested';
+                    const showMatchButton = matchStatus === 'unmatched' || matchStatus === 'suggested';
+                    
                     return (
-                      <TableRow key={transaction.id} className="h-10">
-                        <TableCell className="font-medium">
+                      <TableRow 
+                        key={transaction.id} 
+                        className={cn("h-10", getRowBackgroundClass(transaction))}
+                      >
+                        <TableCell className="font-medium text-xs">
                           {transaction.transaction_date 
                             ? format(new Date(transaction.transaction_date), 'yyyy.MM.dd')
                             : '-'
                           }
                         </TableCell>
-                        <TableCell className="max-w-[300px] truncate">
+                        <TableCell className="max-w-[200px] truncate text-xs">
                           {transaction.description || '-'}
                         </TableCell>
                         <TableCell className={cn(
-                          "text-right font-mono",
+                          "text-right font-mono text-xs",
                           transaction.amount >= 0 ? "text-success" : "text-destructive"
                         )}>
                           {formatCurrency(transaction.amount, transaction.currency || 'HUF')}
                         </TableCell>
-                        <TableCell>{transaction.currency || 'HUF'}</TableCell>
+                        <TableCell className="text-xs">{transaction.currency || 'HUF'}</TableCell>
                         <TableCell>
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-xs text-muted-foreground">
                             {transaction.type || '-'}
                           </span>
                         </TableCell>
+                        <TableCell className="text-center">
+                          <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                {getMatchStatusIcon(matchStatus)}
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {matchStatus === 'matched' && 'Párosított és jóváhagyott'}
+                                {matchStatus === 'suggested' && `Javasolt párosítás ${transaction.confidence_score ? `(${Math.round(transaction.confidence_score * 100)}%)` : ''}`}
+                                {matchStatus === 'unmatched' && 'Nincs párosítva'}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
                         <TableCell>
-                          {getMatchStatusBadge(matchStatus, transaction.confidence_score)}
+                          <TransactionReasonCell reason={transaction.reason} />
                         </TableCell>
                         <TableCell className="text-center">
-                          {transaction.matched_invoice_id && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  onClick={() => {
-                                    // TODO: Open invoice details dialog
-                                    console.log('View invoice:', transaction.matched_invoice_id);
-                                  }}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Számla megtekintése</TooltipContent>
-                            </Tooltip>
-                          )}
+                          <div className="flex items-center justify-center gap-1">
+                            {showVerifyButton && (
+                              <TooltipProvider delayDuration={0}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 px-2 text-xs"
+                                      onClick={() => handleVerify(transaction.id)}
+                                      disabled={verifyingId === transaction.id}
+                                    >
+                                      <Check className="h-3 w-3 mr-1" />
+                                      Rendben
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Javasolt párosítás jóváhagyása</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                            {showMatchButton && (
+                              <TooltipProvider delayDuration={0}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      onClick={() => handleOpenMatchDialog(transaction)}
+                                    >
+                                      <Link2 className="h-3 w-3" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Manuális párosítás</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                            {matchStatus === 'matched' && (
+                              <span className="text-xs text-muted-foreground">✓</span>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -659,7 +769,7 @@ const TransactionsPage = () => {
                 {paginatedTransactions.length > 0 && paginatedTransactions.length < pageSize && (
                   Array.from({ length: Math.min(5, pageSize - paginatedTransactions.length) }).map((_, i) => (
                     <TableRow key={`empty-${i}`} className="h-10 pointer-events-none">
-                      <TableCell colSpan={7}>&nbsp;</TableCell>
+                      <TableCell colSpan={8}>&nbsp;</TableCell>
                     </TableRow>
                   ))
                 )}
@@ -681,6 +791,17 @@ const TransactionsPage = () => {
           setCurrentPage(1);
         }}
         className="mt-3"
+      />
+
+      {/* Match Dialog */}
+      <TransactionMatchDialog
+        open={matchDialogOpen}
+        onOpenChange={setMatchDialogOpen}
+        transaction={selectedTransaction}
+        companyId={selectedCompany?.id || ''}
+        onMatch={() => {
+          fetchTransactions();
+        }}
       />
     </div>
   );
