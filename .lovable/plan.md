@@ -1,73 +1,35 @@
 
-# Add "Tranzakciók" Tab to Document Upload Page
+# Tranzakció feltöltés javítása - Többszöri feltöltés engedélyezése
 
-## Summary
-Add a new "Tranzakciók" tab to the existing document upload page (`ManualUpload.tsx`) that allows users to upload transaction-related files separately from bank statements.
+## A probléma
 
-## Changes Required
+A tranzakció fájl sikeres feltöltése után nem lehet új fájlt kiválasztani az oldal frissítése nélkül.
 
-### 1. Update TabsList Layout
-**File:** `src/pages/ManualUpload.tsx`
+## Technikai ok
 
-Change the grid layout from 3 columns to 4 columns to accommodate the new tab:
-- Current: `grid-cols-3`
-- New: `grid-cols-4`
+A `handleTransactionUpload` függvény törli a React state-et (`setSelectedTransactionFiles([])`), de a DOM `<input type="file">` elem `value` tulajdonsága megmarad. A böngésző ilyenkor nem triggereli az `onChange` eseményt, mert úgy érzékeli, hogy "nincs változás".
 
-Add a new TabsTrigger for "Tranzakciók" with the Landmark icon (consistent with the sidebar navigation).
+## Megoldás
 
-### 2. Add State for Transaction Files
-Add new state variable for handling transaction file selection:
-- `selectedTransactionFiles` - array of selected transaction files
+A `handleTransactionUpload` függvény `finally` blokkjában (661-663. sor) hozzáadjuk az input mező értékének resetelését:
 
-### 3. Add File Handling Functions
-Create new functions mirroring the existing patterns:
-- `handleTransactionFileSelect` - validates and adds files (PDF, CSV, XLS/XLSX)
-- `removeTransactionFile` - removes a file from selection
-- `handleTransactionUpload` - uploads files to storage and creates database records
-
-### 4. Add New TabsContent for Transactions
-Create the "transactions" TabsContent section with:
-- Card header with Landmark icon and description
-- Drag-and-drop upload area
-- File list display with badges showing file type and size
-- Upload button with loading state
-
-### 5. Storage Configuration
-Store transaction files in the `transactions` bucket (as discussed previously for bank statement changes, but now specifically for this new tab).
-
----
-
-## Technical Details
-
-### Import Updates
-Add `Landmark` icon import from lucide-react.
-
-### State Additions
 ```typescript
-const [selectedTransactionFiles, setSelectedTransactionFiles] = useState<File[]>([]);
+finally {
+  setUploading(false);
+  // Reset file input to allow re-uploading
+  const inputElement = document.getElementById('transaction-file-input') as HTMLInputElement;
+  if (inputElement) {
+    inputElement.value = '';
+  }
+}
 ```
 
-### New Functions Pattern
-The transaction file handling will follow the same pattern as bank statements:
-- Allowed file types: PDF, CSV, XLS, XLSX
-- Storage bucket: `transactions`
-- Database table: Can use `bank_statement_uploads` with a different type indicator, or you can specify if a new table is preferred
+## Érintett fájl
 
-### TabsList Change
-```tsx
-<TabsList className="grid w-full grid-cols-4">
-  <TabsTrigger value="invoices">Számlák</TabsTrigger>
-  <TabsTrigger value="bank-statements">Bankkivonatok</TabsTrigger>
-  <TabsTrigger value="transactions">Tranzakciók</TabsTrigger>
-  <TabsTrigger value="salaries">Bérek/Járulékok</TabsTrigger>
-</TabsList>
-```
+| Fájl | Változtatás |
+|------|-------------|
+| `src/pages/ManualUpload.tsx` | Input mező value resetelése a `finally` blokkban |
 
----
+## Megjegyzés
 
-## UI Consistency
-The new tab will maintain visual consistency with existing tabs:
-- Same card structure with header, description, and content
-- Same drag-and-drop styling with dashed border
-- Same file list format with badges and remove buttons
-- Same upload button with loading spinner
+Ez a javítás **csak** a tranzakció feltöltésre vonatkozik, a többi feltöltési típus (számlák, bankkivonatok, bérek) változatlan marad.
