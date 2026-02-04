@@ -31,7 +31,7 @@ interface Transaction {
 // Matched invoice from the 'invoices' table
 interface MatchedInvoice {
   id: string;
-  szamlaszam: string;
+  szamlaszam: string | null;
   kibocsatas_datuma: string;
   elado_nev: string;
   brutto_vegosszeg: number;
@@ -350,6 +350,10 @@ export const TransactionDetailsDialog = ({
                   </div>
                 ) : matchedInvoice ? (
                   <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Számlaszám:</span>
+                      <span className="ml-1 font-mono font-medium">{matchedInvoice.szamlaszam || '-'}</span>
+                    </div>
                     <div>
                       <span className="text-muted-foreground">Kiállítás:</span>
                       <span className="ml-1">
