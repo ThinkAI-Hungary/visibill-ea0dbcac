@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -29,21 +28,17 @@ interface Transaction {
   company_id: string | null;
 }
 
+// Matched invoice from the 'invoices' table
 interface MatchedInvoice {
   id: string;
-  invoice_number: string;
-  invoice_gross_amount: number | null;
-  invoice_net_amount: number | null;
-  invoice_vat_amount: number | null;
-  supplier_name: string | null;
-  customer_name: string | null;
-  currency: string | null;
-  invoice_issue_date: string | null;
-  invoice_delivery_date: string | null;
-  payment_method: string | null;
-  paid: boolean | null;
+  szamlaszam: string;
+  kibocsatas_datuma: string;
+  elado_nev: string;
+  brutto_vegosszeg: number;
+  penznem: string | null;
 }
 
+// Available invoices for manual matching (from nav_invoices)
 interface AvailableInvoice {
   id: string;
   invoice_number: string;
@@ -90,18 +85,21 @@ export const TransactionDetailsDialog = ({
         fetchMatchedInvoice();
       } else {
         setMatchedInvoice(null);
+        // Auto-load available invoices for unmatched transactions
+        fetchAvailableInvoices();
       }
     }
   }, [open, transaction]);
 
+  // Fetch from 'invoices' table - this is the correct connection
   const fetchMatchedInvoice = async () => {
     if (!transaction?.matched_invoice_id) return;
     
     setLoadingInvoice(true);
     try {
       const { data, error } = await supabase
-        .from('nav_invoices')
-        .select('id, invoice_number, invoice_gross_amount, invoice_net_amount, invoice_vat_amount, supplier_name, customer_name, currency, invoice_issue_date, invoice_delivery_date, payment_method, paid')
+        .from('invoices')
+        .select('id, szamlaszam, kibocsatas_datuma, elado_nev, brutto_vegosszeg, penznem')
         .eq('id', transaction.matched_invoice_id)
         .maybeSingle();
 
@@ -267,54 +265,54 @@ export const TransactionDetailsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
+      <DialogContent className="max-w-lg">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <FileText className="h-4 w-4" />
             Tranzakció részletei
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs">
             Tranzakció és párosított számla adatai
           </DialogDescription>
         </DialogHeader>
 
-        {/* Transaction Details */}
+        {/* Transaction Details - Compact */}
         <Card className="bg-muted/30 border-border/50">
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="text-sm font-medium flex items-center justify-between">
+          <CardHeader className="py-2 px-3">
+            <CardTitle className="text-xs font-medium flex items-center justify-between">
               <span>Tranzakció</span>
               {matchStatus === 'matched' && (
-                <Badge variant="success" className="gap-1">
-                  <CheckCircle2 className="h-3 w-3" />
+                <Badge variant="success" className="gap-1 text-[10px] h-5">
+                  <CheckCircle2 className="h-2.5 w-2.5" />
                   Párosított
                 </Badge>
               )}
               {matchStatus === 'suggested' && (
-                <Badge variant="warning" className="gap-1">
-                  <AlertTriangle className="h-3 w-3" />
+                <Badge variant="warning" className="gap-1 text-[10px] h-5">
+                  <AlertTriangle className="h-2.5 w-2.5" />
                   Javasolt
                 </Badge>
               )}
               {matchStatus === 'unmatched' && (
-                <Badge variant="destructive" className="gap-1">
-                  <HelpCircle className="h-3 w-3" />
+                <Badge variant="destructive" className="gap-1 text-[10px] h-5">
+                  <HelpCircle className="h-2.5 w-2.5" />
                   Párosítatlan
                 </Badge>
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="grid grid-cols-2 gap-3 text-sm">
+          <CardContent className="p-3 pt-0">
+            <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
                 <span className="text-muted-foreground">Dátum:</span>
-                <span className="ml-2 font-medium">
+                <span className="ml-1 font-medium">
                   {format(new Date(transaction.transaction_date), 'yyyy.MM.dd')}
                 </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Összeg:</span>
                 <span className={cn(
-                  "ml-2 font-medium font-mono",
+                  "ml-1 font-medium font-mono",
                   transaction.amount >= 0 ? "text-success" : "text-destructive"
                 )}>
                   {formatCurrency(transaction.amount, transaction.currency || 'HUF')}
@@ -322,18 +320,12 @@ export const TransactionDetailsDialog = ({
               </div>
               <div className="col-span-2">
                 <span className="text-muted-foreground">Leírás:</span>
-                <span className="ml-2">{transaction.description || '-'}</span>
+                <span className="ml-1">{transaction.description || '-'}</span>
               </div>
-              {transaction.type && (
-                <div>
-                  <span className="text-muted-foreground">Típus:</span>
-                  <span className="ml-2">{transaction.type}</span>
-                </div>
-              )}
               {transaction.reason && (
                 <div className="col-span-2">
                   <span className="text-muted-foreground">AI indoklás:</span>
-                  <p className="mt-1 text-xs bg-background/50 p-2 rounded border border-border/30">
+                  <p className="mt-1 text-[10px] bg-background/50 p-1.5 rounded border border-border/30 line-clamp-2">
                     {transaction.reason}
                   </p>
                 </div>
@@ -342,78 +334,58 @@ export const TransactionDetailsDialog = ({
           </CardContent>
         </Card>
 
-        <Separator />
+        <Separator className="my-1" />
 
-        {/* Matched Invoice Section */}
+        {/* Matched Invoice Section - Simplified */}
         {transaction.matched_invoice_id && !showManualMatch && (
           <>
             <Card className="bg-muted/30 border-border/50">
-              <CardHeader className="py-3 px-4">
-                <CardTitle className="text-sm font-medium">Párosított számla</CardTitle>
+              <CardHeader className="py-2 px-3">
+                <CardTitle className="text-xs font-medium">Párosított számla</CardTitle>
               </CardHeader>
-              <CardContent className="p-4 pt-0">
+              <CardContent className="p-3 pt-0">
                 {loadingInvoice ? (
-                  <div className="flex items-center justify-center py-4">
+                  <div className="flex items-center justify-center py-2">
                     <LoadingSpinner />
                   </div>
                 ) : matchedInvoice ? (
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Számlaszám:</span>
-                      <span className="ml-2 font-medium font-mono">{matchedInvoice.invoice_number}</span>
-                    </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
                       <span className="text-muted-foreground">Kiállítás:</span>
-                      <span className="ml-2">
-                        {matchedInvoice.invoice_issue_date 
-                          ? format(new Date(matchedInvoice.invoice_issue_date), 'yyyy.MM.dd')
+                      <span className="ml-1">
+                        {matchedInvoice.kibocsatas_datuma 
+                          ? format(new Date(matchedInvoice.kibocsatas_datuma), 'yyyy.MM.dd')
                           : '-'}
-                      </span>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-muted-foreground">Partner:</span>
-                      <span className="ml-2">{matchedInvoice.supplier_name || matchedInvoice.customer_name || '-'}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Nettó:</span>
-                      <span className="ml-2 font-mono">
-                        {formatCurrency(matchedInvoice.invoice_net_amount || 0, matchedInvoice.currency || 'HUF')}
                       </span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Bruttó:</span>
-                      <span className="ml-2 font-mono font-medium">
-                        {formatCurrency(matchedInvoice.invoice_gross_amount || 0, matchedInvoice.currency || 'HUF')}
+                      <span className="ml-1 font-mono font-medium">
+                        {formatCurrency(matchedInvoice.brutto_vegosszeg || 0, matchedInvoice.penznem || 'HUF')}
                       </span>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">ÁFA:</span>
-                      <span className="ml-2 font-mono">
-                        {formatCurrency(matchedInvoice.invoice_vat_amount || 0, matchedInvoice.currency || 'HUF')}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Fizetési mód:</span>
-                      <span className="ml-2">{matchedInvoice.payment_method || '-'}</span>
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Eladó:</span>
+                      <span className="ml-1 font-medium">{matchedInvoice.elado_nev || '-'}</span>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-sm">Számla nem található</p>
+                  <p className="text-muted-foreground text-xs">Számla nem található</p>
                 )}
               </CardContent>
             </Card>
 
-            <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={handleUnmatch} disabled={saving}>
+            <DialogFooter className="flex-row gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={handleUnmatch} disabled={saving} className="text-xs h-8">
                 Párosítás megszüntetése
               </Button>
-              <Button variant="outline" onClick={handleShowManualMatch}>
-                <Link2 className="h-4 w-4 mr-2" />
-                Másik számla választása
+              <Button variant="outline" size="sm" onClick={handleShowManualMatch} className="text-xs h-8">
+                <Link2 className="h-3 w-3 mr-1" />
+                Másik számla
               </Button>
               {matchStatus === 'suggested' && (
-                <Button onClick={handleVerify} disabled={saving}>
-                  <Check className="h-4 w-4 mr-2" />
+                <Button size="sm" onClick={handleVerify} disabled={saving} className="text-xs h-8">
+                  <Check className="h-3 w-3 mr-1" />
                   {saving ? 'Mentés...' : 'Rendben'}
                 </Button>
               )}
@@ -421,139 +393,93 @@ export const TransactionDetailsDialog = ({
           </>
         )}
 
-        {/* Manual Match Section */}
+        {/* Manual Match Section - Compact */}
         {(showManualMatch || !transaction.matched_invoice_id) && (
           <>
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium">
+                <h4 className="text-xs font-medium">
                   {transaction.matched_invoice_id ? 'Másik számla választása' : 'Manuális párosítás'}
                 </h4>
                 {transaction.matched_invoice_id && (
-                  <Button variant="ghost" size="sm" onClick={() => setShowManualMatch(false)}>
+                  <Button variant="ghost" size="sm" onClick={() => setShowManualMatch(false)} className="h-6 text-xs">
                     Vissza
                   </Button>
                 )}
               </div>
 
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
                 <Input
-                  placeholder="Keresés számlaszám, partner vagy összeg alapján..."
+                  placeholder="Keresés..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
+                  className="pl-7 h-8 text-xs"
                 />
               </div>
 
-              <ScrollArea className="h-[250px] border rounded-md">
+              <div className="max-h-[180px] overflow-y-auto border rounded-md">
                 {loadingAvailable ? (
-                  <div className="flex items-center justify-center h-full">
+                  <div className="flex items-center justify-center h-20">
                     <LoadingSpinner />
                   </div>
                 ) : filteredInvoices.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                    <FileText className="h-8 w-8 mb-2" />
-                    <p>Nincs találat</p>
-                    <p className="text-xs">Próbálj más keresési feltételt</p>
+                  <div className="flex flex-col items-center justify-center h-20 text-muted-foreground">
+                    <FileText className="h-5 w-5 mb-1" />
+                    <p className="text-xs">Nincs találat</p>
                   </div>
                 ) : (
-                  <div className="p-2 space-y-2">
-                    {filteredInvoices.map((invoice) => {
+                  <div className="p-1.5 space-y-1">
+                    {filteredInvoices.slice(0, 5).map((invoice) => {
                       const isSelected = selectedInvoiceId === invoice.id;
                       const isExactMatch = Math.abs((invoice.invoice_gross_amount || 0) - transactionAmount) < 1;
-                      const isPartialMatch = invoice.remaining > 0 && invoice.remaining <= transactionAmount;
 
                       return (
                         <Card
                           key={invoice.id}
                           className={cn(
-                            "cursor-pointer transition-all hover:border-primary/50",
-                            isSelected && "border-primary bg-primary/5",
-                            isExactMatch && !isSelected && "border-success/50 bg-success/5"
+                            "cursor-pointer transition-colors p-2",
+                            isSelected ? "border-primary bg-primary/10" : "hover:bg-muted/50",
+                            isExactMatch && "border-success/50"
                           )}
                           onClick={() => setSelectedInvoiceId(invoice.id)}
                         >
-                          <CardContent className="p-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-medium text-sm truncate">
-                                    {invoice.invoice_number}
-                                  </span>
-                                  {isExactMatch && (
-                                    <Badge variant="success" className="text-xs">
-                                      <Check className="h-3 w-3 mr-1" />
-                                      Pontos egyezés
-                                    </Badge>
-                                  )}
-                                  {isPartialMatch && !isExactMatch && (
-                                    <Badge variant="warning" className="text-xs">
-                                      <AlertTriangle className="h-3 w-3 mr-1" />
-                                      Részfizetés
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {invoice.supplier_name || invoice.customer_name || '-'}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {invoice.invoice_issue_date 
-                                    ? format(new Date(invoice.invoice_issue_date), 'yyyy.MM.dd')
-                                    : '-'
-                                  }
-                                </p>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <div className="font-mono text-sm font-medium">
-                                  {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
-                                </div>
-                                {invoice.already_paid > 0 && (
-                                  <div className="text-xs text-muted-foreground">
-                                    Fizetve: {formatCurrency(invoice.already_paid, invoice.currency || 'HUF')}
-                                  </div>
-                                )}
-                                {invoice.remaining > 0 && invoice.remaining < (invoice.invoice_gross_amount || 0) && (
-                                  <div className="text-xs text-warning">
-                                    Maradék: {formatCurrency(invoice.remaining, invoice.currency || 'HUF')}
-                                  </div>
-                                )}
-                              </div>
+                          <div className="flex justify-between items-center text-xs">
+                            <div>
+                              <p className="font-medium">{invoice.invoice_number}</p>
+                              <p className="text-muted-foreground text-[10px]">
+                                {invoice.supplier_name || invoice.customer_name || '-'}
+                              </p>
                             </div>
-                          </CardContent>
+                            <div className="text-right">
+                              <p className="font-mono font-medium">
+                                {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
+                              </p>
+                              {isExactMatch && (
+                                <Badge variant="success" className="text-[9px] h-4">Pontos</Badge>
+                              )}
+                            </div>
+                          </div>
                         </Card>
                       );
                     })}
                   </div>
                 )}
-              </ScrollArea>
+              </div>
             </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Mégse
-              </Button>
-              <Button 
-                onClick={handleMatch} 
+            <DialogFooter className="pt-2">
+              <Button
+                size="sm"
                 disabled={!selectedInvoiceId || saving}
+                onClick={handleMatch}
+                className="text-xs h-8"
               >
-                {saving ? 'Mentés...' : 'Párosítás'}
+                <Check className="h-3 w-3 mr-1" />
+                {saving ? 'Mentés...' : 'Párosítás mentése'}
               </Button>
             </DialogFooter>
           </>
-        )}
-
-        {/* No Match, No Manual Mode */}
-        {!transaction.matched_invoice_id && !showManualMatch && availableInvoices.length === 0 && (
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Bezárás
-            </Button>
-            <Button onClick={handleShowManualMatch}>
-              <Link2 className="h-4 w-4 mr-2" />
-              Számla párosítása
-            </Button>
-          </DialogFooter>
         )}
       </DialogContent>
     </Dialog>

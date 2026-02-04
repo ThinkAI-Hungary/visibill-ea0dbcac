@@ -10,7 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
 import { CalendarIcon, Search, X, CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, RefreshCw, Download, ChevronDown, FileText, Eye } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
@@ -362,351 +361,354 @@ const TransactionsPage = () => {
   }
 
   return (
-    <div className="space-y-4 px-4">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Tranzakciók</h1>
-          <p className="text-muted-foreground text-sm">
-            Banki tranzakciók és számla párosítások - {filteredTransactions.length} találat
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleSync}
-                  disabled={syncing}
-                >
-                  <RefreshCw className={cn("h-4 w-4 mr-2", syncing && "animate-spin")} />
-                  {syncing ? 'Szinkronizálás...' : 'Szinkronizálás'}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Tranzakciók szinkronizálása és feldolgozása</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Export
-                <ChevronDown className="h-4 w-4 ml-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => handleExport('csv')}>
-                <FileText className="h-4 w-4 mr-2" />
-                Export CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport('xlsx')}>
-                <FileText className="h-4 w-4 mr-2" />
-                Export XLSX
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {/* Filters - Matching InvoicesPage style */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 p-4 bg-muted/20 rounded-lg border border-border/30">
-        {/* Search */}
-        <div className="relative col-span-2 md:col-span-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Keresés..."
-            value={filters.search}
-            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-            className="pl-9 h-9 bg-secondary/50 border border-white/10 focus:border-primary/50"
-          />
-        </div>
-
-        {/* Currency */}
-        <Select
-          value={filters.currency}
-          onValueChange={(value) => setFilters(prev => ({ ...prev, currency: value }))}
-        >
-          <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
-            <SelectValue placeholder="Pénznem" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Minden pénznem</SelectItem>
-            {uniqueCurrencies.map(currency => (
-              <SelectItem key={currency} value={currency}>{currency}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Match Status */}
-        <Select
-          value={filters.matchStatus}
-          onValueChange={(value) => setFilters(prev => ({ ...prev, matchStatus: value }))}
-        >
-          <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
-            <SelectValue placeholder="Státusz" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Minden státusz</SelectItem>
-            <SelectItem value="matched">Párosított</SelectItem>
-            <SelectItem value="suggested">Javasolt</SelectItem>
-            <SelectItem value="unmatched">Párosítatlan</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Type */}
-        <Select
-          value={filters.type}
-          onValueChange={(value) => setFilters(prev => ({ ...prev, type: value }))}
-        >
-          <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
-            <SelectValue placeholder="Típus" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Minden típus</SelectItem>
-            {uniqueTypes.map(type => (
-              <SelectItem key={type} value={type}>{type}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Date From */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className={cn(
-                "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
-                !filters.dateFrom && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {filters.dateFrom ? format(filters.dateFrom, 'MM.dd.', { locale: hu }) : 'Kezdő'}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={filters.dateFrom}
-              onSelect={(date) => setFilters(prev => ({ ...prev, dateFrom: date }))}
-              locale={hu}
-              className="pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
-
-        {/* Date To */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className={cn(
-                "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
-                !filters.dateTo && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {filters.dateTo ? format(filters.dateTo, 'MM.dd.', { locale: hu }) : 'Befejező'}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={filters.dateTo}
-              onSelect={(date) => setFilters(prev => ({ ...prev, dateTo: date }))}
-              locale={hu}
-              className="pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
-
-        {/* Amount Min */}
-        <Input
-          type="number"
-          placeholder="Min összeg"
-          value={filters.amountMin}
-          onChange={(e) => setFilters(prev => ({ ...prev, amountMin: e.target.value }))}
-          className="h-9 bg-secondary/50 border border-white/10"
-        />
-
-        {/* Amount Max */}
-        <Input
-          type="number"
-          placeholder="Max összeg"
-          value={filters.amountMax}
-          onChange={(e) => setFilters(prev => ({ ...prev, amountMax: e.target.value }))}
-          className="h-9 bg-secondary/50 border border-white/10"
-        />
-
-        {/* Clear button */}
-        {hasActiveFilters && (
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={clearFilters}
-            className="h-9 text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-4 w-4 mr-1" />
-            Törlés
-          </Button>
-        )}
-      </div>
-
-      {/* Top Pagination */}
-      <UnifiedPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={filteredTransactions.length}
-        pageSize={pageSize}
-        onPageChange={setCurrentPage}
-        onPageSizeChange={(size) => {
-          setPageSize(size);
-          setCurrentPage(1);
-        }}
-        className="mb-3"
-      />
-
-      {/* Transactions Table - Matching InvoicesPage style */}
-      <div className="rounded-lg border border-border/50 overflow-x-auto">
-        <Table className="table-fixed compact-table">
-          <TableHeader>
-            <TableRow className="bg-muted/30 hover:bg-muted/30">
-              <TableHead 
-                className="cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
-                onClick={() => handleSort('transaction_date')}
-              >
-                <div className="flex items-center gap-2">
-                  Dátum
-                  <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-                </div>
-              </TableHead>
-              <TableHead className="font-semibold w-[30%]">Leírás</TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-muted/50 text-right font-semibold w-[12%]"
-                onClick={() => handleSort('amount')}
-              >
-                <div className="flex items-center justify-end gap-2">
-                  Összeg
-                  <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-                </div>
-              </TableHead>
-              <TableHead className="font-semibold w-[7%]">Pénznem</TableHead>
-              <TableHead className="font-semibold w-[10%]">Típus</TableHead>
-              <TableHead className="font-semibold w-[8%] text-center">Státusz</TableHead>
-              <TableHead className="font-semibold w-[13%]">Indoklás</TableHead>
-              <TableHead className="font-semibold w-[10%] text-center">Művelet</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedTransactions.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="h-32 text-center">
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <HelpCircle className="h-8 w-8" />
-                    <p>Nincs tranzakció</p>
-                    <p className="text-xs">Tölts fel bankkivonatot a Feltöltés oldalon</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              paginatedTransactions.map((transaction) => {
-                const matchStatus = getMatchStatus(transaction);
-                
-                return (
-                  <TableRow 
-                    key={transaction.id} 
-                    className={cn("h-10", getRowBackgroundClass(transaction))}
+    <div className="px-4 py-4">
+      {/* Main Card Container */}
+      <div className="max-w-7xl mx-auto bg-card border border-border/50 rounded-2xl shadow-lg p-6 space-y-4">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Tranzakciók</h1>
+            <p className="text-muted-foreground text-sm">
+              Banki tranzakciók és számla párosítások - {filteredTransactions.length} találat
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleSync}
+                    disabled={syncing}
                   >
-                    <TableCell className="font-medium text-xs">
-                      {transaction.transaction_date 
-                        ? format(new Date(transaction.transaction_date), 'yyyy.MM.dd')
-                        : '-'
-                      }
-                    </TableCell>
-                    <TableCell className="max-w-[200px] truncate text-xs">
-                      {transaction.description || '-'}
-                    </TableCell>
-                    <TableCell className={cn(
-                      "text-right font-mono text-xs",
-                      transaction.amount >= 0 ? "text-success" : "text-destructive"
-                    )}>
-                      {formatCurrency(transaction.amount, transaction.currency || 'HUF')}
-                    </TableCell>
-                    <TableCell className="text-xs">{transaction.currency || 'HUF'}</TableCell>
-                    <TableCell>
-                      <span className="text-xs text-muted-foreground">
-                        {transaction.type || '-'}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <TooltipProvider delayDuration={0}>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            {getMatchStatusIcon(matchStatus)}
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {matchStatus === 'matched' && 'Párosított és jóváhagyott'}
-                            {matchStatus === 'suggested' && `Javasolt párosítás ${transaction.confidence_score ? `(${Math.round(transaction.confidence_score * 100)}%)` : ''}`}
-                            {matchStatus === 'unmatched' && 'Nincs párosítva'}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </TableCell>
-                    <TableCell>
-                      <TransactionReasonCell reason={transaction.reason} />
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <TooltipProvider delayDuration={0}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 px-2 text-xs"
-                              onClick={() => handleOpenDetails(transaction)}
-                            >
-                              <Eye className="h-3 w-3 mr-1" />
-                              Számlák
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Tranzakció és számla részletei</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-            {/* Empty placeholder rows for stable height */}
-            {paginatedTransactions.length > 0 && paginatedTransactions.length < pageSize && (
-              Array.from({ length: Math.min(5, pageSize - paginatedTransactions.length) }).map((_, i) => (
-                <TableRow key={`empty-${i}`} className="h-10 pointer-events-none">
-                  <TableCell colSpan={8}>&nbsp;</TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                    <RefreshCw className={cn("h-4 w-4 mr-2", syncing && "animate-spin")} />
+                    {syncing ? 'Szinkronizálás...' : 'Szinkronizálás'}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Tranzakciók szinkronizálása és feldolgozása</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleExport('csv')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Export CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('xlsx')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Export XLSX
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
 
-      {/* Bottom Pagination */}
-      <UnifiedPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={filteredTransactions.length}
-        pageSize={pageSize}
-        onPageChange={setCurrentPage}
-        onPageSizeChange={(size) => {
-          setPageSize(size);
-          setCurrentPage(1);
-        }}
-        className="mt-3"
-      />
+        {/* Filters */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 p-4 bg-muted/20 rounded-lg border border-border/30">
+          {/* Search */}
+          <div className="relative col-span-2 md:col-span-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Keresés..."
+              value={filters.search}
+              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              className="pl-9 h-9 bg-secondary/50 border border-white/10 focus:border-primary/50"
+            />
+          </div>
+
+          {/* Currency */}
+          <Select
+            value={filters.currency}
+            onValueChange={(value) => setFilters(prev => ({ ...prev, currency: value }))}
+          >
+            <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
+              <SelectValue placeholder="Pénznem" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Minden pénznem</SelectItem>
+              {uniqueCurrencies.map(currency => (
+                <SelectItem key={currency} value={currency}>{currency}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Match Status */}
+          <Select
+            value={filters.matchStatus}
+            onValueChange={(value) => setFilters(prev => ({ ...prev, matchStatus: value }))}
+          >
+            <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
+              <SelectValue placeholder="Státusz" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Minden státusz</SelectItem>
+              <SelectItem value="matched">Párosított</SelectItem>
+              <SelectItem value="suggested">Javasolt</SelectItem>
+              <SelectItem value="unmatched">Párosítatlan</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Type */}
+          <Select
+            value={filters.type}
+            onValueChange={(value) => setFilters(prev => ({ ...prev, type: value }))}
+          >
+            <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
+              <SelectValue placeholder="Típus" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Minden típus</SelectItem>
+              {uniqueTypes.map(type => (
+                <SelectItem key={type} value={type}>{type}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Date From */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className={cn(
+                  "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
+                  !filters.dateFrom && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {filters.dateFrom ? format(filters.dateFrom, 'MM.dd.', { locale: hu }) : 'Kezdő'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={filters.dateFrom}
+                onSelect={(date) => setFilters(prev => ({ ...prev, dateFrom: date }))}
+                locale={hu}
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* Date To */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className={cn(
+                  "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
+                  !filters.dateTo && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {filters.dateTo ? format(filters.dateTo, 'MM.dd.', { locale: hu }) : 'Befejező'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={filters.dateTo}
+                onSelect={(date) => setFilters(prev => ({ ...prev, dateTo: date }))}
+                locale={hu}
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* Amount Min */}
+          <Input
+            type="number"
+            placeholder="Min összeg"
+            value={filters.amountMin}
+            onChange={(e) => setFilters(prev => ({ ...prev, amountMin: e.target.value }))}
+            className="h-9 bg-secondary/50 border border-white/10"
+          />
+
+          {/* Amount Max */}
+          <Input
+            type="number"
+            placeholder="Max összeg"
+            value={filters.amountMax}
+            onChange={(e) => setFilters(prev => ({ ...prev, amountMax: e.target.value }))}
+            className="h-9 bg-secondary/50 border border-white/10"
+          />
+
+          {/* Clear button */}
+          {hasActiveFilters && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={clearFilters}
+              className="h-9 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Törlés
+            </Button>
+          )}
+        </div>
+
+        {/* Top Pagination */}
+        <UnifiedPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredTransactions.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setCurrentPage(1);
+          }}
+          className="mb-3"
+        />
+
+        {/* Transactions Table */}
+        <div className="rounded-lg border border-border/50 overflow-x-auto">
+          <Table className="table-fixed compact-table">
+            <TableHeader>
+              <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
+                  onClick={() => handleSort('transaction_date')}
+                >
+                  <div className="flex items-center gap-2">
+                    Dátum
+                    <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                </TableHead>
+                <TableHead className="font-semibold w-[30%]">Leírás</TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50 text-right font-semibold w-[12%]"
+                  onClick={() => handleSort('amount')}
+                >
+                  <div className="flex items-center justify-end gap-2">
+                    Összeg
+                    <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                </TableHead>
+                <TableHead className="font-semibold w-[7%]">Pénznem</TableHead>
+                <TableHead className="font-semibold w-[10%]">Típus</TableHead>
+                <TableHead className="font-semibold w-[8%] text-center">Státusz</TableHead>
+                <TableHead className="font-semibold w-[13%]">Indoklás</TableHead>
+                <TableHead className="font-semibold w-[10%] text-center">Művelet</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedTransactions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-32 text-center">
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <HelpCircle className="h-8 w-8" />
+                      <p>Nincs tranzakció</p>
+                      <p className="text-xs">Tölts fel bankkivonatot a Feltöltés oldalon</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedTransactions.map((transaction) => {
+                  const matchStatus = getMatchStatus(transaction);
+                  
+                  return (
+                    <TableRow 
+                      key={transaction.id} 
+                      className={cn("h-10", getRowBackgroundClass(transaction))}
+                    >
+                      <TableCell className="font-medium text-xs">
+                        {transaction.transaction_date 
+                          ? format(new Date(transaction.transaction_date), 'yyyy.MM.dd')
+                          : '-'
+                        }
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate text-xs">
+                        {transaction.description || '-'}
+                      </TableCell>
+                      <TableCell className={cn(
+                        "text-right font-mono text-xs",
+                        transaction.amount >= 0 ? "text-success" : "text-destructive"
+                      )}>
+                        {formatCurrency(transaction.amount, transaction.currency || 'HUF')}
+                      </TableCell>
+                      <TableCell className="text-xs">{transaction.currency || 'HUF'}</TableCell>
+                      <TableCell>
+                        <span className="text-xs text-muted-foreground">
+                          {transaction.type || '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <TooltipProvider delayDuration={0}>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              {getMatchStatusIcon(matchStatus)}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {matchStatus === 'matched' && 'Párosított és jóváhagyott'}
+                              {matchStatus === 'suggested' && `Javasolt párosítás ${transaction.confidence_score ? `(${Math.round(transaction.confidence_score * 100)}%)` : ''}`}
+                              {matchStatus === 'unmatched' && 'Nincs párosítva'}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                      <TableCell>
+                        <TransactionReasonCell reason={transaction.reason} />
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <TooltipProvider delayDuration={0}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                onClick={() => handleOpenDetails(transaction)}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                Számlák
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Tranzakció és számla részletei</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+              {/* Empty placeholder rows for stable height */}
+              {paginatedTransactions.length > 0 && paginatedTransactions.length < pageSize && (
+                Array.from({ length: Math.min(5, pageSize - paginatedTransactions.length) }).map((_, i) => (
+                  <TableRow key={`empty-${i}`} className="h-10 pointer-events-none">
+                    <TableCell colSpan={8}>&nbsp;</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Bottom Pagination */}
+        <UnifiedPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredTransactions.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setCurrentPage(1);
+          }}
+          className="mt-3"
+        />
+      </div>
 
       {/* Details Dialog */}
       <TransactionDetailsDialog
