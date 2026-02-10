@@ -33,9 +33,12 @@ interface MatchedInvoice {
   id: string;
   szamlaszam: string | null;
   kibocsatas_datuma: string;
+  teljesites_datuma: string | null;
   elado_nev: string;
+  vevo_nev: string;
   brutto_vegosszeg: number;
   penznem: string | null;
+  invoice_type: string;
 }
 
 // Available invoices for manual matching (from invoices table)
@@ -98,7 +101,7 @@ export const TransactionDetailsDialog = ({
     try {
       const { data, error } = await supabase
         .from('invoices')
-        .select('id, szamlaszam, kibocsatas_datuma, elado_nev, brutto_vegosszeg, penznem')
+        .select('id, szamlaszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, brutto_vegosszeg, penznem, invoice_type')
         .eq('id', transaction.matched_invoice_id)
         .maybeSingle();
 
@@ -353,10 +356,26 @@ export const TransactionDetailsDialog = ({
                       <span className="ml-1 font-mono font-medium">{matchedInvoice.szamlaszam || '-'}</span>
                     </div>
                     <div>
+                      <span className="text-muted-foreground">Eladó:</span>
+                      <span className="ml-1 font-medium">{matchedInvoice.elado_nev || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Vevő:</span>
+                      <span className="ml-1 font-medium">{matchedInvoice.vevo_nev || '-'}</span>
+                    </div>
+                    <div>
                       <span className="text-muted-foreground">Kiállítás:</span>
                       <span className="ml-1">
                         {matchedInvoice.kibocsatas_datuma 
                           ? format(new Date(matchedInvoice.kibocsatas_datuma), 'yyyy.MM.dd')
+                          : '-'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Teljesítés:</span>
+                      <span className="ml-1">
+                        {matchedInvoice.teljesites_datuma 
+                          ? format(new Date(matchedInvoice.teljesites_datuma), 'yyyy.MM.dd')
                           : '-'}
                       </span>
                     </div>
@@ -366,9 +385,9 @@ export const TransactionDetailsDialog = ({
                         {formatCurrency(matchedInvoice.brutto_vegosszeg || 0, matchedInvoice.penznem || 'HUF')}
                       </span>
                     </div>
-                    <div className="col-span-2">
-                      <span className="text-muted-foreground">Eladó:</span>
-                      <span className="ml-1 font-medium">{matchedInvoice.elado_nev || '-'}</span>
+                    <div>
+                      <span className="text-muted-foreground">Típus:</span>
+                      <span className="ml-1">{matchedInvoice.invoice_type || '-'}</span>
                     </div>
                   </div>
                 ) : (
