@@ -12,7 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CalendarIcon, Search, X, CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, RefreshCw, Download, ChevronDown, FileText, Eye } from 'lucide-react';
+import { CalendarIcon, Search, X, CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, RefreshCw, Download, ChevronDown, FileText, Eye, Sparkles } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -50,6 +50,10 @@ interface TransactionFilters {
 }
 
 type MatchStatus = 'matched' | 'suggested' | 'unmatched';
+
+const isAutoApproved = (transaction: Transaction): boolean => {
+  return !!(transaction.confidence_score && transaction.confidence_score >= 0.97 && transaction.matched_invoice_id);
+};
 
 const getMatchStatus = (transaction: Transaction): MatchStatus => {
   if (transaction.is_verified && transaction.matched_invoice_id) {
@@ -131,7 +135,31 @@ const TransactionsPage = () => {
       const { data, error } = await query;
 
       if (error) throw error;
-      setTransactions(data || []);
+      
+      const fetchedTransactions = data || [];
+      
+      // Auto-approve transactions with confidence_score >= 0.97
+      const toAutoApprove = fetchedTransactions.filter(
+        t => t.matched_invoice_id && !t.is_verified && t.confidence_score && t.confidence_score >= 0.97
+      );
+      
+      if (toAutoApprove.length > 0) {
+        const ids = toAutoApprove.map(t => t.id);
+        await supabase
+          .from('transactions')
+          .update({ is_verified: true, match_type: 'auto' })
+          .in('id', ids);
+        
+        // Update local state to reflect auto-approval
+        fetchedTransactions.forEach(t => {
+          if (ids.includes(t.id)) {
+            t.is_verified = true;
+            t.match_type = 'auto';
+          }
+        });
+      }
+      
+      setTransactions(fetchedTransactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
     } finally {
@@ -629,10 +657,16 @@ const TransactionsPage = () => {
                             <TooltipProvider delayDuration={0}>
                               <Tooltip>
                                 <TooltipTrigger>
-                                  {getMatchStatusIcon(matchStatus)}
+                                  <div className="flex items-center justify-center gap-1">
+                                    {getMatchStatusIcon(matchStatus)}
+                                    {transaction.match_type === 'auto' && (
+                                      <Sparkles className="h-3 w-3 text-success" />
+                                    )}
+                                  </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  {matchStatus === 'matched' && 'Párosított és jóváhagyott'}
+                                  {matchStatus === 'matched' && transaction.match_type === 'auto' && 'Automatikusan jóváhagyva (≥97%)'}
+                                  {matchStatus === 'matched' && transaction.match_type !== 'auto' && 'Párosított és jóváhagyott'}
                                   {matchStatus === 'suggested' && `Javasolt párosítás ${transaction.confidence_score ? `(${Math.round(transaction.confidence_score * 100)}%)` : ''}`}
                                   {matchStatus === 'unmatched' && 'Nincs párosítva'}
                                 </TooltipContent>
