@@ -7,10 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Search, Check, AlertTriangle, FileText, CheckCircle2, HelpCircle, Link2 } from 'lucide-react';
+import { Search, Check, AlertTriangle, FileText, CheckCircle2, HelpCircle, Link2, Eye } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { format, subDays, addDays } from 'date-fns';
 import { toast } from 'sonner';
+import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
 
 interface Transaction {
   id: string;
@@ -76,6 +77,8 @@ export const TransactionDetailsDialog = ({
   const [showManualMatch, setShowManualMatch] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const [invoiceDetailOpen, setInvoiceDetailOpen] = useState(false);
+  const [invoiceDetailId, setInvoiceDetailId] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && transaction) {
@@ -265,6 +268,7 @@ export const TransactionDetailsDialog = ({
   if (!transaction) return null;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader className="pb-2">
@@ -340,9 +344,25 @@ export const TransactionDetailsDialog = ({
         {/* Matched Invoice Section - Simplified */}
         {transaction.matched_invoice_id && !showManualMatch && (
           <>
-            <Card className="bg-muted/30 border-border/50">
+            <Card 
+              className="bg-muted/30 border-border/50 cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => {
+                if (matchedInvoice) {
+                  setInvoiceDetailId(matchedInvoice.id);
+                  setInvoiceDetailOpen(true);
+                }
+              }}
+            >
               <CardHeader className="py-2 px-3">
-                <CardTitle className="text-xs font-medium">Párosított számla</CardTitle>
+                <CardTitle className="text-xs font-medium flex items-center justify-between">
+                  <span>Párosított számla</span>
+                  {matchedInvoice && (
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <Eye className="h-3 w-3" />
+                      Kattints a részletekért
+                    </span>
+                  )}
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-3 pt-0">
                 {loadingInvoice ? (
@@ -372,22 +392,10 @@ export const TransactionDetailsDialog = ({
                       </span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Teljesítés:</span>
-                      <span className="ml-1">
-                        {matchedInvoice.teljesites_datuma 
-                          ? format(new Date(matchedInvoice.teljesites_datuma), 'yyyy.MM.dd')
-                          : '-'}
-                      </span>
-                    </div>
-                    <div>
                       <span className="text-muted-foreground">Bruttó:</span>
                       <span className="ml-1 font-mono font-medium">
                         {formatCurrency(matchedInvoice.brutto_vegosszeg || 0, matchedInvoice.penznem || 'HUF')}
                       </span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Típus:</span>
-                      <span className="ml-1">{matchedInvoice.invoice_type || '-'}</span>
                     </div>
                   </div>
                 ) : (
@@ -504,5 +512,12 @@ export const TransactionDetailsDialog = ({
         )}
       </DialogContent>
     </Dialog>
+
+    <InvoiceDetailPopup
+      open={invoiceDetailOpen}
+      onOpenChange={setInvoiceDetailOpen}
+      invoiceId={invoiceDetailId}
+    />
+    </>
   );
 };
