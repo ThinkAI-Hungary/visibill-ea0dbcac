@@ -8,6 +8,7 @@ export interface Company {
   tax_number: string | null;
   address: string | null;
   owner_id: string;
+  share_token?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -42,7 +43,6 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase
         .from('companies')
         .select('*')
-        .eq('owner_id', user.id)
         .order('created_at', { ascending: true });
 
       if (error) throw error;

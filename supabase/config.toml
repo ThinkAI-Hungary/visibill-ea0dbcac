@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.trigger-nav-categorization]
 verify_jwt = true
+
+[functions.join-company]
+verify_jwt = true
