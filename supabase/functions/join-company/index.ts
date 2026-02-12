@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
     // Find company by share_token
     const { data: company, error: findError } = await adminClient
       .from("companies")
-      .select("id, name, tax_number, address, owner_id, created_at, updated_at")
+      .select("id, name, tax_number, address, owner_id, created_at, updated_at, share_token_created_at")
       .eq("share_token", share_token.trim())
       .single();
 
@@ -61,6 +61,18 @@ Deno.serve(async (req) => {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Check token expiration (10 minutes)
+    if (company.share_token_created_at) {
+      const createdAt = new Date(company.share_token_created_at).getTime();
+      const now = Date.now();
+      if (now - createdAt > 10 * 60 * 1000) {
+        return new Response(JSON.stringify({ error: "token_expired" }), {
+          status: 410,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Check if already a member

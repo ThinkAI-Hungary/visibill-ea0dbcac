@@ -71,48 +71,80 @@ interface SystemSettings {
   timezone: string;
 }
 
-// --- Company Access Card (Share Token) ---
+// --- Company Access Card (Share Token) with Countdown ---
 function CompanyAccessCard({ companyId, toast }: { companyId: string; toast: any }) {
   const [shareToken, setShareToken] = useState<string | null>(null);
+  const [tokenCreatedAt, setTokenCreatedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
+
+  const TOKEN_DURATION_MS = 10 * 60 * 1000;
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchToken = async () => {
       setLoading(true);
       const { data } = await supabase
         .from('companies')
-        .select('share_token')
+        .select('share_token, share_token_created_at')
         .eq('id', companyId)
         .single();
       setShareToken((data as any)?.share_token || null);
+      setTokenCreatedAt((data as any)?.share_token_created_at || null);
       setLoading(false);
     };
-    fetch();
+    fetchToken();
   }, [companyId]);
+
+  useEffect(() => {
+    if (!shareToken || !tokenCreatedAt) {
+      setRemainingSeconds(null);
+      return;
+    }
+    const calcRemaining = () => {
+      const created = new Date(tokenCreatedAt).getTime();
+      const expires = created + TOKEN_DURATION_MS;
+      return Math.max(0, Math.floor((expires - Date.now()) / 1000));
+    };
+    setRemainingSeconds(calcRemaining());
+    const interval = setInterval(() => {
+      const r = calcRemaining();
+      setRemainingSeconds(r);
+      if (r <= 0) clearInterval(interval);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [shareToken, tokenCreatedAt]);
+
+  const isExpired = remainingSeconds !== null && remainingSeconds <= 0;
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   const generateToken = async () => {
     setGenerating(true);
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let token = '';
     for (let i = 0; i < 6; i++) token += chars[Math.floor(Math.random() * chars.length)];
-    
+    const now = new Date().toISOString();
     const { error } = await supabase
       .from('companies')
-      .update({ share_token: token } as any)
+      .update({ share_token: token, share_token_created_at: now } as any)
       .eq('id', companyId);
-
     if (error) {
       toast({ title: "Hiba", description: "Nem sikerült a kód generálása.", variant: "destructive" });
     } else {
       setShareToken(token);
-      toast({ title: "Siker", description: "Meghívó kód generálva!" });
+      setTokenCreatedAt(now);
+      toast({ title: "Siker", description: "Meghívó kód generálva! 10 percig érvényes." });
     }
     setGenerating(false);
   };
 
   const copyToken = () => {
-    if (shareToken) {
+    if (shareToken && !isExpired) {
       navigator.clipboard.writeText(shareToken);
       toast({ title: "Másolva", description: "Csatlakozási kód a vágólapra másolva." });
     }
@@ -128,7 +160,7 @@ function CompanyAccessCard({ companyId, toast }: { companyId: string; toast: any
           Cég hozzáférés
         </CardTitle>
         <CardDescription>
-          Meghívó kód generálása, amivel mások csatlakozhatnak a céghez
+          Meghívó kód generálása, amivel mások csatlakozhatnak a céghez (10 percig érvényes)
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -137,16 +169,29 @@ function CompanyAccessCard({ companyId, toast }: { companyId: string; toast: any
             {generating ? 'Generálás...' : 'Meghívó kód generálása'}
           </Button>
         ) : (
-          <div className="flex items-center gap-3">
-            <div className="flex-1 px-4 py-2 bg-muted rounded-md font-mono text-lg tracking-widest text-center">
-              {shareToken}
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className={`flex-1 px-4 py-2 bg-muted rounded-md font-mono text-lg tracking-widest text-center transition-all ${isExpired ? 'blur-sm select-none' : ''}`}>
+                {shareToken}
+              </div>
+              <Button variant="outline" size="icon" onClick={copyToken} title="Másolás" disabled={isExpired}>
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={generateToken} disabled={generating} title="Újragenerálás">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
             </div>
-            <Button variant="outline" size="icon" onClick={copyToken} title="Másolás">
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={generateToken} disabled={generating} title="Újragenerálás">
-              <RefreshCw className="h-4 w-4" />
-            </Button>
+            {remainingSeconds !== null && (
+              <div className="flex items-center gap-2 text-sm">
+                {isExpired ? (
+                  <span className="text-destructive font-medium">Lejárt — kattints az újragenerálásra</span>
+                ) : (
+                  <span className="text-muted-foreground">
+                    Hátralévő idő: <span className="font-mono font-medium text-foreground">{formatTime(remainingSeconds)}</span>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         )}
       </CardContent>
@@ -223,8 +268,10 @@ function CompanyMembersCard({ companyId, ownerId, isOwner, toast }: { companyId:
                 <div>
                   <p className="font-medium">
                     {member.profile?.name || 'Névtelen felhasználó'}
-                    {member.user_id === ownerId && (
+                    {member.user_id === ownerId ? (
                       <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Tulajdonos</span>
+                    ) : (
+                      <span className="ml-2 text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Admin</span>
                     )}
                   </p>
                   <p className="text-sm text-muted-foreground">
@@ -699,6 +746,14 @@ export default function Settings() {
                   </Alert>
                 ) : (
                   <>
+                    {selectedCompany.owner_id !== user?.id && (
+                      <Alert className="mb-4">
+                        <Info className="h-4 w-4" />
+                        <AlertDescription>
+                          Csak a tulajdonos szerkesztheti a cég adatait.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="company_name">Cég neve *</Label>
@@ -707,6 +762,7 @@ export default function Settings() {
                           value={companyName}
                           onChange={(e) => setCompanyName(e.target.value)}
                           placeholder="Pl. Példa Kft."
+                          disabled={selectedCompany.owner_id !== user?.id}
                         />
                       </div>
                       <div className="space-y-2">
@@ -716,6 +772,7 @@ export default function Settings() {
                           value={companyTaxNumber}
                           onChange={(e) => setCompanyTaxNumber(e.target.value)}
                           placeholder="Pl. 12345678-2-42"
+                          disabled={selectedCompany.owner_id !== user?.id}
                         />
                       </div>
                     </div>
@@ -728,16 +785,19 @@ export default function Settings() {
                         onChange={(e) => setCompanyAddress(e.target.value)}
                         placeholder="Pl. 1234 Budapest, Példa utca 1."
                         rows={3}
+                        disabled={selectedCompany.owner_id !== user?.id}
                       />
                     </div>
 
                     <div className="flex items-center gap-4 pt-2">
-                      <Button 
-                        onClick={saveCompanyData} 
-                        disabled={!companyName.trim() || savingCompany}
-                      >
-                        {savingCompany ? "Mentés..." : "Cég adatainak mentése"}
-                      </Button>
+                      {selectedCompany.owner_id === user?.id && (
+                        <Button 
+                          onClick={saveCompanyData} 
+                          disabled={!companyName.trim() || savingCompany}
+                        >
+                          {savingCompany ? "Mentés..." : "Cég adatainak mentése"}
+                        </Button>
+                      )}
                       <p className="text-sm text-muted-foreground">
                         Létrehozva: {new Date(selectedCompany.created_at).toLocaleDateString('hu-HU')}
                       </p>

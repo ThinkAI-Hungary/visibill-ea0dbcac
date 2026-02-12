@@ -112,6 +112,10 @@ const CompanySelector = () => {
         toast.error('Érvénytelen csatlakozási kód!');
         return;
       }
+      if (data?.error === 'token_expired') {
+        toast.error('A csatlakozási kód lejárt! Kérj új kódot a cég tulajdonosától.');
+        return;
+      }
       if (data?.error) {
         toast.error(data.error);
         return;
