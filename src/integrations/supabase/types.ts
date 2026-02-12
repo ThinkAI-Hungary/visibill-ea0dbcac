@@ -264,6 +264,7 @@ export type Database = {
           name: string
           owner_id: string
           share_token: string | null
+          share_token_created_at: string | null
           tax_number: string | null
           updated_at: string
         }
@@ -274,6 +275,7 @@ export type Database = {
           name: string
           owner_id: string
           share_token?: string | null
+          share_token_created_at?: string | null
           tax_number?: string | null
           updated_at?: string
         }
@@ -284,6 +286,7 @@ export type Database = {
           name?: string
           owner_id?: string
           share_token?: string | null
+          share_token_created_at?: string | null
           tax_number?: string | null
           updated_at?: string
         }
