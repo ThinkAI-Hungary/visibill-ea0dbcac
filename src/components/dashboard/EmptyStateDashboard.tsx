@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle } from 'lucide-react';
+import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle, Users } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface OnboardingProject {
   name: string;
@@ -88,6 +89,9 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
   const [companyName, setCompanyName] = useState('');
   const [companyTaxNumber, setCompanyTaxNumber] = useState('');
   const [companyAddress, setCompanyAddress] = useState('');
+  const [step1Tab, setStep1Tab] = useState('create');
+  const [joinCode, setJoinCode] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
 
   // Step 2: Projects data
   const [projects, setProjects] = useState<OnboardingProject[]>([]);
@@ -363,45 +367,124 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
     }
   };
 
+  const handleJoinCompany = async () => {
+    if (!joinCode.trim()) {
+      toast.error('A csatlakozási kód kötelező!');
+      return;
+    }
+
+    setIsJoining(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Nincs bejelentkezve');
+
+      const { data, error } = await supabase.functions.invoke('join-company', {
+        body: { share_token: joinCode.trim() },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.error === 'already_member') {
+        toast.error('Már tagja vagy ennek a cégnek!');
+        return;
+      }
+      if (data?.error === 'invalid_code') {
+        toast.error('Érvénytelen csatlakozási kód!');
+        return;
+      }
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      await refreshCompanies();
+      if (data?.company) {
+        setSelectedCompany(data.company);
+      }
+      toast.success('Sikeresen csatlakoztál a céghez!');
+      onOnboardingComplete?.();
+    } catch (error) {
+      console.error('Error joining company:', error);
+      toast.error('Hiba történt a csatlakozás során');
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
   const renderStep1 = () => (
     <div className="space-y-4">
       <div className="text-center mb-6">
         <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
           <Building2 className="h-7 w-7 text-primary" />
         </div>
-        <h3 className="text-xl font-semibold">Cég regisztráció</h3>
-        <p className="text-sm text-muted-foreground mt-1">Add meg a vállalkozásod adatait</p>
+        <h3 className="text-xl font-semibold">Cég hozzáadása</h3>
+        <p className="text-sm text-muted-foreground mt-1">Regisztrálj új céget vagy csatlakozz egy meglévőhöz</p>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="company-name">Cég neve *</Label>
-        <Input
-          id="company-name"
-          value={companyName}
-          onChange={(e) => setCompanyName(e.target.value)}
-          placeholder="Pl. Példa Kft."
-        />
-      </div>
+      <Tabs value={step1Tab} onValueChange={setStep1Tab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="create">Új cég regisztrációja</TabsTrigger>
+          <TabsTrigger value="join">Csatlakozás meglévőhöz</TabsTrigger>
+        </TabsList>
+        <TabsContent value="create" className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="company-name">Cég neve *</Label>
+            <Input
+              id="company-name"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="Pl. Példa Kft."
+            />
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="tax-number">Adószám *</Label>
-        <Input
-          id="tax-number"
-          value={companyTaxNumber}
-          onChange={(e) => setCompanyTaxNumber(e.target.value)}
-          placeholder="Pl. 12345678-2-42"
-        />
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="tax-number">Adószám *</Label>
+            <Input
+              id="tax-number"
+              value={companyTaxNumber}
+              onChange={(e) => setCompanyTaxNumber(e.target.value)}
+              placeholder="Pl. 12345678-2-42"
+            />
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="address">Cím</Label>
-        <Input
-          id="address"
-          value={companyAddress}
-          onChange={(e) => setCompanyAddress(e.target.value)}
-          placeholder="Pl. 1234 Budapest, Példa utca 1."
-        />
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="address">Cím</Label>
+            <Input
+              id="address"
+              value={companyAddress}
+              onChange={(e) => setCompanyAddress(e.target.value)}
+              placeholder="Pl. 1234 Budapest, Példa utca 1."
+            />
+          </div>
+        </TabsContent>
+        <TabsContent value="join" className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="joinCode">Csatlakozási kód</Label>
+            <Input
+              id="joinCode"
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+              placeholder="Pl. ABC123"
+              maxLength={6}
+              className="text-center text-lg tracking-widest font-mono"
+            />
+            <p className="text-sm text-muted-foreground">
+              Kérd el a cég tulajdonosától a 6 karakteres csatlakozási kódot.
+            </p>
+          </div>
+          <Button
+            onClick={handleJoinCompany}
+            disabled={!joinCode.trim() || isJoining}
+            className="w-full"
+          >
+            <Users className="h-4 w-4 mr-2" />
+            {isJoining ? 'Csatlakozás...' : 'Csatlakozás a céghez'}
+          </Button>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 
@@ -710,7 +793,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
 
   // Check if next button should be disabled
   const isNextDisabled = () => {
-    if (currentStep === 1) return !isStep1Valid;
+    if (currentStep === 1) return step1Tab === 'join' || !isStep1Valid;
     // Steps 2 and 3 are optional
     return false;
   };
