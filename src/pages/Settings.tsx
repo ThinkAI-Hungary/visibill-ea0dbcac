@@ -28,7 +28,11 @@ import {
   Mail,
   Download,
   Info,
-  AlertCircle
+  AlertCircle,
+  Copy,
+  RefreshCw,
+  Users,
+  X
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -65,6 +69,180 @@ interface SystemSettings {
   date_format: string;
   number_format: string;
   timezone: string;
+}
+
+// --- Company Access Card (Share Token) ---
+function CompanyAccessCard({ companyId, toast }: { companyId: string; toast: any }) {
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+
+  useEffect(() => {
+    const fetch = async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from('companies')
+        .select('share_token')
+        .eq('id', companyId)
+        .single();
+      setShareToken((data as any)?.share_token || null);
+      setLoading(false);
+    };
+    fetch();
+  }, [companyId]);
+
+  const generateToken = async () => {
+    setGenerating(true);
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let token = '';
+    for (let i = 0; i < 6; i++) token += chars[Math.floor(Math.random() * chars.length)];
+    
+    const { error } = await supabase
+      .from('companies')
+      .update({ share_token: token } as any)
+      .eq('id', companyId);
+
+    if (error) {
+      toast({ title: "Hiba", description: "Nem sikerült a kód generálása.", variant: "destructive" });
+    } else {
+      setShareToken(token);
+      toast({ title: "Siker", description: "Meghívó kód generálva!" });
+    }
+    setGenerating(false);
+  };
+
+  const copyToken = () => {
+    if (shareToken) {
+      navigator.clipboard.writeText(shareToken);
+      toast({ title: "Másolva", description: "Csatlakozási kód a vágólapra másolva." });
+    }
+  };
+
+  if (loading) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          Cég hozzáférés
+        </CardTitle>
+        <CardDescription>
+          Meghívó kód generálása, amivel mások csatlakozhatnak a céghez
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {!shareToken ? (
+          <Button onClick={generateToken} disabled={generating}>
+            {generating ? 'Generálás...' : 'Meghívó kód generálása'}
+          </Button>
+        ) : (
+          <div className="flex items-center gap-3">
+            <div className="flex-1 px-4 py-2 bg-muted rounded-md font-mono text-lg tracking-widest text-center">
+              {shareToken}
+            </div>
+            <Button variant="outline" size="icon" onClick={copyToken} title="Másolás">
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={generateToken} disabled={generating} title="Újragenerálás">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// --- Company Members Card ---
+function CompanyMembersCard({ companyId, ownerId, isOwner, toast }: { companyId: string; ownerId: string; isOwner: boolean; toast: any }) {
+  const [members, setMembers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchMembers = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('company_members')
+      .select('id, user_id, created_at')
+      .eq('company_id', companyId);
+
+    if (data && data.length > 0) {
+      // Fetch profiles for each member
+      const userIds = data.map(m => m.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .in('user_id', userIds);
+
+      const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+      setMembers(data.map(m => ({
+        ...m,
+        profile: profileMap.get(m.user_id) || null,
+      })));
+    } else {
+      setMembers([]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchMembers(); }, [companyId]);
+
+  const removeMember = async (memberId: string, userId: string) => {
+    if (userId === ownerId) return;
+    const { error } = await supabase
+      .from('company_members')
+      .delete()
+      .eq('id', memberId);
+
+    if (error) {
+      toast({ title: "Hiba", description: "Nem sikerült a tag eltávolítása.", variant: "destructive" });
+    } else {
+      toast({ title: "Siker", description: "Tag eltávolítva." });
+      fetchMembers();
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          Tagok
+        </CardTitle>
+        <CardDescription>A céghez hozzáféréssel rendelkező felhasználók</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Betöltés...</p>
+        ) : members.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nincsenek tagok.</p>
+        ) : (
+          <div className="space-y-2">
+            {members.map((member) => (
+              <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                <div>
+                  <p className="font-medium">
+                    {member.profile?.name || 'Névtelen felhasználó'}
+                    {member.user_id === ownerId && (
+                      <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Tulajdonos</span>
+                    )}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Csatlakozott: {new Date(member.created_at).toLocaleDateString('hu-HU')}
+                  </p>
+                </div>
+                {isOwner && member.user_id !== ownerId && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeMember(member.id, member.user_id)} title="Tag eltávolítása">
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function Settings() {
@@ -568,6 +746,21 @@ export default function Settings() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Company Access - Share Token */}
+            {selectedCompany && selectedCompany.owner_id === user?.id && (
+              <CompanyAccessCard companyId={selectedCompany.id} toast={toast} />
+            )}
+
+            {/* Company Members */}
+            {selectedCompany && (
+              <CompanyMembersCard 
+                companyId={selectedCompany.id} 
+                ownerId={selectedCompany.owner_id} 
+                isOwner={selectedCompany.owner_id === user?.id} 
+                toast={toast} 
+              />
+            )}
 
             {/* All Companies Overview */}
             {companies.length > 1 && (

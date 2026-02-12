@@ -263,6 +263,7 @@ export type Database = {
           id: string
           name: string
           owner_id: string
+          share_token: string | null
           tax_number: string | null
           updated_at: string
         }
@@ -272,6 +273,7 @@ export type Database = {
           id?: string
           name: string
           owner_id: string
+          share_token?: string | null
           tax_number?: string | null
           updated_at?: string
         }
@@ -281,10 +283,40 @@ export type Database = {
           id?: string
           name?: string
           owner_id?: string
+          share_token?: string | null
           tax_number?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      company_members: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       egyszerusitett_szamla_backup: {
         Row: {
