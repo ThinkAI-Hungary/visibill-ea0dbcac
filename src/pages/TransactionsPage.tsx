@@ -55,7 +55,15 @@ const isAutoApproved = (transaction: Transaction): boolean => {
   return !!(transaction.confidence_score && transaction.confidence_score >= 0.97 && transaction.matched_invoice_id);
 };
 
+const isNoCategoryMatch = (transaction: Transaction): boolean => {
+  return transaction.match_type === 'no_match_category';
+};
+
 const getMatchStatus = (transaction: Transaction): MatchStatus => {
+  // no_match_category treated as matched/validated
+  if (isNoCategoryMatch(transaction)) {
+    return 'matched';
+  }
   if (transaction.is_verified && transaction.matched_invoice_id) {
     return 'matched';
   }
@@ -77,13 +85,44 @@ const getMatchStatusIcon = (status: MatchStatus) => {
 };
 
 const getRowBackgroundClass = (transaction: Transaction): string => {
-  if (transaction.is_verified && transaction.matched_invoice_id) {
-    return 'bg-success/10 hover:bg-success/15';
+  if (isNoCategoryMatch(transaction) || (transaction.is_verified && transaction.matched_invoice_id)) {
+    return 'bg-success/20 hover:bg-success/25 dark:bg-success/10 dark:hover:bg-success/15';
   }
   if (transaction.matched_invoice_id && !transaction.is_verified) {
-    return 'bg-warning/10 hover:bg-warning/15';
+    return 'bg-warning/20 hover:bg-warning/25 dark:bg-warning/10 dark:hover:bg-warning/15';
   }
-  return 'bg-destructive/10 hover:bg-destructive/15';
+  return 'bg-destructive/20 hover:bg-destructive/25 dark:bg-destructive/10 dark:hover:bg-destructive/15';
+};
+
+// Type-based background color mapping
+const getTypeBgClass = (type: string | null): string => {
+  if (!type) return '';
+  const t = type.toLowerCase().trim();
+  
+  // Dark Blue: szállítói tranzakció
+  if (t === 'szállítói tranzakció') return 'bg-[hsl(220,70%,50%)] text-white dark:bg-[hsl(220,70%,40%)]';
+  // Green: vevői tranzakció
+  if (t === 'vevői tranzakció') return 'bg-[hsl(142,71%,45%)] text-white dark:bg-[hsl(142,71%,35%)]';
+  // Light Blue: számlák közötti átvezetés
+  if (t === 'számlák közötti átvezetés') return 'bg-[hsl(200,80%,75%)] text-[hsl(200,80%,15%)] dark:bg-[hsl(200,60%,30%)] dark:text-[hsl(200,80%,85%)]';
+  // Orange: banki számlavezetési díj
+  if (t === 'banki számlavezetési díj') return 'bg-[hsl(30,90%,55%)] text-white dark:bg-[hsl(30,90%,40%)]';
+  // Light Orange: kártyadíj
+  if (t === 'kártyadíj') return 'bg-[hsl(35,90%,70%)] text-[hsl(35,90%,15%)] dark:bg-[hsl(35,70%,35%)] dark:text-[hsl(35,90%,85%)]';
+  // Pink: hiteltörlesztés, tranzakciós illeték, kamat
+  if (t === 'hiteltörlesztés' || t === 'tranzakciós illeték' || t === 'kamat') return 'bg-[hsl(330,70%,65%)] text-white dark:bg-[hsl(330,60%,40%)]';
+  // Brown: atm pénzfelvét
+  if (t === 'atm pénzfelvét') return 'bg-[hsl(25,50%,40%)] text-white dark:bg-[hsl(25,50%,30%)]';
+  // Light Brown: pénztári kp felvét
+  if (t === 'pénztári kp felvét') return 'bg-[hsl(25,40%,60%)] text-white dark:bg-[hsl(25,40%,35%)]';
+  // Light Green: pénztári kp befizetés, kp befizetés atm-en keresztül
+  if (t === 'pénztári kp befizetés' || t === 'kp befizetés atm-en keresztül') return 'bg-[hsl(142,50%,70%)] text-[hsl(142,50%,15%)] dark:bg-[hsl(142,40%,30%)] dark:text-[hsl(142,50%,85%)]';
+  // Light Purple: bérek
+  if (t === 'bérek') return 'bg-[hsl(270,50%,70%)] text-[hsl(270,50%,15%)] dark:bg-[hsl(270,40%,35%)] dark:text-[hsl(270,50%,85%)]';
+  // Dark Purple: járulékok/adók
+  if (t === 'járulékok/adók') return 'bg-[hsl(270,60%,40%)] text-white dark:bg-[hsl(270,60%,30%)]';
+  
+  return '';
 };
 
 const TransactionsPage = () => {
@@ -649,9 +688,16 @@ const TransactionsPage = () => {
                           </TableCell>
                           <TableCell className="text-xs">{transaction.currency || 'HUF'}</TableCell>
                           <TableCell>
-                            <span className="text-xs text-muted-foreground">
-                              {transaction.type || '-'}
-                            </span>
+                            {transaction.type ? (
+                              <span className={cn(
+                                "text-xs px-1.5 py-0.5 rounded-md inline-block",
+                                getTypeBgClass(transaction.type) || "text-muted-foreground"
+                              )}>
+                                {transaction.type}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
                           </TableCell>
                           <TableCell className="text-center">
                             <TooltipProvider delayDuration={0}>
