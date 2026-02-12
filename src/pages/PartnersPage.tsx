@@ -110,14 +110,13 @@ export default function PartnersPage() {
 
   // Fetch partners - company scoped (required)
   const { data: partners, isLoading } = useQuery({
-    queryKey: ["partners", user?.id, selectedCompany?.id],
+    queryKey: ["partners", selectedCompany?.id],
     queryFn: async () => {
-      if (!user?.id || !selectedCompany?.id) return [];
+      if (!selectedCompany?.id) return [];
       
       const { data, error } = await supabase
         .from("partners")
         .select("*")
-        .eq("user_id", user.id)
         .eq("company_id", selectedCompany.id)
         .order("name", { ascending: true });
       
