@@ -1,216 +1,171 @@
 
-# Tranzakciók oldal funkcionalitás bővítése
 
-## Projekt összefoglaló
+# Multi-Tenancy Refactor: Many-to-Many (Users <-> Companies)
 
-A Tranzakciók oldal jelentős funkcionalitás-bővítése, amely AI-alapú számlázás-párosítást, manuális korrekciót és részfizetési logikát is tartalmaz.
-
-## Tervezett funkciók
-
-### 1. Bővített táblázat oszlopok és szűrés
-
-Az alábbi oszlopok lesznek láthatók és szűrhetők:
-
-| Oszlop | Leírás | Szűrhető/Rendezhető |
-|--------|--------|---------------------|
-| Partner/Tétel | Párosított számla partnere vagy tranzakció leírás | Szűrhető |
-| Dátum | Tranzakció dátuma | Rendezhető |
-| Összeg | Teljes érték pénznemmel | Rendezhető |
-| Leírás | Eredeti bankkivonat közlemény | Szűrhető |
-| Típus | Kategorizált típus (pl. Kártyafizetés, ATM, Átutalás) | Szűrhető |
-| Státusz | Vizuális ikon - Pipa/X/Kérdőjel | Szűrhető |
-| Indoklás | AI döntés magyarázata (első 10 karakter) | Hover: tooltip |
-| Művelet | Rendben gomb + manuális párosítás | - |
-
-### 2. Vizuális visszajelzés és színkódolás
-
-A sorok háttérszíne a párosítási státusztól függ:
-
-```text
-+--------------------------------------------------+
-| Zöld háttér   | is_verified=true, matched_invoice_id létezik |
-+--------------------------------------------------+
-| Sárga háttér  | matched_invoice_id létezik, de is_verified=false |
-+--------------------------------------------------+
-| Piros háttér  | matched_invoice_id nincs |
-+--------------------------------------------------+
-```
-
-Színkódok Tailwind osztályokkal:
-- Zöld: `bg-success/10` 
-- Sárga: `bg-warning/10`
-- Piros: `bg-destructive/10`
-
-### 3. Manuális párosítási felület
-
-Új dialog komponens létrehozása: `TransactionMatchDialog.tsx`
-
-Funkciók:
-- Keresési mező számlák szűréséhez (partner név, számlaszám, összeg)
-- Párosítatlan számlák listázása a tranzakció dátumához közeli időszakból (-30/+7 nap)
-- Számla kiválasztás és mentés
-- Részfizetés jelzése ha az összeg nem egyezik
-
-### 4. AI indoklás megjelenítése
-
-A `reason` mező a `transactions` táblában már létezik. Megjelenítés:
-
-```text
-+-------------------+------------------------------------------+
-| Cellában         | Első 10 karakter + "..." ha hosszabb     |
-+-------------------+------------------------------------------+
-| Hover (Tooltip)  | Teljes indoklás szöveg (max 300 char)   |
-+-------------------+------------------------------------------+
-```
-
-Tooltip implementáció: `TooltipProvider` + `delayDuration={0}` az instant megjelenéshez.
-
-### 5. Részfizetési logika (One-to-Many)
-
-Üzleti logika:
-- Egy számlához több tranzakció is kapcsolható
-- A rendszer nyilvántartja a már befizetett összeget
-- Vizuális jelzés ha a számla még nincs teljesen kiegyenlítve
-
-Adatbázis szempontok:
-- A `matched_invoice_id` mező már támogatja ezt (több tranzakció ugyanarra a számlára mutathat)
-- Új mező nem szükséges - aggregált lekérdezéssel számítható a maradék összeg
+Refactoring company access from single-owner to shared membership model with join codes.
 
 ---
 
-## Technikai részletek
+## Step 1: Database Migration (Manual SQL)
 
-### Érintett fájlok
+A single SQL script to run manually, covering all schema and policy changes:
 
-| Fájl | Változtatás |
-|------|-------------|
-| `src/pages/TransactionsPage.tsx` | Táblázat bővítése, színkódolás, új oszlopok, Rendben gomb, manuális párosítás trigger |
-| `src/components/TransactionMatchDialog.tsx` | **ÚJ** - Manuális párosítási dialog komponens |
-| `src/components/TransactionReasonCell.tsx` | **ÚJ** - AI indoklás megjelenítő cella komponens |
+### 1a. Create `company_members` junction table
+- Columns: `id` (uuid PK), `user_id` (uuid, NOT NULL, references auth.users ON DELETE CASCADE), `company_id` (uuid, NOT NULL, references public.companies ON DELETE CASCADE), `created_at` (timestamptz)
+- UNIQUE constraint on (user_id, company_id)
+- RLS enabled
 
-### Transaction interface bővítése
+### 1b. Add `share_token` to `companies`
+- New column: `share_token` (text, UNIQUE, nullable)
 
-```typescript
-interface Transaction {
-  id: string;
-  transaction_date: string;
-  description: string | null;
-  amount: number;
-  currency: string | null;
-  type: string | null;
-  matched_invoice_id: string | null;
-  confidence_score: number | null;
-  is_verified: boolean | null;
-  match_type: string | null;
-  reason: string | null;  // Már létezik a DB-ben
-  created_at: string | null;
-  company_id: string | null;
-}
+### 1c. Migrate existing data
+- INSERT INTO company_members from all existing companies (owner_id -> user_id)
+
+### 1d. Create trigger: `on_company_created`
+- AFTER INSERT on `public.companies`
+- Automatically inserts a row into `company_members` using `NEW.id` and `NEW.owner_id`
+- This eliminates the need for frontend to manually insert membership on company creation
+
+### 1e. RLS on `company_members`
+- SELECT: `auth.uid() = user_id`
+- DELETE: `auth.uid() = user_id` (user can leave)
+- No INSERT policy for regular users (handled by trigger + edge function with service role)
+
+### 1f. Update `user_has_company_access` function
+Replace owner check with membership check:
+```text
+SELECT EXISTS (
+  SELECT 1 FROM public.company_members
+  WHERE company_id = p_company_id AND user_id = auth.uid()
+)
 ```
 
-### Új API hívások
+### 1g. Update `companies` RLS policies
+- DROP old SELECT/UPDATE policies that check `owner_id`
+- New SELECT: membership check via `company_members`
+- New UPDATE: membership check via `company_members`
+- INSERT remains: `auth.uid() = owner_id` (only creator sets owner)
+- DELETE remains: `auth.uid() = owner_id` (only owner can delete)
 
-1. **Számla lekérdezés párosításhoz**:
-```typescript
-const { data } = await supabase
-  .from('nav_invoices')
-  .select('id, invoice_number, invoice_gross_amount, supplier_name, customer_name, currency, invoice_issue_date')
-  .eq('company_id', selectedCompany.id)
-  .is('matched_transaction_id', null) // Opcionális filter
-  .order('invoice_issue_date', { ascending: false });
-```
+### 1h. Update RLS on shared-resource tables
+The following tables have `company_id` and need membership-based access instead of `user_id`-based:
 
-2. **Párosítás mentése**:
-```typescript
-await supabase
-  .from('transactions')
-  .update({
-    matched_invoice_id: invoiceId,
-    is_verified: true,
-    match_type: 'manual'
-  })
-  .eq('id', transactionId);
-```
+**invoices** -- Drop old 4 policies, create new ones checking `company_members` via `company_id`
 
-3. **"Rendben" gomb - verifikálás**:
-```typescript
-await supabase
-  .from('transactions')
-  .update({ is_verified: true })
-  .eq('id', transactionId);
-```
+**nav_invoices** -- Drop old ALL policy, create new ALL policy checking `company_members`
 
-### Szín kódolás implementáció
+**partners** -- Drop old 4 policies, create new ones checking `company_members`
 
-```typescript
-const getRowBackgroundClass = (transaction: Transaction): string => {
-  if (transaction.is_verified && transaction.matched_invoice_id) {
-    return 'bg-success/10 hover:bg-success/15';
-  }
-  if (transaction.matched_invoice_id && !transaction.is_verified) {
-    return 'bg-warning/10 hover:bg-warning/15';
-  }
-  return 'bg-destructive/10 hover:bg-destructive/15';
-};
-```
+**salary** -- Drop old 4 policies, create new ones checking `company_members`
 
-### TransactionMatchDialog komponens struktúra
+**salary_files** -- Drop old 4 policies, create new ones checking `company_members`
 
-```typescript
-interface TransactionMatchDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  transaction: Transaction;
-  companyId: string;
-  onMatch: (invoiceId: string) => void;
-}
-```
+**tax** -- Drop old 4 policies, create new ones checking `company_members`
 
-Tartalom:
-- Tranzakció adatok összefoglaló kártya
-- Keresési input számla kereséséhez
-- Szűrt számla lista (`nav_invoices` + `invoices` táblákból)
-- Összeg összehasonlítás jelzés (egyezik / részleges)
-- Párosítás gomb
+**email_aliases** -- Drop old 4 policies, create new ones checking `company_members`
 
-### Részfizetési összesítő logika
+**invoice_uploads** -- Drop old 4 policies, create new ones checking `company_members`
 
-Párosítási dialógban megjelenik ha a számla már rendelkezik más tranzakciókkal:
+**bank_statements** -- Drop old 4 policies, create new ones checking `company_members`
 
-```typescript
-// Lekérdezi az adott számlához már párosított tranzakciókat
-const { data: existingMatches } = await supabase
-  .from('transactions')
-  .select('amount')
-  .eq('matched_invoice_id', invoiceId)
-  .eq('is_verified', true);
+**bank_statement_uploads** -- Drop old 4 policies, create new ones checking `company_members`
 
-const alreadyPaid = existingMatches?.reduce((sum, t) => sum + Math.abs(t.amount), 0) || 0;
-const remaining = invoiceGrossAmount - alreadyPaid;
-```
+**nav_sync_logs** -- Drop old SELECT policy, create new one checking `company_members`
 
-### Compact table stílus
+**user_nav_credentials** -- Drop old ALL policy, create new ALL policy checking `company_members`
 
-A meglévő `compact-table` CSS osztály használata, de a "reason" oszlophoz egyedi szélesség:
+**categories** -- Drop old 4 policies, create new ones checking `company_members`
 
-```css
-.reason-cell {
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+**projects** -- Drop old 4 policies, create new ones checking `company_members`
+
+**transactions** -- Already company-based via companies table join; will be updated to use `company_members` directly
+
+**transaction_uploads** -- Drop old 4 policies, create new ones checking `company_members`
+
+Each policy follows the pattern:
+```text
+EXISTS (
+  SELECT 1 FROM public.company_members
+  WHERE company_members.company_id = <table>.company_id
+    AND company_members.user_id = auth.uid()
+)
 ```
 
 ---
 
-## Implementációs sorrend
+## Step 2: Edge Function - `join-company`
 
-1. `TransactionsPage.tsx` - Transaction interface bővítése a `reason` mezővel
-2. `TransactionsPage.tsx` - Sor háttérszín logika hozzáadása
-3. `TransactionsPage.tsx` - "Indoklás" oszlop hozzáadása tooltip-pal
-4. `TransactionsPage.tsx` - "Rendben" gomb implementálása verifikáláshoz
-5. `TransactionMatchDialog.tsx` - Új komponens létrehozása
-6. `TransactionsPage.tsx` - Manuális párosítás gomb és dialog integráció
-7. `TransactionMatchDialog.tsx` - Részfizetési logika hozzáadása
-8. Tesztelés és finomhangolás
+Create `supabase/functions/join-company/index.ts`:
+
+- `verify_jwt = true` in config.toml (user must be authenticated)
+- POST endpoint accepting `{ share_token: string }`
+- Uses service role client to:
+  1. Find company by `share_token` (bypasses RLS since user isn't a member yet)
+  2. Check if user is already a member
+  3. Insert into `company_members` using service role
+- Returns company data on success
+- CORS headers included
+
+---
+
+## Step 3: Update `CompanyContext.tsx`
+
+- Remove `.eq('owner_id', user.id)` filter from `fetchCompanies`
+- Simply query `companies` with `select('*')` and let RLS (membership-based) handle filtering
+- The `Company` interface keeps `owner_id` (still needed for delete permission checks)
+
+---
+
+## Step 4: Update `CompanySelector.tsx` - Add Join Tab
+
+Modify the create dialog to have two tabs:
+
+**Tab 1: "Uj ceg letrehozasa"** (default) -- existing create form, unchanged (trigger handles membership)
+
+**Tab 2: "Csatlakozas meglevo ceghez"**
+- Input field for 6-character join code
+- "Csatlakozas" button
+- Calls the `join-company` edge function
+- On success: refreshes companies, switches to joined company
+- Error handling for "already a member", "invalid code"
+
+---
+
+## Step 5: Settings Page - Share Token & Members
+
+Add a new Card in the "Ceg" (Business) tab of `src/pages/Settings.tsx`:
+
+### Share Token Section ("Ceg hozzaferes")
+- If no `share_token`: "Meghivo kod generalasa" button
+- If `share_token` exists: display code with Copy button + "Ujrageneralas" button
+- Generate: random 6-char alphanumeric, save via Supabase update on `companies`
+- Only visible to company owner (`selectedCompany.owner_id === user.id`)
+
+### Members List ("Tagok")
+- Query `company_members` joined with `profiles` for the selected company
+- Display member names/emails
+- Owner can remove members (delete from `company_members`)
+
+---
+
+## Step 6: No Frontend Membership Insert Needed
+
+Thanks to the `on_company_created` trigger:
+- `CompanySelector.tsx` `handleCreateCompany` -- no change needed
+- `EmptyStateDashboard.tsx` `handleFinishOnboarding` -- no change needed
+- Both already insert into `companies` with `owner_id`, and the trigger auto-creates membership
+
+---
+
+## Files to Create
+- `supabase/functions/join-company/index.ts`
+
+## Files to Modify
+- `supabase/config.toml` -- add `[functions.join-company]` with `verify_jwt = true`
+- `src/contexts/CompanyContext.tsx` -- remove owner_id filter
+- `src/components/CompanySelector.tsx` -- add join tab UI
+- `src/pages/Settings.tsx` -- add share token management + members list
+
+## SQL to Provide (manual execution)
+- Single comprehensive migration script covering all schema changes, trigger, function updates, and RLS policy updates
+
