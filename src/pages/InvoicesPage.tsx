@@ -1293,7 +1293,7 @@ const InvoicesPage = () => {
                             onClick={() => handleSort('invoice_number')}
                           >
                             <div className="flex items-center gap-2">
-                              Számlaszám
+                              Bizonylatsorszám
                               <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                           </TableHead>
