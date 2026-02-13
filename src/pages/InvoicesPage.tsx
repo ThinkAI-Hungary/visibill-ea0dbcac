@@ -1099,7 +1099,7 @@ const InvoicesPage = () => {
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as InvoiceTab)}>
               <TabsList className="grid w-full max-w-lg grid-cols-3">
-                <TabsTrigger value="OUTBOUND">Kimenő</TabsTrigger>
+                <TabsTrigger value="OUTBOUND">Kimenő (NAV)</TabsTrigger>
                 <TabsTrigger value="INBOUND">Bejövő</TabsTrigger>
                 <TabsTrigger value="SUBMITTED">Beküldött</TabsTrigger>
               </TabsList>
