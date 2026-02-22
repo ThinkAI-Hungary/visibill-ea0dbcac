@@ -181,6 +181,7 @@ const Projects = () => {
           .from('projects')
           .insert({
             user_id: user.id,
+            company_id: selectedCompany?.id,
             name: editingProject.name,
             description: editingProject.description,
             client_name: editingProject.client_name,
