@@ -59,7 +59,6 @@ export function PartnerCombobox({
       let query = supabase
         .from('partners')
         .select('id, name, tax_number, partner_type')
-        .eq('user_id', user.id)
         .in('partner_type', ['customer', 'both'])
         .order('name');
 
