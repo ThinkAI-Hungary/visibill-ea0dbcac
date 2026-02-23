@@ -578,58 +578,31 @@ const ManualUpload = () => {
 
         if (dbError) throw dbError;
 
-        // Trigger n8n webhook for processing
+        // Trigger processing via edge function (avoids CORS issues with direct webhook calls)
         const webhookUrl = 'https://n8n.thinkaikontir.hu/webhook/supabase-transaction_storage-trigger';
         
         try {
-          const webhookPayload = {
-            file_url: urlData.publicUrl,
-            file_name: file.name,
-            upload_id: uploadRecord.id,
-            company_id: selectedCompany.id
-          };
+          console.log('Triggering transaction processing via edge function:', { uploadId: uploadRecord.id });
 
-          console.log('Sending transaction webhook:', { webhookUrl, payload: webhookPayload });
-
-          const webhookResponse = await fetch(webhookUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(webhookPayload)
+          const { data: triggerData, error: triggerError } = await supabase.functions.invoke('trigger-transaction-processing', {
+            body: {
+              uploadId: uploadRecord.id,
+              webhookUrl,
+              fileUrl: urlData.publicUrl,
+              fileName: file.name,
+              companyId: selectedCompany.id
+            }
           });
 
-          if (webhookResponse.ok) {
-            // Update processing status to webhook_sent
-            await supabase
-              .from('transaction_uploads')
-              .update({ processing_status: 'webhook_sent' })
-              .eq('id', uploadRecord.id);
-            
+          if (triggerError) {
+            console.error('Edge function error:', triggerError);
+          } else if (triggerData?.success) {
             successfulUploads++;
           } else {
-            console.error('Webhook failed:', webhookResponse.status, webhookResponse.statusText);
-            
-            // Update status to webhook_failed
-            await supabase
-              .from('transaction_uploads')
-              .update({ 
-                processing_status: 'webhook_failed',
-                error_message: `Webhook failed: ${webhookResponse.status} ${webhookResponse.statusText}`
-              })
-              .eq('id', uploadRecord.id);
+            console.error('Webhook failed via edge function:', triggerData);
           }
         } catch (webhookError) {
           console.error('Webhook trigger error:', webhookError);
-          
-          // Update status to webhook_failed
-          await supabase
-            .from('transaction_uploads')
-            .update({ 
-              processing_status: 'webhook_failed',
-              error_message: `Webhook error: ${webhookError instanceof Error ? webhookError.message : 'Unknown error'}`
-            })
-            .eq('id', uploadRecord.id);
         }
       }
 
