@@ -579,7 +579,7 @@ const ManualUpload = () => {
         if (dbError) throw dbError;
 
         // Trigger n8n webhook for processing
-        const webhookUrl = 'https://n8n.thinkaikontir.hu/webhook-test/supabase-transaction_storage-trigger';
+        const webhookUrl = 'https://n8n.thinkaikontir.hu/webhook/supabase-transaction_storage-trigger';
         
         try {
           const webhookPayload = {
