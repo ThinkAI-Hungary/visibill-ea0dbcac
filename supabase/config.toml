@@ -71,3 +71,6 @@ verify_jwt = true
 
 [functions.join-company]
 verify_jwt = true
+
+[functions.trigger-transaction-processing]
+verify_jwt = true
