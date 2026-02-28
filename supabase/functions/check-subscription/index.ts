@@ -47,25 +47,14 @@ serve(async (req) => {
     if (!authHeader) throw new Error("No authorization header provided");
     logStep("Authorization header found");
 
-    logStep("Authenticating user with token");
     const token = authHeader.replace(/^Bearer\s+/i, "");
 
-    // Prefer decoding the JWT directly to avoid GoTrue session dependency
-    let userId: string | null = null;
-    let userEmail: string | null = null;
-    try {
-      const [, payload] = token.split(".");
-      const json = JSON.parse(atob(payload));
-      userId = json.sub || null;
-      userEmail = json.email || json.user_metadata?.email || null;
-    } catch (_) {
-      // Fallback to Supabase auth.getUser if decoding fails
-      const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
-      if (userError) throw new Error(`Authentication error: ${userError.message}`);
-      userId = user?.id ?? null;
-      userEmail = user?.email ?? null;
-    }
-
+    // Validate JWT via Supabase auth
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+    if (userError || !user) throw new Error(`Authentication error: ${userError?.message || 'User not found'}`);
+    
+    const userId = user.id;
+    const userEmail = user.email;
     if (!userId || !userEmail) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId, email: userEmail });
 
