@@ -37,59 +37,42 @@ serve(async (req) => {
       .eq('id', uploadId);
 
     if (webhookUrl) {
-      try {
-        const webhookPayload = {
-          file_url: fileUrl,
-          file_name: fileName,
-          upload_id: uploadId,
-          company_id: companyId,
-          supabaseUrl: supabaseUrl
-        };
+      const webhookPayload = {
+        file_url: fileUrl,
+        file_name: fileName,
+        upload_id: uploadId,
+        company_id: companyId,
+        supabaseUrl: supabaseUrl
+      };
 
-        console.log('Sending webhook to N8N:', { webhookUrl, payload: webhookPayload });
+      console.log('Sending webhook to N8N (fire-and-forget):', { webhookUrl });
 
-        const webhookResponse = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(webhookPayload)
-        });
-
-        if (!webhookResponse.ok) {
-          throw new Error(`Webhook failed with status: ${webhookResponse.status}`);
+      // Fire-and-forget: don't await the webhook response
+      fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(webhookPayload)
+      }).then(async (res) => {
+        if (res.ok) {
+          console.log('Webhook sent successfully');
+          await supabase
+            .from('transaction_uploads')
+            .update({ processing_status: 'webhook_sent', updated_at: new Date().toISOString() })
+            .eq('id', uploadId);
+        } else {
+          console.error('Webhook failed with status:', res.status);
+          await supabase
+            .from('transaction_uploads')
+            .update({ processing_status: 'webhook_failed', error_message: `Webhook failed: ${res.status}`, updated_at: new Date().toISOString() })
+            .eq('id', uploadId);
         }
-
-        console.log('Webhook sent successfully');
-
+      }).catch(async (err) => {
+        console.error('Webhook error:', err);
         await supabase
           .from('transaction_uploads')
-          .update({ 
-            processing_status: 'webhook_sent',
-            updated_at: new Date().toISOString()
-          })
+          .update({ processing_status: 'webhook_failed', error_message: `Webhook error: ${err.message}`, updated_at: new Date().toISOString() })
           .eq('id', uploadId);
-
-      } catch (webhookError) {
-        console.error('Error sending webhook:', webhookError);
-        
-        await supabase
-          .from('transaction_uploads')
-          .update({ 
-            processing_status: 'webhook_failed',
-            error_message: `Webhook failed: ${webhookError.message}`,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', uploadId);
-
-        return new Response(
-          JSON.stringify({ 
-            success: false,
-            error: 'Webhook failed', 
-            details: webhookError.message,
-            uploadId
-          }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+      });
     }
 
     return new Response(
