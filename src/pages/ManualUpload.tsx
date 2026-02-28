@@ -147,8 +147,8 @@ const ManualUpload = () => {
   const uploadFileToStorage = async (file: File, bucket: string, folder: string) => {
     if (!user) throw new Error('User not authenticated');
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}.${fileExt}`;
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const fileName = `${Date.now()}-${sanitizedName}`;
     const filePath = `${folder}/${fileName}`;
 
     const { data, error } = await supabase.storage
