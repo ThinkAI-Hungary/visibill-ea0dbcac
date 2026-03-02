@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +23,7 @@ const Onboarding = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const { user } = useAuth();
+  const { selectedCompany } = useCompany();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -63,14 +65,14 @@ const Onboarding = () => {
   // Load existing data
   useEffect(() => {
     const loadExistingData = async () => {
-      if (!user) return;
+      if (!user || !selectedCompany) return;
       
       try {
-        // Load existing categories for the user (user-based, not company-based)
+        // Load existing categories for the company
         const { data: categoryData } = await supabase
           .from('categories')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('company_id', selectedCompany.id)
           .order('created_at', { ascending: true });
 
         let loadedCategories: Category[];
@@ -96,7 +98,7 @@ const Onboarding = () => {
     };
 
     loadExistingData();
-  }, [user]);
+  }, [user, selectedCompany]);
 
 
   const addCategory = () => {
@@ -111,7 +113,7 @@ const Onboarding = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !selectedCompany) return;
     
     setLoading(true);
 
@@ -123,7 +125,7 @@ const Onboarding = () => {
       const { data: existingUserCategories, error: loadCategoriesError } = await supabase
         .from('categories')
         .select('id')
-        .eq('user_id', user.id);
+        .eq('company_id', selectedCompany.id);
 
       if (loadCategoriesError) throw loadCategoriesError;
       
@@ -137,7 +139,7 @@ const Onboarding = () => {
               description: category.description,
             })
             .eq('id', category.id)
-            .eq('user_id', user.id);
+            .eq('company_id', selectedCompany.id);
           
           if (updateError) throw updateError;
         } else {
@@ -146,6 +148,7 @@ const Onboarding = () => {
             .from('categories')
             .insert({
               user_id: user.id,
+              company_id: selectedCompany.id,
               name: category.name,
               description: category.description,
             });
@@ -200,7 +203,7 @@ const Onboarding = () => {
     }
   };
 
-  if (!user || initialLoading) {
+  if (!user || !selectedCompany || initialLoading) {
     return <LoadingSpinner message="Kategóriák betöltése..." />;
   }
 
