@@ -51,7 +51,19 @@ serve(async (req) => {
 
     // Validate JWT via Supabase auth (use admin client to avoid session issues)
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-    if (userError || !user) throw new Error(`Authentication error: ${userError?.message || 'User not found'}`);
+    if (userError || !user) {
+      logStep("Auth failed, returning default unsubscribed state", { error: userError?.message });
+      // Return graceful default instead of 500 error
+      return new Response(JSON.stringify({ 
+        subscribed: false, 
+        tier: 'teszt',
+        product_id: null,
+        subscription_end: null 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
     
     const userId = user.id;
     const userEmail = user.email;
