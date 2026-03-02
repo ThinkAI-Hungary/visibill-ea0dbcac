@@ -247,6 +247,7 @@ const InvoicesPage = () => {
 
   // Row selection state for recategorization
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
+  const [selectedSubmittedIds, setSelectedSubmittedIds] = useState<Set<string>>(new Set());
 
   const [navFilters, setNavFilters] = useState<NavFilters>({
     search: '',
@@ -280,6 +281,7 @@ const InvoicesPage = () => {
   // Clear selection when tab changes
   useEffect(() => {
     setSelectedInvoiceIds(new Set());
+    setSelectedSubmittedIds(new Set());
   }, [activeTab]);
 
   const checkCredentialsExist = async () => {
@@ -703,6 +705,20 @@ const InvoicesPage = () => {
 
   const isSubmittedTab = activeTab === 'SUBMITTED_INBOUND' || activeTab === 'SUBMITTED_OUTBOUND';
 
+  // Submitted row selection helpers
+  const handleSubmittedRowSelect = (invoiceId: string, checked: boolean) => {
+    setSelectedSubmittedIds(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(invoiceId);
+      } else {
+        newSet.delete(invoiceId);
+      }
+      return newSet;
+    });
+  };
+
+
   const filteredAndSortedSubmittedInvoices = useMemo(() => {
     const submittedDirection = activeTab === 'SUBMITTED_OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
 
@@ -774,6 +790,23 @@ const InvoicesPage = () => {
   }, [filteredAndSortedSubmittedInvoices, submittedCurrentPage, submittedPageSize]);
 
   const submittedTotalPages = Math.ceil(filteredAndSortedSubmittedInvoices.length / submittedPageSize);
+
+  const handleSubmittedSelectAll = (checked: boolean) => {
+    if (checked) {
+      const newSet = new Set(selectedSubmittedIds);
+      paginatedSubmittedInvoices.forEach(inv => newSet.add(inv.id));
+      setSelectedSubmittedIds(newSet);
+    } else {
+      const newSet = new Set(selectedSubmittedIds);
+      paginatedSubmittedInvoices.forEach(inv => newSet.delete(inv.id));
+      setSelectedSubmittedIds(newSet);
+    }
+  };
+
+  const allVisibleSubmittedSelected = useMemo(() => {
+    if (paginatedSubmittedInvoices.length === 0) return false;
+    return paginatedSubmittedInvoices.every(inv => selectedSubmittedIds.has(inv.id));
+  }, [paginatedSubmittedInvoices, selectedSubmittedIds]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -1661,7 +1694,14 @@ const InvoicesPage = () => {
                     <Table className="table-fixed compact-table">
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
-                          <TableHead className="font-semibold min-w-[150px] w-[12%]">Számlaszám</TableHead>
+                          <TableHead className="w-[40px]">
+                            <Checkbox
+                              checked={allVisibleSubmittedSelected}
+                              onCheckedChange={(checked) => handleSubmittedSelectAll(!!checked)}
+                              aria-label="Összes kijelölése"
+                            />
+                          </TableHead>
+                          <TableHead className="font-semibold min-w-[150px] w-[12%]">Bizonylatsorszám</TableHead>
                           <TableHead
                             className="cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
                             onClick={() => handleSort('kibocsatas_datuma')}
@@ -1691,7 +1731,7 @@ const InvoicesPage = () => {
                       <TableBody>
                         {paginatedSubmittedInvoices.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                            <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                               Nincs megjeleníthető számla a megadott szűrők alapján.
                             </TableCell>
                           </TableRow>
@@ -1699,9 +1739,17 @@ const InvoicesPage = () => {
                           paginatedSubmittedInvoices.map((invoice) => (
                             <TableRow key={invoice.id} className={cn(
                               "group",
-                              activeTab === 'SUBMITTED_INBOUND' && "bg-destructive/10 hover:bg-destructive/15",
-                              activeTab === 'SUBMITTED_OUTBOUND' && "bg-success/10 hover:bg-success/15"
+                              selectedSubmittedIds.has(invoice.id) && "bg-primary/5",
+                              !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && "bg-destructive/10 hover:bg-destructive/15",
+                              !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_OUTBOUND' && "bg-success/10 hover:bg-success/15"
                             )}>
+                              <TableCell>
+                                <Checkbox
+                                  checked={selectedSubmittedIds.has(invoice.id)}
+                                  onCheckedChange={(checked) => handleSubmittedRowSelect(invoice.id, !!checked)}
+                                  aria-label={`${invoice.szamlaszam || invoice.id} kijelölése`}
+                                />
+                              </TableCell>
                               <TableCell className="font-medium min-w-[150px]">
                                 <TooltipProvider>
                                   <Tooltip>
@@ -1814,6 +1862,22 @@ const InvoicesPage = () => {
                     onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}
                     className="mt-3"
                   />
+
+                  {/* Selection indicator */}
+                  {selectedSubmittedIds.size > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-primary px-2">
+                      <span className="font-medium">{selectedSubmittedIds.size} számla kijelölve</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setSelectedSubmittedIds(new Set())}
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Törlés
+                      </Button>
+                    </div>
+                  )}
                 </TabsContent>
               )}
             </Tabs>
