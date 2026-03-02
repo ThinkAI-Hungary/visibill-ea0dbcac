@@ -28,7 +28,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.save-credentials]
-verify_jwt = true
+verify_jwt = false
 
 [functions.query-nav-invoices]
 verify_jwt = true
