@@ -54,7 +54,7 @@ const CURRENCIES = ['HUF', 'EUR', 'USD', 'GBP', 'CHF'];
 const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, onSave }: InvoiceFullEditDialogProps) => {
   const { user } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     kibocsatas_datuma: undefined as Date | undefined,
     teljesites_datuma: undefined as Date | undefined,
@@ -88,33 +88,11 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
   const handleSave = async () => {
     if (!invoice || !user) return;
 
-    // Validation
-    if (!formData.kibocsatas_datuma) {
-      toast.error('A kibocsátás dátuma kötelező');
-      return;
-    }
-    if (!formData.elado_nev.trim()) {
-      toast.error('Az eladó neve kötelező');
-      return;
-    }
-    if (!formData.vevo_nev.trim()) {
-      toast.error('A vevő neve kötelező');
-      return;
-    }
-
     setIsSaving(true);
     try {
       const { error } = await supabase
         .from('invoices')
         .update({
-          kibocsatas_datuma: format(formData.kibocsatas_datuma, 'yyyy-MM-dd'),
-          teljesites_datuma: formData.teljesites_datuma ? format(formData.teljesites_datuma, 'yyyy-MM-dd') : null,
-          elado_nev: formData.elado_nev.trim(),
-          vevo_nev: formData.vevo_nev.trim(),
-          adoalap_osszesen: formData.adoalap_osszesen,
-          brutto_vegosszeg: formData.brutto_vegosszeg,
-          afa_osszeg_osszesen: formData.afa_osszeg_osszesen,
-          penznem: formData.penznem,
           category_id: formData.category_id === 'none' ? null : formData.category_id,
           project_id: formData.project_id === 'none' ? null : formData.project_id,
         })
@@ -143,146 +121,74 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
             Módosítsd a számla adatait az alábbi mezők segítségével.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-          {/* Left column */}
+          {/* Left column - Read-only fields */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Kibocsátás dátuma *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.kibocsatas_datuma && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.kibocsatas_datuma 
-                      ? format(formData.kibocsatas_datuma, "yyyy. MM. dd.", { locale: hu }) 
-                      : "Válassz dátumot"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.kibocsatas_datuma}
-                    onSelect={(date) => setFormData(prev => ({ ...prev, kibocsatas_datuma: date }))}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label className="text-muted-foreground">Kibocsátás dátuma</Label>
+              <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30">
+                {formData.kibocsatas_datuma
+                  ? format(formData.kibocsatas_datuma, "yyyy. MM. dd.", { locale: hu })
+                  : "-"}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Teljesítés dátuma</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.teljesites_datuma && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.teljesites_datuma 
-                      ? format(formData.teljesites_datuma, "yyyy. MM. dd.", { locale: hu }) 
-                      : "Válassz dátumot"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.teljesites_datuma}
-                    onSelect={(date) => setFormData(prev => ({ ...prev, teljesites_datuma: date }))}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label className="text-muted-foreground">Teljesítés dátuma</Label>
+              <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30">
+                {formData.teljesites_datuma
+                  ? format(formData.teljesites_datuma, "yyyy. MM. dd.", { locale: hu })
+                  : "-"}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="elado_nev">Eladó neve *</Label>
-              <Input
-                id="elado_nev"
-                value={formData.elado_nev}
-                onChange={(e) => setFormData(prev => ({ ...prev, elado_nev: e.target.value }))}
-                placeholder="Eladó neve"
-              />
+              <Label className="text-muted-foreground">Eladó neve</Label>
+              <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30 truncate">
+                {formData.elado_nev || '-'}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="vevo_nev">Vevő neve *</Label>
-              <Input
-                id="vevo_nev"
-                value={formData.vevo_nev}
-                onChange={(e) => setFormData(prev => ({ ...prev, vevo_nev: e.target.value }))}
-                placeholder="Vevő neve"
-              />
+              <Label className="text-muted-foreground">Vevő neve</Label>
+              <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30 truncate">
+                {formData.vevo_nev || '-'}
+              </div>
             </div>
           </div>
 
           {/* Right column */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="adoalap">Nettó összeg</Label>
-              <Input
-                id="adoalap"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.adoalap_osszesen}
-                onChange={(e) => setFormData(prev => ({ ...prev, adoalap_osszesen: parseFloat(e.target.value) || 0 }))}
-              />
+              <Label className="text-muted-foreground">Nettó összeg</Label>
+              <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30 font-mono">
+                {formData.adoalap_osszesen?.toLocaleString('hu-HU')} {formData.penznem}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="brutto">Bruttó összeg</Label>
-              <Input
-                id="brutto"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.brutto_vegosszeg}
-                onChange={(e) => setFormData(prev => ({ ...prev, brutto_vegosszeg: parseFloat(e.target.value) || 0 }))}
-              />
+              <Label className="text-muted-foreground">Bruttó összeg</Label>
+              <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30 font-mono">
+                {formData.brutto_vegosszeg?.toLocaleString('hu-HU')} {formData.penznem}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="afa">ÁFA összeg</Label>
-              <Input
-                id="afa"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.afa_osszeg_osszesen}
-                onChange={(e) => setFormData(prev => ({ ...prev, afa_osszeg_osszesen: parseFloat(e.target.value) || 0 }))}
-              />
+              <Label className="text-muted-foreground">ÁFA összeg</Label>
+              <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30 font-mono">
+                {formData.afa_osszeg_osszesen?.toLocaleString('hu-HU')} {formData.penznem}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Pénznem</Label>
-              <Select
-                value={formData.penznem}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, penznem: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Válassz pénznemet" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CURRENCIES.map((currency) => (
-                    <SelectItem key={currency} value={currency}>
-                      {currency}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="text-muted-foreground">Pénznem</Label>
+              <div className="text-sm py-2 px-3 rounded-md bg-muted/30 border border-border/30">
+                {formData.penznem}
+              </div>
             </div>
 
+            {/* Editable: Kategória */}
             <div className="space-y-2">
               <Label>Kategória</Label>
               <Select
@@ -303,6 +209,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
               </Select>
             </div>
 
+            {/* Editable: Projekt */}
             <div className="space-y-2">
               <Label>Projekt</Label>
               <Select

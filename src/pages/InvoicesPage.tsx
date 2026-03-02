@@ -1448,7 +1448,8 @@ const InvoicesPage = () => {
                                   <TableCell className="text-center">
                                     <Checkbox
                                       checked={invoice.submitted === true}
-                                      onCheckedChange={() => handleToggleSubmitted(invoice)}
+                                      disabled
+                                      className="cursor-default opacity-70"
                                     />
                                   </TableCell>
                                 )}
