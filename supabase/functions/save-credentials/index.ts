@@ -123,7 +123,37 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log(`[SAVE-CREDS][${debugId}] Validation passed, calling RPC`)
+    console.log(`[SAVE-CREDS][${debugId}] Validation passed, checking ownership`)
+
+    // Verify user is the company owner
+    if (companyId) {
+      const serviceClient2 = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      )
+      const { data: companyData, error: companyError } = await serviceClient2
+        .from('companies')
+        .select('owner_id')
+        .eq('id', companyId)
+        .single()
+
+      if (companyError || !companyData) {
+        return new Response(
+          JSON.stringify({ code: 'COMPANY_NOT_FOUND', error: 'Company not found', debugId }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      if (companyData.owner_id !== userId) {
+        console.error(`[SAVE-CREDS][${debugId}] User ${userId} is not owner of company ${companyId}`)
+        return new Response(
+          JSON.stringify({ code: 'FORBIDDEN', error: 'Csak a cég tulajdonosa mentheti a NAV hitelesítő adatokat', debugId }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
+
+    console.log(`[SAVE-CREDS][${debugId}] Ownership verified, calling RPC`)
 
     // Call the database function to save credentials with sanitized values
     // Use supabaseClient (with user JWT) so auth.uid() works in the RPC function

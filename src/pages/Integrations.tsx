@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface SyncLog {
@@ -28,7 +29,9 @@ interface SyncLog {
 
 const Integrations = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { selectedCompany, loading: companyLoading } = useCompany();
+  const isOwner = selectedCompany?.owner_id === user?.id;
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(true);
   const [activeNavTab, setActiveNavTab] = useState('credentials');
@@ -216,6 +219,7 @@ const Integrations = () => {
                 <TabsContent value="credentials" className="mt-0">
                   <NavCredentialsForm 
                     companyId={selectedCompany?.id}
+                    isOwner={isOwner}
                     onCredentialsSaved={() => {
                       toast({
                         title: 'Hitelesítő adatok frissítve',
