@@ -49,8 +49,8 @@ serve(async (req) => {
 
     const token = authHeader.replace(/^Bearer\s+/i, "");
 
-    // Validate JWT via Supabase auth
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+    // Validate JWT via Supabase auth (use admin client to avoid session issues)
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError || !user) throw new Error(`Authentication error: ${userError?.message || 'User not found'}`);
     
     const userId = user.id;
