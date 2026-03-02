@@ -1,23 +1,26 @@
 
 
-## Plan: ON DELETE CASCADE hozzáadása a `nav_invoice_items` foreign key-hez
+## Fix: save-credentials "Auth session missing!" error
 
-**Cél**: Ha egy `nav_invoices` rekordot törölsz, az összes hozzá tartozó `nav_invoice_items` sor automatikusan törlődjön.
+### Problem
+Line 38 of `save-credentials/index.ts` calls `supabaseClient.auth.getClaims(token)` using an anon-key client. This method requires an active session and fails with "Auth session missing!" during auth transitions or with stale tokens. The same root cause we already fixed in `check-subscription`.
 
-### Megvalósítás
+### Solution
+Replace `getClaims(token)` with `getUser(token)` using the service role client (which validates the JWT directly without needing a session).
 
-Egyetlen SQL migráció:
-1. Meglévő foreign key constraint törlése a `nav_invoice_items.nav_invoice_id` oszlopról
-2. Új constraint létrehozása `ON DELETE CASCADE` opcióval
+### Changes
 
-```sql
-ALTER TABLE nav_invoice_items
-  DROP CONSTRAINT nav_invoice_items_nav_invoice_id_fkey;
+**File: `supabase/functions/save-credentials/index.ts`**
 
-ALTER TABLE nav_invoice_items
-  ADD CONSTRAINT nav_invoice_items_nav_invoice_id_fkey
-  FOREIGN KEY (nav_invoice_id) REFERENCES nav_invoices(id) ON DELETE CASCADE;
-```
+1. Move the service role client creation (currently at line 51) to before the auth check (before line 36)
+2. Replace lines 36-48:
+   - Remove: `supabaseClient.auth.getClaims(token)` 
+   - Add: `serviceClient.auth.getUser(token)` to validate the JWT
+   - Extract `userId` from `user.id` instead of `claims.sub`
+3. Keep the anon `supabaseClient` (with auth header) for the RPC call on line 160 so `auth.uid()` works in the database function
 
-Kódmódosítás nem szükséges -- ez tisztán adatbázis-szintű változás.
+### What stays the same
+- The anon client with auth header is still used for the `save_nav_credentials` RPC call (needed for `auth.uid()`)
+- All validation, ownership checks, and error handling remain unchanged
+- The edge function will be auto-deployed after the edit
 
