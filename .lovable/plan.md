@@ -1,39 +1,53 @@
 
 
-## Plan: Categories and Projects from User-Level to Company-Level
-
-### Current State
-- **Categories**: Queried with `.eq('user_id', user.id)` everywhere. RLS policies already use `company_members` + `company_id`, but frontend code filters by `user_id`.
-- **Projects**: Same pattern - queried with `.eq('user_id', user.id)`, but inserts already include `company_id`.
-- Both tables already have a `company_id` column and company-member-based RLS policies, so **no database schema or RLS changes are needed**.
+## Plan: NAV Integration Owner-Only Access
 
 ### What Needs to Change
 
-All frontend queries need to switch from `user_id` filtering to `company_id` filtering (using `selectedCompany.id`).
+The NAV integration (credentials save/delete/modify) should only be accessible to the company Owner. When the Owner disconnects NAV, the credentials are deleted for the entire company (they're already company-scoped in `user_nav_credentials`).
 
-### Files to Modify
+### Current State
+- `user_nav_credentials` is company-scoped (has `company_id`)
+- `delete-nav-credentials` currently deletes by `user_id` instead of `company_id` — this is a bug
+- The `NavCredentialsForm` component has no role check; any company member can see and use it
+- `Company` type already has `owner_id` available in the context
 
-**1. `src/pages/Projects.tsx`** (3 changes)
-- `loadProjects`: Change `.eq('user_id', user.id)` → `.eq('company_id', selectedCompany.id)`
-- `handleSaveProject` update: Change `.eq('user_id', user.id)` → `.eq('company_id', selectedCompany.id)` 
-- `handleDeleteProject`: Change `.eq('user_id', user.id)` → `.eq('company_id', selectedCompany.id)`
+### Changes
 
-**2. `src/pages/InvoicesPage.tsx`** (2 changes)
-- Categories fetch: `.eq('user_id', user.id)` → `.eq('company_id', selectedCompany.id)`
-- Projects fetch: `.eq('user_id', user.id)` → `.eq('company_id', selectedCompany.id)`
+**1. Frontend: `src/pages/Integrations.tsx`**
+- Compute `isOwner = selectedCompany?.owner_id === user?.id`
+- Pass `isOwner` prop to `NavCredentialsForm`
+- For non-owners: show a read-only status card (connection status visible) with a message like "Csak a cég tulajdonosa kezelheti a NAV integrációt" instead of the form/disconnect button
 
-**3. `src/pages/Index.tsx`** (1 change)
-- Categories fetch: `.eq('user_id', user.id)` → `.eq('company_id', selectedCompany.id)`
+**2. Frontend: `src/components/nav/NavCredentialsForm.tsx`**
+- Accept `isOwner` prop
+- When `isOwner === false`: hide the credential form, save button, and disconnect button; show only the connection status card with a "read-only" notice
+- When `isOwner === true`: current behavior (full form + disconnect)
 
-**4. `src/pages/Onboarding.tsx`** (major refactor)
-- Add `useCompany` context import and use `selectedCompany`
-- All category queries: switch from `.eq('user_id', user.id)` to `.eq('company_id', selectedCompany.id)`
-- Category inserts: include `company_id` instead of (or alongside) `user_id`
-- Guard against missing `selectedCompany`
+**3. Edge Function: `supabase/functions/delete-nav-credentials/index.ts`**
+- Accept `companyId` from request body
+- Verify the user is the company owner by checking `companies.owner_id`
+- Delete credentials by `company_id` instead of `user_id` (since credentials are company-scoped)
+- Return 403 if the user is not the owner
 
-**5. `supabase/functions/export-user-data/index.ts`** (minor)
-- Projects export query should also consider company-based access (may keep user_id for data export purposes)
+**4. Edge Function: `supabase/functions/save-credentials/index.ts`**
+- Add owner check: before calling `save_nav_credentials` RPC, verify the user is the owner of the provided `companyId`
+- Return 403 with clear error message if not owner
 
 ### No Database Changes Needed
-The `categories` and `projects` tables already have `company_id` columns and company-member-based RLS policies. The RLS already allows any company member (Owner or Admin) to perform CRUD operations. The only issue is that the frontend is filtering by `user_id` instead of `company_id`.
+- The `user_nav_credentials` table is already company-scoped
+- RLS policies are already based on company membership
+- Owner role is determined by `companies.owner_id` — no separate roles table needed for this check
+
+### Technical Details
+
+Owner check query (in edge functions):
+```sql
+SELECT 1 FROM companies WHERE id = companyId AND owner_id = userId
+```
+
+Frontend owner check:
+```typescript
+const isOwner = selectedCompany?.owner_id === user?.id;
+```
 
