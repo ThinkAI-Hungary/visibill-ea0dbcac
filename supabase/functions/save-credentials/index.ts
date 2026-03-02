@@ -33,25 +33,25 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     )
 
-    // Verify token using getClaims
+    // Create service role client for DB operations (bypasses RLS)
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    // Verify token using getUser (service role client validates JWT directly, no session needed)
     const token = authHeader.replace('Bearer ', '')
-    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token)
+    const { data: { user }, error: userError } = await serviceClient.auth.getUser(token)
     
-    if (claimsError || !claimsData?.claims) {
-      console.error(`[SAVE-CREDS][${debugId}] Auth failed:`, claimsError?.message)
+    if (userError || !user) {
+      console.error(`[SAVE-CREDS][${debugId}] Auth failed:`, userError?.message)
       return new Response(
         JSON.stringify({ code: 'UNAUTHORIZED', error: 'Invalid or expired token', debugId }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const userId = claimsData.claims.sub
-    
-    // Create service role client for DB operations (bypasses RLS)
-    const serviceClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const userId = user.id
 
     // Parse request body
     const body = await req.json()
