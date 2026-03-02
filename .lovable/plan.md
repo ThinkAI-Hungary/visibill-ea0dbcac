@@ -1,44 +1,69 @@
 
 
-## Plan: Delete "Viktor Jámbor" company and assign user to Taxology Kft
+## Plan: Backfill `invoice_direction` for Existing Invoices
 
-### Data found
-- **Viktor Jámbor** user_id: `5abff3e7-0b0e-47eb-9198-4db551668caf`
-- **"Viktor Jámbor" company** id: `5f23fcee-ad0b-4841-ad74-a46dd571f65d` (to delete)
-- **Taxology Kft** company_id: `377d28cb-edc9-48a7-b261-bcd9c91d81a1` (target)
+### Problem
+Existing invoices have `invoice_direction = NULL`. We need to set it to `INBOUND` (company is buyer/vevő) or `OUTBOUND` (company is seller/eladó).
 
-### Steps
+### Current Data
+| Company | Tax Number | Invoices to Update |
+|---------|-----------|-------------------|
+| Taxology Kft | 14160877-2-43 | 6 |
+| Think Ai Kft | 32478620-2-43 | 74 |
+| Mauroni Events KFT. | *(none)* | 14 |
 
-**1. Delete company_members for the "Viktor Jámbor" company**
+### Matching Logic
+
+**Step 1 — Tax number match** (most reliable):
+- Normalize tax numbers by stripping `HU` prefix and `-` dashes, then take first 8 digits
+- If normalized company tax = normalized `vevo_vat_id` → `INBOUND`
+- If normalized company tax = normalized `elado_vat_id` → `OUTBOUND`
+
+**Step 2 — Name match** (fallback for companies without tax_number, like Mauroni):
+- Case-insensitive check: if company name appears in `vevo_nev` → `INBOUND`
+- If company name appears in `elado_nev` → `OUTBOUND`
+
+### SQL to Execute (via insert tool — data update, not schema change)
+
 ```sql
-DELETE FROM company_members WHERE company_id = '5f23fcee-ad0b-4841-ad74-a46dd571f65d';
+-- Step 1: Tax number match — company is buyer (INBOUND)
+UPDATE invoices i
+SET invoice_direction = 'INBOUND'
+FROM companies c
+WHERE i.company_id = c.id
+  AND i.invoice_direction IS NULL
+  AND c.tax_number IS NOT NULL
+  AND LEFT(REGEXP_REPLACE(REPLACE(i.vevo_vat_id, 'HU', ''), '[^0-9]', '', 'g'), 8)
+    = LEFT(REGEXP_REPLACE(c.tax_number, '[^0-9]', '', 'g'), 8);
+
+-- Step 2: Tax number match — company is seller (OUTBOUND)
+UPDATE invoices i
+SET invoice_direction = 'OUTBOUND'
+FROM companies c
+WHERE i.company_id = c.id
+  AND i.invoice_direction IS NULL
+  AND c.tax_number IS NOT NULL
+  AND LEFT(REGEXP_REPLACE(REPLACE(i.elado_vat_id, 'HU', ''), '[^0-9]', '', 'g'), 8)
+    = LEFT(REGEXP_REPLACE(c.tax_number, '[^0-9]', '', 'g'), 8);
+
+-- Step 3: Name fallback — company is buyer (INBOUND)
+UPDATE invoices i
+SET invoice_direction = 'INBOUND'
+FROM companies c
+WHERE i.company_id = c.id
+  AND i.invoice_direction IS NULL
+  AND LOWER(i.vevo_nev) ILIKE '%' || LOWER(SPLIT_PART(c.name, ' ', 1)) || '%';
+
+-- Step 4: Name fallback — company is seller (OUTBOUND)
+UPDATE invoices i
+SET invoice_direction = 'OUTBOUND'
+FROM companies c
+WHERE i.company_id = c.id
+  AND i.invoice_direction IS NULL
+  AND LOWER(i.elado_nev) ILIKE '%' || LOWER(SPLIT_PART(c.name, ' ', 1)) || '%';
 ```
 
-**2. Delete all related data for that company** (categories, projects, invoices, nav_invoices, partners, salary, tax, etc. that reference this company_id)
-```sql
-DELETE FROM categories WHERE company_id = '5f23fcee-ad0b-4841-ad74-a46dd571f65d';
-DELETE FROM projects WHERE company_id = '5f23fcee-ad0b-4841-ad74-a46dd571f65d';
-DELETE FROM nav_invoices WHERE company_id = '5f23fcee-ad0b-4841-ad74-a46dd571f65d';
-DELETE FROM invoices WHERE company_id = '5f23fcee-ad0b-4841-ad74-a46dd571f65d';
-DELETE FROM partners WHERE company_id = '5f23fcee-ad0b-4841-ad74-a46dd571f65d';
-DELETE FROM salary WHERE company_id = '5f23fcee-ad0b-4841-ad74-a46dd571f65d';
-DELETE FROM tax WHERE company_id = '5f23fcee-ad0b-4841-ad74-a46dd571f65d';
-DELETE FROM email_aliases WHERE company_id = '5f23fcee-ad0b-4841-ad74-a46dd571f65d';
-DELETE FROM salary_files WHERE company_id = '5f23fcee-ad0b-4841-ad74-a46dd571f65d';
--- etc.
-```
-
-**3. Delete the company itself**
-```sql
-DELETE FROM companies WHERE id = '5f23fcee-ad0b-4841-ad74-a46dd571f65d';
-```
-
-**4. Add Viktor Jámbor as admin (member) to Taxology Kft**
-```sql
-INSERT INTO company_members (user_id, company_id)
-VALUES ('5abff3e7-0b0e-47eb-9198-4db551668caf', '377d28cb-edc9-48a7-b261-bcd9c91d81a1')
-ON CONFLICT (user_id, company_id) DO NOTHING;
-```
-
-Since the role system uses `companies.owner_id` to identify owners (and everyone else is implicitly an admin), no extra role column is needed -- simply being in `company_members` without being the `owner_id` makes Viktor an Admin of Taxology Kft.
+### Risk
+- The name fallback uses the first word of the company name (e.g. "Mauroni", "Think", "Taxology") which should be specific enough
+- Any invoices that still can't be matched will remain `NULL` — we can review those manually after
 
