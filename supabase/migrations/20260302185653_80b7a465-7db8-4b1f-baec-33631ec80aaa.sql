@@ -1,0 +1,1 @@
+UPDATE companies SET owner_id = '5abff3e7-0b0e-47eb-9198-4db551668caf' WHERE id = '377d28cb-edc9-48a7-b261-bcd9c91d81a1';
