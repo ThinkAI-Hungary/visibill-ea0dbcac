@@ -1,52 +1,39 @@
 
 
-# Fix: Partners Page Only Shows Data for Owner
+## Plan: Categories and Projects from User-Level to Company-Level
 
-## Root Cause
+### Current State
+- **Categories**: Queried with `.eq('user_id', user.id)` everywhere. RLS policies already use `company_members` + `company_id`, but frontend code filters by `user_id`.
+- **Projects**: Same pattern - queried with `.eq('user_id', user.id)`, but inserts already include `company_id`.
+- Both tables already have a `company_id` column and company-member-based RLS policies, so **no database schema or RLS changes are needed**.
 
-In `src/pages/PartnersPage.tsx` (line 120), the partners query filters by `user_id`:
+### What Needs to Change
 
-```
-.eq("user_id", user.id)
-.eq("company_id", selectedCompany.id)
-```
+All frontend queries need to switch from `user_id` filtering to `company_id` filtering (using `selectedCompany.id`).
 
-Since partners are typically created during NAV sync (which runs under the owner's user ID), the `user_id` filter means only the owner sees the data. Other company members get an empty list.
+### Files to Modify
 
-## Fix
+**1. `src/pages/Projects.tsx`** (3 changes)
+- `loadProjects`: Change `.eq('user_id', user.id)` → `.eq('company_id', selectedCompany.id)`
+- `handleSaveProject` update: Change `.eq('user_id', user.id)` → `.eq('company_id', selectedCompany.id)` 
+- `handleDeleteProject`: Change `.eq('user_id', user.id)` → `.eq('company_id', selectedCompany.id)`
 
-Remove the `.eq("user_id", user.id)` filter from the partners query. The RLS policies on the `partners` table already enforce access control via `company_members`, so filtering by `company_id` alone is sufficient and secure.
+**2. `src/pages/InvoicesPage.tsx`** (2 changes)
+- Categories fetch: `.eq('user_id', user.id)` → `.eq('company_id', selectedCompany.id)`
+- Projects fetch: `.eq('user_id', user.id)` → `.eq('company_id', selectedCompany.id)`
 
-### Change in `src/pages/PartnersPage.tsx`
+**3. `src/pages/Index.tsx`** (1 change)
+- Categories fetch: `.eq('user_id', user.id)` → `.eq('company_id', selectedCompany.id)`
 
-**Before (line 117-122):**
-```typescript
-const { data, error } = await supabase
-  .from("partners")
-  .select("*")
-  .eq("user_id", user.id)
-  .eq("company_id", selectedCompany.id)
-  .order("name", { ascending: true });
-```
+**4. `src/pages/Onboarding.tsx`** (major refactor)
+- Add `useCompany` context import and use `selectedCompany`
+- All category queries: switch from `.eq('user_id', user.id)` to `.eq('company_id', selectedCompany.id)`
+- Category inserts: include `company_id` instead of (or alongside) `user_id`
+- Guard against missing `selectedCompany`
 
-**After:**
-```typescript
-const { data, error } = await supabase
-  .from("partners")
-  .select("*")
-  .eq("company_id", selectedCompany.id)
-  .order("name", { ascending: true });
-```
+**5. `supabase/functions/export-user-data/index.ts`** (minor)
+- Projects export query should also consider company-based access (may keep user_id for data export purposes)
 
-No database or RLS changes needed -- the existing `company_members`-based RLS policies on the `partners` table already handle authorization correctly.
+### No Database Changes Needed
+The `categories` and `projects` tables already have `company_id` columns and company-member-based RLS policies. The RLS already allows any company member (Owner or Admin) to perform CRUD operations. The only issue is that the frontend is filtering by `user_id` instead of `company_id`.
 
-## Technical Details
-
-- The `partners` table RLS policy ("Members can view partners") uses: `EXISTS (SELECT 1 FROM company_members WHERE company_members.company_id = partners.company_id AND company_members.user_id = auth.uid())`
-- This already ensures only company members can see the data
-- The redundant `user_id` filter in the frontend was the sole cause of the issue
-- The `queryKey` can also be simplified to remove `user?.id` since it's no longer relevant to the query
-
-## Files to Modify
-
-- `src/pages/PartnersPage.tsx` -- remove `user_id` filter from the query (1 line change)
