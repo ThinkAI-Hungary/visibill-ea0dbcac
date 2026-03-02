@@ -537,7 +537,7 @@ const InvoicesPage = () => {
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('id, name')
-        .eq('user_id', user.id);
+        .eq('company_id', selectedCompany.id);
 
       if (categoriesError) throw categoriesError;
       setCategories(categoriesData || []);
@@ -546,7 +546,7 @@ const InvoicesPage = () => {
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('id, name')
-        .eq('user_id', user.id);
+        .eq('company_id', selectedCompany.id);
 
       if (projectsError) throw projectsError;
       setProjects(projectsData || []);

@@ -511,7 +511,7 @@ const Index = () => {
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('company_id', selectedCompany.id)
         .order('created_at', { ascending: false });
 
       if (categoriesError) throw categoriesError;

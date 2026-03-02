@@ -67,13 +67,13 @@ const Projects = () => {
   }, [user, selectedCompany]);
 
   const loadProjects = async () => {
-    if (!user) return;
+    if (!user || !selectedCompany) return;
 
     try {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('company_id', selectedCompany.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -167,7 +167,7 @@ const Projects = () => {
             project_type: editingProject.project_type,
           })
           .eq('id', editingProject.id)
-          .eq('user_id', user.id);
+          .eq('company_id', selectedCompany?.id);
 
         if (error) throw error;
 
@@ -226,7 +226,7 @@ const Projects = () => {
         .from('projects')
         .delete()
         .eq('id', projectId)
-        .eq('user_id', user.id);
+        .eq('company_id', selectedCompany?.id);
 
       if (error) throw error;
 
