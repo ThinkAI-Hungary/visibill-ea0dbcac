@@ -25,16 +25,16 @@ const ManualUpload = () => {
 
   const handleInvoiceFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    
+
     // Filter for common invoice file types
     const allowedTypes = [
       'application/pdf',
       'image/jpeg',
-      'image/jpg', 
+      'image/jpg',
       'image/png',
       'image/webp'
     ];
-    
+
     const validFiles = files.filter(file => {
       if (allowedTypes.includes(file.type)) {
         return true;
@@ -52,7 +52,7 @@ const ManualUpload = () => {
 
   const handleBankStatementFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    
+
     // Filter for bank statement file types (PDF, CSV, XLS/XLSX)
     const allowedTypes = [
       'application/pdf',
@@ -60,7 +60,7 @@ const ManualUpload = () => {
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     ];
-    
+
     const validFiles = files.filter(file => {
       if (allowedTypes.includes(file.type)) {
         return true;
@@ -86,7 +86,7 @@ const ManualUpload = () => {
 
   const handleSalaryFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    
+
     // Filter for salary file types (PDF, CSV, XLS/XLSX)
     const allowedTypes = [
       'application/pdf',
@@ -94,7 +94,7 @@ const ManualUpload = () => {
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     ];
-    
+
     const validFiles = files.filter(file => {
       if (allowedTypes.includes(file.type)) {
         return true;
@@ -116,7 +116,7 @@ const ManualUpload = () => {
 
   const handleTransactionFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    
+
     // Filter for transaction file types (PDF, CSV, XLS/XLSX)
     const allowedTypes = [
       'application/pdf',
@@ -124,7 +124,7 @@ const ManualUpload = () => {
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     ];
-    
+
     const validFiles = files.filter(file => {
       if (allowedTypes.includes(file.type)) {
         return true;
@@ -162,7 +162,7 @@ const ManualUpload = () => {
   const uploadFileToInvoiceStorage = async (file: File, userId: string): Promise<string> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    
+
     const { data, error } = await supabase.storage
       .from('invoice-uploads')
       .upload(fileName, file);
@@ -211,11 +211,11 @@ const ManualUpload = () => {
     }
 
     setUploading(true);
-    
+
     try {
       // Process each invoice and increment usage
       let successfulUploads = 0;
-      
+
       for (const file of selectedInvoiceFiles) {
         // Check if we can still process this invoice
         if (!canProcessInvoice()) {
@@ -226,7 +226,7 @@ const ManualUpload = () => {
           });
           break;
         }
-        
+
         // Try to increment usage before processing
         const canIncrement = await incrementUsage();
         if (!canIncrement) {
@@ -237,11 +237,11 @@ const ManualUpload = () => {
           });
           break;
         }
-        
+
         try {
           // Upload file to storage
           const fileUrl = await uploadFileToInvoiceStorage(file, user?.id!);
-          
+
           // Create upload record in database
           const { data: uploadRecord, error: uploadError } = await supabase
             .from('invoice_uploads')
@@ -272,7 +272,7 @@ const ManualUpload = () => {
           for (const webhookUrl of webhookUrls) {
             try {
               const { error: webhookError } = await supabase.functions.invoke('trigger-invoice-processing', {
-                body: { 
+                body: {
                   uploadId: uploadRecord.id,
                   webhookUrl
                 }
@@ -294,13 +294,13 @@ const ManualUpload = () => {
           // Continue with next file
         }
       }
-      
+
       if (successfulUploads > 0) {
         toast({
           title: "Feltöltés sikeres!",
           description: `${successfulUploads} számlafájl feltöltve és feldolgozásra küldve.`
         });
-        
+
         setSelectedInvoiceFiles([]);
       } else {
         toast({
@@ -341,12 +341,12 @@ const ManualUpload = () => {
     }
 
     setUploading(true);
-    
+
     try {
       for (const file of selectedBankFiles) {
         // Upload file to storage
         const uploadData = await uploadFileToStorage(file, 'bank-statements', user.id);
-        
+
         // Get the public URL
         const { data: urlData } = supabase.storage
           .from('bank-statements')
@@ -394,12 +394,12 @@ const ManualUpload = () => {
           }
         }
       }
-      
+
       toast({
         title: "Feltöltés sikeres!",
         description: `${selectedBankFiles.length} bankkivonat feltöltve és feldolgozásra elküldve.`
       });
-      
+
       setSelectedBankFiles([]);
     } catch (error) {
       console.error('Bank statement upload error:', error);
@@ -433,12 +433,12 @@ const ManualUpload = () => {
     }
 
     setUploading(true);
-    
+
     try {
       for (const file of selectedSalaryFiles) {
         // Upload file to storage
         const uploadData = await uploadFileToStorage(file, 'salaries', user.id);
-        
+
         // Get the public URL
         const { data: urlData } = supabase.storage
           .from('salaries')
@@ -493,12 +493,12 @@ const ManualUpload = () => {
           }
         }
       }
-      
+
       toast({
         title: "Feltöltés sikeres!",
         description: `${selectedSalaryFiles.length} bér/járulék fájl feltöltve és feldolgozásra elküldve.`
       });
-      
+
       setSelectedSalaryFiles([]);
     } catch (error) {
       console.error('Salary upload error:', error);
@@ -508,7 +508,7 @@ const ManualUpload = () => {
         description: "Hiba történt a bérek/járulékok feltöltése során. Kérlek próbáld újra."
       });
     } finally {
-    setUploading(false);
+      setUploading(false);
     }
   };
 
@@ -541,20 +541,20 @@ const ManualUpload = () => {
     }
 
     setUploading(true);
-    
+
     // Show processing toast
     const processingToast = toast({
       title: "Feldolgozás...",
       description: "Tranzakciók feltöltése és feldolgozásra küldése folyamatban..."
     });
-    
+
     try {
       let successfulUploads = 0;
-      
+
       for (const file of selectedTransactionFiles) {
         // Upload file to storage
         const uploadData = await uploadFileToStorage(file, 'transactions', user.id);
-        
+
         // Get the public URL
         const { data: urlData } = supabase.storage
           .from('transactions')
@@ -580,7 +580,7 @@ const ManualUpload = () => {
 
         // Trigger processing via edge function (avoids CORS issues with direct webhook calls)
         const webhookUrl = 'https://n8n.thinkaikontir.hu/webhook/supabase-transaction_storage-trigger';
-        
+
         try {
           console.log('Triggering transaction processing via edge function:', { uploadId: uploadRecord.id });
 
@@ -608,13 +608,13 @@ const ManualUpload = () => {
 
       // Dismiss processing toast
       processingToast.dismiss();
-      
+
       if (successfulUploads > 0) {
         toast({
           title: "Feltöltés sikeres!",
           description: `${successfulUploads} tranzakció fájl feltöltve és feldolgozásra küldve.`
         });
-        
+
         setSelectedTransactionFiles([]);
       } else {
         toast({
@@ -673,18 +673,14 @@ const ManualUpload = () => {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <Tabs defaultValue="invoices" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="invoices" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Számlák
               </TabsTrigger>
-              <TabsTrigger value="bank-statements" className="flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Bankkivonatok
-              </TabsTrigger>
               <TabsTrigger value="transactions" className="flex items-center gap-2">
                 <Landmark className="h-4 w-4" />
-                Tranzakciók
+                Banki tranzakciók
               </TabsTrigger>
               <TabsTrigger value="salaries" className="flex items-center gap-2">
                 <Wallet className="h-4 w-4" />
@@ -720,7 +716,7 @@ const ManualUpload = () => {
                         Több fájlt is kiválaszthatsz egyszerre vagy egyenként is feltöltheted
                       </p>
                     </div>
-                    <Button 
+                    <Button
                       className="mt-4"
                       onClick={() => document.getElementById('invoice-file-input')?.click()}
                       disabled={!canProcessInvoice()}
@@ -739,367 +735,367 @@ const ManualUpload = () => {
                     />
                   </div>
 
-              {selectedInvoiceFiles.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="font-medium">Kiválasztott fájlok ({selectedInvoiceFiles.length})</h3>
-                  <div className="space-y-2">
-                    {selectedInvoiceFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 border rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium text-sm">{file.name}</p>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {file.type.split('/')[1].toUpperCase()}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {formatFileSize(file.size)}
-                              </span>
+                  {selectedInvoiceFiles.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="font-medium">Kiválasztott fájlok ({selectedInvoiceFiles.length})</h3>
+                      <div className="space-y-2">
+                        {selectedInvoiceFiles.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 border rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium text-sm">{file.name}</p>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {file.type.split('/')[1].toUpperCase()}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatFileSize(file.size)}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeInvoiceFile(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
                           </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeInvoiceFile(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                  
-                  <Button 
-                    onClick={handleInvoiceUpload}
-                    disabled={uploading || !canProcessInvoice()}
-                    className="w-full"
-                  >
-                    {uploading ? (
-                      <>
-                        <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
-                        Feldolgozás...
-                      </>
-                    ) : !canProcessInvoice() ? (
-                      'Elérted a havi limitet'
-                    ) : (
-                      <>
-                        <Upload className="h-4 w-4 mr-2" />
-                        {selectedInvoiceFiles.length} számlafájl feltöltése
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        {/* Bank Statement Upload Tab */}
-        <TabsContent value="bank-statements">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                Bankkivonat feltöltése
-              </CardTitle>
-              <CardDescription>
-                Tölts fel bankkivonatokat automatikus tranzakció feldolgozásra. Támogatott formátumok: PDF, CSV, Excel (XLS/XLSX)
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Válassz bankkivonat fájlokat</p>
-                  <p className="text-xs text-muted-foreground">
-                    A rendszer automatikusan feldolgozza a tranzakciókat és kategorizálja őket
-                  </p>
-                </div>
-                <Button 
-                  className="mt-4"
-                  onClick={() => document.getElementById('bank-file-input')?.click()}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Bankkivonatok tallózása
-                </Button>
-                <input
-                  id="bank-file-input"
-                  type="file"
-                  multiple
-                  accept=".pdf,.csv,.xls,.xlsx"
-                  onChange={handleBankStatementFileSelect}
-                  className="hidden"
-                />
-              </div>
-
-              {selectedBankFiles.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="font-medium">Kiválasztott bankkivonatok ({selectedBankFiles.length})</h3>
-                  <div className="space-y-2">
-                    {selectedBankFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 border rounded-lg"
+                      <Button
+                        onClick={handleInvoiceUpload}
+                        disabled={uploading || !canProcessInvoice()}
+                        className="w-full"
                       >
-                        <div className="flex items-center gap-3">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium text-sm">{file.name}</p>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {file.type === 'text/csv' ? 'CSV' : 
-                                 file.type === 'application/pdf' ? 'PDF' :
-                                 file.type.includes('excel') || file.type.includes('spreadsheet') ? 'EXCEL' :
-                                 file.type.split('/')[1].toUpperCase()}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {formatFileSize(file.size)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeBankFile(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                        {uploading ? (
+                          <>
+                            <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
+                            Feldolgozás...
+                          </>
+                        ) : !canProcessInvoice() ? (
+                          'Elérted a havi limitet'
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            {selectedInvoiceFiles.length} számlafájl feltöltése
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Bank Statement Upload Tab */}
+            <TabsContent value="bank-statements">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5" />
+                    Bankkivonat feltöltése
+                  </CardTitle>
+                  <CardDescription>
+                    Tölts fel bankkivonatokat automatikus tranzakció feldolgozásra. Támogatott formátumok: PDF, CSV, Excel (XLS/XLSX)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
+                    <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Válassz bankkivonat fájlokat</p>
+                      <p className="text-xs text-muted-foreground">
+                        A rendszer automatikusan feldolgozza a tranzakciókat és kategorizálja őket
+                      </p>
+                    </div>
+                    <Button
+                      className="mt-4"
+                      onClick={() => document.getElementById('bank-file-input')?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Bankkivonatok tallózása
+                    </Button>
+                    <input
+                      id="bank-file-input"
+                      type="file"
+                      multiple
+                      accept=".pdf,.csv,.xls,.xlsx"
+                      onChange={handleBankStatementFileSelect}
+                      className="hidden"
+                    />
                   </div>
-                  
-                  <Button 
-                    onClick={handleBankStatementUpload}
-                    disabled={uploading}
-                    className="w-full"
-                  >
-                    {uploading ? (
-                      <>
-                        <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
-                        Feltöltés és feldolgozás...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-4 w-4 mr-2" />
-                        {selectedBankFiles.length} bankkivonat feltöltése
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        {/* Transaction Upload Tab */}
-        <TabsContent value="transactions">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Landmark className="h-5 w-5" />
-                Tranzakciók feltöltése
-              </CardTitle>
-              <CardDescription>
-                Tölts fel tranzakciós fájlokat feldolgozásra. Támogatott formátumok: PDF, CSV, Excel (XLS/XLSX)
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                <Landmark className="h-12 w-12 text-muted-foreground mb-4" />
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Válassz tranzakciós fájlokat</p>
-                  <p className="text-xs text-muted-foreground">
-                    A rendszer automatikusan feldolgozza és kategorizálja a tranzakciókat
-                  </p>
-                </div>
-                <Button 
-                  className="mt-4"
-                  onClick={() => document.getElementById('transaction-file-input')?.click()}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Tranzakciók tallózása
-                </Button>
-                <input
-                  id="transaction-file-input"
-                  type="file"
-                  multiple
-                  accept=".pdf,.csv,.xls,.xlsx"
-                  onChange={handleTransactionFileSelect}
-                  className="hidden"
-                />
-              </div>
+                  {selectedBankFiles.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="font-medium">Kiválasztott bankkivonatok ({selectedBankFiles.length})</h3>
+                      <div className="space-y-2">
+                        {selectedBankFiles.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 border rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Building2 className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium text-sm">{file.name}</p>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {file.type === 'text/csv' ? 'CSV' :
+                                      file.type === 'application/pdf' ? 'PDF' :
+                                        file.type.includes('excel') || file.type.includes('spreadsheet') ? 'EXCEL' :
+                                          file.type.split('/')[1].toUpperCase()}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatFileSize(file.size)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeBankFile(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
 
-              {selectedTransactionFiles.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="font-medium">Kiválasztott tranzakciók ({selectedTransactionFiles.length})</h3>
-                  <div className="space-y-2">
-                    {selectedTransactionFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 border rounded-lg"
+                      <Button
+                        onClick={handleBankStatementUpload}
+                        disabled={uploading}
+                        className="w-full"
                       >
-                        <div className="flex items-center gap-3">
-                          <Landmark className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium text-sm">{file.name}</p>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {file.type === 'text/csv' ? 'CSV' : 
-                                 file.type === 'application/pdf' ? 'PDF' :
-                                 file.type.includes('excel') || file.type.includes('spreadsheet') ? 'EXCEL' :
-                                 file.type.split('/')[1].toUpperCase()}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {formatFileSize(file.size)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeTransactionFile(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                        {uploading ? (
+                          <>
+                            <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
+                            Feltöltés és feldolgozás...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            {selectedBankFiles.length} bankkivonat feltöltése
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Transaction Upload Tab */}
+            <TabsContent value="transactions">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Landmark className="h-5 w-5" />
+                    Tranzakciók feltöltése
+                  </CardTitle>
+                  <CardDescription>
+                    Tölts fel tranzakciós fájlokat feldolgozásra. Támogatott formátumok: PDF, CSV, Excel (XLS/XLSX)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
+                    <Landmark className="h-12 w-12 text-muted-foreground mb-4" />
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Válassz tranzakciós fájlokat</p>
+                      <p className="text-xs text-muted-foreground">
+                        A rendszer automatikusan feldolgozza és kategorizálja a tranzakciókat
+                      </p>
+                    </div>
+                    <Button
+                      className="mt-4"
+                      onClick={() => document.getElementById('transaction-file-input')?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Tranzakciók tallózása
+                    </Button>
+                    <input
+                      id="transaction-file-input"
+                      type="file"
+                      multiple
+                      accept=".pdf,.csv,.xls,.xlsx"
+                      onChange={handleTransactionFileSelect}
+                      className="hidden"
+                    />
                   </div>
-                  
-                  <Button 
-                    onClick={handleTransactionUpload}
-                    disabled={uploading}
-                    className="w-full"
-                  >
-                    {uploading ? (
-                      <>
-                        <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
-                        Feltöltés...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-4 w-4 mr-2" />
-                        {selectedTransactionFiles.length} tranzakció feltöltése
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        {/* Salary/Contributions Upload Tab */}
-        <TabsContent value="salaries">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Wallet className="h-5 w-5" />
-                Bérek és Járulékok feltöltése
-              </CardTitle>
-              <CardDescription>
-                Tölts fel bér és járulék dokumentumokat feldolgozásra. Támogatott formátumok: PDF, CSV, Excel (XLS/XLSX)
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                <Wallet className="h-12 w-12 text-muted-foreground mb-4" />
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Válassz bér/járulék fájlokat</p>
-                  <p className="text-xs text-muted-foreground">
-                    A rendszer automatikusan feldolgozza és kategorizálja a dokumentumokat
-                  </p>
-                </div>
-                <Button 
-                  className="mt-4"
-                  onClick={() => document.getElementById('salary-file-input')?.click()}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Bérek/Járulékok tallózása
-                </Button>
-                <input
-                  id="salary-file-input"
-                  type="file"
-                  multiple
-                  accept=".pdf,.csv,.xls,.xlsx"
-                  onChange={handleSalaryFileSelect}
-                  className="hidden"
-                />
-              </div>
+                  {selectedTransactionFiles.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="font-medium">Kiválasztott tranzakciók ({selectedTransactionFiles.length})</h3>
+                      <div className="space-y-2">
+                        {selectedTransactionFiles.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 border rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Landmark className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium text-sm">{file.name}</p>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {file.type === 'text/csv' ? 'CSV' :
+                                      file.type === 'application/pdf' ? 'PDF' :
+                                        file.type.includes('excel') || file.type.includes('spreadsheet') ? 'EXCEL' :
+                                          file.type.split('/')[1].toUpperCase()}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatFileSize(file.size)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeTransactionFile(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
 
-              {selectedSalaryFiles.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="font-medium">Kiválasztott fájlok ({selectedSalaryFiles.length})</h3>
-                  <div className="space-y-2">
-                    {selectedSalaryFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 border rounded-lg"
+                      <Button
+                        onClick={handleTransactionUpload}
+                        disabled={uploading}
+                        className="w-full"
                       >
-                        <div className="flex items-center gap-3">
-                          <Wallet className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium text-sm">{file.name}</p>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {file.type === 'text/csv' ? 'CSV' : 
-                                 file.type === 'application/pdf' ? 'PDF' :
-                                 file.type.includes('excel') || file.type.includes('spreadsheet') ? 'EXCEL' :
-                                 file.type.split('/')[1].toUpperCase()}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {formatFileSize(file.size)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeSalaryFile(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                        {uploading ? (
+                          <>
+                            <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
+                            Feltöltés...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            {selectedTransactionFiles.length} tranzakció feltöltése
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Salary/Contributions Upload Tab */}
+            <TabsContent value="salaries">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Wallet className="h-5 w-5" />
+                    Bérek és Járulékok feltöltése
+                  </CardTitle>
+                  <CardDescription>
+                    Tölts fel bér és járulék dokumentumokat feldolgozásra. Támogatott formátumok: PDF, CSV, Excel (XLS/XLSX)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
+                    <Wallet className="h-12 w-12 text-muted-foreground mb-4" />
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Válassz bér/járulék fájlokat</p>
+                      <p className="text-xs text-muted-foreground">
+                        A rendszer automatikusan feldolgozza és kategorizálja a dokumentumokat
+                      </p>
+                    </div>
+                    <Button
+                      className="mt-4"
+                      onClick={() => document.getElementById('salary-file-input')?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Bérek/Járulékok tallózása
+                    </Button>
+                    <input
+                      id="salary-file-input"
+                      type="file"
+                      multiple
+                      accept=".pdf,.csv,.xls,.xlsx"
+                      onChange={handleSalaryFileSelect}
+                      className="hidden"
+                    />
                   </div>
-                  
-                  <Button 
-                    onClick={handleSalaryUpload}
-                    disabled={uploading}
-                    className="w-full"
-                  >
-                    {uploading ? (
-                      <>
-                        <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
-                        Feltöltés és feldolgozás...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="h-4 w-4 mr-2" />
-                        {selectedSalaryFiles.length} fájl feltöltése
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+
+                  {selectedSalaryFiles.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="font-medium">Kiválasztott fájlok ({selectedSalaryFiles.length})</h3>
+                      <div className="space-y-2">
+                        {selectedSalaryFiles.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 border rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Wallet className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium text-sm">{file.name}</p>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {file.type === 'text/csv' ? 'CSV' :
+                                      file.type === 'application/pdf' ? 'PDF' :
+                                        file.type.includes('excel') || file.type.includes('spreadsheet') ? 'EXCEL' :
+                                          file.type.split('/')[1].toUpperCase()}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatFileSize(file.size)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeSalaryFile(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <Button
+                        onClick={handleSalaryUpload}
+                        disabled={uploading}
+                        className="w-full"
+                      >
+                        {uploading ? (
+                          <>
+                            <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
+                            Feltöltés és feldolgozás...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            {selectedSalaryFiles.length} fájl feltöltése
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Subscription Usage Sidebar */}
+        <div className="lg:col-span-1">
+          <SubscriptionUsage />
+        </div>
+      </div>
     </div>
-    
-    {/* Subscription Usage Sidebar */}
-    <div className="lg:col-span-1">
-      <SubscriptionUsage />
-    </div>
-  </div>
-</div>
   );
 };
 
