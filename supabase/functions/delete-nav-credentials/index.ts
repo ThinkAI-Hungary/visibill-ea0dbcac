@@ -7,7 +7,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -25,51 +24,68 @@ serve(async (req) => {
       throw new Error('Missing authorization header');
     }
 
-    // Create client for user authentication
     const supabaseClient = createClient(
       supabaseUrl,
       Deno.env.get('SUPABASE_ANON_KEY') || '',
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Verify user authentication
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
     
     if (authError || !user) {
-      console.error('Authentication error:', authError);
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }), 
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('User authenticated:', user.id);
+    // Parse companyId from request body
+    const body = await req.json().catch(() => ({}));
+    const companyId = body.companyId;
 
-    // Create service role client for vault operations
+    if (!companyId) {
+      return new Response(
+        JSON.stringify({ error: 'companyId is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch user's NAV credentials
+    // Verify user is the company owner
+    const { data: company, error: companyError } = await serviceClient
+      .from('companies')
+      .select('owner_id')
+      .eq('id', companyId)
+      .single();
+
+    if (companyError || !company) {
+      return new Response(
+        JSON.stringify({ error: 'Company not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (company.owner_id !== user.id) {
+      return new Response(
+        JSON.stringify({ error: 'Csak a cég tulajdonosa törölheti a NAV kapcsolatot' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Fetch credentials by company_id
     const { data: credentials, error: fetchError } = await serviceClient
       .from('user_nav_credentials')
       .select('password_secret_id, sign_key_secret_id, exchange_key_secret_id')
-      .eq('user_id', user.id)
+      .eq('company_id', companyId)
       .single();
 
     if (fetchError) {
-      console.error('Error fetching credentials:', fetchError);
       return new Response(
         JSON.stringify({ error: 'Credentials not found' }), 
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    console.log('Credentials found, deleting secrets...');
 
     // Delete secrets from Vault
     const secretIds = [
@@ -86,50 +102,34 @@ serve(async (req) => {
 
       if (deleteSecretError) {
         console.error(`Error deleting secret ${secretId}:`, deleteSecretError);
-        // Continue deleting other secrets even if one fails
-      } else {
-        console.log(`Secret ${secretId} deleted successfully`);
       }
     }
 
-    // Delete user_nav_credentials record
+    // Delete credentials by company_id
     const { error: deleteCredError } = await serviceClient
       .from('user_nav_credentials')
       .delete()
-      .eq('user_id', user.id);
+      .eq('company_id', companyId);
 
     if (deleteCredError) {
-      console.error('Error deleting credentials:', deleteCredError);
       return new Response(
         JSON.stringify({ error: 'Failed to delete credentials' }), 
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('NAV credentials deleted successfully for user:', user.id);
+    console.log('NAV credentials deleted for company:', companyId, 'by owner:', user.id);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'NAV kapcsolat sikeresen leválasztva' 
-      }), 
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify({ success: true, message: 'NAV kapcsolat sikeresen leválasztva' }), 
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Error in delete-nav-credentials:', error);
     return new Response(
       JSON.stringify({ error: error.message }), 
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

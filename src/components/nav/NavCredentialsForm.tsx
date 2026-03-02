@@ -12,10 +12,11 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface NavCredentialsFormProps {
   companyId?: string;
+  isOwner?: boolean;
   onCredentialsSaved?: () => void;
 }
 
-const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, onCredentialsSaved }) => {
+const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOwner = true, onCredentialsSaved }) => {
   const { toast } = useToast();
   const [initialLoading, setInitialLoading] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -334,9 +335,18 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, onCr
 
     setLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('delete-nav-credentials');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.functions.invoke('delete-nav-credentials', {
+        body: { companyId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: "Sikeres leválasztás",
@@ -458,28 +468,52 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, onCr
       <div className="space-y-6">
         {getConnectionStatusCard()}
         
-        <Card>
-          <CardContent className="pt-6">
-            <Button
-              variant="destructive"
-              onClick={handleDisconnect}
-              disabled={loading}
-              className="w-full"
-            >
-              {loading ? (
-                <>
-                  <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                  Leválasztás...
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="mr-2 h-4 w-4" />
-                  Leválasztás
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+        {isOwner ? (
+          <Card>
+            <CardContent className="pt-6">
+              <Button
+                variant="destructive"
+                onClick={handleDisconnect}
+                disabled={loading}
+                className="w-full"
+              >
+                {loading ? (
+                  <>
+                    <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                    Leválasztás...
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="mr-2 h-4 w-4" />
+                    Leválasztás
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Alert>
+            <Shield className="h-4 w-4" />
+            <AlertDescription>
+              Csak a cég tulajdonosa kezelheti a NAV integrációt.
+            </AlertDescription>
+          </Alert>
+        )}
+      </div>
+    );
+  }
+
+  // Non-owner: show read-only notice when no valid connection
+  if (!isOwner) {
+    return (
+      <div className="space-y-6">
+        {getConnectionStatusCard()}
+        <Alert>
+          <Shield className="h-4 w-4" />
+          <AlertDescription>
+            Csak a cég tulajdonosa kezelheti a NAV integrációt.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
