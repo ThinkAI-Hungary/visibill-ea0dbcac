@@ -101,6 +101,7 @@ interface SubmittedInvoice {
   project_id: string | null;
   image_url: string | null;
   melleklet_url: string | null;
+  invoice_direction: string | null;
 }
 
 interface Partner {
@@ -142,7 +143,7 @@ interface SubmittedFilters {
   project: string;
 }
 
-type InvoiceTab = 'OUTBOUND' | 'INBOUND' | 'SUBMITTED';
+type InvoiceTab = 'OUTBOUND' | 'INBOUND' | 'SUBMITTED_INBOUND' | 'SUBMITTED_OUTBOUND';
 
 const InvoicesPage = () => {
   const { user } = useAuth();
@@ -156,17 +157,17 @@ const InvoicesPage = () => {
   const [activeTab, setActiveTab] = useState<InvoiceTab>('OUTBOUND');
   const [sortField, setSortField] = useState<string>('invoice_issue_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  
+
   // NAV sync state
   const [credentialsExist, setCredentialsExist] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const SYNC_COOLDOWN_SECONDS = 10;
-  
+
   // Server-side cooldown state
   const [serverLastSyncTime, setServerLastSyncTime] = useState<Date | null>(null);
   const [cooldownCheckLoading, setCooldownCheckLoading] = useState(true);
   const [cooldownSeconds, setCooldownSeconds] = useState<number>(0);
-  
+
   // Check server-side cooldown on load and periodically
   const checkServerCooldown = async () => {
     if (!selectedCompany?.id) {
@@ -174,7 +175,7 @@ const InvoicesPage = () => {
       setCooldownCheckLoading(false);
       return;
     }
-    
+
     try {
       const { data, error } = await supabase
         .from('nav_sync_logs')
@@ -184,7 +185,7 @@ const InvoicesPage = () => {
         .order('started_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-      
+
       if (!error && data?.started_at) {
         setServerLastSyncTime(new Date(data.started_at));
       } else {
@@ -196,7 +197,7 @@ const InvoicesPage = () => {
       setCooldownCheckLoading(false);
     }
   };
-  
+
   useEffect(() => {
     checkServerCooldown();
     const interval = setInterval(checkServerCooldown, 30000);
@@ -209,17 +210,17 @@ const InvoicesPage = () => {
       setCooldownSeconds(0);
       return;
     }
-    
+
     const calculateRemaining = () => {
       const diffMs = Date.now() - serverLastSyncTime.getTime();
       const cooldownMs = SYNC_COOLDOWN_SECONDS * 1000;
       const remaining = Math.max(0, Math.ceil((cooldownMs - diffMs) / 1000));
       setCooldownSeconds(remaining);
     };
-    
+
     calculateRemaining();
     const interval = setInterval(calculateRemaining, 1000);
-    
+
     return () => clearInterval(interval);
   }, [serverLastSyncTime]);
 
@@ -230,23 +231,23 @@ const InvoicesPage = () => {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-  
+
   // Pagination state
   const [navPageSize, setNavPageSize] = useState(20);
   const [submittedPageSize, setSubmittedPageSize] = useState(20);
   const [navCurrentPage, setNavCurrentPage] = useState(1);
   const [submittedCurrentPage, setSubmittedCurrentPage] = useState(1);
-  
+
   // Dialog states
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [itemsDialogOpen, setItemsDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<SubmittedInvoice | null>(null);
   const [selectedNavInvoice, setSelectedNavInvoice] = useState<NavInvoice | null>(null);
-  
+
   // Row selection state for recategorization
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
-  
+
   const [navFilters, setNavFilters] = useState<NavFilters>({
     search: '',
     dateFrom: undefined,
@@ -292,7 +293,7 @@ const InvoicesPage = () => {
         .select('id')
         .eq('company_id', selectedCompany.id)
         .maybeSingle();
-      
+
       setCredentialsExist(!error && !!data);
     } catch (error) {
       setCredentialsExist(false);
@@ -322,32 +323,32 @@ const InvoicesPage = () => {
       toast.error(`Kérlek várj még ${formatCooldown(cooldownSeconds)} a következő szinkronizálásig`);
       return;
     }
-    
+
     setSyncing(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
       // Helper function to split date range into 35-day chunks (NAV API limit)
-      const splitDateRange = (startDate: Date, endDate: Date, maxDays: number = 35): Array<{from: string, to: string}> => {
-        const chunks: Array<{from: string, to: string}> = [];
+      const splitDateRange = (startDate: Date, endDate: Date, maxDays: number = 35): Array<{ from: string, to: string }> => {
+        const chunks: Array<{ from: string, to: string }> = [];
         let currentStart = new Date(startDate);
-        
+
         while (currentStart < endDate) {
           const chunkEnd = new Date(currentStart);
           chunkEnd.setDate(chunkEnd.getDate() + maxDays - 1);
-          
+
           const actualEnd = chunkEnd > endDate ? endDate : chunkEnd;
-          
+
           chunks.push({
             from: currentStart.toISOString().split('T')[0],
             to: actualEnd.toISOString().split('T')[0]
           });
-          
+
           currentStart = new Date(actualEnd);
           currentStart.setDate(currentStart.getDate() + 1);
         }
-        
+
         return chunks;
       };
 
@@ -355,7 +356,7 @@ const InvoicesPage = () => {
       const endDate = new Date();
       const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
       const dateChunks = splitDateRange(startDate, endDate);
-      
+
       console.log('[InvoicesPage] NAV sync: splitting 90 days into', dateChunks.length, 'chunks');
 
       // Process each chunk sequentially, running OUTBOUND and INBOUND in parallel per chunk
@@ -365,7 +366,7 @@ const InvoicesPage = () => {
 
       for (const chunk of dateChunks) {
         console.log('[InvoicesPage] Processing chunk:', chunk);
-        
+
         const [outboundResult, inboundResult] = await Promise.allSettled([
           supabase.functions.invoke('nav-query-outbound-invoices', {
             body: {
@@ -429,10 +430,10 @@ const InvoicesPage = () => {
           description: `Összesen ${totalInvoices} számla: ${outboundCount} kimenő, ${inboundCount} bejövő`
         });
       }
-      
+
       // Capture selected invoice IDs for force recategorization
       const forceRecategorizeIds = Array.from(selectedInvoiceIds);
-      
+
       // Trigger categorization webhook - include force recategorize IDs
       if (totalInvoices > 0 || forceRecategorizeIds.length > 0) {
         try {
@@ -451,10 +452,10 @@ const InvoicesPage = () => {
           console.error('Categorization webhook failed:', categorizationError);
         }
       }
-      
+
       // Clear selection after sync
       setSelectedInvoiceIds(new Set());
-      
+
       fetchData();
 
     } catch (error: any) {
@@ -467,15 +468,15 @@ const InvoicesPage = () => {
 
   const fetchData = async () => {
     if (!user || !selectedCompany) return;
-    
+
     try {
       // Calculate date range for query - no default filter, show all invoices
-      const queryDateFrom = navFilters.dateFrom 
-        ? format(navFilters.dateFrom, 'yyyy-MM-dd') 
+      const queryDateFrom = navFilters.dateFrom
+        ? format(navFilters.dateFrom, 'yyyy-MM-dd')
         : undefined;
-      
-      const queryDateTo = navFilters.dateTo 
-        ? format(navFilters.dateTo, 'yyyy-MM-dd') 
+
+      const queryDateTo = navFilters.dateTo
+        ? format(navFilters.dateTo, 'yyyy-MM-dd')
         : undefined;
 
       // Fetch NAV invoices with optional date filtering
@@ -483,14 +484,14 @@ const InvoicesPage = () => {
         .from('nav_invoices')
         .select('*')
         .eq('company_id', selectedCompany.id);
-      
+
       if (queryDateFrom) {
         navQuery = navQuery.gte('invoice_issue_date', queryDateFrom);
       }
       if (queryDateTo) {
         navQuery = navQuery.lte('invoice_issue_date', queryDateTo);
       }
-      
+
       const { data: invoicesData, error: invoicesError } = await navQuery
         .order('invoice_issue_date', { ascending: false });
 
@@ -498,19 +499,19 @@ const InvoicesPage = () => {
       setInvoices(invoicesData || []);
 
       // Fetch submitted invoices with optional date filtering
-      const submittedQueryDateFrom = submittedFilters.dateFrom 
-        ? format(submittedFilters.dateFrom, 'yyyy-MM-dd') 
+      const submittedQueryDateFrom = submittedFilters.dateFrom
+        ? format(submittedFilters.dateFrom, 'yyyy-MM-dd')
         : undefined;
-      
-      const submittedQueryDateTo = submittedFilters.dateTo 
-        ? format(submittedFilters.dateTo, 'yyyy-MM-dd') 
+
+      const submittedQueryDateTo = submittedFilters.dateTo
+        ? format(submittedFilters.dateTo, 'yyyy-MM-dd')
         : undefined;
 
       let submittedQuery = supabase
         .from('invoices')
-        .select('id, szamlaszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url')
+        .select('id, szamlaszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction')
         .eq('company_id', selectedCompany.id);
-      
+
       if (submittedQueryDateFrom) {
         submittedQuery = submittedQuery.gte('kibocsatas_datuma', submittedQueryDateFrom);
       }
@@ -598,7 +599,7 @@ const InvoicesPage = () => {
 
   const filteredAndSortedNavInvoices = useMemo(() => {
     const direction = activeTab === 'OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
-    
+
     let filtered = invoices.filter(invoice => {
       if (invoice.invoice_direction !== direction) return false;
 
@@ -606,11 +607,11 @@ const InvoicesPage = () => {
         const searchLower = navFilters.search.toLowerCase();
         const partnerTaxNumber = getPartnerTaxNumber(invoice);
         const partnerName = getInvoicePartnerName(invoice);
-        const matchesSearch = 
+        const matchesSearch =
           invoice.invoice_number?.toLowerCase().includes(searchLower) ||
           partnerTaxNumber?.toLowerCase().includes(searchLower) ||
           partnerName.toLowerCase().includes(searchLower);
-        
+
         if (!matchesSearch) return false;
       }
 
@@ -700,14 +701,20 @@ const InvoicesPage = () => {
     return paginatedNavInvoices.every(inv => selectedInvoiceIds.has(inv.id));
   }, [paginatedNavInvoices, selectedInvoiceIds]);
 
+  const isSubmittedTab = activeTab === 'SUBMITTED_INBOUND' || activeTab === 'SUBMITTED_OUTBOUND';
+
   const filteredAndSortedSubmittedInvoices = useMemo(() => {
+    const submittedDirection = activeTab === 'SUBMITTED_OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
+
     let filtered = submittedInvoices.filter(invoice => {
+      if (invoice.invoice_direction !== submittedDirection) return false;
+
       if (submittedFilters.search) {
         const searchLower = submittedFilters.search.toLowerCase();
-        const matchesSearch = 
+        const matchesSearch =
           invoice.elado_nev?.toLowerCase().includes(searchLower) ||
           invoice.vevo_nev?.toLowerCase().includes(searchLower);
-        
+
         if (!matchesSearch) return false;
       }
 
@@ -758,7 +765,7 @@ const InvoicesPage = () => {
     });
 
     return filtered;
-  }, [submittedInvoices, submittedFilters, sortField, sortDirection]);
+  }, [submittedInvoices, submittedFilters, sortField, sortDirection, activeTab]);
 
   // Paginated submitted invoices
   const paginatedSubmittedInvoices = useMemo(() => {
@@ -810,7 +817,7 @@ const InvoicesPage = () => {
 
       if (error) throw error;
 
-      setInvoices(prev => prev.map(inv => 
+      setInvoices(prev => prev.map(inv =>
         inv.id === invoiceId ? { ...inv, project_id: projectId === 'none' ? null : projectId } : inv
       ));
       toast.success('Projekt hozzárendelve');
@@ -829,7 +836,7 @@ const InvoicesPage = () => {
 
       if (error) throw error;
 
-      setInvoices(prev => prev.map(inv => 
+      setInvoices(prev => prev.map(inv =>
         inv.id === invoiceId ? { ...inv, category_id: categoryId === 'none' ? null : categoryId } : inv
       ));
       toast.success('Kategória hozzárendelve');
@@ -862,7 +869,7 @@ const InvoicesPage = () => {
 
       if (error) throw error;
 
-      setInvoices(prev => prev.map(inv => 
+      setInvoices(prev => prev.map(inv =>
         inv.id === invoice.id ? { ...inv, paid: newValue } : inv
       ));
       toast.success(newValue ? 'Fizetve megjelölve' : 'Fizetve visszavonva');
@@ -882,7 +889,7 @@ const InvoicesPage = () => {
 
       if (error) throw error;
 
-      setInvoices(prev => prev.map(inv => 
+      setInvoices(prev => prev.map(inv =>
         inv.id === invoice.id ? { ...inv, submitted: newValue } : inv
       ));
       toast.success(newValue ? 'Beküldve megjelölve' : 'Beküldve visszavonva');
@@ -893,7 +900,7 @@ const InvoicesPage = () => {
   };
 
   const handleExport = (exportFormat: 'csv' | 'xlsx') => {
-    if (activeTab === 'SUBMITTED') {
+    if (isSubmittedTab) {
       handleExportSubmitted(exportFormat);
     } else {
       handleExportNav(exportFormat);
@@ -973,15 +980,15 @@ const InvoicesPage = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       toast.success("Számlák exportálva CSV formátumban");
     } else {
       const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Számlák');
-      
+
       XLSX.writeFile(workbook, `${filename}_${timestamp}.xlsx`);
-      
+
       toast.success("Számlák exportálva XLSX formátumban");
     }
   };
@@ -1001,7 +1008,7 @@ const InvoicesPage = () => {
   };
 
   const getResultCount = () => {
-    if (activeTab === 'SUBMITTED') {
+    if (isSubmittedTab) {
       return filteredAndSortedSubmittedInvoices.length;
     }
     return filteredAndSortedNavInvoices.length;
@@ -1039,9 +1046,9 @@ const InvoicesPage = () => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={handleSync}
                         disabled={syncing || !credentialsExist || !canSync}
                       >
@@ -1050,9 +1057,9 @@ const InvoicesPage = () => {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      {!credentialsExist 
+                      {!credentialsExist
                         ? 'Állítsd be a NAV integrációt az Integrációk oldalon'
-                        : !canSync 
+                        : !canSync
                           ? `Legközelebb ${formatCooldown(cooldownSeconds)} múlva szinkronizálhatsz`
                           : selectedInvoiceIds.size > 0
                             ? `NAV szinkronizálás + ${selectedInvoiceIds.size} kijelölt számla újrakategorizálása`
@@ -1094,14 +1101,15 @@ const InvoicesPage = () => {
               </div>
             </div>
           </CardHeader>
-          
+
           <CardContent className="space-y-6">
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as InvoiceTab)}>
-              <TabsList className="grid w-full max-w-lg grid-cols-3">
+              <TabsList className="grid w-full max-w-2xl grid-cols-4">
                 <TabsTrigger value="OUTBOUND">Kimenő (NAV)</TabsTrigger>
                 <TabsTrigger value="INBOUND">Bejövő (NAV)</TabsTrigger>
-                <TabsTrigger value="SUBMITTED">Beküldött</TabsTrigger>
+                <TabsTrigger value="SUBMITTED_INBOUND">Beküldött (Bejövő)</TabsTrigger>
+                <TabsTrigger value="SUBMITTED_OUTBOUND">Beküldött (Kimenő)</TabsTrigger>
               </TabsList>
 
               {/* NAV Invoice Tabs (OUTBOUND & INBOUND) */}
@@ -1228,7 +1236,7 @@ const InvoicesPage = () => {
                         />
                       </PopoverContent>
                     </Popover>
-                    
+
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -1254,8 +1262,8 @@ const InvoicesPage = () => {
                       </PopoverContent>
                     </Popover>
 
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={clearNavFilters}
                       className="h-9 text-muted-foreground hover:text-foreground"
@@ -1288,7 +1296,7 @@ const InvoicesPage = () => {
                               aria-label="Összes kijelölése"
                             />
                           </TableHead>
-                          <TableHead 
+                          <TableHead
                             className="cursor-pointer hover:bg-muted/50 font-semibold min-w-[150px] w-[11%]"
                             onClick={() => handleSort('invoice_number')}
                           >
@@ -1297,7 +1305,7 @@ const InvoicesPage = () => {
                               <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                           </TableHead>
-                          <TableHead 
+                          <TableHead
                             className="cursor-pointer hover:bg-muted/50 font-semibold w-[9%]"
                             onClick={() => handleSort('invoice_issue_date')}
                           >
@@ -1306,7 +1314,7 @@ const InvoicesPage = () => {
                               <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                           </TableHead>
-                          <TableHead 
+                          <TableHead
                             className="cursor-pointer hover:bg-muted/50 font-semibold w-[9%]"
                             onClick={() => handleSort('invoice_delivery_date')}
                           >
@@ -1355,9 +1363,14 @@ const InvoicesPage = () => {
                           paginatedNavInvoices.map((invoice) => {
                             const partnerTaxNumber = getPartnerTaxNumber(invoice);
                             const partnerName = getInvoicePartnerName(invoice);
-                            
+
                             return (
-                              <TableRow key={invoice.id} className={cn("group", selectedInvoiceIds.has(invoice.id) && "bg-primary/5")}>
+                              <TableRow key={invoice.id} className={cn(
+                                "group",
+                                selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
+                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && "bg-destructive/10 hover:bg-destructive/15",
+                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'OUTBOUND' && "bg-success/10 hover:bg-success/15"
+                              )}>
                                 <TableCell>
                                   <Checkbox
                                     checked={selectedInvoiceIds.has(invoice.id)}
@@ -1374,12 +1387,12 @@ const InvoicesPage = () => {
                                   />
                                 </TableCell>
                                 <TableCell className="text-muted-foreground">
-                                  {invoice.invoice_issue_date 
+                                  {invoice.invoice_issue_date
                                     ? format(new Date(invoice.invoice_issue_date), 'yyyy. MM. dd.', { locale: hu })
                                     : '-'}
                                 </TableCell>
                                 <TableCell className="text-muted-foreground">
-                                  {invoice.invoice_delivery_date 
+                                  {invoice.invoice_delivery_date
                                     ? format(new Date(invoice.invoice_delivery_date), 'yyyy. MM. dd.', { locale: hu })
                                     : '-'}
                                 </TableCell>
@@ -1400,7 +1413,7 @@ const InvoicesPage = () => {
                                     />
                                   </div>
                                 </TableCell>
-                                <TableCell className="text-right font-mono tabular-nums">
+                                <TableCell className={cn("text-right font-mono tabular-nums", activeTab === 'INBOUND' ? "text-destructive" : "text-success")}>
                                   <CopyableCell
                                     value={(invoice.invoice_net_amount || 0).toString()}
                                     displayValue={formatCurrency(invoice.invoice_net_amount || 0, invoice.currency || 'HUF')}
@@ -1408,7 +1421,7 @@ const InvoicesPage = () => {
                                     ariaLabel="Nettó összeg másolása"
                                   />
                                 </TableCell>
-                                <TableCell className="text-right font-mono tabular-nums font-medium">
+                                <TableCell className={cn("text-right font-mono tabular-nums font-medium", activeTab === 'INBOUND' ? "text-destructive" : "text-success")}>
                                   <CopyableCell
                                     value={(invoice.invoice_gross_amount || 0).toString()}
                                     displayValue={formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
@@ -1522,8 +1535,8 @@ const InvoicesPage = () => {
                   {selectedInvoiceIds.size > 0 && (
                     <div className="flex items-center gap-2 text-sm text-primary px-2">
                       <span className="font-medium">{selectedInvoiceIds.size} számla kijelölve újrakategorizálásra</span>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         className="h-7 px-2 text-muted-foreground hover:text-foreground"
                         onClick={() => setSelectedInvoiceIds(new Set())}
@@ -1536,266 +1549,272 @@ const InvoicesPage = () => {
                 </TabsContent>
               )}
 
-              {/* Submitted Invoices Tab */}
-              <TabsContent value="SUBMITTED" className="space-y-4 mt-4">
-                {/* Submitted Filters - Compact Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-muted/20 rounded-lg border border-border/30">
-                  <div className="relative col-span-2 md:col-span-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                      placeholder="Keresés..."
-                      value={submittedFilters.search}
-                      onChange={(e) => setSubmittedFilters(prev => ({ ...prev, search: e.target.value }))}
-                      className="pl-9 h-9 bg-secondary/50 border border-white/10 focus:border-primary/50"
-                    />
+              {/* Submitted Invoices Tabs (INBOUND & OUTBOUND) */}
+              {isSubmittedTab && (
+                <TabsContent value={activeTab} className="space-y-4 mt-4">
+                  {/* Submitted Filters - Compact Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-muted/20 rounded-lg border border-border/30">
+                    <div className="relative col-span-2 md:col-span-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        placeholder="Keresés..."
+                        value={submittedFilters.search}
+                        onChange={(e) => setSubmittedFilters(prev => ({ ...prev, search: e.target.value }))}
+                        className="pl-9 h-9 bg-secondary/50 border border-white/10 focus:border-primary/50"
+                      />
+                    </div>
+
+                    <Select
+                      value={submittedFilters.currency}
+                      onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, currency: value }))}
+                    >
+                      <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
+                        <SelectValue placeholder="Pénznem" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Minden pénznem</SelectItem>
+                        {Array.from(new Set(submittedInvoices.map(inv => inv.penznem).filter(Boolean))).sort().map((currency) => (
+                          <SelectItem key={currency} value={currency!}>
+                            {currency}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+
+
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={cn(
+                            "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
+                            !submittedFilters.dateFrom && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {submittedFilters.dateFrom ? format(submittedFilters.dateFrom, "MM.dd.", { locale: hu }) : "Kezdő"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={submittedFilters.dateFrom}
+                          onSelect={(date) => setSubmittedFilters(prev => ({ ...prev, dateFrom: date }))}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={cn(
+                            "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
+                            !submittedFilters.dateTo && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {submittedFilters.dateTo ? format(submittedFilters.dateTo, "MM.dd.", { locale: hu }) : "Befejező"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={submittedFilters.dateTo}
+                          onSelect={(date) => setSubmittedFilters(prev => ({ ...prev, dateTo: date }))}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearSubmittedFilters}
+                      className="h-9 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Törlés
+                    </Button>
                   </div>
 
-                  <Select
-                    value={submittedFilters.currency}
-                    onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, currency: value }))}
-                  >
-                    <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
-                      <SelectValue placeholder="Pénznem" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Minden pénznem</SelectItem>
-                      {Array.from(new Set(submittedInvoices.map(inv => inv.penznem).filter(Boolean))).sort().map((currency) => (
-                        <SelectItem key={currency} value={currency!}>
-                          {currency}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {/* Top Pagination */}
+                  <UnifiedPagination
+                    currentPage={submittedCurrentPage}
+                    totalPages={submittedTotalPages}
+                    totalItems={filteredAndSortedSubmittedInvoices.length}
+                    pageSize={submittedPageSize}
+                    onPageChange={setSubmittedCurrentPage}
+                    onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}
+                    className="mb-3"
+                  />
 
-
-
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
-                          !submittedFilters.dateFrom && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {submittedFilters.dateFrom ? format(submittedFilters.dateFrom, "MM.dd.", { locale: hu }) : "Kezdő"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={submittedFilters.dateFrom}
-                        onSelect={(date) => setSubmittedFilters(prev => ({ ...prev, dateFrom: date }))}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
-                          !submittedFilters.dateTo && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {submittedFilters.dateTo ? format(submittedFilters.dateTo, "MM.dd.", { locale: hu }) : "Befejező"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={submittedFilters.dateTo}
-                        onSelect={(date) => setSubmittedFilters(prev => ({ ...prev, dateTo: date }))}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={clearSubmittedFilters}
-                    className="h-9 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Törlés
-                  </Button>
-                </div>
-
-                {/* Top Pagination */}
-                <UnifiedPagination
-                  currentPage={submittedCurrentPage}
-                  totalPages={submittedTotalPages}
-                  totalItems={filteredAndSortedSubmittedInvoices.length}
-                  pageSize={submittedPageSize}
-                  onPageChange={setSubmittedCurrentPage}
-                  onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}
-                  className="mb-3"
-                />
-
-                {/* Submitted Invoice Table */}
-                <div className="rounded-lg border border-border/50 overflow-x-auto">
-                  <Table className="table-fixed compact-table">
-                    <TableHeader>
-                      <TableRow className="bg-muted/30 hover:bg-muted/30">
-                        <TableHead className="font-semibold min-w-[150px] w-[12%]">Számlaszám</TableHead>
-                        <TableHead 
-                          className="cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
-                          onClick={() => handleSort('kibocsatas_datuma')}
-                        >
-                          <div className="flex items-center gap-2">
-                            Kibocsátás
-                            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-                          </div>
-                        </TableHead>
-                        <TableHead className="font-semibold w-[10%]">Teljesítés</TableHead>
-                        <TableHead className="font-semibold w-[14%]">Eladó</TableHead>
-                        <TableHead className="font-semibold w-[14%]">Vevő</TableHead>
-                        <TableHead className="text-right font-semibold w-[10%]">Nettó</TableHead>
-                        <TableHead 
-                          className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
-                          onClick={() => handleSort('brutto_vegosszeg')}
-                        >
-                          <div className="flex items-center justify-end gap-2">
-                            Bruttó
-                            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-                          </div>
-                        </TableHead>
-                        <TableHead className="text-right font-semibold w-[10%]">ÁFA</TableHead>
-                        <TableHead className="text-center font-semibold w-[10%]">Műveletek</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedSubmittedInvoices.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                            Nincs megjeleníthető számla a megadott szűrők alapján.
-                          </TableCell>
+                  {/* Submitted Invoice Table */}
+                  <div className="rounded-lg border border-border/50 overflow-x-auto">
+                    <Table className="table-fixed compact-table">
+                      <TableHeader>
+                        <TableRow className="bg-muted/30 hover:bg-muted/30">
+                          <TableHead className="font-semibold min-w-[150px] w-[12%]">Számlaszám</TableHead>
+                          <TableHead
+                            className="cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
+                            onClick={() => handleSort('kibocsatas_datuma')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Kibocsátás
+                              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                            </div>
+                          </TableHead>
+                          <TableHead className="font-semibold w-[10%]">Teljesítés</TableHead>
+                          <TableHead className="font-semibold w-[14%]">Eladó</TableHead>
+                          <TableHead className="font-semibold w-[14%]">Vevő</TableHead>
+                          <TableHead className="text-right font-semibold w-[10%]">Nettó</TableHead>
+                          <TableHead
+                            className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
+                            onClick={() => handleSort('brutto_vegosszeg')}
+                          >
+                            <div className="flex items-center justify-end gap-2">
+                              Bruttó
+                              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                            </div>
+                          </TableHead>
+                          <TableHead className="text-right font-semibold w-[10%]">ÁFA</TableHead>
+                          <TableHead className="text-center font-semibold w-[10%]">Műveletek</TableHead>
                         </TableRow>
-                      ) : (
-                        paginatedSubmittedInvoices.map((invoice) => (
-                          <TableRow key={invoice.id} className="group">
-                            <TableCell className="font-medium min-w-[150px]">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="block truncate max-w-[140px] cursor-help">
-                                      {invoice.szamlaszam || '-'}
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="font-mono">{invoice.szamlaszam || '-'}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedSubmittedInvoices.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                              Nincs megjeleníthető számla a megadott szűrők alapján.
                             </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {invoice.kibocsatas_datuma 
-                                ? format(new Date(invoice.kibocsatas_datuma), 'yyyy. MM. dd.', { locale: hu })
-                                : '-'}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {invoice.teljesites_datuma 
-                                ? format(new Date(invoice.teljesites_datuma), 'yyyy. MM. dd.', { locale: hu })
-                                : '-'}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2.5">
-                                <div className={cn(
-                                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
-                                  getAvatarColor(invoice.elado_nev)
-                                )}>
-                                  {getInitials(invoice.elado_nev)}
-                                </div>
-                                <span className="font-medium truncate max-w-[140px]">{invoice.elado_nev || '-'}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2.5">
-                                <div className={cn(
-                                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
-                                  getAvatarColor(invoice.vevo_nev)
-                                )}>
-                                  {getInitials(invoice.vevo_nev)}
-                                </div>
-                                <span className="font-medium truncate max-w-[140px]">{invoice.vevo_nev || '-'}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right font-mono tabular-nums">
-                              {formatCurrency(invoice.adoalap_osszesen || 0, invoice.penznem || 'HUF')}
-                            </TableCell>
-                            <TableCell className="text-right font-mono tabular-nums font-medium">
-                              {formatCurrency(invoice.brutto_vegosszeg || 0, invoice.penznem || 'HUF')}
-                            </TableCell>
-                            <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
-                              {formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || 'HUF')}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex justify-center gap-1">
-                                {(invoice.image_url || invoice.melleklet_url) && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button 
-                                          size="sm" 
-                                          variant="ghost" 
-                                          className="h-8 w-8 opacity-70 group-hover:opacity-100"
-                                          onClick={() => openImageDialog(invoice)}
-                                        >
-                                          <Eye className="h-4 w-4" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Számla megtekintése</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
+                          </TableRow>
+                        ) : (
+                          paginatedSubmittedInvoices.map((invoice) => (
+                            <TableRow key={invoice.id} className={cn(
+                              "group",
+                              activeTab === 'SUBMITTED_INBOUND' && "bg-destructive/10 hover:bg-destructive/15",
+                              activeTab === 'SUBMITTED_OUTBOUND' && "bg-success/10 hover:bg-success/15"
+                            )}>
+                              <TableCell className="font-medium min-w-[150px]">
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <Button 
-                                        size="sm" 
-                                        variant="ghost" 
-                                        className="h-8 w-8 opacity-70 group-hover:opacity-100"
-                                        onClick={() => openEditDialog(invoice)}
-                                      >
-                                        <Pencil className="h-4 w-4" />
-                                      </Button>
+                                      <span className="block truncate max-w-[140px] cursor-help">
+                                        {invoice.szamlaszam || '-'}
+                                      </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p>Számla szerkesztése</p>
+                                      <p className="font-mono">{invoice.szamlaszam || '-'}</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {invoice.kibocsatas_datuma
+                                  ? format(new Date(invoice.kibocsatas_datuma), 'yyyy. MM. dd.', { locale: hu })
+                                  : '-'}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {invoice.teljesites_datuma
+                                  ? format(new Date(invoice.teljesites_datuma), 'yyyy. MM. dd.', { locale: hu })
+                                  : '-'}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2.5">
+                                  <div className={cn(
+                                    "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
+                                    getAvatarColor(invoice.elado_nev)
+                                  )}>
+                                    {getInitials(invoice.elado_nev)}
+                                  </div>
+                                  <span className="font-medium truncate max-w-[140px]">{invoice.elado_nev || '-'}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2.5">
+                                  <div className={cn(
+                                    "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
+                                    getAvatarColor(invoice.vevo_nev)
+                                  )}>
+                                    {getInitials(invoice.vevo_nev)}
+                                  </div>
+                                  <span className="font-medium truncate max-w-[140px]">{invoice.vevo_nev || '-'}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className={cn("text-right font-mono tabular-nums", activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
+                                {formatCurrency(invoice.adoalap_osszesen || 0, invoice.penznem || 'HUF')}
+                              </TableCell>
+                              <TableCell className={cn("text-right font-mono tabular-nums font-medium", activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
+                                {formatCurrency(invoice.brutto_vegosszeg || 0, invoice.penznem || 'HUF')}
+                              </TableCell>
+                              <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
+                                {formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || 'HUF')}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex justify-center gap-1">
+                                  {(invoice.image_url || invoice.melleklet_url) && (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-8 w-8 opacity-70 group-hover:opacity-100"
+                                            onClick={() => openImageDialog(invoice)}
+                                          >
+                                            <Eye className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Számla megtekintése</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  )}
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-8 w-8 opacity-70 group-hover:opacity-100"
+                                          onClick={() => openEditDialog(invoice)}
+                                        >
+                                          <Pencil className="h-4 w-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Számla szerkesztése</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
 
-                {/* Bottom Pagination */}
-                <UnifiedPagination
-                  currentPage={submittedCurrentPage}
-                  totalPages={submittedTotalPages}
-                  totalItems={filteredAndSortedSubmittedInvoices.length}
-                  pageSize={submittedPageSize}
-                  onPageChange={setSubmittedCurrentPage}
-                  onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}
-                  className="mt-3"
-                />
-              </TabsContent>
+                  {/* Bottom Pagination */}
+                  <UnifiedPagination
+                    currentPage={submittedCurrentPage}
+                    totalPages={submittedTotalPages}
+                    totalItems={filteredAndSortedSubmittedInvoices.length}
+                    pageSize={submittedPageSize}
+                    onPageChange={setSubmittedCurrentPage}
+                    onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}
+                    className="mt-3"
+                  />
+                </TabsContent>
+              )}
             </Tabs>
           </CardContent>
         </Card>
