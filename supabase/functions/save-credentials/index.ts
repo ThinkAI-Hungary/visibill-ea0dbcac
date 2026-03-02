@@ -30,18 +30,22 @@ Deno.serve(async (req) => {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
+      {
+        global: { headers: { Authorization: authHeader } },
+        auth: { persistSession: false }
+      }
     )
 
     // Create service role client for DB operations (bypasses RLS)
     const serviceClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    // Verify token using getUser (service role client validates JWT directly, no session needed)
+    // Verify token using anon client (which has the Authorization header context)
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: userError } = await serviceClient.auth.getUser(token)
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token)
     
     if (userError || !user) {
       console.error(`[SAVE-CREDS][${debugId}] Auth failed:`, userError?.message)
