@@ -1,26 +1,23 @@
 
 
-## Fix: save-credentials "Auth session missing!" error
+## Fix: save-credentials "Auth session missing!" (attempt 3)
 
-### Problem
-Line 38 of `save-credentials/index.ts` calls `supabaseClient.auth.getClaims(token)` using an anon-key client. This method requires an active session and fails with "Auth session missing!" during auth transitions or with stale tokens. The same root cause we already fixed in `check-subscription`.
+### Root Cause
+Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
 
-### Solution
-Replace `getClaims(token)` with `getUser(token)` using the service role client (which validates the JWT directly without needing a session).
+The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
 
-### Changes
+### Fix (single file change)
 
 **File: `supabase/functions/save-credentials/index.ts`**
 
-1. Move the service role client creation (currently at line 51) to before the auth check (before line 36)
-2. Replace lines 36-48:
-   - Remove: `supabaseClient.auth.getClaims(token)` 
-   - Add: `serviceClient.auth.getUser(token)` to validate the JWT
-   - Extract `userId` from `user.id` instead of `claims.sub`
-3. Keep the anon `supabaseClient` (with auth header) for the RPC call on line 160 so `auth.uid()` works in the database function
+1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
+2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
+
+The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
 
 ### What stays the same
-- The anon client with auth header is still used for the `save_nav_credentials` RPC call (needed for `auth.uid()`)
-- All validation, ownership checks, and error handling remain unchanged
-- The edge function will be auto-deployed after the edit
-
+- The service role client is still used for company ownership checks (line 130-138)
+- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
+- All validation, error handling, and CORS remain unchanged
+- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
