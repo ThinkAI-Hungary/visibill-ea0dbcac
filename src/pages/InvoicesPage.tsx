@@ -1141,8 +1141,8 @@ const InvoicesPage = () => {
               <TabsList className="grid w-full max-w-2xl grid-cols-4">
                 <TabsTrigger value="OUTBOUND">Kimenő (NAV)</TabsTrigger>
                 <TabsTrigger value="INBOUND">Bejövő (NAV)</TabsTrigger>
-                <TabsTrigger value="SUBMITTED_INBOUND">Beküldött (Bejövő)</TabsTrigger>
                 <TabsTrigger value="SUBMITTED_OUTBOUND">Beküldött (Kimenő)</TabsTrigger>
+                <TabsTrigger value="SUBMITTED_INBOUND">Beküldött (Bejövő)</TabsTrigger>
               </TabsList>
 
               {/* NAV Invoice Tabs (OUTBOUND & INBOUND) */}
