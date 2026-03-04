@@ -1,0 +1,1 @@
+INSERT INTO company_members (user_id, company_id) VALUES ('d8dd607d-5a51-44a2-8526-592c6a578921', '377d28cb-edc9-48a7-b261-bcd9c91d81a1') ON CONFLICT (user_id, company_id) DO NOTHING;
