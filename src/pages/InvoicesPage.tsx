@@ -555,6 +555,15 @@ const InvoicesPage = () => {
       if (projectsError) throw projectsError;
       setProjects(projectsData || []);
 
+      // Fetch matched invoice IDs from transactions
+      const { data: matchedData } = await supabase
+        .from('transactions')
+        .select('matched_invoice_id')
+        .eq('company_id', selectedCompany.id)
+        .not('matched_invoice_id', 'is', null);
+
+      setMatchedInvoiceIds(new Set((matchedData || []).map(t => t.matched_invoice_id).filter(Boolean) as string[]));
+
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Hiba az adatok betöltésekor');
