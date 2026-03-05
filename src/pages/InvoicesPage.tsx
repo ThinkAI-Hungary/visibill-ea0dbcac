@@ -26,7 +26,7 @@ import InvoiceFullEditDialog from '@/components/InvoiceFullEditDialog';
 import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { CopyableCell } from '@/components/ui/copyable-cell';
-import { IosToggle } from '@/components/ui/ios-toggle';
+
 
 // Helper to generate initials from name
 const getInitials = (name: string): string => {
