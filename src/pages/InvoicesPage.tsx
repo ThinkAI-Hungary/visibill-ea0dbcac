@@ -1493,11 +1493,11 @@ const InvoicesPage = () => {
                                   />
                                 </TableCell>
                                 <TableCell className="text-center">
-                                  <IosToggle
-                                    checked={invoice.paid === true}
-                                    onCheckedChange={() => handleTogglePaid(invoice)}
-                                    aria-label={invoice.paid ? 'Számla fizetettnek jelölve' : 'Számla nyitottnak jelölve'}
-                                  />
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
+                                    invoice.paid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
+                                  }`}>
+                                    {invoice.paid ? 'Kifizetve' : 'Nyitott'}
+                                  </span>
                                 </TableCell>
                                 {activeTab === 'INBOUND' && (
                                   <TableCell className="text-center">
