@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import SubscriptionUsage from '@/components/SubscriptionUsage';
+import UploadHistory from '@/components/UploadHistory';
 
 const ManualUpload = () => {
   const [selectedInvoiceFiles, setSelectedInvoiceFiles] = useState<File[]>([]);
@@ -18,6 +19,7 @@ const ManualUpload = () => {
   const [selectedSalaryFiles, setSelectedSalaryFiles] = useState<File[]>([]);
   const [selectedTransactionFiles, setSelectedTransactionFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState('invoices');
   const { toast } = useToast();
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
@@ -672,7 +674,7 @@ const ManualUpload = () => {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <Tabs defaultValue="invoices" className="space-y-6">
+          <Tabs defaultValue="invoices" className="space-y-6" onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="invoices" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
@@ -1088,6 +1090,8 @@ const ManualUpload = () => {
               </Card>
             </TabsContent>
           </Tabs>
+
+          <UploadHistory activeTab={activeTab} />
         </div>
 
         {/* Subscription Usage Sidebar */}
