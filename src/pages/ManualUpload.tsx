@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import SubscriptionUsage from '@/components/SubscriptionUsage';
+import UploadHistory from '@/components/UploadHistory';
 
 const ManualUpload = () => {
   const [selectedInvoiceFiles, setSelectedInvoiceFiles] = useState<File[]>([]);
