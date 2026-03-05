@@ -182,12 +182,45 @@ const ManualUpload = () => {
     return urlData.publicUrl;
   };
 
+  const checkDuplicateFile = async (fileName: string, table: 'invoice_uploads' | 'transaction_uploads'): Promise<boolean> => {
+    if (!selectedCompany?.id) return false;
+
+    const { data } = await supabase
+      .from(table)
+      .select('id, file_name')
+      .eq('company_id', selectedCompany.id)
+      .eq('file_name', fileName)
+      .eq('upload_status', 'uploaded')
+      .eq('processing_status', 'completed')
+      .limit(1);
+
+    return (data && data.length > 0);
+  };
+
   const handleInvoiceUpload = async () => {
     if (selectedInvoiceFiles.length === 0) {
       toast({
         variant: "destructive",
         title: "Nincs kiválasztott fájl",
         description: "Kérlek válassz ki legalább egy számlafájlt a feltöltéshez."
+      });
+      return;
+    }
+
+    // Check for duplicate files
+    const duplicates: string[] = [];
+    for (const file of selectedInvoiceFiles) {
+      const isDuplicate = await checkDuplicateFile(file.name, 'invoice_uploads');
+      if (isDuplicate) {
+        duplicates.push(file.name);
+      }
+    }
+
+    if (duplicates.length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Korábban már feltöltött fájl(ok)",
+        description: `A következő fájl(ok) már sikeresen fel lettek töltve és feldolgozva: ${duplicates.join(', ')}`
       });
       return;
     }
