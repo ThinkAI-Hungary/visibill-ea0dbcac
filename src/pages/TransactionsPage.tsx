@@ -52,7 +52,7 @@ interface TransactionFilters {
 type MatchStatus = 'matched' | 'suggested' | 'unmatched';
 
 const isAutoApproved = (transaction: Transaction): boolean => {
-  return !!(transaction.confidence_score && transaction.confidence_score >= 0.97 && transaction.matched_invoice_id);
+  return !!(transaction.confidence_score && transaction.confidence_score >= 0.9 && transaction.matched_invoice_id);
 };
 
 const isNoCategoryMatch = (transaction: Transaction): boolean => {
@@ -177,9 +177,9 @@ const TransactionsPage = () => {
       
       const fetchedTransactions = data || [];
       
-      // Auto-approve transactions with confidence_score >= 0.97
+      // Auto-approve transactions with confidence_score >= 0.9
       const toAutoApprove = fetchedTransactions.filter(
-        t => t.matched_invoice_id && !t.is_verified && t.confidence_score && t.confidence_score >= 0.97
+        t => t.matched_invoice_id && !t.is_verified && t.confidence_score && t.confidence_score >= 0.9
       );
       
       if (toAutoApprove.length > 0) {
