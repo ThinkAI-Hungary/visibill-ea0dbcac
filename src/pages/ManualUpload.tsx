@@ -674,7 +674,7 @@ const ManualUpload = () => {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <Tabs defaultValue="invoices" className="space-y-6">
+          <Tabs defaultValue="invoices" className="space-y-6" onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="invoices" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
