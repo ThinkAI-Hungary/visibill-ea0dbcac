@@ -20,6 +20,7 @@ const ManualUpload = () => {
   const [selectedTransactionFiles, setSelectedTransactionFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('invoices');
+  const [uploadRefreshKey, setUploadRefreshKey] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
@@ -337,6 +338,7 @@ const ManualUpload = () => {
         });
 
         setSelectedInvoiceFiles([]);
+        setUploadRefreshKey(k => k + 1);
       } else {
         toast({
           variant: "destructive",
@@ -669,6 +671,7 @@ const ManualUpload = () => {
         });
 
         setSelectedTransactionFiles([]);
+        setUploadRefreshKey(k => k + 1);
       } else {
         toast({
           variant: "destructive",
@@ -1142,7 +1145,7 @@ const ManualUpload = () => {
             </TabsContent>
           </Tabs>
 
-          <UploadHistory activeTab={activeTab} />
+          <UploadHistory activeTab={activeTab} refreshKey={uploadRefreshKey} />
         </div>
 
         {/* Subscription Usage Sidebar */}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,6 +22,7 @@ interface UploadRecord {
 
 interface UploadHistoryProps {
   activeTab: string;
+  refreshKey?: number;
 }
 
 const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -42,7 +43,7 @@ function formatFileSize(bytes: number) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-export default function UploadHistory({ activeTab }: UploadHistoryProps) {
+export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryProps) {
   const [records, setRecords] = useState<UploadRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -52,34 +53,75 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
   const icon = activeTab === 'invoices' ? <FileText className="h-5 w-5" /> : <Landmark className="h-5 w-5" />;
   const title = activeTab === 'invoices' ? 'Számla feltöltések' : 'Tranzakció feltöltések';
 
-  useEffect(() => {
+  const fetchRecords = useCallback(async () => {
     if (!user) return;
+    
+    let query = supabase
+      .from(tableName)
+      .select('id, file_name, file_size, file_type, upload_status, processing_status, created_at, error_message')
+      .order('created_at', { ascending: false })
+      .limit(20);
 
-    const fetchRecords = async () => {
-      setLoading(true);
-      let query = supabase
-        .from(tableName)
-        .select('id, file_name, file_size, file_type, upload_status, processing_status, created_at, error_message')
-        .order('created_at', { ascending: false })
-        .limit(20);
+    if (selectedCompany?.id) {
+      query = query.eq('company_id', selectedCompany.id);
+    }
 
-      if (selectedCompany?.id) {
-        query = query.eq('company_id', selectedCompany.id);
-      }
+    const { data, error } = await query;
 
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Upload history fetch error:', error);
-        setRecords([]);
-      } else {
-        setRecords((data as UploadRecord[]) || []);
-      }
-      setLoading(false);
-    };
-
-    fetchRecords();
+    if (error) {
+      console.error('Upload history fetch error:', error);
+      setRecords([]);
+    } else {
+      setRecords((data as UploadRecord[]) || []);
+    }
+    setLoading(false);
   }, [user, selectedCompany?.id, tableName]);
+
+  // Initial fetch + refetch on refreshKey change
+  useEffect(() => {
+    setLoading(true);
+    fetchRecords();
+  }, [fetchRecords, refreshKey]);
+
+  // Realtime subscription for live updates
+  useEffect(() => {
+    if (!user || !selectedCompany?.id) return;
+    if (activeTab !== 'invoices' && activeTab !== 'transactions') return;
+
+    const channel = supabase
+      .channel(`upload-history-${tableName}-${selectedCompany.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: tableName,
+          filter: `company_id=eq.${selectedCompany.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newRecord = payload.new as UploadRecord;
+            setRecords(prev => {
+              if (prev.some(r => r.id === newRecord.id)) return prev;
+              return [newRecord, ...prev].slice(0, 20);
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updated = payload.new as UploadRecord;
+            setRecords(prev =>
+              prev.map(r => (r.id === updated.id ? updated : r))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            const deleted = payload.old as { id: string };
+            setRecords(prev => prev.filter(r => r.id !== deleted.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, selectedCompany?.id, tableName, activeTab]);
 
   // Only show for invoices and transactions tabs
   if (activeTab !== 'invoices' && activeTab !== 'transactions') {
