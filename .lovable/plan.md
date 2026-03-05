@@ -1,23 +1,39 @@
 
 
-## Fix: save-credentials "Auth session missing!" (attempt 3)
+## Plan: Also set `submitted = true` when NAV invoice is cross-matched
 
-### Root Cause
-Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
+### Problem
+The existing trigger `mark_nav_invoice_paid_on_transaction_match` only sets `paid = true` when a transaction is matched to an invoice whose `szamlaszam` matches a NAV invoice's `invoice_number`. The user also wants `submitted = true` to be set in the same scenario.
 
-The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
+### Implementation
 
-### Fix (single file change)
+**New migration SQL** -- two changes:
 
-**File: `supabase/functions/save-credentials/index.ts`**
+#### 1. Update the existing trigger function
+Modify `mark_nav_invoice_paid_on_transaction_match()` to also set `submitted = true`:
 
-1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
-2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
+```sql
+CREATE OR REPLACE FUNCTION public.mark_nav_invoice_paid_on_transaction_match()
+...
+    UPDATE nav_invoices
+    SET paid = true, submitted = true
+    WHERE invoice_number = v_szamlaszam
+      AND company_id = v_company_id
+      AND (paid IS NULL OR paid = false OR submitted IS NULL OR submitted = false);
+...
+```
 
-The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
+#### 2. Backfill existing data
+```sql
+UPDATE nav_invoices ni
+SET submitted = true
+FROM invoices i
+JOIN transactions t ON t.matched_invoice_id = i.id
+WHERE ni.invoice_number = i.szamlaszam
+  AND ni.company_id = i.company_id
+  AND (ni.submitted IS NULL OR ni.submitted = false);
+```
 
-### What stays the same
-- The service role client is still used for company ownership checks (line 130-138)
-- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
-- All validation, error handling, and CORS remain unchanged
-- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
+### Files
+- New migration SQL file
+
