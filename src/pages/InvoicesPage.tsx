@@ -26,7 +26,7 @@ import InvoiceFullEditDialog from '@/components/InvoiceFullEditDialog';
 import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { CopyableCell } from '@/components/ui/copyable-cell';
-import { IosToggle } from '@/components/ui/ios-toggle';
+
 
 // Helper to generate initials from name
 const getInitials = (name: string): string => {
@@ -913,25 +913,6 @@ const InvoicesPage = () => {
     });
   };
 
-  const handleTogglePaid = async (invoice: NavInvoice) => {
-    try {
-      const newValue = !invoice.paid;
-      const { error } = await supabase
-        .from('nav_invoices')
-        .update({ paid: newValue })
-        .eq('id', invoice.id);
-
-      if (error) throw error;
-
-      setInvoices(prev => prev.map(inv =>
-        inv.id === invoice.id ? { ...inv, paid: newValue } : inv
-      ));
-      toast.success(newValue ? 'Fizetve megjelölve' : 'Fizetve visszavonva');
-    } catch (error) {
-      console.error('Error updating paid status:', error);
-      toast.error('Hiba a státusz frissítésekor');
-    }
-  };
 
   const handleToggleSubmitted = async (invoice: NavInvoice) => {
     try {
@@ -1389,8 +1370,8 @@ const InvoicesPage = () => {
                                   <TooltipTrigger asChild>
                                     <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                                   </TooltipTrigger>
-                                  <TooltipContent className="max-w-xs">
-                                    <p>Itt tudod beállítani a számla fizetési állapotát. Ha „Nyitott", akkor még nincs kiegyenlítve a rendszerben, míg „Kifizetve" beállításnál már rendezettnek tekintjük a számlát.</p>
+                                   <TooltipContent className="max-w-xs">
+                                    <p>A számla fizetési állapota automatikusan változik: „Kifizetve" lesz, ha a számlához tartozó tranzakció párosítva van.</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -1493,11 +1474,11 @@ const InvoicesPage = () => {
                                   />
                                 </TableCell>
                                 <TableCell className="text-center">
-                                  <IosToggle
-                                    checked={invoice.paid === true}
-                                    onCheckedChange={() => handleTogglePaid(invoice)}
-                                    aria-label={invoice.paid ? 'Számla fizetettnek jelölve' : 'Számla nyitottnak jelölve'}
-                                  />
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
+                                    invoice.paid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
+                                  }`}>
+                                    {invoice.paid ? 'Kifizetve' : 'Nyitott'}
+                                  </span>
                                 </TableCell>
                                 {activeTab === 'INBOUND' && (
                                   <TableCell className="text-center">
