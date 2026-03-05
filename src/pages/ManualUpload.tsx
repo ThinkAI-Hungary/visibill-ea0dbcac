@@ -1090,6 +1090,8 @@ const ManualUpload = () => {
               </Card>
             </TabsContent>
           </Tabs>
+
+          <UploadHistory activeTab={activeTab} />
         </div>
 
         {/* Subscription Usage Sidebar */}
