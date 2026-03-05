@@ -1389,8 +1389,8 @@ const InvoicesPage = () => {
                                   <TooltipTrigger asChild>
                                     <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                                   </TooltipTrigger>
-                                  <TooltipContent className="max-w-xs">
-                                    <p>Itt tudod beállítani a számla fizetési állapotát. Ha „Nyitott", akkor még nincs kiegyenlítve a rendszerben, míg „Kifizetve" beállításnál már rendezettnek tekintjük a számlát.</p>
+                                   <TooltipContent className="max-w-xs">
+                                    <p>A számla fizetési állapota automatikusan változik: „Kifizetve" lesz, ha a számlához tartozó tranzakció párosítva van.</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
