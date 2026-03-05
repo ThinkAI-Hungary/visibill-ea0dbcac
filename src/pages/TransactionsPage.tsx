@@ -177,9 +177,9 @@ const TransactionsPage = () => {
       
       const fetchedTransactions = data || [];
       
-      // Auto-approve transactions with confidence_score >= 0.97
+      // Auto-approve transactions with confidence_score >= 0.9
       const toAutoApprove = fetchedTransactions.filter(
-        t => t.matched_invoice_id && !t.is_verified && t.confidence_score && t.confidence_score >= 0.97
+        t => t.matched_invoice_id && !t.is_verified && t.confidence_score && t.confidence_score >= 0.9
       );
       
       if (toAutoApprove.length > 0) {
