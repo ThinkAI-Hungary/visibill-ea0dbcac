@@ -913,25 +913,6 @@ const InvoicesPage = () => {
     });
   };
 
-  const handleTogglePaid = async (invoice: NavInvoice) => {
-    try {
-      const newValue = !invoice.paid;
-      const { error } = await supabase
-        .from('nav_invoices')
-        .update({ paid: newValue })
-        .eq('id', invoice.id);
-
-      if (error) throw error;
-
-      setInvoices(prev => prev.map(inv =>
-        inv.id === invoice.id ? { ...inv, paid: newValue } : inv
-      ));
-      toast.success(newValue ? 'Fizetve megjelölve' : 'Fizetve visszavonva');
-    } catch (error) {
-      console.error('Error updating paid status:', error);
-      toast.error('Hiba a státusz frissítésekor');
-    }
-  };
 
   const handleToggleSubmitted = async (invoice: NavInvoice) => {
     try {
