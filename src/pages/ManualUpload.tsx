@@ -665,7 +665,7 @@ const ManualUpload = () => {
       if (successfulUploads > 0) {
         toast({
           title: "Feltöltés sikeres!",
-          description: `${successfulUploads} tranzakció fájl feltöltve és feldolgozásra küldve.`
+          description: `${successfulUploads} tranzakció fájl feltöltve és feldolgozásra küldve. A feltöltött állomány feldolgozásához és listákban való megjelenéséhez kb. 5 percre van szükség. Addig a türelmed kérjük!`
         });
 
         setSelectedTransactionFiles([]);
