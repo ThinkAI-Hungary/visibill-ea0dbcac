@@ -575,6 +575,24 @@ const ManualUpload = () => {
       return;
     }
 
+    // Check for duplicate files
+    const duplicates: string[] = [];
+    for (const file of selectedTransactionFiles) {
+      const isDuplicate = await checkDuplicateFile(file.name, 'transaction_uploads');
+      if (isDuplicate) {
+        duplicates.push(file.name);
+      }
+    }
+
+    if (duplicates.length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Korábban már feltöltött fájl(ok)",
+        description: `A következő fájl(ok) már sikeresen fel lettek töltve és feldolgozva: ${duplicates.join(', ')}`
+      });
+      return;
+    }
+
     setUploading(true);
 
     // Show processing toast
