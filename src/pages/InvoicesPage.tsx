@@ -563,7 +563,17 @@ const InvoicesPage = () => {
         .eq('company_id', selectedCompany.id)
         .not('matched_invoice_id', 'is', null);
 
-      setMatchedInvoiceIds(new Set((matchedData || []).map(t => t.matched_invoice_id).filter(Boolean) as string[]));
+      const matchedInvoiceIdsSet = new Set((matchedData || []).map(t => t.matched_invoice_id).filter(Boolean) as string[]);
+      setMatchedInvoiceIds(matchedInvoiceIdsSet);
+
+      // Build cross-reference: szamlaszam values of submitted invoices that have matched transactions
+      const matchedSzamlaszamSet = new Set(
+        (submittedData || [])
+          .filter(inv => matchedInvoiceIdsSet.has(inv.id))
+          .map(inv => inv.szamlaszam)
+          .filter(Boolean)
+      );
+      setMatchedNavInvoiceNumbers(matchedSzamlaszamSet);
 
     } catch (error) {
       console.error('Error fetching data:', error);
