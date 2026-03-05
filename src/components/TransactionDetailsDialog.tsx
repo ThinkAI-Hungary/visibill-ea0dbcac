@@ -485,7 +485,7 @@ export const TransactionDetailsDialog = ({
                                 {formatCurrency(invoice.brutto_vegosszeg || 0, invoice.penznem || 'HUF')}
                               </p>
                               {isExactMatch && (
-                                <Badge variant="success" className="text-[9px] h-4">Pontos</Badge>
+                                <Badge variant="success" className="text-[9px] h-4">Egyező összeg</Badge>
                               )}
                             </div>
                           </div>
