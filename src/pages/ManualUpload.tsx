@@ -671,6 +671,7 @@ const ManualUpload = () => {
         });
 
         setSelectedTransactionFiles([]);
+        setUploadRefreshKey(k => k + 1);
       } else {
         toast({
           variant: "destructive",
