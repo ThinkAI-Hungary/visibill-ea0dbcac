@@ -249,6 +249,7 @@ const InvoicesPage = () => {
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
   const [selectedSubmittedIds, setSelectedSubmittedIds] = useState<Set<string>>(new Set());
   const [matchedInvoiceIds, setMatchedInvoiceIds] = useState<Set<string>>(new Set());
+  const [matchedNavInvoiceNumbers, setMatchedNavInvoiceNumbers] = useState<Set<string>>(new Set());
 
   const [navFilters, setNavFilters] = useState<NavFilters>({
     search: '',
