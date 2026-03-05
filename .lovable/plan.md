@@ -1,58 +1,23 @@
 
 
-## Plan: Cross-link NAV invoices and submitted invoices via invoice_number matching
+## Fix: save-credentials "Auth session missing!" (attempt 3)
 
-### What the user wants
+### Root Cause
+Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
 
-When a NAV invoice (`nav_invoices.invoice_number`) matches a submitted invoice (`invoices.szamlaszam`), AND that submitted invoice has a matched transaction (`transactions.matched_invoice_id`), then:
-1. The **Bejövő (NAV)** row should appear green (as if paid=true & submitted=true)
-2. The **Beküldött (Bejövő)** row should also appear green
+The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
 
-### Implementation
+### Fix (single file change)
 
-**File: `src/pages/InvoicesPage.tsx`**
+**File: `supabase/functions/save-credentials/index.ts`**
 
-#### 1. Build a cross-reference set in `fetchData()`
+1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
+2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
 
-After fetching both `matchedInvoiceIds` (submitted invoice IDs with transactions) and the submitted invoices data, create a new set `matchedNavInvoiceNumbers` containing `invoice_number` values from NAV invoices that match a submitted invoice with a transaction:
+The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
 
-```typescript
-// Build set of szamlaszam values that have matched transactions
-const matchedSzamlaszamSet = new Set(
-  (submittedData || [])
-    .filter(inv => matchedInvoiceIdsSet.has(inv.id))
-    .map(inv => inv.szamlaszam)
-    .filter(Boolean)
-);
-```
-
-Store this as state: `matchedNavInvoiceNumbers: Set<string>`.
-
-Also build reverse: a set of submitted invoice IDs whose `szamlaszam` matches a NAV invoice number (to make submitted rows green even if they don't directly have a transaction, but indirectly through NAV matching). Actually, re-reading the request -- the user wants:
-- If NAV invoice_number matches invoices.szamlaszam AND that invoice has a transaction -> NAV row green, submitted row green.
-
-The submitted row is already green if it has a matched transaction (existing logic). So we only need the **forward** direction: make NAV rows green when their `invoice_number` exists in the set of `szamlaszam` values that have matched transactions.
-
-#### 2. Update NAV row coloring (~line 1414-1415)
-
-Add the cross-reference check as an additional green condition for INBOUND NAV rows:
-
-```typescript
-// Current green condition: invoice.paid === true && invoice.submitted === true
-// New green condition: ALSO green if matchedNavInvoiceNumbers has this invoice_number
-!selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && 
-  (invoice.paid === true && invoice.submitted === true || matchedNavInvoiceNumbers.has(invoice.invoice_number)) 
-  && "bg-success/10 hover:bg-success/15",
-
-!selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && 
-  !(invoice.paid === true && invoice.submitted === true) && !matchedNavInvoiceNumbers.has(invoice.invoice_number) 
-  && "bg-destructive/10 hover:bg-destructive/15",
-```
-
-### Summary of changes
-
-- **1 new state variable**: `matchedNavInvoiceNumbers: Set<string>`
-- **fetchData()**: After fetching matched transaction IDs and submitted invoices, compute the set of `szamlaszam` values that have matched transactions, store as `matchedNavInvoiceNumbers`
-- **NAV INBOUND row**: Green if `paid && submitted` OR if `invoice_number` is in `matchedNavInvoiceNumbers`
-- No changes needed for Beküldött (Bejövő) -- already green via existing `matchedInvoiceIds` logic
-
+### What stays the same
+- The service role client is still used for company ownership checks (line 130-138)
+- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
+- All validation, error handling, and CORS remain unchanged
+- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
