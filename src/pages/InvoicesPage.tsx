@@ -248,6 +248,7 @@ const InvoicesPage = () => {
   // Row selection state for recategorization
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
   const [selectedSubmittedIds, setSelectedSubmittedIds] = useState<Set<string>>(new Set());
+  const [matchedInvoiceIds, setMatchedInvoiceIds] = useState<Set<string>>(new Set());
 
   const [navFilters, setNavFilters] = useState<NavFilters>({
     search: '',
@@ -553,6 +554,15 @@ const InvoicesPage = () => {
 
       if (projectsError) throw projectsError;
       setProjects(projectsData || []);
+
+      // Fetch matched invoice IDs from transactions
+      const { data: matchedData } = await supabase
+        .from('transactions')
+        .select('matched_invoice_id')
+        .eq('company_id', selectedCompany.id)
+        .not('matched_invoice_id', 'is', null);
+
+      setMatchedInvoiceIds(new Set((matchedData || []).map(t => t.matched_invoice_id).filter(Boolean) as string[]));
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -1401,7 +1411,8 @@ const InvoicesPage = () => {
                               <TableRow key={invoice.id} className={cn(
                                 "group",
                                 selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
-                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && "bg-destructive/10 hover:bg-destructive/15",
+                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && invoice.paid === true && invoice.submitted === true && "bg-success/10 hover:bg-success/15",
+                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && !(invoice.paid === true && invoice.submitted === true) && "bg-destructive/10 hover:bg-destructive/15",
                                 !selectedInvoiceIds.has(invoice.id) && activeTab === 'OUTBOUND' && "bg-success/10 hover:bg-success/15"
                               )}>
                                 <TableCell>
@@ -1740,7 +1751,8 @@ const InvoicesPage = () => {
                             <TableRow key={invoice.id} className={cn(
                               "group",
                               selectedSubmittedIds.has(invoice.id) && "bg-primary/5",
-                              !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && "bg-destructive/10 hover:bg-destructive/15",
+                              !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && matchedInvoiceIds.has(invoice.id) && "bg-success/10 hover:bg-success/15",
+                              !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && !matchedInvoiceIds.has(invoice.id) && "bg-destructive/10 hover:bg-destructive/15",
                               !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_OUTBOUND' && "bg-success/10 hover:bg-success/15"
                             )}>
                               <TableCell>
