@@ -1422,8 +1422,8 @@ const InvoicesPage = () => {
                               <TableRow key={invoice.id} className={cn(
                                 "group",
                                 selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
-                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && invoice.paid === true && invoice.submitted === true && "bg-success/10 hover:bg-success/15",
-                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && !(invoice.paid === true && invoice.submitted === true) && "bg-destructive/10 hover:bg-destructive/15",
+                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && ((invoice.paid === true && invoice.submitted === true) || matchedNavInvoiceNumbers.has(invoice.invoice_number)) && "bg-success/10 hover:bg-success/15",
+                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && !(invoice.paid === true && invoice.submitted === true) && !matchedNavInvoiceNumbers.has(invoice.invoice_number) && "bg-destructive/10 hover:bg-destructive/15",
                                 !selectedInvoiceIds.has(invoice.id) && activeTab === 'OUTBOUND' && "bg-success/10 hover:bg-success/15"
                               )}>
                                 <TableCell>
