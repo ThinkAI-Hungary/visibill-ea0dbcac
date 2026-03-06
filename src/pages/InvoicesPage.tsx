@@ -1863,7 +1863,7 @@ const InvoicesPage = () => {
                                   <Checkbox
                                     checked={selectedSubmittedIds.has(invoice.id)}
                                     onCheckedChange={(checked) => handleSubmittedRowSelect(invoice.id, !!checked)}
-                                    aria-label={`${invoice.szamlaszam || invoice.id} kijelölése`}
+                                    aria-label={`${invoice.bizonylatsorszam || invoice.id} kijelölése`}
                                   />
                                 </div>
                               </TableCell>
