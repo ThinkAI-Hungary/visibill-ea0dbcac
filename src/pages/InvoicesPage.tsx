@@ -293,10 +293,11 @@ const InvoicesPage = () => {
     checkCredentialsExist();
   }, [user, selectedCompany, navFilters.dateFrom, navFilters.dateTo, submittedFilters.dateFrom, submittedFilters.dateTo]);
 
-  // Clear selection when tab changes
+  // Clear selection and expanded row when tab changes
   useEffect(() => {
     setSelectedInvoiceIds(new Set());
     setSelectedSubmittedIds(new Set());
+    setExpandedRowId(null);
   }, [activeTab]);
 
   const checkCredentialsExist = async () => {
