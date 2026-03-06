@@ -1,28 +1,23 @@
 
 
-## Plan: Signed URL for invoice image hover preview
+## Fix: save-credentials "Auth session missing!" (attempt 3)
 
-### Problem
-The current hover preview uses the raw `image_url` / `melleklet_url` directly as `<img src>`. These are Supabase storage URLs that require authentication -- so the preview shows a broken image. The `get-invoice-image-url` edge function exists and generates signed URLs, but it's not being used here.
+### Root Cause
+Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
 
-### Solution
-Create a small wrapper component (`InvoiceImagePreview`) that:
-1. On mount (when HoverCard opens), calls the `get-invoice-image-url` edge function with the invoice ID
-2. Shows a loading spinner while fetching
-3. Displays the actual image using the returned signed URL
-4. Caches the signed URL in a `Map` so repeated hovers don't re-fetch
+The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
 
-### Changes
+### Fix (single file change)
 
-**File: `src/pages/InvoicesPage.tsx`**
-- Add state: `imageUrlCache: Record<string, string>` to cache signed URLs
-- Create an inline `InvoiceImagePreview` component (or extract to separate file) that:
-  - Takes `invoiceId`, `imageUrl`, `mellekletUrl` as props
-  - On open, checks cache first; if miss, calls `supabase.functions.invoke('get-invoice-image-url', { body: { invoiceId } })`
-  - Renders: loading skeleton -> actual image or PDF placeholder
-- Replace the current direct `<img src={...}>` in HoverCardContent with this component
-- Use HoverCard's `onOpenChange` to trigger the fetch
+**File: `supabase/functions/save-credentials/index.ts`**
 
-### Technical detail
-The edge function `get-invoice-image-url` accepts `{ invoiceId }` in the POST body and returns `{ signedUrl }`. It verifies ownership and generates a 1-hour signed URL. However, this function queries the `invoices` table (submitted invoices), not `nav_invoices`. The hover preview is on the **Beküldött** tabs where `invoice.id` maps to the `invoices` table, so this will work correctly for those tabs.
+1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
+2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
 
+The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
+
+### What stays the same
+- The service role client is still used for company ownership checks (line 130-138)
+- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
+- All validation, error handling, and CORS remain unchanged
+- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
