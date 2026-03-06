@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
 import { CalendarIcon, Search, Download, ArrowUpDown, FileText, X, ChevronDown, ChevronUp, Info, Eye, Pencil, Package, ChevronLeft, ChevronRight, RefreshCw, Shield } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { toast } from 'sonner';
