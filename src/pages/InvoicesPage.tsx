@@ -161,7 +161,9 @@ const InvoicesPage = () => {
   const { selectedCompany } = useCompany();
   const [invoices, setInvoices] = useState<NavInvoice[]>([]);
   const [submittedInvoices, setSubmittedInvoices] = useState<SubmittedInvoice[]>([]);
+  const [allTransactions, setAllTransactions] = useState<TransactionRecord[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
