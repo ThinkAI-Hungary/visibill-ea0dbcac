@@ -1,23 +1,47 @@
 
 
-## Fix: save-credentials "Auth session missing!" (attempt 3)
+## Plan: Rename `szamlaszam` to `bizonylatsorszam`
 
-### Root Cause
-Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
+### Impact Assessment
 
-The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
+This rename touches **3 layers** and has some critical dependencies:
 
-### Fix (single file change)
+**1. Database (invoices table + sima_szamla_backup table)**
+- Column `szamlaszam` -> `bizonylatsorszam` on `invoices`
+- Column `szamlaszam` -> `bizonylatsorszam` on `sima_szamla_backup`
+- `bankszamlaszam_iban` stays unchanged (different field)
 
-**File: `supabase/functions/save-credentials/index.ts`**
+**2. Database functions/triggers (CRITICAL)**
+Two SECURITY DEFINER functions reference `NEW.szamlaszam`:
+- `mark_nav_invoice_as_submitted()` -- matches `NEW.szamlaszam` against `nav_invoices.invoice_number`
+- `mark_nav_invoice_paid_on_transaction_match()` -- reads `szamlaszam` from invoices table
 
-1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
-2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
+These must be updated in the same migration or the matching logic breaks.
 
-The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
+**3. Frontend (6 files)**
+- `src/pages/InvoicesPage.tsx` -- interface, queries, display, matching logic
+- `src/components/ExpandedInvoiceRow.tsx` -- interface + display
+- `src/components/TransactionDetailsDialog.tsx` -- interface, queries, display, search
+- `src/components/InvoiceDetailPopup.tsx` -- interface + display label
+- `src/components/InvoiceImageDialog.tsx` -- interface + identifier logic
+- `src/components/dashboard/RecentInvoices.tsx` -- display
+- `src/types/invoices.ts` -- type definitions
 
-### What stays the same
-- The service role client is still used for company ownership checks (line 130-138)
-- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
-- All validation, error handling, and CORS remain unchanged
-- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
+**4. Edge functions** -- None reference `szamlaszam` directly; they use `select *` or don't touch this column.
+
+### Migration SQL
+
+Single migration that:
+1. Renames column on `invoices` and `sima_szamla_backup`
+2. Recreates `mark_nav_invoice_as_submitted()` with `NEW.bizonylatsorszam`
+3. Recreates `mark_nav_invoice_paid_on_transaction_match()` with `bizonylatsorszam`
+
+### Frontend Changes
+
+All 7 files above: rename `szamlaszam` -> `bizonylatsorszam` in interfaces, queries, variable references, and change display labels from "Számlaszám" to "Bizonylatsorszám".
+
+### Risk
+
+- **No breaking risk** if migration + triggers + frontend are deployed together (which they will be).
+- The `supabase/integrations/supabase/types.ts` auto-regenerates from DB schema, so it will update automatically after migration.
+
