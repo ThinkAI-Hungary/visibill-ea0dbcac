@@ -1842,19 +1842,28 @@ const InvoicesPage = () => {
                           </TableRow>
                         ) : (
                           paginatedSubmittedInvoices.map((invoice) => (
-                            <TableRow key={invoice.id} className={cn(
-                              "group",
+                            <React.Fragment key={invoice.id}>
+                            <TableRow className={cn(
+                              "group cursor-pointer",
                               selectedSubmittedIds.has(invoice.id) && "bg-primary/5",
                               !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && matchedInvoiceIds.has(invoice.id) && "bg-success/10 hover:bg-success/15",
                               !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && !matchedInvoiceIds.has(invoice.id) && "bg-destructive/10 hover:bg-destructive/15",
-                              !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_OUTBOUND' && "bg-success/10 hover:bg-success/15"
-                            )}>
+                              !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_OUTBOUND' && "bg-success/10 hover:bg-success/15",
+                              expandedRowId === invoice.id && "border-b-0"
+                            )} onClick={(e) => handleRowClick(invoice.id, e)}>
                               <TableCell>
-                                <Checkbox
-                                  checked={selectedSubmittedIds.has(invoice.id)}
-                                  onCheckedChange={(checked) => handleSubmittedRowSelect(invoice.id, !!checked)}
-                                  aria-label={`${invoice.szamlaszam || invoice.id} kijelölése`}
-                                />
+                                <div className="flex items-center gap-1">
+                                  {expandedRowId === invoice.id ? (
+                                    <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                  )}
+                                  <Checkbox
+                                    checked={selectedSubmittedIds.has(invoice.id)}
+                                    onCheckedChange={(checked) => handleSubmittedRowSelect(invoice.id, !!checked)}
+                                    aria-label={`${invoice.szamlaszam || invoice.id} kijelölése`}
+                                  />
+                                </div>
                               </TableCell>
                               <TableCell className="font-medium min-w-[150px]">
                                 <TooltipProvider>
@@ -1952,6 +1961,18 @@ const InvoicesPage = () => {
                                 </div>
                               </TableCell>
                             </TableRow>
+                            {expandedRowId === invoice.id && (() => {
+                              const matches = getSubmittedInvoiceMatches(invoice);
+                              return (
+                                <ExpandedInvoiceRow
+                                  colSpan={10}
+                                  matchedSubmittedInvoices={[]}
+                                  matchedNavInvoices={matches.matchedNav}
+                                  matchedTransactions={matches.matchedTransactions}
+                                />
+                              );
+                            })()}
+                            </React.Fragment>
                           ))
                         )}
                       </TableBody>
