@@ -1,32 +1,23 @@
 
 
-## Plan: Tévesen fizetve státuszú NAV számlák visszaállítása
+## Fix: save-credentials "Auth session missing!" (attempt 3)
 
-### Vizsgálat eredménye
+### Root Cause
+Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
 
-9 NAV számla van `paid=true` státusszal. Ebből **3 tévesen fizetve**:
+The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
 
-| Bizonylatsorszám | Vevő | Bruttó | Kiállítás |
-|---|---|---|---|
-| E-TXLG-2026-8 | GASZTROKER Konyhatechnika Kft. | 203 200 Ft | 2026-01-06 |
-| E-TXLG-2026-10 | Golden Döner Kft. | 165 100 Ft | 2026-01-06 |
-| E-TXLG-2026-31 | RAHIMI Kft. | 31 750 Ft | 2026-01-20 |
+### Fix (single file change)
 
-Ezekhez nincs beküldött számla (`submitted=false`) és nincs párosított tranzakció sem. A fennmaradó 6 bejövő számla jogosan fizetve (van beküldött számla + tranzakció párosítás).
+**File: `supabase/functions/save-credentials/index.ts`**
 
-### Teendő
+1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
+2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
 
-Egyetlen SQL UPDATE futtatása az alábbi 3 rekordra:
+The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
 
-```sql
-UPDATE nav_invoices
-SET paid = false
-WHERE id IN (
-  '164a1139-fa38-4c25-bac3-25104a03bfcb',
-  '86cd632f-1d32-4a4b-97ae-8cb59c9d46f3',
-  '383b72dc-3be4-42b2-bacd-337a56386f00'
-);
-```
-
-Ez nem igényel semmilyen frontend változtatást -- a UI automatikusan "Nyitott" státuszt fog mutatni a `paid=false` értékű soroknál.
-
+### What stays the same
+- The service role client is still used for company ownership checks (line 130-138)
+- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
+- All validation, error handling, and CORS remain unchanged
+- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
