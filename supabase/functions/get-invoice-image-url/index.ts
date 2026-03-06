@@ -59,7 +59,8 @@ serve(async (req) => {
       )
     }
 
-    if (!invoice.image_url) {
+    const imageUrl = invoice.image_url || invoice.melleklet_url
+    if (!imageUrl) {
       return new Response(
         JSON.stringify({ error: 'No image URL found for this invoice' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -67,7 +68,7 @@ serve(async (req) => {
     }
 
     // Extract the file path from the storage URL
-    const url = new URL(invoice.image_url)
+    const url = new URL(imageUrl)
     const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/)
     
     if (!pathMatch) {
