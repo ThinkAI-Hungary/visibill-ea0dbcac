@@ -846,6 +846,66 @@ const InvoicesPage = () => {
     return paginatedSubmittedInvoices.every(inv => selectedSubmittedIds.has(inv.id));
   }, [paginatedSubmittedInvoices, selectedSubmittedIds]);
 
+  // Lookup maps for expandable rows
+  const navToSubmittedMap = useMemo(() => {
+    const map = new Map<string, typeof submittedInvoices>();
+    submittedInvoices.forEach(inv => {
+      if (inv.szamlaszam) {
+        const existing = map.get(inv.szamlaszam) || [];
+        existing.push(inv);
+        map.set(inv.szamlaszam, existing);
+      }
+    });
+    return map;
+  }, [submittedInvoices]);
+
+  const submittedToNavMap = useMemo(() => {
+    const map = new Map<string, NavInvoice[]>();
+    invoices.forEach(inv => {
+      const existing = map.get(inv.invoice_number) || [];
+      existing.push(inv);
+      map.set(inv.invoice_number, existing);
+    });
+    return map;
+  }, [invoices]);
+
+  const submittedIdToTransactionsMap = useMemo(() => {
+    const map = new Map<string, TransactionRecord[]>();
+    allTransactions.forEach(tx => {
+      if (tx.matched_invoice_id) {
+        const existing = map.get(tx.matched_invoice_id) || [];
+        existing.push(tx);
+        map.set(tx.matched_invoice_id, existing);
+      }
+    });
+    return map;
+  }, [allTransactions]);
+
+  // Get matched data for a NAV invoice row
+  const getNavInvoiceMatches = (navInvoice: NavInvoice) => {
+    const matchedSubmitted = navToSubmittedMap.get(navInvoice.invoice_number) || [];
+    const matchedTx: TransactionRecord[] = [];
+    matchedSubmitted.forEach(sub => {
+      const txs = submittedIdToTransactionsMap.get(sub.id) || [];
+      matchedTx.push(...txs);
+    });
+    return { matchedSubmitted, matchedTransactions: matchedTx, matchedNav: [] as NavInvoice[] };
+  };
+
+  // Get matched data for a submitted invoice row
+  const getSubmittedInvoiceMatches = (submitted: SubmittedInvoice) => {
+    const matchedNav = submitted.szamlaszam ? (submittedToNavMap.get(submitted.szamlaszam) || []) : [];
+    const matchedTx = submittedIdToTransactionsMap.get(submitted.id) || [];
+    return { matchedSubmitted: [] as SubmittedInvoice[], matchedTransactions: matchedTx, matchedNav };
+  };
+
+  const handleRowClick = (invoiceId: string, e: React.MouseEvent) => {
+    // Don't toggle if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    if (target.closest('button, input, select, [role="checkbox"], [role="combobox"], [data-radix-collection-item]')) return;
+    setExpandedRowId(prev => prev === invoiceId ? null : invoiceId);
+  };
+
   // Reset page when filters change
   useEffect(() => {
     setNavCurrentPage(1);
