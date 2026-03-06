@@ -1483,9 +1483,8 @@ const InvoicesPage = () => {
                               <TableRow className={cn(
                                 "group cursor-pointer",
                                 selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
-                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && ((invoice.paid === true && invoice.submitted === true) || matchedNavInvoiceNumbers.has(invoice.invoice_number)) && "bg-success/10 hover:bg-success/15",
-                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && !(invoice.paid === true && invoice.submitted === true) && !matchedNavInvoiceNumbers.has(invoice.invoice_number) && "bg-destructive/10 hover:bg-destructive/15",
-                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'OUTBOUND' && "bg-success/10 hover:bg-success/15",
+                                !selectedInvoiceIds.has(invoice.id) && invoice.paid === true && "bg-success/10 hover:bg-success/15",
+                                !selectedInvoiceIds.has(invoice.id) && invoice.paid !== true && "bg-destructive/10 hover:bg-destructive/15",
                                 expandedRowId === invoice.id && "border-b-0"
                               )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                 <TableCell>
