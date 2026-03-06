@@ -17,7 +17,7 @@ interface InvoiceDetailPopupProps {
 
 interface FullInvoice {
   id: string;
-  szamlaszam: string;
+  bizonylatsorszam: string;
   invoice_type: string;
   kibocsatas_datuma: string;
   teljesites_datuma: string | null;
