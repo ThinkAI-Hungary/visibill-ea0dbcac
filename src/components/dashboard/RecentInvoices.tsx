@@ -5,7 +5,7 @@ import { Eye, FileText } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 interface Invoice {
   id: string;
-  szamlaszam: string;
+  bizonylatsorszam: string;
   elado_nev: string;
   vevo_nev: string;
   brutto_vegosszeg: number;
