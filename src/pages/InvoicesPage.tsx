@@ -896,7 +896,7 @@ const InvoicesPage = () => {
 
   // Get matched data for a submitted invoice row
   const getSubmittedInvoiceMatches = (submitted: SubmittedInvoice) => {
-    const matchedNav = submitted.szamlaszam ? (submittedToNavMap.get(submitted.szamlaszam) || []) : [];
+    const matchedNav = submitted.bizonylatsorszam ? (submittedToNavMap.get(submitted.bizonylatsorszam) || []) : [];
     const matchedTx = submittedIdToTransactionsMap.get(submitted.id) || [];
     return { matchedSubmitted: [] as SubmittedInvoice[], matchedTransactions: matchedTx, matchedNav };
   };
