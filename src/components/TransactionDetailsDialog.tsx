@@ -45,7 +45,7 @@ interface MatchedInvoice {
 // Available invoices for manual matching (from invoices table)
 interface AvailableInvoice {
   id: string;
-  szamlaszam: string;
+  bizonylatsorszam: string;
   brutto_vegosszeg: number;
   elado_nev: string;
   penznem: string | null;
