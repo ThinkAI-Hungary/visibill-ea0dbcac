@@ -161,7 +161,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
             <div>
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Alapadatok</h4>
               <div className="bg-muted/30 rounded-md p-3 border border-border/30">
-                <DetailRow label="Számlaszám" value={invoice.szamlaszam} mono />
+                <DetailRow label="Bizonylatsorszám" value={invoice.bizonylatsorszam} mono />
                 <DetailRow label="Dokumentum azonosító" value={invoice.dokumentum_azonosito} mono />
                 <DetailRow label="Kibocsátás dátuma" value={formatDate(invoice.kibocsatas_datuma)} />
                 <DetailRow label="Teljesítés dátuma" value={formatDate(invoice.teljesites_datuma)} />

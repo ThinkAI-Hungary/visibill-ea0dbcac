@@ -1507,7 +1507,7 @@ const InvoicesPage = () => {
                                     value={invoice.invoice_number}
                                     truncate
                                     maxWidth="140px"
-                                    ariaLabel={`${invoice.invoice_number} számlaszám másolása`}
+                                    ariaLabel={`${invoice.invoice_number} bizonylatsorszám másolása`}
                                   />
                                 </TableCell>
                                 <TableCell className="text-muted-foreground">

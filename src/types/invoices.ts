@@ -44,7 +44,7 @@ export interface SimaInvoice extends BaseInvoice {
 
 export interface VegszamlaInvoice extends BaseInvoice {
   invoice_type: 'vegszamla';
-  szamlaszam?: string;
+  bizonylatsorszam?: string;
   elado_cim?: string;
   vevo_cim?: string;
   adoalap_osszesen?: number;

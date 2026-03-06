@@ -136,7 +136,7 @@ const InvoiceStatusTables = () => {
         <Table className="compact-table">
           <TableHeader>
             <TableRow>
-              <TableHead className="min-w-[130px]">Számlaszám</TableHead>
+              <TableHead className="min-w-[130px]">Bizonylatsorszám</TableHead>
               <TableHead>Kibocsátás</TableHead>
               <TableHead>Szállító</TableHead>
               <TableHead className="text-right">Bruttó</TableHead>

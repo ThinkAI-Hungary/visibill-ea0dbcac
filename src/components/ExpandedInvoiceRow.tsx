@@ -168,7 +168,7 @@ const ExpandedInvoiceRow = ({
               <CardContent className="p-3 pt-0">
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="col-span-2">
-                    <span className="text-muted-foreground">Számlaszám:</span>
+                    <span className="text-muted-foreground">Bizonylatsorszám:</span>
                     <span className="ml-1 font-mono font-medium">{inv.invoice_number}</span>
                   </div>
                   <div>

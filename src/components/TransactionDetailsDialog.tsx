@@ -475,7 +475,7 @@ export const TransactionDetailsDialog = ({
                         >
                           <div className="flex justify-between items-center text-xs">
                             <div>
-                              <p className="font-medium font-mono">{invoice.szamlaszam}</p>
+                              <p className="font-medium font-mono">{invoice.bizonylatsorszam}</p>
                               <p className="text-muted-foreground text-[10px]">
                                 {invoice.elado_nev || '-'}
                               </p>
