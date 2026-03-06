@@ -1937,18 +1937,12 @@ const InvoicesPage = () => {
                                         </Button>
                                       </HoverCardTrigger>
                                       <HoverCardContent side="left" align="center" className="w-64 p-1.5">
-                                        {(invoice.image_url || invoice.melleklet_url)?.toLowerCase().endsWith('.pdf') ? (
-                                          <div className="flex flex-col items-center justify-center h-36 bg-muted rounded text-muted-foreground text-xs gap-2">
-                                            <FileText className="h-8 w-8" />
-                                            <span>PDF dokumentum</span>
-                                          </div>
-                                        ) : (
-                                          <img
-                                            src={invoice.image_url || invoice.melleklet_url || ''}
-                                            alt="Számla előnézet"
-                                            className="w-full h-auto max-h-48 object-contain rounded"
-                                          />
-                                        )}
+                                        <InvoiceImagePreview
+                                          invoiceId={invoice.id}
+                                          imageUrl={invoice.image_url}
+                                          mellekletUrl={invoice.melleklet_url}
+                                          isOpen={true}
+                                        />
                                       </HoverCardContent>
                                     </HoverCard>
                                   )}
