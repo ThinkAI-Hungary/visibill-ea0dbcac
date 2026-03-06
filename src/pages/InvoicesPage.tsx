@@ -264,7 +264,7 @@ const InvoicesPage = () => {
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
   const [selectedSubmittedIds, setSelectedSubmittedIds] = useState<Set<string>>(new Set());
   const [matchedInvoiceIds, setMatchedInvoiceIds] = useState<Set<string>>(new Set());
-  const [matchedNavInvoiceNumbers, setMatchedNavInvoiceNumbers] = useState<Set<string>>(new Set());
+  
 
   const [navFilters, setNavFilters] = useState<NavFilters>({
     search: '',
@@ -585,14 +585,6 @@ const InvoicesPage = () => {
       const matchedInvoiceIdsSet = new Set(txData.map(t => t.matched_invoice_id).filter(Boolean));
       setMatchedInvoiceIds(matchedInvoiceIdsSet);
 
-      // Build cross-reference: bizonylatsorszam values of submitted invoices that have matched transactions
-      const matchedBizonylatsorszamSet = new Set(
-        (submittedData || [])
-          .filter(inv => matchedInvoiceIdsSet.has(inv.id))
-          .map(inv => inv.bizonylatsorszam)
-          .filter(Boolean)
-      );
-      setMatchedNavInvoiceNumbers(matchedBizonylatsorszamSet);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -1483,9 +1475,8 @@ const InvoicesPage = () => {
                               <TableRow className={cn(
                                 "group cursor-pointer",
                                 selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
-                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && ((invoice.paid === true && invoice.submitted === true) || matchedNavInvoiceNumbers.has(invoice.invoice_number)) && "bg-success/10 hover:bg-success/15",
-                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && !(invoice.paid === true && invoice.submitted === true) && !matchedNavInvoiceNumbers.has(invoice.invoice_number) && "bg-destructive/10 hover:bg-destructive/15",
-                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'OUTBOUND' && "bg-success/10 hover:bg-success/15",
+                                !selectedInvoiceIds.has(invoice.id) && invoice.paid === true && "bg-success/10 hover:bg-success/15",
+                                !selectedInvoiceIds.has(invoice.id) && invoice.paid !== true && "bg-destructive/10 hover:bg-destructive/15",
                                 expandedRowId === invoice.id && "border-b-0"
                               )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                 <TableCell>
