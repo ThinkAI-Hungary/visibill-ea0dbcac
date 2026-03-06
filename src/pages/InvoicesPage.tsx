@@ -852,10 +852,10 @@ const InvoicesPage = () => {
   const navToSubmittedMap = useMemo(() => {
     const map = new Map<string, typeof submittedInvoices>();
     submittedInvoices.forEach(inv => {
-      if (inv.szamlaszam) {
-        const existing = map.get(inv.szamlaszam) || [];
+      if (inv.bizonylatsorszam) {
+        const existing = map.get(inv.bizonylatsorszam) || [];
         existing.push(inv);
-        map.set(inv.szamlaszam, existing);
+        map.set(inv.bizonylatsorszam, existing);
       }
     });
     return map;
