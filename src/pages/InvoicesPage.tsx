@@ -1872,11 +1872,11 @@ const InvoicesPage = () => {
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span className="block truncate max-w-[140px] cursor-help">
-                                        {invoice.szamlaszam || '-'}
+                                        {invoice.bizonylatsorszam || '-'}
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p className="font-mono">{invoice.szamlaszam || '-'}</p>
+                                      <p className="font-mono">{invoice.bizonylatsorszam || '-'}</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
