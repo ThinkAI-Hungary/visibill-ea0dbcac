@@ -2021,7 +2021,7 @@ const InvoicesPage = () => {
       <InvoiceImageDialog
         invoice={selectedInvoice ? {
           id: selectedInvoice.id,
-          szamlaszam: '',
+          bizonylatsorszam: '',
           dokumentum_azonosito: null,
           image_url: selectedInvoice.image_url,
           melleklet_url: selectedInvoice.melleklet_url,
