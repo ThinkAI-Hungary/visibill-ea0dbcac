@@ -372,8 +372,8 @@ export const TransactionDetailsDialog = ({
                 ) : matchedInvoice ? (
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="col-span-2">
-                      <span className="text-muted-foreground">Számlaszám:</span>
-                      <span className="ml-1 font-mono font-medium">{matchedInvoice.szamlaszam || '-'}</span>
+                      <span className="text-muted-foreground">Bizonylatsorszám:</span>
+                      <span className="ml-1 font-mono font-medium">{matchedInvoice.bizonylatsorszam || '-'}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Eladó:</span>
