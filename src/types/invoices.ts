@@ -20,7 +20,7 @@ export interface BaseInvoice {
 
 export interface SimaInvoice extends BaseInvoice {
   invoice_type: 'sima_szamla';
-  szamlaszam?: string;
+  bizonylatsorszam?: string;
   elado_cim?: string;
   vevo_cim?: string;
   vevo_vat_id?: string;
