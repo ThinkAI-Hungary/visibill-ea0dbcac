@@ -1477,19 +1477,28 @@ const InvoicesPage = () => {
                             const partnerName = getInvoicePartnerName(invoice);
 
                             return (
-                              <TableRow key={invoice.id} className={cn(
-                                "group",
+                              <React.Fragment key={invoice.id}>
+                              <TableRow className={cn(
+                                "group cursor-pointer",
                                 selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
                                 !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && ((invoice.paid === true && invoice.submitted === true) || matchedNavInvoiceNumbers.has(invoice.invoice_number)) && "bg-success/10 hover:bg-success/15",
                                 !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && !(invoice.paid === true && invoice.submitted === true) && !matchedNavInvoiceNumbers.has(invoice.invoice_number) && "bg-destructive/10 hover:bg-destructive/15",
-                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'OUTBOUND' && "bg-success/10 hover:bg-success/15"
-                              )}>
+                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'OUTBOUND' && "bg-success/10 hover:bg-success/15",
+                                expandedRowId === invoice.id && "border-b-0"
+                              )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                 <TableCell>
-                                  <Checkbox
-                                    checked={selectedInvoiceIds.has(invoice.id)}
-                                    onCheckedChange={(checked) => handleRowSelect(invoice.id, !!checked)}
-                                    aria-label={`${invoice.invoice_number} kijelölése`}
-                                  />
+                                  <div className="flex items-center gap-1">
+                                    {expandedRowId === invoice.id ? (
+                                      <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+                                    ) : (
+                                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                    )}
+                                    <Checkbox
+                                      checked={selectedInvoiceIds.has(invoice.id)}
+                                      onCheckedChange={(checked) => handleRowSelect(invoice.id, !!checked)}
+                                      aria-label={`${invoice.invoice_number} kijelölése`}
+                                    />
+                                  </div>
                                 </TableCell>
                                 <TableCell className="font-mono text-sm font-medium min-w-[150px]">
                                   <CopyableCell
@@ -1627,6 +1636,22 @@ const InvoicesPage = () => {
                                   </TooltipProvider>
                                 </TableCell>
                               </TableRow>
+                              {expandedRowId === invoice.id && (() => {
+                                const matches = getNavInvoiceMatches(invoice);
+                                return (
+                                  <ExpandedInvoiceRow
+                                    colSpan={activeTab === 'INBOUND' ? 13 : 11}
+                                    matchedSubmittedInvoices={matches.matchedSubmitted}
+                                    matchedNavInvoices={[]}
+                                    matchedTransactions={matches.matchedTransactions}
+                                    onViewInvoice={(inv) => {
+                                      setSelectedInvoice(inv as any);
+                                      setImageDialogOpen(true);
+                                    }}
+                                  />
+                                );
+                              })()}
+                              </React.Fragment>
                             );
                           })
                         )}
