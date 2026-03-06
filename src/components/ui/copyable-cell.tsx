@@ -62,15 +62,14 @@ export function CopyableCell({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className={cn("flex items-center group", className)}>
-        <div className="relative inline-flex items-center">
+      <div className={cn("flex items-center group min-w-0 overflow-hidden", className)}>
+        <div className="flex items-center min-w-0 gap-1">
           <span
             onClick={handleCopy}
             className={cn(
-              "cursor-pointer hover:text-primary transition-none",
-              truncate && "block truncate",
+              "cursor-pointer hover:text-primary transition-none min-w-0",
+              truncate && "truncate",
             )}
-            style={truncate ? { maxWidth } : undefined}
             role="button"
             tabIndex={0}
             aria-label={ariaLabel || `${display} másolása`}
@@ -87,10 +86,9 @@ export function CopyableCell({
               <button
                 onClick={handleCopy}
                 className={cn(
-                  "absolute top-1/2 -translate-y-1/2 p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity",
+                  "shrink-0 p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity",
                   "hover:bg-muted focus:opacity-100",
                   copied && "opacity-100",
-                  align === 'right' ? "right-full mr-1" : "left-full ml-1"
                 )}
                 aria-label={ariaLabel || `${display} másolása`}
               >
