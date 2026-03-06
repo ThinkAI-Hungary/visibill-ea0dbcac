@@ -264,7 +264,7 @@ const InvoicesPage = () => {
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
   const [selectedSubmittedIds, setSelectedSubmittedIds] = useState<Set<string>>(new Set());
   const [matchedInvoiceIds, setMatchedInvoiceIds] = useState<Set<string>>(new Set());
-  
+
 
   const [navFilters, setNavFilters] = useState<NavFilters>({
     search: '',
@@ -688,13 +688,24 @@ const InvoicesPage = () => {
     });
 
     filtered.sort((a, b) => {
-      let aValue: any = a[sortField as keyof NavInvoice];
-      let bValue: any = b[sortField as keyof NavInvoice];
+      let aValue: any;
+      let bValue: any;
 
-      if (sortField === 'invoice_issue_date' || sortField === 'invoice_delivery_date') {
-        aValue = aValue ? new Date(aValue as string).getTime() : 0;
-        bValue = bValue ? new Date(bValue as string).getTime() : 0;
+      if (sortField === 'partner_name') {
+        aValue = getInvoicePartnerName(a)?.toLowerCase() || '';
+        bValue = getInvoicePartnerName(b)?.toLowerCase() || '';
+      } else if (sortField === 'invoice_issue_date' || sortField === 'invoice_delivery_date') {
+        aValue = a[sortField as keyof NavInvoice] ? new Date(a[sortField as keyof NavInvoice] as string).getTime() : 0;
+        bValue = b[sortField as keyof NavInvoice] ? new Date(b[sortField as keyof NavInvoice] as string).getTime() : 0;
+      } else {
+        aValue = a[sortField as keyof NavInvoice];
+        bValue = b[sortField as keyof NavInvoice];
       }
+
+      // Handle nulls - push to end
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return 1;
+      if (bValue == null) return -1;
 
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         aValue = aValue.toLowerCase();
@@ -799,13 +810,36 @@ const InvoicesPage = () => {
       if (sortField === 'kibocsatas_datuma' || sortField === 'invoice_issue_date') {
         aValue = a.kibocsatas_datuma ? new Date(a.kibocsatas_datuma).getTime() : 0;
         bValue = b.kibocsatas_datuma ? new Date(b.kibocsatas_datuma).getTime() : 0;
+      } else if (sortField === 'teljesites_datuma' || sortField === 'invoice_delivery_date') {
+        aValue = a.teljesites_datuma ? new Date(a.teljesites_datuma).getTime() : 0;
+        bValue = b.teljesites_datuma ? new Date(b.teljesites_datuma).getTime() : 0;
       } else if (sortField === 'brutto_vegosszeg' || sortField === 'invoice_gross_amount') {
         aValue = a.brutto_vegosszeg || 0;
         bValue = b.brutto_vegosszeg || 0;
+      } else if (sortField === 'adoalap_osszesen' || sortField === 'invoice_net_amount') {
+        aValue = a.adoalap_osszesen || 0;
+        bValue = b.adoalap_osszesen || 0;
+      } else if (sortField === 'afa_osszeg_osszesen' || sortField === 'invoice_vat_amount') {
+        aValue = a.afa_osszeg_osszesen || 0;
+        bValue = b.afa_osszeg_osszesen || 0;
+      } else if (sortField === 'elado_nev' || sortField === 'partner_name') {
+        aValue = a.elado_nev?.toLowerCase() || '';
+        bValue = b.elado_nev?.toLowerCase() || '';
+      } else if (sortField === 'vevo_nev') {
+        aValue = a.vevo_nev?.toLowerCase() || '';
+        bValue = b.vevo_nev?.toLowerCase() || '';
+      } else if (sortField === 'bizonylatsorszam' || sortField === 'invoice_number') {
+        aValue = a.bizonylatsorszam?.toLowerCase() || '';
+        bValue = b.bizonylatsorszam?.toLowerCase() || '';
       } else {
         aValue = a.kibocsatas_datuma ? new Date(a.kibocsatas_datuma).getTime() : 0;
         bValue = b.kibocsatas_datuma ? new Date(b.kibocsatas_datuma).getTime() : 0;
       }
+
+      // Handle nulls - push to end
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return 1;
+      if (bValue == null) return -1;
 
       if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
@@ -1395,15 +1429,18 @@ const InvoicesPage = () => {
                     <Table className="table-fixed compact-table">
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
-                          <TableHead className="w-[40px]">
-                            <Checkbox
-                              checked={allVisibleSelected}
-                              onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                              aria-label="Összes kijelölése"
-                            />
+                          <TableHead className="w-[60px] pl-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-3.5" />
+                              <Checkbox
+                                checked={allVisibleSelected}
+                                onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                                aria-label="Összes kijelölése"
+                              />
+                            </div>
                           </TableHead>
                           <TableHead
-                            className="cursor-pointer hover:bg-muted/50 font-semibold min-w-[150px] w-[11%]"
+                            className="cursor-pointer hover:bg-muted/50 font-semibold w-[150px]"
                             onClick={() => handleSort('invoice_number')}
                           >
                             <div className="flex items-center gap-2">
@@ -1412,36 +1449,68 @@ const InvoicesPage = () => {
                             </div>
                           </TableHead>
                           <TableHead
-                            className="cursor-pointer hover:bg-muted/50 font-semibold w-[9%]"
+                            className="cursor-pointer hover:bg-muted/50 font-semibold w-28 text-center"
                             onClick={() => handleSort('invoice_issue_date')}
                           >
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center gap-2">
                               Kibocsátás
                               <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                           </TableHead>
                           <TableHead
-                            className="cursor-pointer hover:bg-muted/50 font-semibold w-[9%]"
+                            className="cursor-pointer hover:bg-muted/50 font-semibold w-28 text-center"
                             onClick={() => handleSort('invoice_delivery_date')}
                           >
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center gap-2">
                               Teljesítés
                               <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                           </TableHead>
-                          <TableHead className="font-semibold w-[11%]">Partner</TableHead>
-                          <TableHead className="text-right font-semibold w-[9%]">Nettó</TableHead>
-                          <TableHead className="text-right font-semibold w-[9%]">Bruttó</TableHead>
-                          <TableHead className="text-right font-semibold w-[8%]">ÁFA</TableHead>
-                          <TableHead className="font-semibold w-[8%]">
-                            <div className="flex items-center gap-1">
+                          <TableHead
+                            className="cursor-pointer hover:bg-muted/50 font-semibold"
+                            onClick={() => handleSort('partner_name')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Partner
+                              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                            </div>
+                          </TableHead>
+                          <TableHead
+                            className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-32"
+                            onClick={() => handleSort('invoice_net_amount')}
+                          >
+                            <div className="flex items-center justify-end gap-2">
+                              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                              Nettó
+                            </div>
+                          </TableHead>
+                          <TableHead
+                            className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-32"
+                            onClick={() => handleSort('invoice_gross_amount')}
+                          >
+                            <div className="flex items-center justify-end gap-2">
+                              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                              Bruttó
+                            </div>
+                          </TableHead>
+                          <TableHead
+                            className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-32"
+                            onClick={() => handleSort('invoice_vat_amount')}
+                          >
+                            <div className="flex items-center justify-end gap-2">
+                              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                              ÁFA
+                            </div>
+                          </TableHead>
+                          <TableHead className="font-semibold w-24 text-center">
+                            <div className="flex items-center justify-center gap-1">
                               Státusz
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                                   </TooltipTrigger>
-                                   <TooltipContent className="max-w-xs">
+                                  <TooltipContent className="max-w-xs">
                                     <p>A számla fizetési állapota automatikusan változik: „Kifizetve" lesz, ha a számlához tartozó tranzakció párosítva van.</p>
                                   </TooltipContent>
                                 </Tooltip>
@@ -1449,13 +1518,13 @@ const InvoicesPage = () => {
                             </div>
                           </TableHead>
                           {activeTab === 'INBOUND' && (
-                            <TableHead className="font-semibold w-[6%]">Beküldve</TableHead>
+                            <TableHead className="font-semibold w-20 text-center">Beküldve</TableHead>
                           )}
                           {activeTab === 'INBOUND' && (
-                            <TableHead className="font-semibold w-[10%]">Kategória</TableHead>
+                            <TableHead className="font-semibold w-[140px] text-center">Kategória</TableHead>
                           )}
-                          <TableHead className="font-semibold w-[10%]">Projekt</TableHead>
-                          <TableHead className="font-semibold w-[5%]">Tételek</TableHead>
+                          <TableHead className="font-semibold w-[140px] text-center">Projekt</TableHead>
+                          <TableHead className="font-semibold w-20 text-center">Tételek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1472,178 +1541,178 @@ const InvoicesPage = () => {
 
                             return (
                               <React.Fragment key={invoice.id}>
-                              <TableRow className={cn(
-                                "group cursor-pointer",
-                                selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
-                                !selectedInvoiceIds.has(invoice.id) && invoice.paid === true && "bg-success/10 hover:bg-success/15",
-                                !selectedInvoiceIds.has(invoice.id) && invoice.paid !== true && "bg-destructive/10 hover:bg-destructive/15",
-                                expandedRowId === invoice.id && "border-b-0"
-                              )} onClick={(e) => handleRowClick(invoice.id, e)}>
-                                <TableCell>
-                                  <div className="flex items-center gap-1">
-                                    {expandedRowId === invoice.id ? (
-                                      <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
-                                    ) : (
-                                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                                    )}
-                                    <Checkbox
-                                      checked={selectedInvoiceIds.has(invoice.id)}
-                                      onCheckedChange={(checked) => handleRowSelect(invoice.id, !!checked)}
-                                      aria-label={`${invoice.invoice_number} kijelölése`}
-                                    />
-                                  </div>
-                                </TableCell>
-                                <TableCell className="font-mono text-sm font-medium min-w-[150px]">
-                                  <CopyableCell
-                                    value={invoice.invoice_number}
-                                    truncate
-                                    maxWidth="140px"
-                                    ariaLabel={`${invoice.invoice_number} bizonylatsorszám másolása`}
-                                  />
-                                </TableCell>
-                                <TableCell className="text-muted-foreground">
-                                  {invoice.invoice_issue_date
-                                    ? format(new Date(invoice.invoice_issue_date), 'yyyy. MM. dd.', { locale: hu })
-                                    : '-'}
-                                </TableCell>
-                                <TableCell className="text-muted-foreground">
-                                  {invoice.invoice_delivery_date
-                                    ? format(new Date(invoice.invoice_delivery_date), 'yyyy. MM. dd.', { locale: hu })
-                                    : '-'}
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-1.5">
-                                    <div className={cn(
-                                      "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0",
-                                      getAvatarColor(partnerName)
-                                    )}>
-                                      {getInitials(partnerName)}
+                                <TableRow className={cn(
+                                  "group cursor-pointer",
+                                  selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
+                                  !selectedInvoiceIds.has(invoice.id) && invoice.paid === true && "bg-success/10 hover:bg-success/15",
+                                  !selectedInvoiceIds.has(invoice.id) && invoice.paid !== true && "bg-destructive/10 hover:bg-destructive/15",
+                                  expandedRowId === invoice.id && "border-b-0"
+                                )} onClick={(e) => handleRowClick(invoice.id, e)}>
+                                  <TableCell className="pl-6">
+                                    <div className="flex items-center gap-3">
+                                      {expandedRowId === invoice.id ? (
+                                        <ChevronUp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                      ) : (
+                                        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                      )}
+                                      <Checkbox
+                                        checked={selectedInvoiceIds.has(invoice.id)}
+                                        onCheckedChange={(checked) => handleRowSelect(invoice.id, !!checked)}
+                                        aria-label={`${invoice.invoice_number} kijelölése`}
+                                      />
                                     </div>
+                                  </TableCell>
+                                  <TableCell className="font-mono text-sm font-medium">
                                     <CopyableCell
-                                      value={partnerName}
+                                      value={invoice.invoice_number}
                                       truncate
-                                      maxWidth="100px"
-                                      className="font-medium text-xs"
-                                      ariaLabel={`${partnerName} másolása`}
-                                    />
-                                  </div>
-                                </TableCell>
-                                <TableCell className={cn("text-right font-mono tabular-nums", activeTab === 'INBOUND' ? "text-destructive" : "text-success")}>
-                                  <CopyableCell
-                                    value={(invoice.invoice_net_amount || 0).toString()}
-                                    displayValue={formatCurrency(invoice.invoice_net_amount || 0, invoice.currency || 'HUF')}
-                                    className="justify-end"
-                                    ariaLabel="Nettó összeg másolása"
-                                  />
-                                </TableCell>
-                                <TableCell className={cn("text-right font-mono tabular-nums font-medium", activeTab === 'INBOUND' ? "text-destructive" : "text-success")}>
-                                  <CopyableCell
-                                    value={(invoice.invoice_gross_amount || 0).toString()}
-                                    displayValue={formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
-                                    className="justify-end"
-                                    ariaLabel="Bruttó összeg másolása"
-                                  />
-                                </TableCell>
-                                <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
-                                  <CopyableCell
-                                    value={(invoice.invoice_vat_amount || 0).toString()}
-                                    displayValue={formatCurrency(invoice.invoice_vat_amount || 0, invoice.currency || 'HUF')}
-                                    className="justify-end"
-                                    ariaLabel="ÁFA összeg másolása"
-                                  />
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
-                                    invoice.paid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
-                                  }`}>
-                                    {invoice.paid ? 'Kifizetve' : 'Nyitott'}
-                                  </span>
-                                </TableCell>
-                                {activeTab === 'INBOUND' && (
-                                  <TableCell className="text-center">
-                                    <Checkbox
-                                      checked={invoice.submitted === true}
-                                      disabled
-                                      className="cursor-default opacity-70"
+                                      maxWidth="105px"
+                                      ariaLabel={`${invoice.invoice_number} bizonylatsorszám másolása`}
                                     />
                                   </TableCell>
-                                )}
-                                {activeTab === 'INBOUND' && (
+                                  <TableCell className="text-center text-muted-foreground tabular-nums">
+                                    {invoice.invoice_issue_date
+                                      ? format(new Date(invoice.invoice_issue_date), 'yyyy. MM. dd.', { locale: hu })
+                                      : '-'}
+                                  </TableCell>
+                                  <TableCell className="text-center text-muted-foreground tabular-nums">
+                                    {invoice.invoice_delivery_date
+                                      ? format(new Date(invoice.invoice_delivery_date), 'yyyy. MM. dd.', { locale: hu })
+                                      : '-'}
+                                  </TableCell>
                                   <TableCell>
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <div className={cn(
+                                        "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0",
+                                        getAvatarColor(partnerName)
+                                      )}>
+                                        {getInitials(partnerName)}
+                                      </div>
+                                      <CopyableCell
+                                        value={partnerName}
+                                        truncate
+                                        maxWidth="100%"
+                                        className="font-medium text-xs"
+                                        ariaLabel={`${partnerName} másolása`}
+                                      />
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className={cn("text-right font-mono tabular-nums", activeTab === 'INBOUND' ? "text-destructive" : "text-success")}>
+                                    <CopyableCell
+                                      value={(invoice.invoice_net_amount || 0).toString()}
+                                      displayValue={formatCurrency(invoice.invoice_net_amount || 0, invoice.currency || 'HUF')}
+                                      className="justify-end"
+                                      ariaLabel="Nettó összeg másolása"
+                                    />
+                                  </TableCell>
+                                  <TableCell className={cn("text-right font-mono tabular-nums font-medium", activeTab === 'INBOUND' ? "text-destructive" : "text-success")}>
+                                    <CopyableCell
+                                      value={(invoice.invoice_gross_amount || 0).toString()}
+                                      displayValue={formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
+                                      className="justify-end"
+                                      ariaLabel="Bruttó összeg másolása"
+                                    />
+                                  </TableCell>
+                                  <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
+                                    <CopyableCell
+                                      value={(invoice.invoice_vat_amount || 0).toString()}
+                                      displayValue={formatCurrency(invoice.invoice_vat_amount || 0, invoice.currency || 'HUF')}
+                                      className="justify-end"
+                                      align="right"
+                                      ariaLabel="ÁFA összeg másolása"
+                                    />
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${invoice.paid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
+                                      }`}>
+                                      {invoice.paid ? 'Kifizetve' : 'Nyitott'}
+                                    </span>
+                                  </TableCell>
+                                  {activeTab === 'INBOUND' && (
+                                    <TableCell className="text-center">
+                                      <Checkbox
+                                        checked={invoice.submitted === true}
+                                        disabled
+                                        className="cursor-default opacity-70"
+                                      />
+                                    </TableCell>
+                                  )}
+                                  {activeTab === 'INBOUND' && (
+                                    <TableCell className="text-center">
+                                      <Select
+                                        value={invoice.category_id || 'none'}
+                                        onValueChange={(value) => handleCategoryChange(invoice.id, value)}
+                                      >
+                                        <SelectTrigger className="w-[120px] h-8 mx-auto bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0">
+                                          <SelectValue placeholder="Válassz..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="none">-</SelectItem>
+                                          {categories.map((category) => (
+                                            <SelectItem key={category.id} value={category.id}>
+                                              {category.name}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </TableCell>
+                                  )}
+                                  <TableCell className="text-center">
                                     <Select
-                                      value={invoice.category_id || 'none'}
-                                      onValueChange={(value) => handleCategoryChange(invoice.id, value)}
+                                      value={invoice.project_id || 'none'}
+                                      onValueChange={(value) => handleProjectChange(invoice.id, value)}
                                     >
-                                      <SelectTrigger className="w-[120px] h-8 bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0">
+                                      <SelectTrigger className="w-[120px] h-8 mx-auto bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0">
                                         <SelectValue placeholder="Válassz..." />
                                       </SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="none">-</SelectItem>
-                                        {categories.map((category) => (
-                                          <SelectItem key={category.id} value={category.id}>
-                                            {category.name}
+                                        {projects.map((project) => (
+                                          <SelectItem key={project.id} value={project.id}>
+                                            {project.name}
                                           </SelectItem>
                                         ))}
                                       </SelectContent>
                                     </Select>
                                   </TableCell>
-                                )}
-                                <TableCell>
-                                  <Select
-                                    value={invoice.project_id || 'none'}
-                                    onValueChange={(value) => handleProjectChange(invoice.id, value)}
-                                  >
-                                    <SelectTrigger className="w-[120px] h-8 bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0">
-                                      <SelectValue placeholder="Válassz..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="none">-</SelectItem>
-                                      {projects.map((project) => (
-                                        <SelectItem key={project.id} value={project.id}>
-                                          {project.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-8 w-8 opacity-70 group-hover:opacity-100"
-                                          onClick={() => {
-                                            setSelectedNavInvoice(invoice);
-                                            setItemsDialogOpen(true);
-                                          }}
-                                        >
-                                          <Package className="h-4 w-4" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Számlatételek megtekintése</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </TableCell>
-                              </TableRow>
-                              {expandedRowId === invoice.id && (() => {
-                                const matches = getNavInvoiceMatches(invoice);
-                                return (
-                                  <ExpandedInvoiceRow
-                                    colSpan={activeTab === 'INBOUND' ? 13 : 11}
-                                    matchedSubmittedInvoices={matches.matchedSubmitted}
-                                    matchedNavInvoices={[]}
-                                    matchedTransactions={matches.matchedTransactions}
-                                    onViewInvoice={(inv) => {
-                                      setSelectedInvoice(inv as any);
-                                      setImageDialogOpen(true);
-                                    }}
-                                  />
-                                );
-                              })()}
+                                  <TableCell className="text-center">
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 opacity-70 group-hover:opacity-100"
+                                            onClick={() => {
+                                              setSelectedNavInvoice(invoice);
+                                              setItemsDialogOpen(true);
+                                            }}
+                                          >
+                                            <Package className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Számlatételek megtekintése</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </TableCell>
+                                </TableRow>
+                                {expandedRowId === invoice.id && (() => {
+                                  const matches = getNavInvoiceMatches(invoice);
+                                  return (
+                                    <ExpandedInvoiceRow
+                                      colSpan={activeTab === 'INBOUND' ? 13 : 11}
+                                      matchedSubmittedInvoices={matches.matchedSubmitted}
+                                      matchedNavInvoices={[]}
+                                      matchedTransactions={matches.matchedTransactions}
+                                      onViewInvoice={(inv) => {
+                                        setSelectedInvoice(inv as any);
+                                        setImageDialogOpen(true);
+                                      }}
+                                    />
+                                  );
+                                })()}
                               </React.Fragment>
                             );
                           })
@@ -1792,38 +1861,89 @@ const InvoicesPage = () => {
                     <Table className="table-fixed compact-table">
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
-                          <TableHead className="w-[40px]">
-                            <Checkbox
-                              checked={allVisibleSubmittedSelected}
-                              onCheckedChange={(checked) => handleSubmittedSelectAll(!!checked)}
-                              aria-label="Összes kijelölése"
-                            />
+                          <TableHead className="w-[60px] pl-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-3.5" />
+                              <Checkbox
+                                checked={allVisibleSubmittedSelected}
+                                onCheckedChange={(checked) => handleSubmittedSelectAll(!!checked)}
+                                aria-label="Összes kijelölése"
+                              />
+                            </div>
                           </TableHead>
-                          <TableHead className="font-semibold min-w-[150px] w-[12%]">Bizonylatsorszám</TableHead>
                           <TableHead
-                            className="cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
-                            onClick={() => handleSort('kibocsatas_datuma')}
+                            className="cursor-pointer hover:bg-muted/50 font-semibold w-[150px]"
+                            onClick={() => handleSort('bizonylatsorszam')}
                           >
                             <div className="flex items-center gap-2">
+                              Bizonylatsorszám
+                              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                            </div>
+                          </TableHead>
+                          <TableHead
+                            className="cursor-pointer hover:bg-muted/50 font-semibold w-28 text-center"
+                            onClick={() => handleSort('kibocsatas_datuma')}
+                          >
+                            <div className="flex items-center justify-center gap-2">
                               Kibocsátás
                               <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                           </TableHead>
-                          <TableHead className="font-semibold w-[10%]">Teljesítés</TableHead>
-                          <TableHead className="font-semibold w-[14%]">Eladó</TableHead>
-                          <TableHead className="font-semibold w-[14%]">Vevő</TableHead>
-                          <TableHead className="text-right font-semibold w-[10%]">Nettó</TableHead>
                           <TableHead
-                            className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
-                            onClick={() => handleSort('brutto_vegosszeg')}
+                            className="cursor-pointer hover:bg-muted/50 font-semibold w-28 text-center"
+                            onClick={() => handleSort('teljesites_datuma')}
                           >
-                            <div className="flex items-center justify-end gap-2">
-                              Bruttó
+                            <div className="flex items-center justify-center gap-2">
+                              Teljesítés
                               <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                           </TableHead>
-                          <TableHead className="text-right font-semibold w-[10%]">ÁFA</TableHead>
-                          <TableHead className="text-center font-semibold w-[10%]">Műveletek</TableHead>
+                          <TableHead
+                            className="cursor-pointer hover:bg-muted/50 font-semibold"
+                            onClick={() => handleSort('elado_nev')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Eladó
+                              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                            </div>
+                          </TableHead>
+                          <TableHead
+                            className="cursor-pointer hover:bg-muted/50 font-semibold"
+                            onClick={() => handleSort('vevo_nev')}
+                          >
+                            <div className="flex items-center gap-2">
+                              Vevő
+                              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                            </div>
+                          </TableHead>
+                          <TableHead
+                            className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-32"
+                            onClick={() => handleSort('adoalap_osszesen')}
+                          >
+                            <div className="flex items-center justify-end gap-2">
+                              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                              Nettó
+                            </div>
+                          </TableHead>
+                          <TableHead
+                            className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-32"
+                            onClick={() => handleSort('brutto_vegosszeg')}
+                          >
+                            <div className="flex items-center justify-end gap-2">
+                              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                              Bruttó
+                            </div>
+                          </TableHead>
+                          <TableHead
+                            className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-32"
+                            onClick={() => handleSort('afa_osszeg_osszesen')}
+                          >
+                            <div className="flex items-center justify-end gap-2">
+                              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                              ÁFA
+                            </div>
+                          </TableHead>
+                          <TableHead className="text-center font-semibold w-20">Műveletek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1836,138 +1956,160 @@ const InvoicesPage = () => {
                         ) : (
                           paginatedSubmittedInvoices.map((invoice) => (
                             <React.Fragment key={invoice.id}>
-                            <TableRow className={cn(
-                              "group cursor-pointer",
-                              selectedSubmittedIds.has(invoice.id) && "bg-primary/5",
-                              !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && matchedInvoiceIds.has(invoice.id) && "bg-success/10 hover:bg-success/15",
-                              !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && !matchedInvoiceIds.has(invoice.id) && "bg-destructive/10 hover:bg-destructive/15",
-                              !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_OUTBOUND' && "bg-success/10 hover:bg-success/15",
-                              expandedRowId === invoice.id && "border-b-0"
-                            )} onClick={(e) => handleRowClick(invoice.id, e)}>
-                              <TableCell>
-                                <div className="flex items-center gap-1">
-                                  {expandedRowId === invoice.id ? (
-                                    <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
-                                  ) : (
-                                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                                  )}
-                                  <Checkbox
-                                    checked={selectedSubmittedIds.has(invoice.id)}
-                                    onCheckedChange={(checked) => handleSubmittedRowSelect(invoice.id, !!checked)}
-                                    aria-label={`${invoice.bizonylatsorszam || invoice.id} kijelölése`}
+                              <TableRow className={cn(
+                                "group cursor-pointer",
+                                selectedSubmittedIds.has(invoice.id) && "bg-primary/5",
+                                !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && matchedInvoiceIds.has(invoice.id) && "bg-success/10 hover:bg-success/15",
+                                !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && !matchedInvoiceIds.has(invoice.id) && "bg-destructive/10 hover:bg-destructive/15",
+                                !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_OUTBOUND' && "bg-success/10 hover:bg-success/15",
+                                expandedRowId === invoice.id && "border-b-0"
+                              )} onClick={(e) => handleRowClick(invoice.id, e)}>
+                                <TableCell className="pl-6">
+                                  <div className="flex items-center gap-3">
+                                    {expandedRowId === invoice.id ? (
+                                      <ChevronUp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                    ) : (
+                                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                    )}
+                                    <Checkbox
+                                      checked={selectedSubmittedIds.has(invoice.id)}
+                                      onCheckedChange={(checked) => handleSubmittedRowSelect(invoice.id, !!checked)}
+                                      aria-label={`${invoice.bizonylatsorszam || invoice.id} kijelölése`}
+                                    />
+                                  </div>
+                                </TableCell>
+                                <TableCell className="font-medium font-mono">
+                                  <CopyableCell
+                                    value={invoice.bizonylatsorszam || '-'}
+                                    truncate
+                                    maxWidth="105px"
+                                    ariaLabel={`${invoice.bizonylatsorszam} bizonylatsorszám másolása`}
                                   />
-                                </div>
-                              </TableCell>
-                              <TableCell className="font-medium min-w-[150px]">
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <span className="block truncate max-w-[140px] cursor-help">
-                                        {invoice.bizonylatsorszam || '-'}
-                                      </span>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p className="font-mono">{invoice.bizonylatsorszam || '-'}</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {invoice.kibocsatas_datuma
-                                  ? format(new Date(invoice.kibocsatas_datuma), 'yyyy. MM. dd.', { locale: hu })
-                                  : '-'}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {invoice.teljesites_datuma
-                                  ? format(new Date(invoice.teljesites_datuma), 'yyyy. MM. dd.', { locale: hu })
-                                  : '-'}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2.5">
-                                  <div className={cn(
-                                    "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
-                                    getAvatarColor(invoice.elado_nev)
-                                  )}>
-                                    {getInitials(invoice.elado_nev)}
+                                </TableCell>
+                                <TableCell className="text-center text-muted-foreground tabular-nums">
+                                  {invoice.kibocsatas_datuma
+                                    ? format(new Date(invoice.kibocsatas_datuma), 'yyyy. MM. dd.', { locale: hu })
+                                    : '-'}
+                                </TableCell>
+                                <TableCell className="text-center text-muted-foreground tabular-nums">
+                                  {invoice.teljesites_datuma
+                                    ? format(new Date(invoice.teljesites_datuma), 'yyyy. MM. dd.', { locale: hu })
+                                    : '-'}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <div className={cn(
+                                      "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0",
+                                      getAvatarColor(invoice.elado_nev)
+                                    )}>
+                                      {getInitials(invoice.elado_nev)}
+                                    </div>
+                                    <CopyableCell
+                                      value={invoice.elado_nev || '-'}
+                                      truncate
+                                      maxWidth="100%"
+                                      className="font-medium text-xs"
+                                      ariaLabel={`${invoice.elado_nev} másolása`}
+                                    />
                                   </div>
-                                  <span className="font-medium truncate max-w-[140px]">{invoice.elado_nev || '-'}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2.5">
-                                  <div className={cn(
-                                    "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
-                                    getAvatarColor(invoice.vevo_nev)
-                                  )}>
-                                    {getInitials(invoice.vevo_nev)}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <div className={cn(
+                                      "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0",
+                                      getAvatarColor(invoice.vevo_nev)
+                                    )}>
+                                      {getInitials(invoice.vevo_nev)}
+                                    </div>
+                                    <CopyableCell
+                                      value={invoice.vevo_nev || '-'}
+                                      truncate
+                                      maxWidth="100%"
+                                      className="font-medium text-xs"
+                                      ariaLabel={`${invoice.vevo_nev} másolása`}
+                                    />
                                   </div>
-                                  <span className="font-medium truncate max-w-[140px]">{invoice.vevo_nev || '-'}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell className={cn("text-right font-mono tabular-nums", activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
-                                {formatCurrency(invoice.adoalap_osszesen || 0, invoice.penznem || 'HUF')}
-                              </TableCell>
-                              <TableCell className={cn("text-right font-mono tabular-nums font-medium", activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
-                                {formatCurrency(invoice.brutto_vegosszeg || 0, invoice.penznem || 'HUF')}
-                              </TableCell>
-                              <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
-                                {formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || 'HUF')}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex justify-center gap-1">
-                                  {(invoice.image_url || invoice.melleklet_url) && (
-                                    <HoverCard openDelay={300} closeDelay={100}>
-                                      <HoverCardTrigger asChild>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          className="h-8 w-8 opacity-70 group-hover:opacity-100"
-                                          onClick={() => openImageDialog(invoice)}
-                                        >
-                                          <Eye className="h-4 w-4" />
-                                        </Button>
-                                      </HoverCardTrigger>
-                                      <HoverCardContent side="left" align="center" className="w-64 p-1.5">
-                                        <InvoiceImagePreview
-                                          invoiceId={invoice.id}
-                                          imageUrl={invoice.image_url}
-                                          mellekletUrl={invoice.melleklet_url}
-                                          isOpen={true}
-                                        />
-                                      </HoverCardContent>
-                                    </HoverCard>
-                                  )}
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          className="h-8 w-8 opacity-70 group-hover:opacity-100"
-                                          onClick={() => openEditDialog(invoice)}
-                                        >
-                                          <Pencil className="h-4 w-4" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Számla szerkesztése</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                            {expandedRowId === invoice.id && (() => {
-                              const matches = getSubmittedInvoiceMatches(invoice);
-                              return (
-                                <ExpandedInvoiceRow
-                                  colSpan={10}
-                                  matchedSubmittedInvoices={[]}
-                                  matchedNavInvoices={matches.matchedNav}
-                                  matchedTransactions={matches.matchedTransactions}
-                                />
-                              );
-                            })()}
+                                </TableCell>
+                                <TableCell className={cn("text-right font-mono tabular-nums", activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
+                                  <CopyableCell
+                                    value={(invoice.adoalap_osszesen || 0).toString()}
+                                    displayValue={formatCurrency(invoice.adoalap_osszesen || 0, invoice.penznem || 'HUF')}
+                                    className="justify-end"
+                                    ariaLabel="Nettó összeg másolása"
+                                  />
+                                </TableCell>
+                                <TableCell className={cn("text-right font-mono tabular-nums font-medium", activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
+                                  <CopyableCell
+                                    value={(invoice.brutto_vegosszeg || 0).toString()}
+                                    displayValue={formatCurrency(invoice.brutto_vegosszeg || 0, invoice.penznem || 'HUF')}
+                                    className="justify-end"
+                                    ariaLabel="Bruttó összeg másolása"
+                                  />
+                                </TableCell>
+                                <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
+                                  <CopyableCell
+                                    value={(invoice.afa_osszeg_osszesen || 0).toString()}
+                                    displayValue={formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || 'HUF')}
+                                    className="justify-end"
+                                    align="right"
+                                    ariaLabel="ÁFA összeg másolása"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex justify-center gap-1">
+                                    {(invoice.image_url || invoice.melleklet_url) && (
+                                      <HoverCard openDelay={300} closeDelay={100}>
+                                        <HoverCardTrigger asChild>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-8 w-8 opacity-70 group-hover:opacity-100"
+                                            onClick={() => openImageDialog(invoice)}
+                                          >
+                                            <Eye className="h-4 w-4" />
+                                          </Button>
+                                        </HoverCardTrigger>
+                                        <HoverCardContent side="left" align="center" className="w-64 p-1.5">
+                                          <InvoiceImagePreview
+                                            invoiceId={invoice.id}
+                                            imageUrl={invoice.image_url}
+                                            mellekletUrl={invoice.melleklet_url}
+                                            isOpen={true}
+                                          />
+                                        </HoverCardContent>
+                                      </HoverCard>
+                                    )}
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-8 w-8 opacity-70 group-hover:opacity-100"
+                                            onClick={() => openEditDialog(invoice)}
+                                          >
+                                            <Pencil className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Számla szerkesztése</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                              {expandedRowId === invoice.id && (() => {
+                                const matches = getSubmittedInvoiceMatches(invoice);
+                                return (
+                                  <ExpandedInvoiceRow
+                                    colSpan={10}
+                                    matchedSubmittedInvoices={[]}
+                                    matchedNavInvoices={matches.matchedNav}
+                                    matchedTransactions={matches.matchedTransactions}
+                                  />
+                                );
+                              })()}
                             </React.Fragment>
                           ))
                         )}
@@ -2012,8 +2154,7 @@ const InvoicesPage = () => {
       <InvoiceImageDialog
         invoice={selectedInvoice ? {
           id: selectedInvoice.id,
-          bizonylatsorszam: '',
-          dokumentum_azonosito: null,
+          bizonylatsorszam: selectedInvoice.bizonylatsorszam || '',
           image_url: selectedInvoice.image_url,
           melleklet_url: selectedInvoice.melleklet_url,
           elado_nev: selectedInvoice.elado_nev,

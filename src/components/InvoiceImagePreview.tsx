@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { FileText } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { FileText, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 // Module-level cache so signed URLs persist across re-renders
@@ -16,6 +15,7 @@ interface InvoiceImagePreviewProps {
 export function InvoiceImagePreview({ invoiceId, imageUrl, mellekletUrl, isOpen }: InvoiceImagePreviewProps) {
   const [signedUrl, setSignedUrl] = useState<string | null>(signedUrlCache.get(invoiceId) ?? null);
   const [loading, setLoading] = useState(false);
+  const [iframeLoading, setIframeLoading] = useState(true);
   const [error, setError] = useState(false);
   const fetchedRef = useRef(false);
 
@@ -48,17 +48,13 @@ export function InvoiceImagePreview({ invoiceId, imageUrl, mellekletUrl, isOpen 
     });
   }, [isOpen, invoiceId]);
 
-  if (isPDF) {
+  if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-36 bg-muted rounded text-muted-foreground text-xs gap-2">
-        <FileText className="h-8 w-8" />
-        <span>PDF dokumentum</span>
+      <div className="flex flex-col items-center justify-center h-48 bg-muted/50 rounded text-muted-foreground text-xs gap-2">
+        <Loader2 className="h-6 w-6 animate-spin" />
+        <span>Előnézet betöltése...</span>
       </div>
     );
-  }
-
-  if (loading) {
-    return <Skeleton className="w-full h-36 rounded" />;
   }
 
   if (error || !signedUrl) {
@@ -66,6 +62,25 @@ export function InvoiceImagePreview({ invoiceId, imageUrl, mellekletUrl, isOpen 
       <div className="flex flex-col items-center justify-center h-36 bg-muted rounded text-muted-foreground text-xs gap-2">
         <FileText className="h-8 w-8" />
         <span>Előnézet nem elérhető</span>
+      </div>
+    );
+  }
+
+  if (isPDF) {
+    return (
+      <div className="relative w-full h-48 rounded overflow-hidden bg-white">
+        {iframeLoading && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/50 z-10 text-muted-foreground text-xs gap-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>PDF betöltése...</span>
+          </div>
+        )}
+        <iframe
+          src={`${signedUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+          className="w-full h-full border-0 pointer-events-none"
+          title="Számla előnézet"
+          onLoad={() => setIframeLoading(false)}
+        />
       </div>
     );
   }
