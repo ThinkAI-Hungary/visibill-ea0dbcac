@@ -104,7 +104,7 @@ export const TransactionDetailsDialog = ({
     try {
       const { data, error } = await supabase
         .from('invoices')
-        .select('id, szamlaszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, brutto_vegosszeg, penznem, invoice_type')
+        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, brutto_vegosszeg, penznem, invoice_type')
         .eq('id', transaction.matched_invoice_id)
         .maybeSingle();
 
