@@ -62,11 +62,11 @@ const ExpandedInvoiceRow = ({
   const hasAny = matchedSubmittedInvoices.length > 0 || matchedNavInvoices.length > 0 || matchedTransactions.length > 0;
 
   return (
-    <TableRow className="bg-muted/20 hover:bg-muted/20 border-b border-border/30">
-      <TableCell colSpan={colSpan} className="py-4 px-6">
-        <div className="space-y-3 max-w-3xl">
+    <TableRow className="bg-muted/40 dark:bg-[hsl(222_47%_7%)] hover:bg-muted/40 dark:hover:bg-[hsl(222_47%_7%)] border-b border-border/30">
+      <TableCell colSpan={colSpan} className="py-6 px-8">
+        <div className="space-y-4 max-w-3xl ml-4">
           {/* Header */}
-          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
             <Link2 className="h-3.5 w-3.5" />
             Kapcsolódó tételek
           </div>
