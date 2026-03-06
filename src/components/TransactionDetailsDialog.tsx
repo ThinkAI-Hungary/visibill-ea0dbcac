@@ -32,7 +32,7 @@ interface Transaction {
 // Matched invoice from the 'invoices' table
 interface MatchedInvoice {
   id: string;
-  szamlaszam: string | null;
+  bizonylatsorszam: string | null;
   kibocsatas_datuma: string;
   teljesites_datuma: string | null;
   elado_nev: string;
