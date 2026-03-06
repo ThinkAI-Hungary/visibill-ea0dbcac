@@ -67,7 +67,7 @@ const ExpandedInvoiceRow = ({
       <TableRow className="bg-transparent hover:bg-transparent border-none">
         <TableCell colSpan={colSpan} className="p-0 h-3 border-none" />
       </TableRow>
-      <TableRow className="bg-muted/40 dark:bg-[hsl(222_47%_7%)] hover:bg-muted/40 dark:hover:bg-[hsl(222_47%_7%)] border-t border-b border-border/30">
+      <TableRow className="bg-muted/40 dark:bg-card hover:bg-muted/40 dark:hover:bg-card border-t border-b border-border/30">
         <TableCell colSpan={colSpan} className="py-6 px-8">
           <style>{`
             @keyframes expandSlideDown {

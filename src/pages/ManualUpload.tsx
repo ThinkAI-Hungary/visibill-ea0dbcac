@@ -755,13 +755,6 @@ const ManualUpload = () => {
                   <CardDescription>
                     Válassz PDF vagy kép fájlokat, amelyek számlákat tartalmaznak. Támogatott formátumok: PDF, JPG, PNG, WebP
                   </CardDescription>
-                  {remainingInvoices <= 5 && (
-                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm text-yellow-800">
-                        Figyelem: Csak {remainingInvoices} számlát tudsz még feldolgozni ebben a hónapban.
-                      </p>
-                    </div>
-                  )}
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">

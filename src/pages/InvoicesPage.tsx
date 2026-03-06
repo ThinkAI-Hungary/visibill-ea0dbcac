@@ -28,6 +28,9 @@ import InvoiceFullEditDialog from '@/components/InvoiceFullEditDialog';
 import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { CopyableCell } from '@/components/ui/copyable-cell';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { TableEmptyState } from '@/components/ui/table-empty-state';
+import { TablePlaceholderRows } from '@/components/ui/table-placeholder-rows';
 import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
 
 interface TransactionRecord {
@@ -1154,10 +1157,6 @@ const InvoicesPage = () => {
     return filteredAndSortedNavInvoices.length;
   };
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
   return (
     <div className="h-full bg-background">
       <main className="w-full max-w-none px-4 py-4">
@@ -1528,12 +1527,15 @@ const InvoicesPage = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {paginatedNavInvoices.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={activeTab === 'INBOUND' ? 13 : 11} className="text-center py-8 text-muted-foreground">
-                              Nincs megjeleníthető számla a megadott szűrők alapján.
-                            </TableCell>
-                          </TableRow>
+                        {loading ? (
+                          <TableSkeleton rows={10} columns={activeTab === 'INBOUND' ? 13 : 11} />
+                        ) : paginatedNavInvoices.length === 0 ? (
+                          <TableEmptyState
+                            colSpan={activeTab === 'INBOUND' ? 13 : 11}
+                            title="Nincs megjeleníthető számla"
+                            description="Próbáld módosítani a szűrőket vagy keresési feltételeket."
+                            onClearFilters={clearNavFilters}
+                          />
                         ) : (
                           paginatedNavInvoices.map((invoice) => {
                             const partnerTaxNumber = getPartnerTaxNumber(invoice);
@@ -1544,8 +1546,8 @@ const InvoicesPage = () => {
                                 <TableRow className={cn(
                                   "group cursor-pointer",
                                   selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
-                                  !selectedInvoiceIds.has(invoice.id) && invoice.paid === true && "bg-success/10 hover:bg-success/15",
-                                  !selectedInvoiceIds.has(invoice.id) && invoice.paid !== true && "bg-destructive/10 hover:bg-destructive/15",
+                                  !selectedInvoiceIds.has(invoice.id) && invoice.paid === true && "bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40 hover:shadow-[inset_0_0_0_100vw_rgba(0,0,0,0.04)] dark:hover:shadow-[inset_0_0_0_100vw_rgba(255,255,255,0.06)]",
+                                  !selectedInvoiceIds.has(invoice.id) && invoice.paid !== true && "bg-[hsl(var(--error-row-bg))] text-[hsl(var(--error-row-text))] border-l-4 border-l-destructive border-b border-border/40 hover:shadow-[inset_0_0_0_100vw_rgba(0,0,0,0.04)] dark:hover:shadow-[inset_0_0_0_100vw_rgba(255,255,255,0.06)]",
                                   expandedRowId === invoice.id && "border-b-0"
                                 )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                   <TableCell className="pl-6">
@@ -1717,6 +1719,7 @@ const InvoicesPage = () => {
                             );
                           })
                         )}
+                        <TablePlaceholderRows currentCount={paginatedNavInvoices.length} pageSize={navPageSize} columns={activeTab === 'INBOUND' ? 13 : 11} />
                       </TableBody>
                     </Table>
                   </div>
@@ -1947,21 +1950,23 @@ const InvoicesPage = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {paginatedSubmittedInvoices.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                              Nincs megjeleníthető számla a megadott szűrők alapján.
-                            </TableCell>
-                          </TableRow>
+                        {loading ? (
+                          <TableSkeleton rows={10} columns={10} />
+                        ) : paginatedSubmittedInvoices.length === 0 ? (
+                          <TableEmptyState
+                            colSpan={10}
+                            title="Nincs megjeleníthető számla"
+                            description="Próbáld módosítani a szűrőket vagy keresési feltételeket."
+                          />
                         ) : (
                           paginatedSubmittedInvoices.map((invoice) => (
                             <React.Fragment key={invoice.id}>
                               <TableRow className={cn(
                                 "group cursor-pointer",
                                 selectedSubmittedIds.has(invoice.id) && "bg-primary/5",
-                                !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && matchedInvoiceIds.has(invoice.id) && "bg-success/10 hover:bg-success/15",
-                                !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && !matchedInvoiceIds.has(invoice.id) && "bg-destructive/10 hover:bg-destructive/15",
-                                !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_OUTBOUND' && "bg-success/10 hover:bg-success/15",
+                                !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && matchedInvoiceIds.has(invoice.id) && "bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40 hover:shadow-[inset_0_0_0_100vw_rgba(0,0,0,0.04)] dark:hover:shadow-[inset_0_0_0_100vw_rgba(255,255,255,0.06)]",
+                                !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && !matchedInvoiceIds.has(invoice.id) && "bg-[hsl(var(--error-row-bg))] text-[hsl(var(--error-row-text))] border-l-4 border-l-destructive border-b border-border/40 hover:shadow-[inset_0_0_0_100vw_rgba(0,0,0,0.04)] dark:hover:shadow-[inset_0_0_0_100vw_rgba(255,255,255,0.06)]",
+                                !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_OUTBOUND' && "bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40 hover:shadow-[inset_0_0_0_100vw_rgba(0,0,0,0.04)] dark:hover:shadow-[inset_0_0_0_100vw_rgba(255,255,255,0.06)]",
                                 expandedRowId === invoice.id && "border-b-0"
                               )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                 <TableCell className="pl-6">
@@ -2113,6 +2118,7 @@ const InvoicesPage = () => {
                             </React.Fragment>
                           ))
                         )}
+                        <TablePlaceholderRows currentCount={paginatedSubmittedInvoices.length} pageSize={submittedPageSize} columns={10} />
                       </TableBody>
                     </Table>
                   </div>

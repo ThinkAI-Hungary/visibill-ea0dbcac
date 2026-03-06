@@ -15,7 +15,7 @@ export function ProductTourTooltip({
   size,
 }: TooltipRenderProps) {
   const { theme } = useTheme();
-  const isDark = theme === 'dark' || 
+  const isDark = theme === 'dark' ||
     (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   const currentStep = index + 1;
@@ -26,8 +26,8 @@ export function ProductTourTooltip({
       {...tooltipProps}
       className={`
         w-[340px] rounded-xl border shadow-lg
-        ${isDark 
-          ? 'bg-[hsl(222,47%,8%)] border-border/30 text-foreground' 
+        ${isDark
+          ? 'bg-popover border-border/30 text-foreground'
           : 'bg-white border-border/50 text-foreground shadow-xl'
         }
       `}
@@ -42,8 +42,8 @@ export function ProductTourTooltip({
           {...closeProps}
           className={`
             p-1 rounded-md transition-colors
-            ${isDark 
-              ? 'text-muted-foreground hover:text-primary hover:bg-primary/10' 
+            ${isDark
+              ? 'text-muted-foreground hover:text-primary hover:bg-primary/10'
               : 'text-muted-foreground hover:text-primary hover:bg-primary/10'
             }
           `}

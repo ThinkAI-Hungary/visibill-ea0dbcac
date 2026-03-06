@@ -9,7 +9,7 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* Brand Colors - Apple-style simplicity with your brand palette */
-    --background: 0 0% 99%;
+    --background: 220 14% 96%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -27,8 +27,8 @@ All colors MUST be HSL.
     --secondary: 220 14% 96%;
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 220 14% 94%;
+    --muted-foreground: 215 25% 27%;
 
     /* Accent: Teal-based hover/accent color */
     --accent: 173 60% 92%;
@@ -65,11 +65,11 @@ All colors MUST be HSL.
     --chart-4: 142 71% 45%;
     --chart-5: 330 81% 60%;
 
-    /* Modern shadows and effects */
+    /* Refined shadows for Light mode - subtle teal tint */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+    --shadow-lg: 0 10px 20px -5px rgb(0 0 0 / 0.1), 0 4px 8px -4px rgb(0 0 0 / 0.06);
+    --shadow-xl: 0 20px 40px -10px rgb(0 0 0 / 0.12), 0 8px 16px -6px rgb(0 0 0 / 0.06);
 
     --sidebar-background: 0 0% 98%;
 
@@ -86,6 +86,38 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Transaction type colors - Light mode (soft pastels) */
+    --tr-supplier-bg: 220 70% 93%;
+    --tr-supplier-text: 220 70% 35%;
+    --tr-customer-bg: 142 60% 90%;
+    --tr-customer-text: 142 71% 30%;
+    --tr-transfer-bg: 200 70% 90%;
+    --tr-transfer-text: 200 80% 25%;
+    --tr-bankfee-bg: 30 80% 90%;
+    --tr-bankfee-text: 30 90% 30%;
+    --tr-cardfee-bg: 35 80% 90%;
+    --tr-cardfee-text: 35 90% 30%;
+    --tr-loan-bg: 330 60% 92%;
+    --tr-loan-text: 330 70% 35%;
+    --tr-atm-bg: 25 40% 88%;
+    --tr-atm-text: 25 50% 25%;
+    --tr-cashout-bg: 25 35% 90%;
+    --tr-cashout-text: 25 40% 30%;
+    --tr-cashin-bg: 142 45% 90%;
+    --tr-cashin-text: 142 50% 25%;
+    --tr-salary-bg: 270 45% 92%;
+    --tr-salary-text: 270 50% 30%;
+    --tr-tax-bg: 270 50% 90%;
+    --tr-tax-text: 270 60% 30%;
+
+    /* Row status colors - Light mode */
+    --success-row-bg: 142 60% 88%;
+    --success-row-text: 142 75% 10%;
+    --error-row-bg: 0 70% 92%;
+    --error-row-text: 0 85% 20%;
+    --warning-row-bg: 38 80% 90%;
+    --warning-row-text: 38 92% 15%;
   }
 
   .dark {
@@ -140,6 +172,13 @@ All colors MUST be HSL.
     --chart-3: 38 92% 55%;
     --chart-4: 142 71% 50%;
     --chart-5: 330 81% 65%;
+
+    /* Reduced shadows for Dark mode - borders instead */
+    --shadow-sm: 0 0 0 1px rgb(255 255 255 / 0.05);
+    --shadow: 0 0 0 1px rgb(255 255 255 / 0.05);
+    --shadow-lg: 0 0 0 1px rgb(255 255 255 / 0.06), 0 4px 12px -4px rgb(0 0 0 / 0.3);
+    --shadow-xl: 0 0 0 1px rgb(255 255 255 / 0.06), 0 8px 24px -8px rgb(0 0 0 / 0.4);
+
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -148,6 +187,38 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 173 80% 70%;
     --sidebar-border: 240 5% 10%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Transaction type colors - Dark mode */
+    --tr-supplier-bg: 220 70% 40%;
+    --tr-supplier-text: 0 0% 100%;
+    --tr-customer-bg: 142 71% 35%;
+    --tr-customer-text: 0 0% 100%;
+    --tr-transfer-bg: 200 60% 30%;
+    --tr-transfer-text: 200 80% 85%;
+    --tr-bankfee-bg: 30 90% 40%;
+    --tr-bankfee-text: 0 0% 100%;
+    --tr-cardfee-bg: 35 70% 35%;
+    --tr-cardfee-text: 35 90% 85%;
+    --tr-loan-bg: 330 60% 40%;
+    --tr-loan-text: 0 0% 100%;
+    --tr-atm-bg: 25 50% 30%;
+    --tr-atm-text: 0 0% 100%;
+    --tr-cashout-bg: 25 40% 35%;
+    --tr-cashout-text: 0 0% 100%;
+    --tr-cashin-bg: 142 40% 30%;
+    --tr-cashin-text: 142 50% 85%;
+    --tr-salary-bg: 270 40% 35%;
+    --tr-salary-text: 270 50% 85%;
+    --tr-tax-bg: 270 60% 30%;
+    --tr-tax-text: 0 0% 100%;
+
+    /* Row status colors - Dark mode */
+    --success-row-bg: 142 71% 8%;
+    --success-row-text: 142 71% 65%;
+    --error-row-bg: 0 84% 8%;
+    --error-row-text: 0 84% 70%;
+    --warning-row-bg: 38 92% 8%;
+    --warning-row-text: 38 92% 65%;
   }
 }
 
@@ -175,11 +246,45 @@ All colors MUST be HSL.
     @apply bg-background text-foreground font-sans antialiased m-0 p-0;
     font-size: 1.125rem;
     font-feature-settings: "rlig" 1, "calt" 1;
+    transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
   }
 
   #root {
     height: 100%;
     overflow: hidden;
+  }
+
+  /* Smooth theme transitions for key layout elements */
+  main,
+  nav,
+  aside,
+  header,
+  footer,
+  .sidebar,
+  [data-sidebar],
+  [role="navigation"] {
+    transition: background-color 300ms ease-in-out, color 300ms ease-in-out, border-color 300ms ease-in-out;
+  }
+
+  /* Heading typography */
+  h1,
+  h2,
+  h3 {
+    @apply font-sans;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: hsl(var(--foreground));
+  }
+
+  /* Text selection highlight - Teal */
+  ::selection {
+    background-color: hsl(var(--primary) / 0.2);
+    color: hsl(var(--foreground));
+  }
+
+  ::-moz-selection {
+    background-color: hsl(var(--primary) / 0.2);
+    color: hsl(var(--foreground));
   }
 
   /* Enhanced typography for financial data */
@@ -215,10 +320,10 @@ All colors MUST be HSL.
   select:-webkit-autofill:hover,
   select:-webkit-autofill:focus,
   select:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px hsl(220 14% 96%) inset !important;
-    -webkit-text-fill-color: hsl(222 47% 11%) !important;
+    -webkit-box-shadow: 0 0 0 30px hsl(var(--muted)) inset !important;
+    -webkit-text-fill-color: hsl(var(--foreground)) !important;
     background-color: transparent !important;
-    caret-color: hsl(222 47% 11%) !important;
+    caret-color: hsl(var(--foreground)) !important;
     transition: background-color 5000s ease-in-out 0s;
   }
 
@@ -235,10 +340,10 @@ All colors MUST be HSL.
   .dark select:-webkit-autofill:hover,
   .dark select:-webkit-autofill:focus,
   .dark select:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px hsl(215 20% 14%) inset !important;
-    -webkit-text-fill-color: hsl(210 40% 98%) !important;
+    -webkit-box-shadow: 0 0 0 30px hsl(var(--secondary)) inset !important;
+    -webkit-text-fill-color: hsl(var(--foreground)) !important;
     background-color: transparent !important;
-    caret-color: hsl(210 40% 98%) !important;
+    caret-color: hsl(var(--foreground)) !important;
     transition: background-color 5000s ease-in-out 0s;
   }
 
@@ -247,7 +352,7 @@ All colors MUST be HSL.
     filter: invert(0.8) sepia(1) saturate(3) hue-rotate(130deg);
     cursor: pointer;
   }
-  
+
   .dark input[type="date"]::-webkit-calendar-picker-indicator:hover {
     filter: invert(0.9) sepia(1) saturate(4) hue-rotate(130deg);
   }
@@ -255,6 +360,7 @@ All colors MUST be HSL.
 
 /* Custom Scrollbar Styling - Global */
 @layer base {
+
   /* Webkit browsers (Chrome, Safari, Edge) */
   ::-webkit-scrollbar {
     width: 8px;
@@ -312,25 +418,21 @@ All colors MUST be HSL.
   }
 }
 
-/* Compact Table Styling - for dense list views */
+/* Compact Table Styling - strict fixed heights for layout stability */
 @layer components {
   .compact-table {
     @apply text-sm;
   }
 
   .compact-table th {
-    @apply py-1 px-2 text-xs;
+    @apply py-2 px-2 text-xs h-[45px] max-h-[45px];
   }
 
   .compact-table td {
-    @apply py-0.5 px-2;
+    @apply py-1 px-2 h-[45px] max-h-[45px] overflow-hidden;
   }
 
   .compact-table tr {
-    @apply h-[32px];
-  }
-
-  .compact-table .empty-row {
-    @apply h-[32px];
+    @apply h-[45px] max-h-[45px];
   }
 }

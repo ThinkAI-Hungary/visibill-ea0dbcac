@@ -21,6 +21,9 @@ import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { TransactionReasonCell } from '@/components/TransactionReasonCell';
 import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
+import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { TableEmptyState } from '@/components/ui/table-empty-state';
+import { TablePlaceholderRows } from '@/components/ui/table-placeholder-rows';
 
 interface Transaction {
   id: string;
@@ -85,43 +88,44 @@ const getMatchStatusIcon = (status: MatchStatus) => {
 };
 
 const getRowBackgroundClass = (transaction: Transaction): string => {
+  const hoverClass = 'hover:shadow-[inset_0_0_0_100vw_rgba(0,0,0,0.04)] dark:hover:shadow-[inset_0_0_0_100vw_rgba(255,255,255,0.06)]';
   if (isNoCategoryMatch(transaction) || (transaction.is_verified && transaction.matched_invoice_id)) {
-    return 'bg-success/20 hover:bg-success/25 dark:bg-success/10 dark:hover:bg-success/15';
+    return `bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40 ${hoverClass}`;
   }
   if (transaction.matched_invoice_id && !transaction.is_verified) {
-    return 'bg-warning/20 hover:bg-warning/25 dark:bg-warning/10 dark:hover:bg-warning/15';
+    return `bg-[hsl(var(--warning-row-bg))] text-[hsl(var(--warning-row-text))] border-l-4 border-l-warning border-b border-border/40 ${hoverClass}`;
   }
-  return 'bg-destructive/20 hover:bg-destructive/25 dark:bg-destructive/10 dark:hover:bg-destructive/15';
+  return `bg-[hsl(var(--error-row-bg))] text-[hsl(var(--error-row-text))] border-l-4 border-l-destructive border-b border-border/40 ${hoverClass}`;
 };
 
 // Type-based background color mapping
 const getTypeBgClass = (type: string | null): string => {
   if (!type) return '';
   const t = type.toLowerCase().trim();
-  
+
   // Dark Blue: szállítói tranzakció
-  if (t === 'szállítói tranzakció') return 'bg-[hsl(220,70%,50%)] text-white dark:bg-[hsl(220,70%,40%)]';
+  if (t === 'szállítói tranzakció') return 'bg-[hsl(var(--tr-supplier-bg))] text-[hsl(var(--tr-supplier-text))]';
   // Green: vevői tranzakció
-  if (t === 'vevői tranzakció') return 'bg-[hsl(142,71%,45%)] text-white dark:bg-[hsl(142,71%,35%)]';
+  if (t === 'vevői tranzakció') return 'bg-[hsl(var(--tr-customer-bg))] text-[hsl(var(--tr-customer-text))]';
   // Light Blue: számlák közötti átvezetés
-  if (t === 'számlák közötti átvezetés') return 'bg-[hsl(200,80%,75%)] text-[hsl(200,80%,15%)] dark:bg-[hsl(200,60%,30%)] dark:text-[hsl(200,80%,85%)]';
+  if (t === 'számlák közötti átvezetés') return 'bg-[hsl(var(--tr-transfer-bg))] text-[hsl(var(--tr-transfer-text))]';
   // Orange: banki számlavezetési díj
-  if (t === 'banki számlavezetési díj') return 'bg-[hsl(30,90%,55%)] text-white dark:bg-[hsl(30,90%,40%)]';
+  if (t === 'banki számlavezetési díj') return 'bg-[hsl(var(--tr-bankfee-bg))] text-[hsl(var(--tr-bankfee-text))]';
   // Light Orange: kártyadíj
-  if (t === 'kártyadíj') return 'bg-[hsl(35,90%,70%)] text-[hsl(35,90%,15%)] dark:bg-[hsl(35,70%,35%)] dark:text-[hsl(35,90%,85%)]';
+  if (t === 'kártyadíj') return 'bg-[hsl(var(--tr-cardfee-bg))] text-[hsl(var(--tr-cardfee-text))]';
   // Pink: hiteltörlesztés, tranzakciós illeték, kamat
-  if (t === 'hiteltörlesztés' || t === 'tranzakciós illeték' || t === 'kamat') return 'bg-[hsl(330,70%,65%)] text-white dark:bg-[hsl(330,60%,40%)]';
+  if (t === 'hiteltörlesztés' || t === 'tranzakciós illeték' || t === 'kamat') return 'bg-[hsl(var(--tr-loan-bg))] text-[hsl(var(--tr-loan-text))]';
   // Brown: atm pénzfelvét
-  if (t === 'atm pénzfelvét') return 'bg-[hsl(25,50%,40%)] text-white dark:bg-[hsl(25,50%,30%)]';
+  if (t === 'atm pénzfelvét') return 'bg-[hsl(var(--tr-atm-bg))] text-[hsl(var(--tr-atm-text))]';
   // Light Brown: pénztári kp felvét
-  if (t === 'pénztári kp felvét') return 'bg-[hsl(25,40%,60%)] text-white dark:bg-[hsl(25,40%,35%)]';
+  if (t === 'pénztári kp felvét') return 'bg-[hsl(var(--tr-cashout-bg))] text-[hsl(var(--tr-cashout-text))]';
   // Light Green: pénztári kp befizetés, kp befizetés atm-en keresztül
-  if (t === 'pénztári kp befizetés' || t === 'kp befizetés atm-en keresztül') return 'bg-[hsl(142,50%,70%)] text-[hsl(142,50%,15%)] dark:bg-[hsl(142,40%,30%)] dark:text-[hsl(142,50%,85%)]';
+  if (t === 'pénztári kp befizetés' || t === 'kp befizetés atm-en keresztül') return 'bg-[hsl(var(--tr-cashin-bg))] text-[hsl(var(--tr-cashin-text))]';
   // Light Purple: bérek
-  if (t === 'bérek') return 'bg-[hsl(270,50%,70%)] text-[hsl(270,50%,15%)] dark:bg-[hsl(270,40%,35%)] dark:text-[hsl(270,50%,85%)]';
+  if (t === 'bérek') return 'bg-[hsl(var(--tr-salary-bg))] text-[hsl(var(--tr-salary-text))]';
   // Dark Purple: járulékok/adók
-  if (t === 'járulékok/adók') return 'bg-[hsl(270,60%,40%)] text-white dark:bg-[hsl(270,60%,30%)]';
-  
+  if (t === 'járulékok/adók') return 'bg-[hsl(var(--tr-tax-bg))] text-[hsl(var(--tr-tax-text))]';
+
   return '';
 };
 
@@ -133,15 +137,15 @@ const TransactionsPage = () => {
   const [syncing, setSyncing] = useState(false);
   const [sortField, setSortField] = useState<string>('transaction_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  
+
   // Pagination state
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   // Details dialog state
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-  
+
   const [filters, setFilters] = useState<TransactionFilters>({
     search: '',
     dateFrom: undefined,
@@ -159,7 +163,7 @@ const TransactionsPage = () => {
 
   const fetchTransactions = async () => {
     if (!user) return;
-    
+
     setLoading(true);
     try {
       let query = supabase
@@ -174,21 +178,21 @@ const TransactionsPage = () => {
       const { data, error } = await query;
 
       if (error) throw error;
-      
+
       const fetchedTransactions = data || [];
-      
+
       // Auto-approve transactions with confidence_score >= 0.9
       const toAutoApprove = fetchedTransactions.filter(
         t => t.matched_invoice_id && !t.is_verified && t.confidence_score && t.confidence_score >= 0.9
       );
-      
+
       if (toAutoApprove.length > 0) {
         const ids = toAutoApprove.map(t => t.id);
         await supabase
           .from('transactions')
           .update({ is_verified: true, match_type: 'auto' })
           .in('id', ids);
-        
+
         // Update local state to reflect auto-approval
         fetchedTransactions.forEach(t => {
           if (ids.includes(t.id)) {
@@ -197,7 +201,7 @@ const TransactionsPage = () => {
           }
         });
       }
-      
+
       setTransactions(fetchedTransactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
@@ -263,7 +267,7 @@ const TransactionsPage = () => {
     // Sorting
     result.sort((a, b) => {
       let aVal: any, bVal: any;
-      
+
       switch (sortField) {
         case 'transaction_date':
           aVal = a.transaction_date || '';
@@ -298,13 +302,13 @@ const TransactionsPage = () => {
   }, [filteredTransactions, currentPage, pageSize]);
 
   // Get unique values for filters
-  const uniqueCurrencies = useMemo(() => 
+  const uniqueCurrencies = useMemo(() =>
     [...new Set(transactions.map(t => t.currency).filter(Boolean))] as string[],
-  [transactions]);
-  
-  const uniqueTypes = useMemo(() => 
+    [transactions]);
+
+  const uniqueTypes = useMemo(() =>
     [...new Set(transactions.map(t => t.type).filter(Boolean))] as string[],
-  [transactions]);
+    [transactions]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -362,10 +366,10 @@ const TransactionsPage = () => {
 
     const exportData = filteredTransactions.map(transaction => {
       const matchStatus = getMatchStatus(transaction);
-      const statusText = matchStatus === 'matched' ? 'Párosított' 
-        : matchStatus === 'suggested' ? 'Javasolt' 
-        : 'Párosítatlan';
-      
+      const statusText = matchStatus === 'matched' ? 'Párosított'
+        : matchStatus === 'suggested' ? 'Javasolt'
+          : 'Párosítatlan';
+
       return [
         transaction.transaction_date || '',
         transaction.description || '',
@@ -399,15 +403,15 @@ const TransactionsPage = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       toast.success("Tranzakciók exportálva CSV formátumban");
     } else {
       const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Tranzakciók');
-      
+
       XLSX.writeFile(workbook, `${filename}_${timestamp}.xlsx`);
-      
+
       toast.success("Tranzakciók exportálva XLSX formátumban");
     }
   };
@@ -418,10 +422,6 @@ const TransactionsPage = () => {
         <p className="text-muted-foreground">Válassz egy céget a folytatáshoz</p>
       </div>
     );
-  }
-
-  if (loading) {
-    return <LoadingSpinner />;
   }
 
   return (
@@ -440,9 +440,9 @@ const TransactionsPage = () => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={handleSync}
                         disabled={syncing}
                       >
@@ -543,8 +543,8 @@ const TransactionsPage = () => {
               {/* Date From */}
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     className={cn(
                       "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
@@ -569,8 +569,8 @@ const TransactionsPage = () => {
               {/* Date To */}
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     className={cn(
                       "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
@@ -594,8 +594,8 @@ const TransactionsPage = () => {
 
               {/* Clear button */}
               {hasActiveFilters && (
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
                   onClick={clearFilters}
                   className="h-9 text-muted-foreground hover:text-foreground"
@@ -625,7 +625,7 @@ const TransactionsPage = () => {
               <Table className="table-fixed compact-table">
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead 
+                    <TableHead
                       className="cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
                       onClick={() => handleSort('transaction_date')}
                     >
@@ -635,7 +635,7 @@ const TransactionsPage = () => {
                       </div>
                     </TableHead>
                     <TableHead className="font-semibold w-[30%]">Leírás</TableHead>
-                    <TableHead 
+                    <TableHead
                       className="cursor-pointer hover:bg-muted/50 text-right font-semibold w-[12%]"
                       onClick={() => handleSort('amount')}
                     >
@@ -652,27 +652,26 @@ const TransactionsPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedTransactions.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="h-32 text-center">
-                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                          <HelpCircle className="h-8 w-8" />
-                          <p>Nincs tranzakció</p>
-                          <p className="text-xs">Tölts fel bankkivonatot a Feltöltés oldalon</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                  {loading ? (
+                    <TableSkeleton rows={10} columns={8} />
+                  ) : paginatedTransactions.length === 0 ? (
+                    <TableEmptyState
+                      colSpan={8}
+                      title="Nincs tranzakció"
+                      description="Tölts fel bankkivonatot a Feltöltés oldalon, vagy módosítsd a szűrőket."
+                      onClearFilters={hasActiveFilters ? clearFilters : undefined}
+                    />
                   ) : (
                     paginatedTransactions.map((transaction) => {
                       const matchStatus = getMatchStatus(transaction);
-                      
+
                       return (
-                        <TableRow 
-                          key={transaction.id} 
+                        <TableRow
+                          key={transaction.id}
                           className={cn("h-10", getRowBackgroundClass(transaction))}
                         >
                           <TableCell className="font-medium text-xs">
-                            {transaction.transaction_date 
+                            {transaction.transaction_date
                               ? format(new Date(transaction.transaction_date), 'yyyy.MM.dd')
                               : '-'
                             }
@@ -744,14 +743,7 @@ const TransactionsPage = () => {
                       );
                     })
                   )}
-                  {/* Empty placeholder rows for stable height */}
-                  {paginatedTransactions.length > 0 && paginatedTransactions.length < pageSize && (
-                    Array.from({ length: Math.min(5, pageSize - paginatedTransactions.length) }).map((_, i) => (
-                      <TableRow key={`empty-${i}`} className="h-10 pointer-events-none">
-                        <TableCell colSpan={8}>&nbsp;</TableCell>
-                      </TableRow>
-                    ))
-                  )}
+                  <TablePlaceholderRows currentCount={paginatedTransactions.length} pageSize={pageSize} columns={8} />
                 </TableBody>
               </Table>
             </div>

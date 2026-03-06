@@ -16,15 +16,15 @@ interface CategoryCardProps {
   canRemove?: boolean;
 }
 
-export function CategoryCard({ 
-  name, 
-  description, 
+export function CategoryCard({
+  name,
+  description,
   isNew = false,
-  onUpdate, 
+  onUpdate,
   onRemove,
   canRemove = true
 }: CategoryCardProps) {
-  const [isEditing, setIsEditing] = useState(isNew && !name);
+  const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(name);
   const [editTags, setEditTags] = useState<string[]>(
     description ? description.split(',').map(t => t.trim()).filter(Boolean) : []
@@ -99,13 +99,13 @@ export function CategoryCard({
               )}
             </div>
           </div>
-          
+
           <div className="flex flex-wrap gap-1.5 min-h-[28px]">
             {tags.length > 0 ? (
               tags.slice(0, 5).map((tag, i) => (
-                <Badge 
-                  key={i} 
-                  variant="secondary" 
+                <Badge
+                  key={i}
+                  variant="secondary"
                   className="text-xs bg-primary/10 text-primary border-0 hover:bg-primary/20"
                 >
                   {tag}
@@ -130,7 +130,7 @@ export function CategoryCard({
           <DialogHeader>
             <DialogTitle>{name ? 'Kategória szerkesztése' : 'Új kategória'}</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="category-name">Kategória neve</Label>
@@ -142,7 +142,7 @@ export function CategoryCard({
                 className="bg-background/50"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label>Címkék (számla típusok)</Label>
               <div className="flex gap-2">
@@ -166,12 +166,12 @@ export function CategoryCard({
               <p className="text-xs text-muted-foreground">
                 Nyomj Enter-t vagy kattints a + gombra a címke hozzáadásához
               </p>
-              
+
               <div className="flex flex-wrap gap-2 mt-3 min-h-[32px] p-2 rounded-md bg-background/30 border border-border/30">
                 {editTags.length > 0 ? (
                   editTags.map((tag, i) => (
-                    <Badge 
-                      key={i} 
+                    <Badge
+                      key={i}
                       variant="secondary"
                       className="text-sm bg-primary/15 text-primary border-0 pr-1 gap-1"
                     >
@@ -193,7 +193,7 @@ export function CategoryCard({
               </div>
             </div>
           </div>
-          
+
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="ghost" onClick={handleCancel}>
               Mégse

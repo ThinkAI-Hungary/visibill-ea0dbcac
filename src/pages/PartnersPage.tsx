@@ -41,6 +41,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CopyableCell } from "@/components/ui/copyable-cell";
 import { UnifiedPagination } from "@/components/ui/unified-pagination";
 import { PartnerTypeFilter, PartnerTypeFilterValue } from "@/components/ui/partner-type-filter";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
+import { TableEmptyState } from "@/components/ui/table-empty-state";
+import { TablePlaceholderRows } from "@/components/ui/table-placeholder-rows";
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -94,7 +97,7 @@ export default function PartnersPage() {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -113,13 +116,13 @@ export default function PartnersPage() {
     queryKey: ["partners", selectedCompany?.id],
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
-      
+
       const { data, error } = await supabase
         .from("partners")
         .select("*")
         .eq("company_id", selectedCompany.id)
         .order("name", { ascending: true });
-      
+
       if (error) throw error;
       return data as Partner[];
     },
@@ -130,7 +133,7 @@ export default function PartnersPage() {
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData & { id?: string }) => {
       if (!user?.id) throw new Error("No user");
-      
+
       const partnerData = {
         name: data.name,
         tax_number: data.tax_number,
@@ -198,16 +201,16 @@ export default function PartnersPage() {
   // Filter partners by search query, type filter, and paginate
   const { paginatedPartners, totalPages, totalFiltered } = useMemo(() => {
     if (!partners) return { paginatedPartners: [], totalPages: 0, totalFiltered: 0 };
-    
+
     let filtered = partners;
-    
+
     // Apply type filter
     if (typeFilter !== 'all') {
-      filtered = filtered.filter(p => 
+      filtered = filtered.filter(p =>
         p.partner_type === typeFilter || p.partner_type === 'both'
       );
     }
-    
+
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -218,12 +221,12 @@ export default function PartnersPage() {
           (p.address && p.address.toLowerCase().includes(query))
       );
     }
-    
+
     const totalFiltered = filtered.length;
     const totalPages = Math.ceil(totalFiltered / pageSize);
     const startIndex = (currentPage - 1) * pageSize;
     const paginatedPartners = filtered.slice(startIndex, startIndex + pageSize);
-    
+
     return { paginatedPartners, totalPages, totalFiltered };
   }, [partners, searchQuery, currentPage, pageSize, typeFilter]);
 
@@ -297,9 +300,6 @@ export default function PartnersPage() {
     }
   };
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
 
   return (
     <div className="h-full space-y-2 px-2 pt-0 pb-0">
@@ -350,7 +350,7 @@ export default function PartnersPage() {
                 </Popover>
               </div>
             </div>
-            
+
             {/* Top Pagination */}
             {totalFiltered > 0 && (
               <UnifiedPagination
@@ -364,140 +364,140 @@ export default function PartnersPage() {
             )}
           </div>
 
-          {/* Table or Empty State */}
-          {paginatedPartners.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              {searchQuery || typeFilter !== 'all' ? (
-                <p>Nincs találat a szűrésre</p>
-              ) : (
-                <p>Még nincsenek partnerek.</p>
-              )}
-            </div>
-          ) : (
-            <>
-              <div className="rounded-lg border border-border/50 overflow-hidden">
-                <Table className="table-fixed compact-table">
-                  <TableHeader>
-                    <TableRow className="bg-muted/30 hover:bg-muted/30">
-                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[28%]">
-                        Név
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[18%]">
-                        Adószám
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[24%]">
-                        Cím
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[14%]">
-                        Típus
-                      </TableHead>
-                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[16%]">
-                        Műveletek
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedPartners.map((partner) => {
-                      const decodedName = decodeHtmlEntities(partner.name);
-                      const decodedAddress = partner.address ? decodeHtmlEntities(partner.address) : null;
-                      return (
-                        <TableRow 
-                          key={partner.id} 
-                          className="hover:bg-muted/40 transition-colors"
-                        >
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-7 w-7 shrink-0">
-                                <AvatarFallback className={`text-xs font-medium ${getAvatarColor(partner.name)}`}>
-                                  {getInitials(partner.name)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <CopyableCell
-                                value={decodedName}
-                                truncate
-                                maxWidth="160px"
-                                className="font-medium text-sm"
-                                ariaLabel="Név másolása"
-                              />
-                            </div>
-                          </TableCell>
-                          <TableCell>
+          {/* Table */}
+          <div className="rounded-lg border border-border/50 overflow-hidden">
+            <Table className="table-fixed compact-table">
+              <TableHeader>
+                <TableRow className="bg-muted/30 hover:bg-muted/30">
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[28%]">
+                    Név
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[18%]">
+                    Adószám
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[24%]">
+                    Cím
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[14%]">
+                    Típus
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[16%]">
+                    Műveletek
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableSkeleton rows={10} columns={5} />
+                ) : paginatedPartners.length === 0 ? (
+                  <TableEmptyState
+                    colSpan={5}
+                    title={searchQuery || typeFilter !== 'all' ? 'Nincs találat a szűrésre' : 'Még nincsenek partnerek'}
+                    description={searchQuery || typeFilter !== 'all' ? 'Próbáld módosítani a szűrőket.' : 'Küldj be egy számlát, hogy automatikusan megjelenjen a partner.'}
+                    onClearFilters={searchQuery || typeFilter !== 'all' ? () => { setSearchQuery(''); setTypeFilter('all'); } : undefined}
+                  />
+                ) : (
+                  paginatedPartners.map((partner) => {
+                    const decodedName = decodeHtmlEntities(partner.name);
+                    const decodedAddress = partner.address ? decodeHtmlEntities(partner.address) : null;
+                    return (
+                      <TableRow
+                        key={partner.id}
+                        className="hover:bg-muted/40 transition-colors"
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-7 w-7 shrink-0">
+                              <AvatarFallback className={`text-xs font-medium ${getAvatarColor(partner.name)}`}>
+                                {getInitials(partner.name)}
+                              </AvatarFallback>
+                            </Avatar>
                             <CopyableCell
-                              value={partner.tax_number}
-                              className="font-mono text-xs text-muted-foreground"
-                              ariaLabel="Adószám másolása"
+                              value={decodedName}
+                              truncate
+                              maxWidth="160px"
+                              className="font-medium text-sm"
+                              ariaLabel="Név másolása"
                             />
-                          </TableCell>
-                          <TableCell>
-                            {decodedAddress ? (
-                              <CopyableCell
-                                value={decodedAddress}
-                                truncate
-                                maxWidth="180px"
-                                className="text-xs text-muted-foreground"
-                                ariaLabel="Cím másolása"
-                              />
-                            ) : (
-                              <span className="text-xs text-muted-foreground/50">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {partner.partner_type === 'customer' && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-500">
-                                Vevő
-                              </span>
-                            )}
-                            {partner.partner_type === 'supplier' && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-500/10 text-blue-500">
-                                Szállító
-                              </span>
-                            )}
-                            {partner.partner_type === 'both' && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground">
-                                Mindkettő
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleOpenDialog(partner)}
-                                className="h-7 w-7 hover:bg-primary/10 hover:text-primary"
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDelete(partner)}
-                                className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <CopyableCell
+                            value={partner.tax_number}
+                            className="font-mono text-xs text-muted-foreground"
+                            ariaLabel="Adószám másolása"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {decodedAddress ? (
+                            <CopyableCell
+                              value={decodedAddress}
+                              truncate
+                              maxWidth="180px"
+                              className="text-xs text-muted-foreground"
+                              ariaLabel="Cím másolása"
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground/50">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {partner.partner_type === 'customer' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-500">
+                              Vevő
+                            </span>
+                          )}
+                          {partner.partner_type === 'supplier' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-500/10 text-blue-500">
+                              Szállító
+                            </span>
+                          )}
+                          {partner.partner_type === 'both' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground">
+                              Mindkettő
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleOpenDialog(partner)}
+                              className="h-7 w-7 hover:bg-primary/10 hover:text-primary"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(partner)}
+                              className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+                <TablePlaceholderRows currentCount={paginatedPartners.length} pageSize={pageSize} columns={5} />
+              </TableBody>
+            </Table>
+          </div>
 
-              {/* Bottom Pagination */}
-              {totalPages > 1 && (
-                <UnifiedPagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={totalFiltered}
-                  pageSize={pageSize}
-                  onPageChange={setCurrentPage}
-                  onPageSizeChange={handlePageSizeChange}
-                  className="pt-3"
-                />
-              )}
-            </>
+          {/* Bottom Pagination */}
+          {totalPages > 1 && (
+            <UnifiedPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalFiltered}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={handlePageSizeChange}
+              className="pt-3"
+            />
           )}
         </CardContent>
       </Card>
