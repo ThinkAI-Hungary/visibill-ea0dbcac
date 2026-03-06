@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 interface MatchedSubmittedInvoice {
   id: string;
-  szamlaszam: string | null;
+  bizonylatsorszam: string | null;
   kibocsatas_datuma: string;
   elado_nev: string;
   vevo_nev: string;
