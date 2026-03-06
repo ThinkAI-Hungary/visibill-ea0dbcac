@@ -569,14 +569,17 @@ const InvoicesPage = () => {
       if (projectsError) throw projectsError;
       setProjects(projectsData || []);
 
-      // Fetch matched invoice IDs from transactions
+      // Fetch matched transactions (full data for expandable rows)
       const { data: matchedData } = await supabase
         .from('transactions')
-        .select('matched_invoice_id')
+        .select('id, matched_invoice_id, transaction_date, amount, description, currency, type')
         .eq('company_id', selectedCompany.id)
         .not('matched_invoice_id', 'is', null);
 
-      const matchedInvoiceIdsSet = new Set((matchedData || []).map(t => t.matched_invoice_id).filter(Boolean) as string[]);
+      const txData = (matchedData || []) as TransactionRecord[];
+      setAllTransactions(txData);
+
+      const matchedInvoiceIdsSet = new Set(txData.map(t => t.matched_invoice_id).filter(Boolean));
       setMatchedInvoiceIds(matchedInvoiceIdsSet);
 
       // Build cross-reference: szamlaszam values of submitted invoices that have matched transactions
