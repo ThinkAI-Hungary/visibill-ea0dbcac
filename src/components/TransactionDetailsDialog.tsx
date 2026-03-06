@@ -252,7 +252,7 @@ export const TransactionDetailsDialog = ({
     if (!search) return availableInvoices;
     const searchLower = search.toLowerCase();
     return availableInvoices.filter(inv =>
-      inv.szamlaszam.toLowerCase().includes(searchLower) ||
+      inv.bizonylatsorszam.toLowerCase().includes(searchLower) ||
       inv.elado_nev?.toLowerCase().includes(searchLower) ||
       inv.brutto_vegosszeg?.toString().includes(search)
     );
