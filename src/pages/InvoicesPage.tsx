@@ -585,14 +585,14 @@ const InvoicesPage = () => {
       const matchedInvoiceIdsSet = new Set(txData.map(t => t.matched_invoice_id).filter(Boolean));
       setMatchedInvoiceIds(matchedInvoiceIdsSet);
 
-      // Build cross-reference: szamlaszam values of submitted invoices that have matched transactions
-      const matchedSzamlaszamSet = new Set(
+      // Build cross-reference: bizonylatsorszam values of submitted invoices that have matched transactions
+      const matchedBizonylatsorszamSet = new Set(
         (submittedData || [])
           .filter(inv => matchedInvoiceIdsSet.has(inv.id))
-          .map(inv => inv.szamlaszam)
+          .map(inv => inv.bizonylatsorszam)
           .filter(Boolean)
       );
-      setMatchedNavInvoiceNumbers(matchedSzamlaszamSet);
+      setMatchedNavInvoiceNumbers(matchedBizonylatsorszamSet);
 
     } catch (error) {
       console.error('Error fetching data:', error);
