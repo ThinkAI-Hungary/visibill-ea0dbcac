@@ -7,7 +7,7 @@ interface InvoiceForDialog {
   id: string;
   elado_nev: string;
   vevo_nev: string;
-  szamlaszam?: string;
+  bizonylatsorszam?: string;
   dokumentum_azonosito?: string;
   invoice_type?: string;
   image_url?: string;
