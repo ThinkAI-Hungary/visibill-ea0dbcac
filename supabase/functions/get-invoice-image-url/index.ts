@@ -44,29 +44,23 @@ serve(async (req) => {
       )
     }
 
-    // Get invoice to verify ownership and get image_url
+    // Get invoice - RLS on invoices table enforces company membership access
     const { data: invoice, error: invoiceError } = await supabaseClient
       .from('invoices')
-      .select('image_url, user_id')
+      .select('image_url, melleklet_url')
       .eq('id', invoiceId)
       .single()
 
     if (invoiceError || !invoice) {
+      console.error('Invoice query error:', invoiceError)
       return new Response(
-        JSON.stringify({ error: 'Invoice not found' }),
+        JSON.stringify({ error: 'Invoice not found or access denied' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Verify user owns this invoice
-    if (invoice.user_id !== user.id) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized access to invoice' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (!invoice.image_url) {
+    const imageUrl = invoice.image_url || invoice.melleklet_url
+    if (!imageUrl) {
       return new Response(
         JSON.stringify({ error: 'No image URL found for this invoice' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -74,7 +68,7 @@ serve(async (req) => {
     }
 
     // Extract the file path from the storage URL
-    const url = new URL(invoice.image_url)
+    const url = new URL(imageUrl)
     const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/)
     
     if (!pathMatch) {
