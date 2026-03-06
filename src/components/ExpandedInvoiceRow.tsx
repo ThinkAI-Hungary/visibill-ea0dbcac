@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 interface MatchedSubmittedInvoice {
   id: string;
-  szamlaszam: string | null;
+  bizonylatsorszam: string | null;
   kibocsatas_datuma: string;
   elado_nev: string;
   vevo_nev: string;
@@ -116,8 +116,8 @@ const ExpandedInvoiceRow = ({
               <CardContent className="p-3 pt-0">
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="col-span-2">
-                    <span className="text-muted-foreground">Számlaszám:</span>
-                    <span className="ml-1 font-mono font-medium">{inv.szamlaszam || '-'}</span>
+                    <span className="text-muted-foreground">Bizonylatsorszám:</span>
+                    <span className="ml-1 font-mono font-medium">{inv.bizonylatsorszam || '-'}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Eladó:</span>
@@ -168,7 +168,7 @@ const ExpandedInvoiceRow = ({
               <CardContent className="p-3 pt-0">
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="col-span-2">
-                    <span className="text-muted-foreground">Számlaszám:</span>
+                    <span className="text-muted-foreground">Bizonylatsorszám:</span>
                     <span className="ml-1 font-mono font-medium">{inv.invoice_number}</span>
                   </div>
                   <div>

@@ -63,7 +63,7 @@ interface Category {
 
 interface Invoice {
   id: string;
-  szamlaszam: string;
+  bizonylatsorszam: string;
   elado_nev: string;
   vevo_nev: string;
   brutto_vegosszeg: number;

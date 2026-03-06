@@ -5,7 +5,7 @@ import { Eye, FileText } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 interface Invoice {
   id: string;
-  szamlaszam: string;
+  bizonylatsorszam: string;
   elado_nev: string;
   vevo_nev: string;
   brutto_vegosszeg: number;
@@ -70,7 +70,7 @@ const RecentInvoices = ({
             {invoices.map(invoice => <div key={invoice.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                 <div className="flex-1 min-w-0">
                   <div className="mb-1">
-                    <h4 className="font-medium truncate">{invoice.szamlaszam}</h4>
+                    <h4 className="font-medium truncate">{invoice.bizonylatsorszam}</h4>
                   </div>
                   <p className="text-sm text-muted-foreground truncate">
                     {invoice.elado_nev} → {invoice.vevo_nev}

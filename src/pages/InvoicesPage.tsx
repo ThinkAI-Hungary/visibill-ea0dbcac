@@ -101,7 +101,7 @@ interface NavInvoice {
 
 interface SubmittedInvoice {
   id: string;
-  szamlaszam: string | null;
+  bizonylatsorszam: string | null;
   kibocsatas_datuma: string;
   teljesites_datuma: string | null;
   elado_nev: string;
@@ -529,7 +529,7 @@ const InvoicesPage = () => {
 
       let submittedQuery = supabase
         .from('invoices')
-        .select('id, szamlaszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction')
+        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction')
         .eq('company_id', selectedCompany.id);
 
       if (submittedQueryDateFrom) {
@@ -585,14 +585,14 @@ const InvoicesPage = () => {
       const matchedInvoiceIdsSet = new Set(txData.map(t => t.matched_invoice_id).filter(Boolean));
       setMatchedInvoiceIds(matchedInvoiceIdsSet);
 
-      // Build cross-reference: szamlaszam values of submitted invoices that have matched transactions
-      const matchedSzamlaszamSet = new Set(
+      // Build cross-reference: bizonylatsorszam values of submitted invoices that have matched transactions
+      const matchedBizonylatsorszamSet = new Set(
         (submittedData || [])
           .filter(inv => matchedInvoiceIdsSet.has(inv.id))
-          .map(inv => inv.szamlaszam)
+          .map(inv => inv.bizonylatsorszam)
           .filter(Boolean)
       );
-      setMatchedNavInvoiceNumbers(matchedSzamlaszamSet);
+      setMatchedNavInvoiceNumbers(matchedBizonylatsorszamSet);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -852,10 +852,10 @@ const InvoicesPage = () => {
   const navToSubmittedMap = useMemo(() => {
     const map = new Map<string, typeof submittedInvoices>();
     submittedInvoices.forEach(inv => {
-      if (inv.szamlaszam) {
-        const existing = map.get(inv.szamlaszam) || [];
+      if (inv.bizonylatsorszam) {
+        const existing = map.get(inv.bizonylatsorszam) || [];
         existing.push(inv);
-        map.set(inv.szamlaszam, existing);
+        map.set(inv.bizonylatsorszam, existing);
       }
     });
     return map;
@@ -896,7 +896,7 @@ const InvoicesPage = () => {
 
   // Get matched data for a submitted invoice row
   const getSubmittedInvoiceMatches = (submitted: SubmittedInvoice) => {
-    const matchedNav = submitted.szamlaszam ? (submittedToNavMap.get(submitted.szamlaszam) || []) : [];
+    const matchedNav = submitted.bizonylatsorszam ? (submittedToNavMap.get(submitted.bizonylatsorszam) || []) : [];
     const matchedTx = submittedIdToTransactionsMap.get(submitted.id) || [];
     return { matchedSubmitted: [] as SubmittedInvoice[], matchedTransactions: matchedTx, matchedNav };
   };
@@ -1041,7 +1041,7 @@ const InvoicesPage = () => {
     };
 
     const headers = [
-      'Irány', 'Számlaszám', 'Kibocsátás dátuma', 'Teljesítés dátuma',
+      'Irány', 'Bizonylatsorszám', 'Kibocsátás dátuma', 'Teljesítés dátuma',
       'Partner név', 'Partner adószám', 'Nettó összeg', 'Bruttó összeg',
       'ÁFA összeg', 'Pénznem', 'Fizetve', 'Beküldve'
     ];
@@ -1507,7 +1507,7 @@ const InvoicesPage = () => {
                                     value={invoice.invoice_number}
                                     truncate
                                     maxWidth="140px"
-                                    ariaLabel={`${invoice.invoice_number} számlaszám másolása`}
+                                    ariaLabel={`${invoice.invoice_number} bizonylatsorszám másolása`}
                                   />
                                 </TableCell>
                                 <TableCell className="text-muted-foreground">
@@ -1863,7 +1863,7 @@ const InvoicesPage = () => {
                                   <Checkbox
                                     checked={selectedSubmittedIds.has(invoice.id)}
                                     onCheckedChange={(checked) => handleSubmittedRowSelect(invoice.id, !!checked)}
-                                    aria-label={`${invoice.szamlaszam || invoice.id} kijelölése`}
+                                    aria-label={`${invoice.bizonylatsorszam || invoice.id} kijelölése`}
                                   />
                                 </div>
                               </TableCell>
@@ -1872,11 +1872,11 @@ const InvoicesPage = () => {
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span className="block truncate max-w-[140px] cursor-help">
-                                        {invoice.szamlaszam || '-'}
+                                        {invoice.bizonylatsorszam || '-'}
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p className="font-mono">{invoice.szamlaszam || '-'}</p>
+                                      <p className="font-mono">{invoice.bizonylatsorszam || '-'}</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
@@ -2021,7 +2021,7 @@ const InvoicesPage = () => {
       <InvoiceImageDialog
         invoice={selectedInvoice ? {
           id: selectedInvoice.id,
-          szamlaszam: '',
+          bizonylatsorszam: '',
           dokumentum_azonosito: null,
           image_url: selectedInvoice.image_url,
           melleklet_url: selectedInvoice.melleklet_url,

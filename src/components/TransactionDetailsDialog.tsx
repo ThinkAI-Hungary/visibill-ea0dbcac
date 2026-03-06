@@ -32,7 +32,7 @@ interface Transaction {
 // Matched invoice from the 'invoices' table
 interface MatchedInvoice {
   id: string;
-  szamlaszam: string | null;
+  bizonylatsorszam: string | null;
   kibocsatas_datuma: string;
   teljesites_datuma: string | null;
   elado_nev: string;
@@ -45,7 +45,7 @@ interface MatchedInvoice {
 // Available invoices for manual matching (from invoices table)
 interface AvailableInvoice {
   id: string;
-  szamlaszam: string;
+  bizonylatsorszam: string;
   brutto_vegosszeg: number;
   elado_nev: string;
   penznem: string | null;
@@ -104,7 +104,7 @@ export const TransactionDetailsDialog = ({
     try {
       const { data, error } = await supabase
         .from('invoices')
-        .select('id, szamlaszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, brutto_vegosszeg, penznem, invoice_type')
+        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, brutto_vegosszeg, penznem, invoice_type')
         .eq('id', transaction.matched_invoice_id)
         .maybeSingle();
 
@@ -129,7 +129,7 @@ export const TransactionDetailsDialog = ({
 
       const { data: invoices, error } = await supabase
         .from('invoices')
-        .select('id, szamlaszam, brutto_vegosszeg, elado_nev, penznem, kibocsatas_datuma')
+        .select('id, bizonylatsorszam, brutto_vegosszeg, elado_nev, penznem, kibocsatas_datuma')
         .eq('company_id', companyId)
         .gte('kibocsatas_datuma', dateFrom)
         .lte('kibocsatas_datuma', dateTo)
@@ -252,7 +252,7 @@ export const TransactionDetailsDialog = ({
     if (!search) return availableInvoices;
     const searchLower = search.toLowerCase();
     return availableInvoices.filter(inv =>
-      inv.szamlaszam.toLowerCase().includes(searchLower) ||
+      inv.bizonylatsorszam.toLowerCase().includes(searchLower) ||
       inv.elado_nev?.toLowerCase().includes(searchLower) ||
       inv.brutto_vegosszeg?.toString().includes(search)
     );
@@ -372,8 +372,8 @@ export const TransactionDetailsDialog = ({
                 ) : matchedInvoice ? (
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="col-span-2">
-                      <span className="text-muted-foreground">Számlaszám:</span>
-                      <span className="ml-1 font-mono font-medium">{matchedInvoice.szamlaszam || '-'}</span>
+                      <span className="text-muted-foreground">Bizonylatsorszám:</span>
+                      <span className="ml-1 font-mono font-medium">{matchedInvoice.bizonylatsorszam || '-'}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Eladó:</span>
@@ -475,7 +475,7 @@ export const TransactionDetailsDialog = ({
                         >
                           <div className="flex justify-between items-center text-xs">
                             <div>
-                              <p className="font-medium font-mono">{invoice.szamlaszam}</p>
+                              <p className="font-medium font-mono">{invoice.bizonylatsorszam}</p>
                               <p className="text-muted-foreground text-[10px]">
                                 {invoice.elado_nev || '-'}
                               </p>

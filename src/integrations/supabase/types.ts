@@ -483,6 +483,7 @@ export type Database = {
           afa_kulcsok_bontasban: string | null
           afa_osszeg_osszesen: number
           bankszamlaszam_iban: string | null
+          bizonylatsorszam: string
           brutto_vegosszeg: number
           category_id: string | null
           company_id: string | null
@@ -512,7 +513,6 @@ export type Database = {
           penznem: string | null
           project_id: string | null
           statusz: string | null
-          szamlaszam: string
           teljesites_datuma: string | null
           termek_szolgaltatas_tipusa: string | null
           user_id: string
@@ -527,6 +527,7 @@ export type Database = {
           afa_kulcsok_bontasban?: string | null
           afa_osszeg_osszesen?: number
           bankszamlaszam_iban?: string | null
+          bizonylatsorszam: string
           brutto_vegosszeg?: number
           category_id?: string | null
           company_id?: string | null
@@ -556,7 +557,6 @@ export type Database = {
           penznem?: string | null
           project_id?: string | null
           statusz?: string | null
-          szamlaszam: string
           teljesites_datuma?: string | null
           termek_szolgaltatas_tipusa?: string | null
           user_id: string
@@ -571,6 +571,7 @@ export type Database = {
           afa_kulcsok_bontasban?: string | null
           afa_osszeg_osszesen?: number
           bankszamlaszam_iban?: string | null
+          bizonylatsorszam?: string
           brutto_vegosszeg?: number
           category_id?: string | null
           company_id?: string | null
@@ -600,7 +601,6 @@ export type Database = {
           penznem?: string | null
           project_id?: string | null
           statusz?: string | null
-          szamlaszam?: string
           teljesites_datuma?: string | null
           termek_szolgaltatas_tipusa?: string | null
           user_id?: string
@@ -1261,6 +1261,7 @@ export type Database = {
           adomentesseg_hivatkozas: string | null
           afa_kulcsok_bontasban: string | null
           afa_osszeg_osszesen: number | null
+          bizonylatsorszam: string
           brutto_vegosszeg: number | null
           category_id: string | null
           created_at: string
@@ -1277,7 +1278,6 @@ export type Database = {
           penznem: string | null
           project_id: string | null
           statusz: string | null
-          szamlaszam: string
           teljesites_datuma: string | null
           updated_at: string
           user_id: string
@@ -1290,6 +1290,7 @@ export type Database = {
           adomentesseg_hivatkozas?: string | null
           afa_kulcsok_bontasban?: string | null
           afa_osszeg_osszesen?: number | null
+          bizonylatsorszam: string
           brutto_vegosszeg?: number | null
           category_id?: string | null
           created_at?: string
@@ -1306,7 +1307,6 @@ export type Database = {
           penznem?: string | null
           project_id?: string | null
           statusz?: string | null
-          szamlaszam: string
           teljesites_datuma?: string | null
           updated_at?: string
           user_id: string
@@ -1319,6 +1319,7 @@ export type Database = {
           adomentesseg_hivatkozas?: string | null
           afa_kulcsok_bontasban?: string | null
           afa_osszeg_osszesen?: number | null
+          bizonylatsorszam?: string
           brutto_vegosszeg?: number | null
           category_id?: string | null
           created_at?: string
@@ -1335,7 +1336,6 @@ export type Database = {
           penznem?: string | null
           project_id?: string | null
           statusz?: string | null
-          szamlaszam?: string
           teljesites_datuma?: string | null
           updated_at?: string
           user_id?: string
