@@ -1041,7 +1041,7 @@ const InvoicesPage = () => {
     };
 
     const headers = [
-      'Irány', 'Számlaszám', 'Kibocsátás dátuma', 'Teljesítés dátuma',
+      'Irány', 'Bizonylatsorszám', 'Kibocsátás dátuma', 'Teljesítés dátuma',
       'Partner név', 'Partner adószám', 'Nettó összeg', 'Bruttó összeg',
       'ÁFA összeg', 'Pénznem', 'Fizetve', 'Beküldve'
     ];
