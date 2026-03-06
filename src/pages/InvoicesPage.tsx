@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,7 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CalendarIcon, Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Eye, Pencil, Package, ChevronLeft, ChevronRight, RefreshCw, Shield } from 'lucide-react';
+import { CalendarIcon, Search, Download, ArrowUpDown, FileText, X, ChevronDown, ChevronUp, Info, Eye, Pencil, Package, ChevronLeft, ChevronRight, RefreshCw, Shield } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -26,6 +26,17 @@ import InvoiceFullEditDialog from '@/components/InvoiceFullEditDialog';
 import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { CopyableCell } from '@/components/ui/copyable-cell';
+import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
+
+interface TransactionRecord {
+  id: string;
+  matched_invoice_id: string;
+  transaction_date: string;
+  amount: number;
+  description: string | null;
+  currency: string | null;
+  type: string | null;
+}
 
 
 // Helper to generate initials from name
@@ -150,7 +161,9 @@ const InvoicesPage = () => {
   const { selectedCompany } = useCompany();
   const [invoices, setInvoices] = useState<NavInvoice[]>([]);
   const [submittedInvoices, setSubmittedInvoices] = useState<SubmittedInvoice[]>([]);
+  const [allTransactions, setAllTransactions] = useState<TransactionRecord[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -280,10 +293,11 @@ const InvoicesPage = () => {
     checkCredentialsExist();
   }, [user, selectedCompany, navFilters.dateFrom, navFilters.dateTo, submittedFilters.dateFrom, submittedFilters.dateTo]);
 
-  // Clear selection when tab changes
+  // Clear selection and expanded row when tab changes
   useEffect(() => {
     setSelectedInvoiceIds(new Set());
     setSelectedSubmittedIds(new Set());
+    setExpandedRowId(null);
   }, [activeTab]);
 
   const checkCredentialsExist = async () => {
@@ -556,14 +570,17 @@ const InvoicesPage = () => {
       if (projectsError) throw projectsError;
       setProjects(projectsData || []);
 
-      // Fetch matched invoice IDs from transactions
+      // Fetch matched transactions (full data for expandable rows)
       const { data: matchedData } = await supabase
         .from('transactions')
-        .select('matched_invoice_id')
+        .select('id, matched_invoice_id, transaction_date, amount, description, currency, type')
         .eq('company_id', selectedCompany.id)
         .not('matched_invoice_id', 'is', null);
 
-      const matchedInvoiceIdsSet = new Set((matchedData || []).map(t => t.matched_invoice_id).filter(Boolean) as string[]);
+      const txData = (matchedData || []) as TransactionRecord[];
+      setAllTransactions(txData);
+
+      const matchedInvoiceIdsSet = new Set(txData.map(t => t.matched_invoice_id).filter(Boolean));
       setMatchedInvoiceIds(matchedInvoiceIdsSet);
 
       // Build cross-reference: szamlaszam values of submitted invoices that have matched transactions
@@ -828,6 +845,66 @@ const InvoicesPage = () => {
     if (paginatedSubmittedInvoices.length === 0) return false;
     return paginatedSubmittedInvoices.every(inv => selectedSubmittedIds.has(inv.id));
   }, [paginatedSubmittedInvoices, selectedSubmittedIds]);
+
+  // Lookup maps for expandable rows
+  const navToSubmittedMap = useMemo(() => {
+    const map = new Map<string, typeof submittedInvoices>();
+    submittedInvoices.forEach(inv => {
+      if (inv.szamlaszam) {
+        const existing = map.get(inv.szamlaszam) || [];
+        existing.push(inv);
+        map.set(inv.szamlaszam, existing);
+      }
+    });
+    return map;
+  }, [submittedInvoices]);
+
+  const submittedToNavMap = useMemo(() => {
+    const map = new Map<string, NavInvoice[]>();
+    invoices.forEach(inv => {
+      const existing = map.get(inv.invoice_number) || [];
+      existing.push(inv);
+      map.set(inv.invoice_number, existing);
+    });
+    return map;
+  }, [invoices]);
+
+  const submittedIdToTransactionsMap = useMemo(() => {
+    const map = new Map<string, TransactionRecord[]>();
+    allTransactions.forEach(tx => {
+      if (tx.matched_invoice_id) {
+        const existing = map.get(tx.matched_invoice_id) || [];
+        existing.push(tx);
+        map.set(tx.matched_invoice_id, existing);
+      }
+    });
+    return map;
+  }, [allTransactions]);
+
+  // Get matched data for a NAV invoice row
+  const getNavInvoiceMatches = (navInvoice: NavInvoice) => {
+    const matchedSubmitted = navToSubmittedMap.get(navInvoice.invoice_number) || [];
+    const matchedTx: TransactionRecord[] = [];
+    matchedSubmitted.forEach(sub => {
+      const txs = submittedIdToTransactionsMap.get(sub.id) || [];
+      matchedTx.push(...txs);
+    });
+    return { matchedSubmitted, matchedTransactions: matchedTx, matchedNav: [] as NavInvoice[] };
+  };
+
+  // Get matched data for a submitted invoice row
+  const getSubmittedInvoiceMatches = (submitted: SubmittedInvoice) => {
+    const matchedNav = submitted.szamlaszam ? (submittedToNavMap.get(submitted.szamlaszam) || []) : [];
+    const matchedTx = submittedIdToTransactionsMap.get(submitted.id) || [];
+    return { matchedSubmitted: [] as SubmittedInvoice[], matchedTransactions: matchedTx, matchedNav };
+  };
+
+  const handleRowClick = (invoiceId: string, e: React.MouseEvent) => {
+    // Don't toggle if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    if (target.closest('button, input, select, [role="checkbox"], [role="combobox"], [data-radix-collection-item]')) return;
+    setExpandedRowId(prev => prev === invoiceId ? null : invoiceId);
+  };
 
   // Reset page when filters change
   useEffect(() => {
@@ -1400,19 +1477,28 @@ const InvoicesPage = () => {
                             const partnerName = getInvoicePartnerName(invoice);
 
                             return (
-                              <TableRow key={invoice.id} className={cn(
-                                "group",
+                              <React.Fragment key={invoice.id}>
+                              <TableRow className={cn(
+                                "group cursor-pointer",
                                 selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
                                 !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && ((invoice.paid === true && invoice.submitted === true) || matchedNavInvoiceNumbers.has(invoice.invoice_number)) && "bg-success/10 hover:bg-success/15",
                                 !selectedInvoiceIds.has(invoice.id) && activeTab === 'INBOUND' && !(invoice.paid === true && invoice.submitted === true) && !matchedNavInvoiceNumbers.has(invoice.invoice_number) && "bg-destructive/10 hover:bg-destructive/15",
-                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'OUTBOUND' && "bg-success/10 hover:bg-success/15"
-                              )}>
+                                !selectedInvoiceIds.has(invoice.id) && activeTab === 'OUTBOUND' && "bg-success/10 hover:bg-success/15",
+                                expandedRowId === invoice.id && "border-b-0"
+                              )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                 <TableCell>
-                                  <Checkbox
-                                    checked={selectedInvoiceIds.has(invoice.id)}
-                                    onCheckedChange={(checked) => handleRowSelect(invoice.id, !!checked)}
-                                    aria-label={`${invoice.invoice_number} kijelölése`}
-                                  />
+                                  <div className="flex items-center gap-1">
+                                    {expandedRowId === invoice.id ? (
+                                      <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+                                    ) : (
+                                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                    )}
+                                    <Checkbox
+                                      checked={selectedInvoiceIds.has(invoice.id)}
+                                      onCheckedChange={(checked) => handleRowSelect(invoice.id, !!checked)}
+                                      aria-label={`${invoice.invoice_number} kijelölése`}
+                                    />
+                                  </div>
                                 </TableCell>
                                 <TableCell className="font-mono text-sm font-medium min-w-[150px]">
                                   <CopyableCell
@@ -1550,6 +1636,22 @@ const InvoicesPage = () => {
                                   </TooltipProvider>
                                 </TableCell>
                               </TableRow>
+                              {expandedRowId === invoice.id && (() => {
+                                const matches = getNavInvoiceMatches(invoice);
+                                return (
+                                  <ExpandedInvoiceRow
+                                    colSpan={activeTab === 'INBOUND' ? 13 : 11}
+                                    matchedSubmittedInvoices={matches.matchedSubmitted}
+                                    matchedNavInvoices={[]}
+                                    matchedTransactions={matches.matchedTransactions}
+                                    onViewInvoice={(inv) => {
+                                      setSelectedInvoice(inv as any);
+                                      setImageDialogOpen(true);
+                                    }}
+                                  />
+                                );
+                              })()}
+                              </React.Fragment>
                             );
                           })
                         )}
@@ -1740,19 +1842,28 @@ const InvoicesPage = () => {
                           </TableRow>
                         ) : (
                           paginatedSubmittedInvoices.map((invoice) => (
-                            <TableRow key={invoice.id} className={cn(
-                              "group",
+                            <React.Fragment key={invoice.id}>
+                            <TableRow className={cn(
+                              "group cursor-pointer",
                               selectedSubmittedIds.has(invoice.id) && "bg-primary/5",
                               !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && matchedInvoiceIds.has(invoice.id) && "bg-success/10 hover:bg-success/15",
                               !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_INBOUND' && !matchedInvoiceIds.has(invoice.id) && "bg-destructive/10 hover:bg-destructive/15",
-                              !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_OUTBOUND' && "bg-success/10 hover:bg-success/15"
-                            )}>
+                              !selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_OUTBOUND' && "bg-success/10 hover:bg-success/15",
+                              expandedRowId === invoice.id && "border-b-0"
+                            )} onClick={(e) => handleRowClick(invoice.id, e)}>
                               <TableCell>
-                                <Checkbox
-                                  checked={selectedSubmittedIds.has(invoice.id)}
-                                  onCheckedChange={(checked) => handleSubmittedRowSelect(invoice.id, !!checked)}
-                                  aria-label={`${invoice.szamlaszam || invoice.id} kijelölése`}
-                                />
+                                <div className="flex items-center gap-1">
+                                  {expandedRowId === invoice.id ? (
+                                    <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                  )}
+                                  <Checkbox
+                                    checked={selectedSubmittedIds.has(invoice.id)}
+                                    onCheckedChange={(checked) => handleSubmittedRowSelect(invoice.id, !!checked)}
+                                    aria-label={`${invoice.szamlaszam || invoice.id} kijelölése`}
+                                  />
+                                </div>
                               </TableCell>
                               <TableCell className="font-medium min-w-[150px]">
                                 <TooltipProvider>
@@ -1850,6 +1961,18 @@ const InvoicesPage = () => {
                                 </div>
                               </TableCell>
                             </TableRow>
+                            {expandedRowId === invoice.id && (() => {
+                              const matches = getSubmittedInvoiceMatches(invoice);
+                              return (
+                                <ExpandedInvoiceRow
+                                  colSpan={10}
+                                  matchedSubmittedInvoices={[]}
+                                  matchedNavInvoices={matches.matchedNav}
+                                  matchedTransactions={matches.matchedTransactions}
+                                />
+                              );
+                            })()}
+                            </React.Fragment>
                           ))
                         )}
                       </TableBody>
