@@ -1,9 +1,11 @@
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { Eye, Link2, FileText, ArrowRightLeft } from 'lucide-react';
+import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
@@ -61,131 +63,189 @@ const ExpandedInvoiceRow = ({
 
   return (
     <TableRow className="bg-muted/20 hover:bg-muted/20 border-b border-border/30">
-      <TableCell colSpan={colSpan} className="py-3 px-6">
-        <div className="space-y-3">
+      <TableCell colSpan={colSpan} className="py-4 px-6">
+        <div className="space-y-3 max-w-3xl">
+          {/* Header */}
           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             <Link2 className="h-3.5 w-3.5" />
             Kapcsolódó tételek
           </div>
 
           {!hasAny && (
-            <p className="text-sm text-muted-foreground italic">Nincs párosított tétel ehhez a számlához.</p>
+            <Card className="bg-muted/30 border-border/50">
+              <CardContent className="p-4 flex items-center justify-center">
+                <p className="text-sm text-muted-foreground italic">Nincs párosított tétel ehhez a számlához.</p>
+              </CardContent>
+            </Card>
           )}
 
           {/* Matched submitted invoices */}
-          {matchedSubmittedInvoices.length > 0 && (
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <FileText className="h-3 w-3" />
-                Párosított beküldött számla ({matchedSubmittedInvoices.length})
-              </div>
-              <div className="space-y-1">
-                {matchedSubmittedInvoices.map((inv) => (
-                  <div
-                    key={inv.id}
-                    className="flex items-center justify-between gap-3 rounded-md border border-border/40 bg-card/50 px-3 py-2 text-sm"
-                  >
-                    <div className="flex items-center gap-4 min-w-0">
-                      <span className="font-mono text-xs font-medium shrink-0">{inv.szamlaszam || '-'}</span>
-                      <span className="text-muted-foreground truncate">{inv.elado_nev} → {inv.vevo_nev}</span>
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        {inv.kibocsatas_datuma ? format(new Date(inv.kibocsatas_datuma), 'yyyy.MM.dd.', { locale: hu }) : '-'}
+          {matchedSubmittedInvoices.map((inv) => (
+            <Card
+              key={inv.id}
+              className={cn(
+                "bg-muted/30 border-border/50 transition-colors",
+                (inv.image_url || inv.melleklet_url) && onViewInvoice && "cursor-pointer hover:border-primary/50"
+              )}
+              onClick={() => {
+                if ((inv.image_url || inv.melleklet_url) && onViewInvoice) {
+                  onViewInvoice(inv);
+                }
+              }}
+            >
+              <CardHeader className="py-2 px-3">
+                <CardTitle className="text-xs font-medium flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <FileText className="h-3 w-3 text-muted-foreground" />
+                    Párosított beküldött számla
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="success" className="gap-1 text-[10px] h-5">
+                      <CheckCircle2 className="h-2.5 w-2.5" />
+                      Párosított
+                    </Badge>
+                    {(inv.image_url || inv.melleklet_url) && onViewInvoice && (
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        Kattints a részletekért
                       </span>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="font-mono text-xs font-medium">
-                        {formatCurrency(inv.brutto_vegosszeg, inv.penznem || 'HUF')}
-                      </span>
-                      {(inv.image_url || inv.melleklet_url) && onViewInvoice && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onViewInvoice(inv);
-                          }}
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                    </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 pt-0">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Számlaszám:</span>
+                    <span className="ml-1 font-mono font-medium">{inv.szamlaszam || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Eladó:</span>
+                    <span className="ml-1 font-medium">{inv.elado_nev}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Vevő:</span>
+                    <span className="ml-1 font-medium">{inv.vevo_nev}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Kiállítás:</span>
+                    <span className="ml-1">
+                      {format(new Date(inv.kibocsatas_datuma), 'yyyy.MM.dd', { locale: hu })}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Bruttó:</span>
+                    <span className="ml-1 font-mono font-medium">
+                      {formatCurrency(inv.brutto_vegosszeg, inv.penznem || 'HUF')}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
 
           {/* Matched NAV invoices */}
-          {matchedNavInvoices.length > 0 && (
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <FileText className="h-3 w-3" />
-                Párosított NAV számla ({matchedNavInvoices.length})
-              </div>
-              <div className="space-y-1">
-                {matchedNavInvoices.map((inv) => (
-                  <div
-                    key={inv.id}
-                    className="flex items-center justify-between gap-3 rounded-md border border-border/40 bg-card/50 px-3 py-2 text-sm"
-                  >
-                    <div className="flex items-center gap-4 min-w-0">
-                      <span className="font-mono text-xs font-medium shrink-0">{inv.invoice_number}</span>
-                      <span className="text-muted-foreground truncate">
-                        {inv.supplier_name || '-'} → {inv.customer_name || '-'}
-                      </span>
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        {inv.invoice_issue_date ? format(new Date(inv.invoice_issue_date), 'yyyy.MM.dd.', { locale: hu }) : '-'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="font-mono text-xs font-medium">
-                        {formatCurrency(inv.invoice_gross_amount || 0, inv.currency || 'HUF')}
-                      </span>
-                      <div className="flex gap-1">
-                        {inv.paid && <Badge variant="outline" className="text-[10px] h-5">Fizetve</Badge>}
-                        {inv.submitted && <Badge variant="outline" className="text-[10px] h-5">Beküldve</Badge>}
-                      </div>
+          {matchedNavInvoices.map((inv) => (
+            <Card key={inv.id} className="bg-muted/30 border-border/50">
+              <CardHeader className="py-2 px-3">
+                <CardTitle className="text-xs font-medium flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <FileText className="h-3 w-3 text-muted-foreground" />
+                    Párosított NAV számla
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="success" className="gap-1 text-[10px] h-5">
+                      <CheckCircle2 className="h-2.5 w-2.5" />
+                      Párosított
+                    </Badge>
+                    <div className="flex gap-1">
+                      {inv.paid && <Badge variant="outline" className="text-[10px] h-5">Fizetve</Badge>}
+                      {inv.submitted && <Badge variant="outline" className="text-[10px] h-5">Beküldve</Badge>}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 pt-0">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Számlaszám:</span>
+                    <span className="ml-1 font-mono font-medium">{inv.invoice_number}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Eladó:</span>
+                    <span className="ml-1 font-medium">{inv.supplier_name || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Vevő:</span>
+                    <span className="ml-1 font-medium">{inv.customer_name || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Kiállítás:</span>
+                    <span className="ml-1">
+                      {inv.invoice_issue_date ? format(new Date(inv.invoice_issue_date), 'yyyy.MM.dd', { locale: hu }) : '-'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Bruttó:</span>
+                    <span className="ml-1 font-mono font-medium">
+                      {formatCurrency(inv.invoice_gross_amount || 0, inv.currency || 'HUF')}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+
+          {/* Separator between invoices and transactions */}
+          {(matchedSubmittedInvoices.length > 0 || matchedNavInvoices.length > 0) && matchedTransactions.length > 0 && (
+            <Separator className="my-1" />
           )}
 
           {/* Matched transactions */}
-          {matchedTransactions.length > 0 && (
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <ArrowRightLeft className="h-3 w-3" />
-                Párosított tranzakció ({matchedTransactions.length})
-              </div>
-              <div className="space-y-1">
-                {matchedTransactions.map((tx) => (
-                  <div
-                    key={tx.id}
-                    className="flex items-center justify-between gap-3 rounded-md border border-border/40 bg-card/50 px-3 py-2 text-sm"
-                  >
-                    <div className="flex items-center gap-4 min-w-0">
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        {format(new Date(tx.transaction_date), 'yyyy.MM.dd.', { locale: hu })}
-                      </span>
-                      <span className="text-muted-foreground truncate text-xs">{tx.description || '-'}</span>
-                      {tx.type && (
-                        <Badge variant="outline" className="text-[10px] h-5 shrink-0">{tx.type}</Badge>
-                      )}
-                    </div>
+          {matchedTransactions.map((tx) => (
+            <Card key={tx.id} className="bg-muted/30 border-border/50">
+              <CardHeader className="py-2 px-3">
+                <CardTitle className="text-xs font-medium flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
+                    Párosított tranzakció
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="success" className="gap-1 text-[10px] h-5">
+                      <CheckCircle2 className="h-2.5 w-2.5" />
+                      Párosított
+                    </Badge>
+                    {tx.type && (
+                      <Badge variant="outline" className="text-[10px] h-5">{tx.type}</Badge>
+                    )}
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 pt-0">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Dátum:</span>
+                    <span className="ml-1 font-medium">
+                      {format(new Date(tx.transaction_date), 'yyyy.MM.dd', { locale: hu })}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Összeg:</span>
                     <span className={cn(
-                      "font-mono text-xs font-medium shrink-0",
+                      "ml-1 font-mono font-medium",
                       tx.amount < 0 ? "text-destructive" : "text-success"
                     )}>
                       {formatCurrency(tx.amount, tx.currency || 'HUF')}
                     </span>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Leírás:</span>
+                    <span className="ml-1">{tx.description || '-'}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </TableCell>
     </TableRow>
