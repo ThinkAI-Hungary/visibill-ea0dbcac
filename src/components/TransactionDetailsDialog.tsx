@@ -129,7 +129,7 @@ export const TransactionDetailsDialog = ({
 
       const { data: invoices, error } = await supabase
         .from('invoices')
-        .select('id, szamlaszam, brutto_vegosszeg, elado_nev, penznem, kibocsatas_datuma')
+        .select('id, bizonylatsorszam, brutto_vegosszeg, elado_nev, penznem, kibocsatas_datuma')
         .eq('company_id', companyId)
         .gte('kibocsatas_datuma', dateFrom)
         .lte('kibocsatas_datuma', dateTo)
