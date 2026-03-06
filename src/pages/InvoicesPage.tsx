@@ -15,7 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CalendarIcon, Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Eye, Pencil, Package, ChevronLeft, ChevronRight, RefreshCw, Shield } from 'lucide-react';
+import { CalendarIcon, Search, Download, ArrowUpDown, FileText, X, ChevronDown, ChevronUp, Info, Eye, Pencil, Package, ChevronLeft, ChevronRight, RefreshCw, Shield } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -26,6 +26,17 @@ import InvoiceFullEditDialog from '@/components/InvoiceFullEditDialog';
 import { InvoiceItemsDialog } from '@/components/InvoiceItemsDialog';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { CopyableCell } from '@/components/ui/copyable-cell';
+import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
+
+interface TransactionRecord {
+  id: string;
+  matched_invoice_id: string;
+  transaction_date: string;
+  amount: number;
+  description: string | null;
+  currency: string | null;
+  type: string | null;
+}
 
 
 // Helper to generate initials from name
