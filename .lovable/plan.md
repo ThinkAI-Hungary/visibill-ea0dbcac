@@ -1,23 +1,36 @@
 
 
-## Fix: save-credentials "Auth session missing!" (attempt 3)
+## Plan: Kimenő NAV sorok zöld csak tranzakció párosítás esetén
 
-### Root Cause
-Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
+### Probléma
+Kimenő (OUTBOUND) NAV számlák némelyike `paid=true` státuszú lehet anélkül, hogy valódi tranzakció párosítás tartozna hozzá (korábbi hibás adatok).
 
-The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
+### Megoldás
 
-### Fix (single file change)
+**1. Adatbázis migráció — backfill cleanup**
 
-**File: `supabase/functions/save-credentials/index.ts`**
+Minden kimenő NAV számlánál ellenőrizzük, hogy tényleg van-e párosított tranzakció. Ha nincs, `paid` visszaáll `false`-ra:
 
-1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
-2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
+```sql
+UPDATE nav_invoices ni
+SET paid = false
+WHERE ni.invoice_direction = 'OUTBOUND'
+  AND ni.paid = true
+  AND NOT EXISTS (
+    SELECT 1
+    FROM invoices i
+    JOIN transactions t ON t.matched_invoice_id = i.id
+    WHERE i.bizonylatsorszam = ni.invoice_number
+      AND i.company_id = ni.company_id
+  );
+```
 
-The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
+**2. Frontend — nincs változás szükséges**
 
-### What stays the same
-- The service role client is still used for company ownership checks (line 130-138)
-- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
-- All validation, error handling, and CORS remain unchanged
-- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
+A jelenlegi logika (`paid === true` → zöld, egyébként piros) már helyes mindkét irányra. A triggerek (`match_nav_invoice_on_insert`, `mark_nav_invoice_paid_on_transaction_match`) biztosítják, hogy `paid` csak tranzakció párosítás esetén legyen `true`. A backfill cleanup kijavítja a régi hibás adatokat.
+
+### Érintett fájlok
+| Fájl | Változás |
+|---|---|
+| Új migráció SQL | Backfill: outbound `paid=false` ahol nincs tranzakció |
+
