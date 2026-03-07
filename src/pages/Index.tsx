@@ -658,7 +658,8 @@ const Index = () => {
           .from('invoices')
           .select('brutto_vegosszeg, bizonylatsorszam')
           .eq('company_id', selectedCompany.id)
-          .ilike('fizetesi_mod', '%készpénz%');
+          .ilike('fizetesi_mod', '%készpénz%')
+          .is('reference_number', null);
         if (startDateFilter) cashExpensesQuery = cashExpensesQuery.gte('kibocsatas_datuma', startDateFilter);
 
         let navCashExpensesQuery = supabase
@@ -700,7 +701,7 @@ const Index = () => {
     if (!categories.length || !invoices.length) return [];
 
     const categoryStats = categories.map(category => {
-      const categoryInvoices = invoices.filter(invoice => invoice.category_id === category.id);
+      const categoryInvoices = invoices.filter(invoice => invoice.category_id === category.id && !(invoice as any).reference_number);
       const totalAmount = categoryInvoices.reduce((sum, invoice) => sum + invoice.brutto_vegosszeg, 0);
       
       const allTotal = metrics ? Object.values(metrics.totalAmountByCurrency).reduce((sum, val) => sum + val, 0) : 0;

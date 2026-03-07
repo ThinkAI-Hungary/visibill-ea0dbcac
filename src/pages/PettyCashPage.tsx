@@ -111,7 +111,8 @@ const PettyCashPage = () => {
         .from('invoices')
         .select('kibocsatas_datuma, elado_nev, brutto_vegosszeg, fizetesi_mod, bizonylatsorszam')
         .eq('company_id', selectedCompany.id)
-        .ilike('fizetesi_mod', '%készpénz%'),
+        .ilike('fizetesi_mod', '%készpénz%')
+        .is('reference_number', null),
 
       // 4. Cash Expenses from nav_invoices (INBOUND, payment_method = CASH)
       supabase

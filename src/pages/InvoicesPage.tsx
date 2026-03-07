@@ -2150,7 +2150,7 @@ const InvoicesPage = () => {
                                     />
                                   </div>
                                 </TableCell>
-                                <TableCell className={cn("text-right font-mono tabular-nums", activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
+                                <TableCell className={cn("text-right font-mono tabular-nums", invoice.reference_number ? "text-muted-foreground italic" : activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
                                   <CopyableCell
                                     value={(invoice.adoalap_osszesen || 0).toString()}
                                     displayValue={formatCurrency(invoice.adoalap_osszesen || 0, invoice.penznem || 'HUF')}
@@ -2158,7 +2158,7 @@ const InvoicesPage = () => {
                                     ariaLabel="Nettó összeg másolása"
                                   />
                                 </TableCell>
-                                <TableCell className={cn("text-right font-mono tabular-nums font-medium", activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
+                                <TableCell className={cn("text-right font-mono tabular-nums font-medium", invoice.reference_number ? "text-muted-foreground italic" : activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
                                   <CopyableCell
                                     value={(invoice.brutto_vegosszeg || 0).toString()}
                                     displayValue={formatCurrency(invoice.brutto_vegosszeg || 0, invoice.penznem || 'HUF')}
@@ -2166,7 +2166,7 @@ const InvoicesPage = () => {
                                     ariaLabel="Bruttó összeg másolása"
                                   />
                                 </TableCell>
-                                <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
+                                <TableCell className={cn("text-right font-mono tabular-nums text-muted-foreground", invoice.reference_number && "italic")}>
                                   <CopyableCell
                                     value={(invoice.afa_osszeg_osszesen || 0).toString()}
                                     displayValue={formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || 'HUF')}
