@@ -64,23 +64,31 @@ export function CopyableCell({
     <TooltipProvider delayDuration={0}>
       <div className={cn("flex items-center group min-w-0 overflow-hidden", className)}>
         <div className="flex items-center min-w-0 gap-1">
-          <span
-            onClick={handleCopy}
-            className={cn(
-              "cursor-pointer hover:text-primary transition-none min-w-0",
-              truncate && "truncate",
-            )}
-            role="button"
-            tabIndex={0}
-            aria-label={ariaLabel || `${display} másolása`}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                handleCopy(e as any);
-              }
-            }}
-          >
-            {display}
-          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span
+                onClick={handleCopy}
+                className={cn(
+                  "cursor-pointer hover:text-primary transition-none min-w-0",
+                  truncate && "truncate",
+                )}
+                style={truncate ? { maxWidth } : undefined}
+                role="button"
+                tabIndex={0}
+                aria-label={ariaLabel || `${display} másolása`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleCopy(e as any);
+                  }
+                }}
+              >
+                {display}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p className="text-xs">{value}</p>
+            </TooltipContent>
+          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <button
