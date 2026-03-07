@@ -1,8 +1,7 @@
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -42,11 +41,25 @@ interface MatchedTransaction {
   type: string | null;
 }
 
+interface LinkedInvoice {
+  id: string;
+  bizonylatsorszam: string | null;
+  kibocsatas_datuma: string;
+  elado_nev: string;
+  vevo_nev: string;
+  brutto_vegosszeg: number;
+  penznem: string | null;
+  image_url?: string | null;
+  melleklet_url?: string | null;
+  reference_number?: string | null;
+}
+
 interface ExpandedInvoiceRowProps {
   colSpan: number;
   matchedSubmittedInvoices: MatchedSubmittedInvoice[];
   matchedNavInvoices: MatchedNavInvoice[];
   matchedTransactions: MatchedTransaction[];
+  linkedInvoices?: LinkedInvoice[];
   onViewInvoice?: (invoice: MatchedSubmittedInvoice) => void;
   onViewNavItems?: (invoice: MatchedNavInvoice) => void;
 }
@@ -56,10 +69,11 @@ const ExpandedInvoiceRow = ({
   matchedSubmittedInvoices,
   matchedNavInvoices,
   matchedTransactions,
+  linkedInvoices = [],
   onViewInvoice,
   onViewNavItems,
 }: ExpandedInvoiceRowProps) => {
-  const hasAny = matchedSubmittedInvoices.length > 0 || matchedNavInvoices.length > 0 || matchedTransactions.length > 0;
+  const hasAny = matchedSubmittedInvoices.length > 0 || matchedNavInvoices.length > 0 || matchedTransactions.length > 0 || linkedInvoices.length > 0;
 
   return (
     <>
@@ -78,6 +92,7 @@ const ExpandedInvoiceRow = ({
             .expand-stagger-1 { animation: expandSlideDown 300ms ease-in-out 50ms forwards; opacity: 0; }
             .expand-stagger-2 { animation: expandSlideDown 300ms ease-in-out 150ms forwards; opacity: 0; }
             .expand-stagger-3 { animation: expandSlideDown 300ms ease-in-out 250ms forwards; opacity: 0; }
+            .expand-stagger-4 { animation: expandSlideDown 300ms ease-in-out 350ms forwards; opacity: 0; }
           `}</style>
           <div className="space-y-4 max-w-3xl ml-4">
             {/* Header */}
@@ -94,12 +109,93 @@ const ExpandedInvoiceRow = ({
               </Card>
             )}
 
+            {/* Linked invoices (reference_number based) */}
+            {linkedInvoices.length > 0 && (
+              <>
+                <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider expand-stagger-1">
+                  <GitBranch className="h-3.5 w-3.5" />
+                  Kapcsolt bizonylatok
+                </div>
+                {linkedInvoices.map((inv) => (
+                  <Card
+                    key={inv.id}
+                    className={cn(
+                      "bg-muted/30 border-border/50 transition-colors expand-stagger-1",
+                      (inv.image_url || inv.melleklet_url) && onViewInvoice && "cursor-pointer hover:border-primary/50"
+                    )}
+                    onClick={() => {
+                      if ((inv.image_url || inv.melleklet_url) && onViewInvoice) {
+                        onViewInvoice(inv as MatchedSubmittedInvoice);
+                      }
+                    }}
+                  >
+                    <CardHeader className="py-2 px-3">
+                      <CardTitle className="text-xs font-medium flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <GitBranch className="h-3 w-3 text-muted-foreground" />
+                          Kapcsolt bizonylat
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="gap-1 text-[10px] h-5">
+                            <Link2 className="h-2.5 w-2.5" />
+                            Kapcsolt
+                          </Badge>
+                          {inv.reference_number && (
+                            <Badge variant="outline" className="text-[10px] h-5">
+                              → {inv.reference_number}
+                            </Badge>
+                          )}
+                          {(inv.image_url || inv.melleklet_url) && onViewInvoice && (
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <Eye className="h-3 w-3" />
+                              Kattints a részletekért
+                            </span>
+                          )}
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-3 pt-0">
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">Bizonylatsorszám:</span>
+                          <span className="ml-1 font-mono font-medium">{inv.bizonylatsorszam || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Eladó:</span>
+                          <span className="ml-1 font-medium">{inv.elado_nev}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Vevő:</span>
+                          <span className="ml-1 font-medium">{inv.vevo_nev}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Kiállítás:</span>
+                          <span className="ml-1">
+                            {format(new Date(inv.kibocsatas_datuma), 'yyyy.MM.dd', { locale: hu })}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Bruttó:</span>
+                          <span className="ml-1 font-mono font-medium">
+                            {formatCurrency(inv.brutto_vegosszeg, inv.penznem || 'HUF')}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {(matchedSubmittedInvoices.length > 0 || matchedNavInvoices.length > 0 || matchedTransactions.length > 0) && (
+                  <Separator className="my-1" />
+                )}
+              </>
+            )}
+
             {/* Matched submitted invoices */}
             {matchedSubmittedInvoices.map((inv) => (
               <Card
                 key={inv.id}
                 className={cn(
-                  "bg-muted/30 border-border/50 transition-colors expand-stagger-1",
+                  "bg-muted/30 border-border/50 transition-colors expand-stagger-2",
                   (inv.image_url || inv.melleklet_url) && onViewInvoice && "cursor-pointer hover:border-primary/50"
                 )}
                 onClick={() => {
@@ -161,7 +257,7 @@ const ExpandedInvoiceRow = ({
 
             {/* Matched NAV invoices */}
             {matchedNavInvoices.map((inv) => (
-              <Card key={inv.id} className="bg-muted/30 border-border/50 expand-stagger-2">
+              <Card key={inv.id} className="bg-muted/30 border-border/50 expand-stagger-3">
                 <CardHeader className="py-2 px-3">
                   <CardTitle className="text-xs font-medium flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
@@ -218,7 +314,7 @@ const ExpandedInvoiceRow = ({
 
             {/* Matched transactions */}
             {matchedTransactions.map((tx) => (
-              <Card key={tx.id} className="bg-muted/30 border-border/50 expand-stagger-3">
+              <Card key={tx.id} className="bg-muted/30 border-border/50 expand-stagger-4">
                 <CardHeader className="py-2 px-3">
                   <CardTitle className="text-xs font-medium flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
@@ -273,4 +369,4 @@ const ExpandedInvoiceRow = ({
 };
 
 export default ExpandedInvoiceRow;
-export type { MatchedSubmittedInvoice, MatchedNavInvoice, MatchedTransaction };
+export type { MatchedSubmittedInvoice, MatchedNavInvoice, MatchedTransaction, LinkedInvoice };
