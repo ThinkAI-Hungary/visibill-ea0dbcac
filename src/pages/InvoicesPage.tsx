@@ -2177,6 +2177,10 @@ const InvoicesPage = () => {
                                     matchedNavInvoices={matches.matchedNav}
                                     matchedTransactions={matches.matchedTransactions}
                                     linkedInvoices={matches.linkedInvoices}
+                                    onViewInvoice={(inv) => {
+                                      setSelectedInvoice(inv as any);
+                                      setImageDialogOpen(true);
+                                    }}
                                   />
                                 );
                               })()}
