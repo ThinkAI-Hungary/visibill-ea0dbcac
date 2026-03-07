@@ -170,7 +170,7 @@ export default function SalariesPage() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedMonth]);
+  }, [searchTerm, dateFrom, dateTo]);
 
   // Calculate metrics
   const metrics = useMemo(() => {
@@ -178,26 +178,26 @@ export default function SalariesPage() {
     const employeeCount = new Set(filteredSalaries.map(s => s.név)).size;
     const avgSalary = employeeCount > 0 ? totalAmount / employeeCount : 0;
     
-    // Calculate previous month for comparison
-    const prevMonth = subMonths(selectedMonth, 1);
-    const prevMonthStart = startOfMonth(prevMonth);
-    const prevMonthEnd = endOfMonth(prevMonth);
+    // Calculate previous period for comparison
+    const periodLength = dateTo.getTime() - dateFrom.getTime();
+    const prevEnd = new Date(dateFrom.getTime() - 1);
+    const prevStart = new Date(prevEnd.getTime() - periodLength);
     
-    const prevMonthSalaries = salaries.filter(s => {
+    const prevPeriodSalaries = salaries.filter(s => {
       if (s.dátum) {
         const salaryDate = new Date(s.dátum);
-        return salaryDate >= prevMonthStart && salaryDate <= prevMonthEnd;
+        return salaryDate >= prevStart && salaryDate <= prevEnd;
       }
       return false;
     });
     
-    const prevTotalAmount = prevMonthSalaries.reduce((sum, s) => sum + s.összeg, 0);
+    const prevTotalAmount = prevPeriodSalaries.reduce((sum, s) => sum + s.összeg, 0);
     const trendPercent = prevTotalAmount > 0 
       ? ((totalAmount - prevTotalAmount) / prevTotalAmount * 100).toFixed(1)
       : null;
     
     return { totalAmount, employeeCount, avgSalary, trendPercent };
-  }, [filteredSalaries, salaries, selectedMonth]);
+  }, [filteredSalaries, salaries, dateFrom, dateTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
