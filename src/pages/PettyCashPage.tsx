@@ -220,17 +220,19 @@ const PettyCashPage = () => {
     }
   };
 
-  // Filter entries by start_date if set
+  // Filter entries by start_date and global date range
   const filteredEntries = useMemo(() => {
     const startDateStr = settings?.start_date;
     let filtered = [...entries];
     if (startDateStr) {
       filtered = filtered.filter(e => e.date >= startDateStr);
     }
+    // Apply global date range filter
+    filtered = filtered.filter(e => e.date >= dateFromFormatted && e.date <= dateToFormatted);
     // Sort descending by date
     filtered.sort((a, b) => b.date.localeCompare(a.date));
     return filtered;
-  }, [entries, settings?.start_date]);
+  }, [entries, settings?.start_date, dateFromFormatted, dateToFormatted]);
 
   // Calculate balance
   const currentBalance = useMemo(() => {
