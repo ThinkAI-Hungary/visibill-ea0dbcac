@@ -639,29 +639,35 @@ const Index = () => {
         const ob = hpSettings?.opening_balance || 0;
         const startDateFilter = hpSettings?.start_date;
 
+        let withdrawalsQuery = supabase
+          .from('transactions')
+          .select('amount')
+          .eq('company_id', selectedCompany.id)
+          .in('type', ['atm pénzfelvét', 'pénztári kp felvét']);
+        if (startDateFilter) withdrawalsQuery = withdrawalsQuery.gte('transaction_date', startDateFilter);
+
+        let cashSalesQuery = supabase
+          .from('nav_invoices')
+          .select('invoice_gross_amount')
+          .eq('company_id', selectedCompany.id)
+          .eq('invoice_direction', 'OUTBOUND')
+          .in('payment_method', ['CASH', 'KÉSZPÉNZ']);
+        if (startDateFilter) cashSalesQuery = cashSalesQuery.gte('invoice_issue_date', startDateFilter);
+
+        let cashExpensesQuery = supabase
+          .from('invoices')
+          .select('brutto_vegosszeg')
+          .eq('company_id', selectedCompany.id)
+          .ilike('fizetesi_mod', '%készpénz%');
+        if (startDateFilter) cashExpensesQuery = cashExpensesQuery.gte('kibocsatas_datuma', startDateFilter);
+
         const [withdrawalsRes, cashSalesRes, cashExpensesRes] = await Promise.all([
-          supabase
-            .from('transactions')
-            .select('amount')
-            .eq('company_id', selectedCompany.id)
-            .in('type', ['atm pénzfelvét', 'pénztári kp felvét'])
-            ...(startDateFilter ? [supabase.from('transactions').select('amount').eq('company_id', selectedCompany.id).in('type', ['atm pénzfelvét', 'pénztári kp felvét']).gte('transaction_date', startDateFilter)] : [supabase.from('transactions').select('amount').eq('company_id', selectedCompany.id).in('type', ['atm pénzfelvét', 'pénztári kp felvét'])]),
-          supabase
-            .from('nav_invoices')
-            .select('invoice_gross_amount')
-            .eq('company_id', selectedCompany.id)
-            .eq('invoice_direction', 'OUTBOUND')
-            .in('payment_method', ['CASH', 'KÉSZPÉNZ']),
-          supabase
-            .from('invoices')
-            .select('brutto_vegosszeg')
-            .eq('company_id', selectedCompany.id)
-            .ilike('fizetesi_mod', '%készpénz%'),
+          withdrawalsQuery, cashSalesQuery, cashExpensesQuery
         ]);
 
-        const withdrawals = (withdrawalsRes.data || []).reduce((sum, t) => sum + Math.abs(t.amount), 0);
-        const cashSales = (cashSalesRes.data || []).reduce((sum, inv) => sum + Math.abs(inv.invoice_gross_amount || 0), 0);
-        const cashExpenses = (cashExpensesRes.data || []).reduce((sum, inv) => sum + Math.abs(inv.brutto_vegosszeg || 0), 0);
+        const withdrawals = (withdrawalsRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+        const cashSales = (cashSalesRes.data || []).reduce((sum: number, inv: any) => sum + Math.abs(inv.invoice_gross_amount || 0), 0);
+        const cashExpenses = (cashExpensesRes.data || []).reduce((sum: number, inv: any) => sum + Math.abs(inv.brutto_vegosszeg || 0), 0);
 
         setPettyCashBalance(ob + withdrawals + cashSales - cashExpenses);
       } catch (e) {
