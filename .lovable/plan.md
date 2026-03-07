@@ -1,23 +1,32 @@
 
 
-## Fix: save-credentials "Auth session missing!" (attempt 3)
+## Meglévő közvetlen párosítások javítása - egyszeri adatmigráció
 
-### Root Cause
-Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
+### Probléma
 
-The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
+15+ OUTBOUND NAV számla rendelkezik közvetlenül párosított tranzakcióval (`transactions.matched_invoice_id` → `nav_invoices.id`), de a `paid` mező `false` maradt, mert a triggerjavítás csak az új párosításokra vonatkozik.
 
-### Fix (single file change)
+### Megoldás
 
-**File: `supabase/functions/save-credentials/index.ts`**
+Egyetlen SQL migráció, amely frissíti a meglévő közvetlen párosításokat:
 
-1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
-2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
+```sql
+-- Fix existing direct matches: transactions.matched_invoice_id -> nav_invoices.id
+UPDATE nav_invoices ni
+SET paid = true
+FROM transactions t
+WHERE t.matched_invoice_id = ni.id
+  AND (ni.paid IS NULL OR ni.paid = false);
+```
 
-The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
+### Érintett fájlok
 
-### What stays the same
-- The service role client is still used for company ownership checks (line 130-138)
-- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
-- All validation, error handling, and CORS remain unchanged
-- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
+| Fájl | Változás |
+|------|----------|
+| Új SQL migráció | Egyszeri UPDATE a meglévő közvetlen párosítások `paid` mezőjének javítására |
+
+### Hatás
+- ~15+ OUTBOUND NAV számla státusza `paid = true` lesz
+- A frontend azonnal zöld színnel fogja megjeleníteni ezeket a sorokat
+- A lenyitáskor a tranzakciók már most is megjelennek (az előző frontend fix miatt)
+
