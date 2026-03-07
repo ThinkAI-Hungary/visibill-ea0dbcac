@@ -334,7 +334,7 @@ const InvoicesPage = () => {
     setSubmittedCurrentPage(1);
     setSelectedInvoiceIds(new Set());
     setSelectedSubmittedIds(new Set());
-    setExpandedRowId(null);
+    setExpandedRowIds(new Set());
   }, [selectedCompany?.id]);
 
   // Clear selection and expanded row when tab changes
