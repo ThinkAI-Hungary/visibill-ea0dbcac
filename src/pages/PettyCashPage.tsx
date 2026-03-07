@@ -90,7 +90,7 @@ const PettyCashPage = () => {
     if (!selectedCompany) return;
 
     // Fetch all 3 sources in parallel
-    const [withdrawalsRes, cashSalesRes, cashExpensesRes] = await Promise.all([
+    const [withdrawalsRes, cashSalesRes, cashExpensesRes, navCashExpensesRes] = await Promise.all([
       // 1. Cash Withdrawals from transactions
       supabase
         .from('transactions')
@@ -109,9 +109,17 @@ const PettyCashPage = () => {
       // 3. Cash Expenses from invoices (fizetesi_mod = készpénz)
       supabase
         .from('invoices')
-        .select('kibocsatas_datuma, elado_nev, brutto_vegosszeg, fizetesi_mod')
+        .select('kibocsatas_datuma, elado_nev, brutto_vegosszeg, fizetesi_mod, bizonylatsorszam')
         .eq('company_id', selectedCompany.id)
         .ilike('fizetesi_mod', '%készpénz%'),
+
+      // 4. Cash Expenses from nav_invoices (INBOUND, payment_method = CASH)
+      supabase
+        .from('nav_invoices')
+        .select('invoice_issue_date, supplier_name, invoice_gross_amount, invoice_number')
+        .eq('company_id', selectedCompany.id)
+        .eq('invoice_direction', 'INBOUND')
+        .in('payment_method', ['CASH', 'KÉSZPÉNZ']),
     ]);
 
     const allEntries: PettyCashEntry[] = [];
@@ -136,12 +144,26 @@ const PettyCashPage = () => {
       });
     });
 
-    // Cash expenses (-)
+    // Cash expenses from invoices (-)
+    const invoiceExpenseNumbers = new Set<string>();
     (cashExpensesRes.data || []).forEach(inv => {
+      if (inv.bizonylatsorszam) invoiceExpenseNumbers.add(inv.bizonylatsorszam);
       allEntries.push({
         date: inv.kibocsatas_datuma,
         description: `Készpénzes kiadás - ${inv.elado_nev}`,
         amount: -(Math.abs(inv.brutto_vegosszeg || 0)),
+        source: 'cash_expense',
+      });
+    });
+
+    // Cash expenses from nav_invoices INBOUND (-), de-duplicated
+    (navCashExpensesRes.data || []).forEach(inv => {
+      // Skip if already counted from invoices table (matching invoice_number)
+      if (inv.invoice_number && invoiceExpenseNumbers.has(inv.invoice_number)) return;
+      allEntries.push({
+        date: inv.invoice_issue_date || '',
+        description: `Készpénzes kiadás (NAV) - ${inv.supplier_name || 'Ismeretlen'}`,
+        amount: -(Math.abs(inv.invoice_gross_amount || 0)),
         source: 'cash_expense',
       });
     });
