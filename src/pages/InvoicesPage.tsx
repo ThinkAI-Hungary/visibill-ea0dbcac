@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
@@ -165,6 +166,7 @@ type InvoiceTab = 'OUTBOUND' | 'INBOUND' | 'SUBMITTED_INBOUND' | 'SUBMITTED_OUTB
 const InvoicesPage = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
+  const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const [invoices, setInvoices] = useState<NavInvoice[]>([]);
   const [submittedInvoices, setSubmittedInvoices] = useState<SubmittedInvoice[]>([]);
   const [allTransactions, setAllTransactions] = useState<TransactionRecord[]>([]);
@@ -297,7 +299,7 @@ const InvoicesPage = () => {
   useEffect(() => {
     fetchData();
     checkCredentialsExist();
-  }, [user, selectedCompany, navFilters.dateFrom, navFilters.dateTo, submittedFilters.dateFrom, submittedFilters.dateTo]);
+  }, [user, selectedCompany, dateFrom, dateTo]);
 
   // Real-time subscription for invoices
   useEffect(() => {
@@ -533,27 +535,17 @@ const InvoicesPage = () => {
 
     setLoading(true);
     try {
-      // Calculate date range for query - no default filter, show all invoices
-      const queryDateFrom = navFilters.dateFrom
-        ? format(navFilters.dateFrom, 'yyyy-MM-dd')
-        : undefined;
+      // Use global date range for queries
+      const queryDateFrom = dateFromFormatted;
+      const queryDateTo = dateToFormatted;
 
-      const queryDateTo = navFilters.dateTo
-        ? format(navFilters.dateTo, 'yyyy-MM-dd')
-        : undefined;
-
-      // Fetch NAV invoices with optional date filtering
+      // Fetch NAV invoices with date filtering
       let navQuery = supabase
         .from('nav_invoices')
         .select('*')
-        .eq('company_id', selectedCompany.id);
-
-      if (queryDateFrom) {
-        navQuery = navQuery.gte('invoice_issue_date', queryDateFrom);
-      }
-      if (queryDateTo) {
-        navQuery = navQuery.lte('invoice_issue_date', queryDateTo);
-      }
+        .eq('company_id', selectedCompany.id)
+        .gte('invoice_issue_date', queryDateFrom)
+        .lte('invoice_issue_date', queryDateTo);
 
       const { data: invoicesData, error: invoicesError } = await navQuery
         .order('invoice_issue_date', { ascending: false });
@@ -561,26 +553,13 @@ const InvoicesPage = () => {
       if (invoicesError) throw invoicesError;
       setInvoices(invoicesData || []);
 
-      // Fetch submitted invoices with optional date filtering
-      const submittedQueryDateFrom = submittedFilters.dateFrom
-        ? format(submittedFilters.dateFrom, 'yyyy-MM-dd')
-        : undefined;
-
-      const submittedQueryDateTo = submittedFilters.dateTo
-        ? format(submittedFilters.dateTo, 'yyyy-MM-dd')
-        : undefined;
-
+      // Fetch submitted invoices with global date filtering
       let submittedQuery = supabase
         .from('invoices')
         .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number')
-        .eq('company_id', selectedCompany.id);
-
-      if (submittedQueryDateFrom) {
-        submittedQuery = submittedQuery.gte('kibocsatas_datuma', submittedQueryDateFrom);
-      }
-      if (submittedQueryDateTo) {
-        submittedQuery = submittedQuery.lte('kibocsatas_datuma', submittedQueryDateTo);
-      }
+        .eq('company_id', selectedCompany.id)
+        .gte('kibocsatas_datuma', dateFromFormatted)
+        .lte('kibocsatas_datuma', dateToFormatted);
 
       const { data: submittedData, error: submittedError } = await submittedQuery
         .order('kibocsatas_datuma', { ascending: false });
@@ -1464,55 +1443,8 @@ const InvoicesPage = () => {
                       </SelectContent>
                     </Select>
 
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={cn(
-                            "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
-                            !navFilters.dateFrom && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {navFilters.dateFrom ? format(navFilters.dateFrom, "MM.dd.", { locale: hu }) : "Kezdő"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={navFilters.dateFrom}
-                          onSelect={(date) => setNavFilters(prev => ({ ...prev, dateFrom: date }))}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
 
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={cn(
-                            "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
-                            !navFilters.dateTo && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {navFilters.dateTo ? format(navFilters.dateTo, "MM.dd.", { locale: hu }) : "Befejező"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={navFilters.dateTo}
-                          onSelect={(date) => setNavFilters(prev => ({ ...prev, dateTo: date }))}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
+
 
                     <Button
                       variant="ghost"
@@ -1900,56 +1832,6 @@ const InvoicesPage = () => {
                     </Select>
 
 
-
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={cn(
-                            "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
-                            !submittedFilters.dateFrom && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {submittedFilters.dateFrom ? format(submittedFilters.dateFrom, "MM.dd.", { locale: hu }) : "Kezdő"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={submittedFilters.dateFrom}
-                          onSelect={(date) => setSubmittedFilters(prev => ({ ...prev, dateFrom: date }))}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={cn(
-                            "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
-                            !submittedFilters.dateTo && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {submittedFilters.dateTo ? format(submittedFilters.dateTo, "MM.dd.", { locale: hu }) : "Befejező"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={submittedFilters.dateTo}
-                          onSelect={(date) => setSubmittedFilters(prev => ({ ...prev, dateTo: date }))}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
 
                     <Button
                       variant="ghost"

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ interface PettyCashEntry {
 const PettyCashPage = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
+  const { dateFromFormatted, dateToFormatted } = useDateRange();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<HpSettings | null>(null);
@@ -218,17 +220,19 @@ const PettyCashPage = () => {
     }
   };
 
-  // Filter entries by start_date if set
+  // Filter entries by start_date and global date range
   const filteredEntries = useMemo(() => {
     const startDateStr = settings?.start_date;
     let filtered = [...entries];
     if (startDateStr) {
       filtered = filtered.filter(e => e.date >= startDateStr);
     }
+    // Apply global date range filter
+    filtered = filtered.filter(e => e.date >= dateFromFormatted && e.date <= dateToFormatted);
     // Sort descending by date
     filtered.sort((a, b) => b.date.localeCompare(a.date));
     return filtered;
-  }, [entries, settings?.start_date]);
+  }, [entries, settings?.start_date, dateFromFormatted, dateToFormatted]);
 
   // Calculate balance
   const currentBalance = useMemo(() => {

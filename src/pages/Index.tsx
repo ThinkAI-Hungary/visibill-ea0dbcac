@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import EmptyStateDashboard from '@/components/dashboard/EmptyStateDashboard';
 import { ProductTour } from '@/components/ProductTour';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { User, Building, Briefcase, Upload, FileText, Euro, TrendingUp, Calendar, BarChart3, PieChart, ChevronUp, Loader2, CalendarIcon, ArrowDownLeft, ArrowUpRight, Wallet, Banknote } from 'lucide-react';
+import { User, Building, Briefcase, Upload, FileText, Euro, TrendingUp, Calendar, BarChart3, PieChart, ChevronUp, Loader2, ArrowDownLeft, ArrowUpRight, Wallet, Banknote } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import MetricCard from '@/components/dashboard/MetricCard';
 import RecentInvoices from '@/components/dashboard/RecentInvoices';
@@ -25,10 +26,8 @@ import InvoiceStatusTables from '@/components/dashboard/InvoiceStatusTables';
 import { formatCurrency, cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
-import { parseISO, format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, isSameDay } from 'date-fns';
+import { parseISO, format } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 interface Profile {
   name: string;
@@ -131,6 +130,7 @@ const MONTH_NAMES = ["január", "február", "március", "április", "május", "j
 const Index = () => {
   const { user, signOut } = useAuth();
   const { selectedCompany, companies, loading: companyLoading } = useCompany();
+  const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -143,11 +143,7 @@ const Index = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [navVatData, setNavVatData] = useState<NavVatData | null>(null);
-  const [dateFrom, setDateFrom] = useState<Date>(startOfMonth(new Date()));
-  const [dateTo, setDateTo] = useState<Date>(endOfMonth(new Date()));
-  const [dateFromOpen, setDateFromOpen] = useState(false);
-  const [dateToOpen, setDateToOpen] = useState(false);
-  
+
   // Analytics states
   const [showBrutto, setShowBrutto] = useState(true);
   const [vatSectionOpen, setVatSectionOpen] = useState(true);
@@ -171,9 +167,7 @@ const Index = () => {
 
   const vatChartRef = useRef<HTMLDivElement>(null);
 
-  // Displayed date range info
-  const dateFromFormatted = format(dateFrom, 'yyyy-MM-dd');
-  const dateToFormatted = format(dateTo, 'yyyy-MM-dd');
+  // displayedPeriod for UI labels
   const displayedPeriod = `${format(dateFrom, 'yyyy. MMM dd.', { locale: hu })} - ${format(dateTo, 'yyyy. MMM dd.', { locale: hu })}`;
 
   const currencies = [
@@ -761,99 +755,6 @@ const Index = () => {
             </p>
           </div>
           <div className="flex gap-2 items-center flex-wrap">
-            {/* Quick period buttons */}
-            <div className="flex gap-1 items-center">
-              <Button
-                variant={isSameDay(dateFrom, startOfMonth(new Date())) && isSameDay(dateTo, endOfMonth(new Date())) ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setDateFrom(startOfMonth(new Date()));
-                  setDateTo(endOfMonth(new Date()));
-                }}
-              >
-                Ez a hónap
-              </Button>
-              <Button
-                variant={isSameDay(dateFrom, startOfMonth(subMonths(new Date(), 1))) && isSameDay(dateTo, endOfMonth(subMonths(new Date(), 1))) ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setDateFrom(startOfMonth(subMonths(new Date(), 1)));
-                  setDateTo(endOfMonth(subMonths(new Date(), 1)));
-                }}
-              >
-                Előző hónap
-              </Button>
-              <Button
-                variant={isSameDay(dateFrom, startOfYear(new Date())) && isSameDay(dateTo, endOfYear(new Date())) ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setDateFrom(startOfYear(new Date()));
-                  setDateTo(endOfYear(new Date()));
-                }}
-              >
-                Ez az év
-              </Button>
-            </div>
-            <span className="text-muted-foreground mx-1">|</span>
-            <div className="flex gap-2 items-center">
-              <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-[160px] justify-start text-left font-normal",
-                      !dateFrom && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateFrom ? format(dateFrom, "yyyy. MMM dd.", { locale: hu }) : <span>Kezdő dátum</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={dateFrom}
-                    onSelect={(date) => {
-                      if (date) {
-                        setDateFrom(date);
-                        setDateFromOpen(false);
-                      }
-                    }}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-              <span className="text-sm text-muted-foreground">-</span>
-              <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-[160px] justify-start text-left font-normal",
-                      !dateTo && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateTo ? format(dateTo, "yyyy. MMM dd.", { locale: hu }) : <span>Záró dátum</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <CalendarComponent
-                    mode="single"
-                    selected={dateTo}
-                    onSelect={(date) => {
-                      if (date) {
-                        setDateTo(date);
-                        setDateToOpen(false);
-                      }
-                    }}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
             <div className="w-[200px]">
               <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
                 <SelectTrigger>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
@@ -132,6 +133,7 @@ const getTypeBgClass = (type: string | null): string => {
 const TransactionsPage = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
+  const { dateFrom, dateTo } = useDateRange();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -156,6 +158,11 @@ const TransactionsPage = () => {
     type: 'all',
     matchStatus: 'all'
   });
+
+  // Sync filters.dateFrom/dateTo with global date range
+  useEffect(() => {
+    setFilters(prev => ({ ...prev, dateFrom, dateTo }));
+  }, [dateFrom, dateTo]);
 
   useEffect(() => {
     fetchTransactions();
@@ -540,57 +547,7 @@ const TransactionsPage = () => {
                 </SelectContent>
               </Select>
 
-              {/* Date From */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
-                      !filters.dateFrom && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.dateFrom ? format(filters.dateFrom, 'MM.dd.', { locale: hu }) : 'Kezdő'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={filters.dateFrom}
-                    onSelect={(date) => setFilters(prev => ({ ...prev, dateFrom: date }))}
-                    locale={hu}
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
 
-              {/* Date To */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
-                      !filters.dateTo && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.dateTo ? format(filters.dateTo, 'MM.dd.', { locale: hu }) : 'Befejező'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={filters.dateTo}
-                    onSelect={(date) => setFilters(prev => ({ ...prev, dateTo: date }))}
-                    locale={hu}
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
 
               {/* Clear button */}
               {hasActiveFilters && (

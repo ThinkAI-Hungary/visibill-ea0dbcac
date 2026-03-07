@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Outlet } from "react-router-dom";
 import { Suspense } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { GlobalDatePicker } from "@/components/GlobalDatePicker";
 
 interface AppLayoutProps {
   children?: React.ReactNode;
@@ -18,6 +19,8 @@ export function AppLayout({ children }: AppLayoutProps) {
       <AppSidebar />
       
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-background">
+        {/* Global Date Picker Header */}
+        <GlobalDatePicker />
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-background p-6">
           <Suspense fallback={<ContentLoader />}>

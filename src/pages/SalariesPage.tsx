@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
+import { useDateRange } from "@/contexts/DateRangeContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -99,12 +100,12 @@ const getAvatarColor = (name: string): string => {
 export default function SalariesPage() {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
+  const { dateFrom, dateTo } = useDateRange();
   const [salaries, setSalaries] = useState<Salary[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   
@@ -142,24 +143,21 @@ export default function SalariesPage() {
     }
   };
 
-  // Filter salaries by selected month
+  // Filter salaries by global date range
   const filteredSalaries = useMemo(() => {
-    const monthStart = startOfMonth(selectedMonth);
-    const monthEnd = endOfMonth(selectedMonth);
-    
     return salaries.filter((salary) => {
       const matchesSearch = salary.név.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Filter by month if salary has a date
+      // Filter by date range if salary has a date
       if (salary.dátum) {
         const salaryDate = new Date(salary.dátum);
-        const matchesMonth = salaryDate >= monthStart && salaryDate <= monthEnd;
-        return matchesSearch && matchesMonth;
+        const matchesDate = salaryDate >= dateFrom && salaryDate <= dateTo;
+        return matchesSearch && matchesDate;
       }
       
       return matchesSearch;
     });
-  }, [salaries, searchTerm, selectedMonth]);
+  }, [salaries, searchTerm, dateFrom, dateTo]);
 
   // Paginated salaries
   const paginatedSalaries = useMemo(() => {
@@ -172,7 +170,7 @@ export default function SalariesPage() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedMonth]);
+  }, [searchTerm, dateFrom, dateTo]);
 
   // Calculate metrics
   const metrics = useMemo(() => {
@@ -180,26 +178,26 @@ export default function SalariesPage() {
     const employeeCount = new Set(filteredSalaries.map(s => s.név)).size;
     const avgSalary = employeeCount > 0 ? totalAmount / employeeCount : 0;
     
-    // Calculate previous month for comparison
-    const prevMonth = subMonths(selectedMonth, 1);
-    const prevMonthStart = startOfMonth(prevMonth);
-    const prevMonthEnd = endOfMonth(prevMonth);
+    // Calculate previous period for comparison
+    const periodLength = dateTo.getTime() - dateFrom.getTime();
+    const prevEnd = new Date(dateFrom.getTime() - 1);
+    const prevStart = new Date(prevEnd.getTime() - periodLength);
     
-    const prevMonthSalaries = salaries.filter(s => {
+    const prevPeriodSalaries = salaries.filter(s => {
       if (s.dátum) {
         const salaryDate = new Date(s.dátum);
-        return salaryDate >= prevMonthStart && salaryDate <= prevMonthEnd;
+        return salaryDate >= prevStart && salaryDate <= prevEnd;
       }
       return false;
     });
     
-    const prevTotalAmount = prevMonthSalaries.reduce((sum, s) => sum + s.összeg, 0);
+    const prevTotalAmount = prevPeriodSalaries.reduce((sum, s) => sum + s.összeg, 0);
     const trendPercent = prevTotalAmount > 0 
       ? ((totalAmount - prevTotalAmount) / prevTotalAmount * 100).toFixed(1)
       : null;
     
     return { totalAmount, employeeCount, avgSalary, trendPercent };
-  }, [filteredSalaries, salaries, selectedMonth]);
+  }, [filteredSalaries, salaries, dateFrom, dateTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -326,52 +324,7 @@ export default function SalariesPage() {
         </div>
         
         <div className="flex items-center gap-3">
-          {/* Year & Month Selector */}
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <Select
-              value={selectedMonth.getFullYear().toString()}
-              onValueChange={(year) => {
-                const newDate = new Date(selectedMonth);
-                newDate.setFullYear(parseInt(year));
-                setSelectedMonth(newDate);
-              }}
-            >
-              <SelectTrigger className="w-[100px] bg-muted/30">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 10 }, (_, i) => {
-                  const year = new Date().getFullYear() - 5 + i;
-                  return (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-            <Select
-              value={selectedMonth.getMonth().toString()}
-              onValueChange={(month) => {
-                const newDate = new Date(selectedMonth);
-                newDate.setMonth(parseInt(month));
-                setSelectedMonth(newDate);
-              }}
-            >
-              <SelectTrigger className="w-[140px] bg-muted/30">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="max-h-none">
-                {MONTHS.map((month) => (
-                  <SelectItem key={month.value} value={month.value}>
-                    {month.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
+
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);
             if (!open) resetForm();

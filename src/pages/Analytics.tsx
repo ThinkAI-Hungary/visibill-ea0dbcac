@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
+import { useDateRange } from "@/contexts/DateRangeContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,8 +48,9 @@ const MONTH_NAMES = ["január", "február", "március", "április", "május", "j
 export default function Analytics() {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
+  const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const [loading, setLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const selectedYear = dateFrom.getFullYear();
   const [showBrutto, setShowBrutto] = useState(true);
   const [vatSectionOpen, setVatSectionOpen] = useState(true);
   const [revenueSectionOpen, setRevenueSectionOpen] = useState(true);
@@ -58,7 +60,6 @@ export default function Analytics() {
   const [showPaidExpenses, setShowPaidExpenses] = useState(true);
   const [showPaidSalaries, setShowPaidSalaries] = useState(false);
   
-  const years = [2024, 2025];
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
   const currentMonthName = MONTH_NAMES[currentMonth];
@@ -97,7 +98,7 @@ export default function Analytics() {
     if (user && selectedCompany) {
       fetchAnalyticsData();
     }
-  }, [user, selectedCompany, selectedYear, comparisonMonth]);
+  }, [user, selectedCompany, dateFrom, dateTo, comparisonMonth]);
 
 
   const fetchAnalyticsData = async () => {
@@ -542,21 +543,7 @@ export default function Analytics() {
                     </label>
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">Időszak</span>
-                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                        <SelectTrigger className="w-24">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {years.map(year => (
-                            <SelectItem key={year} value={year.toString()}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+
                     
                     <div className="inline-flex rounded-lg border p-1 bg-muted/30 gap-1">
                       <Button
