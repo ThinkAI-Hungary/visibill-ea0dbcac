@@ -378,7 +378,10 @@ export const TransactionDetailsDialog = ({
         {transaction.matched_invoice_id && !showManualMatch && (
           <>
             <Card 
-              className="bg-muted/30 border-border/50 cursor-pointer hover:border-primary/50 transition-colors"
+              className={cn(
+                "bg-muted/30 border-border/50 transition-colors",
+                matchedInvoice && "cursor-pointer hover:border-primary/50"
+              )}
               onClick={() => {
                 if (matchedInvoice) {
                   setInvoiceDetailId(matchedInvoice.id);
@@ -388,7 +391,7 @@ export const TransactionDetailsDialog = ({
             >
               <CardHeader className="py-2 px-3">
                 <CardTitle className="text-xs font-medium flex items-center justify-between">
-                  <span>Párosított számla</span>
+                  <span>{matchedNavInvoice ? 'Párosított NAV számla' : 'Párosított számla'}</span>
                   {matchedInvoice && (
                     <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                       <Eye className="h-3 w-3" />
@@ -429,6 +432,48 @@ export const TransactionDetailsDialog = ({
                       <span className="ml-1 font-mono font-medium">
                         {formatCurrency(matchedInvoice.brutto_vegosszeg || 0, matchedInvoice.penznem || 'HUF')}
                       </span>
+                    </div>
+                  </div>
+                ) : matchedNavInvoice ? (
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Számlaszám:</span>
+                      <span className="ml-1 font-mono font-medium">{matchedNavInvoice.invoice_number}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Szállító:</span>
+                      <span className="ml-1 font-medium">{matchedNavInvoice.supplier_name || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Vevő:</span>
+                      <span className="ml-1 font-medium">{matchedNavInvoice.customer_name || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Kiállítás:</span>
+                      <span className="ml-1">
+                        {matchedNavInvoice.invoice_issue_date 
+                          ? format(new Date(matchedNavInvoice.invoice_issue_date), 'yyyy.MM.dd')
+                          : '-'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Bruttó:</span>
+                      <span className="ml-1 font-mono font-medium">
+                        {formatCurrency(matchedNavInvoice.invoice_gross_amount || 0, matchedNavInvoice.currency || 'HUF')}
+                      </span>
+                    </div>
+                    <div className="col-span-2 flex gap-1">
+                      {matchedNavInvoice.invoice_direction && (
+                        <Badge variant="outline" className="text-[10px] h-5">
+                          {matchedNavInvoice.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő'}
+                        </Badge>
+                      )}
+                      {matchedNavInvoice.paid && (
+                        <Badge variant="success" className="text-[10px] h-5">Fizetve</Badge>
+                      )}
+                      {matchedNavInvoice.submitted && (
+                        <Badge variant="outline" className="text-[10px] h-5">Beküldve</Badge>
+                      )}
                     </div>
                   </div>
                 ) : (
