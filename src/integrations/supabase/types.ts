@@ -1492,13 +1492,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "transactions_matched_invoice_id_fkey"
-            columns: ["matched_invoice_id"]
-            isOneToOne: false
-            referencedRelation: "invoices"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "transactions_upload_id_fkey"
             columns: ["upload_id"]
             isOneToOne: false
