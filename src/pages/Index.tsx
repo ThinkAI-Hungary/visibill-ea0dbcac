@@ -658,7 +658,8 @@ const Index = () => {
           .from('invoices')
           .select('brutto_vegosszeg, bizonylatsorszam')
           .eq('company_id', selectedCompany.id)
-          .ilike('fizetesi_mod', '%készpénz%');
+          .ilike('fizetesi_mod', '%készpénz%')
+          .is('reference_number', null);
         if (startDateFilter) cashExpensesQuery = cashExpensesQuery.gte('kibocsatas_datuma', startDateFilter);
 
         let navCashExpensesQuery = supabase
