@@ -935,6 +935,13 @@ const Index = () => {
                 variant="warning"
               />
               <MetricCard
+                title="Házipénztár"
+                value={formatCurrency(pettyCashBalance ?? 0)}
+                description="Aktuális készpénz egyenleg"
+                icon={Banknote}
+                variant={pettyCashBalance !== null && pettyCashBalance >= 0 ? 'success' : 'destructive'}
+              />
+              <MetricCard
                 title={`Bejövő számlaösszeg (${showBrutto ? 'bruttó' : 'nettó'})`}
                 value={
                   expensesData && Object.keys(expensesData).length > 0
@@ -966,13 +973,6 @@ const Index = () => {
                 description="Kifizetetlen bejövő számlák"
                 icon={Wallet}
                 variant="destructive"
-              />
-              <MetricCard
-                title="Házipénztár"
-                value={formatCurrency(pettyCashBalance ?? 0)}
-                description="Aktuális készpénz egyenleg"
-                icon={Banknote}
-                variant={pettyCashBalance !== null && pettyCashBalance >= 0 ? 'success' : 'destructive'}
               />
             </div>
           );
