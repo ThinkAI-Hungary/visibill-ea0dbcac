@@ -701,7 +701,7 @@ const Index = () => {
     if (!categories.length || !invoices.length) return [];
 
     const categoryStats = categories.map(category => {
-      const categoryInvoices = invoices.filter(invoice => invoice.category_id === category.id);
+      const categoryInvoices = invoices.filter(invoice => invoice.category_id === category.id && !invoice.reference_number);
       const totalAmount = categoryInvoices.reduce((sum, invoice) => sum + invoice.brutto_vegosszeg, 0);
       
       const allTotal = metrics ? Object.values(metrics.totalAmountByCurrency).reduce((sum, val) => sum + val, 0) : 0;
