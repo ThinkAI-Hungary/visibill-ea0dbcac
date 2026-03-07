@@ -953,6 +953,15 @@ const Index = () => {
                 icon={Wallet}
                 variant="destructive"
               />
+              {pettyCashBalance !== null && (
+                <MetricCard
+                  title="Házipénztár"
+                  value={formatCurrency(pettyCashBalance)}
+                  description="Aktuális készpénz egyenleg"
+                  icon={Banknote}
+                  variant={pettyCashBalance >= 0 ? 'success' : 'destructive'}
+                />
+              )}
             </div>
           );
         })()}
