@@ -967,15 +967,13 @@ const Index = () => {
                 icon={Wallet}
                 variant="destructive"
               />
-              {pettyCashBalance !== null && (
-                <MetricCard
-                  title="Házipénztár"
-                  value={formatCurrency(pettyCashBalance)}
-                  description="Aktuális készpénz egyenleg"
-                  icon={Banknote}
-                  variant={pettyCashBalance >= 0 ? 'success' : 'destructive'}
-                />
-              )}
+              <MetricCard
+                title="Házipénztár"
+                value={formatCurrency(pettyCashBalance ?? 0)}
+                description="Aktuális készpénz egyenleg"
+                icon={Banknote}
+                variant={pettyCashBalance !== null && pettyCashBalance >= 0 ? 'success' : 'destructive'}
+              />
             </div>
           );
         })()}
