@@ -143,24 +143,21 @@ export default function SalariesPage() {
     }
   };
 
-  // Filter salaries by selected month
+  // Filter salaries by global date range
   const filteredSalaries = useMemo(() => {
-    const monthStart = startOfMonth(selectedMonth);
-    const monthEnd = endOfMonth(selectedMonth);
-    
     return salaries.filter((salary) => {
       const matchesSearch = salary.név.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Filter by month if salary has a date
+      // Filter by date range if salary has a date
       if (salary.dátum) {
         const salaryDate = new Date(salary.dátum);
-        const matchesMonth = salaryDate >= monthStart && salaryDate <= monthEnd;
-        return matchesSearch && matchesMonth;
+        const matchesDate = salaryDate >= dateFrom && salaryDate <= dateTo;
+        return matchesSearch && matchesDate;
       }
       
       return matchesSearch;
     });
-  }, [salaries, searchTerm, selectedMonth]);
+  }, [salaries, searchTerm, dateFrom, dateTo]);
 
   // Paginated salaries
   const paginatedSalaries = useMemo(() => {
