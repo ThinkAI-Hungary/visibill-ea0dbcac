@@ -121,10 +121,10 @@ const ExpandedInvoiceRow = ({
                     key={inv.id}
                     className={cn(
                       "bg-muted/30 border-border/50 transition-colors expand-stagger-1",
-                      (inv.image_url || inv.melleklet_url) && onViewInvoice && "cursor-pointer hover:border-primary/50"
+                      onViewInvoice && "cursor-pointer hover:border-primary/50"
                     )}
                     onClick={() => {
-                      if ((inv.image_url || inv.melleklet_url) && onViewInvoice) {
+                      if (onViewInvoice) {
                         onViewInvoice(inv as MatchedSubmittedInvoice);
                       }
                     }}
