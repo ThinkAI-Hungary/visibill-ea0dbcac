@@ -341,7 +341,7 @@ const InvoicesPage = () => {
   useEffect(() => {
     setSelectedInvoiceIds(new Set());
     setSelectedSubmittedIds(new Set());
-    setExpandedRowId(null);
+    setExpandedRowIds(new Set());
   }, [activeTab]);
 
   const checkCredentialsExist = async () => {
