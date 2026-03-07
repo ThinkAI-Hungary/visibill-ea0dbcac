@@ -121,10 +121,10 @@ const ExpandedInvoiceRow = ({
                     key={inv.id}
                     className={cn(
                       "bg-muted/30 border-border/50 transition-colors expand-stagger-1",
-                      onViewInvoice && "cursor-pointer hover:border-primary/50"
+                      (inv.image_url || inv.melleklet_url) && onViewInvoice && "cursor-pointer hover:border-primary/50"
                     )}
                     onClick={() => {
-                      if (onViewInvoice) {
+                      if ((inv.image_url || inv.melleklet_url) && onViewInvoice) {
                         onViewInvoice(inv as MatchedSubmittedInvoice);
                       }
                     }}
@@ -145,7 +145,7 @@ const ExpandedInvoiceRow = ({
                               → {inv.reference_number}
                             </Badge>
                           )}
-                          {onViewInvoice && (
+                          {(inv.image_url || inv.melleklet_url) && onViewInvoice && (
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                               <Eye className="h-3 w-3" />
                               Kattints a részletekért
