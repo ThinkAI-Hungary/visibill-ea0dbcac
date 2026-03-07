@@ -2219,7 +2219,7 @@ const InvoicesPage = () => {
                                   </div>
                                 </TableCell>
                               </TableRow>
-                              {expandedRowId === invoice.id && (() => {
+                              {expandedRowIds.has(invoice.id) && (() => {
                                 const matches = getSubmittedInvoiceMatches(invoice);
                                 return (
                                   <ExpandedInvoiceRow
