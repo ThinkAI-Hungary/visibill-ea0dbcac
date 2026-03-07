@@ -130,6 +130,7 @@ const MONTH_NAMES = ["január", "február", "március", "április", "május", "j
 const Index = () => {
   const { user, signOut } = useAuth();
   const { selectedCompany, companies, loading: companyLoading } = useCompany();
+  const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -142,11 +143,7 @@ const Index = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [navVatData, setNavVatData] = useState<NavVatData | null>(null);
-  const [dateFrom, setDateFrom] = useState<Date>(startOfMonth(new Date()));
-  const [dateTo, setDateTo] = useState<Date>(endOfMonth(new Date()));
-  const [dateFromOpen, setDateFromOpen] = useState(false);
-  const [dateToOpen, setDateToOpen] = useState(false);
-  
+
   // Analytics states
   const [showBrutto, setShowBrutto] = useState(true);
   const [vatSectionOpen, setVatSectionOpen] = useState(true);
