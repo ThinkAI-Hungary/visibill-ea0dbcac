@@ -112,12 +112,15 @@ export const TransactionDetailsDialog = ({
     }
   }, [open, transaction]);
 
-  // Fetch from 'invoices' table - this is the correct connection
+  // Fetch matched invoice - try 'invoices' first, then fallback to 'nav_invoices'
   const fetchMatchedInvoice = async () => {
     if (!transaction?.matched_invoice_id) return;
     
     setLoadingInvoice(true);
+    setMatchedNavInvoice(null);
+    setMatchedInvoice(null);
     try {
+      // Try invoices table first
       const { data, error } = await supabase
         .from('invoices')
         .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, brutto_vegosszeg, penznem, invoice_type')
@@ -125,10 +128,24 @@ export const TransactionDetailsDialog = ({
         .maybeSingle();
 
       if (error) throw error;
-      setMatchedInvoice(data);
+      
+      if (data) {
+        setMatchedInvoice(data);
+      } else {
+        // Fallback: try nav_invoices table
+        const { data: navData, error: navError } = await supabase
+          .from('nav_invoices')
+          .select('id, invoice_number, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, invoice_direction, paid, submitted')
+          .eq('id', transaction.matched_invoice_id)
+          .maybeSingle();
+
+        if (navError) throw navError;
+        setMatchedNavInvoice(navData);
+      }
     } catch (error) {
       console.error('Error fetching matched invoice:', error);
       setMatchedInvoice(null);
+      setMatchedNavInvoice(null);
     } finally {
       setLoadingInvoice(false);
     }
