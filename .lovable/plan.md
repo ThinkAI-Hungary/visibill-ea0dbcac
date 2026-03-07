@@ -1,23 +1,57 @@
 
 
-## Fix: save-credentials "Auth session missing!" (attempt 3)
+## Számlák valós idejű frissítése Supabase Realtime-mal
 
-### Root Cause
-Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
+### Megoldás
 
-The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
+A `src/pages/InvoicesPage.tsx` fájlban egy `useEffect`-ben feliratkozunk a Supabase Realtime csatornára, amely figyeli az `invoices` és `nav_invoices` táblák INSERT/UPDATE/DELETE eseményeit. Amikor változás történik, automatikusan meghívjuk a meglévő `fetchData()` függvényt.
 
-### Fix (single file change)
+### Implementáció
 
-**File: `supabase/functions/save-credentials/index.ts`**
+Egy új `useEffect` blokk hozzáadása a meglévő `fetchData` useEffect mellé (sor ~300):
 
-1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
-2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
+```typescript
+// Real-time subscription for invoices
+useEffect(() => {
+  if (!selectedCompany) return;
 
-The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
+  const channel = supabase
+    .channel(`invoices-realtime-${selectedCompany.id}`)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'invoices',
+      filter: `company_id=eq.${selectedCompany.id}`
+    }, () => {
+      fetchData();
+    })
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'nav_invoices',
+      filter: `company_id=eq.${selectedCompany.id}`
+    }, () => {
+      fetchData();
+    })
+    .subscribe();
 
-### What stays the same
-- The service role client is still used for company ownership checks (line 130-138)
-- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
-- All validation, error handling, and CORS remain unchanged
-- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [selectedCompany]);
+```
+
+### Supabase konfiguráció
+
+A Supabase Realtime alapból engedélyezett a projekten. Az `invoices` és `nav_invoices` tábláknál engedélyezni kell a Realtime-ot (ha még nincs), ami egy egyszerű migration:
+
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE invoices;
+ALTER PUBLICATION supabase_realtime ADD TABLE nav_invoices;
+```
+
+### Eredmény
+- Amikor bármely forrásból (email, manuális feltöltés, NAV szinkron) új számla érkezik, a táblázat automatikusan frissül
+- Nem kell manuálisan újratölteni az oldalt
+- A csatorna cleanup-je biztosított a `useEffect` return-ben
+
