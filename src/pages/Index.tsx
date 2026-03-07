@@ -770,6 +770,7 @@ const Index = () => {
               </Select>
             </div>
           </div>
+        </div>
 
         {/* Nettó/Bruttó Toggle */}
         <div className="flex items-center gap-3">
