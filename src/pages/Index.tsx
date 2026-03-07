@@ -900,7 +900,7 @@ const Index = () => {
           const unpaidOutboundData = showBrutto ? navVatData?.unpaidOutboundGross : navVatData?.unpaidOutboundNet;
 
           return (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 items-stretch">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-stretch">
               <MetricCard
                 title="Feltöltött számlák"
                 value={metrics.totalInvoices}
@@ -967,15 +967,13 @@ const Index = () => {
                 icon={Wallet}
                 variant="destructive"
               />
-              {pettyCashBalance !== null && (
-                <MetricCard
-                  title="Házipénztár"
-                  value={formatCurrency(pettyCashBalance)}
-                  description="Aktuális készpénz egyenleg"
-                  icon={Banknote}
-                  variant={pettyCashBalance >= 0 ? 'success' : 'destructive'}
-                />
-              )}
+              <MetricCard
+                title="Házipénztár"
+                value={formatCurrency(pettyCashBalance ?? 0)}
+                description="Aktuális készpénz egyenleg"
+                icon={Banknote}
+                variant={pettyCashBalance !== null && pettyCashBalance >= 0 ? 'success' : 'destructive'}
+              />
             </div>
           );
         })()}
