@@ -110,6 +110,11 @@ const App = () => (
                         <SalariesPage />
                       </ProtectedPage>
                     } />
+                    <Route path="/petty-cash" element={
+                      <ProtectedPage>
+                        <PettyCashPage />
+                      </ProtectedPage>
+                    } />
                     <Route path="/analytics" element={
                       <ProtectedPage>
                         <Analytics />
