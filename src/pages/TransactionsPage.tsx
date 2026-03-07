@@ -547,57 +547,7 @@ const TransactionsPage = () => {
                 </SelectContent>
               </Select>
 
-              {/* Date From */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
-                      !filters.dateFrom && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.dateFrom ? format(filters.dateFrom, 'MM.dd.', { locale: hu }) : 'Kezdő'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={filters.dateFrom}
-                    onSelect={(date) => setFilters(prev => ({ ...prev, dateFrom: date }))}
-                    locale={hu}
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
 
-              {/* Date To */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
-                      !filters.dateTo && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.dateTo ? format(filters.dateTo, 'MM.dd.', { locale: hu }) : 'Befejező'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={filters.dateTo}
-                    onSelect={(date) => setFilters(prev => ({ ...prev, dateTo: date }))}
-                    locale={hu}
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
 
               {/* Clear button */}
               {hasActiveFilters && (
