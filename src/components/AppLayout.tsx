@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Outlet } from "react-router-dom";
 import { Suspense } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { GlobalDatePicker } from "@/components/GlobalDatePicker";
 
 interface AppLayoutProps {
   children?: React.ReactNode;
