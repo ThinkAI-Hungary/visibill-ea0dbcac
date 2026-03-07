@@ -1833,56 +1833,6 @@ const InvoicesPage = () => {
 
 
 
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={cn(
-                            "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
-                            !submittedFilters.dateFrom && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {submittedFilters.dateFrom ? format(submittedFilters.dateFrom, "MM.dd.", { locale: hu }) : "Kezdő"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={submittedFilters.dateFrom}
-                          onSelect={(date) => setSubmittedFilters(prev => ({ ...prev, dateFrom: date }))}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={cn(
-                            "h-9 justify-start text-left font-normal bg-secondary/50 border border-white/10",
-                            !submittedFilters.dateTo && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {submittedFilters.dateTo ? format(submittedFilters.dateTo, "MM.dd.", { locale: hu }) : "Befejező"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={submittedFilters.dateTo}
-                          onSelect={(date) => setSubmittedFilters(prev => ({ ...prev, dateTo: date }))}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-
                     <Button
                       variant="ghost"
                       size="sm"
