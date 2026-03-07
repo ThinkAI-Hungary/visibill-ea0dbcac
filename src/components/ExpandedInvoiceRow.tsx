@@ -52,6 +52,7 @@ interface LinkedInvoice {
   image_url?: string | null;
   melleklet_url?: string | null;
   reference_number?: string | null;
+  relationDirection?: 'parent' | 'child';
 }
 
 interface ExpandedInvoiceRowProps {
@@ -138,13 +139,8 @@ const ExpandedInvoiceRow = ({
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary" className="gap-1 text-[10px] h-5">
                             <Link2 className="h-2.5 w-2.5" />
-                            Kapcsolt
+                            {inv.relationDirection === 'parent' ? 'Hivatkozott bizonylat' : inv.relationDirection === 'child' ? 'Hivatkozó bizonylat' : 'Kapcsolt'}
                           </Badge>
-                          {inv.reference_number && (
-                            <Badge variant="outline" className="text-[10px] h-5">
-                              → {inv.reference_number}
-                            </Badge>
-                          )}
                           {(inv.image_url || inv.melleklet_url) && onViewInvoice && (
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                               <Eye className="h-3 w-3" />
