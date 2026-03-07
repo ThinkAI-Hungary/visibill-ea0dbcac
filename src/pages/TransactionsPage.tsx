@@ -133,6 +133,7 @@ const getTypeBgClass = (type: string | null): string => {
 const TransactionsPage = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
+  const { dateFrom, dateTo } = useDateRange();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
