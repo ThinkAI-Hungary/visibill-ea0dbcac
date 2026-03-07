@@ -1,23 +1,34 @@
 
 
-## Fix: save-credentials "Auth session missing!" (attempt 3)
+## A "→" badge rossz kontextust mutat
 
-### Root Cause
-Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
+### A probléma
 
-The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
+Amikor a **D-THINK-84** (díjbekérő) sort lenyitod, a kapcsolt bizonylat az **E-THINK-2025-85** (előlegszámla). A badge `→ D-THINK-84`-et mutat, ami az E-THINK-2025-85 saját `reference_number` mezője — tehát önmagadra mutat vissza. Ez félrevezető.
 
-### Fix (single file change)
+### A megoldás
 
-**File: `supabase/functions/save-credentials/index.ts`**
+A badge-nek a **kapcsolat irányát** kell mutatnia, nem vakon a `reference_number`-t:
 
-1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
-2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
+- **Ha a kapcsolt számla hivatkozik rám** (gyerek): `← E-THINK-2025-85 hivatkozik erre`  
+- **Ha én hivatkozok a kapcsolt számlára** (szülő): `→ Hivatkozás: D-THINK-84`
 
-The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
+### Változás
 
-### What stays the same
-- The service role client is still used for company ownership checks (line 130-138)
-- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
-- All validation, error handling, and CORS remain unchanged
-- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
+**`src/components/ExpandedInvoiceRow.tsx`**:
+- A `LinkedInvoice` interfészhez hozzáadunk egy opcionális `relationDirection` mezőt (`'parent' | 'child'`)
+- A badge megjelenítés a direction alapján változik:
+  - `parent`: "Hivatkozott bizonylat" (erre mutat az aktuális számla)
+  - `child`: "Hivatkozó bizonylat" (ez mutat az aktuális számlára)
+
+**`src/pages/InvoicesPage.tsx`**:
+- A `getLinkedInvoices` függvényben a parent és child találatoknál a visszaadott objektumokhoz hozzáadjuk a `relationDirection` mezőt (`'parent'` vagy `'child'`)
+
+### Eredmény
+
+D-THINK-84 lenyitásakor:
+- E-THINK-2025-85 → badge: **"Hivatkozó bizonylat"** (mert az előlegszámla hivatkozik a díjbekérőre)
+
+E-THINK-2025-85 lenyitásakor:  
+- D-THINK-84 → badge: **"Hivatkozott bizonylat"** (mert az előlegszámla hivatkozik rá)
+
