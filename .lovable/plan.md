@@ -1,18 +1,23 @@
 
 
-## Oldalméret: 20 eltávolítása, 50 legyen az alapértelmezett
+## Fix: save-credentials "Auth session missing!" (attempt 3)
 
-### Változások
+### Root Cause
+Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
 
-**1. `src/components/ui/unified-pagination.tsx`** (~30. sor)
-- Default `pageSizeOptions` változás: `[20, 50, 100]` → `[50, 100]`
+The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
 
-**2. `src/pages/InvoicesPage.tsx`** (~257-258. sorok)
-- `useState(20)` → `useState(50)` mindkét pageSize state-nél
+### Fix (single file change)
 
-**3. `src/pages/TransactionsPage.tsx`** (~144. sor)
-- `useState(20)` → `useState(50)`
+**File: `supabase/functions/save-credentials/index.ts`**
 
-**4. `src/pages/SalariesPage.tsx`** (~110. sor)
-- `useState(20)` → `useState(50)`
+1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
+2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
 
+The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
+
+### What stays the same
+- The service role client is still used for company ownership checks (line 130-138)
+- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
+- All validation, error handling, and CORS remain unchanged
+- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
