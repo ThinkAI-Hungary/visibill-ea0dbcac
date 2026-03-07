@@ -1758,6 +1758,7 @@ const InvoicesPage = () => {
                                       matchedSubmittedInvoices={matches.matchedSubmitted}
                                       matchedNavInvoices={[]}
                                       matchedTransactions={matches.matchedTransactions}
+                                      linkedInvoices={matches.linkedInvoices}
                                       onViewInvoice={(inv) => {
                                         setSelectedInvoice(inv as any);
                                         setImageDialogOpen(true);
