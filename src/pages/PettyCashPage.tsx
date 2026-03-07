@@ -410,7 +410,10 @@ const PettyCashPage = () => {
                 <UnifiedPagination
                   currentPage={currentPage}
                   totalPages={totalPages}
+                  totalItems={filteredEntries.length}
+                  pageSize={pageSize}
                   onPageChange={setCurrentPage}
+                  onPageSizeChange={() => {}}
                 />
               </div>
             )}

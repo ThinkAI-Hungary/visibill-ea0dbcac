@@ -95,6 +95,12 @@ const navigationItems = [
     tourId: "salaries",
   },
   {
+    title: "Házipénztár",
+    url: "/petty-cash",
+    icon: Banknote,
+    tourId: "petty-cash",
+  },
+  {
     title: "Integrációk",
     url: "/integrations",
     icon: Plug,
