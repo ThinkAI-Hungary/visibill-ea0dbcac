@@ -6,6 +6,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { CompanyProvider } from "./contexts/CompanyContext";
+import { DateRangeProvider } from "./contexts/DateRangeContext";
 import { ProtectedLayout } from "./components/ProtectedLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthGuard from "./components/AuthGuard";
@@ -44,94 +45,96 @@ const App = () => (
     <ThemeProvider>
       <AuthProvider>
         <CompanyProvider>
-          <SubscriptionProvider>
-            <TooltipProvider>
-              <Toaster />
-              
-              <BrowserRouter>
-                <Routes>
-                  {/* Auth route without layout */}
-                  <Route path="/auth" element={<Auth />} />
-                  
-                  {/* All protected routes with ProtectedLayout - auth check before layout renders */}
-                  <Route element={<ProtectedLayout />}>
-                    <Route path="/onboarding" element={
-                      <AuthGuardPage>
-                        <Onboarding />
-                      </AuthGuardPage>
-                    } />
-                    <Route path="/upload" element={
-                      <ProtectedPage>
-                        <ManualUpload />
-                      </ProtectedPage>
-                    } />
-                    <Route path="/invoices" element={
-                      <ProtectedPage>
-                        <InvoicesPage />
-                      </ProtectedPage>
-                    } />
-                    <Route path="/integrations" element={
-                      <ProtectedPage>
-                        <Integrations />
-                      </ProtectedPage>
-                    } />
-                    <Route path="/settings" element={
-                      <ProtectedPage>
-                        <Settings />
-                      </ProtectedPage>
-                    } />
-                    <Route path="/projects" element={
-                      <ProtectedPage>
-                        <Projects />
-                      </ProtectedPage>
-                    } />
-                    <Route path="/partners" element={
-                      <ProtectedPage>
-                        <PartnersPage />
-                      </ProtectedPage>
-                    } />
-                    <Route path="/transactions" element={
-                      <ProtectedPage>
-                        <TransactionsPage />
-                      </ProtectedPage>
-                    } />
-                    <Route path="/pricing" element={
-                      <ProtectedPage>
-                        <Pricing />
-                      </ProtectedPage>
-                    } />
-                    <Route path="/exchange-rates" element={
-                      <ProtectedPage>
-                        <ExchangeRates />
-                      </ProtectedPage>
-                    } />
-                    <Route path="/salaries" element={
-                      <ProtectedPage>
-                        <SalariesPage />
-                      </ProtectedPage>
-                    } />
-                    <Route path="/petty-cash" element={
-                      <ProtectedPage>
-                        <PettyCashPage />
-                      </ProtectedPage>
-                    } />
-                    <Route path="/analytics" element={
-                      <ProtectedPage>
-                        <Analytics />
-                      </ProtectedPage>
-                    } />
-                    <Route path="/" element={
-                      <ProtectedPage>
-                        <Index />
-                      </ProtectedPage>
-                    } />
-                  </Route>
-                  
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
-          </SubscriptionProvider>
+          <DateRangeProvider>
+            <SubscriptionProvider>
+              <TooltipProvider>
+                <Toaster />
+                
+                <BrowserRouter>
+                  <Routes>
+                    {/* Auth route without layout */}
+                    <Route path="/auth" element={<Auth />} />
+                    
+                    {/* All protected routes with ProtectedLayout - auth check before layout renders */}
+                    <Route element={<ProtectedLayout />}>
+                      <Route path="/onboarding" element={
+                        <AuthGuardPage>
+                          <Onboarding />
+                        </AuthGuardPage>
+                      } />
+                      <Route path="/upload" element={
+                        <ProtectedPage>
+                          <ManualUpload />
+                        </ProtectedPage>
+                      } />
+                      <Route path="/invoices" element={
+                        <ProtectedPage>
+                          <InvoicesPage />
+                        </ProtectedPage>
+                      } />
+                      <Route path="/integrations" element={
+                        <ProtectedPage>
+                          <Integrations />
+                        </ProtectedPage>
+                      } />
+                      <Route path="/settings" element={
+                        <ProtectedPage>
+                          <Settings />
+                        </ProtectedPage>
+                      } />
+                      <Route path="/projects" element={
+                        <ProtectedPage>
+                          <Projects />
+                        </ProtectedPage>
+                      } />
+                      <Route path="/partners" element={
+                        <ProtectedPage>
+                          <PartnersPage />
+                        </ProtectedPage>
+                      } />
+                      <Route path="/transactions" element={
+                        <ProtectedPage>
+                          <TransactionsPage />
+                        </ProtectedPage>
+                      } />
+                      <Route path="/pricing" element={
+                        <ProtectedPage>
+                          <Pricing />
+                        </ProtectedPage>
+                      } />
+                      <Route path="/exchange-rates" element={
+                        <ProtectedPage>
+                          <ExchangeRates />
+                        </ProtectedPage>
+                      } />
+                      <Route path="/salaries" element={
+                        <ProtectedPage>
+                          <SalariesPage />
+                        </ProtectedPage>
+                      } />
+                      <Route path="/petty-cash" element={
+                        <ProtectedPage>
+                          <PettyCashPage />
+                        </ProtectedPage>
+                      } />
+                      <Route path="/analytics" element={
+                        <ProtectedPage>
+                          <Analytics />
+                        </ProtectedPage>
+                      } />
+                      <Route path="/" element={
+                        <ProtectedPage>
+                          <Index />
+                        </ProtectedPage>
+                      } />
+                    </Route>
+                    
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </SubscriptionProvider>
+          </DateRangeProvider>
         </CompanyProvider>
       </AuthProvider>
     </ThemeProvider>
