@@ -553,26 +553,13 @@ const InvoicesPage = () => {
       if (invoicesError) throw invoicesError;
       setInvoices(invoicesData || []);
 
-      // Fetch submitted invoices with optional date filtering
-      const submittedQueryDateFrom = submittedFilters.dateFrom
-        ? format(submittedFilters.dateFrom, 'yyyy-MM-dd')
-        : undefined;
-
-      const submittedQueryDateTo = submittedFilters.dateTo
-        ? format(submittedFilters.dateTo, 'yyyy-MM-dd')
-        : undefined;
-
+      // Fetch submitted invoices with global date filtering
       let submittedQuery = supabase
         .from('invoices')
         .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number')
-        .eq('company_id', selectedCompany.id);
-
-      if (submittedQueryDateFrom) {
-        submittedQuery = submittedQuery.gte('kibocsatas_datuma', submittedQueryDateFrom);
-      }
-      if (submittedQueryDateTo) {
-        submittedQuery = submittedQuery.lte('kibocsatas_datuma', submittedQueryDateTo);
-      }
+        .eq('company_id', selectedCompany.id)
+        .gte('kibocsatas_datuma', dateFromFormatted)
+        .lte('kibocsatas_datuma', dateToFormatted);
 
       const { data: submittedData, error: submittedError } = await submittedQuery
         .order('kibocsatas_datuma', { ascending: false });
