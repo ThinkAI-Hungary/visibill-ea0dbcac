@@ -299,6 +299,35 @@ const InvoicesPage = () => {
     checkCredentialsExist();
   }, [user, selectedCompany, navFilters.dateFrom, navFilters.dateTo, submittedFilters.dateFrom, submittedFilters.dateTo]);
 
+  // Real-time subscription for invoices
+  useEffect(() => {
+    if (!selectedCompany) return;
+
+    const channel = supabase
+      .channel(`invoices-realtime-${selectedCompany.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'invoices',
+        filter: `company_id=eq.${selectedCompany.id}`
+      }, () => {
+        fetchData();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'nav_invoices',
+        filter: `company_id=eq.${selectedCompany.id}`
+      }, () => {
+        fetchData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedCompany?.id]);
+
   // Reset pagination, selection, and expanded row when company changes
   useEffect(() => {
     setNavCurrentPage(1);
