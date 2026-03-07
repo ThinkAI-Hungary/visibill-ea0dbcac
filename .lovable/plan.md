@@ -1,23 +1,30 @@
 
 
-## Fix: save-credentials "Auth session missing!" (attempt 3)
+## Kapcsolt bizonylat hivatkozás irányának javítása
 
-### Root Cause
-Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
+### Probléma
 
-The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
+A `→` badge jelenleg `inv.bizonylatsorszam`-ot mutatja (sor 146), ami magának a kártyán megjelenített számlának a sorszáma. Ehelyett az `inv.reference_number`-t kellene mutatnia — vagyis azt a bizonylatsorszámot, **amire az adott számla hivatkozik**.
 
-### Fix (single file change)
+Példa D-THINK-84 lenyitásakor:
+- Jelenlegi: `→ E-THINK-2025-85` (a kártyán lévő számla saját sorszáma — értelmetlen)
+- Helyes: `→ D-THINK-84` (amire az E-THINK-2025-85 hivatkozik)
 
-**File: `supabase/functions/save-credentials/index.ts`**
+### Megoldás
 
-1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
-2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
+**`src/components/ExpandedInvoiceRow.tsx`** — sor 144-148:
 
-The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
+A `→` badge-nél `inv.bizonylatsorszam` helyett `inv.reference_number`-t jelenítünk meg. Továbbá mindkét irány esetén (child és parent) megjelenítjük, ha van `reference_number`:
 
-### What stays the same
-- The service role client is still used for company ownership checks (line 130-138)
-- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
-- All validation, error handling, and CORS remain unchanged
-- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
+```tsx
+{inv.reference_number && (
+  <Badge variant="outline" className="text-[10px] h-5">
+    → {inv.reference_number}
+  </Badge>
+)}
+```
+
+### Eredmény
+- **D-THINK-84** lenyitása → E-THINK-2025-85 kártyán: `Hivatkozó bizonylat → D-THINK-84`
+- **D-THINK-84** lenyitása → E-THINK-2026-11 kártyán: `Hivatkozó bizonylat → E-THINK-2025-85`
+
