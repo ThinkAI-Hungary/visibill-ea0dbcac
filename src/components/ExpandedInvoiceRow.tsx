@@ -145,7 +145,7 @@ const ExpandedInvoiceRow = ({
                               → {inv.reference_number}
                             </Badge>
                           )}
-                          {(inv.image_url || inv.melleklet_url) && onViewInvoice && (
+                          {onViewInvoice && (
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                               <Eye className="h-3 w-3" />
                               Kattints a részletekért
