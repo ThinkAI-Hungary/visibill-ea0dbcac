@@ -810,6 +810,8 @@ const InvoicesPage = () => {
 
     let filtered = submittedInvoices.filter(invoice => {
       if (invoice.invoice_direction !== submittedDirection) return false;
+      // Hide invoices that have a reference_number (they appear as linked items instead)
+      if (invoice.reference_number) return false;
 
       if (submittedFilters.search) {
         const searchLower = submittedFilters.search.toLowerCase();

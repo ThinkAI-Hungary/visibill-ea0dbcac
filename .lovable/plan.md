@@ -1,21 +1,23 @@
 
 
-## Terv: `reference_number`-rel rendelkező számlák elrejtése a listából
+## Fix: save-credentials "Auth session missing!" (attempt 3)
 
-### Megoldás
+### Root Cause
+Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
 
-A `filteredAndSortedSubmittedInvoices` useMemo-ban egy extra filter feltétel hozzáadása: a `reference_number`-rel rendelkező számlák kiszűrése a megjelenítésből. A teljes `submittedInvoices` tömb változatlan marad, így a linked invoices lookup (lenyíló kártyák) továbbra is megtalálja ezeket.
+The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
 
-### Implementáció
+### Fix (single file change)
 
-**`src/pages/InvoicesPage.tsx`**, sor ~811-812:
+**File: `supabase/functions/save-credentials/index.ts`**
 
-```typescript
-let filtered = submittedInvoices.filter(invoice => {
-  if (invoice.invoice_direction !== submittedDirection) return false;
-  // Hide invoices that have a reference_number (they appear as linked items instead)
-  if (invoice.reference_number) return false;
-```
+1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
+2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
 
-Egyetlen sor hozzáadása. A linked invoices map (`linkedInvoicesMap`) és a `getLinkedInvoices` függvény a teljes `submittedInvoices` tömbön dolgozik, így a kapcsolt lenyíló elemek továbbra is megjelennek.
+The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
 
+### What stays the same
+- The service role client is still used for company ownership checks (line 130-138)
+- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
+- All validation, error handling, and CORS remain unchanged
+- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
