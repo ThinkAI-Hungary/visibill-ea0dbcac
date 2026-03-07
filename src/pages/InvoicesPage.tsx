@@ -920,14 +920,16 @@ const InvoicesPage = () => {
     const byReference = new Map<string, SubmittedInvoice[]>();
     submittedInvoices.forEach(inv => {
       if (inv.bizonylatsorszam) {
-        const arr = byBizonylat.get(inv.bizonylatsorszam) || [];
+        const key = inv.bizonylatsorszam.toUpperCase();
+        const arr = byBizonylat.get(key) || [];
         arr.push(inv);
-        byBizonylat.set(inv.bizonylatsorszam, arr);
+        byBizonylat.set(key, arr);
       }
       if (inv.reference_number) {
-        const arr = byReference.get(inv.reference_number) || [];
+        const key = inv.reference_number.toUpperCase();
+        const arr = byReference.get(key) || [];
         arr.push(inv);
-        byReference.set(inv.reference_number, arr);
+        byReference.set(key, arr);
       }
     });
     return { byBizonylat, byReference };
@@ -937,12 +939,12 @@ const InvoicesPage = () => {
     const linked: SubmittedInvoice[] = [];
     // What I reference (parent)
     if (invoice.reference_number) {
-      const parents = linkedInvoicesMap.byBizonylat.get(invoice.reference_number) || [];
+      const parents = linkedInvoicesMap.byBizonylat.get(invoice.reference_number.toUpperCase()) || [];
       parents.forEach(p => { if (p.id !== invoice.id && !linked.some(l => l.id === p.id)) linked.push(p); });
     }
     // What references me (children)
     if (invoice.bizonylatsorszam) {
-      const children = linkedInvoicesMap.byReference.get(invoice.bizonylatsorszam) || [];
+      const children = linkedInvoicesMap.byReference.get(invoice.bizonylatsorszam.toUpperCase()) || [];
       children.forEach(c => { if (c.id !== invoice.id && !linked.some(l => l.id === c.id)) linked.push(c); });
     }
     return linked;
