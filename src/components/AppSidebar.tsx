@@ -40,7 +40,8 @@ import {
   Sun,
   Landmark,
   Moon,
-  Users
+  Users,
+  Banknote
 } from "lucide-react";
 import CompanySelector from "./CompanySelector";
 
