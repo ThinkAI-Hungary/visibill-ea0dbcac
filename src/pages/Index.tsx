@@ -164,6 +164,7 @@ const Index = () => {
   const [totalOutboundVat, setTotalOutboundVat] = useState(0);
   const [totalInboundVat, setTotalInboundVat] = useState(0);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [pettyCashBalance, setPettyCashBalance] = useState<number | null>(null);
   
   // Product Tour state
   const [showTour, setShowTour] = useState(false);
