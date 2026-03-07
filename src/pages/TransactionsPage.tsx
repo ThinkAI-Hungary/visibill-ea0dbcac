@@ -141,7 +141,7 @@ const TransactionsPage = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // Pagination state
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Details dialog state

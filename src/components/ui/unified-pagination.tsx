@@ -27,7 +27,7 @@ export function UnifiedPagination({
   pageSize,
   onPageChange,
   onPageSizeChange,
-  pageSizeOptions = [20, 50, 100],
+  pageSizeOptions = [50, 100],
   className,
 }: UnifiedPaginationProps) {
   const isFirstPage = currentPage === 1;

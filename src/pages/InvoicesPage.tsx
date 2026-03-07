@@ -254,8 +254,8 @@ const InvoicesPage = () => {
   };
 
   // Pagination state
-  const [navPageSize, setNavPageSize] = useState(20);
-  const [submittedPageSize, setSubmittedPageSize] = useState(20);
+  const [navPageSize, setNavPageSize] = useState(50);
+  const [submittedPageSize, setSubmittedPageSize] = useState(50);
   const [navCurrentPage, setNavCurrentPage] = useState(1);
   const [submittedCurrentPage, setSubmittedCurrentPage] = useState(1);
 
