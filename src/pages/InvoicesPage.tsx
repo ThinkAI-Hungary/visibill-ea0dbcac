@@ -935,17 +935,17 @@ const InvoicesPage = () => {
     return { byBizonylat, byReference };
   }, [submittedInvoices]);
 
-  const getLinkedInvoices = (invoice: SubmittedInvoice): SubmittedInvoice[] => {
-    const linked: SubmittedInvoice[] = [];
-    // What I reference (parent)
+  const getLinkedInvoices = (invoice: SubmittedInvoice): (SubmittedInvoice & { relationDirection: 'parent' | 'child' })[] => {
+    const linked: (SubmittedInvoice & { relationDirection: 'parent' | 'child' })[] = [];
+    // What I reference (parent) — these are the documents this invoice points to
     if (invoice.reference_number) {
       const parents = linkedInvoicesMap.byBizonylat.get(invoice.reference_number.toUpperCase()) || [];
-      parents.forEach(p => { if (p.id !== invoice.id && !linked.some(l => l.id === p.id)) linked.push(p); });
+      parents.forEach(p => { if (p.id !== invoice.id && !linked.some(l => l.id === p.id)) linked.push({ ...p, relationDirection: 'parent' }); });
     }
-    // What references me (children)
+    // What references me (children) — these are documents that point to this invoice
     if (invoice.bizonylatsorszam) {
       const children = linkedInvoicesMap.byReference.get(invoice.bizonylatsorszam.toUpperCase()) || [];
-      children.forEach(c => { if (c.id !== invoice.id && !linked.some(l => l.id === c.id)) linked.push(c); });
+      children.forEach(c => { if (c.id !== invoice.id && !linked.some(l => l.id === c.id)) linked.push({ ...c, relationDirection: 'child' }); });
     }
     return linked;
   };
