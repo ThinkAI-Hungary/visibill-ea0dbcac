@@ -16,6 +16,7 @@ export interface BaseInvoice {
   project_name?: string;
   fizetve?: boolean;
   penznem?: string;
+  reference_number?: string;
 }
 
 export interface SimaInvoice extends BaseInvoice {

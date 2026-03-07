@@ -550,6 +550,7 @@ export type Database = {
           penzforgalmi_elszamolas: boolean | null
           penznem: string | null
           project_id: string | null
+          reference_number: string | null
           statusz: string | null
           teljesites_datuma: string | null
           termek_szolgaltatas_tipusa: string | null
@@ -594,6 +595,7 @@ export type Database = {
           penzforgalmi_elszamolas?: boolean | null
           penznem?: string | null
           project_id?: string | null
+          reference_number?: string | null
           statusz?: string | null
           teljesites_datuma?: string | null
           termek_szolgaltatas_tipusa?: string | null
@@ -638,6 +640,7 @@ export type Database = {
           penzforgalmi_elszamolas?: boolean | null
           penznem?: string | null
           project_id?: string | null
+          reference_number?: string | null
           statusz?: string | null
           teljesites_datuma?: string | null
           termek_szolgaltatas_tipusa?: string | null

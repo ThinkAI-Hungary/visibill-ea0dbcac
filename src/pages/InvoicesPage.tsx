@@ -118,6 +118,7 @@ interface SubmittedInvoice {
   image_url: string | null;
   melleklet_url: string | null;
   invoice_direction: string | null;
+  reference_number: string | null;
 }
 
 interface Partner {
@@ -532,7 +533,7 @@ const InvoicesPage = () => {
 
       let submittedQuery = supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction')
+        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number')
         .eq('company_id', selectedCompany.id);
 
       if (submittedQueryDateFrom) {
@@ -912,6 +913,41 @@ const InvoicesPage = () => {
     return map;
   }, [allTransactions]);
 
+  // Linked invoices maps (reference_number based)
+  const linkedInvoicesMap = useMemo(() => {
+    // For each invoice, find: what it references + what references it
+    const byBizonylat = new Map<string, SubmittedInvoice[]>();
+    const byReference = new Map<string, SubmittedInvoice[]>();
+    submittedInvoices.forEach(inv => {
+      if (inv.bizonylatsorszam) {
+        const arr = byBizonylat.get(inv.bizonylatsorszam) || [];
+        arr.push(inv);
+        byBizonylat.set(inv.bizonylatsorszam, arr);
+      }
+      if (inv.reference_number) {
+        const arr = byReference.get(inv.reference_number) || [];
+        arr.push(inv);
+        byReference.set(inv.reference_number, arr);
+      }
+    });
+    return { byBizonylat, byReference };
+  }, [submittedInvoices]);
+
+  const getLinkedInvoices = (invoice: SubmittedInvoice): SubmittedInvoice[] => {
+    const linked: SubmittedInvoice[] = [];
+    // What I reference (parent)
+    if (invoice.reference_number) {
+      const parents = linkedInvoicesMap.byBizonylat.get(invoice.reference_number) || [];
+      parents.forEach(p => { if (p.id !== invoice.id && !linked.some(l => l.id === p.id)) linked.push(p); });
+    }
+    // What references me (children)
+    if (invoice.bizonylatsorszam) {
+      const children = linkedInvoicesMap.byReference.get(invoice.bizonylatsorszam) || [];
+      children.forEach(c => { if (c.id !== invoice.id && !linked.some(l => l.id === c.id)) linked.push(c); });
+    }
+    return linked;
+  };
+
   // Get matched data for a NAV invoice row
   const getNavInvoiceMatches = (navInvoice: NavInvoice) => {
     const matchedSubmitted = navToSubmittedMap.get(navInvoice.invoice_number) || [];
@@ -926,14 +962,22 @@ const InvoicesPage = () => {
     directTxs.forEach(tx => {
       if (!matchedTx.some(t => t.id === tx.id)) matchedTx.push(tx);
     });
-    return { matchedSubmitted, matchedTransactions: matchedTx, matchedNav: [] as NavInvoice[] };
+    // Linked invoices from matched submitted
+    const linkedInvs: SubmittedInvoice[] = [];
+    matchedSubmitted.forEach(sub => {
+      getLinkedInvoices(sub).forEach(l => {
+        if (!linkedInvs.some(x => x.id === l.id) && !matchedSubmitted.some(x => x.id === l.id)) linkedInvs.push(l);
+      });
+    });
+    return { matchedSubmitted, matchedTransactions: matchedTx, matchedNav: [] as NavInvoice[], linkedInvoices: linkedInvs };
   };
 
   // Get matched data for a submitted invoice row
   const getSubmittedInvoiceMatches = (submitted: SubmittedInvoice) => {
     const matchedNav = submitted.bizonylatsorszam ? (submittedToNavMap.get(submitted.bizonylatsorszam) || []) : [];
     const matchedTx = submittedIdToTransactionsMap.get(submitted.id) || [];
-    return { matchedSubmitted: [] as SubmittedInvoice[], matchedTransactions: matchedTx, matchedNav };
+    const linkedInvs = getLinkedInvoices(submitted);
+    return { matchedSubmitted: [] as SubmittedInvoice[], matchedTransactions: matchedTx, matchedNav, linkedInvoices: linkedInvs };
   };
 
   const handleRowClick = (invoiceId: string, e: React.MouseEvent) => {
@@ -1714,6 +1758,7 @@ const InvoicesPage = () => {
                                       matchedSubmittedInvoices={matches.matchedSubmitted}
                                       matchedNavInvoices={[]}
                                       matchedTransactions={matches.matchedTransactions}
+                                      linkedInvoices={matches.linkedInvoices}
                                       onViewInvoice={(inv) => {
                                         setSelectedInvoice(inv as any);
                                         setImageDialogOpen(true);
@@ -2118,6 +2163,7 @@ const InvoicesPage = () => {
                                     matchedSubmittedInvoices={[]}
                                     matchedNavInvoices={matches.matchedNav}
                                     matchedTransactions={matches.matchedTransactions}
+                                    linkedInvoices={matches.linkedInvoices}
                                   />
                                 );
                               })()}
