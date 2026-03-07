@@ -299,7 +299,7 @@ const InvoicesPage = () => {
   useEffect(() => {
     fetchData();
     checkCredentialsExist();
-  }, [user, selectedCompany, navFilters.dateFrom, navFilters.dateTo, submittedFilters.dateFrom, submittedFilters.dateTo]);
+  }, [user, selectedCompany, dateFrom, dateTo]);
 
   // Real-time subscription for invoices
   useEffect(() => {
