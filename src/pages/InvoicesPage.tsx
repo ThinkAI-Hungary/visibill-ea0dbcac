@@ -2163,6 +2163,7 @@ const InvoicesPage = () => {
                                     matchedSubmittedInvoices={[]}
                                     matchedNavInvoices={matches.matchedNav}
                                     matchedTransactions={matches.matchedTransactions}
+                                    linkedInvoices={matches.linkedInvoices}
                                   />
                                 );
                               })()}
