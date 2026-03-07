@@ -419,6 +419,44 @@ export type Database = {
           },
         ]
       }
+      hp_settings: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          opening_balance: number | null
+          start_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          opening_balance?: number | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          opening_balance?: number | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hp_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_uploads: {
         Row: {
           company_id: string | null

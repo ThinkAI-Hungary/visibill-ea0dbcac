@@ -24,6 +24,7 @@ import SalariesPage from "./pages/SalariesPage";
 import Analytics from "./pages/Analytics";
 import PartnersPage from "./pages/PartnersPage";
 import TransactionsPage from "./pages/TransactionsPage";
+import PettyCashPage from "./pages/PettyCashPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -107,6 +108,11 @@ const App = () => (
                     <Route path="/salaries" element={
                       <ProtectedPage>
                         <SalariesPage />
+                      </ProtectedPage>
+                    } />
+                    <Route path="/petty-cash" element={
+                      <ProtectedPage>
+                        <PettyCashPage />
                       </ProtectedPage>
                     } />
                     <Route path="/analytics" element={

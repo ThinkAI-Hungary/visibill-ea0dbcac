@@ -40,7 +40,8 @@ import {
   Sun,
   Landmark,
   Moon,
-  Users
+  Users,
+  Banknote
 } from "lucide-react";
 import CompanySelector from "./CompanySelector";
 
@@ -92,6 +93,12 @@ const navigationItems = [
     url: "/salaries",
     icon: Wallet,
     tourId: "salaries",
+  },
+  {
+    title: "Házipénztár",
+    url: "/petty-cash",
+    icon: Banknote,
+    tourId: "petty-cash",
   },
   {
     title: "Integrációk",

@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { User, Building, Briefcase, Upload, FileText, Euro, TrendingUp, Calendar, BarChart3, PieChart, ChevronUp, Loader2, CalendarIcon, ArrowDownLeft, ArrowUpRight, Wallet } from 'lucide-react';
+import { User, Building, Briefcase, Upload, FileText, Euro, TrendingUp, Calendar, BarChart3, PieChart, ChevronUp, Loader2, CalendarIcon, ArrowDownLeft, ArrowUpRight, Wallet, Banknote } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import MetricCard from '@/components/dashboard/MetricCard';
 import RecentInvoices from '@/components/dashboard/RecentInvoices';
@@ -164,6 +164,7 @@ const Index = () => {
   const [totalOutboundVat, setTotalOutboundVat] = useState(0);
   const [totalInboundVat, setTotalInboundVat] = useState(0);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [pettyCashBalance, setPettyCashBalance] = useState<number | null>(null);
   
   // Product Tour state
   const [showTour, setShowTour] = useState(false);
@@ -627,6 +628,52 @@ const Index = () => {
 
       setNavVatData({ inboundVat, outboundVat, revenueNet, revenueGross, expensesNet, expensesGross, unpaidInboundNet, unpaidInboundGross, unpaidOutboundNet, unpaidOutboundGross });
 
+      // Fetch petty cash balance
+      try {
+        const { data: hpSettings } = await supabase
+          .from('hp_settings')
+          .select('opening_balance, start_date')
+          .eq('company_id', selectedCompany.id)
+          .maybeSingle();
+
+        const ob = hpSettings?.opening_balance || 0;
+        const startDateFilter = hpSettings?.start_date;
+
+        let withdrawalsQuery = supabase
+          .from('transactions')
+          .select('amount')
+          .eq('company_id', selectedCompany.id)
+          .in('type', ['atm pénzfelvét', 'pénztári kp felvét']);
+        if (startDateFilter) withdrawalsQuery = withdrawalsQuery.gte('transaction_date', startDateFilter);
+
+        let cashSalesQuery = supabase
+          .from('nav_invoices')
+          .select('invoice_gross_amount')
+          .eq('company_id', selectedCompany.id)
+          .eq('invoice_direction', 'OUTBOUND')
+          .in('payment_method', ['CASH', 'KÉSZPÉNZ']);
+        if (startDateFilter) cashSalesQuery = cashSalesQuery.gte('invoice_issue_date', startDateFilter);
+
+        let cashExpensesQuery = supabase
+          .from('invoices')
+          .select('brutto_vegosszeg')
+          .eq('company_id', selectedCompany.id)
+          .ilike('fizetesi_mod', '%készpénz%');
+        if (startDateFilter) cashExpensesQuery = cashExpensesQuery.gte('kibocsatas_datuma', startDateFilter);
+
+        const [withdrawalsRes, cashSalesRes, cashExpensesRes] = await Promise.all([
+          withdrawalsQuery, cashSalesQuery, cashExpensesQuery
+        ]);
+
+        const withdrawals = (withdrawalsRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+        const cashSales = (cashSalesRes.data || []).reduce((sum: number, inv: any) => sum + Math.abs(inv.invoice_gross_amount || 0), 0);
+        const cashExpenses = (cashExpensesRes.data || []).reduce((sum: number, inv: any) => sum + Math.abs(inv.brutto_vegosszeg || 0), 0);
+
+        setPettyCashBalance(ob + withdrawals + cashSales - cashExpenses);
+      } catch (e) {
+        console.error('Error fetching petty cash balance:', e);
+      }
+
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -906,6 +953,15 @@ const Index = () => {
                 icon={Wallet}
                 variant="destructive"
               />
+              {pettyCashBalance !== null && (
+                <MetricCard
+                  title="Házipénztár"
+                  value={formatCurrency(pettyCashBalance)}
+                  description="Aktuális készpénz egyenleg"
+                  icon={Banknote}
+                  variant={pettyCashBalance >= 0 ? 'success' : 'destructive'}
+                />
+              )}
             </div>
           );
         })()}
