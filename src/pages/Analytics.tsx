@@ -48,8 +48,9 @@ const MONTH_NAMES = ["január", "február", "március", "április", "május", "j
 export default function Analytics() {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
+  const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const [loading, setLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const selectedYear = dateFrom.getFullYear();
   const [showBrutto, setShowBrutto] = useState(true);
   const [vatSectionOpen, setVatSectionOpen] = useState(true);
   const [revenueSectionOpen, setRevenueSectionOpen] = useState(true);
@@ -59,7 +60,6 @@ export default function Analytics() {
   const [showPaidExpenses, setShowPaidExpenses] = useState(true);
   const [showPaidSalaries, setShowPaidSalaries] = useState(false);
   
-  const years = [2024, 2025];
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
   const currentMonthName = MONTH_NAMES[currentMonth];
@@ -98,7 +98,7 @@ export default function Analytics() {
     if (user && selectedCompany) {
       fetchAnalyticsData();
     }
-  }, [user, selectedCompany, selectedYear, comparisonMonth]);
+  }, [user, selectedCompany, dateFrom, dateTo, comparisonMonth]);
 
 
   const fetchAnalyticsData = async () => {
