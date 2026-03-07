@@ -144,12 +144,26 @@ const PettyCashPage = () => {
       });
     });
 
-    // Cash expenses (-)
+    // Cash expenses from invoices (-)
+    const invoiceExpenseNumbers = new Set<string>();
     (cashExpensesRes.data || []).forEach(inv => {
+      if (inv.bizonylatsorszam) invoiceExpenseNumbers.add(inv.bizonylatsorszam);
       allEntries.push({
         date: inv.kibocsatas_datuma,
         description: `Készpénzes kiadás - ${inv.elado_nev}`,
         amount: -(Math.abs(inv.brutto_vegosszeg || 0)),
+        source: 'cash_expense',
+      });
+    });
+
+    // Cash expenses from nav_invoices INBOUND (-), de-duplicated
+    (navCashExpensesRes.data || []).forEach(inv => {
+      // Skip if already counted from invoices table (matching invoice_number)
+      if (inv.invoice_number && invoiceExpenseNumbers.has(inv.invoice_number)) return;
+      allEntries.push({
+        date: inv.invoice_issue_date || '',
+        description: `Készpénzes kiadás (NAV) - ${inv.supplier_name || 'Ismeretlen'}`,
+        amount: -(Math.abs(inv.invoice_gross_amount || 0)),
         source: 'cash_expense',
       });
     });
