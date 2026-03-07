@@ -535,27 +535,17 @@ const InvoicesPage = () => {
 
     setLoading(true);
     try {
-      // Calculate date range for query - no default filter, show all invoices
-      const queryDateFrom = navFilters.dateFrom
-        ? format(navFilters.dateFrom, 'yyyy-MM-dd')
-        : undefined;
+      // Use global date range for queries
+      const queryDateFrom = dateFromFormatted;
+      const queryDateTo = dateToFormatted;
 
-      const queryDateTo = navFilters.dateTo
-        ? format(navFilters.dateTo, 'yyyy-MM-dd')
-        : undefined;
-
-      // Fetch NAV invoices with optional date filtering
+      // Fetch NAV invoices with date filtering
       let navQuery = supabase
         .from('nav_invoices')
         .select('*')
-        .eq('company_id', selectedCompany.id);
-
-      if (queryDateFrom) {
-        navQuery = navQuery.gte('invoice_issue_date', queryDateFrom);
-      }
-      if (queryDateTo) {
-        navQuery = navQuery.lte('invoice_issue_date', queryDateTo);
-      }
+        .eq('company_id', selectedCompany.id)
+        .gte('invoice_issue_date', queryDateFrom)
+        .lte('invoice_issue_date', queryDateTo);
 
       const { data: invoicesData, error: invoicesError } = await navQuery
         .order('invoice_issue_date', { ascending: false });
