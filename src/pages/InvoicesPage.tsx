@@ -502,6 +502,7 @@ const InvoicesPage = () => {
   const fetchData = async () => {
     if (!user || !selectedCompany) return;
 
+    setLoading(true);
     try {
       // Calculate date range for query - no default filter, show all invoices
       const queryDateFrom = navFilters.dateFrom
