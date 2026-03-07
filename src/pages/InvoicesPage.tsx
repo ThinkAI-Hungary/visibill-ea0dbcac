@@ -1813,7 +1813,7 @@ const InvoicesPage = () => {
                                     </TooltipProvider>
                                   </TableCell>
                                 </TableRow>
-                                {expandedRowId === invoice.id && (() => {
+                                {expandedRowIds.has(invoice.id) && (() => {
                                   const matches = getNavInvoiceMatches(invoice);
                                   return (
                                     <ExpandedInvoiceRow
