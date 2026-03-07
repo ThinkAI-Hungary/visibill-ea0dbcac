@@ -299,6 +299,15 @@ const InvoicesPage = () => {
     checkCredentialsExist();
   }, [user, selectedCompany, navFilters.dateFrom, navFilters.dateTo, submittedFilters.dateFrom, submittedFilters.dateTo]);
 
+  // Reset pagination, selection, and expanded row when company changes
+  useEffect(() => {
+    setNavCurrentPage(1);
+    setSubmittedCurrentPage(1);
+    setSelectedInvoiceIds(new Set());
+    setSelectedSubmittedIds(new Set());
+    setExpandedRowId(null);
+  }, [selectedCompany?.id]);
+
   // Clear selection and expanded row when tab changes
   useEffect(() => {
     setSelectedInvoiceIds(new Set());
@@ -493,6 +502,7 @@ const InvoicesPage = () => {
   const fetchData = async () => {
     if (!user || !selectedCompany) return;
 
+    setLoading(true);
     try {
       // Calculate date range for query - no default filter, show all invoices
       const queryDateFrom = navFilters.dateFrom

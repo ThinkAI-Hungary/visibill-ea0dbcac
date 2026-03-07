@@ -1,32 +1,23 @@
 
 
-## Számlák oldal automatikus frissítése cégváltáskor
+## Fix: save-credentials "Auth session missing!" (attempt 3)
 
-### Probléma
+### Root Cause
+Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
 
-A `fetchData()` függvény (sor 493) **nem állítja vissza a `loading` state-et `true`-ra** az adatlekérés elején. Az `useEffect` (sor 297) ugyan figyeli a `selectedCompany` változást és meghívja a `fetchData()`-t, de:
+The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
 
-1. A `loading` state csak egyszer `true` (inicializáláskor, sor 175)
-2. Cégváltáskor a régi adatok maradnak a táblában amíg az újak betöltődnek -- nincs vizuális visszajelzés
-3. A pagination state (oldalszám) nem resetelődik cégváltáskor
+### Fix (single file change)
 
-### Megoldás
+**File: `supabase/functions/save-credentials/index.ts`**
 
-**`src/pages/InvoicesPage.tsx`** -- 3 módosítás:
+1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
+2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
 
-1. **`fetchData` elején `setLoading(true)`** hozzáadása (sor ~496): Ez biztosítja, hogy minden adatlekérésnél megjelenjen a loading state, beleértve a cégváltást is.
+The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
 
-2. **Új `useEffect` a `selectedCompany` változásra** -- reseteli a pagination-t és a filtereket:
-   - `setNavCurrentPage(1)`
-   - `setSubmittedCurrentPage(1)` 
-   - `setSelectedInvoiceIds(new Set())`
-   - `setSelectedSubmittedIds(new Set())`
-   - `setExpandedRowId(null)`
-
-3. **Loading állapotban `TableSkeleton` megjelenítése** a tábla body-ban a jelenlegi `LoadingSpinner` helyett (ami már importálva van, sor 31). Ez biztosítja a pre-loader animációt a táblázaton belül, amíg az új cég adatai betöltenek. A meglévő teljes oldal `LoadingSpinner`-t lecseréljük a tábla-szintű skeleton-ra.
-
-### Eredmény
-- Cégváltáskor azonnal megjelenik a skeleton animáció a táblában
-- Az adatok betöltése után automatikusan frissül a tartalom
-- A pagination és szűrők resetelődnek
-
+### What stays the same
+- The service role client is still used for company ownership checks (line 130-138)
+- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
+- All validation, error handling, and CORS remain unchanged
+- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
