@@ -1,25 +1,23 @@
 
 
-## Beküldött (Kimenő) sorok zöld színezésének javítása
+## Fix: save-credentials "Auth session missing!" (attempt 3)
 
-### Probléma
+### Root Cause
+Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
 
-A `src/pages/InvoicesPage.tsx` **2022. sorában** a `SUBMITTED_OUTBOUND` fül minden sora feltétel nélkül zöld hátteret kap:
+The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
 
-```typescript
-!selectedSubmittedIds.has(invoice.id) && activeTab === 'SUBMITTED_OUTBOUND' && "bg-[hsl(var(--success-row-bg))]..."
-```
+### Fix (single file change)
 
-Ez helytelen: a zöld szín csak akkor kellene, ha van párosított banki tranzakció (ahogy a `SUBMITTED_INBOUND` fülnél is `matchedInvoiceIds` alapján történik).
+**File: `supabase/functions/save-credentials/index.ts`**
 
-### Megoldás
+1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
+2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
 
-**Egyetlen sor módosítás** az `InvoicesPage.tsx` 2022. sorában:
+The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
 
-A jelenlegi feltétel nélküli zöld (`activeTab === 'SUBMITTED_OUTBOUND'`) helyett ugyanazt a `matchedInvoiceIds.has(invoice.id)` logikát kell alkalmazni, mint a `SUBMITTED_INBOUND` fülnél:
-
-- Ha `matchedInvoiceIds` tartalmazza az invoice ID-t -> zöld sor (van tranzakció)
-- Ha nem -> piros sor (nincs tranzakció)
-
-Ez a `SUBMITTED_INBOUND` 2020-2021. sorainak mintáját követi, csak az `activeTab` feltétel lesz `'SUBMITTED_OUTBOUND'`.
-
+### What stays the same
+- The service role client is still used for company ownership checks (line 130-138)
+- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
+- All validation, error handling, and CORS remain unchanged
+- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
