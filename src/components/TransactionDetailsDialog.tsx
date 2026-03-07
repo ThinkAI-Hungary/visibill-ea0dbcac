@@ -42,6 +42,20 @@ interface MatchedInvoice {
   invoice_type: string;
 }
 
+// Matched invoice from the 'nav_invoices' table
+interface MatchedNavInvoice {
+  id: string;
+  invoice_number: string;
+  invoice_issue_date: string | null;
+  supplier_name: string | null;
+  customer_name: string | null;
+  invoice_gross_amount: number | null;
+  currency: string | null;
+  invoice_direction: string | null;
+  paid: boolean | null;
+  submitted: boolean | null;
+}
+
 // Available invoices for manual matching (from invoices table)
 interface AvailableInvoice {
   id: string;
