@@ -628,6 +628,46 @@ const Index = () => {
 
       setNavVatData({ inboundVat, outboundVat, revenueNet, revenueGross, expensesNet, expensesGross, unpaidInboundNet, unpaidInboundGross, unpaidOutboundNet, unpaidOutboundGross });
 
+      // Fetch petty cash balance
+      try {
+        const { data: hpSettings } = await supabase
+          .from('hp_settings')
+          .select('opening_balance, start_date')
+          .eq('company_id', selectedCompany.id)
+          .maybeSingle();
+
+        const ob = hpSettings?.opening_balance || 0;
+        const startDateFilter = hpSettings?.start_date;
+
+        const [withdrawalsRes, cashSalesRes, cashExpensesRes] = await Promise.all([
+          supabase
+            .from('transactions')
+            .select('amount')
+            .eq('company_id', selectedCompany.id)
+            .in('type', ['atm pénzfelvét', 'pénztári kp felvét'])
+            ...(startDateFilter ? [supabase.from('transactions').select('amount').eq('company_id', selectedCompany.id).in('type', ['atm pénzfelvét', 'pénztári kp felvét']).gte('transaction_date', startDateFilter)] : [supabase.from('transactions').select('amount').eq('company_id', selectedCompany.id).in('type', ['atm pénzfelvét', 'pénztári kp felvét'])]),
+          supabase
+            .from('nav_invoices')
+            .select('invoice_gross_amount')
+            .eq('company_id', selectedCompany.id)
+            .eq('invoice_direction', 'OUTBOUND')
+            .in('payment_method', ['CASH', 'KÉSZPÉNZ']),
+          supabase
+            .from('invoices')
+            .select('brutto_vegosszeg')
+            .eq('company_id', selectedCompany.id)
+            .ilike('fizetesi_mod', '%készpénz%'),
+        ]);
+
+        const withdrawals = (withdrawalsRes.data || []).reduce((sum, t) => sum + Math.abs(t.amount), 0);
+        const cashSales = (cashSalesRes.data || []).reduce((sum, inv) => sum + Math.abs(inv.invoice_gross_amount || 0), 0);
+        const cashExpenses = (cashExpensesRes.data || []).reduce((sum, inv) => sum + Math.abs(inv.brutto_vegosszeg || 0), 0);
+
+        setPettyCashBalance(ob + withdrawals + cashSales - cashExpenses);
+      } catch (e) {
+        console.error('Error fetching petty cash balance:', e);
+      }
+
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
