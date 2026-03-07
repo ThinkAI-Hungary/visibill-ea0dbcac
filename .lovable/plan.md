@@ -1,23 +1,34 @@
 
 
-## Fix: save-credentials "Auth session missing!" (attempt 3)
+## Reference_number-es számlák: szürke+dőlt összegek + kizárás az összesítésekből
 
-### Root Cause
-Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
+### Összefoglaló
 
-The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
+A `reference_number` mezővel rendelkező beküldött számlák (pl. előlegszámlák, díjbekérők) megjelennek a táblázatban, de Nettó/Bruttó/ÁFA értékeik szürkék és dőltek lesznek, és kizárásra kerülnek minden összesítésből, grafikonból.
 
-### Fix (single file change)
+### Érintett fájlok és változások
 
-**File: `supabase/functions/save-credentials/index.ts`**
+**1. `src/pages/InvoicesPage.tsx` - Szürke + dőlt összegek (~2153-2177)**
 
-1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
-2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
+A Nettó, Bruttó, ÁFA cellák `className`-jében: ha `invoice.reference_number` truthy, a szín `text-muted-foreground italic` lesz a szokásos piros/zöld helyett. Az ÁFA cella jelenleg mindig `text-muted-foreground` -- ott is dőlt lesz, ha van reference_number.
 
-The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
+**2. SQL migráció - `get_invoice_aggregates` RPC frissítése**
 
-### What stays the same
-- The service role client is still used for company ownership checks (line 130-138)
-- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
-- All validation, error handling, and CORS remain unchanged
-- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
+A `WHERE` feltételbe bekerül: `AND i.reference_number IS NULL`, hogy a reference_number-es tételek ne számítsanak bele a Dashboard beküldött számla összesítésbe.
+
+**3. `src/pages/Index.tsx` - Kategória statisztikák (~703)**
+
+Az invoices lekérdezés már `*`-ot selectel, tehát a `reference_number` mező elérhető. A `getCategoryBreakdownData` függvényben a `categoryInvoices` szűrőbe bekerül: `&& !invoice.reference_number`.
+
+**4. `src/pages/Index.tsx` - Készpénzes kiadás lekérdezés (~657-662)**
+
+A `cashExpensesQuery`-hez hozzáadás: `.is('reference_number', null)`.
+
+**5. `src/pages/PettyCashPage.tsx` - Készpénzes kiadás lekérdezés (~110-114)**
+
+A beküldött számlák lekérdezéséhez: `.is('reference_number', null)`.
+
+### Megjegyzés
+
+A `nav_invoices` tábla nem tartalmaz `reference_number` mezőt, ezért a NAV füleken és a `get_nav_invoice_aggregates` RPC-ben, valamint a havi grafikonban (ami NAV számlákat használ) nincs teendő.
+
