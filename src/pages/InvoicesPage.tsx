@@ -118,6 +118,7 @@ interface SubmittedInvoice {
   image_url: string | null;
   melleklet_url: string | null;
   invoice_direction: string | null;
+  reference_number: string | null;
 }
 
 interface Partner {
