@@ -141,6 +141,11 @@ const ExpandedInvoiceRow = ({
                             <Link2 className="h-2.5 w-2.5" />
                             {inv.relationDirection === 'parent' ? 'Hivatkozott bizonylat' : inv.relationDirection === 'child' ? 'Hivatkozó bizonylat' : 'Kapcsolt'}
                           </Badge>
+                          {inv.relationDirection === 'child' && inv.reference_number && (
+                            <Badge variant="outline" className="text-[10px] h-5">
+                              → {inv.reference_number}
+                            </Badge>
+                          )}
                           {(inv.image_url || inv.melleklet_url) && onViewInvoice && (
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                               <Eye className="h-3 w-3" />
