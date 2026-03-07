@@ -916,9 +916,15 @@ const InvoicesPage = () => {
   const getNavInvoiceMatches = (navInvoice: NavInvoice) => {
     const matchedSubmitted = navToSubmittedMap.get(navInvoice.invoice_number) || [];
     const matchedTx: TransactionRecord[] = [];
+    // Transactions matched via submitted invoices
     matchedSubmitted.forEach(sub => {
       const txs = submittedIdToTransactionsMap.get(sub.id) || [];
       matchedTx.push(...txs);
+    });
+    // Transactions matched DIRECTLY to this NAV invoice
+    const directTxs = submittedIdToTransactionsMap.get(navInvoice.id) || [];
+    directTxs.forEach(tx => {
+      if (!matchedTx.some(t => t.id === tx.id)) matchedTx.push(tx);
     });
     return { matchedSubmitted, matchedTransactions: matchedTx, matchedNav: [] as NavInvoice[] };
   };
