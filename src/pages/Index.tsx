@@ -167,9 +167,7 @@ const Index = () => {
 
   const vatChartRef = useRef<HTMLDivElement>(null);
 
-  // Displayed date range info
-  const dateFromFormatted = format(dateFrom, 'yyyy-MM-dd');
-  const dateToFormatted = format(dateTo, 'yyyy-MM-dd');
+  // displayedPeriod for UI labels
   const displayedPeriod = `${format(dateFrom, 'yyyy. MMM dd.', { locale: hu })} - ${format(dateTo, 'yyyy. MMM dd.', { locale: hu })}`;
 
   const currencies = [
