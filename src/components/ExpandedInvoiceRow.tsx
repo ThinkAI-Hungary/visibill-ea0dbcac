@@ -52,6 +52,7 @@ interface LinkedInvoice {
   image_url?: string | null;
   melleklet_url?: string | null;
   reference_number?: string | null;
+  relationDirection?: 'parent' | 'child';
 }
 
 interface ExpandedInvoiceRowProps {
