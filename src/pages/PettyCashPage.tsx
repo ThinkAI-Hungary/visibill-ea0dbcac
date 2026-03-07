@@ -35,6 +35,7 @@ interface PettyCashEntry {
 const PettyCashPage = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
+  const { dateFromFormatted, dateToFormatted } = useDateRange();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<HpSettings | null>(null);
