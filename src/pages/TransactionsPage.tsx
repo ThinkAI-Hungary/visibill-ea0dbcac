@@ -159,6 +159,11 @@ const TransactionsPage = () => {
     matchStatus: 'all'
   });
 
+  // Sync filters.dateFrom/dateTo with global date range
+  useEffect(() => {
+    setFilters(prev => ({ ...prev, dateFrom, dateTo }));
+  }, [dateFrom, dateTo]);
+
   useEffect(() => {
     fetchTransactions();
   }, [user, selectedCompany]);
