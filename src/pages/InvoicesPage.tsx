@@ -1042,7 +1042,12 @@ const InvoicesPage = () => {
     // Don't toggle if clicking on interactive elements
     const target = e.target as HTMLElement;
     if (target.closest('button, input, select, [role="checkbox"], [role="combobox"], [data-radix-collection-item]')) return;
-    setExpandedRowId(prev => prev === invoiceId ? null : invoiceId);
+    setExpandedRowIds(prev => {
+      const next = new Set(prev);
+      if (next.has(invoiceId)) next.delete(invoiceId);
+      else next.add(invoiceId);
+      return next;
+    });
   };
 
   // Reset page when filters change
