@@ -166,6 +166,7 @@ type InvoiceTab = 'OUTBOUND' | 'INBOUND' | 'SUBMITTED_INBOUND' | 'SUBMITTED_OUTB
 const InvoicesPage = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
+  const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const [invoices, setInvoices] = useState<NavInvoice[]>([]);
   const [submittedInvoices, setSubmittedInvoices] = useState<SubmittedInvoice[]>([]);
   const [allTransactions, setAllTransactions] = useState<TransactionRecord[]>([]);
