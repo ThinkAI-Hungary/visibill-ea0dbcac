@@ -324,52 +324,7 @@ export default function SalariesPage() {
         </div>
         
         <div className="flex items-center gap-3">
-          {/* Year & Month Selector */}
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <Select
-              value={selectedMonth.getFullYear().toString()}
-              onValueChange={(year) => {
-                const newDate = new Date(selectedMonth);
-                newDate.setFullYear(parseInt(year));
-                setSelectedMonth(newDate);
-              }}
-            >
-              <SelectTrigger className="w-[100px] bg-muted/30">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 10 }, (_, i) => {
-                  const year = new Date().getFullYear() - 5 + i;
-                  return (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-            <Select
-              value={selectedMonth.getMonth().toString()}
-              onValueChange={(month) => {
-                const newDate = new Date(selectedMonth);
-                newDate.setMonth(parseInt(month));
-                setSelectedMonth(newDate);
-              }}
-            >
-              <SelectTrigger className="w-[140px] bg-muted/30">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="max-h-none">
-                {MONTHS.map((month) => (
-                  <SelectItem key={month.value} value={month.value}>
-                    {month.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
+
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);
             if (!open) resetForm();
