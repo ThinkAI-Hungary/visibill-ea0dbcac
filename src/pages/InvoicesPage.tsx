@@ -947,16 +947,33 @@ const InvoicesPage = () => {
 
   const getLinkedInvoices = (invoice: SubmittedInvoice): (SubmittedInvoice & { relationDirection: 'parent' | 'child' })[] => {
     const linked: (SubmittedInvoice & { relationDirection: 'parent' | 'child' })[] = [];
-    // What I reference (parent) — these are the documents this invoice points to
-    if (invoice.reference_number) {
-      const parents = linkedInvoicesMap.byBizonylat.get(invoice.reference_number.toUpperCase()) || [];
-      parents.forEach(p => { if (p.id !== invoice.id && !linked.some(l => l.id === p.id)) linked.push({ ...p, relationDirection: 'parent' }); });
+    const visited = new Set([invoice.id]);
+
+    // Walk up: follow reference_number chain recursively
+    let currentRef = invoice.reference_number;
+    while (currentRef) {
+      const parents = linkedInvoicesMap.byBizonylat.get(currentRef.toUpperCase()) || [];
+      const parent = parents.find(p => !visited.has(p.id));
+      if (!parent) break;
+      visited.add(parent.id);
+      linked.push({ ...parent, relationDirection: 'parent' });
+      currentRef = parent.reference_number;
     }
-    // What references me (children) — these are documents that point to this invoice
-    if (invoice.bizonylatsorszam) {
-      const children = linkedInvoicesMap.byReference.get(invoice.bizonylatsorszam.toUpperCase()) || [];
-      children.forEach(c => { if (c.id !== invoice.id && !linked.some(l => l.id === c.id)) linked.push({ ...c, relationDirection: 'child' }); });
+
+    // Walk down: follow children recursively (BFS)
+    const queue = [invoice.bizonylatsorszam];
+    while (queue.length > 0) {
+      const bizSorszam = queue.shift();
+      if (!bizSorszam) continue;
+      const children = linkedInvoicesMap.byReference.get(bizSorszam.toUpperCase()) || [];
+      for (const child of children) {
+        if (visited.has(child.id)) continue;
+        visited.add(child.id);
+        linked.push({ ...child, relationDirection: 'child' });
+        if (child.bizonylatsorszam) queue.push(child.bizonylatsorszam);
+      }
     }
+
     return linked;
   };
 
