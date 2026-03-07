@@ -755,99 +755,6 @@ const Index = () => {
             </p>
           </div>
           <div className="flex gap-2 items-center flex-wrap">
-            {/* Quick period buttons */}
-            <div className="flex gap-1 items-center">
-              <Button
-                variant={isSameDay(dateFrom, startOfMonth(new Date())) && isSameDay(dateTo, endOfMonth(new Date())) ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setDateFrom(startOfMonth(new Date()));
-                  setDateTo(endOfMonth(new Date()));
-                }}
-              >
-                Ez a hónap
-              </Button>
-              <Button
-                variant={isSameDay(dateFrom, startOfMonth(subMonths(new Date(), 1))) && isSameDay(dateTo, endOfMonth(subMonths(new Date(), 1))) ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setDateFrom(startOfMonth(subMonths(new Date(), 1)));
-                  setDateTo(endOfMonth(subMonths(new Date(), 1)));
-                }}
-              >
-                Előző hónap
-              </Button>
-              <Button
-                variant={isSameDay(dateFrom, startOfYear(new Date())) && isSameDay(dateTo, endOfYear(new Date())) ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setDateFrom(startOfYear(new Date()));
-                  setDateTo(endOfYear(new Date()));
-                }}
-              >
-                Ez az év
-              </Button>
-            </div>
-            <span className="text-muted-foreground mx-1">|</span>
-            <div className="flex gap-2 items-center">
-              <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-[160px] justify-start text-left font-normal",
-                      !dateFrom && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateFrom ? format(dateFrom, "yyyy. MMM dd.", { locale: hu }) : <span>Kezdő dátum</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={dateFrom}
-                    onSelect={(date) => {
-                      if (date) {
-                        setDateFrom(date);
-                        setDateFromOpen(false);
-                      }
-                    }}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-              <span className="text-sm text-muted-foreground">-</span>
-              <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-[160px] justify-start text-left font-normal",
-                      !dateTo && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateTo ? format(dateTo, "yyyy. MMM dd.", { locale: hu }) : <span>Záró dátum</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <CalendarComponent
-                    mode="single"
-                    selected={dateTo}
-                    onSelect={(date) => {
-                      if (date) {
-                        setDateTo(date);
-                        setDateToOpen(false);
-                      }
-                    }}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
             <div className="w-[200px]">
               <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
                 <SelectTrigger>
@@ -863,7 +770,6 @@ const Index = () => {
               </Select>
             </div>
           </div>
-        </div>
 
         {/* Nettó/Bruttó Toggle */}
         <div className="flex items-center gap-3">
