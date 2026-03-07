@@ -1,23 +1,65 @@
 
 
-## Fix: save-credentials "Auth session missing!" (attempt 3)
+## Számlák párosítás - Audit eredmények
 
-### Root Cause
-Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
+### Talált probléma
 
-The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
+A tranzakciók **kétféleképpen** párosulhatnak számlákhoz:
+- **A)** `transactions.matched_invoice_id` → `invoices.id` (beküldött számlához)
+- **B)** `transactions.matched_invoice_id` → `nav_invoices.id` (közvetlenül NAV számlához)
 
-### Fix (single file change)
+Az adatbázisban **mindkét típus létezik** (20 tranzakcióból 8 közvetlenül NAV számlához van párosítva).
 
-**File: `supabase/functions/save-credentials/index.ts`**
+**A hiba**: A `getNavInvoiceMatches` függvény a NAV sor lenyitásakor **csak a beküldött számlákon keresztül** keresi a tranzakciókat (NAV → submitted via `invoice_number` → transactions via `matched_invoice_id`). A **közvetlenül NAV számlához párosított tranzakciók nem jelennek meg** a lenyitott sorban.
 
-1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
-2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
+### Érintett kódrészletek
 
-The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
+1. **`getNavInvoiceMatches`** (InvoicesPage.tsx ~916-924): Nem veszi figyelembe a közvetlen NAV-tranzakció párosítást.
 
-### What stays the same
-- The service role client is still used for company ownership checks (line 130-138)
-- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
-- All validation, error handling, and CORS remain unchanged
-- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
+2. **`matchedInvoiceIds` Set** (InvoicesPage.tsx ~588): A zöld sor jelzés a beküldött füleknél helyes (csak `invoices` tábla ID-kat tartalmaz), de a NAV fülön a `paid` mező alapján történik a színezés, ami szintén problémás lehet.
+
+3. **DB trigger `mark_nav_invoice_paid_on_transaction_match`**: Csak akkor jelöli a NAV számlát fizetettnek, ha a tranzakció egy **beküldött** számlához van párosítva és az `invoice_number` egyezik. Ha a tranzakció **közvetlenül** a NAV számlához van párosítva, a trigger nem fut le → a `paid` mező nem frissül.
+
+### Javítási terv
+
+#### 1. Frontend: `getNavInvoiceMatches` kiegészítése
+A NAV invoice ID-t is keresni kell a `submittedIdToTransactionsMap`-ben (ami valójában `matchedInvoiceIdToTransactionsMap`), mivel az a `matched_invoice_id` szerint indexel, és a NAV ID-k is lehetnek benne:
+
+```typescript
+const getNavInvoiceMatches = (navInvoice: NavInvoice) => {
+  const matchedSubmitted = navToSubmittedMap.get(navInvoice.invoice_number) || [];
+  const matchedTx: TransactionRecord[] = [];
+  // Transactions matched via submitted invoices
+  matchedSubmitted.forEach(sub => {
+    const txs = submittedIdToTransactionsMap.get(sub.id) || [];
+    matchedTx.push(...txs);
+  });
+  // Transactions matched DIRECTLY to this NAV invoice
+  const directTxs = submittedIdToTransactionsMap.get(navInvoice.id) || [];
+  directTxs.forEach(tx => {
+    if (!matchedTx.some(t => t.id === tx.id)) matchedTx.push(tx);
+  });
+  return { matchedSubmitted, matchedTransactions: matchedTx, matchedNav: [] };
+};
+```
+
+#### 2. DB trigger: közvetlen NAV párosítás kezelése
+Új trigger vagy a meglévő `mark_nav_invoice_paid_on_transaction_match` bővítése: ha a `matched_invoice_id` közvetlenül egy `nav_invoices` rekordra mutat, akkor azt is jelölje `paid = true`.
+
+```sql
+-- Add direct nav_invoices match handling
+IF v_bizonylatsorszam IS NULL THEN
+  UPDATE nav_invoices
+  SET paid = true
+  WHERE id = NEW.matched_invoice_id
+    AND (paid IS NULL OR paid = false);
+END IF;
+```
+
+### Fájlok
+
+| Fájl | Változás |
+|------|----------|
+| `src/pages/InvoicesPage.tsx` | `getNavInvoiceMatches` bővítése közvetlen NAV-tranzakció kereséssel |
+| DB migration | `mark_nav_invoice_paid_on_transaction_match` trigger bővítése |
+
