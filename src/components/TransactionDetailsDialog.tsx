@@ -105,6 +105,7 @@ export const TransactionDetailsDialog = ({
         fetchMatchedInvoice();
       } else {
         setMatchedInvoice(null);
+        setMatchedNavInvoice(null);
         // Auto-load available invoices for unmatched transactions
         fetchAvailableInvoices();
       }
