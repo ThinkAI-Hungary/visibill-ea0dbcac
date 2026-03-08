@@ -70,8 +70,10 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
     let query = supabase
       .from(tableName)
       .select('id, file_name, file_size, file_type, file_url, user_id, upload_status, processing_status, created_at, error_message')
+      .gte('created_at', dateFromFormatted)
+      .lte('created_at', dateToFormatted + 'T23:59:59')
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(50);
 
     if (selectedCompany?.id) {
       query = query.eq('company_id', selectedCompany.id);
