@@ -1,23 +1,17 @@
 
 
-## Fix: save-credentials "Auth session missing!" (attempt 3)
+## Mélységi korlát növelése a bizonylatláncban
 
-### Root Cause
-Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
+### Probléma
+A jelenlegi BFS iteráció `depth < 5` korlátozással fut. Ez **nem** az egyetlen számlához tartozó kapcsolódó elemek számát korlátozza, hanem a **lánc mélységét** (A→B→C→D→E→F). Tehát ha A-ból indulunk és 6 lépés mélyen van G, az már nem kerül lekérdezésre.
 
-The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
+A gyakorlatban 5 mélység ritkán fogy el (minden szinten több elem is jöhet egyszerre), de biztonsági szempontból érdemes növelni.
 
-### Fix (single file change)
+### Megoldás
 
-**File: `supabase/functions/save-credentials/index.ts`**
+**`src/pages/InvoicesPage.tsx`** (~588. sor):
+- `depth < 5` → `depth < 20`
+- A meglévő `break` feltétel (ha nincs új elem) garantálja, hogy felesleges query-k nem futnak — a 20 csak egy biztonsági felső határ.
 
-1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
-2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
+Egy soros változtatás, a logika és a korai kilépés (`if (newInvoices.length === 0) break`) változatlan marad.
 
-The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
-
-### What stays the same
-- The service role client is still used for company ownership checks (line 130-138)
-- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
-- All validation, error handling, and CORS remain unchanged
-- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
