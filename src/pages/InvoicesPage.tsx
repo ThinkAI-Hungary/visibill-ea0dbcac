@@ -568,38 +568,56 @@ const InvoicesPage = () => {
       if (submittedError) throw submittedError;
       setSubmittedInvoices(submittedData || []);
 
-      // Fetch linked invoices outside the date range
+      // Fetch linked invoices outside the date range (recursive to resolve full chain)
       const submittedList = submittedData || [];
-      const bizonylatNumbers = submittedList
-        .map(inv => inv.bizonylatsorszam)
-        .filter(Boolean) as string[];
-      const referenceNumbers = submittedList
-        .map(inv => inv.reference_number)
-        .filter(Boolean) as string[];
+      const knownIds = new Set(submittedList.map(inv => inv.id));
+      const allExtra: SubmittedInvoice[] = [];
+      
+      // Collect initial link keys from the date-filtered invoices
+      let pendingBizonylat = new Set(
+        submittedList.map(inv => inv.bizonylatsorszam).filter(Boolean) as string[]
+      );
+      let pendingReference = new Set(
+        submittedList.map(inv => inv.reference_number).filter(Boolean) as string[]
+      );
+      // Track already-queried keys to avoid repeat queries
+      const queriedBizonylat = new Set<string>();
+      const queriedReference = new Set<string>();
 
-      const allLinkKeys = [...new Set([...bizonylatNumbers, ...referenceNumbers])];
+      // Iterative BFS: fetch linked invoices, then check if the newly fetched ones have further links
+      for (let depth = 0; depth < 5; depth++) {
+        const newBiz = [...pendingBizonylat].filter(k => !queriedBizonylat.has(k));
+        const newRef = [...pendingReference].filter(k => !queriedReference.has(k));
+        if (newBiz.length === 0 && newRef.length === 0) break;
 
-      if (allLinkKeys.length > 0) {
-        const submittedIds = new Set(submittedList.map(inv => inv.id));
-        // Fetch invoices that reference any of our bizonylatsorszam values, or that are referenced by our reference_numbers
+        newBiz.forEach(k => queriedBizonylat.add(k));
+        newRef.forEach(k => queriedReference.add(k));
+
+        const orParts: string[] = [];
+        if (newBiz.length > 0) orParts.push(`reference_number.in.(${newBiz.join(',')})`);
+        if (newRef.length > 0) orParts.push(`bizonylatsorszam.in.(${newRef.join(',')})`);
+
         const { data: linkedData } = await supabase
           .from('invoices')
           .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number')
           .eq('company_id', selectedCompany.id)
-          .or(
-            bizonylatNumbers.length > 0 && referenceNumbers.length > 0
-              ? `reference_number.in.(${bizonylatNumbers.join(',')}),bizonylatsorszam.in.(${referenceNumbers.join(',')})`
-              : bizonylatNumbers.length > 0
-                ? `reference_number.in.(${bizonylatNumbers.join(',')})`
-                : `bizonylatsorszam.in.(${referenceNumbers.join(',')})`
-          );
+          .or(orParts.join(','));
 
-        // Only keep invoices not already in the date-filtered list
-        const extraLinked = (linkedData || []).filter(inv => !submittedIds.has(inv.id));
-        setLinkedInvoicesPool(extraLinked as SubmittedInvoice[]);
-      } else {
-        setLinkedInvoicesPool([]);
+        const newInvoices = (linkedData || []).filter(inv => !knownIds.has(inv.id));
+        if (newInvoices.length === 0) break;
+
+        // Prepare next iteration keys from newly discovered invoices
+        pendingBizonylat = new Set<string>();
+        pendingReference = new Set<string>();
+        for (const inv of newInvoices) {
+          knownIds.add(inv.id);
+          allExtra.push(inv as SubmittedInvoice);
+          if (inv.bizonylatsorszam) pendingBizonylat.add(inv.bizonylatsorszam);
+          if (inv.reference_number) pendingReference.add(inv.reference_number);
+        }
       }
+
+      setLinkedInvoicesPool(allExtra);
 
       // Fetch partners for name lookup
       const { data: partnersData, error: partnersError } = await supabase
