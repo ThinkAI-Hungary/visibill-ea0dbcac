@@ -281,6 +281,7 @@ const PettyCashPage = () => {
   const getSourceLabel = (source: PettyCashEntry['source']) => {
     switch (source) {
       case 'withdrawal': return 'KP felvétel';
+      case 'cash_deposit': return 'KP befizetés';
       case 'cash_sale': return 'KP értékesítés';
       case 'cash_expense': return 'KP kiadás';
     }
@@ -289,6 +290,7 @@ const PettyCashPage = () => {
   const getSourceBgClass = (source: PettyCashEntry['source']) => {
     switch (source) {
       case 'withdrawal': return 'bg-primary/10 text-primary';
+      case 'cash_deposit': return 'bg-orange-500/10 text-orange-500';
       case 'cash_sale': return 'bg-success/10 text-success';
       case 'cash_expense': return 'bg-destructive/10 text-destructive';
     }
