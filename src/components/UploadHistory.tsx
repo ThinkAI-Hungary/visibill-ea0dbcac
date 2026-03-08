@@ -119,7 +119,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
       }
     }
     setLoading(false);
-  }, [user, selectedCompany?.id, tableName, activeTab]);
+  }, [user, selectedCompany?.id, tableName, activeTab, dateFromFormatted, dateToFormatted]);
 
   // Initial fetch + refetch on refreshKey change
   useEffect(() => {
