@@ -176,7 +176,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
                         <Badge variant={status.variant} className="text-xs">
                           {status.label}
                         </Badge>
-                        {record.error_message && (
+                        {record.error_message && errorStatuses.has(record.processing_status) && (
                           <p className="text-xs text-destructive mt-1 max-w-[150px] truncate" title={record.error_message}>
                             {record.error_message}
                           </p>

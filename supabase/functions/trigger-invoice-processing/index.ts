@@ -93,6 +93,7 @@ serve(async (req) => {
           .from('invoice_uploads')
           .update({ 
             processing_status: 'webhook_sent',
+            error_message: null,
             updated_at: new Date().toISOString()
           })
           .eq('id', uploadId);
