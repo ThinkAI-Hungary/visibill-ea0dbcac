@@ -1,0 +1,1 @@
+UPDATE invoice_uploads SET error_message = NULL WHERE processing_status = 'webhook_sent' AND error_message IS NOT NULL;

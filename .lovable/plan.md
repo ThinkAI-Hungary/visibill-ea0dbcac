@@ -1,33 +1,23 @@
 
 
-## Feltöltési státusz logika átdolgozása
+## Fix: save-credentials "Auth session missing!" (attempt 3)
 
-### Jelenlegi probléma
-A `statusMap` nem ismeri a `webhook_sent` és `webhook_failed` státuszokat, ezért nyers szöveg jelenik meg. Az `error_message` mező nem törlődik sikeres webhook küldéskor, ami hamis hibaüzenetet mutat.
+### Root Cause
+Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
 
-### Változtatások
+The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
 
-**1. `src/components/UploadHistory.tsx` -- statusMap frissítése**
+### Fix (single file change)
 
-Új státusz-leképezés:
-- `pending` / `processing` / `uploaded` → "Feltöltve" (secondary)
-- `webhook_sent` → "Feltöltve" (secondary) -- a webhook sikeresen elküldte n8n-nek
-- `completed` / `done` → "Feldolgozva" (default/green)
-- `webhook_failed` / `failed` / `error` → "A feltöltés sikertelen" (destructive)
+**File: `supabase/functions/save-credentials/index.ts`**
 
-Az `error_message` csak akkor jelenik meg, ha a státusz `webhook_failed`, `failed` vagy `error`.
+1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
+2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
 
-**2. `supabase/functions/trigger-invoice-processing/index.ts` -- error_message nullázása**
+The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
 
-A sikeres webhook küldésnél `error_message: null` beállítása, hogy korábbi hibák ne maradjanak bent.
-
-**3. Adattisztítás (SQL UPDATE)**
-
-Meglévő `invoice_uploads` rekordok `error_message` mezőjének nullázása ahol `processing_status = 'webhook_sent'`:
-```sql
-UPDATE invoice_uploads SET error_message = NULL WHERE processing_status = 'webhook_sent';
-```
-
-### Megjegyzés
-A "Feldolgozva" státusz akkor jelenik meg, amikor az n8n visszaírja a `processing_status`-t `completed`-re az `invoice_uploads` táblában. Ha az n8n jelenleg nem frissíti ezt a mezőt, azt az n8n workflow oldalán kell beállítani.
-
+### What stays the same
+- The service role client is still used for company ownership checks (line 130-138)
+- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
+- All validation, error handling, and CORS remain unchanged
+- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
