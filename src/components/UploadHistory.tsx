@@ -204,7 +204,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
   }
 
   return (
-    <Card className="mt-6">
+    <Card className="mt-6 max-w-full">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <History className="h-5 w-5" />
