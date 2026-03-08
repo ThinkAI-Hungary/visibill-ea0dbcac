@@ -585,7 +585,7 @@ const InvoicesPage = () => {
       const queriedReference = new Set<string>();
 
       // Iterative BFS: fetch linked invoices, then check if the newly fetched ones have further links
-      for (let depth = 0; depth < 5; depth++) {
+      for (let depth = 0; depth < 20; depth++) {
         const newBiz = [...pendingBizonylat].filter(k => !queriedBizonylat.has(k));
         const newRef = [...pendingReference].filter(k => !queriedReference.has(k));
         if (newBiz.length === 0 && newRef.length === 0) break;
