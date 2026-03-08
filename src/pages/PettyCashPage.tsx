@@ -98,7 +98,7 @@ const PettyCashPage = () => {
         .from('transactions')
         .select('transaction_date, description, amount')
         .eq('company_id', selectedCompany.id)
-        .in('type', ['atm pénzfelvét', 'pénztári kp felvét']),
+        .in('type', ['atm készpénzfelvét', 'atm pénzfelvét', 'pénztári kp felvét']),
 
       // 2. Cash Sales from nav_invoices (OUTBOUND, payment_method = CASH)
       supabase
