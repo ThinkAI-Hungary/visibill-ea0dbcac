@@ -967,10 +967,11 @@ const InvoicesPage = () => {
 
   // Linked invoices maps (reference_number based)
   const linkedInvoicesMap = useMemo(() => {
-    // For each invoice, find: what it references + what references it
+    // Combine date-filtered invoices with extra linked invoices fetched without date filter
+    const allInvoices = [...submittedInvoices, ...linkedInvoicesPool];
     const byBizonylat = new Map<string, SubmittedInvoice[]>();
     const byReference = new Map<string, SubmittedInvoice[]>();
-    submittedInvoices.forEach(inv => {
+    allInvoices.forEach(inv => {
       if (inv.bizonylatsorszam) {
         const key = inv.bizonylatsorszam.toUpperCase();
         const arr = byBizonylat.get(key) || [];
@@ -985,7 +986,7 @@ const InvoicesPage = () => {
       }
     });
     return { byBizonylat, byReference };
-  }, [submittedInvoices]);
+  }, [submittedInvoices, linkedInvoicesPool]);
 
   const getLinkedInvoices = (invoice: SubmittedInvoice): (SubmittedInvoice & { relationDirection: 'parent' | 'child' })[] => {
     const linked: (SubmittedInvoice & { relationDirection: 'parent' | 'child' })[] = [];
