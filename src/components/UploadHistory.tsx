@@ -53,6 +53,7 @@ function getStatus(record: UploadRecord, processedUrls: Set<string>): { label: s
 export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryProps) {
   const [records, setRecords] = useState<UploadRecord[]>([]);
   const [processedUrls, setProcessedUrls] = useState<Set<string>>(new Set());
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
