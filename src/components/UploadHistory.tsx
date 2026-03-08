@@ -84,6 +84,21 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
       const uploadRecords = (data as UploadRecord[]) || [];
       setRecords(uploadRecords);
 
+      // Fetch user names for uploaders
+      const uniqueUserIds = [...new Set(uploadRecords.map(r => r.user_id).filter(Boolean))];
+      if (uniqueUserIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', uniqueUserIds);
+        
+        const nameMap: Record<string, string> = {};
+        (profiles || []).forEach(p => {
+          nameMap[p.user_id] = p.name || 'Ismeretlen';
+        });
+        setUserNames(nameMap);
+      }
+
       // For invoice uploads, check which ones have been processed
       if (activeTab === 'invoices' && uploadRecords.length > 0 && selectedCompany?.id) {
         const fileUrls = uploadRecords.map(r => r.file_url).filter(Boolean);
