@@ -1138,7 +1138,6 @@ const ManualUpload = () => {
             </TabsContent>
           </Tabs>
 
-          <UploadHistory activeTab={activeTab} refreshKey={uploadRefreshKey} />
         </div>
 
         {/* Subscription Usage Sidebar */}
@@ -1146,6 +1145,8 @@ const ManualUpload = () => {
           <SubscriptionUsage />
         </div>
       </div>
+
+      <UploadHistory activeTab={activeTab} refreshKey={uploadRefreshKey} />
     </div>
   );
 };
