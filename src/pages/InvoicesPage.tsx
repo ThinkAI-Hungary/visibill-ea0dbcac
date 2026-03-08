@@ -568,6 +568,39 @@ const InvoicesPage = () => {
       if (submittedError) throw submittedError;
       setSubmittedInvoices(submittedData || []);
 
+      // Fetch linked invoices outside the date range
+      const submittedList = submittedData || [];
+      const bizonylatNumbers = submittedList
+        .map(inv => inv.bizonylatsorszam)
+        .filter(Boolean) as string[];
+      const referenceNumbers = submittedList
+        .map(inv => inv.reference_number)
+        .filter(Boolean) as string[];
+
+      const allLinkKeys = [...new Set([...bizonylatNumbers, ...referenceNumbers])];
+
+      if (allLinkKeys.length > 0) {
+        const submittedIds = new Set(submittedList.map(inv => inv.id));
+        // Fetch invoices that reference any of our bizonylatsorszam values, or that are referenced by our reference_numbers
+        const { data: linkedData } = await supabase
+          .from('invoices')
+          .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number')
+          .eq('company_id', selectedCompany.id)
+          .or(
+            bizonylatNumbers.length > 0 && referenceNumbers.length > 0
+              ? `reference_number.in.(${bizonylatNumbers.join(',')}),bizonylatsorszam.in.(${referenceNumbers.join(',')})`
+              : bizonylatNumbers.length > 0
+                ? `reference_number.in.(${bizonylatNumbers.join(',')})`
+                : `bizonylatsorszam.in.(${referenceNumbers.join(',')})`
+          );
+
+        // Only keep invoices not already in the date-filtered list
+        const extraLinked = (linkedData || []).filter(inv => !submittedIds.has(inv.id));
+        setLinkedInvoicesPool(extraLinked as SubmittedInvoice[]);
+      } else {
+        setLinkedInvoicesPool([]);
+      }
+
       // Fetch partners for name lookup
       const { data: partnersData, error: partnersError } = await supabase
         .from('partners')
