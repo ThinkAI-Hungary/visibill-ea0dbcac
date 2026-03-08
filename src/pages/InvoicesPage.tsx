@@ -169,6 +169,7 @@ const InvoicesPage = () => {
   const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const [invoices, setInvoices] = useState<NavInvoice[]>([]);
   const [submittedInvoices, setSubmittedInvoices] = useState<SubmittedInvoice[]>([]);
+  const [linkedInvoicesPool, setLinkedInvoicesPool] = useState<SubmittedInvoice[]>([]);
   const [allTransactions, setAllTransactions] = useState<TransactionRecord[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
@@ -567,6 +568,39 @@ const InvoicesPage = () => {
       if (submittedError) throw submittedError;
       setSubmittedInvoices(submittedData || []);
 
+      // Fetch linked invoices outside the date range
+      const submittedList = submittedData || [];
+      const bizonylatNumbers = submittedList
+        .map(inv => inv.bizonylatsorszam)
+        .filter(Boolean) as string[];
+      const referenceNumbers = submittedList
+        .map(inv => inv.reference_number)
+        .filter(Boolean) as string[];
+
+      const allLinkKeys = [...new Set([...bizonylatNumbers, ...referenceNumbers])];
+
+      if (allLinkKeys.length > 0) {
+        const submittedIds = new Set(submittedList.map(inv => inv.id));
+        // Fetch invoices that reference any of our bizonylatsorszam values, or that are referenced by our reference_numbers
+        const { data: linkedData } = await supabase
+          .from('invoices')
+          .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number')
+          .eq('company_id', selectedCompany.id)
+          .or(
+            bizonylatNumbers.length > 0 && referenceNumbers.length > 0
+              ? `reference_number.in.(${bizonylatNumbers.join(',')}),bizonylatsorszam.in.(${referenceNumbers.join(',')})`
+              : bizonylatNumbers.length > 0
+                ? `reference_number.in.(${bizonylatNumbers.join(',')})`
+                : `bizonylatsorszam.in.(${referenceNumbers.join(',')})`
+          );
+
+        // Only keep invoices not already in the date-filtered list
+        const extraLinked = (linkedData || []).filter(inv => !submittedIds.has(inv.id));
+        setLinkedInvoicesPool(extraLinked as SubmittedInvoice[]);
+      } else {
+        setLinkedInvoicesPool([]);
+      }
+
       // Fetch partners for name lookup
       const { data: partnersData, error: partnersError } = await supabase
         .from('partners')
@@ -933,10 +967,11 @@ const InvoicesPage = () => {
 
   // Linked invoices maps (reference_number based)
   const linkedInvoicesMap = useMemo(() => {
-    // For each invoice, find: what it references + what references it
+    // Combine date-filtered invoices with extra linked invoices fetched without date filter
+    const allInvoices = [...submittedInvoices, ...linkedInvoicesPool];
     const byBizonylat = new Map<string, SubmittedInvoice[]>();
     const byReference = new Map<string, SubmittedInvoice[]>();
-    submittedInvoices.forEach(inv => {
+    allInvoices.forEach(inv => {
       if (inv.bizonylatsorszam) {
         const key = inv.bizonylatsorszam.toUpperCase();
         const arr = byBizonylat.get(key) || [];
@@ -951,7 +986,7 @@ const InvoicesPage = () => {
       }
     });
     return { byBizonylat, byReference };
-  }, [submittedInvoices]);
+  }, [submittedInvoices, linkedInvoicesPool]);
 
   const getLinkedInvoices = (invoice: SubmittedInvoice): (SubmittedInvoice & { relationDirection: 'parent' | 'child' })[] => {
     const linked: (SubmittedInvoice & { relationDirection: 'parent' | 'child' })[] = [];
