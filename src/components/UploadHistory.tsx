@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { History, FileText, Landmark, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
