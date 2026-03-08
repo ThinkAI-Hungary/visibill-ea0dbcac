@@ -685,6 +685,7 @@ const Index = () => {
           .reduce((sum: number, inv: any) => sum + Math.abs(inv.invoice_gross_amount || 0), 0);
 
         setPettyCashBalance(ob + withdrawals + cashSales - cashExpenses - navCashExpenses);
+        }
       } catch (e) {
         console.error('Error fetching petty cash balance:', e);
       }
