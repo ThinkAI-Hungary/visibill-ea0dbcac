@@ -162,8 +162,8 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
         },
         (payload) => {
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const invoice = payload.new as { image_url?: string; feldolgozva?: string };
-            if (invoice.image_url && invoice.feldolgozva) {
+          const invoice = payload.new as { image_url?: string };
+          if (invoice.image_url) {
               setProcessedUrls(prev => {
                 if (prev.has(invoice.image_url!)) return prev;
                 const next = new Set(prev);
