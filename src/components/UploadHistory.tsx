@@ -26,14 +26,18 @@ interface UploadHistoryProps {
 }
 
 const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  pending: { label: 'Feldolgozás alatt', variant: 'secondary' },
-  processing: { label: 'Feldolgozás...', variant: 'secondary' },
-  completed: { label: 'Kész', variant: 'default' },
-  done: { label: 'Kész', variant: 'default' },
-  failed: { label: 'Hiba', variant: 'destructive' },
-  error: { label: 'Hiba', variant: 'destructive' },
-  uploaded: { label: 'Feltöltve', variant: 'outline' },
+  pending: { label: 'Feltöltve', variant: 'secondary' },
+  processing: { label: 'Feltöltve', variant: 'secondary' },
+  uploaded: { label: 'Feltöltve', variant: 'secondary' },
+  webhook_sent: { label: 'Feltöltve', variant: 'secondary' },
+  completed: { label: 'Feldolgozva', variant: 'default' },
+  done: { label: 'Feldolgozva', variant: 'default' },
+  webhook_failed: { label: 'A feltöltés sikertelen', variant: 'destructive' },
+  failed: { label: 'A feltöltés sikertelen', variant: 'destructive' },
+  error: { label: 'A feltöltés sikertelen', variant: 'destructive' },
 };
+
+const errorStatuses = new Set(['webhook_failed', 'failed', 'error']);
 
 function formatFileSize(bytes: number) {
   if (bytes === 0) return '0 B';
