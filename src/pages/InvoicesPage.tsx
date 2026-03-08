@@ -169,6 +169,7 @@ const InvoicesPage = () => {
   const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const [invoices, setInvoices] = useState<NavInvoice[]>([]);
   const [submittedInvoices, setSubmittedInvoices] = useState<SubmittedInvoice[]>([]);
+  const [linkedInvoicesPool, setLinkedInvoicesPool] = useState<SubmittedInvoice[]>([]);
   const [allTransactions, setAllTransactions] = useState<TransactionRecord[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
