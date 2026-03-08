@@ -15,6 +15,7 @@ interface UploadRecord {
   file_size: number;
   file_type: string;
   file_url: string;
+  user_id: string;
   upload_status: string;
   processing_status: string;
   created_at: string;
@@ -52,6 +53,7 @@ function getStatus(record: UploadRecord, processedUrls: Set<string>): { label: s
 export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryProps) {
   const [records, setRecords] = useState<UploadRecord[]>([]);
   const [processedUrls, setProcessedUrls] = useState<Set<string>>(new Set());
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
@@ -65,7 +67,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
     
     let query = supabase
       .from(tableName)
-      .select('id, file_name, file_size, file_type, file_url, upload_status, processing_status, created_at, error_message')
+      .select('id, file_name, file_size, file_type, file_url, user_id, upload_status, processing_status, created_at, error_message')
       .order('created_at', { ascending: false })
       .limit(20);
 
@@ -81,6 +83,21 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
     } else {
       const uploadRecords = (data as UploadRecord[]) || [];
       setRecords(uploadRecords);
+
+      // Fetch user names for uploaders
+      const uniqueUserIds = [...new Set(uploadRecords.map(r => r.user_id).filter(Boolean))];
+      if (uniqueUserIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', uniqueUserIds);
+        
+        const nameMap: Record<string, string> = {};
+        (profiles || []).forEach(p => {
+          nameMap[p.user_id] = p.name || 'Ismeretlen';
+        });
+        setUserNames(nameMap);
+      }
 
       // For invoice uploads, check which ones have been processed
       if (activeTab === 'invoices' && uploadRecords.length > 0 && selectedCompany?.id) {
@@ -187,7 +204,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
   }
 
   return (
-    <Card className="mt-6">
+    <Card className="mt-6 max-w-full">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <History className="h-5 w-5" />
@@ -210,6 +227,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
               <TableHeader>
                 <TableRow>
                   <TableHead>Fájlnév</TableHead>
+                  <TableHead>Feltöltötte</TableHead>
                   <TableHead>Méret</TableHead>
                   <TableHead>Státusz</TableHead>
                   <TableHead>Dátum</TableHead>
@@ -220,8 +238,11 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
                   const status = getStatus(record, processedUrls);
                   return (
                     <TableRow key={record.id}>
-                      <TableCell className="font-medium text-sm max-w-[200px] truncate" title={record.file_name}>
+                      <TableCell className="font-medium text-sm max-w-[250px] truncate" title={record.file_name}>
                         {record.file_name}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                        {userNames[record.user_id] || 'Ismeretlen'}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                         {formatFileSize(record.file_size || 0)}
