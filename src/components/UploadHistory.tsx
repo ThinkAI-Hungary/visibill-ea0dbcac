@@ -90,7 +90,6 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
             .from('invoices')
             .select('image_url')
             .eq('company_id', selectedCompany.id)
-            .not('feldolgozva', 'is', null)
             .in('image_url', fileUrls);
 
           const urls = new Set((invoices || []).map(i => i.image_url).filter(Boolean) as string[]);
@@ -163,8 +162,8 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
         },
         (payload) => {
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const invoice = payload.new as { image_url?: string; feldolgozva?: string };
-            if (invoice.image_url && invoice.feldolgozva) {
+          const invoice = payload.new as { image_url?: string };
+          if (invoice.image_url) {
               setProcessedUrls(prev => {
                 if (prev.has(invoice.image_url!)) return prev;
                 const next = new Set(prev);
