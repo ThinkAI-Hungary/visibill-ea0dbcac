@@ -29,7 +29,7 @@ interface PettyCashEntry {
   date: string;
   description: string;
   amount: number; // positive = income, negative = expense
-  source: 'withdrawal' | 'cash_sale' | 'cash_expense';
+  source: 'withdrawal' | 'cash_deposit' | 'cash_sale' | 'cash_expense';
 }
 
 const PettyCashPage = () => {
@@ -92,15 +92,22 @@ const PettyCashPage = () => {
     if (!selectedCompany) return;
 
     // Fetch all 3 sources in parallel
-    const [withdrawalsRes, cashSalesRes, cashExpensesRes, navCashExpensesRes] = await Promise.all([
-      // 1. Cash Withdrawals from transactions
+    const [withdrawalsRes, cashDepositsRes, cashSalesRes, cashExpensesRes, navCashExpensesRes] = await Promise.all([
+      // 1. Cash Withdrawals from transactions (increases petty cash)
       supabase
         .from('transactions')
         .select('transaction_date, description, amount')
         .eq('company_id', selectedCompany.id)
-        .in('type', ['atm készpénzfelvét', 'atm pénzfelvét', 'pénztári kp felvét']),
+        .in('type', ['atm készpénzfelvét', 'pénztári kp felvét']),
 
-      // 2. Cash Sales from nav_invoices (OUTBOUND, payment_method = CASH)
+      // 2. Cash Deposits from transactions (decreases petty cash)
+      supabase
+        .from('transactions')
+        .select('transaction_date, description, amount')
+        .eq('company_id', selectedCompany.id)
+        .in('type', ['pénztári kp befizetés', 'kp befizetés atm-en keresztül']),
+
+      // 3. Cash Sales from nav_invoices (OUTBOUND, payment_method = CASH)
       supabase
         .from('nav_invoices')
         .select('invoice_issue_date, customer_name, invoice_gross_amount, payment_method')
@@ -108,7 +115,7 @@ const PettyCashPage = () => {
         .eq('invoice_direction', 'OUTBOUND')
         .in('payment_method', ['CASH', 'KÉSZPÉNZ']),
 
-      // 3. Cash Expenses from invoices (fizetesi_mod = készpénz)
+      // 4. Cash Expenses from invoices (fizetesi_mod = készpénz)
       supabase
         .from('invoices')
         .select('kibocsatas_datuma, elado_nev, brutto_vegosszeg, fizetesi_mod, bizonylatsorszam')
@@ -116,7 +123,7 @@ const PettyCashPage = () => {
         .ilike('fizetesi_mod', '%készpénz%')
         .is('reference_number', null),
 
-      // 4. Cash Expenses from nav_invoices (INBOUND, payment_method = CASH)
+      // 5. Cash Expenses from nav_invoices (INBOUND, payment_method = CASH)
       supabase
         .from('nav_invoices')
         .select('invoice_issue_date, supplier_name, invoice_gross_amount, invoice_number')
@@ -134,6 +141,16 @@ const PettyCashPage = () => {
         description: t.description || 'Készpénz felvétel',
         amount: Math.abs(t.amount),
         source: 'withdrawal',
+      });
+    });
+
+    // Cash deposits (-)
+    (cashDepositsRes.data || []).forEach(t => {
+      allEntries.push({
+        date: t.transaction_date,
+        description: t.description || 'Készpénz befizetés',
+        amount: -(Math.abs(t.amount)),
+        source: 'cash_deposit',
       });
     });
 
@@ -264,6 +281,7 @@ const PettyCashPage = () => {
   const getSourceLabel = (source: PettyCashEntry['source']) => {
     switch (source) {
       case 'withdrawal': return 'KP felvétel';
+      case 'cash_deposit': return 'KP befizetés';
       case 'cash_sale': return 'KP értékesítés';
       case 'cash_expense': return 'KP kiadás';
     }
@@ -272,6 +290,7 @@ const PettyCashPage = () => {
   const getSourceBgClass = (source: PettyCashEntry['source']) => {
     switch (source) {
       case 'withdrawal': return 'bg-primary/10 text-primary';
+      case 'cash_deposit': return 'bg-orange-500/10 text-orange-500';
       case 'cash_sale': return 'bg-success/10 text-success';
       case 'cash_expense': return 'bg-destructive/10 text-destructive';
     }
