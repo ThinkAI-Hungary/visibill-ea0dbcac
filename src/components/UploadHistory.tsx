@@ -90,7 +90,6 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
             .from('invoices')
             .select('image_url')
             .eq('company_id', selectedCompany.id)
-            .not('feldolgozva', 'is', null)
             .in('image_url', fileUrls);
 
           const urls = new Set((invoices || []).map(i => i.image_url).filter(Boolean) as string[]);
