@@ -224,7 +224,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
         ) : (
           <div className="relative w-full overflow-auto max-h-[400px]">
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 z-10 bg-card">
                 <TableRow>
                   <TableHead>Fájlnév</TableHead>
                   <TableHead>Feltöltötte</TableHead>
