@@ -14,6 +14,7 @@ interface UploadRecord {
   file_name: string;
   file_size: number;
   file_type: string;
+  file_url: string;
   upload_status: string;
   processing_status: string;
   created_at: string;
@@ -25,18 +26,6 @@ interface UploadHistoryProps {
   refreshKey?: number;
 }
 
-const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  pending: { label: 'Feltöltve', variant: 'secondary' },
-  processing: { label: 'Feltöltve', variant: 'secondary' },
-  uploaded: { label: 'Feltöltve', variant: 'secondary' },
-  webhook_sent: { label: 'Feltöltve', variant: 'secondary' },
-  completed: { label: 'Feldolgozva', variant: 'default' },
-  done: { label: 'Feldolgozva', variant: 'default' },
-  webhook_failed: { label: 'A feltöltés sikertelen', variant: 'destructive' },
-  failed: { label: 'A feltöltés sikertelen', variant: 'destructive' },
-  error: { label: 'A feltöltés sikertelen', variant: 'destructive' },
-};
-
 const errorStatuses = new Set(['webhook_failed', 'failed', 'error']);
 
 function formatFileSize(bytes: number) {
@@ -47,8 +36,22 @@ function formatFileSize(bytes: number) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
+function getStatus(record: UploadRecord, processedUrls: Set<string>): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } {
+  // Error states first
+  if (errorStatuses.has(record.processing_status)) {
+    return { label: 'A feltöltés sikertelen', variant: 'destructive' };
+  }
+  // Check if invoice exists with feldolgozva set
+  if (processedUrls.has(record.file_url)) {
+    return { label: 'Feldolgozva', variant: 'default' };
+  }
+  // Everything else is "Feltöltve"
+  return { label: 'Feltöltve', variant: 'secondary' };
+}
+
 export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryProps) {
   const [records, setRecords] = useState<UploadRecord[]>([]);
+  const [processedUrls, setProcessedUrls] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
@@ -62,7 +65,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
     
     let query = supabase
       .from(tableName)
-      .select('id, file_name, file_size, file_type, upload_status, processing_status, created_at, error_message')
+      .select('id, file_name, file_size, file_type, file_url, upload_status, processing_status, created_at, error_message')
       .order('created_at', { ascending: false })
       .limit(20);
 
@@ -76,10 +79,27 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
       console.error('Upload history fetch error:', error);
       setRecords([]);
     } else {
-      setRecords((data as UploadRecord[]) || []);
+      const uploadRecords = (data as UploadRecord[]) || [];
+      setRecords(uploadRecords);
+
+      // For invoice uploads, check which ones have been processed
+      if (activeTab === 'invoices' && uploadRecords.length > 0 && selectedCompany?.id) {
+        const fileUrls = uploadRecords.map(r => r.file_url).filter(Boolean);
+        if (fileUrls.length > 0) {
+          const { data: invoices } = await supabase
+            .from('invoices')
+            .select('image_url')
+            .eq('company_id', selectedCompany.id)
+            .not('feldolgozva', 'is', null)
+            .in('image_url', fileUrls);
+
+          const urls = new Set((invoices || []).map(i => i.image_url).filter(Boolean) as string[]);
+          setProcessedUrls(urls);
+        }
+      }
     }
     setLoading(false);
-  }, [user, selectedCompany?.id, tableName]);
+  }, [user, selectedCompany?.id, tableName, activeTab]);
 
   // Initial fetch + refetch on refreshKey change
   useEffect(() => {
@@ -87,7 +107,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
     fetchRecords();
   }, [fetchRecords, refreshKey]);
 
-  // Realtime subscription for live updates
+  // Realtime subscription for live updates on uploads
   useEffect(() => {
     if (!user || !selectedCompany?.id) return;
     if (activeTab !== 'invoices' && activeTab !== 'transactions') return;
@@ -127,6 +147,41 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
     };
   }, [user, selectedCompany?.id, tableName, activeTab]);
 
+  // Realtime subscription for invoices table to detect when feldolgozva changes
+  useEffect(() => {
+    if (!user || !selectedCompany?.id || activeTab !== 'invoices') return;
+
+    const channel = supabase
+      .channel(`invoice-processed-${selectedCompany.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'invoices',
+          filter: `company_id=eq.${selectedCompany.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const invoice = payload.new as { image_url?: string; feldolgozva?: string };
+            if (invoice.image_url && invoice.feldolgozva) {
+              setProcessedUrls(prev => {
+                if (prev.has(invoice.image_url!)) return prev;
+                const next = new Set(prev);
+                next.add(invoice.image_url!);
+                return next;
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, selectedCompany?.id, activeTab]);
+
   // Only show for invoices and transactions tabs
   if (activeTab !== 'invoices' && activeTab !== 'transactions') {
     return null;
@@ -163,7 +218,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
               </TableHeader>
               <TableBody>
                 {records.map((record) => {
-                  const status = statusMap[record.processing_status] || statusMap[record.upload_status] || { label: record.processing_status, variant: 'outline' as const };
+                  const status = getStatus(record, processedUrls);
                   return (
                     <TableRow key={record.id}>
                       <TableCell className="font-medium text-sm max-w-[200px] truncate" title={record.file_name}>
