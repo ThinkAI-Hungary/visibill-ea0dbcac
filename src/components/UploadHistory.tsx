@@ -58,6 +58,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
+  const { dateFromFormatted, dateToFormatted } = useDateRange();
 
   const tableName = activeTab === 'invoices' ? 'invoice_uploads' : 'transaction_uploads';
   const icon = activeTab === 'invoices' ? <FileText className="h-5 w-5" /> : <Landmark className="h-5 w-5" />;
