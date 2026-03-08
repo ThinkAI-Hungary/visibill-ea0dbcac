@@ -227,10 +227,10 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
               <TableHeader className="sticky top-0 z-10 bg-card">
                 <TableRow>
                   <TableHead>Fájlnév</TableHead>
-                  <TableHead>Feltöltötte</TableHead>
                   <TableHead>Méret</TableHead>
-                  <TableHead>Státusz</TableHead>
+                  <TableHead>Feltöltötte</TableHead>
                   <TableHead>Dátum</TableHead>
+                  <TableHead>Státusz</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -242,10 +242,13 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
                         {record.file_name}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                        {formatFileSize(record.file_size || 0)}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                         {userNames[record.user_id] || 'Ismeretlen'}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                        {formatFileSize(record.file_size || 0)}
+                        {format(new Date(record.created_at), 'yyyy.MM.dd HH:mm', { locale: hu })}
                       </TableCell>
                       <TableCell>
                         <Badge variant={status.variant} className="text-xs">
@@ -256,9 +259,6 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
                             {record.error_message}
                           </p>
                         )}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                        {format(new Date(record.created_at), 'yyyy.MM.dd HH:mm', { locale: hu })}
                       </TableCell>
                     </TableRow>
                   );
