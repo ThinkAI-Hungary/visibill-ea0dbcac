@@ -643,8 +643,15 @@ const Index = () => {
           .from('transactions')
           .select('amount')
           .eq('company_id', selectedCompany.id)
-          .in('type', ['atm pénzfelvét', 'pénztári kp felvét']);
+          .in('type', ['atm készpénzfelvét', 'pénztári kp felvét']);
         if (startDateFilter) withdrawalsQuery = withdrawalsQuery.gte('transaction_date', startDateFilter);
+
+        let cashDepositsQuery = supabase
+          .from('transactions')
+          .select('amount')
+          .eq('company_id', selectedCompany.id)
+          .in('type', ['pénztári kp befizetés', 'kp befizetés atm-en keresztül']);
+        if (startDateFilter) cashDepositsQuery = cashDepositsQuery.gte('transaction_date', startDateFilter);
 
         let cashSalesQuery = supabase
           .from('nav_invoices')
@@ -670,11 +677,12 @@ const Index = () => {
           .in('payment_method', ['CASH', 'KÉSZPÉNZ']);
         if (startDateFilter) navCashExpensesQuery = navCashExpensesQuery.gte('invoice_issue_date', startDateFilter);
 
-        const [withdrawalsRes, cashSalesRes, cashExpensesRes, navCashExpensesRes] = await Promise.all([
-          withdrawalsQuery, cashSalesQuery, cashExpensesQuery, navCashExpensesQuery
+        const [withdrawalsRes, cashDepositsRes, cashSalesRes, cashExpensesRes, navCashExpensesRes] = await Promise.all([
+          withdrawalsQuery, cashDepositsQuery, cashSalesQuery, cashExpensesQuery, navCashExpensesQuery
         ]);
 
         const withdrawals = (withdrawalsRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+        const cashDeposits = (cashDepositsRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
         const cashSales = (cashSalesRes.data || []).reduce((sum: number, inv: any) => sum + Math.abs(inv.invoice_gross_amount || 0), 0);
         const cashExpenses = (cashExpensesRes.data || []).reduce((sum: number, inv: any) => sum + Math.abs(inv.brutto_vegosszeg || 0), 0);
 
@@ -684,15 +692,7 @@ const Index = () => {
           .filter((inv: any) => !inv.invoice_number || !invoiceNumbers.has(inv.invoice_number))
           .reduce((sum: number, inv: any) => sum + Math.abs(inv.invoice_gross_amount || 0), 0);
 
-        console.log('Petty cash debug:', { ob, withdrawals, cashSales, cashExpenses, navCashExpenses, 
-          withdrawalsCount: (withdrawalsRes.data || []).length,
-          cashSalesCount: (cashSalesRes.data || []).length,
-          cashExpensesCount: (cashExpensesRes.data || []).length,
-          navCashExpensesCount: (navCashExpensesRes.data || []).length,
-          result: ob + withdrawals + cashSales - cashExpenses - navCashExpenses
-        });
-
-        setPettyCashBalance(ob + withdrawals + cashSales - cashExpenses - navCashExpenses);
+        setPettyCashBalance(ob + withdrawals - cashDeposits + cashSales - cashExpenses - navCashExpenses);
         }
       } catch (e) {
         console.error('Error fetching petty cash balance:', e);
