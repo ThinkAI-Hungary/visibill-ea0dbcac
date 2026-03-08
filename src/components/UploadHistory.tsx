@@ -15,6 +15,7 @@ interface UploadRecord {
   file_size: number;
   file_type: string;
   file_url: string;
+  user_id: string;
   upload_status: string;
   processing_status: string;
   created_at: string;
