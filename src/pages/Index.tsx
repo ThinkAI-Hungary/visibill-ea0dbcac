@@ -630,8 +630,14 @@ const Index = () => {
           .eq('company_id', selectedCompany.id)
           .maybeSingle();
 
-        const ob = hpSettings?.opening_balance || 0;
+        // Only use opening balance if hp_settings exists AND start_date is set
+        const hasValidSettings = hpSettings && hpSettings.start_date;
+        const ob = hasValidSettings ? (hpSettings.opening_balance || 0) : 0;
         const startDateFilter = hpSettings?.start_date;
+
+        if (!hasValidSettings) {
+          setPettyCashBalance(null);
+        } else {
 
         let withdrawalsQuery = supabase
           .from('transactions')
@@ -679,6 +685,7 @@ const Index = () => {
           .reduce((sum: number, inv: any) => sum + Math.abs(inv.invoice_gross_amount || 0), 0);
 
         setPettyCashBalance(ob + withdrawals + cashSales - cashExpenses - navCashExpenses);
+        }
       } catch (e) {
         console.error('Error fetching petty cash balance:', e);
       }
