@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { History, FileText, Landmark, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -57,6 +58,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
+  const { dateFromFormatted, dateToFormatted } = useDateRange();
 
   const tableName = activeTab === 'invoices' ? 'invoice_uploads' : 'transaction_uploads';
   const icon = activeTab === 'invoices' ? <FileText className="h-5 w-5" /> : <Landmark className="h-5 w-5" />;
@@ -68,8 +70,10 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
     let query = supabase
       .from(tableName)
       .select('id, file_name, file_size, file_type, file_url, user_id, upload_status, processing_status, created_at, error_message')
+      .gte('created_at', dateFromFormatted)
+      .lte('created_at', dateToFormatted + 'T23:59:59')
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(50);
 
     if (selectedCompany?.id) {
       query = query.eq('company_id', selectedCompany.id);
@@ -115,7 +119,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
       }
     }
     setLoading(false);
-  }, [user, selectedCompany?.id, tableName, activeTab]);
+  }, [user, selectedCompany?.id, tableName, activeTab, dateFromFormatted, dateToFormatted]);
 
   // Initial fetch + refetch on refreshKey change
   useEffect(() => {
