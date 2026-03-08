@@ -684,6 +684,14 @@ const Index = () => {
           .filter((inv: any) => !inv.invoice_number || !invoiceNumbers.has(inv.invoice_number))
           .reduce((sum: number, inv: any) => sum + Math.abs(inv.invoice_gross_amount || 0), 0);
 
+        console.log('Petty cash debug:', { ob, withdrawals, cashSales, cashExpenses, navCashExpenses, 
+          withdrawalsCount: (withdrawalsRes.data || []).length,
+          cashSalesCount: (cashSalesRes.data || []).length,
+          cashExpensesCount: (cashExpensesRes.data || []).length,
+          navCashExpensesCount: (navCashExpensesRes.data || []).length,
+          result: ob + withdrawals + cashSales - cashExpenses - navCashExpenses
+        });
+
         setPettyCashBalance(ob + withdrawals + cashSales - cashExpenses - navCashExpenses);
         }
       } catch (e) {
