@@ -67,7 +67,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
     
     let query = supabase
       .from(tableName)
-      .select('id, file_name, file_size, file_type, file_url, upload_status, processing_status, created_at, error_message')
+      .select('id, file_name, file_size, file_type, file_url, user_id, upload_status, processing_status, created_at, error_message')
       .order('created_at', { ascending: false })
       .limit(20);
 
