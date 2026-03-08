@@ -144,6 +144,16 @@ const PettyCashPage = () => {
       });
     });
 
+    // Cash deposits (-)
+    (cashDepositsRes.data || []).forEach(t => {
+      allEntries.push({
+        date: t.transaction_date,
+        description: t.description || 'Készpénz befizetés',
+        amount: -(Math.abs(t.amount)),
+        source: 'cash_deposit',
+      });
+    });
+
     // Cash sales (+)
     (cashSalesRes.data || []).forEach(inv => {
       allEntries.push({
