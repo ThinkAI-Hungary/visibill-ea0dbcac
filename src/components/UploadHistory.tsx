@@ -246,6 +246,25 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
             </Table>
           </div>
         )}
+        {records.length > 0 && (
+          <div className="mt-4 pt-3 border-t border-border">
+            <p className="text-xs text-muted-foreground mb-2 font-medium">Jelmagyarázat:</p>
+            <div className="flex flex-wrap gap-3">
+              <div className="flex items-center gap-1.5">
+                <Badge variant="secondary" className="text-xs">Feltöltve</Badge>
+                <span className="text-xs text-muted-foreground">— A fájl feltöltésre került, feldolgozás folyamatban</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Badge variant="default" className="text-xs">Feldolgozva</Badge>
+                <span className="text-xs text-muted-foreground">— A számla sikeresen feldolgozva és rögzítve</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Badge variant="destructive" className="text-xs">A feltöltés sikertelen</Badge>
+                <span className="text-xs text-muted-foreground">— Hiba történt a feldolgozás során</span>
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
