@@ -29,7 +29,7 @@ interface PettyCashEntry {
   date: string;
   description: string;
   amount: number; // positive = income, negative = expense
-  source: 'withdrawal' | 'cash_sale' | 'cash_expense';
+  source: 'withdrawal' | 'cash_deposit' | 'cash_sale' | 'cash_expense';
 }
 
 const PettyCashPage = () => {
