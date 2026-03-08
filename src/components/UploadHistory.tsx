@@ -227,6 +227,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
               <TableHeader>
                 <TableRow>
                   <TableHead>Fájlnév</TableHead>
+                  <TableHead>Feltöltötte</TableHead>
                   <TableHead>Méret</TableHead>
                   <TableHead>Státusz</TableHead>
                   <TableHead>Dátum</TableHead>
@@ -237,8 +238,11 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
                   const status = getStatus(record, processedUrls);
                   return (
                     <TableRow key={record.id}>
-                      <TableCell className="font-medium text-sm max-w-[200px] truncate" title={record.file_name}>
+                      <TableCell className="font-medium text-sm max-w-[250px] truncate" title={record.file_name}>
                         {record.file_name}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                        {userNames[record.user_id] || 'Ismeretlen'}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                         {formatFileSize(record.file_size || 0)}
