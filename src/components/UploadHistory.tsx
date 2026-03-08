@@ -60,7 +60,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
 
   const tableName = activeTab === 'invoices' ? 'invoice_uploads' : 'transaction_uploads';
   const icon = activeTab === 'invoices' ? <FileText className="h-5 w-5" /> : <Landmark className="h-5 w-5" />;
-  const title = activeTab === 'invoices' ? 'Számla feltöltések' : 'Tranzakció feltöltések';
+  const title = activeTab === 'invoices' ? 'Számla feltöltési' : 'Tranzakció feltöltési';
 
   const fetchRecords = useCallback(async () => {
     if (!user) return;
