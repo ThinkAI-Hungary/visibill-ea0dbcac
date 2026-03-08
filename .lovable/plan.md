@@ -1,23 +1,37 @@
 
 
-## Fix: save-credentials "Auth session missing!" (attempt 3)
+## Kapcsolt számlák megjelenítése a lenyíló sorban - globális dátumszűréstől függetlenül
 
-### Root Cause
-Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
+### Probléma
+A `linkedInvoicesMap` a `submittedInvoices`-ból épül, ami a globális dátumszűrés eredményeként kerül lekérdezésre. Ha egy számla kapcsolt számlája más dátummal rendelkezik, az nem lesz benne az adathalmazban, így a lenyíló menüben sem jelenik meg.
 
-The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
+### Megoldás
+Külön lekérdezéssel töltjük le az összes kapcsolt számlát (amelyekre `reference_number` mutat, vagy amelyek `reference_number`-rel hivatkoznak másra) dátumszűrés nélkül.
 
-### Fix (single file change)
+### Érintett fájl: `src/pages/InvoicesPage.tsx`
 
-**File: `supabase/functions/save-credentials/index.ts`**
+**1. Új state a kapcsolt számlákhoz (~172. sor után):**
+```typescript
+const [allLinkedInvoices, setAllLinkedInvoices] = useState<SubmittedInvoice[]>([]);
+```
 
-1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
-2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
+**2. Módosított fetch logika (555-568 sorok körül):**
+- Meglévő `submittedQuery` marad változatlan (dátumszűrt lista a táblázathoz)
+- Új lekérdezés hozzáadása: a dátumszűrt számlák `bizonylatsorszam` és `reference_number` értékei alapján lekérdezzük a kapcsolódó számlákat **dátumszűrés nélkül**
 
-The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
+**3. LinkedInvoicesMap módosítása (~935. sor):**
+- A map építésekor kombináljuk a `submittedInvoices` és `allLinkedInvoices` tömböket, duplikációk kiszűrésével
 
-### What stays the same
-- The service role client is still used for company ownership checks (line 130-138)
-- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
-- All validation, error handling, and CORS remain unchanged
-- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
+### Implementáció
+
+A fetch után:
+1. Gyűjtsük össze az összes `bizonylatsorszam`-ot és `reference_number`-t a szűrt listából
+2. Kérdezzük le azokat a számlákat, amelyek:
+   - `reference_number` IN (bizonylatszámok) VAGY
+   - `bizonylatsorszam` IN (reference_number-ök)
+3. Ezeket tároljuk `allLinkedInvoices`-ban
+4. A `linkedInvoicesMap` építésekor mindkét adatforrást használjuk
+
+### Előny
+A táblázatban továbbra is csak a dátumszűrt számlák jelennek meg, de a lenyíló sorban megjelenik a teljes bizonylatlánc.
+
