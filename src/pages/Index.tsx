@@ -117,6 +117,7 @@ interface RawInvoice {
 interface RawSalary {
   dátum: string | null;
   összeg: number;
+  statusz: string | null;
 }
 
 interface VatCategoryData {
@@ -274,10 +275,14 @@ const Index = () => {
       .select("*")
       .eq("company_id", selectedCompany?.id)
       .gte("dátum", yearStart)
-      .lte("dátum", yearEnd);
+      .lte("dátum", yearEnd) as { data: any[] | null };
 
     setRawInvoices(navInvoices || []);
-    setRawSalaries((salaries || []).map(s => ({ dátum: s.dátum, összeg: s.összeg })));
+    setRawSalaries(
+      (salaries || [])
+        .filter((s: any) => s.statusz === "Kifizetve")
+        .map((s: any) => ({ dátum: s.dátum, összeg: s.összeg, statusz: s.statusz }))
+    );
   };
 
   const monthlyData = useMemo(() => {

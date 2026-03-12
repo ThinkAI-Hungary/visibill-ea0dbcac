@@ -481,25 +481,8 @@ const ManualUpload = () => {
           .from('salaries')
           .getPublicUrl(uploadData.path);
 
-        // Trigger webhooks
-        const webhookUrls = [
-          'https://n8n.thinkaikontir.hu/webhook-test/jarulek',
-          'https://n8n.thinkaikontir.hu/webhook/jarulek'
-        ];
-
-        const webhookPayload = {
-          fileName: file.name,
-          fileUrl: urlData.publicUrl,
-          filePath: uploadData.path,
-          userId: user.id,
-          companyId: selectedCompany?.id || null,
-          fileSize: file.size,
-          fileType: file.type,
-          uploadedAt: new Date().toISOString()
-        };
-
         // Insert preliminary record into salary_files table
-        const { error: dbError } = await supabase
+        const { data: uploadRecord, error: dbError } = await supabase
           .from('salary_files' as any)
           .insert({
             user_id: user.id,
@@ -512,21 +495,35 @@ const ManualUpload = () => {
             file_url: urlData.publicUrl,
             file_name: file.name,
             source: 'automated'
-          });
+          })
+          .select()
+          .single() as { data: { id: string } | null; error: any };
 
         if (dbError) {
           console.error('Database insert error:', dbError);
+          continue;
         }
+
+        // Trigger processing via edge function (avoids CORS issues with direct webhook calls)
+        const webhookUrls = [
+          'https://n8n.thinkaikontir.hu/webhook-test/jarulek',
+          'https://n8n.thinkaikontir.hu/webhook/jarulek'
+        ];
 
         for (const webhookUrl of webhookUrls) {
           try {
-            await fetch(webhookUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(webhookPayload)
+            const { error: triggerError } = await supabase.functions.invoke('trigger-salary-processing', {
+              body: {
+                uploadId: uploadRecord.id,
+                webhookUrl
+              }
             });
+
+            if (triggerError) {
+              console.error(`Edge function error for ${webhookUrl}:`, triggerError);
+            }
           } catch (webhookError) {
-            console.error(`Webhook error for ${webhookUrl}:`, webhookError);
+            console.error(`Webhook trigger error for ${webhookUrl}:`, webhookError);
           }
         }
       }

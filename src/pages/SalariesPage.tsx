@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -22,117 +23,125 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { 
-  Plus, 
-  Search, 
-  Trash2, 
-  Edit, 
-  Wallet, 
-  Users, 
-  TrendingUp, 
-  Calendar
+import {
+  Plus,
+  Search,
+  Edit,
+  Wallet,
+  Users,
+  TrendingUp,
+  Banknote,
 } from "lucide-react";
-import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { format } from "date-fns";
 import { hu } from "date-fns/locale";
 import { UnifiedPagination } from "@/components/ui/unified-pagination";
 
-const MONTHS = [
-  { value: "0", label: "Január" },
-  { value: "1", label: "Február" },
-  { value: "2", label: "Március" },
-  { value: "3", label: "Április" },
-  { value: "4", label: "Május" },
-  { value: "5", label: "Június" },
-  { value: "6", label: "Július" },
-  { value: "7", label: "Augusztus" },
-  { value: "8", label: "Szeptember" },
-  { value: "9", label: "Október" },
-  { value: "10", label: "November" },
-  { value: "11", label: "December" },
-];
+// ---------- Types ----------
 
-interface Salary {
+interface SalaryItem {
   id: string;
   név: string;
   összeg: number;
   dátum: string | null;
+  tipus: string | null;
+  statusz: string | null;
+  kifizetes_ideje: string | null;
+  fizetesi_mod: string | null;
+  megjegyzes: string | null;
   created_at: string;
   updated_at: string;
 }
 
-// Helper to get initials from name
-const getInitials = (name: string): string => {
-  const words = name.trim().split(/\s+/);
-  if (words.length >= 2) {
-    return (words[0][0] + words[1][0]).toUpperCase();
+// ---------- Helpers ----------
+
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("hu-HU", {
+    style: "currency",
+    currency: "HUF",
+    maximumFractionDigits: 0,
+  }).format(amount);
+
+const formatDate = (dateString: string | null) => {
+  if (!dateString) return "—";
+  try {
+    return format(new Date(dateString), "yyyy. MMM d.", { locale: hu });
+  } catch {
+    return dateString;
   }
-  return name.slice(0, 2).toUpperCase();
 };
 
-// Generate consistent color based on name
-const getAvatarColor = (name: string): string => {
-  const colors = [
-    'bg-primary/20 text-primary',
-    'bg-blue-500/20 text-blue-500',
-    'bg-purple-500/20 text-purple-500',
-    'bg-amber-500/20 text-amber-500',
-    'bg-emerald-500/20 text-emerald-500',
-    'bg-rose-500/20 text-rose-500',
-  ];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
+const getTypeBadge = (tipus: string | null) => {
+  const t = tipus?.toLowerCase() ?? "";
+  if (t === "bér")
+    return { label: "Bér", className: "bg-purple-500/15 text-purple-500 border-purple-500/20" };
+  if (t === "bruttó_bér")
+    return { label: "Bruttó Bér", className: "bg-indigo-500/15 text-indigo-500 border-indigo-500/20" };
+  if (t === "áfa")
+    return { label: "ÁFA", className: "bg-blue-500/15 text-blue-500 border-blue-500/20" };
+  if (t === "adó")
+    return { label: "Adó", className: "bg-rose-500/15 text-rose-500 border-rose-500/20" };
+  if (t === "járulék")
+    return { label: "Járulék", className: "bg-amber-500/15 text-amber-500 border-amber-500/20" };
+  return { label: tipus || "—", className: "bg-muted text-muted-foreground border-border" };
 };
+
+// ---------- Component ----------
 
 export default function SalariesPage() {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFrom, dateTo } = useDateRange();
-  const [salaries, setSalaries] = useState<Salary[]>([]);
+
+  const [salaryItems, setSalaryItems] = useState<SalaryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
-  
-  const [formData, setFormData] = useState({
-    név: "",
-    összeg: "",
-    dátum: "",
+
+  // "+ KP kifizetés" modal
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [addForm, setAddForm] = useState({
+    megnevezes: "",
+    osszeg: "",
+    datum: new Date().toISOString().slice(0, 10),
   });
 
-  useEffect(() => {
-    fetchSalaries();
-  }, [selectedCompany]);
+  // Edit modal
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<SalaryItem | null>(null);
+  const [editForm, setEditForm] = useState({
+    megnevezes: "",
+    megjegyzes: "",
+  });
 
-  const fetchSalaries = async () => {
+  // ---------- Fetch ----------
+
+  useEffect(() => {
+    fetchSalaryItems();
+  }, [selectedCompany, dateFrom, dateTo]);
+
+  const fetchSalaryItems = async () => {
     if (!user || !selectedCompany) return;
-    
+
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from("salary")
         .select("*")
         .eq("company_id", selectedCompany.id)
+        .gte("dátum", dateFrom.toISOString().slice(0, 10))
+        .lte("dátum", dateTo.toISOString().slice(0, 10))
         .order("dátum", { ascending: false, nullsFirst: false });
 
       if (error) throw error;
-      setSalaries(data || []);
+      setSalaryItems((data as unknown as SalaryItem[]) || []);
     } catch (error) {
-      console.error("Error fetching salaries:", error);
+      console.error("Error fetching salary items:", error);
       toast({
         variant: "destructive",
         title: "Hiba",
@@ -143,170 +152,140 @@ export default function SalariesPage() {
     }
   };
 
-  // Filter salaries by global date range
-  const filteredSalaries = useMemo(() => {
-    return salaries.filter((salary) => {
-      const matchesSearch = salary.név.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      // Filter by date range if salary has a date
-      if (salary.dátum) {
-        const salaryDate = new Date(salary.dátum);
-        const matchesDate = salaryDate >= dateFrom && salaryDate <= dateTo;
-        return matchesSearch && matchesDate;
-      }
-      
-      return matchesSearch;
-    });
-  }, [salaries, searchTerm, dateFrom, dateTo]);
+  // ---------- Filtered & paginated ----------
 
-  // Paginated salaries
-  const paginatedSalaries = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    return filteredSalaries.slice(startIndex, startIndex + pageSize);
-  }, [filteredSalaries, currentPage, pageSize]);
+  const filteredItems = useMemo(() => {
+    return salaryItems.filter((item) =>
+      item.név.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [salaryItems, searchTerm]);
 
-  const totalPages = Math.ceil(filteredSalaries.length / pageSize);
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredItems.slice(start, start + pageSize);
+  }, [filteredItems, currentPage, pageSize]);
 
-  // Reset page when filters change
+  const totalPages = Math.ceil(filteredItems.length / pageSize);
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, dateFrom, dateTo]);
+  }, [searchTerm]);
 
-  // Calculate metrics
+  // ---------- KPI metrics (exact user spec) ----------
+
   const metrics = useMemo(() => {
-    const totalAmount = filteredSalaries.reduce((sum, s) => sum + s.összeg, 0);
-    const employeeCount = new Set(filteredSalaries.map(s => s.név)).size;
-    const avgSalary = employeeCount > 0 ? totalAmount / employeeCount : 0;
-    
-    // Calculate previous period for comparison
-    const periodLength = dateTo.getTime() - dateFrom.getTime();
-    const prevEnd = new Date(dateFrom.getTime() - 1);
-    const prevStart = new Date(prevEnd.getTime() - periodLength);
-    
-    const prevPeriodSalaries = salaries.filter(s => {
-      if (s.dátum) {
-        const salaryDate = new Date(s.dátum);
-        return salaryDate >= prevStart && salaryDate <= prevEnd;
-      }
-      return false;
-    });
-    
-    const prevTotalAmount = prevPeriodSalaries.reduce((sum, s) => sum + s.összeg, 0);
-    const trendPercent = prevTotalAmount > 0 
-      ? ((totalAmount - prevTotalAmount) / prevTotalAmount * 100).toFixed(1)
-      : null;
-    
-    return { totalAmount, employeeCount, avgSalary, trendPercent };
-  }, [filteredSalaries, salaries, dateFrom, dateTo]);
+    // KPI 1: Összes kifizetés – statusz === 'Kifizetve' szummája
+    const totalPayments = salaryItems
+      .filter((item) => item.statusz === "Kifizetve")
+      .reduce((sum, item) => sum + Number(item.összeg), 0);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    // KPI 2: Alkalmazottak száma – egyedi nevek ahol tipus === 'bér'
+    const employeeCount = new Set(
+      salaryItems
+        .filter((item) => item.tipus === "bér")
+        .map((item) => item.név)
+    ).size;
+
+    // KPI 3: Összes nettó bérköltség – tipus === 'bér' szummája
+    const netSalary = salaryItems
+      .filter((item) => item.tipus === "bér")
+      .reduce((sum, item) => sum + Number(item.összeg), 0);
+
+    // KPI 4: Összes bruttó bérköltség – tipus === 'bruttó_bér' szummája
+    const grossSalary = salaryItems
+      .filter((item) => item.tipus === "bruttó_bér")
+      .reduce((sum, item) => sum + Number(item.összeg), 0);
+
+    return { totalPayments, employeeCount, netSalary, grossSalary };
+  }, [salaryItems]);
+
+  // ---------- "+ KP kifizetés" submit ----------
+
+  const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !selectedCompany) return;
 
     try {
-      const dataToSubmit = {
-        user_id: user.id,
-        company_id: selectedCompany.id,
-        név: formData.név,
-        összeg: parseFloat(formData.összeg),
-        dátum: formData.dátum || null,
-      };
+      const now = new Date().toISOString();
+      const { error } = await supabase.from("salary").insert([
+        {
+          user_id: user.id,
+          company_id: selectedCompany.id,
+          név: addForm.megnevezes,
+          összeg: parseFloat(addForm.osszeg),
+          dátum: addForm.datum || null,
+          statusz: "Kifizetve",
+          fizetesi_mod: "készpénz",
+          tipus: "bér",
+          kifizetes_ideje: now,
+        },
+      ]);
 
-      if (editingId) {
-        const { error } = await supabase
-          .from("salary")
-          .update(dataToSubmit)
-          .eq("id", editingId);
+      if (error) throw error;
 
-        if (error) throw error;
-        toast({ title: "Siker", description: "Bejegyzés frissítve." });
-      } else {
-        const { error } = await supabase
-          .from("salary")
-          .insert([dataToSubmit]);
-
-        if (error) throw error;
-        toast({ title: "Siker", description: "Új bejegyzés hozzáadva." });
-      }
-
-      setDialogOpen(false);
-      resetForm();
-      fetchSalaries();
+      toast({ title: "Siker", description: "KP kifizetés rögzítve." });
+      setAddDialogOpen(false);
+      resetAddForm();
+      fetchSalaryItems();
     } catch (error) {
-      console.error("Error saving salary:", error);
+      console.error("Error adding cash payment:", error);
       toast({
         variant: "destructive",
         title: "Hiba",
-        description: "Nem sikerült menteni a bejegyzést.",
+        description: "Nem sikerült rögzíteni a kifizetést.",
       });
     }
   };
 
-  const handleEdit = (salary: Salary) => {
-    setEditingId(salary.id);
-    setFormData({
-      név: salary.név,
-      összeg: salary.összeg.toString(),
-      dátum: salary.dátum || "",
+  const resetAddForm = () => {
+    setAddForm({
+      megnevezes: "",
+      osszeg: "",
+      datum: new Date().toISOString().slice(0, 10),
     });
-    setDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Biztosan törölni szeretnéd ezt a bejegyzést?")) return;
+  // ---------- Edit (only név + megjegyzes) ----------
+
+  const openEditModal = (record: SalaryItem) => {
+    setEditingRecord(record);
+    setEditForm({
+      megnevezes: record.név,
+      megjegyzes: record.megjegyzes ?? "",
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRecord) return;
 
     try {
       const { error } = await supabase
         .from("salary")
-        .delete()
-        .eq("id", id);
+        .update({
+          név: editForm.megnevezes,
+          megjegyzes: editForm.megjegyzes || null,
+        })
+        .eq("id", editingRecord.id);
 
       if (error) throw error;
-      toast({ title: "Siker", description: "Bejegyzés törölve." });
-      fetchSalaries();
+
+      toast({ title: "Siker", description: "Bejegyzés frissítve." });
+      setEditDialogOpen(false);
+      setEditingRecord(null);
+      fetchSalaryItems();
     } catch (error) {
-      console.error("Error deleting salary:", error);
+      console.error("Error editing salary:", error);
       toast({
         variant: "destructive",
         title: "Hiba",
-        description: "Nem sikerült törölni a bejegyzést.",
+        description: "Nem sikerült frissíteni a bejegyzést.",
       });
     }
   };
 
-  const resetForm = () => {
-    setEditingId(null);
-    setFormData({
-      név: "",
-      összeg: "",
-      dátum: "",
-    });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("hu-HU", {
-      style: "currency",
-      currency: "HUF",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "—";
-    try {
-      return format(new Date(dateString), "yyyy. MMM d.", { locale: hu });
-    } catch {
-      return dateString;
-    }
-  };
-
-  // Determine status based on date (simplified: past date = paid, future = pending)
-  const getPaymentStatus = (dateString: string | null) => {
-    if (!dateString) return "pending";
-    const paymentDate = new Date(dateString);
-    const today = new Date();
-    return paymentDate <= today ? "paid" : "pending";
-  };
+  // ---------- Render ----------
 
   if (loading) {
     return <LoadingSpinner message="Bérek betöltése..." />;
@@ -314,88 +293,24 @@ export default function SalariesPage() {
 
   return (
     <div className="h-full space-y-4 px-2 py-2">
-      {/* Header with Month Selector */}
+      {/* ========== Header ========== */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Bérek</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Bérek / járulékok</h1>
           <p className="text-muted-foreground">
-            Alkalmazottak bérének kezelése
+            Alkalmazottak bérének és járulékainak kezelése
           </p>
         </div>
-        
-        <div className="flex items-center gap-3">
 
-          <Dialog open={dialogOpen} onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) resetForm();
-          }}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Új bejegyzés
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingId ? "Bejegyzés szerkesztése" : "Új bejegyzés hozzáadása"}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="név">Alkalmazott neve *</Label>
-                  <Input
-                    id="név"
-                    value={formData.név}
-                    onChange={(e) => setFormData({ ...formData, név: e.target.value })}
-                    placeholder="Alkalmazott teljes neve"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="összeg">Bér összege (HUF) *</Label>
-                  <Input
-                    id="összeg"
-                    type="number"
-                    step="1"
-                    value={formData.összeg}
-                    onChange={(e) => setFormData({ ...formData, összeg: e.target.value })}
-                    placeholder="0"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="dátum">Fizetés dátuma</Label>
-                  <Input
-                    id="dátum"
-                    type="date"
-                    value={formData.dátum}
-                    onChange={(e) => setFormData({ ...formData, dátum: e.target.value })}
-                  />
-                </div>
-
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => {
-                    setDialogOpen(false);
-                    resetForm();
-                  }}>
-                    Mégse
-                  </Button>
-                  <Button type="submit">
-                    {editingId ? "Frissítés" : "Hozzáadás"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+        <Button onClick={() => setAddDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          KP kifizetés
+        </Button>
       </div>
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Total Payroll */}
+      {/* ========== KPI Cards (4) ========== */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* 1 – Összes kifizetés */}
         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
           <CardContent className="p-5">
             <div className="flex items-start justify-between">
@@ -403,16 +318,9 @@ export default function SalariesPage() {
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Összes kifizetés
                 </p>
-                <p className="text-2xl font-bold">{formatCurrency(metrics.totalAmount)}</p>
-                {metrics.trendPercent !== null && (
-                  <div className="flex items-center gap-1">
-                    <TrendingUp className={`h-3 w-3 ${parseFloat(metrics.trendPercent) >= 0 ? 'text-emerald-500' : 'text-red-500'}`} />
-                    <span className={`text-xs font-medium ${parseFloat(metrics.trendPercent) >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                      {parseFloat(metrics.trendPercent) >= 0 ? '+' : ''}{metrics.trendPercent}%
-                    </span>
-                    <span className="text-xs text-muted-foreground">előző hónaphoz</span>
-                  </div>
-                )}
+                <p className="text-2xl font-bold">
+                  {formatCurrency(metrics.totalPayments)}
+                </p>
               </div>
               <div className="p-3 rounded-full bg-primary/10">
                 <Wallet className="h-5 w-5 text-primary" />
@@ -421,17 +329,17 @@ export default function SalariesPage() {
           </CardContent>
         </Card>
 
-        {/* Employee Count */}
+        {/* 2 – Alkalmazottak száma */}
         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
           <CardContent className="p-5">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Alkalmazottak
+                  Alkalmazottak száma
                 </p>
                 <p className="text-2xl font-bold">{metrics.employeeCount}</p>
                 <p className="text-xs text-muted-foreground">
-                  {filteredSalaries.length} kifizetés
+                  {salaryItems.length} bejegyzés
                 </p>
               </div>
               <div className="p-3 rounded-full bg-blue-500/10">
@@ -441,39 +349,60 @@ export default function SalariesPage() {
           </CardContent>
         </Card>
 
-        {/* Average Salary */}
+        {/* 3 – Összes nettó bérköltség */}
         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
           <CardContent className="p-5">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Átlagbér
+                  Összes nettó bérköltség
                 </p>
-                <p className="text-2xl font-bold">{formatCurrency(metrics.avgSalary)}</p>
-                <p className="text-xs text-muted-foreground">
-                  / alkalmazott
+                <p className="text-2xl font-bold">
+                  {formatCurrency(metrics.netSalary)}
                 </p>
               </div>
               <div className="p-3 rounded-full bg-emerald-500/10">
-                <TrendingUp className="h-5 w-5 text-emerald-500" />
+                <Banknote className="h-5 w-5 text-emerald-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 4 – Összes bruttó bérköltség */}
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Összes bruttó bérköltség
+                </p>
+                <p className="text-2xl font-bold">
+                  {formatCurrency(metrics.grossSalary)}
+                </p>
+              </div>
+              <div className="p-3 rounded-full bg-purple-500/10">
+                <TrendingUp className="h-5 w-5 text-purple-500" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Table Card */}
+      {/* ========== Table Card ========== */}
       <Card className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm">
         <CardContent className="p-6">
-          {/* Search Bar */}
+          {/* Search */}
           <div className="flex items-center justify-between gap-4 mb-6">
             <h2 className="text-lg font-semibold">
-              Kifizetések <span className="text-muted-foreground font-normal">({filteredSalaries.length})</span>
+              Kifizetések{" "}
+              <span className="text-muted-foreground font-normal">
+                ({filteredItems.length})
+              </span>
             </h2>
             <div className="relative w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Keresés név alapján..."
+                placeholder="Keresés megnevezés alapján..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 bg-background/50"
@@ -482,89 +411,108 @@ export default function SalariesPage() {
           </div>
 
           {/* Table */}
-          {filteredSalaries.length === 0 ? (
+          {filteredItems.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nincs bejegyzés ebben a hónapban</p>
+              <p>Nincs bejegyzés a kiválasztott időszakban</p>
             </div>
           ) : (
             <div className="rounded-lg border border-border/50 overflow-hidden">
               <Table className="table-fixed compact-table">
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[40%]">
-                      Alkalmazott
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[22%]">
+                      Megnevezés
                     </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[15%]">
-                      Összeg
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">
+                      Típus
                     </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[14%]">
                       Dátum
                     </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[15%]">
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[14%]">
+                      Összeg
+                    </TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[11%]">
                       Státusz
                     </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[15%]">
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[14%]">
+                      Kifizetés ideje
+                    </TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[10%]">
                       Műveletek
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedSalaries.map((salary) => {
-                    const status = getPaymentStatus(salary.dátum);
+                  {paginatedItems.map((item) => {
+                    const typeBadge = getTypeBadge(item.tipus);
+                    const isPaid = item.statusz === "Kifizetve";
+
                     return (
-                      <TableRow 
-                        key={salary.id} 
+                      <TableRow
+                        key={item.id}
                         className="hover:bg-muted/40 transition-colors h-[52px]"
                       >
+                        {/* Megnevezés */}
                         <TableCell className="py-4 px-4">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9 shrink-0">
-                              <AvatarFallback className={`text-xs font-medium ${getAvatarColor(salary.név)}`}>
-                                {getInitials(salary.név)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">{salary.név}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-4 px-4 text-right">
-                          <span className="font-mono font-semibold">
-                            {formatCurrency(salary.összeg)}
+                          <span className="font-medium truncate block">
+                            {item.név}
                           </span>
                         </TableCell>
-                        <TableCell className="py-4 px-4 text-muted-foreground">
-                          {formatDate(salary.dátum)}
-                        </TableCell>
+
+                        {/* Típus Badge */}
                         <TableCell className="py-4 px-4">
-                          {status === 'paid' ? (
+                          <Badge
+                            variant="outline"
+                            className={`text-xs ${typeBadge.className}`}
+                          >
+                            {typeBadge.label}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Dátum */}
+                        <TableCell className="py-4 px-4 text-muted-foreground">
+                          {formatDate(item.dátum)}
+                        </TableCell>
+
+                        {/* Összeg */}
+                        <TableCell className="py-4 px-4 text-right">
+                          <span className="font-mono font-semibold">
+                            {formatCurrency(item.összeg)}
+                          </span>
+                        </TableCell>
+
+                        {/* Státusz Badge */}
+                        <TableCell className="py-4 px-4">
+                          {isPaid ? (
                             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-500">
                               Kifizetve
                             </span>
                           ) : (
                             <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-500/10 text-amber-500">
-                              Függőben
+                              Függő
                             </span>
                           )}
                         </TableCell>
+
+                        {/* Kifizetés ideje */}
+                        <TableCell className="py-4 px-4 text-muted-foreground">
+                          {item.kifizetes_ideje
+                            ? formatDate(item.kifizetes_ideje)
+                            : "–"}
+                        </TableCell>
+
+                        {/* Műveletek (ONLY Edit – NO Delete) */}
                         <TableCell className="py-4 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                              onClick={() => handleEdit(salary)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                              onClick={() => handleDelete(salary.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                            onClick={() => openEditModal(item)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );
@@ -578,13 +526,161 @@ export default function SalariesPage() {
           <UnifiedPagination
             currentPage={currentPage}
             totalPages={totalPages}
-            totalItems={filteredSalaries.length}
+            totalItems={filteredItems.length}
             pageSize={pageSize}
             onPageChange={setCurrentPage}
-            onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }}
           />
         </CardContent>
       </Card>
+
+      {/* ========== "+ KP kifizetés" Modal ========== */}
+      <Dialog
+        open={addDialogOpen}
+        onOpenChange={(open) => {
+          setAddDialogOpen(open);
+          if (!open) resetAddForm();
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>KP kifizetés rögzítése</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="add-megnevezes">Megnevezés</Label>
+              <Input
+                id="add-megnevezes"
+                value={addForm.megnevezes}
+                onChange={(e) =>
+                  setAddForm({ ...addForm, megnevezes: e.target.value })
+                }
+                placeholder="Pl. Januári bér – Kiss Péter"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="add-osszeg">
+                KP-ban kifizetett bér összege (HUF) *
+              </Label>
+              <Input
+                id="add-osszeg"
+                type="number"
+                step="1"
+                value={addForm.osszeg}
+                onChange={(e) =>
+                  setAddForm({ ...addForm, osszeg: e.target.value })
+                }
+                placeholder="0"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="add-datum">Fizetés dátuma</Label>
+              <Input
+                id="add-datum"
+                type="date"
+                value={addForm.datum}
+                onChange={(e) =>
+                  setAddForm({ ...addForm, datum: e.target.value })
+                }
+              />
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setAddDialogOpen(false);
+                  resetAddForm();
+                }}
+              >
+                Mégse
+              </Button>
+              <Button type="submit">Rögzítés</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ========== Edit Modal (restricted: név + megjegyzes only) ========== */}
+      <Dialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) setEditingRecord(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Bejegyzés szerkesztése</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-megnevezes">Megnevezés</Label>
+              <Input
+                id="edit-megnevezes"
+                value={editForm.megnevezes}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, megnevezes: e.target.value })
+                }
+                placeholder="Megnevezés"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-megjegyzes">Megjegyzés (opcionális)</Label>
+              <Textarea
+                id="edit-megjegyzes"
+                value={editForm.megjegyzes}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, megjegyzes: e.target.value })
+                }
+                placeholder="Opcionális megjegyzés..."
+                rows={3}
+              />
+            </div>
+
+            {/* Read-only context */}
+            {editingRecord && (
+              <div className="rounded-lg bg-muted/40 p-3 space-y-1 text-sm text-muted-foreground">
+                <p>
+                  <span className="font-medium text-foreground">Típus:</span>{" "}
+                  {getTypeBadge(editingRecord.tipus).label}
+                </p>
+                <p>
+                  <span className="font-medium text-foreground">Összeg:</span>{" "}
+                  {formatCurrency(editingRecord.összeg)}
+                </p>
+                <p>
+                  <span className="font-medium text-foreground">Dátum:</span>{" "}
+                  {formatDate(editingRecord.dátum)}
+                </p>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setEditDialogOpen(false);
+                  setEditingRecord(null);
+                }}
+              >
+                Mégse
+              </Button>
+              <Button type="submit">Mentés</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

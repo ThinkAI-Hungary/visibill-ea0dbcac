@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
-import { History, FileText, Landmark, Loader2 } from 'lucide-react';
+import { History, FileText, Landmark, Banknote, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 
@@ -38,13 +38,13 @@ function formatFileSize(bytes: number) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-function getStatus(record: UploadRecord, processedUrls: Set<string>): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } {
+function getStatus(record: UploadRecord, processedIds: Set<string>): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } {
   // Error states first
   if (errorStatuses.has(record.processing_status)) {
     return { label: 'A feltöltés sikertelen', variant: 'destructive' };
   }
-  // Check if invoice exists with feldolgozva set
-  if (processedUrls.has(record.file_url)) {
+  // Check if an invoice exists linked to this upload via invoice_uploads_id FK
+  if (processedIds.has(record.id)) {
     return { label: 'Feldolgozva', variant: 'default' };
   }
   // Everything else is "Feltöltve"
@@ -60,32 +60,64 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
 
-  const tableName = activeTab === 'invoices' ? 'invoice_uploads' : 'transaction_uploads';
-  const icon = activeTab === 'invoices' ? <FileText className="h-5 w-5" /> : <Landmark className="h-5 w-5" />;
-  const title = activeTab === 'invoices' ? 'Számla feltöltési' : 'Tranzakció feltöltési';
+  const tableName = activeTab === 'invoices' ? 'invoice_uploads' : activeTab === 'salaries' ? 'salary_files' : 'transaction_uploads';
+  const icon = activeTab === 'invoices' ? <FileText className="h-5 w-5" /> : activeTab === 'salaries' ? <Banknote className="h-5 w-5" /> : <Landmark className="h-5 w-5" />;
+  const title = activeTab === 'invoices' ? 'Számla feltöltési' : activeTab === 'salaries' ? 'Bér/járulék feltöltési' : 'Tranzakció feltöltési';
 
   const fetchRecords = useCallback(async () => {
     if (!user) return;
     
-    let query = supabase
-      .from(tableName)
-      .select('id, file_name, file_size, file_type, file_url, user_id, upload_status, processing_status, created_at, error_message')
-      .gte('created_at', dateFromFormatted)
-      .lte('created_at', dateToFormatted + 'T23:59:59')
-      .order('created_at', { ascending: false })
-      .limit(50);
+    let data: any[] | null = null;
+    let error: any = null;
 
-    if (selectedCompany?.id) {
-      query = query.eq('company_id', selectedCompany.id);
+    if (activeTab === 'salaries') {
+      // salary_files has different columns: status instead of processing_status/upload_status, no file_size/file_type
+      const res = await (supabase
+        .from('salary_files')
+        .select('id, file_name, file_url, user_id, status, created_at')
+        .gte('created_at', dateFromFormatted)
+        .lte('created_at', dateToFormatted + 'T23:59:59')
+        .order('created_at', { ascending: false }) as any)
+        .eq('company_id', selectedCompany?.id)
+        .limit(50);
+
+      data = res.data;
+      error = res.error;
+
+      // Normalize to UploadRecord shape
+      if (data) {
+        data = data.map((r: any) => ({
+          ...r,
+          file_size: 0,
+          file_type: '',
+          upload_status: r.status || 'pending',
+          processing_status: r.status || 'pending',
+          error_message: null,
+        }));
+      }
+    } else {
+      let query = supabase
+        .from(tableName)
+        .select('id, file_name, file_size, file_type, file_url, user_id, upload_status, processing_status, created_at, error_message')
+        .gte('created_at', dateFromFormatted)
+        .lte('created_at', dateToFormatted + 'T23:59:59')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (selectedCompany?.id) {
+        query = query.eq('company_id', selectedCompany.id);
+      }
+
+      const res = await query;
+      data = res.data;
+      error = res.error;
     }
-
-    const { data, error } = await query;
 
     if (error) {
       console.error('Upload history fetch error:', error);
       setRecords([]);
     } else {
-      const uploadRecords = (data as UploadRecord[]) || [];
+      const uploadRecords = (data as unknown as UploadRecord[]) || [];
       setRecords(uploadRecords);
 
       // Fetch user names for uploaders
@@ -103,23 +135,49 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
         setUserNames(nameMap);
       }
 
-      // For invoice uploads, check which ones have been processed
+      // For invoice uploads, check which ones have been processed via FK
       if (activeTab === 'invoices' && uploadRecords.length > 0 && selectedCompany?.id) {
-        const fileUrls = uploadRecords.map(r => r.file_url).filter(Boolean);
-        if (fileUrls.length > 0) {
-          const { data: invoices } = await supabase
+        const uploadIds = uploadRecords.map(r => r.id).filter(Boolean);
+        if (uploadIds.length > 0) {
+          const { data: invoices } = await (supabase
             .from('invoices')
-            .select('image_url')
-            .eq('company_id', selectedCompany.id)
-            .in('image_url', fileUrls);
+            .select('invoice_uploads_id')
+            .eq('company_id', selectedCompany.id) as any)
+            .in('invoice_uploads_id', uploadIds);
 
-          const urls = new Set((invoices || []).map(i => i.image_url).filter(Boolean) as string[]);
-          setProcessedUrls(urls);
+          const matchedIds = new Set(
+            (invoices || [])
+              .map((i: any) => i.invoice_uploads_id)
+              .filter(Boolean) as string[]
+          );
+          setProcessedUrls(matchedIds);
+        }
+      }
+
+      // For salary uploads, check which ones have been processed via salary_file_id FK
+      if (activeTab === 'salaries' && uploadRecords.length > 0 && selectedCompany?.id) {
+        const uploadIds = uploadRecords.map(r => r.id).filter(Boolean);
+        if (uploadIds.length > 0) {
+          const { data: salaries } = await (supabase
+            .from('salary')
+            .select('salary_file_id')
+            .eq('company_id', selectedCompany.id) as any)
+            .in('salary_file_id', uploadIds);
+
+          const matchedIds = new Set(
+            (salaries || [])
+              .map((s: any) => s.salary_file_id)
+              .filter(Boolean) as string[]
+          );
+          setProcessedUrls(matchedIds);
         }
       }
     }
     setLoading(false);
   }, [user, selectedCompany?.id, tableName, activeTab, dateFromFormatted, dateToFormatted]);
+
+  // salary_files doesn't have all the same columns - use file_name for display
+  // The salary_files table uses 'status' instead of 'processing_status' and 'upload_status'
 
   // Initial fetch + refetch on refreshKey change
   useEffect(() => {
@@ -130,7 +188,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
   // Realtime subscription for live updates on uploads
   useEffect(() => {
     if (!user || !selectedCompany?.id) return;
-    if (activeTab !== 'invoices' && activeTab !== 'transactions') return;
+    if (activeTab !== 'invoices' && activeTab !== 'transactions' && activeTab !== 'salaries') return;
 
     const channel = supabase
       .channel(`upload-history-${tableName}-${selectedCompany.id}`)
@@ -183,12 +241,12 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
         },
         (payload) => {
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-          const invoice = payload.new as { image_url?: string };
-          if (invoice.image_url) {
+            const invoice = payload.new as { invoice_uploads_id?: string };
+            if (invoice.invoice_uploads_id) {
               setProcessedUrls(prev => {
-                if (prev.has(invoice.image_url!)) return prev;
+                if (prev.has(invoice.invoice_uploads_id!)) return prev;
                 const next = new Set(prev);
-                next.add(invoice.image_url!);
+                next.add(invoice.invoice_uploads_id!);
                 return next;
               });
             }
@@ -202,8 +260,43 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
     };
   }, [user, selectedCompany?.id, activeTab]);
 
-  // Only show for invoices and transactions tabs
-  if (activeTab !== 'invoices' && activeTab !== 'transactions') {
+  // Realtime subscription for salary table to detect when salary_file_id is set
+  useEffect(() => {
+    if (!user || !selectedCompany?.id || activeTab !== 'salaries') return;
+
+    const channel = supabase
+      .channel(`salary-processed-${selectedCompany.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'salary',
+          filter: `company_id=eq.${selectedCompany.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const salary = payload.new as { salary_file_id?: string };
+            if (salary.salary_file_id) {
+              setProcessedUrls(prev => {
+                if (prev.has(salary.salary_file_id!)) return prev;
+                const next = new Set(prev);
+                next.add(salary.salary_file_id!);
+                return next;
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, selectedCompany?.id, activeTab]);
+
+  // Only show for invoices, transactions, and salaries tabs
+  if (activeTab !== 'invoices' && activeTab !== 'transactions' && activeTab !== 'salaries') {
     return null;
   }
 
