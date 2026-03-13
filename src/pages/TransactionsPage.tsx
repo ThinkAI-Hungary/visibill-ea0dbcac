@@ -63,9 +63,19 @@ const isNoCategoryMatch = (transaction: Transaction): boolean => {
   return transaction.match_type === 'no_match_category';
 };
 
+const isCashTransactionType = (transaction: Transaction): boolean => {
+  const cashTypes = [
+    'atm készpénzfelvét',
+    'pénztári kp felvét',
+    'pénztári kp befizetés',
+    'kp befizetés atm-en keresztül',
+  ];
+  return !!transaction.type && cashTypes.includes(transaction.type.toLowerCase());
+};
+
 const getMatchStatus = (transaction: Transaction): MatchStatus => {
-  // no_match_category treated as matched/validated
-  if (isNoCategoryMatch(transaction)) {
+  // Cash transactions and no_match_category treated as matched/validated
+  if (isNoCategoryMatch(transaction) || isCashTransactionType(transaction)) {
     return 'matched';
   }
   if (transaction.is_verified && transaction.matched_invoice_id) {
