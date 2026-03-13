@@ -1,31 +1,23 @@
 
 
-## Plan: ATM készpénzfelvét tranzakciók automatikus párosítottként kezelése
+## Fix: save-credentials "Auth session missing!" (attempt 3)
 
-### Probléma
-Az "atm készpénzfelvét" (és hasonló készpénzes) tranzakciók pirosak (nem párosított), pedig soha nem lesz hozzájuk számla pár. Ezeket automatikusan zöldnek (párosítottnak) kellene jelölni.
+### Root Cause
+Line 44 calls `serviceClient.auth.getUser(token)` on a service role client that has NO `Authorization` header. In Supabase's Deno runtime, `getUser(token)` still requires the client to have auth context — without it, the SDK returns "Auth session missing!" before even reaching the auth server.
 
-### Megoldás
+The working `check-subscription` function has `{ auth: { persistSession: false } }` but also falls back gracefully. Here, we need the auth to actually succeed.
 
-Egyetlen fájl módosítása: **`src/pages/TransactionsPage.tsx`**
+### Fix (single file change)
 
-1. Új helper függvény létrehozása, amely azonosítja a készpénzes tranzakciókat, amelyeknek nem kell számla pár:
+**File: `supabase/functions/save-credentials/index.ts`**
 
-```typescript
-const isCashTransactionType = (transaction: Transaction): boolean => {
-  const cashTypes = [
-    'atm készpénzfelvét',
-    'pénztári kp felvét',
-    'pénztári kp befizetés',
-    'kp befizetés atm-en keresztül',
-  ];
-  return !!transaction.type && cashTypes.includes(transaction.type.toLowerCase());
-};
-```
+1. Add `{ auth: { persistSession: false } }` to both clients to prevent stale session caching in edge functions
+2. Change line 44: use `supabaseClient.auth.getUser(token)` (anon client WITH auth header) instead of `serviceClient.auth.getUser(token)` (service role client WITHOUT auth header)
 
-2. A `getMatchStatus` függvényben a `no_match_category` mellé beilleszteni ezt az ellenőrzést -- ha a tranzakció típusa készpénzes, akkor `'matched'` státuszt kap.
+The anon client already has `{ global: { headers: { Authorization: authHeader } } }` set on line 33, which gives it the auth context needed for `getUser(token)` to work.
 
-3. A `getRowBackgroundClass` függvényben szintén figyelembe venni ezt az új feltételt, hogy zöld hátteret kapjanak.
-
-Ez pontosan ugyanazt a mintát követi, mint a már meglévő `isNoCategoryMatch` logika.
-
+### What stays the same
+- The service role client is still used for company ownership checks (line 130-138)
+- The anon client (supabaseClient) is still used for the `save_nav_credentials` RPC call so `auth.uid()` works
+- All validation, error handling, and CORS remain unchanged
+- `verify_jwt = false` in config.toml stays as-is (manual validation in code)
