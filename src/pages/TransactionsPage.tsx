@@ -100,7 +100,7 @@ const getMatchStatusIcon = (status: MatchStatus) => {
 
 const getRowBackgroundClass = (transaction: Transaction): string => {
   const hoverClass = 'hover:shadow-[inset_0_0_0_100vw_rgba(0,0,0,0.04)] dark:hover:shadow-[inset_0_0_0_100vw_rgba(255,255,255,0.06)]';
-  if (isNoCategoryMatch(transaction) || (transaction.is_verified && transaction.matched_invoice_id)) {
+  if (isNoCategoryMatch(transaction) || isCashTransactionType(transaction) || (transaction.is_verified && transaction.matched_invoice_id)) {
     return `bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40 ${hoverClass}`;
   }
   if (transaction.matched_invoice_id && !transaction.is_verified) {
