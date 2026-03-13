@@ -543,6 +543,7 @@ export type Database = {
           image_url: string | null
           invoice_direction: string | null
           invoice_type: string
+          invoice_uploads_id: string | null
           kibocsatas_datuma: string
           letrehozva: string
           melleklet_url: string | null
@@ -588,6 +589,7 @@ export type Database = {
           image_url?: string | null
           invoice_direction?: string | null
           invoice_type?: string
+          invoice_uploads_id?: string | null
           kibocsatas_datuma: string
           letrehozva?: string
           melleklet_url?: string | null
@@ -633,6 +635,7 @@ export type Database = {
           image_url?: string | null
           invoice_direction?: string | null
           invoice_type?: string
+          invoice_uploads_id?: string | null
           kibocsatas_datuma?: string
           letrehozva?: string
           melleklet_url?: string | null
@@ -655,6 +658,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_invoice_uploads_id_fkey"
+            columns: ["invoice_uploads_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_uploads"
             referencedColumns: ["id"]
           },
           {
@@ -1153,9 +1163,16 @@ export type Database = {
           company_id: string | null
           created_at: string
           dátum: string | null
+          fizetesi_mod: string
           id: string
+          kifizetes_ideje: string | null
+          megjegyzes: string | null
           név: string
           összeg: number
+          salary_file_id: string | null
+          statusz: string
+          tipus: string
+          transaction_id: string | null
           updated_at: string
           user_id: string
         }
@@ -1163,9 +1180,16 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           dátum?: string | null
+          fizetesi_mod: string
           id?: string
+          kifizetes_ideje?: string | null
+          megjegyzes?: string | null
           név: string
           összeg: number
+          salary_file_id?: string | null
+          statusz: string
+          tipus: string
+          transaction_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1173,9 +1197,16 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           dátum?: string | null
+          fizetesi_mod?: string
           id?: string
+          kifizetes_ideje?: string | null
+          megjegyzes?: string | null
           név?: string
           összeg?: number
+          salary_file_id?: string | null
+          statusz?: string
+          tipus?: string
+          transaction_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1185,6 +1216,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_salary_file_id_fkey"
+            columns: ["salary_file_id"]
+            isOneToOne: false
+            referencedRelation: "salary_files"
             referencedColumns: ["id"]
           },
         ]
@@ -1823,7 +1861,9 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      salary_item_type: "bér" | "ÁFA" | "adó" | "járulék"
+      salary_payment_method: "banki tranzakció" | "készpénz"
+      salary_status_type: "Függő" | "Kifizetve"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1950,6 +1990,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      salary_item_type: ["bér", "ÁFA", "adó", "járulék"],
+      salary_payment_method: ["banki tranzakció", "készpénz"],
+      salary_status_type: ["Függő", "Kifizetve"],
+    },
   },
 } as const
