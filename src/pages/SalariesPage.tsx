@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queryKeys";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -94,9 +96,8 @@ export default function SalariesPage() {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFrom, dateTo } = useDateRange();
+  const queryClient = useQueryClient();
 
-  const [salaryItems, setSalaryItems] = useState<SalaryItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
   // Pagination
@@ -119,37 +120,30 @@ export default function SalariesPage() {
     megjegyzes: "",
   });
 
-  // ---------- Fetch ----------
+  // ---------- Fetch (TanStack Query) ----------
 
-  useEffect(() => {
-    fetchSalaryItems();
-  }, [selectedCompany, dateFrom, dateTo]);
+  const dateFromStr = dateFrom.toISOString().slice(0, 10);
+  const dateToStr = dateTo.toISOString().slice(0, 10);
 
-  const fetchSalaryItems = async () => {
-    if (!user || !selectedCompany) return;
-
-    try {
-      setLoading(true);
+  const { data: salaryItems = [], isLoading: loading } = useQuery({
+    queryKey: queryKeys.salaries(selectedCompany?.id || '', dateFromStr, dateToStr),
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("salary")
         .select("*")
-        .eq("company_id", selectedCompany.id)
-        .gte("dátum", dateFrom.toISOString().slice(0, 10))
-        .lte("dátum", dateTo.toISOString().slice(0, 10))
+        .eq("company_id", selectedCompany!.id)
+        .gte("dátum", dateFromStr)
+        .lte("dátum", dateToStr)
         .order("dátum", { ascending: false, nullsFirst: false });
 
       if (error) throw error;
-      setSalaryItems((data as unknown as SalaryItem[]) || []);
-    } catch (error) {
-      console.error("Error fetching salary items:", error);
-      toast({
-        variant: "destructive",
-        title: "Hiba",
-        description: "Nem sikerült betölteni a béreket.",
-      });
-    } finally {
-      setLoading(false);
-    }
+      return (data as unknown as SalaryItem[]) || [];
+    },
+    enabled: !!user && !!selectedCompany?.id,
+  });
+
+  const invalidateSalaries = () => {
+    queryClient.invalidateQueries({ queryKey: ['salaries', selectedCompany?.id] });
   };
 
   // ---------- Filtered & paginated ----------
@@ -201,40 +195,46 @@ export default function SalariesPage() {
 
   // ---------- "+ KP kifizetés" submit ----------
 
-  const handleAddSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !selectedCompany) return;
+  // ---------- Add mutation ----------
 
-    try {
+  const addMutation = useMutation({
+    mutationFn: async (form: typeof addForm) => {
+      if (!user || !selectedCompany) throw new Error("No user/company");
       const now = new Date().toISOString();
       const { error } = await supabase.from("salary").insert([
         {
           user_id: user.id,
           company_id: selectedCompany.id,
-          név: addForm.megnevezes,
-          összeg: parseFloat(addForm.osszeg),
-          dátum: addForm.datum || null,
+          név: form.megnevezes,
+          összeg: parseFloat(form.osszeg),
+          dátum: form.datum || null,
           statusz: "Kifizetve",
           fizetesi_mod: "készpénz",
           tipus: "bér",
           kifizetes_ideje: now,
         },
       ]);
-
       if (error) throw error;
-
+    },
+    onSuccess: () => {
       toast({ title: "Siker", description: "KP kifizetés rögzítve." });
       setAddDialogOpen(false);
       resetAddForm();
-      fetchSalaryItems();
-    } catch (error) {
+      invalidateSalaries();
+    },
+    onError: (error: any) => {
       console.error("Error adding cash payment:", error);
       toast({
         variant: "destructive",
         title: "Hiba",
         description: "Nem sikerült rögzíteni a kifizetést.",
       });
-    }
+    },
+  });
+
+  const handleAddSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    addMutation.mutate(addForm);
   };
 
   const resetAddForm = () => {
@@ -256,33 +256,39 @@ export default function SalariesPage() {
     setEditDialogOpen(true);
   };
 
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingRecord) return;
+  // ---------- Edit mutation ----------
 
-    try {
+  const editMutation = useMutation({
+    mutationFn: async ({ id, form }: { id: string; form: typeof editForm }) => {
       const { error } = await supabase
         .from("salary")
         .update({
-          név: editForm.megnevezes,
-          megjegyzes: editForm.megjegyzes || null,
+          név: form.megnevezes,
+          megjegyzes: form.megjegyzes || null,
         })
-        .eq("id", editingRecord.id);
-
+        .eq("id", id);
       if (error) throw error;
-
+    },
+    onSuccess: () => {
       toast({ title: "Siker", description: "Bejegyzés frissítve." });
       setEditDialogOpen(false);
       setEditingRecord(null);
-      fetchSalaryItems();
-    } catch (error) {
+      invalidateSalaries();
+    },
+    onError: (error: any) => {
       console.error("Error editing salary:", error);
       toast({
         variant: "destructive",
         title: "Hiba",
         description: "Nem sikerült frissíteni a bejegyzést.",
       });
-    }
+    },
+  });
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRecord) return;
+    editMutation.mutate({ id: editingRecord.id, form: editForm });
   };
 
   // ---------- Render ----------

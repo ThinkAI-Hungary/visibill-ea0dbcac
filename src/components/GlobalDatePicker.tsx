@@ -1,5 +1,5 @@
 import { CalendarIcon } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, isSameDay, addDays } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -7,6 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { useState } from 'react';
+
+const MAX_RANGE_DAYS = 365;
 
 export function GlobalDatePicker() {
   const { dateFrom, dateTo, setDateFrom, setDateTo, setThisMonth, setPreviousMonth, setThisYear } = useDateRange();
@@ -74,6 +76,7 @@ export function GlobalDatePicker() {
                   setDateFromOpen(false);
                 }
               }}
+              disabled={{ after: dateTo }}
               initialFocus
               className={cn("p-3 pointer-events-auto")}
             />
@@ -103,6 +106,10 @@ export function GlobalDatePicker() {
                   setDateToOpen(false);
                 }
               }}
+              disabled={[
+                { before: dateFrom },
+                { after: addDays(dateFrom, MAX_RANGE_DAYS) }
+              ]}
               initialFocus
               className={cn("p-3 pointer-events-auto")}
             />

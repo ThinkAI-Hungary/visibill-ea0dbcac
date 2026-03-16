@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -36,160 +38,134 @@ const PettyCashPage = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState<HpSettings | null>(null);
   const [openingBalance, setOpeningBalance] = useState<string>('');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [startDateOpen, setStartDateOpen] = useState(false);
-  const [entries, setEntries] = useState<PettyCashEntry[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 25;
 
+  // TanStack Query: fetch settings
+  const { data: settings = null } = useQuery({
+    queryKey: queryKeys.pettyCashSettings(selectedCompany?.id || ''),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('hp_settings')
+        .select('*')
+        .eq('company_id', selectedCompany!.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching hp_settings:', error);
+        return null;
+      }
+      return data as HpSettings | null;
+    },
+    enabled: !!user && !!selectedCompany?.id,
+  });
+
+  // Sync local form state when settings load
   useEffect(() => {
-    if (user && selectedCompany) {
-      fetchAll();
-    }
-  }, [user, selectedCompany]);
-
-  const fetchAll = async () => {
-    setLoading(true);
-    try {
-      await Promise.all([fetchSettings(), fetchEntries()]);
-    } catch (error) {
-      console.error('Error fetching petty cash data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchSettings = async () => {
-    if (!selectedCompany) return;
-
-    const { data, error } = await supabase
-      .from('hp_settings')
-      .select('*')
-      .eq('company_id', selectedCompany.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching hp_settings:', error);
-      return;
-    }
-
-    if (data) {
-      setSettings(data);
-      setOpeningBalance(data.opening_balance?.toString() || '');
-      setStartDate(data.start_date ? new Date(data.start_date) : undefined);
+    if (settings) {
+      setOpeningBalance(settings.opening_balance?.toString() || '');
+      setStartDate(settings.start_date ? new Date(settings.start_date) : undefined);
     } else {
-      setSettings(null);
       setOpeningBalance('');
       setStartDate(undefined);
     }
-  };
+  }, [settings]);
 
-  const fetchEntries = async () => {
-    if (!selectedCompany) return;
+  // TanStack Query: fetch entries
+  const { data: entries = [], isLoading: loading } = useQuery({
+    queryKey: queryKeys.pettyCashEntries(selectedCompany?.id || ''),
+    queryFn: async () => {
+      // Fetch all 5 sources in parallel
+      const [withdrawalsRes, cashDepositsRes, cashSalesRes, cashExpensesRes, navCashExpensesRes] = await Promise.all([
+        supabase
+          .from('transactions')
+          .select('transaction_date, description, amount')
+          .eq('company_id', selectedCompany!.id)
+          .in('type', ['atm készpénzfelvét', 'pénztári kp felvét']),
+        supabase
+          .from('transactions')
+          .select('transaction_date, description, amount')
+          .eq('company_id', selectedCompany!.id)
+          .in('type', ['pénztári kp befizetés', 'kp befizetés atm-en keresztül']),
+        supabase
+          .from('nav_invoices')
+          .select('invoice_issue_date, customer_name, invoice_gross_amount, payment_method')
+          .eq('company_id', selectedCompany!.id)
+          .eq('invoice_direction', 'OUTBOUND')
+          .in('payment_method', ['CASH', 'KÉSZPÉNZ']),
+        supabase
+          .from('invoices')
+          .select('kibocsatas_datuma, elado_nev, brutto_vegosszeg, fizetesi_mod, bizonylatsorszam')
+          .eq('company_id', selectedCompany!.id)
+          .ilike('fizetesi_mod', '%készpénz%')
+          .is('reference_number', null),
+        supabase
+          .from('nav_invoices')
+          .select('invoice_issue_date, supplier_name, invoice_gross_amount, invoice_number')
+          .eq('company_id', selectedCompany!.id)
+          .eq('invoice_direction', 'INBOUND')
+          .in('payment_method', ['CASH', 'KÉSZPÉNZ']),
+      ]);
 
-    // Fetch all 3 sources in parallel
-    const [withdrawalsRes, cashDepositsRes, cashSalesRes, cashExpensesRes, navCashExpensesRes] = await Promise.all([
-      // 1. Cash Withdrawals from transactions (increases petty cash)
-      supabase
-        .from('transactions')
-        .select('transaction_date, description, amount')
-        .eq('company_id', selectedCompany.id)
-        .in('type', ['atm készpénzfelvét', 'pénztári kp felvét']),
+      const allEntries: PettyCashEntry[] = [];
 
-      // 2. Cash Deposits from transactions (decreases petty cash)
-      supabase
-        .from('transactions')
-        .select('transaction_date, description, amount')
-        .eq('company_id', selectedCompany.id)
-        .in('type', ['pénztári kp befizetés', 'kp befizetés atm-en keresztül']),
-
-      // 3. Cash Sales from nav_invoices (OUTBOUND, payment_method = CASH)
-      supabase
-        .from('nav_invoices')
-        .select('invoice_issue_date, customer_name, invoice_gross_amount, payment_method')
-        .eq('company_id', selectedCompany.id)
-        .eq('invoice_direction', 'OUTBOUND')
-        .in('payment_method', ['CASH', 'KÉSZPÉNZ']),
-
-      // 4. Cash Expenses from invoices (fizetesi_mod = készpénz)
-      supabase
-        .from('invoices')
-        .select('kibocsatas_datuma, elado_nev, brutto_vegosszeg, fizetesi_mod, bizonylatsorszam')
-        .eq('company_id', selectedCompany.id)
-        .ilike('fizetesi_mod', '%készpénz%')
-        .is('reference_number', null),
-
-      // 5. Cash Expenses from nav_invoices (INBOUND, payment_method = CASH)
-      supabase
-        .from('nav_invoices')
-        .select('invoice_issue_date, supplier_name, invoice_gross_amount, invoice_number')
-        .eq('company_id', selectedCompany.id)
-        .eq('invoice_direction', 'INBOUND')
-        .in('payment_method', ['CASH', 'KÉSZPÉNZ']),
-    ]);
-
-    const allEntries: PettyCashEntry[] = [];
-
-    // Withdrawals (+)
-    (withdrawalsRes.data || []).forEach(t => {
-      allEntries.push({
-        date: t.transaction_date,
-        description: t.description || 'Készpénz felvétel',
-        amount: Math.abs(t.amount),
-        source: 'withdrawal',
+      (withdrawalsRes.data || []).forEach(t => {
+        allEntries.push({
+          date: t.transaction_date,
+          description: t.description || 'Készpénz felvétel',
+          amount: Math.abs(t.amount),
+          source: 'withdrawal',
+        });
       });
-    });
 
-    // Cash deposits (-)
-    (cashDepositsRes.data || []).forEach(t => {
-      allEntries.push({
-        date: t.transaction_date,
-        description: t.description || 'Készpénz befizetés',
-        amount: -(Math.abs(t.amount)),
-        source: 'cash_deposit',
+      (cashDepositsRes.data || []).forEach(t => {
+        allEntries.push({
+          date: t.transaction_date,
+          description: t.description || 'Készpénz befizetés',
+          amount: -(Math.abs(t.amount)),
+          source: 'cash_deposit',
+        });
       });
-    });
 
-    // Cash sales (+)
-    (cashSalesRes.data || []).forEach(inv => {
-      allEntries.push({
-        date: inv.invoice_issue_date || '',
-        description: `Készpénzes értékesítés - ${inv.customer_name || 'Ismeretlen'}`,
-        amount: Math.abs(inv.invoice_gross_amount || 0),
-        source: 'cash_sale',
+      (cashSalesRes.data || []).forEach(inv => {
+        allEntries.push({
+          date: inv.invoice_issue_date || '',
+          description: `Készpénzes értékesítés - ${inv.customer_name || 'Ismeretlen'}`,
+          amount: Math.abs(inv.invoice_gross_amount || 0),
+          source: 'cash_sale',
+        });
       });
-    });
 
-    // Cash expenses from invoices (-)
-    const invoiceExpenseNumbers = new Set<string>();
-    (cashExpensesRes.data || []).forEach(inv => {
-      if (inv.bizonylatsorszam) invoiceExpenseNumbers.add(inv.bizonylatsorszam);
-      allEntries.push({
-        date: inv.kibocsatas_datuma,
-        description: `Készpénzes kiadás - ${inv.elado_nev}`,
-        amount: -(Math.abs(inv.brutto_vegosszeg || 0)),
-        source: 'cash_expense',
+      const invoiceExpenseNumbers = new Set<string>();
+      (cashExpensesRes.data || []).forEach(inv => {
+        if (inv.bizonylatsorszam) invoiceExpenseNumbers.add(inv.bizonylatsorszam);
+        allEntries.push({
+          date: inv.kibocsatas_datuma,
+          description: `Készpénzes kiadás - ${inv.elado_nev}`,
+          amount: -(Math.abs(inv.brutto_vegosszeg || 0)),
+          source: 'cash_expense',
+        });
       });
-    });
 
-    // Cash expenses from nav_invoices INBOUND (-), de-duplicated
-    (navCashExpensesRes.data || []).forEach(inv => {
-      // Skip if already counted from invoices table (matching invoice_number)
-      if (inv.invoice_number && invoiceExpenseNumbers.has(inv.invoice_number)) return;
-      allEntries.push({
-        date: inv.invoice_issue_date || '',
-        description: `Készpénzes kiadás (NAV) - ${inv.supplier_name || 'Ismeretlen'}`,
-        amount: -(Math.abs(inv.invoice_gross_amount || 0)),
-        source: 'cash_expense',
+      (navCashExpensesRes.data || []).forEach(inv => {
+        if (inv.invoice_number && invoiceExpenseNumbers.has(inv.invoice_number)) return;
+        allEntries.push({
+          date: inv.invoice_issue_date || '',
+          description: `Készpénzes kiadás (NAV) - ${inv.supplier_name || 'Ismeretlen'}`,
+          amount: -(Math.abs(inv.invoice_gross_amount || 0)),
+          source: 'cash_expense',
+        });
       });
-    });
 
-    setEntries(allEntries);
-  };
+      return allEntries;
+    },
+    enabled: !!user && !!selectedCompany?.id,
+  });
 
   const handleSave = async () => {
     if (!selectedCompany || !user) return;
@@ -228,7 +204,7 @@ const PettyCashPage = () => {
       }
 
       toast.success('Házipénztár beállítások mentve!');
-      await fetchSettings();
+      queryClient.invalidateQueries({ queryKey: queryKeys.pettyCashSettings(selectedCompany!.id) });
     } catch (error: any) {
       console.error('Error saving settings:', error);
       toast.error('Hiba a mentés során', { description: error.message });

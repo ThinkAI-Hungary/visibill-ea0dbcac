@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -137,10 +139,8 @@ const Index = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [metricsLoading, setMetricsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [selectedCurrency, setSelectedCurrency] = useState<string>('HUF');
-  const [exchangeRates, setExchangeRates] = useState<{[key: string]: number}>({});
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [navVatData, setNavVatData] = useState<NavVatData | null>(null);
@@ -160,7 +160,6 @@ const Index = () => {
   const [inboundVatCategories, setInboundVatCategories] = useState<VatCategoryData[]>([]);
   const [totalOutboundVat, setTotalOutboundVat] = useState(0);
   const [totalInboundVat, setTotalInboundVat] = useState(0);
-  const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [pettyCashBalance, setPettyCashBalance] = useState<number | null>(null);
   
   // Product Tour state
@@ -184,10 +183,36 @@ const Index = () => {
     { code: 'CNY', name: 'Kínai Yuan', flag: '🇨🇳' },
   ];
 
-  useEffect(() => {
-    fetchDashboardData();
-    fetchExchangeRates();
-  }, [user, selectedCompany, dateFrom, dateTo]);
+  // TanStack Query: exchange rates (global, no company dependency)
+  const { data: exchangeRates = {} } = useQuery({
+    queryKey: queryKeys.exchangeRates(),
+    queryFn: async () => {
+      const response = await fetch('https://api.exchangerate-api.com/v4/latest/HUF');
+      const data = await response.json();
+      return data.rates as {[key: string]: number};
+    },
+    staleTime: 60 * 60 * 1000, // 1 hour
+  });
+
+  // TanStack Query: dashboard data
+  const { isLoading: metricsLoading } = useQuery({
+    queryKey: queryKeys.dashboardData(selectedCompany?.id || '', dateFromFormatted, dateToFormatted),
+    queryFn: async () => {
+      await fetchDashboardData();
+      return true; // just used to track loading
+    },
+    enabled: !!user && !!selectedCompany?.id,
+  });
+
+  // TanStack Query: analytics data
+  const { isLoading: analyticsLoading } = useQuery({
+    queryKey: queryKeys.dashboardAnalytics(selectedCompany?.id || '', dateFromFormatted, dateToFormatted),
+    queryFn: async () => {
+      await fetchAnalyticsData();
+      return true;
+    },
+    enabled: !!user && !!selectedCompany?.id,
+  });
 
   // Check if user needs to see the product tour
   useEffect(() => {
@@ -202,7 +227,6 @@ const Index = () => {
           .single();
         
         if (data && data.has_completed_tour === false) {
-          // Small delay to ensure UI is rendered
           setTimeout(() => setShowTour(true), 500);
         }
       } catch (error) {
@@ -212,22 +236,6 @@ const Index = () => {
     
     checkTourStatus();
   }, [user, selectedCompany]);
-
-  useEffect(() => {
-    if (user && selectedCompany) {
-      fetchAnalyticsData();
-    }
-  }, [user, selectedCompany, dateFrom, dateTo]);
-
-  const fetchExchangeRates = async () => {
-    try {
-      const response = await fetch('https://api.exchangerate-api.com/v4/latest/HUF');
-      const data = await response.json();
-      setExchangeRates(data.rates);
-    } catch (error) {
-      console.error('Error fetching exchange rates:', error);
-    }
-  };
 
   const convertAmount = (amount: number): number => {
     if (selectedCurrency === 'HUF') return amount;
@@ -249,13 +257,10 @@ const Index = () => {
 
   // Analytics data fetching
   const fetchAnalyticsData = async () => {
-    setAnalyticsLoading(true);
     try {
       await Promise.all([fetchRawData(), fetchVatData()]);
     } catch (error) {
       console.error("Error fetching analytics:", error);
-    } finally {
-      setAnalyticsLoading(false);
     }
   };
 
@@ -496,8 +501,7 @@ const Index = () => {
 
   const fetchDashboardData = async () => {
     if (!user || !selectedCompany) return;
-    
-    setMetricsLoading(true);
+
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -707,7 +711,6 @@ const Index = () => {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
-      setMetricsLoading(false);
     }
   };
 

@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -144,8 +146,7 @@ const TransactionsPage = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFrom, dateTo } = useDateRange();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [syncing, setSyncing] = useState(false);
   const [sortField, setSortField] = useState<string>('transaction_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -174,31 +175,77 @@ const TransactionsPage = () => {
     setFilters(prev => ({ ...prev, dateFrom, dateTo }));
   }, [dateFrom, dateTo]);
 
-  useEffect(() => {
-    fetchTransactions();
-  }, [user, selectedCompany]);
+  // Build server-side filter params for query key
+  const dateFromStr = filters.dateFrom ? format(filters.dateFrom, 'yyyy-MM-dd') : '';
+  const dateToStr = filters.dateTo ? format(filters.dateTo, 'yyyy-MM-dd') : '';
+  const serverFilters = useMemo(() => ({
+    currency: filters.currency,
+    type: filters.type,
+    search: filters.search,
+  }), [filters.currency, filters.type, filters.search]);
 
-  const fetchTransactions = async () => {
-    if (!user) return;
+  // Fetch distinct currency/type values for filter dropdowns (lightweight query)
+  const { data: filterOptions } = useQuery({
+    queryKey: queryKeys.transactionFilterOptions(selectedCompany?.id || ''),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('currency, type')
+        .eq('company_id', selectedCompany!.id);
+      if (error) throw error;
+      const currencies = [...new Set((data || []).map(t => t.currency).filter(Boolean))] as string[];
+      const types = [...new Set((data || []).map(t => t.type).filter(Boolean))] as string[];
+      return { currencies, types };
+    },
+    enabled: !!user && !!selectedCompany?.id,
+    staleTime: 5 * 60 * 1000, // cache for 5 minutes
+  });
 
-    setLoading(true);
-    try {
+  const uniqueCurrencies = filterOptions?.currencies || [];
+  const uniqueTypes = filterOptions?.types || [];
+
+  // TanStack Query: fetch transactions with server-side filtering + pagination
+  const { data: queryResult, isLoading: loading } = useQuery({
+    queryKey: queryKeys.transactions(
+      selectedCompany?.id || '',
+      dateFromStr,
+      dateToStr,
+      currentPage,
+      pageSize,
+      serverFilters
+    ),
+    queryFn: async () => {
+      const from = (currentPage - 1) * pageSize;
+      const to = from + pageSize - 1;
+
       let query = supabase
         .from('transactions')
-        .select('*')
-        .order('transaction_date', { ascending: false });
+        .select('*', { count: 'exact' })
+        .eq('company_id', selectedCompany!.id)
+        .order('transaction_date', { ascending: sortDirection === 'asc' });
 
-      if (selectedCompany) {
-        query = query.eq('company_id', selectedCompany.id);
+      // Server-side date filtering
+      if (dateFromStr) query = query.gte('transaction_date', dateFromStr);
+      if (dateToStr) query = query.lte('transaction_date', dateToStr);
+
+      // Server-side currency and type filtering
+      if (filters.currency !== 'all') query = query.eq('currency', filters.currency);
+      if (filters.type !== 'all') query = query.eq('type', filters.type);
+
+      // Server-side text search
+      if (filters.search) {
+        query = query.or(`description.ilike.%${filters.search}%,type.ilike.%${filters.search}%`);
       }
 
-      const { data, error } = await query;
+      // Server-side pagination
+      query = query.range(from, to);
 
+      const { data, error, count } = await query;
       if (error) throw error;
 
-      const fetchedTransactions = data || [];
+      const fetchedTransactions = (data || []) as Transaction[];
 
-      // Auto-approve transactions with confidence_score >= 0.9
+      // Auto-approve transactions with confidence_score >= 0.9 (current page only)
       const toAutoApprove = fetchedTransactions.filter(
         t => t.matched_invoice_id && !t.is_verified && t.confidence_score && t.confidence_score >= 0.9
       );
@@ -210,7 +257,6 @@ const TransactionsPage = () => {
           .update({ is_verified: true, match_type: 'auto' })
           .in('id', ids);
 
-        // Update local state to reflect auto-approval
         fetchedTransactions.forEach(t => {
           if (ids.includes(t.id)) {
             t.is_verified = true;
@@ -219,13 +265,14 @@ const TransactionsPage = () => {
         });
       }
 
-      setTransactions(fetchedTransactions);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return { rows: fetchedTransactions, totalCount: count ?? 0 };
+    },
+    enabled: !!user && !!selectedCompany?.id,
+    placeholderData: (previousData) => previousData, // keep previous data while loading new page
+  });
+
+  const transactions = queryResult?.rows ?? [];
+  const totalCount = queryResult?.totalCount ?? 0;
 
   // Open details dialog
   const handleOpenDetails = (transaction: Transaction) => {
@@ -233,30 +280,11 @@ const TransactionsPage = () => {
     setDetailsDialogOpen(true);
   };
 
-  // Filtered and sorted transactions
+  // Client-side post-filters (amount range, matchStatus – not feasible server-side)
   const filteredTransactions = useMemo(() => {
     let result = [...transactions];
 
-    // Search filter
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      result = result.filter(t =>
-        t.description?.toLowerCase().includes(searchLower) ||
-        t.type?.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Date filters
-    if (filters.dateFrom) {
-      const fromDate = format(filters.dateFrom, 'yyyy-MM-dd');
-      result = result.filter(t => t.transaction_date >= fromDate);
-    }
-    if (filters.dateTo) {
-      const toDate = format(filters.dateTo, 'yyyy-MM-dd');
-      result = result.filter(t => t.transaction_date <= toDate);
-    }
-
-    // Amount filters
+    // Amount filters (uses Math.abs, not feasible as simple server-side filter)
     if (filters.amountMin) {
       const min = parseFloat(filters.amountMin);
       if (!isNaN(min)) result = result.filter(t => Math.abs(t.amount) >= min);
@@ -266,66 +294,18 @@ const TransactionsPage = () => {
       if (!isNaN(max)) result = result.filter(t => Math.abs(t.amount) <= max);
     }
 
-    // Currency filter
-    if (filters.currency !== 'all') {
-      result = result.filter(t => t.currency === filters.currency);
-    }
-
-    // Type filter
-    if (filters.type !== 'all') {
-      result = result.filter(t => t.type === filters.type);
-    }
-
-    // Match status filter
+    // Match status filter (computed field, not in DB)
     if (filters.matchStatus !== 'all') {
       result = result.filter(t => getMatchStatus(t) === filters.matchStatus);
     }
 
-    // Sorting
-    result.sort((a, b) => {
-      let aVal: any, bVal: any;
-
-      switch (sortField) {
-        case 'transaction_date':
-          aVal = a.transaction_date || '';
-          bVal = b.transaction_date || '';
-          break;
-        case 'amount':
-          aVal = Math.abs(a.amount);
-          bVal = Math.abs(b.amount);
-          break;
-        case 'description':
-          aVal = a.description?.toLowerCase() || '';
-          bVal = b.description?.toLowerCase() || '';
-          break;
-        default:
-          aVal = a[sortField as keyof Transaction] || '';
-          bVal = b[sortField as keyof Transaction] || '';
-      }
-
-      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-
     return result;
-  }, [transactions, filters, sortField, sortDirection]);
+  }, [transactions, filters.amountMin, filters.amountMax, filters.matchStatus]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredTransactions.length / pageSize);
-  const paginatedTransactions = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredTransactions.slice(start, start + pageSize);
-  }, [filteredTransactions, currentPage, pageSize]);
-
-  // Get unique values for filters
-  const uniqueCurrencies = useMemo(() =>
-    [...new Set(transactions.map(t => t.currency).filter(Boolean))] as string[],
-    [transactions]);
-
-  const uniqueTypes = useMemo(() =>
-    [...new Set(transactions.map(t => t.type).filter(Boolean))] as string[],
-    [transactions]);
+  // Server-side pagination: totalPages comes from the exact count
+  const totalPages = Math.ceil(totalCount / pageSize);
+  // The current page data (post-filtered for amount/matchStatus)
+  const paginatedTransactions = filteredTransactions;
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -354,16 +334,17 @@ const TransactionsPage = () => {
     filters.amountMin || filters.amountMax || filters.currency !== 'all' ||
     filters.type !== 'all' || filters.matchStatus !== 'all';
 
-  // Reset page when filters change
+  // Reset page when server-side filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters]);
+  }, [filters.search, filters.dateFrom, filters.dateTo, filters.currency, filters.type, filters.matchStatus]);
 
-  // Sync function - refreshes the transactions table
+  // Sync function - refreshes the transactions table (prefix match invalidates all pages)
   const handleSync = async () => {
     setSyncing(true);
     try {
-      await fetchTransactions();
+      await queryClient.invalidateQueries({ queryKey: ['transactions', selectedCompany?.id || ''] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.transactionFilterOptions(selectedCompany?.id || '') });
       toast.success('Tranzakciók frissítve!');
     } catch (error: any) {
       console.error('Sync error:', error);
@@ -450,7 +431,7 @@ const TransactionsPage = () => {
               <div>
                 <CardTitle className="text-2xl font-bold">Tranzakciók</CardTitle>
                 <CardDescription>
-                  Banki tranzakciók és számla párosítások - {filteredTransactions.length} találat
+                  Banki tranzakciók és számla párosítások - {totalCount} találat
                 </CardDescription>
               </div>
               <div className="flex gap-2">
@@ -577,7 +558,7 @@ const TransactionsPage = () => {
             <UnifiedPagination
               currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={filteredTransactions.length}
+              totalItems={totalCount}
               pageSize={pageSize}
               onPageChange={setCurrentPage}
               onPageSizeChange={(size) => {
@@ -719,7 +700,7 @@ const TransactionsPage = () => {
             <UnifiedPagination
               currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={filteredTransactions.length}
+              totalItems={totalCount}
               pageSize={pageSize}
               onPageChange={setCurrentPage}
               onPageSizeChange={(size) => {
@@ -739,7 +720,7 @@ const TransactionsPage = () => {
         transaction={selectedTransaction}
         companyId={selectedCompany?.id || ''}
         onUpdate={() => {
-          fetchTransactions();
+          queryClient.invalidateQueries({ queryKey: ['transactions', selectedCompany?.id || ''] });
         }}
       />
     </div>

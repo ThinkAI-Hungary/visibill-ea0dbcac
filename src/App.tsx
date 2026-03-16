@@ -28,7 +28,16 @@ import TransactionsPage from "./pages/TransactionsPage";
 import PettyCashPage from "./pages/PettyCashPage";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,      // 5 perc — adat "friss"-nek számít, nem fetchel újra
+      gcTime: 10 * 60 * 1000,         // 10 perc — cache megőrzés
+      refetchOnWindowFocus: false,     // Ne fetcheljen ablak-fókuszra
+      retry: 1,                        // Max 1 retry hiba esetén
+    },
+  },
+});
 
 // Wrapper component that combines ProtectedRoute with page content
 function ProtectedPage({ children }: { children: React.ReactNode }) {

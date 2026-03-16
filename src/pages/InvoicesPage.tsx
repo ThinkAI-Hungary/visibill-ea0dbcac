@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -167,6 +169,7 @@ const InvoicesPage = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
+  const queryClient = useQueryClient();
   const [invoices, setInvoices] = useState<NavInvoice[]>([]);
   const [submittedInvoices, setSubmittedInvoices] = useState<SubmittedInvoice[]>([]);
   const [linkedInvoicesPool, setLinkedInvoicesPool] = useState<SubmittedInvoice[]>([]);
@@ -181,7 +184,6 @@ const InvoicesPage = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // NAV sync state
-  const [credentialsExist, setCredentialsExist] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const SYNC_COOLDOWN_SECONDS = 10;
 
@@ -298,9 +300,13 @@ const InvoicesPage = () => {
   });
 
   useEffect(() => {
-    fetchData();
-    checkCredentialsExist();
+    fetchInvoiceData();
   }, [user, selectedCompany, dateFrom, dateTo]);
+
+  // Invalidation helper — triggers refetch of invoice data
+  const invalidateInvoiceData = () => {
+    fetchInvoiceData();
+  };
 
   // Real-time subscription for invoices
   useEffect(() => {
@@ -314,7 +320,7 @@ const InvoicesPage = () => {
         table: 'invoices',
         filter: `company_id=eq.${selectedCompany.id}`
       }, () => {
-        fetchData();
+        invalidateInvoiceData();
       })
       .on('postgres_changes', {
         event: '*',
@@ -322,7 +328,7 @@ const InvoicesPage = () => {
         table: 'nav_invoices',
         filter: `company_id=eq.${selectedCompany.id}`
       }, () => {
-        fetchData();
+        invalidateInvoiceData();
       })
       .subscribe();
 
@@ -347,25 +353,21 @@ const InvoicesPage = () => {
     setExpandedRowIds(new Set());
   }, [activeTab]);
 
-  const checkCredentialsExist = async () => {
-    if (!selectedCompany) {
-      setCredentialsExist(false);
-      return;
-    }
-    try {
+  // NAV credentials check
+  const { data: credentialsExist = false } = useQuery({
+    queryKey: queryKeys.navCredentials(selectedCompany?.id || ''),
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('user_nav_credentials')
         .select('id')
-        .eq('company_id', selectedCompany.id)
+        .eq('company_id', selectedCompany!.id)
         .maybeSingle();
+      return !error && !!data;
+    },
+    enabled: !!selectedCompany?.id,
+  });
 
-      setCredentialsExist(!error && !!data);
-    } catch (error) {
-      setCredentialsExist(false);
-    }
-  };
-
-  // Row selection helpers - defined after paginatedNavInvoices
+  // Row selection helpers
   const handleRowSelect = (invoiceId: string, checked: boolean) => {
     setSelectedInvoiceIds(prev => {
       const newSet = new Set(prev);
@@ -531,12 +533,11 @@ const InvoicesPage = () => {
     }
   };
 
-  const fetchData = async () => {
+  const fetchInvoiceData = async () => {
     if (!user || !selectedCompany) return;
 
     setLoading(true);
     try {
-      // Use global date range for queries
       const queryDateFrom = dateFromFormatted;
       const queryDateTo = dateToFormatted;
 
@@ -573,18 +574,15 @@ const InvoicesPage = () => {
       const knownIds = new Set(submittedList.map(inv => inv.id));
       const allExtra: SubmittedInvoice[] = [];
       
-      // Collect initial link keys from the date-filtered invoices
       let pendingBizonylat = new Set(
         submittedList.map(inv => inv.bizonylatsorszam).filter(Boolean) as string[]
       );
       let pendingReference = new Set(
         submittedList.map(inv => inv.reference_number).filter(Boolean) as string[]
       );
-      // Track already-queried keys to avoid repeat queries
       const queriedBizonylat = new Set<string>();
       const queriedReference = new Set<string>();
 
-      // Iterative BFS: fetch linked invoices, then check if the newly fetched ones have further links
       for (let depth = 0; depth < 20; depth++) {
         const newBiz = [...pendingBizonylat].filter(k => !queriedBizonylat.has(k));
         const newRef = [...pendingReference].filter(k => !queriedReference.has(k));
@@ -606,7 +604,6 @@ const InvoicesPage = () => {
         const newInvoices = (linkedData || []).filter(inv => !knownIds.has(inv.id));
         if (newInvoices.length === 0) break;
 
-        // Prepare next iteration keys from newly discovered invoices
         pendingBizonylat = new Set<string>();
         pendingReference = new Set<string>();
         for (const inv of newInvoices) {
@@ -646,7 +643,7 @@ const InvoicesPage = () => {
       if (projectsError) throw projectsError;
       setProjects(projectsData || []);
 
-      // Fetch matched transactions (full data for expandable rows)
+      // Fetch matched transactions
       const { data: matchedData } = await supabase
         .from('transactions')
         .select('id, matched_invoice_id, transaction_date, amount, description, currency, type')
@@ -658,7 +655,6 @@ const InvoicesPage = () => {
 
       const matchedInvoiceIdsSet = new Set(txData.map(t => t.matched_invoice_id).filter(Boolean));
       setMatchedInvoiceIds(matchedInvoiceIdsSet);
-
 
     } catch (error) {
       console.error('Error fetching data:', error);
