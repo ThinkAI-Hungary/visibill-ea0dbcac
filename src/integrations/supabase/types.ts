@@ -958,6 +958,7 @@ export type Database = {
           company_id: string | null
           created_at: string
           default_project_id: string | null
+          email: string | null
           id: string
           name: string
           partner_type: string
@@ -970,6 +971,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           default_project_id?: string | null
+          email?: string | null
           id?: string
           name: string
           partner_type?: string
@@ -982,6 +984,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           default_project_id?: string | null
+          email?: string | null
           id?: string
           name?: string
           partner_type?: string
@@ -1002,6 +1005,62 @@ export type Database = {
             columns: ["default_project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dunning_sends: {
+        Row: {
+          id: string
+          user_id: string
+          company_id: string
+          debtor_company_name: string
+          debtor_tax_number: string | null
+          debtor_email: string
+          invoice_ids: string[]
+          sent_at: string
+          status: string
+          error_message: string | null
+          total_amount: number | null
+          currency: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          company_id: string
+          debtor_company_name: string
+          debtor_tax_number?: string | null
+          debtor_email: string
+          invoice_ids?: string[]
+          sent_at?: string
+          status?: string
+          error_message?: string | null
+          total_amount?: number | null
+          currency?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          company_id?: string
+          debtor_company_name?: string
+          debtor_tax_number?: string | null
+          debtor_email?: string
+          invoice_ids?: string[]
+          sent_at?: string
+          status?: string
+          error_message?: string | null
+          total_amount?: number | null
+          currency?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dunning_sends_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]

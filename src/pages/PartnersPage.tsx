@@ -52,6 +52,7 @@ interface Partner {
   name: string;
   tax_number: string;
   address: string | null;
+  email: string | null;
   partner_type: string;
   company_id: string | null;
   user_id: string;
@@ -108,8 +109,10 @@ export default function PartnersPage() {
     name: "",
     tax_number: "",
     address: "",
+    email: "",
     partner_type: "both",
   });
+  const [emailError, setEmailError] = useState("");
 
   // Fetch partners - company scoped (required)
   const { data: partners, isLoading } = useQuery({
@@ -138,6 +141,7 @@ export default function PartnersPage() {
         name: data.name,
         tax_number: data.tax_number,
         address: data.address || null,
+        email: data.email?.trim() || null,
         partner_type: data.partner_type,
         user_id: user.id,
         company_id: selectedCompany?.id || null,
@@ -253,6 +257,7 @@ export default function PartnersPage() {
         name: partner.name,
         tax_number: partner.tax_number,
         address: partner.address || "",
+        email: partner.email || "",
         partner_type: partner.partner_type,
       });
     } else {
@@ -261,21 +266,30 @@ export default function PartnersPage() {
         name: "",
         tax_number: "",
         address: "",
+        email: "",
         partner_type: "both",
       });
     }
+    setEmailError("");
     setIsDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingPartner(null);
+    setEmailError("");
     setFormData({
       name: "",
       tax_number: "",
       address: "",
+      email: "",
       partner_type: "both",
     });
+  };
+
+  const validateEmail = (email: string): boolean => {
+    if (!email.trim()) return true; // optional
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -288,6 +302,11 @@ export default function PartnersPage() {
       });
       return;
     }
+    if (formData.email && !validateEmail(formData.email)) {
+      setEmailError("Érvénytelen email-cím formátum");
+      return;
+    }
+    setEmailError("");
     saveMutation.mutate({
       ...formData,
       id: editingPartner?.id,
@@ -537,6 +556,23 @@ export default function PartnersPage() {
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder="Partner címe"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email-cím <span className="text-muted-foreground text-xs">(felszólítólevélhez)</span></Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => {
+                  setFormData({ ...formData, email: e.target.value });
+                  setEmailError("");
+                }}
+                placeholder="partner@example.com"
+                className={emailError ? "border-destructive" : ""}
+              />
+              {emailError && (
+                <p className="text-xs text-destructive">{emailError}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="partner_type">Típus</Label>

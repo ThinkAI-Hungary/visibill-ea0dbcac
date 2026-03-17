@@ -41,7 +41,8 @@ import {
   Landmark,
   Moon,
   Users,
-  Banknote
+  Banknote,
+  ReceiptText
 } from "lucide-react";
 import CompanySelector from "./CompanySelector";
 
@@ -75,6 +76,12 @@ const navigationItems = [
     url: "/invoices", 
     icon: FileText,
     tourId: "invoices",
+  },
+  {
+    title: "Kintlévőség",
+    url: "/kintlevo",
+    icon: ReceiptText,
+    tourId: "kintlevo",
   },
   {
     title: "Tranzakciók",

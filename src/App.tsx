@@ -19,32 +19,20 @@ import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
 import Projects from "./pages/Projects";
 import Pricing from "./pages/Pricing";
-
 import ExchangeRates from "./pages/ExchangeRates";
 import SalariesPage from "./pages/SalariesPage";
 import Analytics from "./pages/Analytics";
 import PartnersPage from "./pages/PartnersPage";
 import TransactionsPage from "./pages/TransactionsPage";
-import PettyCashPage from "./pages/PettyCashPage";
 import NotFound from "./pages/NotFound";
+import KintlevoPage from "./pages/KintlevoPage";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,      // 5 perc — adat "friss"-nek számít, nem fetchel újra
-      gcTime: 10 * 60 * 1000,         // 10 perc — cache megőrzés
-      refetchOnWindowFocus: false,     // Ne fetcheljen ablak-fókuszra
-      retry: 1,                        // Max 1 retry hiba esetén
-    },
-  },
-});
+const queryClient = new QueryClient();
 
-// Wrapper component that combines ProtectedRoute with page content
 function ProtectedPage({ children }: { children: React.ReactNode }) {
   return <ProtectedRoute>{children}</ProtectedRoute>;
 }
 
-// Wrapper for AuthGuard pages
 function AuthGuardPage({ children }: { children: React.ReactNode }) {
   return <AuthGuard>{children}</AuthGuard>;
 }
@@ -58,86 +46,57 @@ const App = () => (
             <SubscriptionProvider>
               <TooltipProvider>
                 <Toaster />
-                
                 <BrowserRouter>
                   <Routes>
                     {/* Auth route without layout */}
                     <Route path="/auth" element={<Auth />} />
-                    
-                    {/* All protected routes with ProtectedLayout - auth check before layout renders */}
+
+                    {/* All protected routes with ProtectedLayout */}
                     <Route element={<ProtectedLayout />}>
                       <Route path="/onboarding" element={
-                        <AuthGuardPage>
-                          <Onboarding />
-                        </AuthGuardPage>
+                        <AuthGuardPage><Onboarding /></AuthGuardPage>
                       } />
                       <Route path="/upload" element={
-                        <ProtectedPage>
-                          <ManualUpload />
-                        </ProtectedPage>
+                        <ProtectedPage><ManualUpload /></ProtectedPage>
                       } />
                       <Route path="/invoices" element={
-                        <ProtectedPage>
-                          <InvoicesPage />
-                        </ProtectedPage>
+                        <ProtectedPage><InvoicesPage /></ProtectedPage>
                       } />
                       <Route path="/integrations" element={
-                        <ProtectedPage>
-                          <Integrations />
-                        </ProtectedPage>
+                        <ProtectedPage><Integrations /></ProtectedPage>
                       } />
                       <Route path="/settings" element={
-                        <ProtectedPage>
-                          <Settings />
-                        </ProtectedPage>
+                        <ProtectedPage><Settings /></ProtectedPage>
                       } />
                       <Route path="/projects" element={
-                        <ProtectedPage>
-                          <Projects />
-                        </ProtectedPage>
+                        <ProtectedPage><Projects /></ProtectedPage>
                       } />
                       <Route path="/partners" element={
-                        <ProtectedPage>
-                          <PartnersPage />
-                        </ProtectedPage>
+                        <ProtectedPage><PartnersPage /></ProtectedPage>
                       } />
                       <Route path="/transactions" element={
-                        <ProtectedPage>
-                          <TransactionsPage />
-                        </ProtectedPage>
+                        <ProtectedPage><TransactionsPage /></ProtectedPage>
+                      } />
+                      <Route path="/kintlevo" element={
+                        <ProtectedPage><KintlevoPage /></ProtectedPage>
                       } />
                       <Route path="/pricing" element={
-                        <ProtectedPage>
-                          <Pricing />
-                        </ProtectedPage>
+                        <ProtectedPage><Pricing /></ProtectedPage>
                       } />
                       <Route path="/exchange-rates" element={
-                        <ProtectedPage>
-                          <ExchangeRates />
-                        </ProtectedPage>
+                        <ProtectedPage><ExchangeRates /></ProtectedPage>
                       } />
                       <Route path="/salaries" element={
-                        <ProtectedPage>
-                          <SalariesPage />
-                        </ProtectedPage>
-                      } />
-                      <Route path="/petty-cash" element={
-                        <ProtectedPage>
-                          <PettyCashPage />
-                        </ProtectedPage>
+                        <ProtectedPage><SalariesPage /></ProtectedPage>
                       } />
                       <Route path="/analytics" element={
-                        <ProtectedPage>
-                          <Analytics />
-                        </ProtectedPage>
+                        <ProtectedPage><Analytics /></ProtectedPage>
                       } />
                       <Route path="/" element={
-                        <ProtectedPage>
-                          <Index />
-                        </ProtectedPage>
+                        <ProtectedPage><Index /></ProtectedPage>
                       } />
                     </Route>
-                    
+
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>
