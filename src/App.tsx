@@ -26,6 +26,7 @@ import PartnersPage from "./pages/PartnersPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import NotFound from "./pages/NotFound";
 import KintlevoPage from "./pages/KintlevoPage";
+import PettyCashPage from "./pages/PettyCashPage";
 
 const queryClient = new QueryClient();
 
