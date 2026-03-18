@@ -81,6 +81,9 @@ const App = () => (
                       <Route path="/kintlevo" element={
                         <ProtectedPage><KintlevoPage /></ProtectedPage>
                       } />
+                      <Route path="/petty-cash" element={
+                        <ProtectedPage><PettyCashPage /></ProtectedPage>
+                      } />
                       <Route path="/pricing" element={
                         <ProtectedPage><Pricing /></ProtectedPage>
                       } />

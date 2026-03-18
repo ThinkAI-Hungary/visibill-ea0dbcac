@@ -1288,7 +1288,7 @@ const InvoicesPage = () => {
   };
 
   const handleEditSave = () => {
-    fetchData();
+    fetchInvoiceData();
   };
 
   const getResultCount = () => {
