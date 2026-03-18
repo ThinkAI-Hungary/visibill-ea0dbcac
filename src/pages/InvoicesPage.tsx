@@ -523,7 +523,7 @@ const InvoicesPage = () => {
       // Clear selection after sync
       setSelectedInvoiceIds(new Set());
 
-      fetchData();
+      fetchInvoiceData();
 
     } catch (error: any) {
       console.error('Sync error:', error);
@@ -1288,7 +1288,7 @@ const InvoicesPage = () => {
   };
 
   const handleEditSave = () => {
-    fetchData();
+    fetchInvoiceData();
   };
 
   const getResultCount = () => {

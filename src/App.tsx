@@ -26,6 +26,7 @@ import PartnersPage from "./pages/PartnersPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import NotFound from "./pages/NotFound";
 import KintlevoPage from "./pages/KintlevoPage";
+import PettyCashPage from "./pages/PettyCashPage";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,9 @@ const App = () => (
                       } />
                       <Route path="/kintlevo" element={
                         <ProtectedPage><KintlevoPage /></ProtectedPage>
+                      } />
+                      <Route path="/petty-cash" element={
+                        <ProtectedPage><PettyCashPage /></ProtectedPage>
                       } />
                       <Route path="/pricing" element={
                         <ProtectedPage><Pricing /></ProtectedPage>
