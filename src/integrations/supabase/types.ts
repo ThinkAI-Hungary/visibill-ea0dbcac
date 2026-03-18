@@ -321,6 +321,62 @@ export type Database = {
           },
         ]
       }
+      dunning_sends: {
+        Row: {
+          company_id: string
+          created_at: string
+          currency: string | null
+          debtor_company_name: string
+          debtor_email: string
+          debtor_tax_number: string | null
+          error_message: string | null
+          id: string
+          invoice_ids: string[]
+          sent_at: string
+          status: string
+          total_amount: number | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          currency?: string | null
+          debtor_company_name: string
+          debtor_email: string
+          debtor_tax_number?: string | null
+          error_message?: string | null
+          id?: string
+          invoice_ids?: string[]
+          sent_at?: string
+          status?: string
+          total_amount?: number | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          currency?: string | null
+          debtor_company_name?: string
+          debtor_email?: string
+          debtor_tax_number?: string | null
+          error_message?: string | null
+          id?: string
+          invoice_ids?: string[]
+          sent_at?: string
+          status?: string
+          total_amount?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dunning_sends_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       egyszerusitett_szamla_backup: {
         Row: {
           adoalap_osszesen_netto: number | null
@@ -1005,62 +1061,6 @@ export type Database = {
             columns: ["default_project_id"]
             isOneToOne: false
             referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      dunning_sends: {
-        Row: {
-          id: string
-          user_id: string
-          company_id: string
-          debtor_company_name: string
-          debtor_tax_number: string | null
-          debtor_email: string
-          invoice_ids: string[]
-          sent_at: string
-          status: string
-          error_message: string | null
-          total_amount: number | null
-          currency: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          company_id: string
-          debtor_company_name: string
-          debtor_tax_number?: string | null
-          debtor_email: string
-          invoice_ids?: string[]
-          sent_at?: string
-          status?: string
-          error_message?: string | null
-          total_amount?: number | null
-          currency?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          company_id?: string
-          debtor_company_name?: string
-          debtor_tax_number?: string | null
-          debtor_email?: string
-          invoice_ids?: string[]
-          sent_at?: string
-          status?: string
-          error_message?: string | null
-          total_amount?: number | null
-          currency?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "dunning_sends_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
