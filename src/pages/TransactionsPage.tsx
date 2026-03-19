@@ -571,8 +571,8 @@ const TransactionsPage = () => {
             {/* Transactions Table */}
             <div className="rounded-lg border border-border/50 overflow-x-auto">
               <Table className="table-fixed compact-table">
-                <TableHeader>
-                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHeader className="sticky top-0 z-10">
+                  <TableRow className="bg-muted hover:bg-muted">
                     <TableHead
                       className="cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
                       onClick={() => handleSort('transaction_date')}
