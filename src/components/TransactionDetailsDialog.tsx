@@ -162,12 +162,24 @@ export const TransactionDetailsDialog = ({
           // Fallback: try salary table
           const { data: salaryData, error: salaryError } = await supabase
             .from('salary')
-            .select('id, név, összeg, tipus, fizetesi_mod, statusz, dátum, munkavallalo_neve, megjegyzes')
+            .select('*')
             .eq('id', transaction.matched_invoice_id)
             .maybeSingle();
 
           if (salaryError) throw salaryError;
-          setMatchedSalary(salaryData);
+          if (salaryData) {
+            setMatchedSalary({
+              id: salaryData.id,
+              név: salaryData['név'],
+              összeg: salaryData['összeg'],
+              tipus: salaryData.tipus,
+              fizetesi_mod: salaryData.fizetesi_mod,
+              statusz: salaryData.statusz,
+              dátum: salaryData['dátum'],
+              munkavallalo_neve: salaryData.munkavallalo_neve,
+              megjegyzes: salaryData.megjegyzes,
+            });
+          }
         }
       }
     } catch (error) {
