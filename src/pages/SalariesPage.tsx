@@ -199,9 +199,9 @@ export default function SalariesPage() {
   // ---------- KPI metrics ----------
 
   const metrics = useMemo(() => {
-    // Összes kifizetés – statusz === 'Kifizetve' szummája
+    // Összes kifizetés – transaction_id NOT NULL
     const totalPayments = salaryItems
-      .filter((item) => item.statusz === "Kifizetve" || matchedSalaryIds.has(item.id))
+      .filter((item) => !!item.transaction_id)
       .reduce((sum, item) => sum + Number(item.összeg), 0);
 
     // Alkalmazottak száma – egyedi munkavallalo_neve értékek (NOT NULL)
@@ -226,7 +226,7 @@ export default function SalariesPage() {
     const grossSalary = employeeNetTotal + navTotal;
 
     return { totalPayments, employeeCount, netSalary, grossSalary };
-  }, [salaryItems, matchedSalaryIds]);
+  }, [salaryItems]);
 
   // ---------- Employee subtotals ----------
 
