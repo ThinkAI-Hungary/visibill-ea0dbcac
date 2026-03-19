@@ -80,22 +80,35 @@ const ExpandedInvoiceRow = ({
     <>
       {/* Top spacer row */}
       <TableRow className="bg-transparent hover:bg-transparent border-none">
-        <TableCell colSpan={colSpan} className="p-0 h-3 border-none" />
+        <TableCell colSpan={colSpan} className="p-0 h-1 border-none" />
       </TableRow>
       <TableRow className="bg-muted/40 dark:bg-card hover:bg-muted/40 dark:hover:bg-card border-t border-b border-border/30">
-        <TableCell colSpan={colSpan} className="py-6 px-8">
+        <TableCell colSpan={colSpan} className="p-0">
           <style>{`
-            @keyframes expandSlideDown {
-              from { opacity: 0; transform: translateY(-8px); }
+            @keyframes accordionSlideDown {
+              from { grid-template-rows: 0fr; }
+              to { grid-template-rows: 1fr; }
+            }
+            @keyframes accordionFadeIn {
+              from { opacity: 0; transform: translateY(-6px); }
               to { opacity: 1; transform: translateY(0); }
             }
-            .expand-animate { animation: expandSlideDown 300ms ease-in-out forwards; }
-            .expand-stagger-1 { animation: expandSlideDown 300ms ease-in-out 50ms forwards; opacity: 0; }
-            .expand-stagger-2 { animation: expandSlideDown 300ms ease-in-out 150ms forwards; opacity: 0; }
-            .expand-stagger-3 { animation: expandSlideDown 300ms ease-in-out 250ms forwards; opacity: 0; }
-            .expand-stagger-4 { animation: expandSlideDown 300ms ease-in-out 350ms forwards; opacity: 0; }
+            .accordion-grid-animate {
+              display: grid;
+              animation: accordionSlideDown 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+            .accordion-grid-animate > .accordion-overflow {
+              overflow: hidden;
+            }
+            .expand-animate { animation: accordionFadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+            .expand-stagger-1 { animation: accordionFadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) 60ms forwards; opacity: 0; }
+            .expand-stagger-2 { animation: accordionFadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) 120ms forwards; opacity: 0; }
+            .expand-stagger-3 { animation: accordionFadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) 180ms forwards; opacity: 0; }
+            .expand-stagger-4 { animation: accordionFadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) 240ms forwards; opacity: 0; }
           `}</style>
-          <div className="space-y-4 max-w-3xl ml-4">
+          <div className="accordion-grid-animate">
+            <div className="accordion-overflow">
+              <div className="py-6 px-8 space-y-4 max-w-3xl ml-4">
             {/* Header */}
             <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 expand-animate">
               <Link2 className="h-3.5 w-3.5" />
@@ -359,11 +372,13 @@ const ExpandedInvoiceRow = ({
               </Card>
             ))}
           </div>
+              </div>
+            </div>
         </TableCell>
       </TableRow>
       {/* Bottom spacer row */}
       <TableRow className="bg-transparent hover:bg-transparent border-none">
-        <TableCell colSpan={colSpan} className="p-0 h-3 border-none" />
+        <TableCell colSpan={colSpan} className="p-0 h-1 border-none" />
       </TableRow>
     </>
   );

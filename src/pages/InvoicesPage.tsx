@@ -18,7 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CalendarIcon, Search, Download, ArrowUpDown, FileText, X, ChevronDown, ChevronUp, Info, Eye, Pencil, Package, ChevronLeft, ChevronRight, RefreshCw, Shield } from 'lucide-react';
+import { CalendarIcon, Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Eye, Pencil, Package, ChevronLeft, ChevronRight, RefreshCw, Shield } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 import { InvoiceImagePreview } from '@/components/InvoiceImagePreview';
@@ -1646,11 +1646,10 @@ const InvoicesPage = () => {
                                 )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                   <TableCell className="pl-6">
                                     <div className="flex items-center gap-3">
-                                      {expandedRowIds.has(invoice.id) ? (
-                                        <ChevronUp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                      ) : (
-                                        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                      )}
+                                      <ChevronDown className={cn(
+                                        "h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform duration-200",
+                                        expandedRowIds.has(invoice.id) && "rotate-180"
+                                      )} />
                                       <Checkbox
                                         checked={selectedInvoiceIds.has(invoice.id)}
                                         onCheckedChange={(checked) => handleRowSelect(invoice.id, !!checked)}
@@ -2017,11 +2016,10 @@ const InvoicesPage = () => {
                               )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                 <TableCell className="pl-6">
                                   <div className="flex items-center gap-3">
-                                    {expandedRowIds.has(invoice.id) ? (
-                                      <ChevronUp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                    ) : (
-                                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                    )}
+                                    <ChevronDown className={cn(
+                                      "h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform duration-200",
+                                      expandedRowIds.has(invoice.id) && "rotate-180"
+                                    )} />
                                     <Checkbox
                                       checked={selectedSubmittedIds.has(invoice.id)}
                                       onCheckedChange={(checked) => handleSubmittedRowSelect(invoice.id, !!checked)}

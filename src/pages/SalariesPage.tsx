@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -27,19 +27,25 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { toast } from "@/hooks/use-toast";
 import {
   Plus,
-  Search,
   Edit,
   Wallet,
   Users,
   TrendingUp,
   Banknote,
+  User,
+  Building2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { hu } from "date-fns/locale";
-import { UnifiedPagination } from "@/components/ui/unified-pagination";
 
 // ---------- Types ----------
 
@@ -53,6 +59,7 @@ interface SalaryItem {
   kifizetes_ideje: string | null;
   fizetesi_mod: string | null;
   megjegyzes: string | null;
+  munkavallalo_neve: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -98,13 +105,7 @@ export default function SalariesPage() {
   const { dateFrom, dateTo } = useDateRange();
   const queryClient = useQueryClient();
 
-  const [searchTerm, setSearchTerm] = useState("");
-
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
-
-  // "+ KP kifizetés" modal
+  // "KP kifizetés" modal
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addForm, setAddForm] = useState({
     megnevezes: "",
@@ -120,7 +121,7 @@ export default function SalariesPage() {
     megjegyzes: "",
   });
 
-  // ---------- Fetch (TanStack Query) ----------
+  // ---------- Fetch ----------
 
   const dateFromStr = dateFrom.toISOString().slice(0, 10);
   const dateToStr = dateTo.toISOString().slice(0, 10);
@@ -146,56 +147,69 @@ export default function SalariesPage() {
     queryClient.invalidateQueries({ queryKey: ['salaries', selectedCompany?.id] });
   };
 
-  // ---------- Filtered & paginated ----------
+  // ---------- Grouped data ----------
 
-  const filteredItems = useMemo(() => {
-    return salaryItems.filter((item) =>
-      item.név.toLowerCase().includes(searchTerm.toLowerCase())
+  const { employeeGroups, navItems } = useMemo(() => {
+    const groups: Record<string, SalaryItem[]> = {};
+    const nav: SalaryItem[] = [];
+
+    salaryItems.forEach((item) => {
+      if (item.munkavallalo_neve) {
+        if (!groups[item.munkavallalo_neve]) {
+          groups[item.munkavallalo_neve] = [];
+        }
+        groups[item.munkavallalo_neve].push(item);
+      } else {
+        nav.push(item);
+      }
+    });
+
+    // Sort groups alphabetically
+    const sortedGroups = Object.entries(groups).sort(([a], [b]) =>
+      a.localeCompare(b, "hu")
     );
-  }, [salaryItems, searchTerm]);
 
-  const paginatedItems = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredItems.slice(start, start + pageSize);
-  }, [filteredItems, currentPage, pageSize]);
+    return {
+      employeeGroups: sortedGroups,
+      navItems: nav,
+    };
+  }, [salaryItems]);
 
-  const totalPages = Math.ceil(filteredItems.length / pageSize);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
-
-  // ---------- KPI metrics (exact user spec) ----------
+  // ---------- KPI metrics ----------
 
   const metrics = useMemo(() => {
-    // KPI 1: Összes kifizetés – statusz === 'Kifizetve' szummája
+    // Összes kifizetés – statusz === 'Kifizetve' szummája
     const totalPayments = salaryItems
       .filter((item) => item.statusz === "Kifizetve")
       .reduce((sum, item) => sum + Number(item.összeg), 0);
 
-    // KPI 2: Alkalmazottak száma – egyedi nevek ahol tipus === 'bér'
+    // Alkalmazottak száma – egyedi munkavallalo_neve értékek (NOT NULL)
     const employeeCount = new Set(
       salaryItems
-        .filter((item) => item.tipus === "bér")
-        .map((item) => item.név)
+        .filter((item) => item.munkavallalo_neve)
+        .map((item) => item.munkavallalo_neve)
     ).size;
 
-    // KPI 3: Összes nettó bérköltség – tipus === 'bér' szummája
+    // Összes nettó bérköltség – tipus === 'bér' szummája
     const netSalary = salaryItems
       .filter((item) => item.tipus === "bér")
       .reduce((sum, item) => sum + Number(item.összeg), 0);
 
-    // KPI 4: Összes bruttó bérköltség – tipus === 'bruttó_bér' szummája
+    // Összes bruttó bérköltség – nettó bér + járulékok + adók
     const grossSalary = salaryItems
-      .filter((item) => item.tipus === "bruttó_bér")
+      .filter((item) => item.tipus === "bér" || item.tipus === "járulék" || item.tipus === "adó")
       .reduce((sum, item) => sum + Number(item.összeg), 0);
 
     return { totalPayments, employeeCount, netSalary, grossSalary };
   }, [salaryItems]);
 
-  // ---------- "+ KP kifizetés" submit ----------
+  // ---------- Employee subtotals ----------
 
-  // ---------- Add mutation ----------
+  const getEmployeeSubtotal = (items: SalaryItem[]) => {
+    return items.reduce((sum, item) => sum + Number(item.összeg), 0);
+  };
+
+  // ---------- Mutations ----------
 
   const addMutation = useMutation({
     mutationFn: async (form: typeof addForm) => {
@@ -245,7 +259,7 @@ export default function SalariesPage() {
     });
   };
 
-  // ---------- Edit (only név + megjegyzes) ----------
+  // ---------- Edit ----------
 
   const openEditModal = (record: SalaryItem) => {
     setEditingRecord(record);
@@ -255,8 +269,6 @@ export default function SalariesPage() {
     });
     setEditDialogOpen(true);
   };
-
-  // ---------- Edit mutation ----------
 
   const editMutation = useMutation({
     mutationFn: async ({ id, form }: { id: string; form: typeof editForm }) => {
@@ -394,156 +406,215 @@ export default function SalariesPage() {
         </Card>
       </div>
 
-      {/* ========== Table Card ========== */}
-      <Card className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm">
-        <CardContent className="p-6">
-          {/* Search */}
-          <div className="flex items-center justify-between gap-4 mb-6">
-            <h2 className="text-lg font-semibold">
-              Kifizetések{" "}
-              <span className="text-muted-foreground font-normal">
-                ({filteredItems.length})
-              </span>
-            </h2>
-            <div className="relative w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Keresés megnevezés alapján..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-background/50"
-              />
+      {/* ========== Employee Accordion ========== */}
+      {employeeGroups.length > 0 && (
+        <Card className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <User className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold">
+                Dolgozói bontás{" "}
+                <span className="text-muted-foreground font-normal">
+                  ({employeeGroups.length} fő)
+                </span>
+              </h2>
             </div>
-          </div>
 
-          {/* Table */}
-          {filteredItems.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nincs bejegyzés a kiválasztott időszakban</p>
+            <Accordion type="multiple" className="w-full">
+              {employeeGroups.map(([employeeName, items]) => {
+                const subtotal = getEmployeeSubtotal(items);
+
+                return (
+                  <AccordionItem key={employeeName} value={employeeName} className="border-border/50">
+                    <AccordionTrigger className="hover:no-underline px-4 py-4 rounded-lg hover:bg-muted/40 transition-colors">
+                      <div className="flex items-center justify-between w-full mr-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-sm font-bold text-primary">
+                              {employeeName.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                            </span>
+                          </div>
+                          <div className="text-left">
+                            <p className="font-semibold text-base">{employeeName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {items.length} tétel
+                            </p>
+                          </div>
+                        </div>
+                        <span className="font-mono font-bold text-base tabular-nums">
+                          {formatCurrency(subtotal)}
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+
+                    <AccordionContent className="px-4">
+                      <div className="rounded-lg border border-border/50 overflow-hidden">
+                        <Table className="table-fixed">
+                          <TableHeader>
+                            <TableRow className="bg-muted/30 hover:bg-muted/30">
+                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[40%]">
+                                Megnevezés
+                              </TableHead>
+                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[25%]">
+                                Típus
+                              </TableHead>
+                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[25%]">
+                                Összeg
+                              </TableHead>
+                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[10%]">
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {items.map((item) => {
+                              const typeBadge = getTypeBadge(item.tipus);
+                              return (
+                                <TableRow
+                                  key={item.id}
+                                  className="hover:bg-muted/40 transition-colors"
+                                >
+                                  <TableCell className="py-3 px-4">
+                                    <span className="font-medium">{item.név}</span>
+                                  </TableCell>
+                                  <TableCell className="py-3 px-4">
+                                    <Badge
+                                      variant="outline"
+                                      className={`text-xs ${typeBadge.className}`}
+                                    >
+                                      {typeBadge.label}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="py-3 px-4 text-right">
+                                    <span className="font-mono font-semibold tabular-nums">
+                                      {formatCurrency(item.összeg)}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="py-3 px-4 text-right">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 hover:bg-primary/10 hover:text-primary"
+                                      onClick={() => openEditModal(item)}
+                                    >
+                                      <Edit className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                            {/* Subtotal row */}
+                            <TableRow className="bg-muted/20 border-t-2 border-border/60">
+                              <TableCell colSpan={2} className="py-3 px-4">
+                                <span className="font-semibold text-muted-foreground text-sm">
+                                  Összesen
+                                </span>
+                              </TableCell>
+                              <TableCell className="py-3 px-4 text-right">
+                                <span className="font-mono font-bold tabular-nums">
+                                  {formatCurrency(subtotal)}
+                                </span>
+                              </TableCell>
+                              <TableCell />
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ========== NAV Összesítő (munkavallalo_neve IS NULL) ========== */}
+      {navItems.length > 0 && (
+        <Card className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Building2 className="h-5 w-5 text-amber-500" />
+              <h2 className="text-lg font-semibold">
+                Havi bérösszesítő (NAV utalások)
+              </h2>
             </div>
-          ) : (
+
             <div className="rounded-lg border border-border/50 overflow-hidden">
-              <Table className="table-fixed compact-table">
+              <Table className="table-fixed">
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[22%]">
+                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[60%]">
                       Megnevezés
                     </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">
-                      Típus
-                    </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[14%]">
-                      Dátum
-                    </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[14%]">
+                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[30%]">
                       Összeg
                     </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[11%]">
-                      Státusz
-                    </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[14%]">
-                      Kifizetés ideje
-                    </TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[10%]">
-                      Műveletek
+                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[10%]">
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedItems.map((item) => {
-                    const typeBadge = getTypeBadge(item.tipus);
-                    const isPaid = item.statusz === "Kifizetve";
-
-                    return (
-                      <TableRow
-                        key={item.id}
-                        className="hover:bg-muted/40 transition-colors h-[52px]"
-                      >
-                        {/* Megnevezés */}
-                        <TableCell className="py-4 px-4">
-                          <span className="font-medium truncate block">
-                            {item.név}
-                          </span>
-                        </TableCell>
-
-                        {/* Típus Badge */}
-                        <TableCell className="py-4 px-4">
-                          <Badge
-                            variant="outline"
-                            className={`text-xs ${typeBadge.className}`}
-                          >
-                            {typeBadge.label}
-                          </Badge>
-                        </TableCell>
-
-                        {/* Dátum */}
-                        <TableCell className="py-4 px-4 text-muted-foreground">
-                          {formatDate(item.dátum)}
-                        </TableCell>
-
-                        {/* Összeg */}
-                        <TableCell className="py-4 px-4 text-right">
-                          <span className="font-mono font-semibold">
-                            {formatCurrency(item.összeg)}
-                          </span>
-                        </TableCell>
-
-                        {/* Státusz Badge */}
-                        <TableCell className="py-4 px-4">
-                          {isPaid ? (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-500">
-                              Kifizetve
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-500/10 text-amber-500">
-                              Függő
-                            </span>
-                          )}
-                        </TableCell>
-
-                        {/* Kifizetés ideje */}
-                        <TableCell className="py-4 px-4 text-muted-foreground">
-                          {item.kifizetes_ideje
-                            ? formatDate(item.kifizetes_ideje)
-                            : "–"}
-                        </TableCell>
-
-                        {/* Műveletek (ONLY Edit – NO Delete) */}
-                        <TableCell className="py-4 px-4 text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                            onClick={() => openEditModal(item)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {navItems.map((item) => (
+                    <TableRow
+                      key={item.id}
+                      className="hover:bg-muted/40 transition-colors"
+                    >
+                      <TableCell className="py-3 px-4">
+                        <span className="font-medium">{item.név}</span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-right">
+                        <span className="font-mono font-semibold tabular-nums">
+                          {formatCurrency(item.összeg)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 hover:bg-primary/10 hover:text-primary"
+                          onClick={() => openEditModal(item)}
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {/* NAV subtotal */}
+                  <TableRow className="bg-muted/20 border-t-2 border-border/60">
+                    <TableCell className="py-3 px-4">
+                      <span className="font-semibold text-muted-foreground text-sm">
+                        NAV utalások összesen
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-right">
+                      <span className="font-mono font-bold tabular-nums">
+                        {formatCurrency(
+                          navItems.reduce((sum, item) => sum + Number(item.összeg), 0)
+                        )}
+                      </span>
+                    </TableCell>
+                    <TableCell />
+                  </TableRow>
                 </TableBody>
               </Table>
             </div>
-          )}
+          </CardContent>
+        </Card>
+      )}
 
-          {/* Pagination */}
-          <UnifiedPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredItems.length}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setCurrentPage(1);
-            }}
-          />
-        </CardContent>
-      </Card>
+      {/* ========== Empty state ========== */}
+      {employeeGroups.length === 0 && navItems.length === 0 && (
+        <Card className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm">
+          <CardContent className="p-6">
+            <div className="text-center py-16 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nincs bejegyzés a kiválasztott időszakban</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* ========== "+ KP kifizetés" Modal ========== */}
+      {/* ========== "KP kifizetés" Modal ========== */}
       <Dialog
         open={addDialogOpen}
         onOpenChange={(open) => {
@@ -614,7 +685,7 @@ export default function SalariesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ========== Edit Modal (restricted: név + megjegyzes only) ========== */}
+      {/* ========== Edit Modal ========== */}
       <Dialog
         open={editDialogOpen}
         onOpenChange={(open) => {
@@ -668,6 +739,12 @@ export default function SalariesPage() {
                   <span className="font-medium text-foreground">Dátum:</span>{" "}
                   {formatDate(editingRecord.dátum)}
                 </p>
+                {editingRecord.munkavallalo_neve && (
+                  <p>
+                    <span className="font-medium text-foreground">Dolgozó:</span>{" "}
+                    {editingRecord.munkavallalo_neve}
+                  </p>
+                )}
               </div>
             )}
 

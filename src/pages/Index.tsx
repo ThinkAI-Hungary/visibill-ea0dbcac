@@ -489,8 +489,8 @@ const Index = () => {
   const maxVatValue = Math.max(totalOutboundVat, totalInboundVat, Math.abs(netVatPosition));
 
   const vatBarData = [
-    { name: "Kimenő ÁFA", value: totalOutboundVat, color: "#F59E0B" },
-    { name: "Bejövő ÁFA", value: totalInboundVat, color: "#8B5CF6" },
+    { name: "Fizetendő ÁFA", value: totalOutboundVat, color: "#F59E0B" },
+    { name: "Levonható ÁFA", value: totalInboundVat, color: "#8B5CF6" },
     { name: "Becsült ÁFA pozíció", value: netVatPosition, color: "#A78BFA" }
   ];
 
