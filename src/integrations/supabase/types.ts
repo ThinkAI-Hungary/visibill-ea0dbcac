@@ -828,6 +828,7 @@ export type Database = {
           supplier_name: string | null
           supplier_partner_id: string | null
           supplier_tax_number: string | null
+          transaction_id: string | null
           user_id: string | null
         }
         Insert: {
@@ -859,6 +860,7 @@ export type Database = {
           supplier_name?: string | null
           supplier_partner_id?: string | null
           supplier_tax_number?: string | null
+          transaction_id?: string | null
           user_id?: string | null
         }
         Update: {
@@ -890,6 +892,7 @@ export type Database = {
           supplier_name?: string | null
           supplier_partner_id?: string | null
           supplier_tax_number?: string | null
+          transaction_id?: string | null
           user_id?: string | null
         }
         Relationships: [
@@ -919,6 +922,13 @@ export type Database = {
             columns: ["supplier_partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nav_invoices_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
         ]
