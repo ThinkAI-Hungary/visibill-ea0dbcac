@@ -136,6 +136,7 @@ const Index = () => {
   const { selectedCompany, companies, loading: companyLoading } = useCompany();
   const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const navigate = useNavigate();
+  useRealtimeInvalidation(selectedCompany?.id);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
