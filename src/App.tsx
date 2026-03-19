@@ -52,6 +52,7 @@ const App = () => (
                   <Routes>
                     {/* Auth route without layout */}
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
 
                     {/* All protected routes with ProtectedLayout */}
                     <Route element={<ProtectedLayout />}>
