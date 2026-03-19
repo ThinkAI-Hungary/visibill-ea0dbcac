@@ -5,9 +5,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { Invoice } from '@/types/invoices';
 import { toast } from 'sonner';
+import { getPaymentStatusBadge } from '@/hooks/useComputedStatus';
 
 interface Category {
   id: string;
@@ -32,14 +33,12 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
   const { user } = useAuth();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
-  const [isPaid, setIsPaid] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (invoice && open) {
       setSelectedCategoryId(invoice.category_id || 'none');
       setSelectedProjectId(invoice.project_id || 'none');
-      setIsPaid(invoice.fizetve || false);
     }
   }, [invoice, open]);
 
@@ -53,7 +52,6 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
         .update({
           category_id: selectedCategoryId === 'none' ? null : selectedCategoryId || null,
           project_id: selectedProjectId === 'none' ? null : selectedProjectId || null,
-          fizetve: isPaid,
         })
         .eq('id', invoice.id)
         .eq('user_id', user.id);
@@ -71,13 +69,15 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
     }
   };
 
+  const paymentBadge = invoice ? getPaymentStatusBadge(invoice.transaction_id) : null;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Számla szerkesztése</DialogTitle>
           <DialogDescription>
-            Módosítsd a számla kategóriáját, projektjét vagy fizetési státuszát.
+            Módosítsd a számla kategóriáját vagy projektjét.
           </DialogDescription>
         </DialogHeader>
         
@@ -122,18 +122,15 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
             </Select>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="paid"
-              checked={isPaid}
-              onCheckedChange={(checked) => setIsPaid(checked as boolean)}
-            />
-            <Label
-              htmlFor="paid"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Fizetve
-            </Label>
+          <div className="space-y-2">
+            <Label>Fizetési státusz</Label>
+            <div>
+              {paymentBadge && (
+                <Badge variant="outline" className={paymentBadge.className}>
+                  {paymentBadge.label}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
 

@@ -25,6 +25,7 @@ interface FullInvoice {
   fizetesi_mod: string | null;
   fizetve: boolean | null;
   statusz: string | null;
+  transaction_id: string | null;
   penznem: string | null;
   elado_nev: string;
   elado_cim: string | null;
@@ -151,7 +152,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
               <Badge variant={invoice.statusz === 'feldolgozott' ? 'success' : 'secondary'}>
                 {statusLabels[invoice.statusz || ''] || invoice.statusz || 'Ismeretlen'}
               </Badge>
-              {invoice.fizetve && <Badge variant="success">Fizetve</Badge>}
+              {!!invoice.transaction_id && <Badge variant="success">Fizetve</Badge>}
               {invoice.forditott_adozas && <Badge variant="outline">Fordított adózás</Badge>}
               {invoice.onszamlazas && <Badge variant="outline">Önszámlázás</Badge>}
               {invoice.penzforgalmi_elszamolas && <Badge variant="outline">Pénzforgalmi</Badge>}

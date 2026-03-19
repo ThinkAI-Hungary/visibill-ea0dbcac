@@ -28,7 +28,7 @@ interface MatchedNavInvoice {
   customer_name: string | null;
   invoice_gross_amount: number | null;
   currency: string | null;
-  paid: boolean | null;
+  transaction_id: string | null;
   submitted: boolean | null;
 }
 
@@ -284,7 +284,7 @@ const ExpandedInvoiceRow = ({
                         Párosított
                       </Badge>
                       <div className="flex gap-1">
-                        {inv.paid && <Badge variant="outline" className="text-[10px] h-5">Fizetve</Badge>}
+                        {!!inv.transaction_id && <Badge variant="outline" className="text-[10px] h-5">Fizetve</Badge>}
                         {inv.submitted && <Badge variant="outline" className="text-[10px] h-5">Beküldve</Badge>}
                       </div>
                     </div>

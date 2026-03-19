@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { computeMatchStatus } from '@/hooks/useComputedStatus';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,7 +54,7 @@ interface MatchedNavInvoice {
   invoice_gross_amount: number | null;
   currency: string | null;
   invoice_direction: string | null;
-  paid: boolean | null;
+  transaction_id: string | null;
   submitted: boolean | null;
 }
 
@@ -152,7 +153,7 @@ export const TransactionDetailsDialog = ({
         // Fallback: try nav_invoices table
         const { data: navData, error: navError } = await supabase
           .from('nav_invoices')
-          .select('id, invoice_number, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, invoice_direction, paid, submitted')
+          .select('id, invoice_number, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, invoice_direction, transaction_id, submitted')
           .eq('id', transaction.matched_invoice_id)
           .maybeSingle();
 
@@ -334,11 +335,7 @@ export const TransactionDetailsDialog = ({
   }, [availableInvoices, search]);
 
   const transactionAmount = Math.abs(transaction?.amount || 0);
-  const matchStatus = transaction?.is_verified && transaction?.matched_invoice_id 
-    ? 'matched' 
-    : transaction?.matched_invoice_id 
-      ? 'suggested' 
-      : 'unmatched';
+  const matchStatus = transaction ? computeMatchStatus(transaction) : 'unmatched';
 
   if (!transaction) return null;
 
@@ -516,7 +513,7 @@ export const TransactionDetailsDialog = ({
                           {matchedNavInvoice.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő'}
                         </Badge>
                       )}
-                      {matchedNavInvoice.paid && (
+                      {!!matchedNavInvoice.transaction_id && (
                         <Badge variant="success" className="text-[10px] h-5">Fizetve</Badge>
                       )}
                       {matchedNavInvoice.submitted && (
