@@ -16,6 +16,8 @@ const Auth = () => {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
   const { signIn, signUp, user } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
