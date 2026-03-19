@@ -242,10 +242,14 @@ export default function SalariesPage() {
       .filter((item) => item.tipus === "bér")
       .reduce((sum, item) => sum + Number(item.összeg), 0);
 
-    // Összes bruttó bérköltség – nettó bér + járulékok + adók
-    const grossSalary = salaryItems
-      .filter((item) => item.tipus === "bér" || item.tipus === "járulék" || item.tipus === "adó")
+    // Összes bruttó bérköltség – dolgozói nettó bérek + NAV utalások összege
+    const employeeNetTotal = salaryItems
+      .filter((item) => item.munkavallalo_neve && item.tipus === "bér")
       .reduce((sum, item) => sum + Number(item.összeg), 0);
+    const navTotal = salaryItems
+      .filter((item) => !item.munkavallalo_neve)
+      .reduce((sum, item) => sum + Number(item.összeg), 0);
+    const grossSalary = employeeNetTotal + navTotal;
 
     return { totalPayments, employeeCount, netSalary, grossSalary };
   }, [salaryItems, matchedSalaryIds]);
@@ -484,6 +488,15 @@ export default function SalariesPage() {
               </h2>
             </div>
 
+            {/* Header row */}
+            <div className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center px-4 py-2 mb-1 border-b border-border/30">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Megnevezés</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">Státusz</span>
+              <span />
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Összeg</span>
+              <span />
+            </div>
+
             <Accordion type="multiple" className="w-full">
               {employeeGroups.map(([employeeName, items]) => {
                 const subtotal = getEmployeeSubtotal(items);
@@ -492,8 +505,8 @@ export default function SalariesPage() {
 
                 return (
                   <AccordionItem key={employeeName} value={employeeName} className="border-border/50">
-                    <AccordionTrigger className="hover:no-underline px-4 py-4 rounded-lg hover:bg-muted/40 transition-colors">
-                      <div className="flex items-center justify-between w-full mr-4">
+                    <AccordionTrigger className="hover:no-underline py-0 rounded-lg hover:bg-muted/40 transition-colors relative [&>svg]:absolute [&>svg]:right-4 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2">
+                      <div className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center w-full px-4 py-4">
                         <div className="flex items-center gap-3">
                           <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
                             <span className="text-sm font-bold text-primary">
@@ -507,101 +520,84 @@ export default function SalariesPage() {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center">
-                          <div className="w-24 flex justify-center">
-                            {allPaid ? (
-                              <div className="flex items-center gap-1.5 text-emerald-500">
-                                <CheckCircle2 className="h-4 w-4" />
-                                <span className="text-xs font-medium">Fizetve</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1.5 text-amber-500">
-                                <Clock className="h-4 w-4" />
-                                <span className="text-xs font-medium">Nyitott</span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="w-40 text-right">
-                            <span className="font-mono font-bold text-base tabular-nums">
-                              {formatCurrency(netTotal)}
-                            </span>
-                            <p className="text-xs text-muted-foreground">nettó</p>
-                          </div>
+                        <div className="flex justify-center">
+                          {allPaid ? (
+                            <div className="flex items-center gap-1.5 text-emerald-500">
+                              <CheckCircle2 className="h-4 w-4" />
+                              <span className="text-xs font-medium">Fizetve</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 text-amber-500">
+                              <Clock className="h-4 w-4" />
+                              <span className="text-xs font-medium">Nyitott</span>
+                            </div>
+                          )}
                         </div>
+                        <span />
+                        <div className="text-right">
+                          <span className="font-mono font-bold text-base tabular-nums">
+                            {formatCurrency(netTotal)}
+                          </span>
+                          <p className="text-xs text-muted-foreground">nettó</p>
+                        </div>
+                        <span />
                       </div>
                     </AccordionTrigger>
 
-                    <AccordionContent className="px-4">
-                      <div className="rounded-lg border border-border/50 overflow-hidden">
-                        <Table className="table-fixed">
-                          <TableHeader>
-                            <TableRow className="bg-muted/30 hover:bg-muted/30">
-                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[45%]">
-                                Megnevezés
-                              </TableHead>
-                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">
-                                Típus
-                              </TableHead>
-                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[28%]">
-                                Összeg
-                              </TableHead>
-                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[7%]">
-                              </TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {items.map((item) => {
-                              const typeBadge = getTypeBadge(item.tipus);
-                              return (
-                                <TableRow
-                                  key={item.id}
-                                  className="hover:bg-muted/40 transition-colors"
+                    <AccordionContent className="px-0">
+                      <div className="rounded-lg border border-border/50 overflow-hidden mx-4">
+                        {/* Detail header */}
+                        <div className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center bg-muted/30 px-4 py-2.5">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Megnevezés</span>
+                          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">Típus</span>
+                          <span />
+                          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Összeg</span>
+                          <span />
+                        </div>
+                        {/* Detail rows */}
+                        {items.map((item) => {
+                          const typeBadge = getTypeBadge(item.tipus);
+                          return (
+                            <div
+                              key={item.id}
+                              className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center px-4 py-3 border-t border-border/30 hover:bg-muted/40 transition-colors"
+                            >
+                              <span className="font-medium">{item.név}</span>
+                              <div className="text-center">
+                                <Badge
+                                  variant="outline"
+                                  className={`text-xs ${typeBadge.className}`}
                                 >
-                                  <TableCell className="py-3 px-4">
-                                    <span className="font-medium">{item.név}</span>
-                                  </TableCell>
-                                  <TableCell className="py-3 px-4">
-                                    <Badge
-                                      variant="outline"
-                                      className={`text-xs ${typeBadge.className}`}
-                                    >
-                                      {typeBadge.label}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="py-3 px-4 text-right">
-                                    <span className="font-mono font-semibold tabular-nums">
-                                      {formatCurrency(item.összeg)}
-                                    </span>
-                                  </TableCell>
-                                  <TableCell className="py-3 px-4 text-right">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7 hover:bg-primary/10 hover:text-primary"
-                                      onClick={() => openEditModal(item)}
-                                    >
-                                      <Edit className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                            {/* Subtotal row */}
-                            <TableRow className="bg-muted/20 border-t-2 border-border/60">
-                              <TableCell colSpan={2} className="py-3 px-4">
-                                <span className="font-semibold text-muted-foreground text-sm">
-                                  Összesen
-                                </span>
-                              </TableCell>
-                              <TableCell className="py-3 px-4 text-right">
-                                <span className="font-mono font-bold tabular-nums">
-                                  {formatCurrency(subtotal)}
-                                </span>
-                              </TableCell>
-                              <TableCell />
-                            </TableRow>
-                          </TableBody>
-                        </Table>
+                                  {typeBadge.label}
+                                </Badge>
+                              </div>
+                              <span />
+                              <span className="font-mono font-semibold tabular-nums text-right">
+                                {formatCurrency(item.összeg)}
+                              </span>
+                              <div className="flex justify-end">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 hover:bg-primary/10 hover:text-primary"
+                                  onClick={() => openEditModal(item)}
+                                >
+                                  <Edit className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {/* Subtotal row */}
+                        <div className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center px-4 py-3 bg-muted/20 border-t-2 border-border/60">
+                          <span className="font-semibold text-muted-foreground text-sm">Összesen</span>
+                          <span />
+                          <span />
+                          <span className="font-mono font-bold tabular-nums text-right">
+                            {formatCurrency(subtotal)}
+                          </span>
+                          <span />
+                        </div>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -624,87 +620,62 @@ export default function SalariesPage() {
             </div>
 
             <div className="rounded-lg border border-border/50 overflow-hidden">
-              <Table className="table-fixed">
-                <TableHeader>
-                  <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[40%]">
-                      Megnevezés
-                    </TableHead>
-                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[15%]">
-                      Státusz
-                    </TableHead>
-                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[20%]">
-                      Kifizetés ideje
-                    </TableHead>
-                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[20%]">
-                      Összeg
-                    </TableHead>
-                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[5%]">
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {navItems.map((item) => (
-                    <TableRow
-                      key={item.id}
-                      className="hover:bg-muted/40 transition-colors"
-                    >
-                      <TableCell className="py-3 px-4">
-                        <span className="font-medium">{item.név}</span>
-                      </TableCell>
-                      <TableCell className="py-3 px-4 text-center">
-                        {(() => {
-                          const statusBadge = getStatusBadge(item, matchedSalaryIds);
-                          return (
-                            <Badge
-                              variant="outline"
-                              className={`text-xs ${statusBadge.className}`}
-                            >
-                              {statusBadge.label}
-                            </Badge>
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell className="py-3 px-4 text-center">
-                        <span className="font-mono text-sm tabular-nums text-muted-foreground">
-                          {formatPaymentDate(salaryMatchData.get(item.id) || item.kifizetes_ideje)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-3 px-4 text-right">
-                        <span className="font-mono font-semibold tabular-nums">
-                          {formatCurrency(item.összeg)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-3 px-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 hover:bg-primary/10 hover:text-primary"
-                          onClick={() => openEditModal(item)}
-                        >
-                          <Edit className="h-3.5 w-3.5" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {/* NAV subtotal */}
-                  <TableRow className="bg-muted/20 border-t-2 border-border/60">
-                    <TableCell colSpan={3} className="py-3 px-4">
-                      <span className="font-semibold text-muted-foreground text-sm">
-                        NAV utalások összesen
-                      </span>
-                    </TableCell>
-                    <TableCell className="py-3 px-4 text-right">
-                      <span className="font-mono font-bold tabular-nums">
-                        {formatCurrency(
-                          navItems.reduce((sum, item) => sum + Number(item.összeg), 0)
-                        )}
-                      </span>
-                    </TableCell>
-                    <TableCell />
-                  </TableRow>
-                </TableBody>
-              </Table>
+              {/* NAV header */}
+              <div className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center bg-muted/30 px-4 py-2.5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Megnevezés</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">Státusz</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">Kifizetés ideje</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Összeg</span>
+                <span />
+              </div>
+              {/* NAV rows */}
+              {navItems.map((item) => {
+                const statusBadge = getStatusBadge(item, matchedSalaryIds);
+                return (
+                  <div
+                    key={item.id}
+                    className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center px-4 py-3 border-t border-border/30 hover:bg-muted/40 transition-colors"
+                  >
+                    <span className="font-medium">{item.név}</span>
+                    <div className="text-center">
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${statusBadge.className}`}
+                      >
+                        {statusBadge.label}
+                      </Badge>
+                    </div>
+                    <span className="font-mono text-sm tabular-nums text-muted-foreground text-center">
+                      {formatPaymentDate(salaryMatchData.get(item.id) || item.kifizetes_ideje)}
+                    </span>
+                    <span className="font-mono font-semibold tabular-nums text-right">
+                      {formatCurrency(item.összeg)}
+                    </span>
+                    <div className="flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 hover:bg-primary/10 hover:text-primary"
+                        onClick={() => openEditModal(item)}
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+              {/* NAV subtotal */}
+              <div className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center px-4 py-3 bg-muted/20 border-t-2 border-border/60">
+                <span className="font-semibold text-muted-foreground text-sm">NAV utalások összesen</span>
+                <span />
+                <span />
+                <span className="font-mono font-bold tabular-nums text-right">
+                  {formatCurrency(
+                    navItems.reduce((sum, item) => sum + Number(item.összeg), 0)
+                  )}
+                </span>
+                <span />
+              </div>
             </div>
           </CardContent>
         </Card>
