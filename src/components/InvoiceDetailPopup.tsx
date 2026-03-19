@@ -148,7 +148,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
             {/* Header badges */}
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline">{invoiceTypeLabels[invoice.invoice_type] || invoice.invoice_type}</Badge>
-              <Badge variant={invoice.statusz === 'feldolgozva' ? 'success' : 'secondary'}>
+              <Badge variant={invoice.statusz === 'feldolgozott' ? 'success' : 'secondary'}>
                 {statusLabels[invoice.statusz || ''] || invoice.statusz || 'Ismeretlen'}
               </Badge>
               {invoice.fizetve && <Badge variant="success">Fizetve</Badge>}

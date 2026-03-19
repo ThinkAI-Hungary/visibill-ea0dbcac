@@ -209,6 +209,12 @@ export default function SalariesPage() {
     return items.reduce((sum, item) => sum + Number(item.összeg), 0);
   };
 
+  const getEmployeeNetTotal = (items: SalaryItem[]) => {
+    return items
+      .filter((item) => item.tipus === "bér")
+      .reduce((sum, item) => sum + Number(item.összeg), 0);
+  };
+
   // ---------- Mutations ----------
 
   const addMutation = useMutation({
@@ -423,6 +429,7 @@ export default function SalariesPage() {
             <Accordion type="multiple" className="w-full">
               {employeeGroups.map(([employeeName, items]) => {
                 const subtotal = getEmployeeSubtotal(items);
+                const netTotal = getEmployeeNetTotal(items);
 
                 return (
                   <AccordionItem key={employeeName} value={employeeName} className="border-border/50">
@@ -441,9 +448,12 @@ export default function SalariesPage() {
                             </p>
                           </div>
                         </div>
-                        <span className="font-mono font-bold text-base tabular-nums">
-                          {formatCurrency(subtotal)}
-                        </span>
+                        <div className="text-right">
+                          <span className="font-mono font-bold text-base tabular-nums">
+                            {formatCurrency(netTotal)}
+                          </span>
+                          <p className="text-xs text-muted-foreground">nettó</p>
+                        </div>
                       </div>
                     </AccordionTrigger>
 
@@ -543,13 +553,13 @@ export default function SalariesPage() {
               <Table className="table-fixed">
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[60%]">
+                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[82%]">
                       Megnevezés
                     </TableHead>
-                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[30%]">
+                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[15%]">
                       Összeg
                     </TableHead>
-                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[10%]">
+                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[3%]">
                     </TableHead>
                   </TableRow>
                 </TableHeader>

@@ -25,7 +25,7 @@ const RecentInvoices = ({
 }: RecentInvoicesProps) => {
   const getStatusVariant = (status: string) => {
     switch (status) {
-      case 'feldolgozva':
+      case 'feldolgozott':
         return 'success';
       case 'feldolgozas_alatt':
         return 'warning';
@@ -37,7 +37,7 @@ const RecentInvoices = ({
   };
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'feldolgozva':
+      case 'feldolgozott':
         return 'Feldolgozva';
       case 'feldolgozas_alatt':
         return 'Feldolgozás alatt';
