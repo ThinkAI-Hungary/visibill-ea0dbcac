@@ -1,114 +1,53 @@
 
+# Audit: Dinamikus Computed Status konzisztencia
 
-# NAV Invoices Computed Status — Full Solution
+## Talált problémák
 
-## Problem
-The `nav_invoices.paid` boolean is set by a trigger when a transaction match is created, but there is **no reverse trigger** when the transaction is deleted/unmatched. This leaves 10 nav_invoices with stale `paid = true` status and no actual backing transaction.
+### 1. Dashboard (`Index.tsx`) — `paid` boolean használata `transaction_id` helyett
+**Súlyosság: MAGAS**
 
-## Solution Overview
-Add `transaction_id` column to `nav_invoices` (same pattern as `salary` and `invoices`), backfill existing data, create a reverse trigger, and update the frontend to derive status from the `transaction_id` relationship.
+Az `Index.tsx` (dashboard) a havi grafikon adatait az elavult `nav_invoices.paid` boolean alapján számítja:
+- **275. sor**: `select("... paid, currency")` — a `paid` booleanra épít, `transaction_id`-t nem kérdezi le
+- **333-343. sorok**: `if (inv.paid === true)` — ezen alapul a fizetett/nem fizetett bevétel/kiadás bontás
 
----
+Ez azt jelenti, hogy a dashboard grafikon **nem követi dinamikusan** a tranzakció-törléseket. Ha egy tranzakciót törölnek, a trigger reseteli a `paid` flaget, DE a dashboard cache-elt adatokat használ és a `paid` boolean alapján számol — holott a `transaction_id` az igazság forrása.
 
-## 1. Database Migration
+**Javítás**: A select-ben `paid` helyett `transaction_id`-t lekérdezni, és `!!inv.transaction_id` alapján szétválasztani a fizetett/nem fizetett tételeket.
 
-**a) Add `transaction_id` to `nav_invoices` with FK + ON DELETE SET NULL:**
-```sql
-ALTER TABLE public.nav_invoices
-  ADD COLUMN transaction_id uuid REFERENCES public.transactions(id) ON DELETE SET NULL;
-```
+### 2. Kintlévőségek oldal (`KintlevoPage.tsx`) — `paid` boolean szűrés
+**Súlyosság: MAGAS**
 
-**b) Backfill `transaction_id` from existing direct matches:**
-```sql
--- Direct matches (matched_invoice_id -> nav_invoices.id)
-UPDATE nav_invoices ni
-SET transaction_id = t.id
-FROM transactions t
-WHERE t.matched_invoice_id = ni.id
-  AND ni.transaction_id IS NULL;
-```
+A `KintlevoPage.tsx` a kintlévőségeket a `paid` boolean szűrővel kérdezi le:
+- **154. sor**: `.select('...paid')`
+- **157. sor**: `.or('paid.is.null,paid.eq.false')`
 
-**c) Backfill from indirect matches (via submitted invoices bizonylatsorszam):**
-```sql
-UPDATE nav_invoices ni
-SET transaction_id = t.id
-FROM transactions t
-JOIN invoices i ON t.matched_invoice_id = i.id
-WHERE i.bizonylatsorszam = ni.invoice_number
-  AND i.company_id = ni.company_id
-  AND ni.transaction_id IS NULL;
-```
+Ez nem a `transaction_id` relációra épít, tehát ha a trigger reseteli a `paid`-et, az adatok helytelenek lehetnek, illetve a logika nem konzisztens a többi oldallal.
 
-**d) Fix stale `paid` flags — reset where no transaction exists:**
-```sql
-UPDATE nav_invoices
-SET paid = false
-WHERE paid = true AND transaction_id IS NULL;
-```
+**Javítás**: A szűrést `transaction_id.is.null`-ra cserélni, összhangban az InvoiceStatusTables-szel.
 
-**e) Create reverse trigger to reset `paid` when transaction is deleted or unmatched:**
-```sql
-CREATE OR REPLACE FUNCTION public.reset_nav_invoice_paid_on_unmatch()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-BEGIN
-  -- When matched_invoice_id is cleared or transaction deleted
-  IF OLD.matched_invoice_id IS NOT NULL THEN
-    -- Reset nav_invoices that pointed to this transaction
-    UPDATE nav_invoices SET paid = false, transaction_id = NULL
-    WHERE transaction_id = OLD.id;
-    -- Also reset invoices and salary
-    UPDATE invoices SET transaction_id = NULL
-    WHERE transaction_id = OLD.id;
-    UPDATE salary SET transaction_id = NULL
-    WHERE transaction_id = OLD.id;
-  END IF;
-  RETURN OLD;
-END;
-$$;
+### 3. TransactionsPage — saját `getMatchStatus` a shared hook helyett
+**Súlyosság: ALACSONY**
 
-CREATE TRIGGER trg_reset_nav_paid_on_delete
-  BEFORE DELETE ON public.transactions
-  FOR EACH ROW EXECUTE FUNCTION reset_nav_invoice_paid_on_unmatch();
-```
+A `TransactionsPage.tsx` saját lokális `getMatchStatus` függvényt definiál (83-95. sor), ami logikailag **azonos** a `useComputedStatus.ts`-ben lévő `computeMatchStatus`-szal, de nem használja azt. Ez duplikáció — ha az üzleti logika változik, két helyen kell módosítani.
 
-**f) Update existing `mark_nav_invoice_paid_on_transaction_match` trigger function to also set `transaction_id`:**
-```sql
--- Updated to also populate transaction_id on nav_invoices
-```
+**Javítás**: A lokális `getMatchStatus`-t lecserélni a shared `computeMatchStatus` importra.
 
-## 2. Update `useComputedStatus` Hook
-Already exists and works. The `getPaymentStatusBadge()` function will be used for nav_invoices too — just pass `invoice.transaction_id` instead of checking `invoice.paid`.
+### 4. InvoiceStatusTables (`dashboard`) — `paid` boolean az interfészben
+**Súlyosság: ALACSONY**
 
-## 3. Update `InvoicesPage.tsx`
-- Add `transaction_id` to the NavInvoice interface and fetch query
-- Replace all `invoice.paid === true` checks with `!!invoice.transaction_id`
-- Row coloring, badge, filter, and export all switch to `transaction_id`-based logic
-- Use `getPaymentStatusBadge` from the shared hook
+Az `InvoiceStatusTables.tsx` interfészében még szerepel a `paid: boolean | null` mező, bár a "payable" szűrés már `transaction_id.is.null`-ra épít. A `paid` mező feleslegesen van lekérdezve a selectben.
 
-## 4. Update `InvoiceStatusTables.tsx` (Dashboard)
-- Replace `paid.is.null,paid.eq.false` filter with `transaction_id.is.null` filter
-- Update the payable total calculation
-
-## 5. Update `get_nav_invoice_aggregates` DB function
-- Change `paid = true` references to `transaction_id IS NOT NULL` for consistency
-
-## 6. Update Supabase Types
-The types file will auto-update after migration, adding `transaction_id` to `nav_invoices`.
+**Javítás**: Takarítás — `paid`-et eltávolítani az interfészből és a selectből, `transaction_id`-t felvenni.
 
 ---
 
-## Migration Order
-1. DB migration (add column, backfill, fix stale data, add reverse trigger)
-2. Update `InvoicesPage.tsx` — switch from `paid` boolean to `transaction_id`
-3. Update `InvoiceStatusTables.tsx` — same switch
-4. Update aggregate DB function
+## Összefoglalás: Teendők
 
-## Risk Notes
-- The `paid` boolean column stays in place for backward compatibility but becomes secondary — `transaction_id` is the source of truth
-- The reverse trigger ensures cascading cleanup when transactions are deleted
-- The `ON DELETE SET NULL` FK handles the `transaction_id` column automatically; the trigger handles the `paid` boolean reset
+| # | Fájl | Probléma | Változás |
+|---|------|----------|----------|
+| 1 | `Index.tsx` | `paid` boolean a grafikonban | `transaction_id` lekérdezés + `!!transaction_id` logika |
+| 2 | `KintlevoPage.tsx` | `paid` boolean szűrés | `transaction_id.is.null` szűrő |
+| 3 | `TransactionsPage.tsx` | Duplikált `getMatchStatus` | Shared `computeMatchStatus` import |
+| 4 | `InvoiceStatusTables.tsx` | `paid` maradék az interfészben | Takarítás: `transaction_id` az interfészbe |
 
+Ezekkel a javításokkal az alkalmazás minden oldalán a `transaction_id` reláció lesz az igazság egyetlen forrása, és a `paid` boolean sehol sem befolyásolja a megjelenítést.
