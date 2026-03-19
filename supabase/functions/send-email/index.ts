@@ -100,6 +100,17 @@ Deno.serve(async (req) => {
           email_action_type,
         })
       )
+    } else if (email_action_type === 'magiclink') {
+      subject = 'Bejelentkezési link - Visibill'
+      html = await renderAsync(
+        React.createElement(PasswordReset, {
+          supabase_url: Deno.env.get('SUPABASE_URL') ?? '',
+          token,
+          token_hash,
+          redirect_to,
+          email_action_type,
+        })
+      )
     } else {
       console.error('[SEND-EMAIL] Unsupported email action type:', email_action_type)
       return new Response(
