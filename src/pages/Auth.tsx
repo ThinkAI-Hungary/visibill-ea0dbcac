@@ -166,7 +166,10 @@ const Auth = () => {
                   <button
                     type="button"
                     className="text-xs text-primary hover:text-primary/80 transition-colors"
-                    onClick={() => toast.info('Jelszó visszaállítás hamarosan elérhető')}
+                    onClick={() => {
+                      setForgotEmail(email);
+                      setShowForgotPassword(true);
+                    }}
                   >
                     Elfelejtett jelszó?
                   </button>
