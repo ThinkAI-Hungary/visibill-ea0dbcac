@@ -80,8 +80,8 @@ const isCashTransactionType = (transaction: Transaction): boolean => {
 };
 
 const getMatchStatus = (transaction: Transaction): MatchStatus => {
-  // Cash transactions and no_match_category treated as matched/validated
-  if (isNoCategoryMatch(transaction) || isCashTransactionType(transaction)) {
+  // Cash transactions, no_match_category, and bankköltség treated as matched/validated
+  if (isNoCategoryMatch(transaction) || isCashTransactionType(transaction) || isBankCostType(transaction)) {
     return 'matched';
   }
   if (transaction.is_verified && transaction.matched_invoice_id) {
