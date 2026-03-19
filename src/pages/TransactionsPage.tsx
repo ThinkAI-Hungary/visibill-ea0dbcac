@@ -650,7 +650,7 @@ const TransactionsPage = () => {
                           <TableCell>
                             {transaction.type ? (
                               <span className={cn(
-                                "text-xs px-1.5 py-0.5 rounded-md inline-block",
+                                "text-xs px-1.5 py-0.5 rounded-md inline-flex items-center justify-center text-center w-[130px] min-h-[24px] whitespace-nowrap overflow-hidden text-ellipsis",
                                 getTypeBgClass(transaction.type) || "text-muted-foreground"
                               )}>
                                 {transaction.type}
