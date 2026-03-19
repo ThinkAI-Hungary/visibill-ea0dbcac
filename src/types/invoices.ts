@@ -17,6 +17,7 @@ export interface BaseInvoice {
   fizetve?: boolean;
   penznem?: string;
   reference_number?: string;
+  transaction_id?: string | null;
 }
 
 export interface SimaInvoice extends BaseInvoice {
