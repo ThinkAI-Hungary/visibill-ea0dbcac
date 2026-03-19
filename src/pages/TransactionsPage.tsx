@@ -632,8 +632,21 @@ const TransactionsPage = () => {
                               : '-'
                             }
                           </TableCell>
-                          <TableCell className="max-w-[200px] truncate text-xs">
-                            {transaction.description || '-'}
+                          <TableCell className="max-w-[200px] text-xs">
+                            {transaction.description ? (
+                              <TooltipProvider delayDuration={0}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="block truncate cursor-default">
+                                      {transaction.description}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="max-w-[400px]">
+                                    <p className="whitespace-pre-wrap text-sm">{transaction.description}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : '-'}
                           </TableCell>
                           <TableCell className={cn(
                             "text-right font-mono text-xs",
