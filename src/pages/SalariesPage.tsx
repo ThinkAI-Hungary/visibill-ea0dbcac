@@ -102,10 +102,8 @@ const getTypeBadge = (tipus: string | null) => {
   return { label: tipus || "—", className: "bg-muted text-muted-foreground border-border" };
 };
 
-const getStatusBadge = (item: SalaryItem, matchedIds: Set<string>) => {
-  if (item.statusz === "Kifizetve" || matchedIds.has(item.id))
-    return { label: "Fizetve", className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/20" };
-  return { label: "Nyitott", className: "bg-amber-500/15 text-amber-500 border-amber-500/20" };
+const getStatusBadge = (item: SalaryItem) => {
+  return getPaymentStatusBadge(item.transaction_id);
 };
 
 const formatPaymentDate = (dateString: string | null) => {
