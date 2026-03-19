@@ -65,6 +65,10 @@ const isNoCategoryMatch = (transaction: Transaction): boolean => {
   return transaction.match_type === 'no_match_category';
 };
 
+const isBankCostType = (transaction: Transaction): boolean => {
+  return !!transaction.type && transaction.type.toLowerCase().trim() === 'bankköltség';
+};
+
 const isCashTransactionType = (transaction: Transaction): boolean => {
   const cashTypes = [
     'atm készpénzfelvét',
