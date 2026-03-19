@@ -593,9 +593,9 @@ const TransactionsPage = () => {
                       </div>
                     </TableHead>
                     <TableHead className="font-semibold w-[7%]">Pénznem</TableHead>
-                    <TableHead className="font-semibold w-[10%]">Típus</TableHead>
+                    <TableHead className="font-semibold w-[14%]">Típus</TableHead>
                     <TableHead className="font-semibold w-[8%] text-center">Státusz</TableHead>
-                    <TableHead className="font-semibold w-[13%]">Indoklás</TableHead>
+                    <TableHead className="font-semibold w-[9%]">Indoklás</TableHead>
                     <TableHead className="font-semibold w-[10%] text-center">Művelet</TableHead>
                   </TableRow>
                 </TableHeader>
