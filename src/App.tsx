@@ -27,6 +27,7 @@ import TransactionsPage from "./pages/TransactionsPage";
 import NotFound from "./pages/NotFound";
 import KintlevoPage from "./pages/KintlevoPage";
 import PettyCashPage from "./pages/PettyCashPage";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
