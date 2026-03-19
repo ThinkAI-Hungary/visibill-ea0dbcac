@@ -65,6 +65,10 @@ const isNoCategoryMatch = (transaction: Transaction): boolean => {
   return transaction.match_type === 'no_match_category';
 };
 
+const isBankCostType = (transaction: Transaction): boolean => {
+  return !!transaction.type && transaction.type.toLowerCase().trim() === 'bankköltség';
+};
+
 const isCashTransactionType = (transaction: Transaction): boolean => {
   const cashTypes = [
     'atm készpénzfelvét',
@@ -76,8 +80,8 @@ const isCashTransactionType = (transaction: Transaction): boolean => {
 };
 
 const getMatchStatus = (transaction: Transaction): MatchStatus => {
-  // Cash transactions and no_match_category treated as matched/validated
-  if (isNoCategoryMatch(transaction) || isCashTransactionType(transaction)) {
+  // Cash transactions, no_match_category, and bankköltség treated as matched/validated
+  if (isNoCategoryMatch(transaction) || isCashTransactionType(transaction) || isBankCostType(transaction)) {
     return 'matched';
   }
   if (transaction.is_verified && transaction.matched_invoice_id) {
@@ -102,7 +106,7 @@ const getMatchStatusIcon = (status: MatchStatus) => {
 
 const getRowBackgroundClass = (transaction: Transaction): string => {
   const hoverClass = 'hover:shadow-[inset_0_0_0_100vw_rgba(0,0,0,0.04)] dark:hover:shadow-[inset_0_0_0_100vw_rgba(255,255,255,0.06)]';
-  if (isNoCategoryMatch(transaction) || isCashTransactionType(transaction) || (transaction.is_verified && transaction.matched_invoice_id)) {
+  if (isNoCategoryMatch(transaction) || isCashTransactionType(transaction) || isBankCostType(transaction) || (transaction.is_verified && transaction.matched_invoice_id)) {
     return `bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40 ${hoverClass}`;
   }
   if (transaction.matched_invoice_id && !transaction.is_verified) {
@@ -628,8 +632,21 @@ const TransactionsPage = () => {
                               : '-'
                             }
                           </TableCell>
-                          <TableCell className="max-w-[200px] truncate text-xs">
-                            {transaction.description || '-'}
+                          <TableCell className="max-w-[200px] text-xs">
+                            {transaction.description ? (
+                              <TooltipProvider delayDuration={0}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="block truncate cursor-default">
+                                      {transaction.description}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="max-w-[400px]">
+                                    <p className="whitespace-pre-wrap text-sm">{transaction.description}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : '-'}
                           </TableCell>
                           <TableCell className={cn(
                             "text-right font-mono text-xs",
