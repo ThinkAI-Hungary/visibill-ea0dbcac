@@ -431,7 +431,7 @@ export const TransactionDetailsDialog = ({
             >
               <CardHeader className="py-2 px-3">
                 <CardTitle className="text-xs font-medium flex items-center justify-between">
-                  <span>{matchedNavInvoice ? 'Párosított NAV számla' : 'Párosított számla'}</span>
+                  <span>{matchedSalary ? 'Párosított bértétel' : matchedNavInvoice ? 'Párosított NAV számla' : 'Párosított számla'}</span>
                   {matchedInvoice && (
                     <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                       <Eye className="h-3 w-3" />
