@@ -43,6 +43,8 @@ import {
   Banknote,
   User,
   Building2,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import { format } from "date-fns";
 import { hu } from "date-fns/locale";
@@ -60,6 +62,7 @@ interface SalaryItem {
   fizetesi_mod: string | null;
   megjegyzes: string | null;
   munkavallalo_neve: string | null;
+  transaction_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -95,6 +98,21 @@ const getTypeBadge = (tipus: string | null) => {
   if (t === "járulék")
     return { label: "Járulék", className: "bg-amber-500/15 text-amber-500 border-amber-500/20" };
   return { label: tipus || "—", className: "bg-muted text-muted-foreground border-border" };
+};
+
+const getStatusBadge = (item: SalaryItem, matchedIds: Set<string>) => {
+  if (item.statusz === "Kifizetve" || matchedIds.has(item.id))
+    return { label: "Fizetve", className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/20" };
+  return { label: "Nyitott", className: "bg-amber-500/15 text-amber-500 border-amber-500/20" };
+};
+
+const formatPaymentDate = (dateString: string | null) => {
+  if (!dateString) return "–";
+  try {
+    return format(new Date(dateString), "yyyy.MM.dd.", { locale: hu });
+  } catch {
+    return dateString;
+  }
 };
 
 // ---------- Component ----------
@@ -143,8 +161,37 @@ export default function SalariesPage() {
     enabled: !!user && !!selectedCompany?.id,
   });
 
+  // Fetch matched salary IDs and their transaction dates from transactions table
+  const { data: salaryMatchData = new Map<string, string>() } = useQuery({
+    queryKey: ['salary-matched-ids', selectedCompany?.id || '', dateFromStr, dateToStr],
+    queryFn: async () => {
+      const salaryIds = salaryItems.map(s => s.id);
+      if (salaryIds.length === 0) return new Map<string, string>();
+
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('matched_invoice_id, transaction_date')
+        .eq('company_id', selectedCompany!.id)
+        .in('matched_invoice_id', salaryIds);
+
+      if (error) throw error;
+      const map = new Map<string, string>();
+      (data || []).forEach(t => {
+        if (t.matched_invoice_id) {
+          map.set(t.matched_invoice_id, t.transaction_date);
+        }
+      });
+      return map;
+    },
+    enabled: !!user && !!selectedCompany?.id && salaryItems.length > 0,
+  });
+
+  // Derive the Set for status checks
+  const matchedSalaryIds = useMemo(() => new Set(salaryMatchData.keys()), [salaryMatchData]);
+
   const invalidateSalaries = () => {
     queryClient.invalidateQueries({ queryKey: ['salaries', selectedCompany?.id] });
+    queryClient.invalidateQueries({ queryKey: ['salary-matched-ids', selectedCompany?.id] });
   };
 
   // ---------- Grouped data ----------
@@ -180,7 +227,7 @@ export default function SalariesPage() {
   const metrics = useMemo(() => {
     // Összes kifizetés – statusz === 'Kifizetve' szummája
     const totalPayments = salaryItems
-      .filter((item) => item.statusz === "Kifizetve")
+      .filter((item) => item.statusz === "Kifizetve" || matchedSalaryIds.has(item.id))
       .reduce((sum, item) => sum + Number(item.összeg), 0);
 
     // Alkalmazottak száma – egyedi munkavallalo_neve értékek (NOT NULL)
@@ -201,7 +248,7 @@ export default function SalariesPage() {
       .reduce((sum, item) => sum + Number(item.összeg), 0);
 
     return { totalPayments, employeeCount, netSalary, grossSalary };
-  }, [salaryItems]);
+  }, [salaryItems, matchedSalaryIds]);
 
   // ---------- Employee subtotals ----------
 
@@ -213,6 +260,17 @@ export default function SalariesPage() {
     return items
       .filter((item) => item.tipus === "bér")
       .reduce((sum, item) => sum + Number(item.összeg), 0);
+  };
+
+  // If all NAV items are paid, employee items inherit that status
+  const allNavPaid = useMemo(() => {
+    if (navItems.length === 0) return false;
+    return navItems.every((item) => item.statusz === "Kifizetve" || matchedSalaryIds.has(item.id));
+  }, [navItems, matchedSalaryIds]);
+
+  const getEmployeeAllPaid = (items: SalaryItem[]) => {
+    if (allNavPaid) return true;
+    return items.every((item) => item.statusz === "Kifizetve" || matchedSalaryIds.has(item.id));
   };
 
   // ---------- Mutations ----------
@@ -430,6 +488,7 @@ export default function SalariesPage() {
               {employeeGroups.map(([employeeName, items]) => {
                 const subtotal = getEmployeeSubtotal(items);
                 const netTotal = getEmployeeNetTotal(items);
+                const allPaid = getEmployeeAllPaid(items);
 
                 return (
                   <AccordionItem key={employeeName} value={employeeName} className="border-border/50">
@@ -448,11 +507,26 @@ export default function SalariesPage() {
                             </p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <span className="font-mono font-bold text-base tabular-nums">
-                            {formatCurrency(netTotal)}
-                          </span>
-                          <p className="text-xs text-muted-foreground">nettó</p>
+                        <div className="flex items-center">
+                          <div className="w-24 flex justify-center">
+                            {allPaid ? (
+                              <div className="flex items-center gap-1.5 text-emerald-500">
+                                <CheckCircle2 className="h-4 w-4" />
+                                <span className="text-xs font-medium">Fizetve</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 text-amber-500">
+                                <Clock className="h-4 w-4" />
+                                <span className="text-xs font-medium">Nyitott</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="w-40 text-right">
+                            <span className="font-mono font-bold text-base tabular-nums">
+                              {formatCurrency(netTotal)}
+                            </span>
+                            <p className="text-xs text-muted-foreground">nettó</p>
+                          </div>
                         </div>
                       </div>
                     </AccordionTrigger>
@@ -462,16 +536,16 @@ export default function SalariesPage() {
                         <Table className="table-fixed">
                           <TableHeader>
                             <TableRow className="bg-muted/30 hover:bg-muted/30">
-                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[40%]">
+                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[45%]">
                                 Megnevezés
                               </TableHead>
-                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[25%]">
+                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">
                                 Típus
                               </TableHead>
-                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[25%]">
+                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[28%]">
                                 Összeg
                               </TableHead>
-                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[10%]">
+                              <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[7%]">
                               </TableHead>
                             </TableRow>
                           </TableHeader>
@@ -553,13 +627,19 @@ export default function SalariesPage() {
               <Table className="table-fixed">
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[82%]">
+                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[40%]">
                       Megnevezés
                     </TableHead>
-                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[15%]">
+                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[15%]">
+                      Státusz
+                    </TableHead>
+                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-[20%]">
+                      Kifizetés ideje
+                    </TableHead>
+                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[20%]">
                       Összeg
                     </TableHead>
-                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[3%]">
+                    <TableHead className="py-2.5 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[5%]">
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -571,6 +651,24 @@ export default function SalariesPage() {
                     >
                       <TableCell className="py-3 px-4">
                         <span className="font-medium">{item.név}</span>
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-center">
+                        {(() => {
+                          const statusBadge = getStatusBadge(item, matchedSalaryIds);
+                          return (
+                            <Badge
+                              variant="outline"
+                              className={`text-xs ${statusBadge.className}`}
+                            >
+                              {statusBadge.label}
+                            </Badge>
+                          );
+                        })()}
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-center">
+                        <span className="font-mono text-sm tabular-nums text-muted-foreground">
+                          {formatPaymentDate(salaryMatchData.get(item.id) || item.kifizetes_ideje)}
+                        </span>
                       </TableCell>
                       <TableCell className="py-3 px-4 text-right">
                         <span className="font-mono font-semibold tabular-nums">
@@ -591,7 +689,7 @@ export default function SalariesPage() {
                   ))}
                   {/* NAV subtotal */}
                   <TableRow className="bg-muted/20 border-t-2 border-border/60">
-                    <TableCell className="py-3 px-4">
+                    <TableCell colSpan={3} className="py-3 px-4">
                       <span className="font-semibold text-muted-foreground text-sm">
                         NAV utalások összesen
                       </span>

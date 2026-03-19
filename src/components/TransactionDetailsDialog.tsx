@@ -7,10 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Search, Check, AlertTriangle, FileText, CheckCircle2, HelpCircle, Link2, Eye } from 'lucide-react';
+import { Search, Check, AlertTriangle, FileText, CheckCircle2, HelpCircle, Link2, Eye, Wallet } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { format, subDays, addDays } from 'date-fns';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
 
 interface Transaction {
@@ -96,6 +97,7 @@ export const TransactionDetailsDialog = ({
   companyId,
   onUpdate
 }: TransactionDetailsDialogProps) => {
+  const navigate = useNavigate();
   const [matchedInvoice, setMatchedInvoice] = useState<MatchedInvoice | null>(null);
   const [matchedNavInvoice, setMatchedNavInvoice] = useState<MatchedNavInvoice | null>(null);
   const [matchedSalary, setMatchedSalary] = useState<MatchedSalary | null>(null);
@@ -420,22 +422,28 @@ export const TransactionDetailsDialog = ({
             <Card 
               className={cn(
                 "bg-muted/30 border-border/50 transition-colors",
-                matchedInvoice && "cursor-pointer hover:border-primary/50"
+                (matchedInvoice || matchedSalary) && "cursor-pointer hover:border-primary/50"
               )}
               onClick={() => {
                 if (matchedInvoice) {
                   setInvoiceDetailId(matchedInvoice.id);
                   setInvoiceDetailOpen(true);
+                } else if (matchedSalary) {
+                  onOpenChange(false);
+                  navigate('/salaries');
                 }
               }}
             >
               <CardHeader className="py-2 px-3">
                 <CardTitle className="text-xs font-medium flex items-center justify-between">
-                  <span>{matchedSalary ? 'Párosított bértétel' : matchedNavInvoice ? 'Párosított NAV számla' : 'Párosított számla'}</span>
-                  {matchedInvoice && (
+                  <span className="flex items-center gap-1.5">
+                    {matchedSalary ? <Wallet className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
+                    {matchedSalary ? 'Párosított bértétel' : matchedNavInvoice ? 'Párosított NAV számla' : 'Párosított számla'}
+                  </span>
+                  {(matchedInvoice || matchedSalary) && (
                     <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                       <Eye className="h-3 w-3" />
-                      Kattints a részletekért
+                      {matchedSalary ? 'Kattints a bérek oldalhoz' : 'Kattints a részletekért'}
                     </span>
                   )}
                 </CardTitle>
