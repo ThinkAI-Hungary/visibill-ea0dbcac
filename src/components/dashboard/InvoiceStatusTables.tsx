@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader2, CreditCard, FileQuestion, Upload } from 'lucide-react';
 import { format } from 'date-fns';
@@ -32,81 +32,72 @@ interface Partner {
   name: string;
 }
 
+const fetchAllInboundInvoices = async (companyId: string, mode: 'payable' | 'missing') => {
+  const PAGE_SIZE = 1000;
+  const all: NavInvoice[] = [];
+  let from = 0;
+
+  while (true) {
+    let query = supabase
+      .from('nav_invoices')
+      .select('id, invoice_number, invoice_issue_date, invoice_delivery_date, supplier_tax_number, invoice_net_amount, invoice_gross_amount, invoice_vat_amount, currency, transaction_id, submitted')
+      .eq('company_id', companyId)
+      .eq('invoice_direction', 'INBOUND')
+      .order('invoice_issue_date', { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (mode === 'payable') {
+      query = query.is('transaction_id', null);
+    } else {
+      query = query.or('submitted.is.null,submitted.eq.false');
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const page = (data || []) as NavInvoice[];
+    all.push(...page);
+
+    if (page.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return all;
+};
+
 const InvoiceStatusTables = () => {
   const navigate = useNavigate();
   const { selectedCompany } = useCompany();
   const [activeTab, setActiveTab] = useState<'payable' | 'missing'>('payable');
-  const [payableInvoices, setPayableInvoices] = useState<NavInvoice[]>([]);
-  const [missingInvoices, setMissingInvoices] = useState<NavInvoice[]>([]);
-  const [partners, setPartners] = useState<Partner[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (selectedCompany) {
-      fetchData();
-    }
-  }, [selectedCompany]);
+  const companyId = selectedCompany?.id;
 
-  const fetchAllInboundInvoices = async (mode: 'payable' | 'missing') => {
-    if (!selectedCompany) return [] as NavInvoice[];
+  const { data: payableInvoices = [], isLoading: loadingPayable } = useQuery({
+    queryKey: ['invoiceStatusPayable', companyId],
+    queryFn: () => fetchAllInboundInvoices(companyId!, 'payable'),
+    enabled: !!companyId,
+  });
 
-    const PAGE_SIZE = 1000;
-    const all: NavInvoice[] = [];
-    let from = 0;
+  const { data: missingInvoices = [], isLoading: loadingMissing } = useQuery({
+    queryKey: ['invoiceStatusMissing', companyId],
+    queryFn: () => fetchAllInboundInvoices(companyId!, 'missing'),
+    enabled: !!companyId,
+  });
 
-    while (true) {
-      let query = supabase
-        .from('nav_invoices')
-        .select('id, invoice_number, invoice_issue_date, invoice_delivery_date, supplier_tax_number, invoice_net_amount, invoice_gross_amount, invoice_vat_amount, currency, transaction_id, submitted')
-        .eq('company_id', selectedCompany.id)
-        .eq('invoice_direction', 'INBOUND')
-        .order('invoice_issue_date', { ascending: false })
-        .range(from, from + PAGE_SIZE - 1);
-
-      if (mode === 'payable') {
-        query = query.is('transaction_id', null);
-      } else {
-        query = query.or('submitted.is.null,submitted.eq.false');
-      }
-
-      const { data, error } = await query;
+  const { data: partners = [] } = useQuery({
+    queryKey: ['invoiceStatusPartners', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('partners')
+        .select('tax_number, name')
+        .eq('company_id', companyId!);
       if (error) throw error;
+      return (data || []) as Partner[];
+    },
+    enabled: !!companyId,
+  });
 
-      const page = (data || []) as NavInvoice[];
-      all.push(...page);
-
-      if (page.length < PAGE_SIZE) break;
-      from += PAGE_SIZE;
-    }
-
-    return all;
-  };
-
-  const fetchData = async () => {
-    if (!selectedCompany) return;
-
-    setLoading(true);
-    try {
-      const [payableData, missingData, partnersResult] = await Promise.all([
-        fetchAllInboundInvoices('payable'),
-        fetchAllInboundInvoices('missing'),
-        supabase
-          .from('partners')
-          .select('tax_number, name')
-          .eq('company_id', selectedCompany.id)
-      ]);
-
-      setPayableInvoices(payableData || []);
-      setMissingInvoices(missingData || []);
-
-      if (partnersResult.error) throw partnersResult.error;
-      setPartners(partnersResult.data || []);
-    } catch (error) {
-      console.error('Error fetching invoice status data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = loadingPayable || loadingMissing;
 
   const getPartnerName = (taxNumber: string | null): string => {
     if (!taxNumber) return '-';
