@@ -1226,6 +1226,7 @@ export type Database = {
           id: string
           kifizetes_ideje: string | null
           megjegyzes: string | null
+          munkavallalo_neve: string | null
           név: string
           összeg: number
           salary_file_id: string | null
@@ -1243,6 +1244,7 @@ export type Database = {
           id?: string
           kifizetes_ideje?: string | null
           megjegyzes?: string | null
+          munkavallalo_neve?: string | null
           név: string
           összeg: number
           salary_file_id?: string | null
@@ -1260,6 +1262,7 @@ export type Database = {
           id?: string
           kifizetes_ideje?: string | null
           megjegyzes?: string | null
+          munkavallalo_neve?: string | null
           név?: string
           összeg?: number
           salary_file_id?: string | null

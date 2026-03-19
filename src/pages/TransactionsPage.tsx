@@ -206,14 +206,18 @@ const TransactionsPage = () => {
 
   // TanStack Query: fetch transactions with server-side filtering + pagination
   const { data: queryResult, isLoading: loading } = useQuery({
-    queryKey: queryKeys.transactions(
-      selectedCompany?.id || '',
-      dateFromStr,
-      dateToStr,
-      currentPage,
-      pageSize,
-      serverFilters
-    ),
+    queryKey: [
+      ...queryKeys.transactions(
+        selectedCompany?.id || '',
+        dateFromStr,
+        dateToStr,
+        currentPage,
+        pageSize,
+        serverFilters
+      ),
+      sortField,
+      sortDirection,
+    ],
     queryFn: async () => {
       const from = (currentPage - 1) * pageSize;
       const to = from + pageSize - 1;
@@ -222,7 +226,7 @@ const TransactionsPage = () => {
         .from('transactions')
         .select('*', { count: 'exact' })
         .eq('company_id', selectedCompany!.id)
-        .order('transaction_date', { ascending: sortDirection === 'asc' });
+        .order(sortField, { ascending: sortDirection === 'asc' });
 
       // Server-side date filtering
       if (dateFromStr) query = query.gte('transaction_date', dateFromStr);
