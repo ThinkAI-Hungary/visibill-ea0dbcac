@@ -110,6 +110,12 @@ All colors MUST be HSL.
     --tr-salary-text: 270 50% 30%;
     --tr-tax-bg: 270 50% 90%;
     --tr-tax-text: 270 60% 30%;
+    --tr-bankcost-bg: 180 50% 88%;
+    --tr-bankcost-text: 180 60% 25%;
+    --tr-interest-bg: 55 70% 88%;
+    --tr-interest-text: 55 80% 25%;
+    --tr-atmcash-bg: 15 60% 88%;
+    --tr-atmcash-text: 15 70% 25%;
 
     /* Row status colors - Light mode */
     --success-row-bg: 142 60% 88%;
