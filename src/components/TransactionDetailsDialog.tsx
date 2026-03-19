@@ -516,6 +516,51 @@ export const TransactionDetailsDialog = ({
                       )}
                     </div>
                   </div>
+                ) : matchedSalary ? (
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Megnevezés:</span>
+                      <span className="ml-1 font-medium">{matchedSalary.név}</span>
+                    </div>
+                    {matchedSalary.munkavallalo_neve && (
+                      <div>
+                        <span className="text-muted-foreground">Munkavállaló:</span>
+                        <span className="ml-1 font-medium">{matchedSalary.munkavallalo_neve}</span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-muted-foreground">Típus:</span>
+                      <span className="ml-1">{matchedSalary.tipus}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Dátum:</span>
+                      <span className="ml-1">
+                        {matchedSalary.dátum 
+                          ? format(new Date(matchedSalary.dátum), 'yyyy.MM.dd')
+                          : '-'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Összeg:</span>
+                      <span className="ml-1 font-mono font-medium">
+                        {formatCurrency(matchedSalary.összeg)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Fizetési mód:</span>
+                      <span className="ml-1">{matchedSalary.fizetesi_mod}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Státusz:</span>
+                      <Badge variant="outline" className="ml-1 text-[10px] h-5">{matchedSalary.statusz}</Badge>
+                    </div>
+                    {matchedSalary.megjegyzes && (
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">Megjegyzés:</span>
+                        <span className="ml-1">{matchedSalary.megjegyzes}</span>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <p className="text-muted-foreground text-xs">Számla nem található</p>
                 )}
