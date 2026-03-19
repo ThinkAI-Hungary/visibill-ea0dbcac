@@ -133,6 +133,7 @@ export const TransactionDetailsDialog = ({
     setLoadingInvoice(true);
     setMatchedNavInvoice(null);
     setMatchedInvoice(null);
+    setMatchedSalary(null);
     try {
       // Try invoices table first
       const { data, error } = await supabase
@@ -154,7 +155,20 @@ export const TransactionDetailsDialog = ({
           .maybeSingle();
 
         if (navError) throw navError;
-        setMatchedNavInvoice(navData);
+        
+        if (navData) {
+          setMatchedNavInvoice(navData);
+        } else {
+          // Fallback: try salary table
+          const { data: salaryData, error: salaryError } = await supabase
+            .from('salary')
+            .select('id, név, összeg, tipus, fizetesi_mod, statusz, dátum, munkavallalo_neve, megjegyzes')
+            .eq('id', transaction.matched_invoice_id)
+            .maybeSingle();
+
+          if (salaryError) throw salaryError;
+          setMatchedSalary(salaryData);
+        }
       }
     } catch (error) {
       console.error('Error fetching matched invoice:', error);
