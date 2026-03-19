@@ -27,6 +27,7 @@ import TransactionsPage from "./pages/TransactionsPage";
 import NotFound from "./pages/NotFound";
 import KintlevoPage from "./pages/KintlevoPage";
 import PettyCashPage from "./pages/PettyCashPage";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
                   <Routes>
                     {/* Auth route without layout */}
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
 
                     {/* All protected routes with ProtectedLayout */}
                     <Route element={<ProtectedLayout />}>

@@ -16,6 +16,8 @@ const Auth = () => {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
   const { signIn, signUp, user } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
@@ -59,6 +61,28 @@ const Auth = () => {
     if (error) {
       toast.error('Google bejelentkezés sikertelen');
       console.error('Google sign in error:', error);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) {
+      toast.error('Kérlek add meg az email címed');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success('Jelszó visszaállító email elküldve! Ellenőrizd a postaládádat.');
+      setShowForgotPassword(false);
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      toast.error(error.message || 'Hiba történt');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -164,7 +188,10 @@ const Auth = () => {
                   <button
                     type="button"
                     className="text-xs text-primary hover:text-primary/80 transition-colors"
-                    onClick={() => toast.info('Jelszó visszaállítás hamarosan elérhető')}
+                    onClick={() => {
+                      setForgotEmail(email);
+                      setShowForgotPassword(true);
+                    }}
                   >
                     Elfelejtett jelszó?
                   </button>
@@ -298,6 +325,49 @@ const Auth = () => {
             {' '}és a{' '}
             <a href="#" className="text-primary hover:underline">Felhasználási feltételeket</a>.
           </p>
+
+          {/* Forgot Password Overlay */}
+          {showForgotPassword && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+              <div className="w-full max-w-sm bg-background border border-border rounded-xl p-6 shadow-lg mx-4">
+                <h2 className="text-xl font-bold text-foreground mb-2">Elfelejtett jelszó</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Add meg az email címedet és küldünk egy jelszó visszaállító linket.
+                </p>
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="forgot-email">Email cím</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="forgot-email"
+                        type="email"
+                        placeholder="pelda@email.com"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        className="pl-10 bg-secondary/30 border-0 focus:bg-secondary/50"
+                        required
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setShowForgotPassword(false)}
+                    >
+                      Mégse
+                    </Button>
+                    <Button type="submit" className="flex-1" disabled={loading}>
+                      {loading ? 'Küldés...' : 'Link küldése'}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
