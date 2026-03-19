@@ -329,14 +329,15 @@ const Index = () => {
         // Konvertálás HUF-ba
         const amount = convertToHUF(originalAmount, inv.currency);
         
+        const isPaid = !!inv.transaction_id;
         if (inv.invoice_direction === "OUTBOUND") {
-          if (inv.paid === true) {
+          if (isPaid) {
             monthlyMap[monthIndex].revenuePaid += amount;
           } else {
             monthlyMap[monthIndex].revenueUnpaid += amount;
           }
         } else { // INBOUND
-          if (inv.paid === true) {
+          if (isPaid) {
             monthlyMap[monthIndex].expensesPaid -= amount; // NEGATÍV
           } else {
             monthlyMap[monthIndex].expensesUnpaid -= amount; // NEGATÍV

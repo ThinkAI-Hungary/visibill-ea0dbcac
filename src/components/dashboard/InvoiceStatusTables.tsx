@@ -23,7 +23,7 @@ interface NavInvoice {
   invoice_gross_amount: number | null;
   invoice_vat_amount: number | null;
   currency: string | null;
-  paid: boolean | null;
+  transaction_id: string | null;
   submitted: boolean | null;
 }
 
