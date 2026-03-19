@@ -113,7 +113,7 @@ interface RawInvoice {
   invoice_direction: string | null;
   invoice_gross_amount: number | null;
   invoice_net_amount: number | null;
-  paid: boolean | null;
+  transaction_id: string | null;
   currency: string | null;
 }
 
