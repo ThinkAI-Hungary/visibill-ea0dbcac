@@ -150,6 +150,7 @@ interface NavFilters {
   submitted: string;
   project: string;
   category: string;
+  paymentMethod: string;
 }
 
 interface SubmittedFilters {
@@ -285,7 +286,8 @@ const InvoicesPage = () => {
     paid: 'all',
     submitted: 'all',
     project: 'all',
-    category: 'all'
+    category: 'all',
+    paymentMethod: 'all'
   });
 
   const [submittedFilters, setSubmittedFilters] = useState<SubmittedFilters>({
@@ -754,6 +756,11 @@ const InvoicesPage = () => {
         if (navFilters.category !== 'none' && invoice.category_id !== navFilters.category) return false;
       }
 
+      if (navFilters.paymentMethod !== 'all') {
+        if (navFilters.paymentMethod === 'none' && invoice.payment_method) return false;
+        if (navFilters.paymentMethod !== 'none' && invoice.payment_method !== navFilters.paymentMethod) return false;
+      }
+
       return true;
     });
 
@@ -1096,6 +1103,17 @@ const InvoicesPage = () => {
     }
   };
 
+  const getPaymentMethodLabel = (method: string | null) => {
+    switch (method) {
+      case 'TRANSFER': return 'Átutalás';
+      case 'CASH': return 'Készpénz';
+      case 'CARD': return 'Bankkártya';
+      case 'VOUCHER': return 'Utalvány';
+      case 'OTHER': return 'Egyéb';
+      default: return 'Nem megadott';
+    }
+  };
+
   const clearNavFilters = () => {
     setNavFilters({
       search: '',
@@ -1107,7 +1125,8 @@ const InvoicesPage = () => {
       paid: 'all',
       submitted: 'all',
       project: 'all',
-      category: 'all'
+      category: 'all',
+      paymentMethod: 'all'
     });
   };
 
@@ -1492,7 +1511,23 @@ const InvoicesPage = () => {
                       </SelectContent>
                     </Select>
 
-
+                    <Select
+                      value={navFilters.paymentMethod}
+                      onValueChange={(value) => setNavFilters(prev => ({ ...prev, paymentMethod: value }))}
+                    >
+                      <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
+                        <SelectValue placeholder="Fiz. mód" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Minden fiz. mód</SelectItem>
+                        <SelectItem value="none">Nem megadott</SelectItem>
+                        <SelectItem value="TRANSFER">Átutalás</SelectItem>
+                        <SelectItem value="CASH">Készpénz</SelectItem>
+                        <SelectItem value="CARD">Bankkártya</SelectItem>
+                        <SelectItem value="VOUCHER">Utalvány</SelectItem>
+                        <SelectItem value="OTHER">Egyéb</SelectItem>
+                      </SelectContent>
+                    </Select>
 
 
                     <Button
@@ -1617,15 +1652,16 @@ const InvoicesPage = () => {
                             <TableHead className="font-semibold w-[140px] text-center">Kategória</TableHead>
                           )}
                           <TableHead className="font-semibold w-[140px] text-center">Projekt</TableHead>
+                          <TableHead className="font-semibold w-[110px] text-center">Fiz. mód</TableHead>
                           <TableHead className="font-semibold w-20 text-center">Tételek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {loading ? (
-                          <TableSkeleton rows={10} columns={activeTab === 'INBOUND' ? 13 : 11} />
+                          <TableSkeleton rows={10} columns={activeTab === 'INBOUND' ? 14 : 12} />
                         ) : paginatedNavInvoices.length === 0 ? (
                           <TableEmptyState
-                            colSpan={activeTab === 'INBOUND' ? 13 : 11}
+                            colSpan={activeTab === 'INBOUND' ? 14 : 12}
                             title="Nincs megjeleníthető számla"
                             description="Próbáld módosítani a szűrőket vagy keresési feltételeket."
                             onClearFilters={clearNavFilters}
@@ -1771,6 +1807,11 @@ const InvoicesPage = () => {
                                     </Select>
                                   </TableCell>
                                   <TableCell className="text-center">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground">
+                                      {getPaymentMethodLabel(invoice.payment_method)}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="text-center">
                                     <TooltipProvider>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
@@ -1797,7 +1838,7 @@ const InvoicesPage = () => {
                                   const matches = getNavInvoiceMatches(invoice);
                                   return (
                                     <ExpandedInvoiceRow
-                                      colSpan={activeTab === 'INBOUND' ? 13 : 11}
+                                      colSpan={activeTab === 'INBOUND' ? 14 : 12}
                                       matchedSubmittedInvoices={matches.matchedSubmitted}
                                       matchedNavInvoices={[]}
                                       matchedTransactions={matches.matchedTransactions}
@@ -1813,7 +1854,7 @@ const InvoicesPage = () => {
                             );
                           })
                         )}
-                        <TablePlaceholderRows currentCount={paginatedNavInvoices.length} pageSize={navPageSize} columns={activeTab === 'INBOUND' ? 13 : 11} />
+                        <TablePlaceholderRows currentCount={paginatedNavInvoices.length} pageSize={navPageSize} columns={activeTab === 'INBOUND' ? 14 : 12} />
                       </TableBody>
                     </Table>
                   </div>
