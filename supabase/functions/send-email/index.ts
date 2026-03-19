@@ -9,8 +9,36 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-function buildRecoveryHtml(supabaseUrl: string, tokenHash: string, emailActionType: string, redirectTo: string, token: string): string {
-  const verifyUrl = `${supabaseUrl}/auth/v1/verify?token=${tokenHash}&type=${emailActionType}&redirect_to=${redirectTo}`
+type EdgeRuntimeType = {
+  waitUntil: (promise: Promise<unknown>) => void
+}
+
+const edgeRuntime = (globalThis as typeof globalThis & { EdgeRuntime?: EdgeRuntimeType }).EdgeRuntime
+
+function buildVerifyUrl(
+  supabaseUrl: string,
+  tokenHash: string,
+  emailActionType: string,
+  redirectTo: string
+): string {
+  const params = new URLSearchParams({
+    token: tokenHash,
+    type: emailActionType,
+    redirect_to: redirectTo,
+  })
+
+  return `${supabaseUrl}/auth/v1/verify?${params.toString()}`
+}
+
+function buildRecoveryHtml(
+  supabaseUrl: string,
+  tokenHash: string,
+  emailActionType: string,
+  redirectTo: string,
+  token: string
+): string {
+  const verifyUrl = buildVerifyUrl(supabaseUrl, tokenHash, emailActionType, redirectTo)
+
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"></head>
 <body style="background-color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu',sans-serif;">
@@ -36,8 +64,15 @@ function buildRecoveryHtml(supabaseUrl: string, tokenHash: string, emailActionTy
 </body></html>`
 }
 
-function buildConfirmationHtml(supabaseUrl: string, tokenHash: string, emailActionType: string, redirectTo: string, token: string, email: string): string {
-  const verifyUrl = `${supabaseUrl}/auth/v1/verify?token=${tokenHash}&type=${emailActionType}&redirect_to=${redirectTo}`
+function buildConfirmationHtml(
+  supabaseUrl: string,
+  tokenHash: string,
+  emailActionType: string,
+  redirectTo: string,
+  token: string
+): string {
+  const verifyUrl = buildVerifyUrl(supabaseUrl, tokenHash, emailActionType, redirectTo)
+
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"></head>
 <body style="background-color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu',sans-serif;">
@@ -63,6 +98,28 @@ function buildConfirmationHtml(supabaseUrl: string, tokenHash: string, emailActi
 </body></html>`
 }
 
+async function sendEmailInBackground(to: string, subject: string, html: string) {
+  try {
+    console.log('[SEND-EMAIL] Background send started:', { to, subject })
+
+    const { error } = await resend.emails.send({
+      from: 'Visibill <info@mail.visibill.hu>',
+      to: [to],
+      subject,
+      html,
+    })
+
+    if (error) {
+      console.error('[SEND-EMAIL] Resend error:', JSON.stringify(error))
+      return
+    }
+
+    console.log('[SEND-EMAIL] Email sent successfully')
+  } catch (error) {
+    console.error('[SEND-EMAIL] Background send failed:', error)
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -74,10 +131,10 @@ Deno.serve(async (req) => {
 
   try {
     console.log('[SEND-EMAIL] Function started')
-    
+
     const payload = await req.text()
     const headers = Object.fromEntries(req.headers)
-    
+
     let webhookData: {
       user: { email: string }
       email_data: {
@@ -88,7 +145,7 @@ Deno.serve(async (req) => {
         site_url: string
       }
     }
-    
+
     try {
       const wh = new Webhook(hookSecret)
       webhookData = wh.verify(payload, headers) as typeof webhookData
@@ -120,10 +177,10 @@ Deno.serve(async (req) => {
 
     if (email_action_type === 'signup') {
       subject = 'Erősítsd meg az email címed - Visibill'
-      html = buildConfirmationHtml(supabaseUrl, token_hash, email_action_type, redirect_to, token, user.email)
+      html = buildConfirmationHtml(supabaseUrl, token_hash, email_action_type, redirect_to, token)
     } else if (email_action_type === 'recovery' || email_action_type === 'magiclink') {
-      subject = email_action_type === 'recovery' 
-        ? 'Jelszó visszaállítás - Visibill' 
+      subject = email_action_type === 'recovery'
+        ? 'Jelszó visszaállítás - Visibill'
         : 'Bejelentkezési link - Visibill'
       html = buildRecoveryHtml(supabaseUrl, token_hash, email_action_type, redirect_to, token)
     } else {
@@ -134,28 +191,27 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('[SEND-EMAIL] Sending via Resend...')
-    
-    const { error } = await resend.emails.send({
-      from: 'Visibill <info@mail.visibill.hu>',
-      to: [user.email],
-      subject,
-      html,
-    })
+    const sendPromise = sendEmailInBackground(user.email, subject, html)
 
-    if (error) {
-      console.error('[SEND-EMAIL] Resend error:', JSON.stringify(error))
-      throw error
+    if (edgeRuntime?.waitUntil) {
+      edgeRuntime.waitUntil(sendPromise)
+      console.log('[SEND-EMAIL] Email queued in background')
+
+      return new Response(
+        JSON.stringify({ success: true, queued: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    console.log('[SEND-EMAIL] Email sent successfully!')
+    console.warn('[SEND-EMAIL] EdgeRuntime.waitUntil unavailable, falling back to synchronous send')
+    await sendPromise
 
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ success: true, queued: false }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('[SEND-EMAIL] Error:', error.message)
+    console.error('[SEND-EMAIL] Error:', error)
     return new Response(
       JSON.stringify({ error: { message: error.message } }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
