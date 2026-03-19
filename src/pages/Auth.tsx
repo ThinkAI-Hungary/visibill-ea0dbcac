@@ -64,6 +64,28 @@ const Auth = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) {
+      toast.error('Kérlek add meg az email címed');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success('Jelszó visszaállító email elküldve! Ellenőrizd a postaládádat.');
+      setShowForgotPassword(false);
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      toast.error(error.message || 'Hiba történt');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
