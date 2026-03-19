@@ -1757,9 +1757,9 @@ const InvoicesPage = () => {
                                     />
                                   </TableCell>
                                   <TableCell className="text-center">
-                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${invoice.paid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${invoice.transaction_id ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
                                       }`}>
-                                      {invoice.paid ? 'Kifizetve' : 'Nyitott'}
+                                      {invoice.transaction_id ? 'Kifizetve' : 'Nyitott'}
                                     </span>
                                   </TableCell>
                                   {activeTab === 'INBOUND' && (
