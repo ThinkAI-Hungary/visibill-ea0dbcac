@@ -570,7 +570,7 @@ const TransactionsPage = () => {
 
             {/* Transactions Table */}
             <div className="rounded-lg border border-border/50 overflow-auto max-h-[calc(100vh-320px)]">
-              <Table className="table-fixed compact-table">
+              <table className="w-full caption-bottom text-sm table-fixed compact-table">
                 <TableHeader className="sticky top-0 z-10">
                   <TableRow className="bg-muted hover:bg-muted">
                     <TableHead
