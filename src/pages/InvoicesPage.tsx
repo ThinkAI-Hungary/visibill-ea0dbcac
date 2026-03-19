@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
@@ -171,6 +172,7 @@ const InvoicesPage = () => {
   const { selectedCompany } = useCompany();
   const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const queryClient = useQueryClient();
+  useRealtimeInvalidation(selectedCompany?.id);
   const [invoices, setInvoices] = useState<NavInvoice[]>([]);
   const [submittedInvoices, setSubmittedInvoices] = useState<SubmittedInvoice[]>([]);
   const [linkedInvoicesPool, setLinkedInvoicesPool] = useState<SubmittedInvoice[]>([]);

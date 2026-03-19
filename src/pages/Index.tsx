@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
+import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useNavigate } from 'react-router-dom';
@@ -135,6 +136,7 @@ const Index = () => {
   const { selectedCompany, companies, loading: companyLoading } = useCompany();
   const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const navigate = useNavigate();
+  useRealtimeInvalidation(selectedCompany?.id);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -285,7 +287,7 @@ const Index = () => {
     setRawInvoices(navInvoices || []);
     setRawSalaries(
       (salaries || [])
-        .filter((s: any) => s.statusz === "Kifizetve")
+        .filter((s: any) => !!s.transaction_id)
         .map((s: any) => ({ dátum: s.dátum, összeg: s.összeg, statusz: s.statusz }))
     );
   };

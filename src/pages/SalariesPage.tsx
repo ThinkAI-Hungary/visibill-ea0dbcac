@@ -4,6 +4,8 @@ import { queryKeys } from "@/lib/queryKeys";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
+import { getPaymentStatusBadge } from "@/hooks/useComputedStatus";
+import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { useDateRange } from "@/contexts/DateRangeContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -100,10 +102,8 @@ const getTypeBadge = (tipus: string | null) => {
   return { label: tipus || "—", className: "bg-muted text-muted-foreground border-border" };
 };
 
-const getStatusBadge = (item: SalaryItem, matchedIds: Set<string>) => {
-  if (item.statusz === "Kifizetve" || matchedIds.has(item.id))
-    return { label: "Fizetve", className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/20" };
-  return { label: "Nyitott", className: "bg-amber-500/15 text-amber-500 border-amber-500/20" };
+const getStatusBadge = (item: SalaryItem) => {
+  return getPaymentStatusBadge(item.transaction_id);
 };
 
 const formatPaymentDate = (dateString: string | null) => {
@@ -122,6 +122,9 @@ export default function SalariesPage() {
   const { selectedCompany } = useCompany();
   const { dateFrom, dateTo } = useDateRange();
   const queryClient = useQueryClient();
+
+  // Realtime invalidation for back-to-back status updates
+  useRealtimeInvalidation(selectedCompany?.id);
 
   // "KP kifizetés" modal
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -161,37 +164,8 @@ export default function SalariesPage() {
     enabled: !!user && !!selectedCompany?.id,
   });
 
-  // Fetch matched salary IDs and their transaction dates from transactions table
-  const { data: salaryMatchData = new Map<string, string>() } = useQuery({
-    queryKey: ['salary-matched-ids', selectedCompany?.id || '', dateFromStr, dateToStr],
-    queryFn: async () => {
-      const salaryIds = salaryItems.map(s => s.id);
-      if (salaryIds.length === 0) return new Map<string, string>();
-
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('matched_invoice_id, transaction_date')
-        .eq('company_id', selectedCompany!.id)
-        .in('matched_invoice_id', salaryIds);
-
-      if (error) throw error;
-      const map = new Map<string, string>();
-      (data || []).forEach(t => {
-        if (t.matched_invoice_id) {
-          map.set(t.matched_invoice_id, t.transaction_date);
-        }
-      });
-      return map;
-    },
-    enabled: !!user && !!selectedCompany?.id && salaryItems.length > 0,
-  });
-
-  // Derive the Set for status checks
-  const matchedSalaryIds = useMemo(() => new Set(salaryMatchData.keys()), [salaryMatchData]);
-
   const invalidateSalaries = () => {
     queryClient.invalidateQueries({ queryKey: ['salaries', selectedCompany?.id] });
-    queryClient.invalidateQueries({ queryKey: ['salary-matched-ids', selectedCompany?.id] });
   };
 
   // ---------- Grouped data ----------
@@ -225,9 +199,9 @@ export default function SalariesPage() {
   // ---------- KPI metrics ----------
 
   const metrics = useMemo(() => {
-    // Összes kifizetés – statusz === 'Kifizetve' szummája
+    // Összes kifizetés – transaction_id NOT NULL
     const totalPayments = salaryItems
-      .filter((item) => item.statusz === "Kifizetve" || matchedSalaryIds.has(item.id))
+      .filter((item) => !!item.transaction_id)
       .reduce((sum, item) => sum + Number(item.összeg), 0);
 
     // Alkalmazottak száma – egyedi munkavallalo_neve értékek (NOT NULL)
@@ -252,7 +226,7 @@ export default function SalariesPage() {
     const grossSalary = employeeNetTotal + navTotal;
 
     return { totalPayments, employeeCount, netSalary, grossSalary };
-  }, [salaryItems, matchedSalaryIds]);
+  }, [salaryItems]);
 
   // ---------- Employee subtotals ----------
 
@@ -269,12 +243,12 @@ export default function SalariesPage() {
   // If all NAV items are paid, employee items inherit that status
   const allNavPaid = useMemo(() => {
     if (navItems.length === 0) return false;
-    return navItems.every((item) => item.statusz === "Kifizetve" || matchedSalaryIds.has(item.id));
-  }, [navItems, matchedSalaryIds]);
+    return navItems.every((item) => !!item.transaction_id);
+  }, [navItems]);
 
   const getEmployeeAllPaid = (items: SalaryItem[]) => {
     if (allNavPaid) return true;
-    return items.every((item) => item.statusz === "Kifizetve" || matchedSalaryIds.has(item.id));
+    return items.every((item) => !!item.transaction_id);
   };
 
   // ---------- Mutations ----------
@@ -630,7 +604,7 @@ export default function SalariesPage() {
               </div>
               {/* NAV rows */}
               {navItems.map((item) => {
-                const statusBadge = getStatusBadge(item, matchedSalaryIds);
+                const statusBadge = getStatusBadge(item);
                 return (
                   <div
                     key={item.id}
@@ -646,7 +620,7 @@ export default function SalariesPage() {
                       </Badge>
                     </div>
                     <span className="font-mono text-sm tabular-nums text-muted-foreground text-center">
-                      {formatPaymentDate(salaryMatchData.get(item.id) || item.kifizetes_ideje)}
+                      {formatPaymentDate(item.kifizetes_ideje)}
                     </span>
                     <span className="font-mono font-semibold tabular-nums text-right">
                       {formatCurrency(item.összeg)}
