@@ -56,6 +56,19 @@ interface MatchedNavInvoice {
   submitted: boolean | null;
 }
 
+// Matched salary record
+interface MatchedSalary {
+  id: string;
+  név: string;
+  összeg: number;
+  tipus: string;
+  fizetesi_mod: string;
+  statusz: string;
+  dátum: string | null;
+  munkavallalo_neve: string | null;
+  megjegyzes: string | null;
+}
+
 // Available invoices for manual matching (from invoices table)
 interface AvailableInvoice {
   id: string;
