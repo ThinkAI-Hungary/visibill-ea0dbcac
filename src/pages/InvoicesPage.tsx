@@ -738,7 +738,7 @@ const InvoicesPage = () => {
       if (navFilters.currency && navFilters.currency !== 'all' && invoice.currency !== navFilters.currency) return false;
 
       if (navFilters.paid !== 'all') {
-        const isPaid = invoice.paid === true;
+        const isPaid = !!invoice.transaction_id;
         if (navFilters.paid === 'yes' && !isPaid) return false;
         if (navFilters.paid === 'no' && isPaid) return false;
       }
