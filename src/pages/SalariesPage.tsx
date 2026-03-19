@@ -620,7 +620,7 @@ export default function SalariesPage() {
                       </Badge>
                     </div>
                     <span className="font-mono text-sm tabular-nums text-muted-foreground text-center">
-                      {formatPaymentDate(salaryMatchData.get(item.id) || item.kifizetes_ideje)}
+                      {formatPaymentDate(item.kifizetes_ideje)}
                     </span>
                     <span className="font-mono font-semibold tabular-nums text-right">
                       {formatCurrency(item.összeg)}
