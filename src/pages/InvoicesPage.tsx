@@ -172,6 +172,7 @@ const InvoicesPage = () => {
   const { selectedCompany } = useCompany();
   const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const queryClient = useQueryClient();
+  useRealtimeInvalidation(selectedCompany?.id);
   const [invoices, setInvoices] = useState<NavInvoice[]>([]);
   const [submittedInvoices, setSubmittedInvoices] = useState<SubmittedInvoice[]>([]);
   const [linkedInvoicesPool, setLinkedInvoicesPool] = useState<SubmittedInvoice[]>([]);
