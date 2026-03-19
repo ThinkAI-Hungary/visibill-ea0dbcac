@@ -284,7 +284,7 @@ const ExpandedInvoiceRow = ({
                         Párosított
                       </Badge>
                       <div className="flex gap-1">
-                        {inv.paid && <Badge variant="outline" className="text-[10px] h-5">Fizetve</Badge>}
+                        {!!inv.transaction_id && <Badge variant="outline" className="text-[10px] h-5">Fizetve</Badge>}
                         {inv.submitted && <Badge variant="outline" className="text-[10px] h-5">Beküldve</Badge>}
                       </div>
                     </div>

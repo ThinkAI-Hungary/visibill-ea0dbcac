@@ -513,7 +513,7 @@ export const TransactionDetailsDialog = ({
                           {matchedNavInvoice.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő'}
                         </Badge>
                       )}
-                      {matchedNavInvoice.paid && (
+                      {!!matchedNavInvoice.transaction_id && (
                         <Badge variant="success" className="text-[10px] h-5">Fizetve</Badge>
                       )}
                       {matchedNavInvoice.submitted && (
