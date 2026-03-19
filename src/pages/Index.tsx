@@ -287,7 +287,7 @@ const Index = () => {
     setRawInvoices(navInvoices || []);
     setRawSalaries(
       (salaries || [])
-        .filter((s: any) => s.statusz === "Kifizetve")
+        .filter((s: any) => !!s.transaction_id)
         .map((s: any) => ({ dátum: s.dátum, összeg: s.összeg, statusz: s.statusz }))
     );
   };
