@@ -243,12 +243,12 @@ export default function SalariesPage() {
   // If all NAV items are paid, employee items inherit that status
   const allNavPaid = useMemo(() => {
     if (navItems.length === 0) return false;
-    return navItems.every((item) => item.statusz === "Kifizetve" || matchedSalaryIds.has(item.id));
-  }, [navItems, matchedSalaryIds]);
+    return navItems.every((item) => !!item.transaction_id);
+  }, [navItems]);
 
   const getEmployeeAllPaid = (items: SalaryItem[]) => {
     if (allNavPaid) return true;
-    return items.every((item) => item.statusz === "Kifizetve" || matchedSalaryIds.has(item.id));
+    return items.every((item) => !!item.transaction_id);
   };
 
   // ---------- Mutations ----------
