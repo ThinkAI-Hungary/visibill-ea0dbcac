@@ -335,11 +335,7 @@ export const TransactionDetailsDialog = ({
   }, [availableInvoices, search]);
 
   const transactionAmount = Math.abs(transaction?.amount || 0);
-  const matchStatus = transaction?.is_verified && transaction?.matched_invoice_id 
-    ? 'matched' 
-    : transaction?.matched_invoice_id 
-      ? 'suggested' 
-      : 'unmatched';
+  const matchStatus = transaction ? computeMatchStatus(transaction) : 'unmatched';
 
   if (!transaction) return null;
 
