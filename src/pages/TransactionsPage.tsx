@@ -706,7 +706,7 @@ const TransactionsPage = () => {
                   )}
                   <TablePlaceholderRows currentCount={paginatedTransactions.length} pageSize={pageSize} columns={8} />
                 </TableBody>
-              </Table>
+              </table>
             </div>
 
             {/* Bottom Pagination */}
