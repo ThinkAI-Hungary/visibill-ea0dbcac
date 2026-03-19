@@ -1,53 +1,50 @@
 
-# Audit: Dinamikus Computed Status konzisztencia
 
-## Talált problémák
+# Computed Status konzisztencia — Végső javítások
 
-### 1. Dashboard (`Index.tsx`) — `paid` boolean használata `transaction_id` helyett
-**Súlyosság: MAGAS**
-
-Az `Index.tsx` (dashboard) a havi grafikon adatait az elavult `nav_invoices.paid` boolean alapján számítja:
-- **275. sor**: `select("... paid, currency")` — a `paid` booleanra épít, `transaction_id`-t nem kérdezi le
-- **333-343. sorok**: `if (inv.paid === true)` — ezen alapul a fizetett/nem fizetett bevétel/kiadás bontás
-
-Ez azt jelenti, hogy a dashboard grafikon **nem követi dinamikusan** a tranzakció-törléseket. Ha egy tranzakciót törölnek, a trigger reseteli a `paid` flaget, DE a dashboard cache-elt adatokat használ és a `paid` boolean alapján számol — holott a `transaction_id` az igazság forrása.
-
-**Javítás**: A select-ben `paid` helyett `transaction_id`-t lekérdezni, és `!!inv.transaction_id` alapján szétválasztani a fizetett/nem fizetett tételeket.
-
-### 2. Kintlévőségek oldal (`KintlevoPage.tsx`) — `paid` boolean szűrés
-**Súlyosság: MAGAS**
-
-A `KintlevoPage.tsx` a kintlévőségeket a `paid` boolean szűrővel kérdezi le:
-- **154. sor**: `.select('...paid')`
-- **157. sor**: `.or('paid.is.null,paid.eq.false')`
-
-Ez nem a `transaction_id` relációra épít, tehát ha a trigger reseteli a `paid`-et, az adatok helytelenek lehetnek, illetve a logika nem konzisztens a többi oldallal.
-
-**Javítás**: A szűrést `transaction_id.is.null`-ra cserélni, összhangban az InvoiceStatusTables-szel.
-
-### 3. TransactionsPage — saját `getMatchStatus` a shared hook helyett
-**Súlyosság: ALACSONY**
-
-A `TransactionsPage.tsx` saját lokális `getMatchStatus` függvényt definiál (83-95. sor), ami logikailag **azonos** a `useComputedStatus.ts`-ben lévő `computeMatchStatus`-szal, de nem használja azt. Ez duplikáció — ha az üzleti logika változik, két helyen kell módosítani.
-
-**Javítás**: A lokális `getMatchStatus`-t lecserélni a shared `computeMatchStatus` importra.
-
-### 4. InvoiceStatusTables (`dashboard`) — `paid` boolean az interfészben
-**Súlyosság: ALACSONY**
-
-Az `InvoiceStatusTables.tsx` interfészében még szerepel a `paid: boolean | null` mező, bár a "payable" szűrés már `transaction_id.is.null`-ra épít. A `paid` mező feleslegesen van lekérdezve a selectben.
-
-**Javítás**: Takarítás — `paid`-et eltávolítani az interfészből és a selectből, `transaction_id`-t felvenni.
+## Összefoglaló
+6 fájl + 1 DB trigger frissítés szükséges ahhoz, hogy a `fizetve`/`paid` státusz sehol ne legyen manuálisan állítható, és mindenhol a `transaction_id` jelenlétéből származzon.
 
 ---
 
-## Összefoglalás: Teendők
+## 1. DB Migration — Trigger kibővítés (`invoices` + `salary` transaction_id beállítás)
 
-| # | Fájl | Probléma | Változás |
-|---|------|----------|----------|
-| 1 | `Index.tsx` | `paid` boolean a grafikonban | `transaction_id` lekérdezés + `!!transaction_id` logika |
-| 2 | `KintlevoPage.tsx` | `paid` boolean szűrés | `transaction_id.is.null` szűrő |
-| 3 | `TransactionsPage.tsx` | Duplikált `getMatchStatus` | Shared `computeMatchStatus` import |
-| 4 | `InvoiceStatusTables.tsx` | `paid` maradék az interfészben | Takarítás: `transaction_id` az interfészbe |
+A `mark_nav_invoice_paid_on_transaction_match` trigger jelenleg csak `nav_invoices.transaction_id`-t állítja be match-kor. Ki kell bővíteni:
+- Ha a `matched_invoice_id` az `invoices` táblára mutat → `invoices.transaction_id = NEW.id`
+- Ha a `matched_invoice_id` a `salary` táblára mutat → `salary.transaction_id = NEW.id`
 
-Ezekkel a javításokkal az alkalmazás minden oldalán a `transaction_id` reláció lesz az igazság egyetlen forrása, és a `paid` boolean sehol sem befolyásolja a megjelenítést.
+Ez biztosítja, hogy manuális párosítás (`handleMatch`) után is azonnal helyes legyen a `transaction_id` mindhárom táblában.
+
+## 2. `InvoiceEditDialog.tsx` — Fizetve checkbox eltávolítása
+- Törlés: `isPaid` state, `Checkbox` UI elem, `fizetve: isPaid` az update-ből
+- A dialógus leírásából is kivenni a "fizetési státuszát" szöveget
+- Read-only badge mutatása a `transaction_id` alapján (ehhez az `Invoice` type-ból kinyerni)
+
+## 3. `InvoiceDetailPopup.tsx` — `fizetve` boolean → `transaction_id` badge
+- A `select('*')` már mindent lekérdez, tehát a `transaction_id` elérhető
+- 154. sor: `invoice.fizetve` → `!!invoice.transaction_id` (vagy a `FullInvoice` interfészhez `transaction_id` hozzáadása)
+
+## 4. `ExpandedInvoiceRow.tsx` — NAV invoice `paid` → `transaction_id`
+- `MatchedNavInvoice` interfészben: `paid: boolean | null` → `transaction_id: string | null`
+- 287. sor badge: `inv.paid` → `!!inv.transaction_id`
+- A hívó komponensben a select query-t is frissíteni: `paid` → `transaction_id`
+
+## 5. `TransactionDetailsDialog.tsx` — Három javítás
+- **Interfész**: `MatchedNavInvoice.paid` → `transaction_id: string | null`
+- **Select query** (155. sor): `paid` → `transaction_id`
+- **Badge** (519. sor): `matchedNavInvoice.paid` → `!!matchedNavInvoice.transaction_id`
+- **matchStatus** (337-341. sor): Lecserélni `computeMatchStatus` importra a shared hookból
+
+## 6. `InvoiceDetailPopup.tsx` interfész frissítés
+- `FullInvoice` interfészbe felvenni `transaction_id: string | null`
+- Badge: `!!invoice.transaction_id`
+
+---
+
+## Implementációs sorrend
+1. DB migration (trigger kibővítés)
+2. `InvoiceEditDialog.tsx` — checkbox eltávolítás
+3. `InvoiceDetailPopup.tsx` — badge fix
+4. `ExpandedInvoiceRow.tsx` — badge fix
+5. `TransactionDetailsDialog.tsx` — badge + matchStatus fix
+
