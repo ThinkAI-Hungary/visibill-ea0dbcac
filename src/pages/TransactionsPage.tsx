@@ -206,14 +206,18 @@ const TransactionsPage = () => {
 
   // TanStack Query: fetch transactions with server-side filtering + pagination
   const { data: queryResult, isLoading: loading } = useQuery({
-    queryKey: queryKeys.transactions(
-      selectedCompany?.id || '',
-      dateFromStr,
-      dateToStr,
-      currentPage,
-      pageSize,
-      serverFilters
-    ),
+    queryKey: [
+      ...queryKeys.transactions(
+        selectedCompany?.id || '',
+        dateFromStr,
+        dateToStr,
+        currentPage,
+        pageSize,
+        serverFilters
+      ),
+      sortField,
+      sortDirection,
+    ],
     queryFn: async () => {
       const from = (currentPage - 1) * pageSize;
       const to = from + pageSize - 1;
