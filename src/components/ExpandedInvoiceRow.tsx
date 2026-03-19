@@ -28,7 +28,7 @@ interface MatchedNavInvoice {
   customer_name: string | null;
   invoice_gross_amount: number | null;
   currency: string | null;
-  paid: boolean | null;
+  transaction_id: string | null;
   submitted: boolean | null;
 }
 
