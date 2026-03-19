@@ -226,7 +226,7 @@ const TransactionsPage = () => {
         .from('transactions')
         .select('*', { count: 'exact' })
         .eq('company_id', selectedCompany!.id)
-        .order('transaction_date', { ascending: sortDirection === 'asc' });
+        .order(sortField, { ascending: sortDirection === 'asc' });
 
       // Server-side date filtering
       if (dateFromStr) query = query.gte('transaction_date', dateFromStr);
