@@ -153,7 +153,7 @@ export const TransactionDetailsDialog = ({
         // Fallback: try nav_invoices table
         const { data: navData, error: navError } = await supabase
           .from('nav_invoices')
-          .select('id, invoice_number, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, invoice_direction, paid, submitted')
+          .select('id, invoice_number, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, invoice_direction, transaction_id, submitted')
           .eq('id', transaction.matched_invoice_id)
           .maybeSingle();
 
