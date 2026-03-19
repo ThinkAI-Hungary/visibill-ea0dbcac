@@ -25,6 +25,7 @@ interface FullInvoice {
   fizetesi_mod: string | null;
   fizetve: boolean | null;
   statusz: string | null;
+  transaction_id: string | null;
   penznem: string | null;
   elado_nev: string;
   elado_cim: string | null;
