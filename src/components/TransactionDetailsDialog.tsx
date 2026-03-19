@@ -56,6 +56,19 @@ interface MatchedNavInvoice {
   submitted: boolean | null;
 }
 
+// Matched salary record
+interface MatchedSalary {
+  id: string;
+  név: string;
+  összeg: number;
+  tipus: string;
+  fizetesi_mod: string;
+  statusz: string;
+  dátum: string | null;
+  munkavallalo_neve: string | null;
+  megjegyzes: string | null;
+}
+
 // Available invoices for manual matching (from invoices table)
 interface AvailableInvoice {
   id: string;
@@ -85,6 +98,7 @@ export const TransactionDetailsDialog = ({
 }: TransactionDetailsDialogProps) => {
   const [matchedInvoice, setMatchedInvoice] = useState<MatchedInvoice | null>(null);
   const [matchedNavInvoice, setMatchedNavInvoice] = useState<MatchedNavInvoice | null>(null);
+  const [matchedSalary, setMatchedSalary] = useState<MatchedSalary | null>(null);
   const [availableInvoices, setAvailableInvoices] = useState<AvailableInvoice[]>([]);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [loadingAvailable, setLoadingAvailable] = useState(false);
@@ -119,6 +133,7 @@ export const TransactionDetailsDialog = ({
     setLoadingInvoice(true);
     setMatchedNavInvoice(null);
     setMatchedInvoice(null);
+    setMatchedSalary(null);
     try {
       // Try invoices table first
       const { data, error } = await supabase
@@ -140,7 +155,32 @@ export const TransactionDetailsDialog = ({
           .maybeSingle();
 
         if (navError) throw navError;
-        setMatchedNavInvoice(navData);
+        
+        if (navData) {
+          setMatchedNavInvoice(navData);
+        } else {
+          // Fallback: try salary table
+          const { data: salaryData, error: salaryError } = await supabase
+            .from('salary')
+            .select('*')
+            .eq('id', transaction.matched_invoice_id)
+            .maybeSingle();
+
+          if (salaryError) throw salaryError;
+          if (salaryData) {
+            setMatchedSalary({
+              id: salaryData.id,
+              név: salaryData['név'],
+              összeg: salaryData['összeg'],
+              tipus: salaryData.tipus,
+              fizetesi_mod: salaryData.fizetesi_mod,
+              statusz: salaryData.statusz,
+              dátum: salaryData['dátum'],
+              munkavallalo_neve: salaryData.munkavallalo_neve,
+              megjegyzes: salaryData.megjegyzes,
+            });
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching matched invoice:', error);
@@ -391,7 +431,7 @@ export const TransactionDetailsDialog = ({
             >
               <CardHeader className="py-2 px-3">
                 <CardTitle className="text-xs font-medium flex items-center justify-between">
-                  <span>{matchedNavInvoice ? 'Párosított NAV számla' : 'Párosított számla'}</span>
+                  <span>{matchedSalary ? 'Párosított bértétel' : matchedNavInvoice ? 'Párosított NAV számla' : 'Párosított számla'}</span>
                   {matchedInvoice && (
                     <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                       <Eye className="h-3 w-3" />
@@ -475,6 +515,51 @@ export const TransactionDetailsDialog = ({
                         <Badge variant="outline" className="text-[10px] h-5">Beküldve</Badge>
                       )}
                     </div>
+                  </div>
+                ) : matchedSalary ? (
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Megnevezés:</span>
+                      <span className="ml-1 font-medium">{matchedSalary.név}</span>
+                    </div>
+                    {matchedSalary.munkavallalo_neve && (
+                      <div>
+                        <span className="text-muted-foreground">Munkavállaló:</span>
+                        <span className="ml-1 font-medium">{matchedSalary.munkavallalo_neve}</span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-muted-foreground">Típus:</span>
+                      <span className="ml-1">{matchedSalary.tipus}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Dátum:</span>
+                      <span className="ml-1">
+                        {matchedSalary.dátum 
+                          ? format(new Date(matchedSalary.dátum), 'yyyy.MM.dd')
+                          : '-'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Összeg:</span>
+                      <span className="ml-1 font-mono font-medium">
+                        {formatCurrency(matchedSalary.összeg)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Fizetési mód:</span>
+                      <span className="ml-1">{matchedSalary.fizetesi_mod}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Státusz:</span>
+                      <Badge variant="outline" className="ml-1 text-[10px] h-5">{matchedSalary.statusz}</Badge>
+                    </div>
+                    {matchedSalary.megjegyzes && (
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">Megjegyzés:</span>
+                        <span className="ml-1">{matchedSalary.megjegyzes}</span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="text-muted-foreground text-xs">Számla nem található</p>
