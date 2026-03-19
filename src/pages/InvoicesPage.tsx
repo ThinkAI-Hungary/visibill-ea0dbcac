@@ -1227,7 +1227,7 @@ const InvoicesPage = () => {
         invoice.invoice_gross_amount?.toString() || '0',
         invoice.invoice_vat_amount?.toString() || '0',
         invoice.currency || 'HUF',
-        invoice.paid ? 'Igen' : 'Nem',
+        invoice.transaction_id ? 'Igen' : 'Nem',
         invoice.submitted ? 'Igen' : 'Nem'
       ];
     };
