@@ -98,6 +98,7 @@ export const TransactionDetailsDialog = ({
 }: TransactionDetailsDialogProps) => {
   const [matchedInvoice, setMatchedInvoice] = useState<MatchedInvoice | null>(null);
   const [matchedNavInvoice, setMatchedNavInvoice] = useState<MatchedNavInvoice | null>(null);
+  const [matchedSalary, setMatchedSalary] = useState<MatchedSalary | null>(null);
   const [availableInvoices, setAvailableInvoices] = useState<AvailableInvoice[]>([]);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [loadingAvailable, setLoadingAvailable] = useState(false);
