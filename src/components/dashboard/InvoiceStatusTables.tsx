@@ -64,7 +64,7 @@ const InvoiceStatusTables = () => {
         .range(from, from + PAGE_SIZE - 1);
 
       if (mode === 'payable') {
-        query = query.or('paid.is.null,paid.eq.false');
+        query = query.is('transaction_id', null);
       } else {
         query = query.or('submitted.is.null,submitted.eq.false');
       }

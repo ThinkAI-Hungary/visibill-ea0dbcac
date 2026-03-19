@@ -104,6 +104,7 @@ interface NavInvoice {
   fetched_at: string | null;
   project_id: string | null;
   category_id: string | null;
+  transaction_id: string | null;
 }
 
 interface SubmittedInvoice {
@@ -737,7 +738,7 @@ const InvoicesPage = () => {
       if (navFilters.currency && navFilters.currency !== 'all' && invoice.currency !== navFilters.currency) return false;
 
       if (navFilters.paid !== 'all') {
-        const isPaid = invoice.paid === true;
+        const isPaid = !!invoice.transaction_id;
         if (navFilters.paid === 'yes' && !isPaid) return false;
         if (navFilters.paid === 'no' && isPaid) return false;
       }
@@ -1226,7 +1227,7 @@ const InvoicesPage = () => {
         invoice.invoice_gross_amount?.toString() || '0',
         invoice.invoice_vat_amount?.toString() || '0',
         invoice.currency || 'HUF',
-        invoice.paid ? 'Igen' : 'Nem',
+        invoice.transaction_id ? 'Igen' : 'Nem',
         invoice.submitted ? 'Igen' : 'Nem'
       ];
     };
@@ -1678,8 +1679,8 @@ const InvoicesPage = () => {
                                 <TableRow className={cn(
                                   "group cursor-pointer",
                                   selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
-                                  !selectedInvoiceIds.has(invoice.id) && invoice.paid === true && "bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40 hover:shadow-[inset_0_0_0_100vw_rgba(0,0,0,0.04)] dark:hover:shadow-[inset_0_0_0_100vw_rgba(255,255,255,0.06)]",
-                                  !selectedInvoiceIds.has(invoice.id) && invoice.paid !== true && "bg-[hsl(var(--error-row-bg))] text-[hsl(var(--error-row-text))] border-l-4 border-l-destructive border-b border-border/40 hover:shadow-[inset_0_0_0_100vw_rgba(0,0,0,0.04)] dark:hover:shadow-[inset_0_0_0_100vw_rgba(255,255,255,0.06)]",
+                                  !selectedInvoiceIds.has(invoice.id) && !!invoice.transaction_id && "bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40 hover:shadow-[inset_0_0_0_100vw_rgba(0,0,0,0.04)] dark:hover:shadow-[inset_0_0_0_100vw_rgba(255,255,255,0.06)]",
+                                  !selectedInvoiceIds.has(invoice.id) && !invoice.transaction_id && "bg-[hsl(var(--error-row-bg))] text-[hsl(var(--error-row-text))] border-l-4 border-l-destructive border-b border-border/40 hover:shadow-[inset_0_0_0_100vw_rgba(0,0,0,0.04)] dark:hover:shadow-[inset_0_0_0_100vw_rgba(255,255,255,0.06)]",
                                   expandedRowIds.has(invoice.id) && "border-b-0"
                                 )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                   <TableCell className="pl-6">
@@ -1756,9 +1757,9 @@ const InvoicesPage = () => {
                                     />
                                   </TableCell>
                                   <TableCell className="text-center">
-                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${invoice.paid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${invoice.transaction_id ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
                                       }`}>
-                                      {invoice.paid ? 'Kifizetve' : 'Nyitott'}
+                                      {invoice.transaction_id ? 'Kifizetve' : 'Nyitott'}
                                     </span>
                                   </TableCell>
                                   {activeTab === 'INBOUND' && (
