@@ -23,6 +23,7 @@ import { hu } from 'date-fns/locale';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import { computeMatchStatus } from '@/hooks/useComputedStatus';
 import { TransactionReasonCell } from '@/components/TransactionReasonCell';
 import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
 import { TableSkeleton } from '@/components/ui/table-skeleton';
@@ -81,17 +82,7 @@ const isCashTransactionType = (transaction: Transaction): boolean => {
 };
 
 const getMatchStatus = (transaction: Transaction): MatchStatus => {
-  // Cash transactions, no_match_category, and bankköltség treated as matched/validated
-  if (isNoCategoryMatch(transaction) || isCashTransactionType(transaction) || isBankCostType(transaction)) {
-    return 'matched';
-  }
-  if (transaction.is_verified && transaction.matched_invoice_id) {
-    return 'matched';
-  }
-  if (transaction.matched_invoice_id && !transaction.is_verified) {
-    return 'suggested';
-  }
-  return 'unmatched';
+  return computeMatchStatus(transaction);
 };
 
 const getMatchStatusIcon = (status: MatchStatus) => {

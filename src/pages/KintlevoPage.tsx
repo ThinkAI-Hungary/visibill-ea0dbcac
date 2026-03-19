@@ -151,10 +151,10 @@ export default function KintlevoPage() {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
         .from('nav_invoices')
-        .select('id,invoice_number,invoice_issue_date,payment_date,customer_name,customer_tax_number,invoice_gross_amount,currency,paid')
+        .select('id,invoice_number,invoice_issue_date,payment_date,customer_name,customer_tax_number,invoice_gross_amount,currency,transaction_id')
         .eq('company_id', selectedCompany.id)
         .eq('invoice_direction', 'OUTBOUND')
-        .or('paid.is.null,paid.eq.false');
+        .is('transaction_id', null);
       if (error) throw error;
       return data ?? [];
     },

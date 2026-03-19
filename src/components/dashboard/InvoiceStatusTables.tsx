@@ -23,7 +23,7 @@ interface NavInvoice {
   invoice_gross_amount: number | null;
   invoice_vat_amount: number | null;
   currency: string | null;
-  paid: boolean | null;
+  transaction_id: string | null;
   submitted: boolean | null;
 }
 
@@ -57,7 +57,7 @@ const InvoiceStatusTables = () => {
     while (true) {
       let query = supabase
         .from('nav_invoices')
-        .select('id, invoice_number, invoice_issue_date, invoice_delivery_date, supplier_tax_number, invoice_net_amount, invoice_gross_amount, invoice_vat_amount, currency, paid, submitted')
+        .select('id, invoice_number, invoice_issue_date, invoice_delivery_date, supplier_tax_number, invoice_net_amount, invoice_gross_amount, invoice_vat_amount, currency, transaction_id, submitted')
         .eq('company_id', selectedCompany.id)
         .eq('invoice_direction', 'INBOUND')
         .order('invoice_issue_date', { ascending: false })

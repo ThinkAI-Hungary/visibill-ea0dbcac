@@ -113,7 +113,7 @@ interface RawInvoice {
   invoice_direction: string | null;
   invoice_gross_amount: number | null;
   invoice_net_amount: number | null;
-  paid: boolean | null;
+  transaction_id: string | null;
   currency: string | null;
 }
 
@@ -272,7 +272,7 @@ const Index = () => {
 
     const { data: navInvoices } = await supabase
       .from("nav_invoices")
-      .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, paid, currency")
+      .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, transaction_id, currency")
       .eq("company_id", selectedCompany?.id)
       .gte("invoice_issue_date", yearStart)
       .lte("invoice_issue_date", yearEnd);
@@ -329,14 +329,15 @@ const Index = () => {
         // Konvertálás HUF-ba
         const amount = convertToHUF(originalAmount, inv.currency);
         
+        const isPaid = !!inv.transaction_id;
         if (inv.invoice_direction === "OUTBOUND") {
-          if (inv.paid === true) {
+          if (isPaid) {
             monthlyMap[monthIndex].revenuePaid += amount;
           } else {
             monthlyMap[monthIndex].revenueUnpaid += amount;
           }
         } else { // INBOUND
-          if (inv.paid === true) {
+          if (isPaid) {
             monthlyMap[monthIndex].expensesPaid -= amount; // NEGATÍV
           } else {
             monthlyMap[monthIndex].expensesUnpaid -= amount; // NEGATÍV
