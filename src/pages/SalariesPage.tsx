@@ -604,7 +604,7 @@ export default function SalariesPage() {
               </div>
               {/* NAV rows */}
               {navItems.map((item) => {
-                const statusBadge = getStatusBadge(item, matchedSalaryIds);
+                const statusBadge = getStatusBadge(item);
                 return (
                   <div
                     key={item.id}
