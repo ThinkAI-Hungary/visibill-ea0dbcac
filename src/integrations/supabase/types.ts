@@ -611,6 +611,7 @@ export type Database = {
           statusz: string | null
           teljesites_datuma: string | null
           termek_szolgaltatas_tipusa: string | null
+          transaction_id: string | null
           user_id: string
           vevo_cim: string | null
           vevo_nev: string
@@ -657,6 +658,7 @@ export type Database = {
           statusz?: string | null
           teljesites_datuma?: string | null
           termek_szolgaltatas_tipusa?: string | null
+          transaction_id?: string | null
           user_id: string
           vevo_cim?: string | null
           vevo_nev: string
@@ -703,6 +705,7 @@ export type Database = {
           statusz?: string | null
           teljesites_datuma?: string | null
           termek_szolgaltatas_tipusa?: string | null
+          transaction_id?: string | null
           user_id?: string
           vevo_cim?: string | null
           vevo_nev?: string
@@ -728,6 +731,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
         ]
@@ -1285,6 +1295,13 @@ export type Database = {
             columns: ["salary_file_id"]
             isOneToOne: false
             referencedRelation: "salary_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
         ]
