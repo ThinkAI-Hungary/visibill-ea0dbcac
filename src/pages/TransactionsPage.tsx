@@ -144,6 +144,7 @@ const TransactionsPage = () => {
   const { selectedCompany } = useCompany();
   const { dateFrom, dateTo } = useDateRange();
   const queryClient = useQueryClient();
+  useRealtimeInvalidation(selectedCompany?.id);
   const [syncing, setSyncing] = useState(false);
   const [sortField, setSortField] = useState<string>('transaction_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
