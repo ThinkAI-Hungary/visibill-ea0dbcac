@@ -104,6 +104,7 @@ interface NavInvoice {
   fetched_at: string | null;
   project_id: string | null;
   category_id: string | null;
+  transaction_id: string | null;
 }
 
 interface SubmittedInvoice {
