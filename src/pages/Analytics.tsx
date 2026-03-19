@@ -128,16 +128,17 @@ export default function Analytics() {
       .gte("invoice_issue_date", yearStart)
       .lte("invoice_issue_date", yearEnd);
 
-    // Fetch salaries
+    // Fetch salaries (only paid — consistent with Dashboard cash flow logic)
     const { data: salaries } = await supabase
       .from("salary")
-      .select("*")
+      .select("dátum, összeg, transaction_id")
       .eq("company_id", selectedCompany?.id)
+      .not("transaction_id", "is", null)
       .gte("dátum", yearStart)
       .lte("dátum", yearEnd);
 
     setRawInvoices(navInvoices || []);
-    setRawSalaries((salaries || []).map(s => ({ dátum: s.dátum, összeg: s.összeg })));
+    setRawSalaries((salaries || []).map(s => ({ dátum: s.dátum, összeg: s.összeg, transaction_id: s.transaction_id })));
   };
 
   // Calculate monthly data based on showBrutto toggle using useMemo

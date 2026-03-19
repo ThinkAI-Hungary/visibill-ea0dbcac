@@ -167,10 +167,10 @@ export default function KintlevoPage() {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
         .from('invoices')
-        .select('id,bizonylatsorszam,kibocsatas_datuma,fizetesi_hatarido,vevo_nev,vevo_vat_id,brutto_vegosszeg,penznem,fizetve,melleklet_url')
+        .select('id,bizonylatsorszam,kibocsatas_datuma,fizetesi_hatarido,vevo_nev,vevo_vat_id,brutto_vegosszeg,penznem,transaction_id,melleklet_url')
         .eq('company_id', selectedCompany.id)
         .eq('invoice_direction', 'OUTBOUND')
-        .or('fizetve.is.null,fizetve.eq.false');
+        .is('transaction_id', null);
       if (error) throw error;
       return data ?? [];
     },

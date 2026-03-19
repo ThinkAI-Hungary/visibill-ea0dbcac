@@ -39,6 +39,11 @@ export function useRealtimeInvalidation(companyId: string | undefined) {
           queryClient.invalidateQueries({ queryKey: ['salaries', companyId] });
           queryClient.invalidateQueries({ queryKey: ['submittedInvoices', companyId] });
           queryClient.invalidateQueries({ queryKey: ['dashboardData', companyId] });
+          queryClient.invalidateQueries({ queryKey: ['dashboardAnalytics', companyId] });
+          queryClient.invalidateQueries({ queryKey: ['kintlevo-nav', companyId] });
+          queryClient.invalidateQueries({ queryKey: ['kintlevo-manual', companyId] });
+          queryClient.invalidateQueries({ queryKey: ['invoiceStatusPayable', companyId] });
+          queryClient.invalidateQueries({ queryKey: ['invoiceStatusMissing', companyId] });
         }
       )
       .on(
