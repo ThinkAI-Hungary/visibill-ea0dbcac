@@ -35,6 +35,7 @@ interface RawInvoice {
 interface RawSalary {
   dátum: string | null;
   összeg: number;
+  transaction_id: string | null;
 }
 
 interface VatCategoryData {
