@@ -123,6 +123,9 @@ export default function SalariesPage() {
   const { dateFrom, dateTo } = useDateRange();
   const queryClient = useQueryClient();
 
+  // Realtime invalidation for back-to-back status updates
+  useRealtimeInvalidation(selectedCompany?.id);
+
   // "KP kifizetés" modal
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addForm, setAddForm] = useState({
@@ -161,37 +164,8 @@ export default function SalariesPage() {
     enabled: !!user && !!selectedCompany?.id,
   });
 
-  // Fetch matched salary IDs and their transaction dates from transactions table
-  const { data: salaryMatchData = new Map<string, string>() } = useQuery({
-    queryKey: ['salary-matched-ids', selectedCompany?.id || '', dateFromStr, dateToStr],
-    queryFn: async () => {
-      const salaryIds = salaryItems.map(s => s.id);
-      if (salaryIds.length === 0) return new Map<string, string>();
-
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('matched_invoice_id, transaction_date')
-        .eq('company_id', selectedCompany!.id)
-        .in('matched_invoice_id', salaryIds);
-
-      if (error) throw error;
-      const map = new Map<string, string>();
-      (data || []).forEach(t => {
-        if (t.matched_invoice_id) {
-          map.set(t.matched_invoice_id, t.transaction_date);
-        }
-      });
-      return map;
-    },
-    enabled: !!user && !!selectedCompany?.id && salaryItems.length > 0,
-  });
-
-  // Derive the Set for status checks
-  const matchedSalaryIds = useMemo(() => new Set(salaryMatchData.keys()), [salaryMatchData]);
-
   const invalidateSalaries = () => {
     queryClient.invalidateQueries({ queryKey: ['salaries', selectedCompany?.id] });
-    queryClient.invalidateQueries({ queryKey: ['salary-matched-ids', selectedCompany?.id] });
   };
 
   // ---------- Grouped data ----------
