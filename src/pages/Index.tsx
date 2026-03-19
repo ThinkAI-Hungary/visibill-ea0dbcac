@@ -272,7 +272,7 @@ const Index = () => {
 
     const { data: navInvoices } = await supabase
       .from("nav_invoices")
-      .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, paid, currency")
+      .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, transaction_id, currency")
       .eq("company_id", selectedCompany?.id)
       .gte("invoice_issue_date", yearStart)
       .lte("invoice_issue_date", yearEnd);
