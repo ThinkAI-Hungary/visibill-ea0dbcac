@@ -102,4 +102,16 @@ export const queryKeys = {
   // ── Exchange Rates Page ──
   exchangeRatesPage: (base: string) =>
     ['exchangeRatesPage', base] as const,
+
+  // ── Kintlevő ──
+  kintlevoNav: (companyId: string) =>
+    ['kintlevo-nav', companyId] as const,
+  kintlevoManual: (companyId: string) =>
+    ['kintlevo-manual', companyId] as const,
+  dunningSends: (companyId: string) =>
+    ['dunning-sends', companyId] as const,
+
+  // ── Integrations ──
+  syncLogs: (companyId: string) =>
+    ['syncLogs', companyId] as const,
 };
