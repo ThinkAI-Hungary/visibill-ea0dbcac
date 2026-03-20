@@ -1,48 +1,46 @@
 
 
-# Feltöltési előzmény azonnali megjelenítése a toast-tal egyidőben
+# Bérek oldal - Dinamikus periódus-megjelenítés
 
-## Probléma
-A `setUploadRefreshKey` megváltoztatja a query key-t, ami új fetch-et indít, de ez aszinkron — a toast azonnal megjelenik, a lista viszont csak a fetch visszatérése után frissül (néhány száz ms késéssel).
+## Mi változik
 
-## Megoldás: Optimisztikus frissítés
-A sikeres DB insert után az upload rekord adatai már rendelkezésre állnak lokálisan. Ahelyett, hogy megvárnánk a refetch-et, **optimisztikusan hozzáadjuk az új rekordot a meglévő query cache-hez** a `queryClient.setQueryData` segítségével — így a lista azonnal frissül a toast-tal egy időben.
+Az adatszűrés már most is a DateRangeContext alapján történik (`useSalaryData` hook), tehát az összesítés és a dolgozói bontás automatikusan a kiválasztott időszakra vonatkozik. A fő változás a **fejlécek dinamikus szövege** és a **periódus-kontextus megjelenítése**.
 
-## Érintett fájl
-`src/pages/ManualUpload.tsx`
+## Érintett fájlok
 
-## Lépések
+### 1. `src/pages/SalariesPage.tsx`
+- Importálni `useDateRange`-et a DateRangeContext-ből
+- Kiszámítani, hogy a kiválasztott dátumtartomány egyetlen hónapra esik-e (`isSingleMonth`)
+- Formázott periódus-stringet előállítani (pl. "2026. jan." vs "2026. jan. 1. – 2026. feb. 28.")
+- Átadni `isSingleMonth` és `periodLabel` propokat a `NavSummaryTable` és `EmployeeAccordion` komponenseknek
 
-### 1. Segédfüggvény: optimisztikus upload cache frissítés
-Létrehozunk egy `addToUploadHistoryCache` függvényt, ami:
-- A `queryClient.getQueriesData` segítségével megkeresi az aktív `uploadHistory` query-t
-- `queryClient.setQueryData`-val az új rekordot a `records` tömb elejére szúrja
-- Ez **szinkron** — azonnal frissíti a UI-t
+### 2. `src/components/salaries/NavSummaryTable.tsx`
+- Új propok: `isSingleMonth: boolean`, `periodLabel: string`
+- Fejléc logika:
+  - Ha `isSingleMonth` → "Havi bérösszesítő (NAV utalások)"
+  - Ha nem → "Bérösszesítő (NAV utalások) a következő periódusra: {periodLabel}"
 
-### 2. Minden handler-ben: toast + optimistic update egyszerre
-A sikeres feltöltés után (ahol a DB insert már visszatért az `uploadRecord`-dal):
-1. Összeállítjuk az `UploadRecord` objektumot a kapott adatokból
-2. Meghívjuk `addToUploadHistoryCache(newRecord)`-ot
-3. Megjelenítjük a toast-ot
-4. A `setUploadRefreshKey` + `delayedUploadHistoryInvalidation` továbbra is megmarad háttér-biztonsági hálóként (a feldolgozási státusz frissüléséhez)
+### 3. `src/components/salaries/EmployeeAccordion.tsx`
+- Új propok: `isSingleMonth: boolean`, `periodLabel: string`
+- Fejléc logika:
+  - Ha `isSingleMonth` → "Dolgozói bontás (X fő)"
+  - Ha nem → "Dolgozói bontás (X fő) — {periodLabel}"
 
-### Technikai részletek
+### 4. `src/components/salaries/SalaryKpiCards.tsx`
+- Nincs változtatás szükséges — a KPI-k már a szűrt `salaryItems` alapján számolódnak a `useSalaryData` hook-ban, tehát automatikusan a kiválasztott periódusra vonatkoznak.
+
+## Technikai részletek
+
 ```text
-Jelenlegi folyamat:
-  DB insert → toast (azonnali) → setRefreshKey → fetch (aszinkron, ~200-500ms) → UI frissül
-
-Új folyamat:
-  DB insert → setQueryData (szinkron) + toast (azonnali) → UI frissül AZONNAL
-            → setRefreshKey + delayed invalidation (háttérben, státusz frissítéshez)
+Periódus-detekció logika (SalariesPage-ben):
+  const { dateFrom, dateTo } = useDateRange();
+  const isSingleMonth = dateFrom.getFullYear() === dateTo.getFullYear() 
+                      && dateFrom.getMonth() === dateTo.getMonth();
+  
+  const periodLabel = isSingleMonth
+    ? format(dateFrom, 'yyyy. MMM', { locale: hu })
+    : `${format(dateFrom, 'yyyy. MMM d.', { locale: hu })} – ${format(dateTo, 'yyyy. MMM d.', { locale: hu })}`;
 ```
 
-A `setQueryData` hívás formátuma:
-```ts
-queryClient.setQueriesData(
-  { queryKey: ['uploadHistory'] },
-  (old) => old ? { ...old, records: [newRecord, ...old.records] } : old
-);
-```
-
-Ez mind a 4 handler-re (invoice, bank, salary, transaction) alkalmazandó.
+A dolgozói összesítés (employee grouping by `munkavallalo_neve`) már most is cross-month összesítést csinál — ha Jan-ban A,B,C van és Feb-ban A,B,C,D, a hook egyetlen csoportba gyűjti A, B, C tételeit mindkét hónapból, és D-t külön. Ez nem igényel változtatást.
 
