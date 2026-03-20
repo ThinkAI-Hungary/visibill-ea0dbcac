@@ -710,7 +710,7 @@ const InvoicesPage = () => {
                   <UnifiedPagination
                     currentPage={submittedCurrentPage}
                     totalPages={submittedTotalPages}
-                    totalItems={filteredAndSortedSubmittedInvoices.length}
+                    totalItems={submittedTotalCount}
                     pageSize={submittedPageSize}
                     onPageChange={setSubmittedCurrentPage}
                     onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}
