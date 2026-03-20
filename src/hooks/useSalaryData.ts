@@ -40,19 +40,48 @@ export function useSalaryData() {
     queryClient.invalidateQueries({ queryKey: ['salaries', selectedCompany?.id] });
   };
 
+  const aggregateItems = (items: SalaryItem[]): SalaryItem[] => {
+    const map = new Map<string, SalaryItem>();
+    items.forEach((item) => {
+      const key = `${item.név}|${item.tipus}`;
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, { ...item });
+      } else {
+        existing.összeg = Number(existing.összeg) + Number(item.összeg);
+        if (!isSalaryItemPaid(existing) && isSalaryItemPaid(item)) {
+          existing.statusz = item.statusz;
+          existing.fizetesi_mod = item.fizetesi_mod;
+        }
+        if (item.transaction_id && !existing.transaction_id) {
+          existing.transaction_id = item.transaction_id;
+        }
+        if (item.kifizetes_ideje && (!existing.kifizetes_ideje || item.kifizetes_ideje > existing.kifizetes_ideje)) {
+          existing.kifizetes_ideje = item.kifizetes_ideje;
+        }
+        if (item.dátum && (!existing.dátum || item.dátum > existing.dátum)) {
+          existing.dátum = item.dátum;
+        }
+      }
+    });
+    return Array.from(map.values());
+  };
+
   const { employeeGroups, navItems } = useMemo(() => {
     const groups: Record<string, SalaryItem[]> = {};
-    const nav: SalaryItem[] = [];
+    const navRaw: SalaryItem[] = [];
     salaryItems.forEach((item) => {
       if (item.munkavallalo_neve) {
         if (!groups[item.munkavallalo_neve]) groups[item.munkavallalo_neve] = [];
         groups[item.munkavallalo_neve].push(item);
       } else {
-        nav.push(item);
+        navRaw.push(item);
       }
     });
-    const sortedGroups = Object.entries(groups).sort(([a], [b]) => a.localeCompare(b, 'hu'));
-    return { employeeGroups: sortedGroups, navItems: nav };
+    const sortedGroups: [string, SalaryItem[]][] = Object.entries(groups)
+      .map(([name, items]) => [name, aggregateItems(items)] as [string, SalaryItem[]])
+      .sort(([a], [b]) => a.localeCompare(b, 'hu'));
+    return { employeeGroups: sortedGroups, navItems: aggregateItems(navRaw) };
   }, [salaryItems]);
 
   const metrics = useMemo(() => {
