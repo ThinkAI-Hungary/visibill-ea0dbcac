@@ -639,7 +639,7 @@ const InvoicesPage = () => {
       // Clear selection after sync
       setSelectedInvoiceIds(new Set());
 
-      fetchInvoiceData();
+      invalidateInvoiceData();
 
     } catch (error: any) {
       console.error('Sync error:', error);
