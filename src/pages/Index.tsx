@@ -745,8 +745,7 @@ const Index = () => {
     await signOut();
   };
 
-  // Debug logging
-  console.log('Index render - companyLoading:', companyLoading, 'companies:', companies.length, 'metricsLoading:', metricsLoading);
+  // Loading state check
 
   // Handle onboarding complete - trigger product tour
   const handleOnboardingComplete = () => {
