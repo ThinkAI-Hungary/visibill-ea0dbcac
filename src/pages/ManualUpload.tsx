@@ -34,6 +34,24 @@ const ManualUpload = () => {
     }, 800);
   }, [queryClient]);
 
+  const addToUploadHistoryCache = useCallback((newRecord: {
+    id: string;
+    file_name: string;
+    file_size: number;
+    file_type: string;
+    file_url: string;
+    user_id: string;
+    upload_status: string;
+    processing_status: string;
+    created_at: string;
+    error_message: string | null;
+  }) => {
+    queryClient.setQueriesData(
+      { queryKey: ['uploadHistory'] },
+      (old: any) => old ? { ...old, records: [newRecord, ...old.records] } : old
+    );
+  }, [queryClient]);
+
   const handleInvoiceFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
 
@@ -332,6 +350,18 @@ const ManualUpload = () => {
             }
           }
 
+          addToUploadHistoryCache({
+            id: uploadRecord.id,
+            file_name: file.name,
+            file_size: file.size,
+            file_type: file.type,
+            file_url: fileUrl,
+            user_id: user?.id!,
+            upload_status: 'uploaded',
+            processing_status: 'pending',
+            created_at: new Date().toISOString(),
+            error_message: null,
+          });
           successfulUploads++;
         } catch (fileError) {
           console.error(`Error processing file ${file.name}:`, fileError);
@@ -441,6 +471,22 @@ const ManualUpload = () => {
         }
       }
 
+      // Optimistic update for each uploaded bank file
+      for (const file of selectedBankFiles) {
+        addToUploadHistoryCache({
+          id: crypto.randomUUID(),
+          file_name: file.name,
+          file_size: file.size,
+          file_type: file.type,
+          file_url: '',
+          user_id: user.id,
+          upload_status: 'uploaded',
+          processing_status: 'pending',
+          created_at: new Date().toISOString(),
+          error_message: null,
+        });
+      }
+
       toast({
         title: "Feltöltés sikeres!",
         description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá."
@@ -537,6 +583,22 @@ const ManualUpload = () => {
             console.error(`Webhook trigger error for ${webhookUrl}:`, webhookError);
           }
         }
+      }
+
+      // Optimistic update for each uploaded salary file
+      for (const file of selectedSalaryFiles) {
+        addToUploadHistoryCache({
+          id: crypto.randomUUID(),
+          file_name: file.name,
+          file_size: 0,
+          file_type: '',
+          file_url: '',
+          user_id: user.id,
+          upload_status: 'pending',
+          processing_status: 'pending',
+          created_at: new Date().toISOString(),
+          error_message: null,
+        });
       }
 
       toast({
@@ -662,6 +724,18 @@ const ManualUpload = () => {
           if (triggerError) {
             console.error('Edge function error:', triggerError);
           } else if (triggerData?.success) {
+            addToUploadHistoryCache({
+              id: uploadRecord.id,
+              file_name: file.name,
+              file_size: file.size,
+              file_type: file.type,
+              file_url: urlData.publicUrl,
+              user_id: user.id,
+              upload_status: 'uploaded',
+              processing_status: 'pending',
+              created_at: new Date().toISOString(),
+              error_message: null,
+            });
             successfulUploads++;
           } else {
             console.error('Webhook failed via edge function:', triggerData);
