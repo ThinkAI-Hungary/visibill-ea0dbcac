@@ -42,8 +42,15 @@ export const getTypeBadge = (tipus: string | null) => {
   return { label: tipus || "—", className: "bg-muted text-muted-foreground border-border" };
 };
 
+export function isSalaryItemPaid(item: SalaryItem): boolean {
+  return !!item.transaction_id || item.fizetesi_mod === 'készpénz';
+}
+
 export const getStatusBadge = (item: SalaryItem) => {
-  return getPaymentStatusBadge(item.transaction_id);
+  if (isSalaryItemPaid(item)) {
+    return { label: 'Fizetve', className: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/20' };
+  }
+  return { label: 'Nyitott', className: 'bg-amber-500/15 text-amber-500 border-amber-500/20' };
 };
 
 export const formatPaymentDate = (dateString: string | null) => {

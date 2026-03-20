@@ -7,6 +7,7 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { isSalaryItemPaid } from '@/lib/salary-helpers';
 import type { SalaryItem } from '@/lib/salary-helpers';
 
 export function useSalaryData() {
