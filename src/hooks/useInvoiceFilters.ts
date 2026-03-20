@@ -154,7 +154,7 @@ export function useInvoiceFilters(
       return (data || []) as (SubmittedInvoice & { total_count: number })[];
     },
     enabled: enabled && isSubmittedTab,
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
   });
 
   // Extract paginated data and total counts
