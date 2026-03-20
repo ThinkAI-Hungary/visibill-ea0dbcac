@@ -180,7 +180,7 @@ export default function KintlevoPage() {
   });
 
   const { data: partners = [] } = useQuery({
-    queryKey: ['partners', selectedCompany?.id],
+    queryKey: queryKeys.partners(selectedCompany?.id || ''),
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
