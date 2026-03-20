@@ -309,8 +309,8 @@ const InvoicesPage = () => {
   };
 
   const getResultCount = () => {
-    if (isSubmittedTab) return filteredAndSortedSubmittedInvoices.length;
-    return filteredAndSortedNavInvoices.length;
+    if (isSubmittedTab) return submittedTotalCount;
+    return navTotalCount;
   };
 
   return (
