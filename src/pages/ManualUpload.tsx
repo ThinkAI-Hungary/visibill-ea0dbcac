@@ -26,6 +26,13 @@ const ManualUpload = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { canProcessInvoice, incrementUsage, remainingInvoices } = useSubscription();
+  const queryClient = useQueryClient();
+
+  const delayedUploadHistoryInvalidation = useCallback(() => {
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
+    }, 800);
+  }, [queryClient]);
 
   const handleInvoiceFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
