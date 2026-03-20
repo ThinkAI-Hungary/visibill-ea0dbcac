@@ -279,15 +279,15 @@ const Index = () => {
 
     const { data: salaries } = await supabase
       .from("salary")
-      .select("*")
+      .select("dátum, összeg, statusz, transaction_id")
       .eq("company_id", selectedCompany?.id)
+      .not("transaction_id", "is", null)
       .gte("dátum", yearStart)
       .lte("dátum", yearEnd) as { data: any[] | null };
 
     setRawInvoices(navInvoices || []);
     setRawSalaries(
       (salaries || [])
-        .filter((s: any) => !!s.transaction_id)
         .map((s: any) => ({ dátum: s.dátum, összeg: s.összeg, statusz: s.statusz }))
     );
   };
