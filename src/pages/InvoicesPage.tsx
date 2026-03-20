@@ -410,7 +410,7 @@ const InvoicesPage = () => {
   });
 
   const { data: projects = [] } = useQuery({
-    queryKey: queryKeys.projects(companyId),
+    queryKey: queryKeys.projectsList(companyId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('projects')
