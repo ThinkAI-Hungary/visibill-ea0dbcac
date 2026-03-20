@@ -36,7 +36,7 @@ const Integrations = () => {
   const [activeNavTab, setActiveNavTab] = useState('credentials');
 
   const { data: syncLogs = [], isLoading: logsLoading } = useQuery({
-    queryKey: ['syncLogs', selectedCompany?.id],
+    queryKey: queryKeys.syncLogs(selectedCompany?.id || ''),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('nav_sync_logs')

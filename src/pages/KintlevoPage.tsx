@@ -194,7 +194,7 @@ export default function KintlevoPage() {
   });
 
   const { data: dunningSends = [] } = useQuery({
-    queryKey: ['dunning-sends', selectedCompany?.id],
+    queryKey: queryKeys.dunningSends(selectedCompany?.id || ''),
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
