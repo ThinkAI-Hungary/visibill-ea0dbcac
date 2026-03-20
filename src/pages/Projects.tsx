@@ -442,7 +442,7 @@ const Projects = () => {
                     projectId={editingProject.id}
                     projectName={editingProject.name}
                     companyId={selectedCompany.id}
-                    onAssignmentChange={loadProjects}
+                    onAssignmentChange={() => queryClient.invalidateQueries({ queryKey: queryKeys.projects(selectedCompany?.id || '') })}
                   />
                 )}
 
