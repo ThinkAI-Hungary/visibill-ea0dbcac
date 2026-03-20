@@ -93,7 +93,7 @@ export default function PartnersPage() {
 
   // Fetch partners - company scoped (required)
   const { data: partners, isLoading } = useQuery({
-    queryKey: ["partners", selectedCompany?.id],
+    queryKey: queryKeys.partners(selectedCompany?.id || ''),
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
 
