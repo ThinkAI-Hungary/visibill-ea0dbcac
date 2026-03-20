@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { format } from 'date-fns';
+import { hu } from 'date-fns/locale';
 import { useSalaryData } from '@/hooks/useSalaryData';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,6 +18,13 @@ export default function SalariesPage() {
     salaryItems, loading, employeeGroups, navItems,
     metrics, addMutation, editMutation,
   } = useSalaryData();
+
+  const { dateFrom, dateTo } = useDateRange();
+  const isSingleMonth = dateFrom.getFullYear() === dateTo.getFullYear()
+    && dateFrom.getMonth() === dateTo.getMonth();
+  const periodLabel = isSingleMonth
+    ? format(dateFrom, 'yyyy. MMM', { locale: hu })
+    : `${format(dateFrom, 'yyyy. MMM d.', { locale: hu })} – ${format(dateTo, 'yyyy. MMM d.', { locale: hu })}`;
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -54,10 +64,12 @@ export default function SalariesPage() {
       <EmployeeAccordion
         employeeGroups={employeeGroups}
         onEdit={openEditModal}
+        isSingleMonth={isSingleMonth}
+        periodLabel={periodLabel}
       />
 
       {/* NAV Summary Table */}
-      <NavSummaryTable navItems={navItems} onEdit={openEditModal} />
+      <NavSummaryTable navItems={navItems} onEdit={openEditModal} isSingleMonth={isSingleMonth} periodLabel={periodLabel} />
 
       {/* Empty state */}
       {employeeGroups.length === 0 && navItems.length === 0 && (
