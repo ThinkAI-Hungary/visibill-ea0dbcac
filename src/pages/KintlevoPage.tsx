@@ -148,7 +148,7 @@ export default function KintlevoPage() {
   // ── Queries ────────────────────────────────────────────────────────────────
 
   const { data: navInvoices = [], isLoading: loadingNav } = useQuery({
-    queryKey: ['kintlevo-nav', selectedCompany?.id],
+    queryKey: queryKeys.kintlevoNav(selectedCompany?.id || ''),
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
