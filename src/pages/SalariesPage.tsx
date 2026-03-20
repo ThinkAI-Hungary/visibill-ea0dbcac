@@ -53,7 +53,6 @@ export default function SalariesPage() {
       {/* Employee Accordion */}
       <EmployeeAccordion
         employeeGroups={employeeGroups}
-        allNavPaid={allNavPaid}
         onEdit={openEditModal}
       />
 

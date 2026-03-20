@@ -77,7 +77,7 @@ export function useSalaryData() {
 
   const allNavPaid = useMemo(() => {
     if (navItems.length === 0) return false;
-    return navItems.every((item) => !!item.transaction_id);
+    return navItems.every((item) => isSalaryItemPaid(item));
   }, [navItems]);
 
   const addMutation = useMutation({

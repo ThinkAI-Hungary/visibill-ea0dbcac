@@ -22,7 +22,7 @@ export function EmployeeAccordion({ employeeGroups, onEdit }: Props) {
     items.filter(item => item.tipus === 'bér').reduce((sum, item) => sum + Number(item.összeg), 0);
 
   const getAllPaid = (items: SalaryItem[]) =>
-    allNavPaid || items.every(item => !!item.transaction_id);
+    items.every(item => isSalaryItemPaid(item));
 
   return (
     <Card className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm">
