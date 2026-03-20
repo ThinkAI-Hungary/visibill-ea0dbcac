@@ -72,18 +72,6 @@ export default function Analytics() {
   // Current vs previous period toggle
   const [showCurrentPeriod, setShowCurrentPeriod] = useState(true);
   const [comparisonMonth, setComparisonMonth] = useState(currentMonth > 0 ? currentMonth - 1 : 11);
-  
-  // Current period VAT data
-  const [currentOutboundVatCategories, setCurrentOutboundVatCategories] = useState<VatCategoryData[]>([]);
-  const [currentInboundVatCategories, setCurrentInboundVatCategories] = useState<VatCategoryData[]>([]);
-  const [currentTotalOutboundVat, setCurrentTotalOutboundVat] = useState(0);
-  const [currentTotalInboundVat, setCurrentTotalInboundVat] = useState(0);
-  
-  // Comparison period VAT data
-  const [compOutboundVatCategories, setCompOutboundVatCategories] = useState<VatCategoryData[]>([]);
-  const [compInboundVatCategories, setCompInboundVatCategories] = useState<VatCategoryData[]>([]);
-  const [compTotalOutboundVat, setCompTotalOutboundVat] = useState(0);
-  const [compTotalInboundVat, setCompTotalInboundVat] = useState(0);
 
   const vatChartRef = useRef<HTMLDivElement>(null);
 
