@@ -29,7 +29,16 @@ import KintlevoPage from "./pages/KintlevoPage";
 import PettyCashPage from "./pages/PettyCashPage";
 import ResetPassword from "./pages/ResetPassword";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 min — stable data won't refetch on every mount
+      gcTime: 10 * 60 * 1000,   // 10 min garbage collection
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 function ProtectedPage({ children }: { children: React.ReactNode }) {
   return <ProtectedRoute>{children}</ProtectedRoute>;

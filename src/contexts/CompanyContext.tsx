@@ -42,7 +42,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data, error } = await supabase
         .from('companies')
-        .select('*')
+        .select('id, name, tax_number, address, owner_id, share_token, created_at, updated_at')
         .order('created_at', { ascending: true });
 
       if (error) throw error;

@@ -165,7 +165,7 @@ export const TransactionDetailsDialog = ({
           // Fallback: try salary table
           const { data: salaryData, error: salaryError } = await supabase
             .from('salary')
-            .select('*')
+            .select('id, név, összeg, tipus, fizetesi_mod, statusz, dátum, munkavallalo_neve, megjegyzes, kifizetes_ideje, transaction_id')
             .eq('id', transaction.matched_invoice_id)
             .maybeSingle();
 

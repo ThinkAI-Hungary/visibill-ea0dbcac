@@ -62,7 +62,7 @@ export function InvoiceItemsDialog({
     try {
       const { data, error } = await supabase
         .from('nav_invoice_items')
-        .select('*')
+        .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount')
         .eq('nav_invoice_id', invoiceId)
         .order('line_number', { ascending: true });
 

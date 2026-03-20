@@ -40,7 +40,7 @@ const Integrations = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('nav_sync_logs')
-        .select('*')
+        .select('id, status, sync_type, invoice_direction, invoices_fetched, error_message, started_at, completed_at, duration_ms, date_from, date_to')
         .eq('company_id', selectedCompany!.id)
         .order('started_at', { ascending: false })
         .limit(20);

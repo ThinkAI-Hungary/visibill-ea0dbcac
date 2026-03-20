@@ -71,7 +71,7 @@ const Onboarding = () => {
         // Load existing categories for the company
         const { data: categoryData } = await supabase
           .from('categories')
-          .select('*')
+          .select('id, name, description')
           .eq('company_id', selectedCompany.id)
           .order('created_at', { ascending: true });
 

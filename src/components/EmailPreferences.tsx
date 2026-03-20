@@ -38,7 +38,7 @@ export function EmailPreferences() {
       setLoading(true);
       const { data, error } = await supabase
         .from('user_email_preferences' as any)
-        .select('*')
+        .select('id, user_id, invoice_processed, invoice_failed, weekly_summary, monthly_summary, subscription_warnings')
         .eq('user_id', user.id)
         .maybeSingle();
 
