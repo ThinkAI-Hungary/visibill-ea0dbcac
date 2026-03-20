@@ -72,8 +72,6 @@ interface SalaryItem {
 
 // ---------- Helpers ----------
 
-// Use shared formatCurrency from utils
-import { formatCurrency } from '@/lib/utils';
 
 const formatDate = (dateString: string | null) => {
   if (!dateString) return "—";
