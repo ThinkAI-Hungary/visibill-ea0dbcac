@@ -57,7 +57,7 @@ export function useSalaryData() {
 
   const metrics = useMemo(() => {
     const totalPayments = salaryItems
-      .filter((item) => (item.tipus === 'bér' || item.tipus === 'járulék') && !!item.transaction_id)
+      .filter((item) => (item.tipus === 'bér' || item.tipus === 'járulék') && isSalaryItemPaid(item))
       .reduce((sum, item) => sum + Number(item.összeg), 0);
     const employeeCount = new Set(
       salaryItems.filter((item) => item.munkavallalo_neve).map((item) => item.munkavallalo_neve)
