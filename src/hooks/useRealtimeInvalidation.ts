@@ -77,6 +77,13 @@ export function useRealtimeInvalidation(companyId: string | undefined) {
       )
       .on(
         'postgres_changes',
+        { event: '*', schema: 'public', table: 'partners', filter: `company_id=eq.${companyId}` },
+        () => {
+          invalidateAll(['partners', 'kintlevo-nav', 'kintlevo-manual']);
+        }
+      )
+      .on(
+        'postgres_changes',
         { event: '*', schema: 'public', table: 'invoice_uploads', filter: `company_id=eq.${companyId}` },
         () => {
           invalidateAll(['uploadHistory']);
