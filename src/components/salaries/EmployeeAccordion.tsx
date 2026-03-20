@@ -10,6 +10,8 @@ import type { SalaryItem } from '@/lib/salary-helpers';
 interface Props {
   employeeGroups: [string, SalaryItem[]][];
   onEdit: (item: SalaryItem) => void;
+  isSingleMonth: boolean;
+  periodLabel: string;
 }
 
 export function EmployeeAccordion({ employeeGroups, onEdit }: Props) {
