@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queryKeys";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -201,36 +203,32 @@ function CompanyAccessCard({ companyId, toast }: { companyId: string; toast: any
 
 // --- Company Members Card ---
 function CompanyMembersCard({ companyId, ownerId, isOwner, toast }: { companyId: string; ownerId: string; isOwner: boolean; toast: any }) {
-  const [members, setMembers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const fetchMembers = async () => {
-    setLoading(true);
-    const { data } = await supabase
-      .from('company_members')
-      .select('id, user_id, created_at')
-      .eq('company_id', companyId);
+  const { data: members = [], isLoading: loading } = useQuery({
+    queryKey: queryKeys.settingsMembers(companyId),
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('company_members')
+        .select('id, user_id, created_at')
+        .eq('company_id', companyId);
 
-    if (data && data.length > 0) {
-      // Fetch profiles for each member
-      const userIds = data.map(m => m.user_id);
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, name')
-        .in('user_id', userIds);
+      if (data && data.length > 0) {
+        const userIds = data.map(m => m.user_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', userIds);
 
-      const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
-      setMembers(data.map(m => ({
-        ...m,
-        profile: profileMap.get(m.user_id) || null,
-      })));
-    } else {
-      setMembers([]);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchMembers(); }, [companyId]);
+        const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+        return data.map(m => ({
+          ...m,
+          profile: profileMap.get(m.user_id) || null,
+        }));
+      }
+      return [];
+    },
+  });
 
   const removeMember = async (memberId: string, userId: string) => {
     if (userId === ownerId) return;
@@ -243,7 +241,7 @@ function CompanyMembersCard({ companyId, ownerId, isOwner, toast }: { companyId:
       toast({ title: "Hiba", description: "Nem sikerült a tag eltávolítása.", variant: "destructive" });
     } else {
       toast({ title: "Siker", description: "Tag eltávolítva." });
-      fetchMembers();
+      queryClient.invalidateQueries({ queryKey: queryKeys.settingsMembers(companyId) });
     }
   };
 

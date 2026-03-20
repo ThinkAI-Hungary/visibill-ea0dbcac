@@ -174,15 +174,7 @@ const InvoicesPage = () => {
   const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const queryClient = useQueryClient();
   useRealtimeInvalidation(selectedCompany?.id);
-  const [invoices, setInvoices] = useState<NavInvoice[]>([]);
-  const [submittedInvoices, setSubmittedInvoices] = useState<SubmittedInvoice[]>([]);
-  const [linkedInvoicesPool, setLinkedInvoicesPool] = useState<SubmittedInvoice[]>([]);
-  const [allTransactions, setAllTransactions] = useState<TransactionRecord[]>([]);
-  const [partners, setPartners] = useState<Partner[]>([]);
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<InvoiceTab>('OUTBOUND');
   const [sortField, setSortField] = useState<string>('invoice_issue_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -276,7 +268,7 @@ const InvoicesPage = () => {
   // Row selection state for recategorization
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
   const [selectedSubmittedIds, setSelectedSubmittedIds] = useState<Set<string>>(new Set());
-  const [matchedInvoiceIds, setMatchedInvoiceIds] = useState<Set<string>>(new Set());
+  
 
 
   const [navFilters, setNavFilters] = useState<NavFilters>({
@@ -304,43 +296,162 @@ const InvoicesPage = () => {
     project: 'all'
   });
 
-  useEffect(() => {
-    fetchInvoiceData();
-  }, [user, selectedCompany, dateFrom, dateTo]);
+  // ── useQuery hooks replacing fetchInvoiceData ──
+  const companyId = selectedCompany?.id || '';
+  const enabled = !!user && !!selectedCompany;
 
-  // Invalidation helper — triggers refetch of invoice data
+  const { data: invoices = [], isLoading: navLoading } = useQuery({
+    queryKey: queryKeys.navInvoices(companyId, dateFromFormatted, dateToFormatted),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('nav_invoices')
+        .select('*')
+        .eq('company_id', companyId)
+        .gte('invoice_issue_date', dateFromFormatted)
+        .lte('invoice_issue_date', dateToFormatted)
+        .order('invoice_issue_date', { ascending: false });
+      if (error) throw error;
+      return (data || []) as NavInvoice[];
+    },
+    enabled,
+  });
+
+  const { data: submittedInvoices = [], isLoading: submittedLoading } = useQuery({
+    queryKey: queryKeys.submittedInvoices(companyId, dateFromFormatted, dateToFormatted),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number')
+        .eq('company_id', companyId)
+        .gte('kibocsatas_datuma', dateFromFormatted)
+        .lte('kibocsatas_datuma', dateToFormatted)
+        .order('kibocsatas_datuma', { ascending: false });
+      if (error) throw error;
+      return (data || []) as SubmittedInvoice[];
+    },
+    enabled,
+  });
+
+  const { data: linkedInvoicesPool = [] } = useQuery({
+    queryKey: queryKeys.linkedInvoices(companyId, dateFromFormatted, dateToFormatted),
+    queryFn: async () => {
+      const submittedList = submittedInvoices;
+      const knownIds = new Set(submittedList.map(inv => inv.id));
+      const allExtra: SubmittedInvoice[] = [];
+
+      let pendingBizonylat = new Set(
+        submittedList.map(inv => inv.bizonylatsorszam).filter(Boolean) as string[]
+      );
+      let pendingReference = new Set(
+        submittedList.map(inv => inv.reference_number).filter(Boolean) as string[]
+      );
+      const queriedBizonylat = new Set<string>();
+      const queriedReference = new Set<string>();
+
+      for (let depth = 0; depth < 20; depth++) {
+        const newBiz = [...pendingBizonylat].filter(k => !queriedBizonylat.has(k));
+        const newRef = [...pendingReference].filter(k => !queriedReference.has(k));
+        if (newBiz.length === 0 && newRef.length === 0) break;
+
+        newBiz.forEach(k => queriedBizonylat.add(k));
+        newRef.forEach(k => queriedReference.add(k));
+
+        const orParts: string[] = [];
+        if (newBiz.length > 0) orParts.push(`reference_number.in.(${newBiz.join(',')})`);
+        if (newRef.length > 0) orParts.push(`bizonylatsorszam.in.(${newRef.join(',')})`);
+
+        const { data: linkedData } = await supabase
+          .from('invoices')
+          .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number')
+          .eq('company_id', companyId)
+          .or(orParts.join(','));
+
+        const newInvoices = (linkedData || []).filter(inv => !knownIds.has(inv.id));
+        if (newInvoices.length === 0) break;
+
+        pendingBizonylat = new Set<string>();
+        pendingReference = new Set<string>();
+        for (const inv of newInvoices) {
+          knownIds.add(inv.id);
+          allExtra.push(inv as SubmittedInvoice);
+          if (inv.bizonylatsorszam) pendingBizonylat.add(inv.bizonylatsorszam);
+          if (inv.reference_number) pendingReference.add(inv.reference_number);
+        }
+      }
+      return allExtra;
+    },
+    enabled: enabled && submittedInvoices.length >= 0 && !submittedLoading,
+  });
+
+  const { data: partners = [] } = useQuery({
+    queryKey: queryKeys.partners(companyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('partners')
+        .select('tax_number, name')
+        .eq('company_id', companyId);
+      if (error) throw error;
+      return (data || []) as Partner[];
+    },
+    enabled,
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: queryKeys.categories(companyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('company_id', companyId);
+      if (error) throw error;
+      return (data || []) as Category[];
+    },
+    enabled,
+  });
+
+  const { data: projects = [] } = useQuery({
+    queryKey: queryKeys.projects(companyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id, name')
+        .eq('company_id', companyId);
+      if (error) throw error;
+      return (data || []) as Project[];
+    },
+    enabled,
+  });
+
+  const { data: allTransactions = [], isLoading: txLoading } = useQuery({
+    queryKey: queryKeys.invoiceTransactions(companyId),
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('transactions')
+        .select('id, matched_invoice_id, transaction_date, amount, description, currency, type')
+        .eq('company_id', companyId)
+        .not('matched_invoice_id', 'is', null);
+      return (data || []) as TransactionRecord[];
+    },
+    enabled,
+  });
+
+  const matchedInvoiceIds = useMemo(
+    () => new Set(allTransactions.map(t => t.matched_invoice_id).filter(Boolean)),
+    [allTransactions]
+  );
+
+  const loading = navLoading || submittedLoading || txLoading;
+
+  // Invalidation helper — triggers refetch of all invoice queries
   const invalidateInvoiceData = () => {
-    fetchInvoiceData();
+    queryClient.invalidateQueries({ queryKey: ['navInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['submittedInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['linkedInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['partners', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['categories', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['projects', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['invoiceTransactions', companyId] });
   };
-
-  // Real-time subscription for invoices
-  useEffect(() => {
-    if (!selectedCompany) return;
-
-    const channel = supabase
-      .channel(`invoices-realtime-${selectedCompany.id}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'invoices',
-        filter: `company_id=eq.${selectedCompany.id}`
-      }, () => {
-        invalidateInvoiceData();
-      })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'nav_invoices',
-        filter: `company_id=eq.${selectedCompany.id}`
-      }, () => {
-        invalidateInvoiceData();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [selectedCompany?.id]);
 
   // Reset pagination, selection, and expanded row when company changes
   useEffect(() => {
@@ -528,144 +639,13 @@ const InvoicesPage = () => {
       // Clear selection after sync
       setSelectedInvoiceIds(new Set());
 
-      fetchInvoiceData();
+      invalidateInvoiceData();
 
     } catch (error: any) {
       console.error('Sync error:', error);
       toast.error(error.message || 'Nem sikerült szinkronizálni a számlákat');
     } finally {
       setSyncing(false);
-    }
-  };
-
-  const fetchInvoiceData = async () => {
-    if (!user || !selectedCompany) return;
-
-    setLoading(true);
-    try {
-      const queryDateFrom = dateFromFormatted;
-      const queryDateTo = dateToFormatted;
-
-      // Fetch NAV invoices with date filtering
-      let navQuery = supabase
-        .from('nav_invoices')
-        .select('*')
-        .eq('company_id', selectedCompany.id)
-        .gte('invoice_issue_date', queryDateFrom)
-        .lte('invoice_issue_date', queryDateTo);
-
-      const { data: invoicesData, error: invoicesError } = await navQuery
-        .order('invoice_issue_date', { ascending: false });
-
-      if (invoicesError) throw invoicesError;
-      setInvoices(invoicesData || []);
-
-      // Fetch submitted invoices with global date filtering
-      let submittedQuery = supabase
-        .from('invoices')
-        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number')
-        .eq('company_id', selectedCompany.id)
-        .gte('kibocsatas_datuma', dateFromFormatted)
-        .lte('kibocsatas_datuma', dateToFormatted);
-
-      const { data: submittedData, error: submittedError } = await submittedQuery
-        .order('kibocsatas_datuma', { ascending: false });
-
-      if (submittedError) throw submittedError;
-      setSubmittedInvoices(submittedData || []);
-
-      // Fetch linked invoices outside the date range (recursive to resolve full chain)
-      const submittedList = submittedData || [];
-      const knownIds = new Set(submittedList.map(inv => inv.id));
-      const allExtra: SubmittedInvoice[] = [];
-      
-      let pendingBizonylat = new Set(
-        submittedList.map(inv => inv.bizonylatsorszam).filter(Boolean) as string[]
-      );
-      let pendingReference = new Set(
-        submittedList.map(inv => inv.reference_number).filter(Boolean) as string[]
-      );
-      const queriedBizonylat = new Set<string>();
-      const queriedReference = new Set<string>();
-
-      for (let depth = 0; depth < 20; depth++) {
-        const newBiz = [...pendingBizonylat].filter(k => !queriedBizonylat.has(k));
-        const newRef = [...pendingReference].filter(k => !queriedReference.has(k));
-        if (newBiz.length === 0 && newRef.length === 0) break;
-
-        newBiz.forEach(k => queriedBizonylat.add(k));
-        newRef.forEach(k => queriedReference.add(k));
-
-        const orParts: string[] = [];
-        if (newBiz.length > 0) orParts.push(`reference_number.in.(${newBiz.join(',')})`);
-        if (newRef.length > 0) orParts.push(`bizonylatsorszam.in.(${newRef.join(',')})`);
-
-        const { data: linkedData } = await supabase
-          .from('invoices')
-          .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number')
-          .eq('company_id', selectedCompany.id)
-          .or(orParts.join(','));
-
-        const newInvoices = (linkedData || []).filter(inv => !knownIds.has(inv.id));
-        if (newInvoices.length === 0) break;
-
-        pendingBizonylat = new Set<string>();
-        pendingReference = new Set<string>();
-        for (const inv of newInvoices) {
-          knownIds.add(inv.id);
-          allExtra.push(inv as SubmittedInvoice);
-          if (inv.bizonylatsorszam) pendingBizonylat.add(inv.bizonylatsorszam);
-          if (inv.reference_number) pendingReference.add(inv.reference_number);
-        }
-      }
-
-      setLinkedInvoicesPool(allExtra);
-
-      // Fetch partners for name lookup
-      const { data: partnersData, error: partnersError } = await supabase
-        .from('partners')
-        .select('tax_number, name')
-        .eq('company_id', selectedCompany.id);
-
-      if (partnersError) throw partnersError;
-      setPartners(partnersData || []);
-
-      // Fetch categories
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
-        .select('id, name')
-        .eq('company_id', selectedCompany.id);
-
-      if (categoriesError) throw categoriesError;
-      setCategories(categoriesData || []);
-
-      // Fetch projects
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('projects')
-        .select('id, name')
-        .eq('company_id', selectedCompany.id);
-
-      if (projectsError) throw projectsError;
-      setProjects(projectsData || []);
-
-      // Fetch matched transactions
-      const { data: matchedData } = await supabase
-        .from('transactions')
-        .select('id, matched_invoice_id, transaction_date, amount, description, currency, type')
-        .eq('company_id', selectedCompany.id)
-        .not('matched_invoice_id', 'is', null);
-
-      const txData = (matchedData || []) as TransactionRecord[];
-      setAllTransactions(txData);
-
-      const matchedInvoiceIdsSet = new Set(txData.map(t => t.matched_invoice_id).filter(Boolean));
-      setMatchedInvoiceIds(matchedInvoiceIdsSet);
-
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('Hiba az adatok betöltésekor');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -1142,9 +1122,7 @@ const InvoicesPage = () => {
 
       if (error) throw error;
 
-      setInvoices(prev => prev.map(inv =>
-        inv.id === invoiceId ? { ...inv, project_id: projectId === 'none' ? null : projectId } : inv
-      ));
+      invalidateInvoiceData();
       toast.success('Projekt hozzárendelve');
     } catch (error) {
       console.error('Error updating project:', error);
@@ -1161,9 +1139,7 @@ const InvoicesPage = () => {
 
       if (error) throw error;
 
-      setInvoices(prev => prev.map(inv =>
-        inv.id === invoiceId ? { ...inv, category_id: categoryId === 'none' ? null : categoryId } : inv
-      ));
+      invalidateInvoiceData();
       toast.success('Kategória hozzárendelve');
     } catch (error) {
       console.error('Error updating category:', error);
@@ -1195,9 +1171,7 @@ const InvoicesPage = () => {
 
       if (error) throw error;
 
-      setInvoices(prev => prev.map(inv =>
-        inv.id === invoice.id ? { ...inv, submitted: newValue } : inv
-      ));
+      invalidateInvoiceData();
       toast.success(newValue ? 'Beküldve megjelölve' : 'Beküldve visszavonva');
     } catch (error) {
       console.error('Error updating submitted status:', error);
@@ -1310,7 +1284,7 @@ const InvoicesPage = () => {
   };
 
   const handleEditSave = () => {
-    fetchInvoiceData();
+    invalidateInvoiceData();
   };
 
   const getResultCount = () => {
