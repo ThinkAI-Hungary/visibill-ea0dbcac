@@ -132,6 +132,7 @@ export default function KintlevoPage() {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
+  useRealtimeInvalidation(selectedCompany?.id);
 
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());

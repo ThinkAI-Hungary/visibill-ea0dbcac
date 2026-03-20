@@ -754,7 +754,7 @@ const Index = () => {
 
   // Show empty state dashboard when no companies exist (check FIRST before any loading states)
   if (!companyLoading && companies.length === 0) {
-    console.log('Showing EmptyStateDashboard');
+    return <EmptyStateDashboard onOnboardingComplete={handleOnboardingComplete} />;
     return <EmptyStateDashboard onOnboardingComplete={handleOnboardingComplete} />;
   }
 
