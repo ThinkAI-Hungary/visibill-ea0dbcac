@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { formatCurrency } from '@/lib/utils';
 import { Edit, User } from 'lucide-react';
-import { getTypeBadge, getStatusBadge } from '@/lib/salary-helpers';
+import { getTypeBadge, getStatusBadge, isSalaryItemPaid } from '@/lib/salary-helpers';
 import type { SalaryItem } from '@/lib/salary-helpers';
 
 interface Props {
