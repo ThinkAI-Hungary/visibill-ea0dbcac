@@ -1,53 +1,71 @@
 
-# VisiBI11 — Skálázási optimalizáció terv
 
-## Elvégzett fázisok
+# Bérek/járulékok — Inkonzisztencia audit és javítási terv
 
-### ✅ 1. fázis — QueryClient konfiguráció
-- `staleTime: 5 * 60 * 1000`, `gcTime: 10 * 60 * 1000`, `refetchOnWindowFocus: false`, `retry: 1`
+## Talált problémák
 
-### ✅ 2. fázis — select('*') eltávolítása (12 fájl)
-- CompanyContext, Projects, Integrations, SubscriptionContext, EmailAliasManager, InvoiceDetailPopup, EmailPreferences, PettyCashPage, Onboarding, Index, InvoiceItemsDialog, TransactionDetailsDialog
+### 1. „Összes kifizetés" KPI kártya — hibás logika
+**Jelenlegi viselkedés** (`useSalaryData.ts`, 58-60. sor):
+```typescript
+const totalPayments = salaryItems
+  .filter((item) => (item.tipus === 'bér' || item.tipus === 'járulék') && !!item.transaction_id)
+  .reduce((sum, item) => sum + Number(item.összeg), 0);
+```
+Ez **csak** a `transaction_id`-vel rendelkező bér+járulék tételeket összegzi. Az adatbázisban a tételek `statusz` mezője „Függő", és csak 2-nek van `transaction_id`. A készpénzes kifizetéseknél (`fizetesi_mod: 'készpénz'`) viszont nincs `transaction_id`, de a `statusz` „Kifizetve" — ezek **kimaradnak** a KPI-ból.
 
-### ✅ 3. fázis — PettyCash RPC aggregáció
-- `get_petty_cash_balance(p_company_id)` RPC létrehozva
-- Index.tsx dashboardPettyCash: 5 query → 1 RPC hívás
+**Kért logika**: Csak azokat a tételeket számoljuk, amelyek **ténylegesen ki vannak fizetve** — vagyis amelyeknek VAN `transaction_id` (banki párosítás) VAGY `fizetesi_mod` = 'készpénz' (készpénzes kifizetés, ami definíció szerint fizetve).
 
-### ✅ 4. fázis — queryKeys + realtime
-- KintlevoPage: 4 inline key → queryKeys factory
-- Integrations: syncLogs → queryKeys factory
-- PartnersPage: queryKeys factory + useRealtimeInvalidation + select('*') eltávolítás
-- useRealtimeInvalidation: partners tábla hozzáadva
+### 2. `matched_invoice_id` vs `transaction_id` — architekturális tisztázás
 
-### ✅ 5. fázis — InvoicesPage server-side szűrés
-- `get_filtered_nav_invoices()` RPC létrehozva (szűrés + rendezés + paginálás SQL-ben)
-- `get_filtered_submitted_invoices()` RPC létrehozva
-- Indexek hozzáadva: `idx_nav_invoices_company_direction_date`, `idx_invoices_company_direction_date`
-- `useInvoiceFilters` átírva server-side módra (useDeferredValue debounce)
-- `useInvoiceData` egyszerűsítve: bulk NAV fetch eltávolítva
-- Nincs többé 1000 soros Supabase limit probléma
+A **`salary` tábla** NEM tartalmaz `matched_invoice_id` oszlopot — ez helyes, ez a `transactions` tábla mezője.
 
-### ✅ 6. fázis — Nagy fájlok szétbontása
+Az adatfolyam:
+- `transactions.matched_invoice_id` → mutat egy `salary.id`-re (vagy `invoices.id`-re, vagy `nav_invoices.id`-re)
+- Amikor egy tranzakció párosítódik, a `mark_nav_invoice_paid_on_transaction_match` trigger beállítja a `salary.transaction_id = transactions.id` értéket
+- Tehát `salary.transaction_id` IS NOT NULL = fizetve (banki úton)
 
-#### ✅ 6.0 — Helper és hook fájlok létrehozva
-- `src/lib/kintlevo-helpers.ts` — típusok + segédfüggvények
-- `src/hooks/useKintlevoData.ts` — adatlekérés + feldolgozás hook
-- `src/lib/salary-helpers.ts` — típusok + segédfüggvények
-- `src/hooks/useSalaryData.ts` — adatlekérés + mutációk hook
+Ez az architektúra **konzisztens** az app többi részével (invoices, nav_invoices). Nincs inkonzisztencia a két mező között — más-más táblákon vannak, és a trigger gondoskodik a szinkronizációról.
 
-#### ✅ 6b. KintlevoPage.tsx átírása (778 → ~75 sor)
-- `src/components/kintlevo/KintlevoSummaryCards.tsx` — 4 összesítő kártya
-- `src/components/kintlevo/KintlevoCompanyTable.tsx` — cégcsoportos tábla
-- `src/components/kintlevo/DunningDialog.tsx` — felszólító email dialog
+### 3. Készpénzes kifizetések kezelése — hiányzó logika
 
-#### ✅ 6c. SalariesPage.tsx átírása (817 → ~85 sor)
-- `src/components/salaries/SalaryKpiCards.tsx` — 4 KPI kártya
-- `src/components/salaries/EmployeeAccordion.tsx` — dolgozói bontás
-- `src/components/salaries/NavSummaryTable.tsx` — NAV összesítő
-- `src/components/salaries/SalaryDialogs.tsx` — KP + Edit dialog
+A `addMutation`-ban (`useSalaryData.ts`, 86-91. sor) a KP kifizetés `statusz: 'Kifizetve'` és `fizetesi_mod: 'készpénz'` értékkel kerül be, DE `transaction_id` nélkül. Mivel a KPI kártya kizárólag `transaction_id`-t néz, ezek a ténylegesen kifizetett tételek **nem jelennek meg** az „Összes kifizetés"-ben.
 
-#### ✅ 6a. Settings.tsx szétbontása (1045 → ~250 sor)
-- `src/components/settings/ProfileSection.tsx`
-- `src/components/settings/BusinessSection.tsx`
-- `src/components/settings/SystemSection.tsx`
-- `src/components/settings/SecuritySection.tsx`
+### 4. EmployeeAccordion `getAllPaid` — hibás `allNavPaid` OR logika
+
+```typescript
+const getAllPaid = (items: SalaryItem[]) =>
+  allNavPaid || items.every(item => !!item.transaction_id);
+```
+Ez azt mondja: ha az összes NAV tétel fizetett, AKKOR minden dolgozó is fizetett? Ez logikailag hibás — a NAV tételek fizetési státusza nem határozza meg a dolgozók kifizetési státuszát. Ráadásul a készpénzes fizetéseket itt sem veszi figyelembe.
+
+---
+
+## Javítási terv
+
+### 1. Univerzális `isPaid` segédfüggvény (`salary-helpers.ts`)
+```typescript
+export function isSalaryItemPaid(item: SalaryItem): boolean {
+  return !!item.transaction_id || item.fizetesi_mod === 'készpénz';
+}
+```
+
+### 2. `useSalaryData.ts` — metrics javítás
+- `totalPayments`: `isSalaryItemPaid()` szűrés `transaction_id` helyett
+- `allNavPaid`: szintén `isSalaryItemPaid()`
+
+### 3. `EmployeeAccordion.tsx` — `getAllPaid` javítás
+- Töröljük az `allNavPaid` OR logikát
+- Helyette: `items.every(item => isSalaryItemPaid(item))`
+
+### 4. Globális ellenőrzés eredménye
+Az app többi részén a `transaction_id`-alapú computed status **helyes**:
+- `invoices` és `nav_invoices`: mindig banki párosításon alapul, nincs készpénz-specifikus kérdés
+- `TransactionDetailsDialog`: `matched_invoice_id` a transactions tábláról jön, ez a transactions oldali mező — helyes
+- `useComputedStatus.ts`: univerzális, `transaction_id`-t néz — a salary oldalon kell kiegészíteni a készpénzes logikával
+
+### Érintett fájlok
+1. `src/lib/salary-helpers.ts` — új `isSalaryItemPaid` export
+2. `src/hooks/useSalaryData.ts` — `metrics.totalPayments` + `allNavPaid` javítás
+3. `src/components/salaries/EmployeeAccordion.tsx` — `getAllPaid` javítás, `allNavPaid` prop eltávolítása
+4. `src/pages/SalariesPage.tsx` — `allNavPaid` prop eltávolítása
+
