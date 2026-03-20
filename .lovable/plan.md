@@ -19,10 +19,32 @@
 11. **`ExchangeRates.tsx`** — Teljes TanStack Query migráció (useEffect/useState → useQuery, 1 óra staleTime cache)
 12. **`Integrations.tsx`** — syncLogs useEffect/useState → useQuery (2 perc staleTime cache)
 
+### Fázis 3 — Nagy refaktorok
+13. **`Index.tsx` Dashboard** — Teljes `fetchDashboardData` szétbontás 7 önálló useQuery-re:
+    - `profile` — profil adatok
+    - `tourStatus` — product tour állapot
+    - `categories` — kategóriák
+    - `recentInvoices` — legutóbbi számlák
+    - `dashboardData` (metrics) — `get_invoice_aggregates` RPC
+    - `dashboardAnalytics` (navVatData) — `get_nav_invoice_aggregates` RPC
+    - `dashboardPettyCash` — házipénztár egyenleg (5 párhuzamos query)
+    - `analyticsRaw` — nyers számla + bér adatok a grafikonhoz
+    - `analyticsVat` — ÁFA bontás `nav_invoice_items`-ből
+    → 15+ useState eltávolítva, minden adat a TanStack Query cache-ben
+    → Minden query önállóan töltődik, egy hiba nem blokkolja a többit
+14. **`UploadHistory.tsx`** — TanStack Query migráció + központi realtime:
+    - 3 manuális realtime channel eltávolítva
+    - Egyetlen `useQuery` hívás (records + processedIds + userNames)
+    - `useRealtimeInvalidation` hookra épít
+    - 389 → ~190 sor (51% csökkenés)
+15. **`useRealtimeInvalidation.ts`** — 3 új tábla listener:
+    - `invoice_uploads` → `uploadHistory` invalidáció
+    - `salary_files` → `uploadHistory` invalidáció
+    - `transaction_uploads` → `uploadHistory` invalidáció
+    - Új kulcsok: `recentInvoices`, `dashboardPettyCash`, `uploadHistory`
+
 ## 🔲 Fennmaradó feladatok
 
-### Fázis 3 — Nagy refaktorok (magas kockázat, külön ütemezendő)
-- **`Index.tsx` Dashboard** — `fetchDashboardData` szétbontása 4 önálló useQuery-re (A1/B3). Jelenleg hibrid useState + useQuery minta, 15+ state variable, 200+ soros monolitikus fetch. Túl nagy egy incremental edit-hez, dedikált refaktor szükséges.
-- **`UploadHistory.tsx`** — TanStack Query + központi realtime migráció (3 saját channel eltávolítása)
+### Fázis 4 — Jövőbeli optimalizációk (külön ütemezendő)
 - **`InvoicesPage.tsx`** — linkedInvoices rekurzív query → RPC/recursive CTE (B4)
 - **`InvoicesPage.tsx`** — server-side szűrés/paginálás (B8)
