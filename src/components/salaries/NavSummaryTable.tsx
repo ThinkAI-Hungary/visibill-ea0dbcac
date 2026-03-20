@@ -9,6 +9,8 @@ import type { SalaryItem } from '@/lib/salary-helpers';
 interface Props {
   navItems: SalaryItem[];
   onEdit: (item: SalaryItem) => void;
+  isSingleMonth: boolean;
+  periodLabel: string;
 }
 
 export function NavSummaryTable({ navItems, onEdit }: Props) {
