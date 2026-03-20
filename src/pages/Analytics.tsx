@@ -75,14 +75,6 @@ export default function Analytics() {
 
   const vatChartRef = useRef<HTMLDivElement>(null);
 
-  // Displayed data based on toggle
-  const displayedMonthName = showCurrentPeriod ? currentMonthName : MONTH_NAMES[comparisonMonth];
-  const displayedYear = showCurrentPeriod ? currentYear : selectedYear;
-  const outboundVatCategories = showCurrentPeriod ? currentOutboundVatCategories : compOutboundVatCategories;
-  const inboundVatCategories = showCurrentPeriod ? currentInboundVatCategories : compInboundVatCategories;
-  const totalOutboundVat = showCurrentPeriod ? currentTotalOutboundVat : compTotalOutboundVat;
-  const totalInboundVat = showCurrentPeriod ? currentTotalInboundVat : compTotalInboundVat;
-
   // TanStack Query: fetch raw invoice + salary data
   const { data: rawData, isLoading: rawLoading } = useQuery({
     queryKey: queryKeys.analyticsRaw(selectedCompany?.id || '', dateFromFormatted, dateToFormatted),
@@ -116,30 +108,106 @@ export default function Analytics() {
 
   const rawInvoices = rawData?.invoices || [];
   const rawSalaries = rawData?.salaries || [];
-  const loading = rawLoading;
+
+  // TanStack Query: fetch VAT data for current and comparison months
+  const actualCurrentYear = new Date().getFullYear();
+  const actualCurrentMonth = new Date().getMonth();
+  const currentMonthStart = `${actualCurrentYear}-${String(actualCurrentMonth + 1).padStart(2, '0')}-01`;
+  const currentMonthEnd = `${actualCurrentYear}-${String(actualCurrentMonth + 1).padStart(2, '0')}-31`;
+  const compMonthStart = `${selectedYear}-${String(comparisonMonth + 1).padStart(2, '0')}-01`;
+  const compMonthEnd = `${selectedYear}-${String(comparisonMonth + 1).padStart(2, '0')}-31`;
+
+  const { data: vatData, isLoading: vatLoading } = useQuery({
+    queryKey: queryKeys.analyticsVat(selectedCompany?.id || '', `${currentMonthStart}-${compMonthStart}`, `${currentMonthEnd}-${compMonthEnd}`),
+    queryFn: async () => {
+      const [currentResult, compResult] = await Promise.all([
+        supabase
+          .from("nav_invoices")
+          .select("invoice_direction, invoice_vat_amount, invoice_net_amount")
+          .eq("company_id", selectedCompany!.id)
+          .gte("invoice_issue_date", currentMonthStart)
+          .lte("invoice_issue_date", currentMonthEnd),
+        supabase
+          .from("nav_invoices")
+          .select("invoice_direction, invoice_vat_amount, invoice_net_amount")
+          .eq("company_id", selectedCompany!.id)
+          .gte("invoice_issue_date", compMonthStart)
+          .lte("invoice_issue_date", compMonthEnd),
+      ]);
+      return {
+        currentInvoices: currentResult.data || [],
+        compInvoices: compResult.data || [],
+      };
+    },
+    enabled: !!user && !!selectedCompany?.id,
+  });
+
+  const loading = rawLoading || vatLoading;
+
+  // Helper function to process invoices and create VAT categories
+  const processInvoices = (invoices: any[]) => {
+    let outboundVat = 0;
+    let outboundNet = 0;
+    let inboundVat = 0;
+    let inboundNet = 0;
+
+    invoices?.forEach(inv => {
+      if (inv.invoice_direction === "OUTBOUND") {
+        outboundVat += inv.invoice_vat_amount || 0;
+        outboundNet += inv.invoice_net_amount || 0;
+      } else {
+        inboundVat += inv.invoice_vat_amount || 0;
+        inboundNet += inv.invoice_net_amount || 0;
+      }
+    });
+
+    const outboundCategories: VatCategoryData[] = [];
+    const inboundCategories: VatCategoryData[] = [];
+
+    if (outboundVat > 0) {
+      outboundCategories.push({ rate: "27%", vatAmount: outboundVat, netAmount: outboundNet });
+    }
+
+    if (inboundVat > 0 || inboundNet > 0) {
+      const vatRatio = inboundNet > 0 ? inboundVat / inboundNet : 0;
+      if (vatRatio < 0.27) {
+        const estimatedZeroNet = inboundNet - (inboundVat / 0.27);
+        if (estimatedZeroNet > 0) {
+          inboundCategories.push({ rate: "0%", vatAmount: 0, netAmount: Math.round(estimatedZeroNet) });
+        }
+      }
+      if (inboundVat > 0) {
+        inboundCategories.push({ rate: "27%", vatAmount: inboundVat, netAmount: Math.round(inboundVat / 0.27) });
+      }
+    }
+
+    return { outboundVat, inboundVat, outboundCategories, inboundCategories };
+  };
+
+  // Compute VAT data from query results
+  const currentVatProcessed = useMemo(() => processInvoices(vatData?.currentInvoices || []), [vatData?.currentInvoices]);
+  const compVatProcessed = useMemo(() => processInvoices(vatData?.compInvoices || []), [vatData?.compInvoices]);
+
+  // Displayed data based on toggle
+  const displayedMonthName = showCurrentPeriod ? currentMonthName : MONTH_NAMES[comparisonMonth];
+  const displayedYear = showCurrentPeriod ? currentYear : selectedYear;
+  const outboundVatCategories = showCurrentPeriod ? currentVatProcessed.outboundCategories : compVatProcessed.outboundCategories;
+  const inboundVatCategories = showCurrentPeriod ? currentVatProcessed.inboundCategories : compVatProcessed.inboundCategories;
+  const totalOutboundVat = showCurrentPeriod ? currentVatProcessed.outboundVat : compVatProcessed.outboundVat;
+  const totalInboundVat = showCurrentPeriod ? currentVatProcessed.inboundVat : compVatProcessed.inboundVat;
 
   // Calculate monthly data based on showBrutto toggle using useMemo
   const monthlyData = useMemo(() => {
     const monthlyMap: { [key: number]: MonthlyData } = {};
     for (let i = 0; i < 12; i++) {
-      monthlyMap[i] = {
-        month: MONTH_NAMES[i],
-        monthIndex: i,
-        revenue: 0,
-        expenses: 0,
-        salaries: 0
-      };
+      monthlyMap[i] = { month: MONTH_NAMES[i], monthIndex: i, revenue: 0, expenses: 0, salaries: 0 };
     }
 
-    // Process NAV invoices
     rawInvoices.forEach(inv => {
       if (inv.invoice_issue_date) {
         const date = parseISO(inv.invoice_issue_date);
         const monthIndex = date.getMonth();
-        const amount = showBrutto 
-          ? (inv.invoice_gross_amount || 0)
-          : (inv.invoice_net_amount || 0);
-        
+        const amount = showBrutto ? (inv.invoice_gross_amount || 0) : (inv.invoice_net_amount || 0);
         if (inv.invoice_direction === "OUTBOUND") {
           monthlyMap[monthIndex].revenue += amount;
         } else {
@@ -148,7 +216,6 @@ export default function Analytics() {
       }
     });
 
-    // Process salaries
     rawSalaries.forEach(sal => {
       if (sal.dátum) {
         const date = parseISO(sal.dátum);
@@ -159,102 +226,6 @@ export default function Analytics() {
 
     return Object.values(monthlyMap);
   }, [rawInvoices, rawSalaries, showBrutto]);
-
-  const fetchVatData = async () => {
-    const currentDate = new Date();
-    const actualCurrentYear = currentDate.getFullYear();
-    const actualCurrentMonth = currentDate.getMonth();
-    
-    // Always use actual current date for "current period"
-    const currentMonthStart = `${actualCurrentYear}-${String(actualCurrentMonth + 1).padStart(2, '0')}-01`;
-    const currentMonthEnd = `${actualCurrentYear}-${String(actualCurrentMonth + 1).padStart(2, '0')}-31`;
-    
-    // Comparison month (selected from chart year)
-    const compMonthStart = `${selectedYear}-${String(comparisonMonth + 1).padStart(2, '0')}-01`;
-    const compMonthEnd = `${selectedYear}-${String(comparisonMonth + 1).padStart(2, '0')}-31`;
-
-    // Current period data
-    const { data: currentNavInvoices } = await supabase
-      .from("nav_invoices")
-      .select("*")
-      .eq("company_id", selectedCompany?.id)
-      .gte("invoice_issue_date", currentMonthStart)
-      .lte("invoice_issue_date", currentMonthEnd);
-
-    // Comparison period data (selected month from chart year)
-    const { data: compNavInvoices } = await supabase
-      .from("nav_invoices")
-      .select("*")
-      .eq("company_id", selectedCompany?.id)
-      .gte("invoice_issue_date", compMonthStart)
-      .lte("invoice_issue_date", compMonthEnd);
-
-    // Helper function to process invoices and create VAT categories
-    const processInvoices = (invoices: typeof currentNavInvoices) => {
-      let outboundVat = 0;
-      let outboundNet = 0;
-      let inboundVat = 0;
-      let inboundNet = 0;
-
-      invoices?.forEach(inv => {
-        if (inv.invoice_direction === "OUTBOUND") {
-          outboundVat += inv.invoice_vat_amount || 0;
-          outboundNet += inv.invoice_net_amount || 0;
-        } else {
-          inboundVat += inv.invoice_vat_amount || 0;
-          inboundNet += inv.invoice_net_amount || 0;
-        }
-      });
-
-      const outboundCategories: VatCategoryData[] = [];
-      const inboundCategories: VatCategoryData[] = [];
-
-      if (outboundVat > 0) {
-        outboundCategories.push({
-          rate: "27%",
-          vatAmount: outboundVat,
-          netAmount: outboundNet
-        });
-      }
-
-      if (inboundVat > 0 || inboundNet > 0) {
-        const vatRatio = inboundNet > 0 ? inboundVat / inboundNet : 0;
-        if (vatRatio < 0.27) {
-          const estimatedZeroNet = inboundNet - (inboundVat / 0.27);
-          if (estimatedZeroNet > 0) {
-            inboundCategories.push({
-              rate: "0%",
-              vatAmount: 0,
-              netAmount: Math.round(estimatedZeroNet)
-            });
-          }
-        }
-        if (inboundVat > 0) {
-          inboundCategories.push({
-            rate: "27%",
-            vatAmount: inboundVat,
-            netAmount: Math.round(inboundVat / 0.27)
-          });
-        }
-      }
-
-      return { outboundVat, inboundVat, outboundCategories, inboundCategories };
-    };
-
-    // Process current period
-    const currentData = processInvoices(currentNavInvoices);
-    setCurrentTotalOutboundVat(currentData.outboundVat);
-    setCurrentTotalInboundVat(currentData.inboundVat);
-    setCurrentOutboundVatCategories(currentData.outboundCategories);
-    setCurrentInboundVatCategories(currentData.inboundCategories);
-
-    // Process comparison period
-    const compData = processInvoices(compNavInvoices);
-    setCompTotalOutboundVat(compData.outboundVat);
-    setCompTotalInboundVat(compData.inboundVat);
-    setCompOutboundVatCategories(compData.outboundCategories);
-    setCompInboundVatCategories(compData.inboundCategories);
-  };
 
   const formatCurrency = (amount: number, compact = false) => {
     if (compact && Math.abs(amount) >= 1000000) {
