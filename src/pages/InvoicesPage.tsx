@@ -1122,9 +1122,7 @@ const InvoicesPage = () => {
 
       if (error) throw error;
 
-      setInvoices(prev => prev.map(inv =>
-        inv.id === invoiceId ? { ...inv, project_id: projectId === 'none' ? null : projectId } : inv
-      ));
+      invalidateInvoiceData();
       toast.success('Projekt hozzárendelve');
     } catch (error) {
       console.error('Error updating project:', error);
