@@ -111,7 +111,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
     try {
       const { data, error } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, elado_cim, elado_vat_id, vevo_nev, vevo_cim, vevo_vat_id, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, fizetesi_mod, fizetesi_hatarido, fizetve, statusz, image_url, melleklet_url, invoice_direction, reference_number, category_id, project_id, transaction_id, afa_kulcsok_bontasban, forditott_adozas, onszamlazas, penzforgalmi_elszamolas, bankszamlaszam_iban, fizetendo_osszeg, invoice_type, termek_szolgaltatas_tipusa, adojogi_megjegyzes, adomentesseg_hivatkozas')
+        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, elado_cim, elado_vat_id, vevo_nev, vevo_cim, vevo_vat_id, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, fizetesi_mod, fizetesi_hatarido, fizetve, statusz, image_url, melleklet_url, invoice_direction, reference_number, category_id, project_id, transaction_id, afa_kulcsok_bontasban, forditott_adozas, onszamlazas, penzforgalmi_elszamolas, bankszamlaszam_iban, fizetendo_osszeg, invoice_type, termek_szolgaltatas_tipusa, adojogi_megjegyzes, adomentesseg_hivatkozas, dokumentum_azonosito, elolegszamla_hivatkozas, elszamolt_eloleg_osszeg, letrehozva, frissitve, company_id, email_uzenet_id, feldolgozva, invoice_uploads_id, user_id')
         .eq('id', invoiceId)
         .maybeSingle();
 
