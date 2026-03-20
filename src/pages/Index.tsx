@@ -232,7 +232,7 @@ const Index = () => {
 
   // ── Recent invoices ──
   const { data: invoices = [] } = useQuery({
-    queryKey: ['recentInvoices', companyId],
+    queryKey: queryKeys.recentInvoices(companyId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invoices')
