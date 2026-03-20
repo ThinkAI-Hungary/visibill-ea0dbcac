@@ -48,33 +48,8 @@ interface TransactionRecord {
 }
 
 
-// Helper to generate initials from name
-const getInitials = (name: string): string => {
-  if (!name || name === '-') return '?';
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-};
-
-// Helper to generate consistent color from name
-const getAvatarColor = (name: string): string => {
-  const colors = [
-    'bg-blue-500/20 text-blue-400',
-    'bg-emerald-500/20 text-emerald-400',
-    'bg-amber-500/20 text-amber-400',
-    'bg-purple-500/20 text-purple-400',
-    'bg-rose-500/20 text-rose-400',
-    'bg-cyan-500/20 text-cyan-400',
-    'bg-orange-500/20 text-orange-400',
-    'bg-indigo-500/20 text-indigo-400',
-  ];
-  if (!name) return colors[0];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
-};
+// Import shared helpers
+import { getInitials, getAvatarColor } from '@/lib/helpers';
 
 interface NavInvoice {
   id: string;
@@ -305,7 +280,7 @@ const InvoicesPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('nav_invoices')
-        .select('*')
+        .select('id, invoice_number, invoice_direction, invoice_issue_date, invoice_delivery_date, supplier_tax_number, supplier_name, supplier_address, customer_tax_number, customer_name, customer_address, invoice_net_amount, invoice_gross_amount, invoice_vat_amount, currency, payment_method, invoice_operation, payment_date, paid, submitted, details_fetched, company_id, user_id, created_at, fetched_at, project_id, category_id, transaction_id')
         .eq('company_id', companyId)
         .gte('invoice_issue_date', dateFromFormatted)
         .lte('invoice_issue_date', dateToFormatted)

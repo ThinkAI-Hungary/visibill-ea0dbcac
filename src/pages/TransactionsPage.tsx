@@ -180,14 +180,15 @@ const TransactionsPage = () => {
       const { data, error } = await supabase
         .from('transactions')
         .select('currency, type')
-        .eq('company_id', selectedCompany!.id);
+        .eq('company_id', selectedCompany!.id)
+        .limit(500);
       if (error) throw error;
       const currencies = [...new Set((data || []).map(t => t.currency).filter(Boolean))] as string[];
       const types = [...new Set((data || []).map(t => t.type).filter(Boolean))] as string[];
       return { currencies, types };
     },
     enabled: !!user && !!selectedCompany?.id,
-    staleTime: 5 * 60 * 1000, // cache for 5 minutes
+    staleTime: 10 * 60 * 1000, // cache for 10 minutes
   });
 
   const uniqueCurrencies = filterOptions?.currencies || [];

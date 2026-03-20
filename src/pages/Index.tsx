@@ -147,7 +147,7 @@ const Index = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [navVatData, setNavVatData] = useState<NavVatData | null>(null);
 
-  // Analytics states
+  // Analytics UI toggles
   const [showBrutto, setShowBrutto] = useState(true);
   const [vatSectionOpen, setVatSectionOpen] = useState(true);
   const [revenueSectionOpen, setRevenueSectionOpen] = useState(true);
@@ -279,15 +279,15 @@ const Index = () => {
 
     const { data: salaries } = await supabase
       .from("salary")
-      .select("*")
+      .select("dátum, összeg, statusz, transaction_id")
       .eq("company_id", selectedCompany?.id)
+      .not("transaction_id", "is", null)
       .gte("dátum", yearStart)
       .lte("dátum", yearEnd) as { data: any[] | null };
 
     setRawInvoices(navInvoices || []);
     setRawSalaries(
       (salaries || [])
-        .filter((s: any) => !!s.transaction_id)
         .map((s: any) => ({ dátum: s.dátum, összeg: s.összeg, statusz: s.statusz }))
     );
   };
@@ -745,8 +745,7 @@ const Index = () => {
     await signOut();
   };
 
-  // Debug logging
-  console.log('Index render - companyLoading:', companyLoading, 'companies:', companies.length, 'metricsLoading:', metricsLoading);
+  // Loading state check
 
   // Handle onboarding complete - trigger product tour
   const handleOnboardingComplete = () => {
@@ -755,7 +754,6 @@ const Index = () => {
 
   // Show empty state dashboard when no companies exist (check FIRST before any loading states)
   if (!companyLoading && companies.length === 0) {
-    console.log('Showing EmptyStateDashboard');
     return <EmptyStateDashboard onOnboardingComplete={handleOnboardingComplete} />;
   }
 

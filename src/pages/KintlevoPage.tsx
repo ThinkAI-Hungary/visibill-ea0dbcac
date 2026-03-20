@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -131,6 +132,7 @@ export default function KintlevoPage() {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
+  useRealtimeInvalidation(selectedCompany?.id);
 
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());

@@ -1,4 +1,6 @@
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queryKeys";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -35,10 +37,7 @@ const currencyData = [
 ];
 
 export default function ExchangeRates() {
-  const [rates, setRates] = useState<ExchangeRate[]>([]);
-  const [initialLoading, setInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState<string>("");
   
   // Converter state
   const [amount, setAmount] = useState<string>("100000");
@@ -48,21 +47,11 @@ export default function ExchangeRates() {
   // Hero cards state
   const [heroCurrencies, setHeroCurrencies] = useState<string[]>(["EUR", "USD", "GBP"]);
 
-  useEffect(() => {
-    fetchExchangeRates();
-  }, []);
-
-  const fetchExchangeRates = async (isRefresh = false) => {
-    try {
-      if (isRefresh) {
-        setIsRefreshing(true);
-      } else {
-        setInitialLoading(true);
-      }
+  const { data: ratesData, isLoading: initialLoading, refetch } = useQuery({
+    queryKey: queryKeys.exchangeRatesPage('HUF'),
+    queryFn: async () => {
       const response = await fetch('https://api.exchangerate-api.com/v4/latest/HUF');
-      if (!response.ok) {
-        throw new Error('Failed to fetch exchange rates');
-      }
+      if (!response.ok) throw new Error('Failed to fetch exchange rates');
       const data = await response.json();
       
       const formattedRates: ExchangeRate[] = currencyData.map(curr => ({
@@ -70,18 +59,21 @@ export default function ExchangeRates() {
         currencyName: curr.name,
         rate: data.rates[curr.code] || 0,
         flag: curr.flag,
-        // Mock daily change (-2% to +2% of rate)
         mockChange: parseFloat(((Math.random() - 0.5) * 4 * (1 / (data.rates[curr.code] || 1)) / 100).toFixed(2))
       }));
       
-      setRates(formattedRates);
-      setLastUpdate(new Date().toLocaleString('hu-HU'));
-    } catch (error) {
-      console.error('Error fetching exchange rates:', error);
-    } finally {
-      setInitialLoading(false);
-      setIsRefreshing(false);
-    }
+      return { rates: formattedRates, lastUpdate: new Date().toLocaleString('hu-HU') };
+    },
+    staleTime: 60 * 60 * 1000, // 1 hour
+  });
+
+  const rates = ratesData?.rates || [];
+  const lastUpdate = ratesData?.lastUpdate || '';
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
   };
 
   const calculateHufValue = (rate: number) => {
@@ -164,7 +156,7 @@ export default function ExchangeRates() {
             <Clock className="h-3 w-3" />
             {lastUpdate}
           </Badge>
-          <Button variant="outline" size="sm" onClick={() => fetchExchangeRates(true)} disabled={isRefreshing} className="gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="gap-2">
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             Frissítés
           </Button>

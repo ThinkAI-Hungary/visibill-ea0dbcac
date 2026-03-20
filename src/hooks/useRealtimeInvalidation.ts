@@ -27,6 +27,7 @@ export function useRealtimeInvalidation(companyId: string | undefined) {
           invalidateAll([
             'salaries', 'dashboardData', 'dashboardAnalytics',
             'analyticsRaw', 'analyticsVat',
+            'pettyCashEntries',
           ]);
         }
       )
@@ -50,6 +51,7 @@ export function useRealtimeInvalidation(companyId: string | undefined) {
             'dashboardData', 'dashboardAnalytics',
             'invoiceStatusPayable', 'invoiceStatusMissing',
             'analyticsRaw', 'analyticsVat',
+            'projects', 'projectsList',
           ]);
         }
       )
