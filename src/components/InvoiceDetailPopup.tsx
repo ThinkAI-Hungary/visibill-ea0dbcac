@@ -23,7 +23,6 @@ interface FullInvoice {
   teljesites_datuma: string | null;
   fizetesi_hatarido: string | null;
   fizetesi_mod: string | null;
-  fizetve: boolean | null;
   statusz: string | null;
   transaction_id: string | null;
   penznem: string | null;

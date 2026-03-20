@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Subscribe to Supabase Realtime changes on salary, invoices, and transactions tables.
+ * Subscribe to Supabase Realtime changes on salary, invoices, nav_invoices, and transactions tables.
  * On any change, invalidate related TanStack Query keys so the UI updates immediately.
  */
 export function useRealtimeInvalidation(companyId: string | undefined) {
@@ -12,46 +12,61 @@ export function useRealtimeInvalidation(companyId: string | undefined) {
   useEffect(() => {
     if (!companyId) return;
 
+    const invalidateAll = (keys: string[]) => {
+      keys.forEach(key => {
+        queryClient.invalidateQueries({ queryKey: [key, companyId] });
+      });
+    };
+
     const channel = supabase
       .channel(`computed-status-rt-${companyId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'salary', filter: `company_id=eq.${companyId}` },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['salaries', companyId] });
-          queryClient.invalidateQueries({ queryKey: ['dashboardData', companyId] });
-          queryClient.invalidateQueries({ queryKey: ['dashboardAnalytics', companyId] });
+          invalidateAll([
+            'salaries', 'dashboardData', 'dashboardAnalytics',
+            'analyticsRaw', 'analyticsVat',
+          ]);
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'invoices', filter: `company_id=eq.${companyId}` },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['submittedInvoices', companyId] });
-          queryClient.invalidateQueries({ queryKey: ['dashboardData', companyId] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'transactions', filter: `company_id=eq.${companyId}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['transactions', companyId] });
-          queryClient.invalidateQueries({ queryKey: ['salaries', companyId] });
-          queryClient.invalidateQueries({ queryKey: ['submittedInvoices', companyId] });
-          queryClient.invalidateQueries({ queryKey: ['dashboardData', companyId] });
-          queryClient.invalidateQueries({ queryKey: ['dashboardAnalytics', companyId] });
-          queryClient.invalidateQueries({ queryKey: ['kintlevo-nav', companyId] });
-          queryClient.invalidateQueries({ queryKey: ['kintlevo-manual', companyId] });
-          queryClient.invalidateQueries({ queryKey: ['invoiceStatusPayable', companyId] });
-          queryClient.invalidateQueries({ queryKey: ['invoiceStatusMissing', companyId] });
+          invalidateAll([
+            'submittedInvoices', 'linkedInvoices', 'invoiceTransactions',
+            'dashboardData', 'kintlevo-manual',
+            'invoiceStatusPayable', 'invoiceStatusMissing',
+          ]);
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'nav_invoices', filter: `company_id=eq.${companyId}` },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['navInvoices', companyId] });
-          queryClient.invalidateQueries({ queryKey: ['dashboardData', companyId] });
+          invalidateAll([
+            'navInvoices', 'kintlevo-nav',
+            'dashboardData', 'dashboardAnalytics',
+            'invoiceStatusPayable', 'invoiceStatusMissing',
+            'analyticsRaw', 'analyticsVat',
+          ]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'transactions', filter: `company_id=eq.${companyId}` },
+        () => {
+          invalidateAll([
+            'transactions', 'salaries', 'submittedInvoices',
+            'dashboardData', 'dashboardAnalytics',
+            'kintlevo-nav', 'kintlevo-manual',
+            'invoiceStatusPayable', 'invoiceStatusMissing',
+            'invoiceTransactions', 'navInvoices',
+            'pettyCashEntries', 'pettyCashSettings',
+            'analyticsRaw', 'analyticsVat',
+            'projects',
+          ]);
         }
       )
       .subscribe();
