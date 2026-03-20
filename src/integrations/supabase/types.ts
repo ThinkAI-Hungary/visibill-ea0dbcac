@@ -713,6 +713,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "invoices_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "invoices_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
@@ -724,13 +731,6 @@ export type Database = {
             columns: ["invoice_uploads_id"]
             isOneToOne: false
             referencedRelation: "invoice_uploads"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoices_project_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
           {

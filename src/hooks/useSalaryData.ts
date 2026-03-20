@@ -7,6 +7,7 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { isSalaryItemPaid } from '@/lib/salary-helpers';
 import type { SalaryItem } from '@/lib/salary-helpers';
 
 export function useSalaryData() {
@@ -56,7 +57,7 @@ export function useSalaryData() {
 
   const metrics = useMemo(() => {
     const totalPayments = salaryItems
-      .filter((item) => (item.tipus === 'bér' || item.tipus === 'járulék') && !!item.transaction_id)
+      .filter((item) => (item.tipus === 'bér' || item.tipus === 'járulék') && isSalaryItemPaid(item))
       .reduce((sum, item) => sum + Number(item.összeg), 0);
     const employeeCount = new Set(
       salaryItems.filter((item) => item.munkavallalo_neve).map((item) => item.munkavallalo_neve)
@@ -76,7 +77,7 @@ export function useSalaryData() {
 
   const allNavPaid = useMemo(() => {
     if (navItems.length === 0) return false;
-    return navItems.every((item) => !!item.transaction_id);
+    return navItems.every((item) => isSalaryItemPaid(item));
   }, [navItems]);
 
   const addMutation = useMutation({

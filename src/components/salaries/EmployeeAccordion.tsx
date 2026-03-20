@@ -4,16 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { formatCurrency } from '@/lib/utils';
 import { Edit, User } from 'lucide-react';
-import { getTypeBadge, getStatusBadge } from '@/lib/salary-helpers';
+import { getTypeBadge, getStatusBadge, isSalaryItemPaid } from '@/lib/salary-helpers';
 import type { SalaryItem } from '@/lib/salary-helpers';
 
 interface Props {
   employeeGroups: [string, SalaryItem[]][];
-  allNavPaid: boolean;
   onEdit: (item: SalaryItem) => void;
 }
 
-export function EmployeeAccordion({ employeeGroups, allNavPaid, onEdit }: Props) {
+export function EmployeeAccordion({ employeeGroups, onEdit }: Props) {
   if (employeeGroups.length === 0) return null;
 
   const getSubtotal = (items: SalaryItem[]) =>
@@ -23,7 +22,7 @@ export function EmployeeAccordion({ employeeGroups, allNavPaid, onEdit }: Props)
     items.filter(item => item.tipus === 'bér').reduce((sum, item) => sum + Number(item.összeg), 0);
 
   const getAllPaid = (items: SalaryItem[]) =>
-    allNavPaid || items.every(item => !!item.transaction_id);
+    items.every(item => isSalaryItemPaid(item));
 
   return (
     <Card className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm">
