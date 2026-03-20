@@ -188,7 +188,7 @@ const Projects = () => {
 
       setEditingProject(null);
       setIsCreating(false);
-      await loadProjects();
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects(selectedCompany?.id || '') });
     } catch (error: any) {
       toast({
         variant: 'destructive',
