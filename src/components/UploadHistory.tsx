@@ -6,6 +6,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 import { supabase } from '@/integrations/supabase/client';
 import { History, FileText, Landmark, Banknote, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -64,7 +65,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
 
   // ── Main data query (records + processed IDs + user names) ──
   const { data, isLoading: loading } = useQuery({
-    queryKey: ['uploadHistory', companyId, activeTab, dateFromFormatted, dateToFormatted, refreshKey],
+    queryKey: queryKeys.uploadHistory(companyId, activeTab, dateFromFormatted, dateToFormatted, refreshKey),
     queryFn: async () => {
       let records: UploadRecord[] = [];
 

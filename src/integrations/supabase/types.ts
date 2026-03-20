@@ -1905,6 +1905,32 @@ export type Database = {
           total_gross: number
         }[]
       }
+      get_linked_invoices: {
+        Args: {
+          p_company_id: string
+          p_exclude_ids: string[]
+          p_seed_bizonylat: string[]
+          p_seed_reference: string[]
+        }
+        Returns: {
+          adoalap_osszesen: number
+          afa_osszeg_osszesen: number
+          bizonylatsorszam: string
+          brutto_vegosszeg: number
+          category_id: string
+          elado_nev: string
+          id: string
+          image_url: string
+          invoice_direction: string
+          kibocsatas_datuma: string
+          melleklet_url: string
+          penznem: string
+          project_id: string
+          reference_number: string
+          teljesites_datuma: string
+          vevo_nev: string
+        }[]
+      }
       get_nav_credentials: {
         Args: { p_company_id?: string; p_user_id: string }
         Returns: Json

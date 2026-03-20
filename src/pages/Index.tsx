@@ -232,7 +232,7 @@ const Index = () => {
 
   // ── Recent invoices ──
   const { data: invoices = [] } = useQuery({
-    queryKey: ['recentInvoices', companyId],
+    queryKey: queryKeys.recentInvoices(companyId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invoices')
@@ -339,7 +339,7 @@ const Index = () => {
 
   // ── Petty cash balance ──
   const { data: pettyCashBalance = null } = useQuery<number | null>({
-    queryKey: ['dashboardPettyCash', companyId],
+    queryKey: queryKeys.dashboardPettyCash(companyId),
     queryFn: async () => {
       const { data: hpSettings } = await supabase
         .from('hp_settings')
