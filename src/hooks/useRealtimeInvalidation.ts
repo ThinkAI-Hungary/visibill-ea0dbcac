@@ -51,6 +51,7 @@ export function useRealtimeInvalidation(companyId: string | undefined) {
             'dashboardData', 'dashboardAnalytics',
             'invoiceStatusPayable', 'invoiceStatusMissing',
             'analyticsRaw', 'analyticsVat',
+            'projects', 'projectsList',
           ]);
         }
       )
