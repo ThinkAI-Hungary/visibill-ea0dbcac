@@ -185,13 +185,13 @@ const InvoicesPage = () => {
 
   const submittedToNavMap = useMemo(() => {
     const map = new Map<string, NavInvoice[]>();
-    invoices.forEach(inv => {
+    paginatedNavInvoices.forEach(inv => {
       const existing = map.get(inv.invoice_number) || [];
       existing.push(inv);
       map.set(inv.invoice_number, existing);
     });
     return map;
-  }, [invoices]);
+  }, [paginatedNavInvoices]);
 
   const submittedIdToTransactionsMap = useMemo(() => {
     const map = new Map<string, TransactionRecord[]>();
