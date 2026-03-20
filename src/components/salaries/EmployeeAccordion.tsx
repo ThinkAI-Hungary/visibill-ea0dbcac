@@ -12,7 +12,7 @@ interface Props {
   onEdit: (item: SalaryItem) => void;
 }
 
-export function EmployeeAccordion({ employeeGroups, allNavPaid, onEdit }: Props) {
+export function EmployeeAccordion({ employeeGroups, onEdit }: Props) {
   if (employeeGroups.length === 0) return null;
 
   const getSubtotal = (items: SalaryItem[]) =>
