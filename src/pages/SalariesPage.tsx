@@ -19,6 +19,13 @@ export default function SalariesPage() {
     metrics, addMutation, editMutation,
   } = useSalaryData();
 
+  const { dateFrom, dateTo } = useDateRange();
+  const isSingleMonth = dateFrom.getFullYear() === dateTo.getFullYear()
+    && dateFrom.getMonth() === dateTo.getMonth();
+  const periodLabel = isSingleMonth
+    ? format(dateFrom, 'yyyy. MMM', { locale: hu })
+    : `${format(dateFrom, 'yyyy. MMM d.', { locale: hu })} – ${format(dateTo, 'yyyy. MMM d.', { locale: hu })}`;
+
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<SalaryItem | null>(null);
