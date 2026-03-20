@@ -40,6 +40,7 @@ const PettyCashPage = () => {
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const queryClient = useQueryClient();
+  useRealtimeInvalidation(selectedCompany?.id);
   const [saving, setSaving] = useState(false);
   const [openingBalance, setOpeningBalance] = useState<string>('');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
