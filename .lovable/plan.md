@@ -19,12 +19,31 @@
 - PartnersPage: queryKeys factory + useRealtimeInvalidation + select('*') eltávolítás
 - useRealtimeInvalidation: partners tábla hozzáadva
 
+### ✅ 5. fázis — InvoicesPage server-side szűrés
+- `get_filtered_nav_invoices()` RPC létrehozva (szűrés + rendezés + paginálás SQL-ben)
+- `get_filtered_submitted_invoices()` RPC létrehozva
+- Indexek hozzáadva: `idx_nav_invoices_company_direction_date`, `idx_invoices_company_direction_date`
+- `useInvoiceFilters` átírva server-side módra (useDeferredValue debounce)
+- `useInvoiceData` egyszerűsítve: bulk NAV fetch eltávolítva
+- Nincs többé 1000 soros Supabase limit probléma
+
 ---
 
-## Hátralévő fázisok
+## Folyamatban
 
-### 5. fázis — InvoicesPage server-side szűrés
-- `get_filtered_nav_invoices()` RPC + useInvoiceFilters átírás
+### 🔄 6. fázis — Nagy fájlok szétbontása
 
-### 6. fázis — Nagy fájlok szétbontása
-- Settings.tsx (1045 sor), KintlevoPage (777 sor), SalariesPage (817 sor)
+#### ✅ 6.0 — Helper és hook fájlok létrehozva
+- `src/lib/kintlevo-helpers.ts` — típusok + segédfüggvények
+- `src/hooks/useKintlevoData.ts` — adatlekérés + feldolgozás hook
+- `src/lib/salary-helpers.ts` — típusok + segédfüggvények
+- `src/hooks/useSalaryData.ts` — adatlekérés + mutációk hook
+
+#### ⏳ 6a. Settings.tsx szétbontása
+- `src/hooks/useSettingsData.ts` + 4 section komponens
+
+#### ⏳ 6b. KintlevoPage.tsx átírása hook-ra
+- KintlevoPage.tsx: import useKintlevoData + UI szétbontás
+
+#### ⏳ 6c. SalariesPage.tsx átírása hook-ra
+- SalariesPage.tsx: import useSalaryData + UI szétbontás
