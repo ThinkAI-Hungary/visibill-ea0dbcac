@@ -425,8 +425,8 @@ const InvoicesPage = () => {
                       <SelectTrigger className="h-9 bg-secondary/50 border border-white/10"><SelectValue placeholder="Pénznem" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Minden pénznem</SelectItem>
-                        {Array.from(new Set(invoices.map(inv => inv.currency).filter(Boolean))).sort().map((currency) => (
-                          <SelectItem key={currency} value={currency!}>{currency}</SelectItem>
+                        {['HUF', 'EUR', 'USD', 'GBP', 'CHF', 'CZK', 'PLN', 'RON'].map((currency) => (
+                          <SelectItem key={currency} value={currency}>{currency}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
