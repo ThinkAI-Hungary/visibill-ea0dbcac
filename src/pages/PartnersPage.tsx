@@ -74,6 +74,7 @@ export default function PartnersPage() {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
+  useRealtimeInvalidation(selectedCompany?.id);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
