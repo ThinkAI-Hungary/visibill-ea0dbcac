@@ -64,7 +64,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
 
   // ── Main data query (records + processed IDs + user names) ──
   const { data, isLoading: loading } = useQuery({
-    queryKey: ['uploadHistory', companyId, activeTab, dateFromFormatted, dateToFormatted, refreshKey],
+    queryKey: queryKeys.uploadHistory(companyId, activeTab, dateFromFormatted, dateToFormatted, refreshKey),
     queryFn: async () => {
       let records: UploadRecord[] = [];
 

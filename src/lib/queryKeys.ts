@@ -87,6 +87,18 @@ export const queryKeys = {
   analyticsVat: (companyId: string, dateFrom: string, dateTo: string) =>
     ['analyticsVat', companyId, dateFrom, dateTo] as const,
 
+  // ── Recent Invoices (Dashboard) ──
+  recentInvoices: (companyId: string) =>
+    ['recentInvoices', companyId] as const,
+
+  // ── Dashboard Petty Cash ──
+  dashboardPettyCash: (companyId: string) =>
+    ['dashboardPettyCash', companyId] as const,
+
+  // ── Upload History ──
+  uploadHistory: (companyId: string, activeTab: string, dateFrom: string, dateTo: string, refreshKey?: number) =>
+    ['uploadHistory', companyId, activeTab, dateFrom, dateTo, refreshKey] as const,
+
   // ── Exchange Rates Page ──
   exchangeRatesPage: (base: string) =>
     ['exchangeRatesPage', base] as const,

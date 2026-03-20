@@ -339,7 +339,7 @@ const Index = () => {
 
   // ── Petty cash balance ──
   const { data: pettyCashBalance = null } = useQuery<number | null>({
-    queryKey: ['dashboardPettyCash', companyId],
+    queryKey: queryKeys.dashboardPettyCash(companyId),
     queryFn: async () => {
       const { data: hpSettings } = await supabase
         .from('hp_settings')
