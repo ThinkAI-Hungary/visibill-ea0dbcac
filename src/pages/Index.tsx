@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
@@ -101,11 +101,11 @@ interface NavVatData {
 interface MonthlyData {
   month: string;
   monthIndex: number;
-  revenuePaid: number;      // Fizetett bevétel (pozitív)
-  revenueUnpaid: number;    // Kintlévőségek (pozitív)
-  expensesPaid: number;     // Fizetett kiadás (negatív!)
-  expensesUnpaid: number;   // Követelések (negatív!)
-  salaries: number;         // Bérek (negatív!)
+  revenuePaid: number;
+  revenueUnpaid: number;
+  expensesPaid: number;
+  expensesUnpaid: number;
+  salaries: number;
 }
 
 interface RawInvoice {
@@ -137,17 +137,13 @@ const Index = () => {
   const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const navigate = useNavigate();
   useRealtimeInvalidation(selectedCompany?.id);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  const companyId = selectedCompany?.id || '';
+
+  // UI-only state
   const [selectedCurrency, setSelectedCurrency] = useState<string>('HUF');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [navVatData, setNavVatData] = useState<NavVatData | null>(null);
-
-  // Analytics UI toggles
   const [showBrutto, setShowBrutto] = useState(true);
   const [vatSectionOpen, setVatSectionOpen] = useState(true);
   const [revenueSectionOpen, setRevenueSectionOpen] = useState(true);
@@ -156,20 +152,10 @@ const Index = () => {
   const [showExpensesPaid, setShowExpensesPaid] = useState(true);
   const [showExpensesUnpaid, setShowExpensesUnpaid] = useState(true);
   const [showSalaries, setShowSalaries] = useState(true);
-  const [rawInvoices, setRawInvoices] = useState<RawInvoice[]>([]);
-  const [rawSalaries, setRawSalaries] = useState<RawSalary[]>([]);
-  const [outboundVatCategories, setOutboundVatCategories] = useState<VatCategoryData[]>([]);
-  const [inboundVatCategories, setInboundVatCategories] = useState<VatCategoryData[]>([]);
-  const [totalOutboundVat, setTotalOutboundVat] = useState(0);
-  const [totalInboundVat, setTotalInboundVat] = useState(0);
-  const [pettyCashBalance, setPettyCashBalance] = useState<number | null>(null);
-  
-  // Product Tour state
   const [showTour, setShowTour] = useState(false);
 
   const vatChartRef = useRef<HTMLDivElement>(null);
 
-  // displayedPeriod for UI labels
   const displayedPeriod = `${format(dateFrom, 'yyyy. MMM dd.', { locale: hu })} - ${format(dateTo, 'yyyy. MMM dd.', { locale: hu })}`;
 
   const currencies = [
@@ -185,7 +171,7 @@ const Index = () => {
     { code: 'CNY', name: 'Kínai Yuan', flag: '🇨🇳' },
   ];
 
-  // TanStack Query: exchange rates (global, no company dependency)
+  // ── Exchange rates (global, no company dependency) ──
   const { data: exchangeRates = {} } = useQuery({
     queryKey: queryKeys.exchangeRates(),
     queryFn: async () => {
@@ -193,52 +179,327 @@ const Index = () => {
       const data = await response.json();
       return data.rates as {[key: string]: number};
     },
-    staleTime: 60 * 60 * 1000, // 1 hour
+    staleTime: 60 * 60 * 1000,
   });
 
-  // TanStack Query: dashboard data
-  const { isLoading: metricsLoading } = useQuery({
-    queryKey: queryKeys.dashboardData(selectedCompany?.id || '', dateFromFormatted, dateToFormatted),
+  // ── Profile ──
+  const { data: profile } = useQuery({
+    queryKey: queryKeys.profile(user?.id || ''),
     queryFn: async () => {
-      await fetchDashboardData();
-      return true; // just used to track loading
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('name, position, company, avatar_url')
+        .eq('user_id', user!.id)
+        .single();
+      if (error) throw error;
+      return data as Profile;
     },
-    enabled: !!user && !!selectedCompany?.id,
+    enabled: !!user,
   });
 
-  // TanStack Query: analytics data
-  const { isLoading: analyticsLoading } = useQuery({
-    queryKey: queryKeys.dashboardAnalytics(selectedCompany?.id || '', dateFromFormatted, dateToFormatted),
+  // ── Tour status ──
+  useQuery({
+    queryKey: queryKeys.tourStatus(user?.id || '', companyId),
     queryFn: async () => {
-      await fetchAnalyticsData();
-      return true;
-    },
-    enabled: !!user && !!selectedCompany?.id,
-  });
-
-  // Check if user needs to see the product tour
-  useEffect(() => {
-    const checkTourStatus = async () => {
-      if (!user || !selectedCompany) return;
-      
-      try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('has_completed_tour')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (data && data.has_completed_tour === false) {
-          setTimeout(() => setShowTour(true), 500);
-        }
-      } catch (error) {
-        console.error('Error checking tour status:', error);
+      const { data } = await supabase
+        .from('profiles')
+        .select('has_completed_tour')
+        .eq('user_id', user!.id)
+        .single();
+      if (data?.has_completed_tour === false) {
+        setTimeout(() => setShowTour(true), 500);
       }
-    };
-    
-    checkTourStatus();
-  }, [user, selectedCompany]);
+      return data?.has_completed_tour ?? true;
+    },
+    enabled: !!user && !!selectedCompany,
+    staleTime: Infinity,
+  });
 
+  // ── Categories ──
+  const { data: categories = [] } = useQuery({
+    queryKey: queryKeys.categories(companyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as Category[];
+    },
+    enabled: !!companyId,
+  });
+
+  // ── Recent invoices ──
+  const { data: invoices = [] } = useQuery({
+    queryKey: ['recentInvoices', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('id, bizonylatsorszam, elado_nev, vevo_nev, brutto_vegosszeg, kibocsatas_datuma, statusz, penznem, category_id, image_url, reference_number, categories(name)')
+        .eq('company_id', companyId)
+        .order('kibocsatas_datuma', { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return (data || []).map(invoice => ({
+        ...invoice,
+        category_name: (invoice as any).categories?.name
+      })) as Invoice[];
+    },
+    enabled: !!companyId,
+  });
+
+  // ── Invoice aggregates (metrics) ──
+  const { data: metrics, isLoading: metricsLoading } = useQuery({
+    queryKey: queryKeys.dashboardData(companyId, dateFromFormatted, dateToFormatted),
+    queryFn: async () => {
+      const { data: invoiceAggregates, error } = await supabase
+        .rpc('get_invoice_aggregates', {
+          p_company_id: companyId,
+          p_date_from: dateFromFormatted,
+          p_date_to: dateToFormatted
+        });
+      if (error) throw error;
+
+      const selectedPeriodAmountByCurrency: { [key: string]: number } = {};
+      let totalInvoices = 0;
+      let processingCount = 0;
+      let completedCount = 0;
+
+      (invoiceAggregates || []).forEach((agg: any) => {
+        const currency = agg.currency || 'HUF';
+        selectedPeriodAmountByCurrency[currency] = (selectedPeriodAmountByCurrency[currency] || 0) + Number(agg.total_gross || 0);
+        totalInvoices += Number(agg.total_count || 0);
+        processingCount += Number(agg.processing_count || 0);
+        completedCount += Number(agg.completed_count || 0);
+      });
+
+      return {
+        totalInvoices,
+        totalAmountByCurrency: selectedPeriodAmountByCurrency,
+        thisMonthAmountByCurrency: selectedPeriodAmountByCurrency,
+        averageInvoiceAmount: 0,
+        processingCount,
+        completedCount
+      } as DashboardMetrics;
+    },
+    enabled: !!companyId,
+  });
+
+  // ── NAV aggregates (navVatData) ──
+  const { data: navVatData } = useQuery({
+    queryKey: queryKeys.dashboardAnalytics(companyId, dateFromFormatted, dateToFormatted),
+    queryFn: async () => {
+      const { data: navAggregates, error } = await supabase
+        .rpc('get_nav_invoice_aggregates', {
+          p_company_id: companyId,
+          p_date_from: dateFromFormatted,
+          p_date_to: dateToFormatted
+        });
+      if (error) throw error;
+
+      const inboundVat: { [currency: string]: number } = {};
+      const outboundVat: { [currency: string]: number } = {};
+      const revenueNet: { [currency: string]: number } = {};
+      const revenueGross: { [currency: string]: number } = {};
+      const expensesNet: { [currency: string]: number } = {};
+      const expensesGross: { [currency: string]: number } = {};
+      const unpaidInboundNet: { [currency: string]: number } = {};
+      const unpaidInboundGross: { [currency: string]: number } = {};
+      const unpaidOutboundNet: { [currency: string]: number } = {};
+      const unpaidOutboundGross: { [currency: string]: number } = {};
+
+      (navAggregates || []).forEach((agg: any) => {
+        const currency = agg.currency || 'HUF';
+        const vatAmount = Number(agg.total_vat || 0);
+        const netAmount = Number(agg.total_net || 0);
+        const grossAmount = Number(agg.total_gross || 0);
+        const unpaidNet = Number(agg.unpaid_net || 0);
+        const unpaidGross = Number(agg.unpaid_gross || 0);
+
+        if (agg.invoice_direction === 'INBOUND') {
+          inboundVat[currency] = (inboundVat[currency] || 0) + vatAmount;
+          expensesNet[currency] = (expensesNet[currency] || 0) + netAmount;
+          expensesGross[currency] = (expensesGross[currency] || 0) + grossAmount;
+          unpaidInboundNet[currency] = (unpaidInboundNet[currency] || 0) + unpaidNet;
+          unpaidInboundGross[currency] = (unpaidInboundGross[currency] || 0) + unpaidGross;
+        } else if (agg.invoice_direction === 'OUTBOUND') {
+          outboundVat[currency] = (outboundVat[currency] || 0) + vatAmount;
+          revenueNet[currency] = (revenueNet[currency] || 0) + netAmount;
+          revenueGross[currency] = (revenueGross[currency] || 0) + grossAmount;
+          unpaidOutboundNet[currency] = (unpaidOutboundNet[currency] || 0) + unpaidNet;
+          unpaidOutboundGross[currency] = (unpaidOutboundGross[currency] || 0) + unpaidGross;
+        }
+      });
+
+      return { inboundVat, outboundVat, revenueNet, revenueGross, expensesNet, expensesGross, unpaidInboundNet, unpaidInboundGross, unpaidOutboundNet, unpaidOutboundGross } as NavVatData;
+    },
+    enabled: !!companyId,
+  });
+
+  // ── Petty cash balance ──
+  const { data: pettyCashBalance = null } = useQuery<number | null>({
+    queryKey: ['dashboardPettyCash', companyId],
+    queryFn: async () => {
+      const { data: hpSettings } = await supabase
+        .from('hp_settings')
+        .select('opening_balance, start_date')
+        .eq('company_id', companyId)
+        .maybeSingle();
+
+      const hasValidSettings = hpSettings && hpSettings.start_date;
+      if (!hasValidSettings) return null;
+
+      const ob = hpSettings.opening_balance || 0;
+      const startDateFilter = hpSettings.start_date;
+
+      let withdrawalsQuery = supabase.from('transactions').select('amount').eq('company_id', companyId).in('type', ['atm készpénzfelvét', 'pénztári kp felvét']);
+      if (startDateFilter) withdrawalsQuery = withdrawalsQuery.gte('transaction_date', startDateFilter);
+
+      let cashDepositsQuery = supabase.from('transactions').select('amount').eq('company_id', companyId).in('type', ['pénztári kp befizetés', 'kp befizetés atm-en keresztül']);
+      if (startDateFilter) cashDepositsQuery = cashDepositsQuery.gte('transaction_date', startDateFilter);
+
+      let cashSalesQuery = supabase.from('nav_invoices').select('invoice_gross_amount').eq('company_id', companyId).eq('invoice_direction', 'OUTBOUND').in('payment_method', ['CASH', 'KÉSZPÉNZ']);
+      if (startDateFilter) cashSalesQuery = cashSalesQuery.gte('invoice_issue_date', startDateFilter);
+
+      let cashExpensesQuery = supabase.from('invoices').select('brutto_vegosszeg, bizonylatsorszam').eq('company_id', companyId).ilike('fizetesi_mod', '%készpénz%').is('reference_number', null);
+      if (startDateFilter) cashExpensesQuery = cashExpensesQuery.gte('kibocsatas_datuma', startDateFilter);
+
+      let navCashExpensesQuery = supabase.from('nav_invoices').select('invoice_gross_amount, invoice_number').eq('company_id', companyId).eq('invoice_direction', 'INBOUND').in('payment_method', ['CASH', 'KÉSZPÉNZ']);
+      if (startDateFilter) navCashExpensesQuery = navCashExpensesQuery.gte('invoice_issue_date', startDateFilter);
+
+      const [withdrawalsRes, cashDepositsRes, cashSalesRes, cashExpensesRes, navCashExpensesRes] = await Promise.all([
+        withdrawalsQuery, cashDepositsQuery, cashSalesQuery, cashExpensesQuery, navCashExpensesQuery
+      ]);
+
+      const withdrawals = (withdrawalsRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+      const cashDeposits = (cashDepositsRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
+      const cashSales = (cashSalesRes.data || []).reduce((sum: number, inv: any) => sum + Math.abs(inv.invoice_gross_amount || 0), 0);
+      const cashExpenses = (cashExpensesRes.data || []).reduce((sum: number, inv: any) => sum + Math.abs(inv.brutto_vegosszeg || 0), 0);
+      const invoiceNumbers = new Set((cashExpensesRes.data || []).map((inv: any) => inv.bizonylatsorszam).filter(Boolean));
+      const navCashExpenses = (navCashExpensesRes.data || [])
+        .filter((inv: any) => !inv.invoice_number || !invoiceNumbers.has(inv.invoice_number))
+        .reduce((sum: number, inv: any) => sum + Math.abs(inv.invoice_gross_amount || 0), 0);
+
+      return ob + withdrawals - cashDeposits + cashSales - cashExpenses - navCashExpenses;
+    },
+    enabled: !!companyId,
+  });
+
+  // ── Analytics raw data (for chart) ──
+  const { data: analyticsRaw, isLoading: analyticsLoading } = useQuery({
+    queryKey: queryKeys.analyticsRaw(companyId, dateFromFormatted, dateToFormatted),
+    queryFn: async () => {
+      const yearStart = format(dateFrom, 'yyyy-01-01');
+      const yearEnd = format(dateTo, 'yyyy-12-31');
+
+      const [navRes, salRes] = await Promise.all([
+        supabase.from("nav_invoices")
+          .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, transaction_id, currency")
+          .eq("company_id", companyId)
+          .gte("invoice_issue_date", yearStart)
+          .lte("invoice_issue_date", yearEnd),
+        supabase.from("salary")
+          .select("dátum, összeg, statusz, transaction_id")
+          .eq("company_id", companyId)
+          .not("transaction_id", "is", null)
+          .gte("dátum", yearStart)
+          .lte("dátum", yearEnd),
+      ]);
+
+      return {
+        rawInvoices: (navRes.data || []) as RawInvoice[],
+        rawSalaries: (salRes.data || []).map((s: any) => ({ dátum: s.dátum, összeg: s.összeg, statusz: s.statusz })) as RawSalary[],
+      };
+    },
+    enabled: !!companyId,
+  });
+
+  const rawInvoices = analyticsRaw?.rawInvoices || [];
+  const rawSalaries = analyticsRaw?.rawSalaries || [];
+
+  // ── VAT breakdown ──
+  const { data: vatBreakdown } = useQuery({
+    queryKey: queryKeys.analyticsVat(companyId, dateFromFormatted, dateToFormatted),
+    queryFn: async () => {
+      const { data: vatItems } = await supabase
+        .from("nav_invoice_items")
+        .select(`vat_rate, net_amount, vat_amount, nav_invoices!inner (invoice_direction, invoice_issue_date, company_id)`)
+        .eq("nav_invoices.company_id", companyId)
+        .gte("nav_invoices.invoice_issue_date", dateFromFormatted)
+        .lte("nav_invoices.invoice_issue_date", dateToFormatted);
+
+      if (vatItems && vatItems.length > 0) {
+        const outboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
+        const inboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
+
+        vatItems.forEach(item => {
+          const navInvoice = item.nav_invoices as unknown as { invoice_direction: string };
+          const direction = navInvoice?.invoice_direction;
+
+          let rateLabel: string;
+          if (item.vat_rate === null || item.vat_rate === undefined) {
+            rateLabel = 'ÁFA mentes';
+          } else {
+            const ratePercent = Math.round(Number(item.vat_rate) * 100);
+            rateLabel = `${ratePercent}%`;
+          }
+
+          const target = direction === 'OUTBOUND' ? outboundByRate : inboundByRate;
+          if (!target[rateLabel]) target[rateLabel] = { netAmount: 0, vatAmount: 0 };
+          target[rateLabel].netAmount += item.net_amount || 0;
+          target[rateLabel].vatAmount += item.vat_amount || 0;
+        });
+
+        const sortOrder = ['ÁFA mentes', '5%', '18%', '27%'];
+        const sortCategories = (cats: VatCategoryData[]) => cats.sort((a, b) => {
+          const iA = sortOrder.indexOf(a.rate), iB = sortOrder.indexOf(b.rate);
+          if (iA === -1 && iB === -1) return a.rate.localeCompare(b.rate);
+          if (iA === -1) return 1;
+          if (iB === -1) return -1;
+          return iA - iB;
+        });
+
+        const outCats = sortCategories(Object.entries(outboundByRate).map(([rate, d]) => ({ rate, netAmount: d.netAmount, vatAmount: d.vatAmount })));
+        const inCats = sortCategories(Object.entries(inboundByRate).map(([rate, d]) => ({ rate, netAmount: d.netAmount, vatAmount: d.vatAmount })));
+
+        return {
+          outboundVatCategories: outCats,
+          inboundVatCategories: inCats,
+          totalOutboundVat: outCats.reduce((s, c) => s + c.vatAmount, 0),
+          totalInboundVat: inCats.reduce((s, c) => s + c.vatAmount, 0),
+        };
+      } else {
+        const { data: navInvoices } = await supabase
+          .from("nav_invoices")
+          .select("invoice_direction, invoice_vat_amount, invoice_net_amount")
+          .eq("company_id", companyId)
+          .gte("invoice_issue_date", dateFromFormatted)
+          .lte("invoice_issue_date", dateToFormatted);
+
+        let outV = 0, inV = 0, outN = 0, inN = 0;
+        navInvoices?.forEach(inv => {
+          if (inv.invoice_direction === 'OUTBOUND') { outV += inv.invoice_vat_amount || 0; outN += inv.invoice_net_amount || 0; }
+          else { inV += inv.invoice_vat_amount || 0; inN += inv.invoice_net_amount || 0; }
+        });
+
+        return {
+          outboundVatCategories: [{ rate: 'Összesített', vatAmount: outV, netAmount: outN }] as VatCategoryData[],
+          inboundVatCategories: [{ rate: 'Összesített', vatAmount: inV, netAmount: inN }] as VatCategoryData[],
+          totalOutboundVat: outV,
+          totalInboundVat: inV,
+        };
+      }
+    },
+    enabled: !!companyId,
+  });
+
+  const outboundVatCategories = vatBreakdown?.outboundVatCategories || [];
+  const inboundVatCategories = vatBreakdown?.inboundVatCategories || [];
+  const totalOutboundVat = vatBreakdown?.totalOutboundVat || 0;
+  const totalInboundVat = vatBreakdown?.totalInboundVat || 0;
+
+  // ── Currency conversion helpers ──
   const convertAmount = (amount: number): number => {
     if (selectedCurrency === 'HUF') return amount;
     const rate = exchangeRates[selectedCurrency] || 1;
@@ -257,51 +518,13 @@ const Index = () => {
     return amountInHUF * rateToSelected;
   };
 
-  // Analytics data fetching
-  const fetchAnalyticsData = async () => {
-    try {
-      await Promise.all([fetchRawData(), fetchVatData()]);
-    } catch (error) {
-      console.error("Error fetching analytics:", error);
-    }
-  };
-
-  const fetchRawData = async () => {
-    const yearStart = format(dateFrom, 'yyyy-01-01');
-    const yearEnd = format(dateTo, 'yyyy-12-31');
-
-    const { data: navInvoices } = await supabase
-      .from("nav_invoices")
-      .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, transaction_id, currency")
-      .eq("company_id", selectedCompany?.id)
-      .gte("invoice_issue_date", yearStart)
-      .lte("invoice_issue_date", yearEnd);
-
-    const { data: salaries } = await supabase
-      .from("salary")
-      .select("dátum, összeg, statusz, transaction_id")
-      .eq("company_id", selectedCompany?.id)
-      .not("transaction_id", "is", null)
-      .gte("dátum", yearStart)
-      .lte("dátum", yearEnd) as { data: any[] | null };
-
-    setRawInvoices(navInvoices || []);
-    setRawSalaries(
-      (salaries || [])
-        .map((s: any) => ({ dátum: s.dátum, összeg: s.összeg, statusz: s.statusz }))
-    );
-  };
-
+  // ── Monthly chart data ──
   const monthlyData = useMemo(() => {
-    // Helper: HUF-ba konvertál tetszőleges pénznemből
     const convertToHUF = (amount: number, fromCurrency: string | null): number => {
       const currency = fromCurrency || 'HUF';
       if (currency === 'HUF') return amount;
-      
-      // exchangeRates a HUF-hoz képest vannak (pl. EUR = 0.0026)
-      // Tehát: EUR összeg → HUF = összeg / exchangeRates['EUR']
       const rate = exchangeRates[currency];
-      if (!rate || rate === 0) return amount; // fallback ha nincs árfolyam
+      if (!rate || rate === 0) return amount;
       return amount / rate;
     };
 
@@ -322,163 +545,33 @@ const Index = () => {
       if (inv.invoice_issue_date) {
         const date = parseISO(inv.invoice_issue_date);
         const monthIndex = date.getMonth();
-        const originalAmount = showBrutto 
+        const originalAmount = showBrutto
           ? (inv.invoice_gross_amount || 0)
           : (inv.invoice_net_amount || 0);
-        
-        // Konvertálás HUF-ba
         const amount = convertToHUF(originalAmount, inv.currency);
-        
         const isPaid = !!inv.transaction_id;
         if (inv.invoice_direction === "OUTBOUND") {
-          if (isPaid) {
-            monthlyMap[monthIndex].revenuePaid += amount;
-          } else {
-            monthlyMap[monthIndex].revenueUnpaid += amount;
-          }
-        } else { // INBOUND
-          if (isPaid) {
-            monthlyMap[monthIndex].expensesPaid -= amount; // NEGATÍV
-          } else {
-            monthlyMap[monthIndex].expensesUnpaid -= amount; // NEGATÍV
-          }
+          if (isPaid) monthlyMap[monthIndex].revenuePaid += amount;
+          else monthlyMap[monthIndex].revenueUnpaid += amount;
+        } else {
+          if (isPaid) monthlyMap[monthIndex].expensesPaid -= amount;
+          else monthlyMap[monthIndex].expensesUnpaid -= amount;
         }
       }
     });
 
-    // Bérek már HUF-ban vannak
     rawSalaries.forEach(sal => {
       if (sal.dátum) {
         const date = parseISO(sal.dátum);
         const monthIndex = date.getMonth();
-        monthlyMap[monthIndex].salaries -= (sal.összeg || 0); // NEGATÍV - kiadásokhoz
+        monthlyMap[monthIndex].salaries -= (sal.összeg || 0);
       }
     });
 
     return Object.values(monthlyMap);
   }, [rawInvoices, rawSalaries, showBrutto, exchangeRates]);
 
-  const fetchVatData = async () => {
-    const monthStart = dateFromFormatted;
-    const monthEnd = dateToFormatted;
-
-    // Fetch VAT data from nav_invoice_items with actual vat_rate field
-    const { data: vatItems } = await supabase
-      .from("nav_invoice_items")
-      .select(`
-        vat_rate,
-        net_amount,
-        vat_amount,
-        nav_invoices!inner (
-          invoice_direction,
-          invoice_issue_date,
-          company_id
-        )
-      `)
-      .eq("nav_invoices.company_id", selectedCompany?.id)
-      .gte("nav_invoices.invoice_issue_date", monthStart)
-      .lte("nav_invoices.invoice_issue_date", monthEnd);
-
-    // If we have detailed line items, use them for breakdown by VAT rate
-    if (vatItems && vatItems.length > 0) {
-      const outboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
-      const inboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
-
-      vatItems.forEach(item => {
-        const navInvoice = item.nav_invoices as unknown as { invoice_direction: string };
-        const direction = navInvoice?.invoice_direction;
-        
-        let rateLabel: string;
-        if (item.vat_rate === null || item.vat_rate === undefined) {
-          rateLabel = 'ÁFA mentes';
-        } else {
-          const ratePercent = Math.round(Number(item.vat_rate) * 100);
-          rateLabel = `${ratePercent}%`;
-        }
-        
-        const target = direction === 'OUTBOUND' ? outboundByRate : inboundByRate;
-        
-        if (!target[rateLabel]) {
-          target[rateLabel] = { netAmount: 0, vatAmount: 0 };
-        }
-        target[rateLabel].netAmount += item.net_amount || 0;
-        target[rateLabel].vatAmount += item.vat_amount || 0;
-      });
-
-      const sortOrder = ['ÁFA mentes', '5%', '18%', '27%'];
-      const sortCategories = (categories: VatCategoryData[]) => {
-        return categories.sort((a, b) => {
-          const indexA = sortOrder.indexOf(a.rate);
-          const indexB = sortOrder.indexOf(b.rate);
-          if (indexA === -1 && indexB === -1) return a.rate.localeCompare(b.rate);
-          if (indexA === -1) return 1;
-          if (indexB === -1) return -1;
-          return indexA - indexB;
-        });
-      };
-
-      const outboundCategories = sortCategories(
-        Object.entries(outboundByRate).map(([rate, data]) => ({
-          rate,
-          netAmount: data.netAmount,
-          vatAmount: data.vatAmount
-        }))
-      );
-
-      const inboundCategories = sortCategories(
-        Object.entries(inboundByRate).map(([rate, data]) => ({
-          rate,
-          netAmount: data.netAmount,
-          vatAmount: data.vatAmount
-        }))
-      );
-
-      const totalOutbound = outboundCategories.reduce((sum, c) => sum + c.vatAmount, 0);
-      const totalInbound = inboundCategories.reduce((sum, c) => sum + c.vatAmount, 0);
-
-      setTotalOutboundVat(totalOutbound);
-      setTotalInboundVat(totalInbound);
-      setOutboundVatCategories(outboundCategories);
-      setInboundVatCategories(inboundCategories);
-    } else {
-      // Fallback: use nav_invoices table for aggregated VAT totals
-      const { data: navInvoices } = await supabase
-        .from("nav_invoices")
-        .select("invoice_direction, invoice_vat_amount, invoice_net_amount")
-        .eq("company_id", selectedCompany?.id)
-        .gte("invoice_issue_date", monthStart)
-        .lte("invoice_issue_date", monthEnd);
-
-      let outboundVatTotal = 0;
-      let inboundVatTotal = 0;
-      let outboundNetTotal = 0;
-      let inboundNetTotal = 0;
-
-      navInvoices?.forEach(inv => {
-        if (inv.invoice_direction === 'OUTBOUND') {
-          outboundVatTotal += inv.invoice_vat_amount || 0;
-          outboundNetTotal += inv.invoice_net_amount || 0;
-        } else {
-          inboundVatTotal += inv.invoice_vat_amount || 0;
-          inboundNetTotal += inv.invoice_net_amount || 0;
-        }
-      });
-
-      setTotalOutboundVat(outboundVatTotal);
-      setTotalInboundVat(inboundVatTotal);
-      setOutboundVatCategories([{ 
-        rate: 'Összesített', 
-        vatAmount: outboundVatTotal, 
-        netAmount: outboundNetTotal 
-      }]);
-      setInboundVatCategories([{ 
-        rate: 'Összesített', 
-        vatAmount: inboundVatTotal, 
-        netAmount: inboundNetTotal 
-      }]);
-    }
-  };
-
+  // ── Derived analytics calculations ──
   const formatAnalyticsCurrency = (amount: number, compact = false) => {
     if (compact && Math.abs(amount) >= 1000000) {
       return `${(amount / 1000000).toFixed(2).replace('.', ',')} M Ft`;
@@ -502,230 +595,15 @@ const Index = () => {
   const inboundTotalVat = inboundVatCategories.reduce((sum, c) => sum + c.vatAmount, 0);
   const inboundTotalNet = inboundVatCategories.reduce((sum, c) => sum + c.netAmount, 0);
 
-  const fetchDashboardData = async () => {
-    if (!user || !selectedCompany) return;
-
-    try {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (profileError) throw profileError;
-      setProfile(profileData);
-
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('company_id', selectedCompany.id)
-        .order('created_at', { ascending: false });
-
-      if (categoriesError) throw categoriesError;
-      setCategories(categoriesData || []);
-
-      const { data: invoicesData, error: invoicesError } = await supabase
-        .from('invoices')
-        .select(`*, categories(name)`)
-        .eq('company_id', selectedCompany.id)
-        .order('kibocsatas_datuma', { ascending: false })
-        .limit(10);
-
-      if (invoicesError) throw invoicesError;
-      
-      const formattedInvoices = (invoicesData || []).map(invoice => ({
-        ...invoice,
-        category_name: invoice.categories?.name
-      }));
-      setInvoices(formattedInvoices);
-
-      // Use RPC functions for aggregation to avoid 1000 row limit
-      const { data: invoiceAggregates, error: invoiceAggError } = await supabase
-        .rpc('get_invoice_aggregates', {
-          p_company_id: selectedCompany.id,
-          p_date_from: dateFromFormatted,
-          p_date_to: dateToFormatted
-        });
-
-      if (invoiceAggError) {
-        console.error('Invoice aggregation error:', invoiceAggError);
-        throw invoiceAggError;
-      }
-
-      const selectedPeriodAmountByCurrency: { [key: string]: number } = {};
-      let totalInvoices = 0;
-      let processingCount = 0;
-      let completedCount = 0;
-      
-      (invoiceAggregates || []).forEach((agg: { currency: string; total_gross: number; processing_count: number; completed_count: number; total_count: number }) => {
-        const currency = agg.currency || 'HUF';
-        selectedPeriodAmountByCurrency[currency] = (selectedPeriodAmountByCurrency[currency] || 0) + Number(agg.total_gross || 0);
-        totalInvoices += Number(agg.total_count || 0);
-        processingCount += Number(agg.processing_count || 0);
-        completedCount += Number(agg.completed_count || 0);
-      });
-
-      setMetrics({
-        totalInvoices,
-        totalAmountByCurrency: selectedPeriodAmountByCurrency,
-        thisMonthAmountByCurrency: selectedPeriodAmountByCurrency,
-        averageInvoiceAmount: 0,
-        processingCount,
-        completedCount
-      });
-
-      // Use RPC function for NAV invoice aggregation to avoid 1000 row limit
-      const { data: navAggregates, error: navAggError } = await supabase
-        .rpc('get_nav_invoice_aggregates', {
-          p_company_id: selectedCompany.id,
-          p_date_from: dateFromFormatted,
-          p_date_to: dateToFormatted
-        });
-
-      if (navAggError) {
-        console.error('NAV aggregation error:', navAggError);
-        throw navAggError;
-      }
-
-      const inboundVat: { [currency: string]: number } = {};
-      const outboundVat: { [currency: string]: number } = {};
-      const revenueNet: { [currency: string]: number } = {};
-      const revenueGross: { [currency: string]: number } = {};
-      const expensesNet: { [currency: string]: number } = {};
-      const expensesGross: { [currency: string]: number } = {};
-      const unpaidInboundNet: { [currency: string]: number } = {};
-      const unpaidInboundGross: { [currency: string]: number } = {};
-      const unpaidOutboundNet: { [currency: string]: number } = {};
-      const unpaidOutboundGross: { [currency: string]: number } = {};
-
-      (navAggregates || []).forEach((agg: { 
-        invoice_direction: string; 
-        currency: string; 
-        total_net: number; 
-        total_gross: number; 
-        total_vat: number;
-        paid_net: number;
-        paid_gross: number;
-        unpaid_net: number;
-        unpaid_gross: number;
-        invoice_count: number;
-      }) => {
-        const currency = agg.currency || 'HUF';
-        const vatAmount = Number(agg.total_vat || 0);
-        const netAmount = Number(agg.total_net || 0);
-        const grossAmount = Number(agg.total_gross || 0);
-        const unpaidNet = Number(agg.unpaid_net || 0);
-        const unpaidGross = Number(agg.unpaid_gross || 0);
-
-        if (agg.invoice_direction === 'INBOUND') {
-          inboundVat[currency] = (inboundVat[currency] || 0) + vatAmount;
-          expensesNet[currency] = (expensesNet[currency] || 0) + netAmount;
-          expensesGross[currency] = (expensesGross[currency] || 0) + grossAmount;
-          unpaidInboundNet[currency] = (unpaidInboundNet[currency] || 0) + unpaidNet;
-          unpaidInboundGross[currency] = (unpaidInboundGross[currency] || 0) + unpaidGross;
-        } else if (agg.invoice_direction === 'OUTBOUND') {
-          outboundVat[currency] = (outboundVat[currency] || 0) + vatAmount;
-          revenueNet[currency] = (revenueNet[currency] || 0) + netAmount;
-          revenueGross[currency] = (revenueGross[currency] || 0) + grossAmount;
-          unpaidOutboundNet[currency] = (unpaidOutboundNet[currency] || 0) + unpaidNet;
-          unpaidOutboundGross[currency] = (unpaidOutboundGross[currency] || 0) + unpaidGross;
-        }
-      });
-
-      setNavVatData({ inboundVat, outboundVat, revenueNet, revenueGross, expensesNet, expensesGross, unpaidInboundNet, unpaidInboundGross, unpaidOutboundNet, unpaidOutboundGross });
-
-      // Fetch petty cash balance
-      try {
-        const { data: hpSettings } = await supabase
-          .from('hp_settings')
-          .select('opening_balance, start_date')
-          .eq('company_id', selectedCompany.id)
-          .maybeSingle();
-
-        // Only use opening balance if hp_settings exists AND start_date is set
-        const hasValidSettings = hpSettings && hpSettings.start_date;
-        const ob = hasValidSettings ? (hpSettings.opening_balance || 0) : 0;
-        const startDateFilter = hpSettings?.start_date;
-
-        if (!hasValidSettings) {
-          setPettyCashBalance(null);
-        } else {
-
-        let withdrawalsQuery = supabase
-          .from('transactions')
-          .select('amount')
-          .eq('company_id', selectedCompany.id)
-          .in('type', ['atm készpénzfelvét', 'pénztári kp felvét']);
-        if (startDateFilter) withdrawalsQuery = withdrawalsQuery.gte('transaction_date', startDateFilter);
-
-        let cashDepositsQuery = supabase
-          .from('transactions')
-          .select('amount')
-          .eq('company_id', selectedCompany.id)
-          .in('type', ['pénztári kp befizetés', 'kp befizetés atm-en keresztül']);
-        if (startDateFilter) cashDepositsQuery = cashDepositsQuery.gte('transaction_date', startDateFilter);
-
-        let cashSalesQuery = supabase
-          .from('nav_invoices')
-          .select('invoice_gross_amount')
-          .eq('company_id', selectedCompany.id)
-          .eq('invoice_direction', 'OUTBOUND')
-          .in('payment_method', ['CASH', 'KÉSZPÉNZ']);
-        if (startDateFilter) cashSalesQuery = cashSalesQuery.gte('invoice_issue_date', startDateFilter);
-
-        let cashExpensesQuery = supabase
-          .from('invoices')
-          .select('brutto_vegosszeg, bizonylatsorszam')
-          .eq('company_id', selectedCompany.id)
-          .ilike('fizetesi_mod', '%készpénz%')
-          .is('reference_number', null);
-        if (startDateFilter) cashExpensesQuery = cashExpensesQuery.gte('kibocsatas_datuma', startDateFilter);
-
-        let navCashExpensesQuery = supabase
-          .from('nav_invoices')
-          .select('invoice_gross_amount, invoice_number')
-          .eq('company_id', selectedCompany.id)
-          .eq('invoice_direction', 'INBOUND')
-          .in('payment_method', ['CASH', 'KÉSZPÉNZ']);
-        if (startDateFilter) navCashExpensesQuery = navCashExpensesQuery.gte('invoice_issue_date', startDateFilter);
-
-        const [withdrawalsRes, cashDepositsRes, cashSalesRes, cashExpensesRes, navCashExpensesRes] = await Promise.all([
-          withdrawalsQuery, cashDepositsQuery, cashSalesQuery, cashExpensesQuery, navCashExpensesQuery
-        ]);
-
-        const withdrawals = (withdrawalsRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
-        const cashDeposits = (cashDepositsRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
-        const cashSales = (cashSalesRes.data || []).reduce((sum: number, inv: any) => sum + Math.abs(inv.invoice_gross_amount || 0), 0);
-        const cashExpenses = (cashExpensesRes.data || []).reduce((sum: number, inv: any) => sum + Math.abs(inv.brutto_vegosszeg || 0), 0);
-
-        // De-duplicate: exclude nav_invoices already present in invoices table
-        const invoiceNumbers = new Set((cashExpensesRes.data || []).map((inv: any) => inv.bizonylatsorszam).filter(Boolean));
-        const navCashExpenses = (navCashExpensesRes.data || [])
-          .filter((inv: any) => !inv.invoice_number || !invoiceNumbers.has(inv.invoice_number))
-          .reduce((sum: number, inv: any) => sum + Math.abs(inv.invoice_gross_amount || 0), 0);
-
-        setPettyCashBalance(ob + withdrawals - cashDeposits + cashSales - cashExpenses - navCashExpenses);
-        }
-      } catch (e) {
-        console.error('Error fetching petty cash balance:', e);
-      }
-
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const getCategoryBreakdownData = () => {
     if (!categories.length || !invoices.length) return [];
 
     const categoryStats = categories.map(category => {
       const categoryInvoices = invoices.filter(invoice => invoice.category_id === category.id && !(invoice as any).reference_number);
       const totalAmount = categoryInvoices.reduce((sum, invoice) => sum + invoice.brutto_vegosszeg, 0);
-      
+
       const allTotal = metrics ? Object.values(metrics.totalAmountByCurrency).reduce((sum, val) => sum + val, 0) : 0;
-      
+
       return {
         id: category.id,
         name: category.name,
@@ -745,24 +623,19 @@ const Index = () => {
     await signOut();
   };
 
-  // Loading state check
-
-  // Handle onboarding complete - trigger product tour
   const handleOnboardingComplete = () => {
     setTimeout(() => setShowTour(true), 500);
   };
 
-  // Show empty state dashboard when no companies exist (check FIRST before any loading states)
+  // Show empty state dashboard when no companies exist
   if (!companyLoading && companies.length === 0) {
     return <EmptyStateDashboard onOnboardingComplete={handleOnboardingComplete} />;
   }
 
-  // Show loading spinner while company data is being fetched
   if (companyLoading) {
     return <LoadingSpinner message="Irányítópult betöltése..." />;
   }
 
-  // Show loading spinner while metrics data is being fetched
   if (metricsLoading) {
     return <LoadingSpinner message="Irányítópult betöltése..." />;
   }
@@ -819,7 +692,6 @@ const Index = () => {
             payableVat = outboundTotal - inboundTotal;
           }
 
-          // Get the appropriate revenue data based on nettó/bruttó toggle
           const revenueData = showBrutto ? navVatData?.revenueGross : navVatData?.revenueNet;
           const expensesData = showBrutto ? navVatData?.expensesGross : navVatData?.expensesNet;
           const unpaidInboundData = showBrutto ? navVatData?.unpaidInboundGross : navVatData?.unpaidInboundNet;
@@ -1171,7 +1043,6 @@ const Index = () => {
                   <ResponsiveContainer width="100%" height={350}>
                     <AreaChart data={monthlyData}>
                       <defs>
-                        {/* Bevételi gradiensek (zöld árnyalatok - felfelé) */}
                         <linearGradient id="revenuePaidGradient" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#16A34A" stopOpacity={0.4}/>
                           <stop offset="95%" stopColor="#16A34A" stopOpacity={0.05}/>
@@ -1180,7 +1051,6 @@ const Index = () => {
                           <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3}/>
                           <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.05}/>
                         </linearGradient>
-                        {/* Kiadási gradiensek (piros árnyalatok - lefelé, negatív tartomány) */}
                         <linearGradient id="expensesPaidGradient" x1="0" y1="1" x2="0" y2="0">
                           <stop offset="5%" stopColor="#DC2626" stopOpacity={0.4}/>
                           <stop offset="95%" stopColor="#DC2626" stopOpacity={0.05}/>
@@ -1189,7 +1059,6 @@ const Index = () => {
                           <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
                           <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.05}/>
                         </linearGradient>
-                        {/* Bérek gradiens (lila - lefelé, negatív tartomány) */}
                         <linearGradient id="salariesGradient" x1="0" y1="1" x2="0" y2="0">
                           <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
                           <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.05}/>
@@ -1223,7 +1092,6 @@ const Index = () => {
                           borderRadius: '8px'
                         }}
                       />
-                      {/* Pozitív tartomány - Bevételek (zöld) */}
                       {showRevenuePaid && (
                         <Area 
                           type="monotone" 
@@ -1246,7 +1114,6 @@ const Index = () => {
                           stackId="positive"
                         />
                       )}
-                      {/* Negatív tartomány - Kiadások (piros) és Bérek (lila) */}
                       {showExpensesPaid && (
                         <Area 
                           type="monotone" 

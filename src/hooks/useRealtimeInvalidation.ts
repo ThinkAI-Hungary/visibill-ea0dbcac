@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Subscribe to Supabase Realtime changes on salary, invoices, nav_invoices, and transactions tables.
+ * Subscribe to Supabase Realtime changes on core tables.
  * On any change, invalidate related TanStack Query keys so the UI updates immediately.
  */
 export function useRealtimeInvalidation(companyId: string | undefined) {
@@ -28,6 +28,7 @@ export function useRealtimeInvalidation(companyId: string | undefined) {
             'salaries', 'dashboardData', 'dashboardAnalytics',
             'analyticsRaw', 'analyticsVat',
             'pettyCashEntries',
+            'uploadHistory',
           ]);
         }
       )
@@ -39,6 +40,7 @@ export function useRealtimeInvalidation(companyId: string | undefined) {
             'submittedInvoices', 'linkedInvoices', 'invoiceTransactions',
             'dashboardData', 'kintlevo-manual',
             'invoiceStatusPayable', 'invoiceStatusMissing',
+            'recentInvoices', 'uploadHistory', 'dashboardPettyCash',
           ]);
         }
       )
@@ -52,6 +54,7 @@ export function useRealtimeInvalidation(companyId: string | undefined) {
             'invoiceStatusPayable', 'invoiceStatusMissing',
             'analyticsRaw', 'analyticsVat',
             'projects', 'projectsList',
+            'dashboardPettyCash',
           ]);
         }
       )
@@ -68,7 +71,29 @@ export function useRealtimeInvalidation(companyId: string | undefined) {
             'pettyCashEntries', 'pettyCashSettings',
             'analyticsRaw', 'analyticsVat',
             'projects', 'projectsList',
+            'dashboardPettyCash',
           ]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'invoice_uploads', filter: `company_id=eq.${companyId}` },
+        () => {
+          invalidateAll(['uploadHistory']);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'salary_files', filter: `company_id=eq.${companyId}` },
+        () => {
+          invalidateAll(['uploadHistory']);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'transaction_uploads', filter: `company_id=eq.${companyId}` },
+        () => {
+          invalidateAll(['uploadHistory']);
         }
       )
       .subscribe();
