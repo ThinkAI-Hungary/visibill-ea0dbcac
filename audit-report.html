@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Visibill – Technikai Audit & Health Check</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22252f;
+    --border: #2a2d3a;
+    --text: #e4e4e7;
+    --text-muted: #9ca3af;
+    --accent: #818cf8;
+    --red: #f87171;
+    --red-bg: rgba(248,113,113,0.08);
+    --yellow: #fbbf24;
+    --yellow-bg: rgba(251,191,36,0.08);
+    --blue: #60a5fa;
+    --blue-bg: rgba(96,165,250,0.08);
+    --green: #34d399;
+    --green-bg: rgba(52,211,153,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 40px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--accent), #a78bfa, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-top: 48px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 28px;
+    margin-bottom: 10px;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 32px;
+  }
+
+  p, li { font-size: 0.92rem; margin-bottom: 8px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 4px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 0.85rem;
+  }
+  th, td {
+    padding: 10px 12px;
+    text-align: left;
+    border: 1px solid var(--border);
+  }
+  th {
+    background: var(--surface2);
+    font-weight: 600;
+    color: var(--text);
+  }
+  td { background: var(--surface); }
+
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+  }
+  p code, li code, td code {
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.82rem;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .tag-p0 { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+  .tag-p1 { background: var(--yellow-bg); color: var(--yellow); border: 1px solid rgba(251,191,36,0.2); }
+  .tag-p2 { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(96,165,250,0.2); }
+  .tag-ok { background: var(--green-bg); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
+
+  .alert {
+    padding: 14px 18px;
+    border-radius: 8px;
+    margin: 16px 0;
+    font-size: 0.88rem;
+    border-left: 4px solid;
+  }
+  .alert-danger { background: var(--red-bg); border-color: var(--red); }
+  .alert-warn { background: var(--yellow-bg); border-color: var(--yellow); }
+  .alert-info { background: var(--blue-bg); border-color: var(--blue); }
+
+  .diff-add { color: var(--green); }
+  .diff-del { color: var(--red); }
+  .comment { color: var(--text-muted); }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 40px 0;
+  }
+
+  .check { color: var(--green); }
+  .cross { color: var(--red); }
+
+  @media print {
+    body { background: white; color: #1a1a1a; padding: 20px; font-size: 11pt; }
+    h1 { background: none; -webkit-text-fill-color: #4338ca; color: #4338ca; }
+    h2 { color: #4338ca; border-color: #e5e7eb; }
+    pre { background: #f9fafb; border-color: #e5e7eb; }
+    code { background: #f3f4f6; }
+    th { background: #f3f4f6; }
+    td { background: white; }
+    th, td { border-color: #e5e7eb; }
+    .tag-p0 { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+    .tag-p1 { background: #fffbeb; color: #d97706; border-color: #fde68a; }
+    .tag-p2 { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+    .tag-ok { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+    .alert-danger { background: #fef2f2; border-color: #dc2626; }
+    .alert-warn { background: #fffbeb; border-color: #d97706; }
+    .alert-info { background: #eff6ff; border-color: #2563eb; }
+    .diff-add { color: #16a34a; }
+    .diff-del { color: #dc2626; }
+    .comment { color: #6b7280; }
+    .surface-alt { background: #f9fafb; }
+    .check { color: #16a34a; }
+    .cross { color: #dc2626; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🏥 Visibill – Technikai Audit & Health Check</h1>
+<p class="subtitle">
+  <strong>Auditor nézőpont:</strong> Senior Software Architect & Adatbázis Szakértő<br>
+  <strong>Dátum:</strong> 2026-03-20 &nbsp;|&nbsp;
+  <strong>Projekt:</strong> <code>visibill-709fffdf</code> (Vite + React + TypeScript + Supabase)
+</p>
+
+<hr>
+
+<h2>📋 Összefoglaló Health Check Prioritási Lista</h2>
+
+<table>
+  <thead>
+    <tr><th>Prior.</th><th>Probléma</th><th>Fájl(ok)</th><th>Típus</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><span class="tag tag-p0">P0</span></td><td><code>nav_invoice_items</code> RLS: <code>USING(true)</code> → bárki olvashat/írhat</td><td>DB policy</td><td>Biztonság</td></tr>
+    <tr><td><span class="tag tag-p0">P0</span></td><td><code>invoices.category_id</code> FK: <code>NO ACTION</code> → törlés blokkolódik</td><td>DB schema</td><td>Adatintegritás</td></tr>
+    <tr><td><span class="tag tag-p0">P0</span></td><td>Auto-approve side-effect a <code>queryFn</code>-ben (write a read-ban)</td><td>TransactionsPage.tsx</td><td>Anti-pattern</td></tr>
+    <tr><td><span class="tag tag-p1">P1</span></td><td><code>statusz</code> mező manuális string-ként kezelve, nem computed</td><td>salary, invoices</td><td>Adat-inkonzisztencia</td></tr>
+    <tr><td><span class="tag tag-p1">P1</span></td><td><code>dunning_sends</code> RLS: <code>user_id</code>-re szűr, nem <code>company_id</code>-ra</td><td>DB policy</td><td>Multi-tenancy</td></tr>
+    <tr><td><span class="tag tag-p1">P1</span></td><td><code>bank_transactions</code> RLS: <code>user_id</code>-re szűr, nem <code>company_id</code>-ra</td><td>DB policy</td><td>Multi-tenancy</td></tr>
+    <tr><td><span class="tag tag-p1">P1</span></td><td>Filter dropdown query 500 soros limittel</td><td>TransactionsPage.tsx</td><td>Skálázhatóság</td></tr>
+    <tr><td><span class="tag tag-p1">P1</span></td><td><code>formatCurrency</code> duplikált lokális verzió</td><td>Analytics.tsx</td><td>Kód minőség</td></tr>
+    <tr><td><span class="tag tag-p1">P1</span></td><td><code>exportToFile</code> duplikált 2 fájlban</td><td>TransactionsPage + useInvoiceMutations</td><td>Kód minőség</td></tr>
+    <tr><td><span class="tag tag-p2">P2</span></td><td>Leaked password protection kikapcsolva</td><td>Auth beállítás</td><td>Biztonság</td></tr>
+    <tr><td><span class="tag tag-p2">P2</span></td><td>DB function <code>search_path</code> nincs beállítva</td><td>update_updated_at</td><td>Biztonság</td></tr>
+    <tr><td><span class="tag tag-p2">P2</span></td><td><code>pg_net</code> extension a <code>public</code> schemában</td><td>DB config</td><td>Biztonság</td></tr>
+    <tr><td><span class="tag tag-p2">P2</span></td><td>8 Realtime listener egyetlen channelen</td><td>useRealtimeInvalidation.ts</td><td>Teljesítmény</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2>1. ADAT-INKONZISZTENCIÁK (Data Integrity)</h2>
+
+<h3><span class="tag tag-p0">P0</span> <code>invoices.category_id</code> FK: <code>NO ACTION</code> — törlés blokkolja a rendszert</h3>
+
+<p>A <code>invoices</code> tábla <code>category_id</code> mezőjének FK constraint-je <code>NO ACTION</code> szabályt használ törléskor. Ha egy kategóriát törölnek, az <strong>összes hozzákapcsolt invoice megakadályozza a törlést</strong>, FK violation hibát dobva.</p>
+
+<pre><code><span class="comment">-- Jelenlegi viselkedés:</span>
+<span class="comment">-- invoices.category_id → categories.id  ON DELETE NO ACTION ❌</span>
+
+<span class="comment">-- Javasolt fix:</span>
+<span class="diff-add">ALTER TABLE public.invoices
+  DROP CONSTRAINT invoices_project_id_fkey,  -- a constraint neve félrevezető!
+  ADD CONSTRAINT invoices_category_id_fkey
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL;</span></code></pre>
+
+<div class="alert alert-danger">
+  <strong>⚠️ FIGYELEM:</strong> A constraint neve <code>invoices_project_id_fkey</code> de a <code>category_id</code> oszlopra mutat! Ez egy migrációs hiba, ami nagyon nehezen debugolható.
+</div>
+
+<p><strong>Többi FK constraint helyes:</strong></p>
+<table>
+  <thead><tr><th>FK</th><th>ON DELETE</th><th>Értékelés</th></tr></thead>
+  <tbody>
+    <tr><td><code>invoices.transaction_id → transactions.id</code></td><td>SET NULL</td><td><span class="check">✅</span></td></tr>
+    <tr><td><code>invoices.company_id → companies.id</code></td><td>CASCADE</td><td><span class="check">✅</span></td></tr>
+    <tr><td><code>salary.transaction_id → transactions.id</code></td><td>SET NULL</td><td><span class="check">✅</span></td></tr>
+    <tr><td><code>nav_invoices.transaction_id → transactions.id</code></td><td>SET NULL</td><td><span class="check">✅</span></td></tr>
+    <tr><td><code>salary.salary_file_id → salary_files.id</code></td><td>CASCADE</td><td><span class="check">✅</span></td></tr>
+  </tbody>
+</table>
+
+<h3><span class="tag tag-p1">P1</span> <code>statusz</code> mező manuális string-ként kezelve</h3>
+
+<p>A <code>salary.statusz</code> és <code>invoices.statusz</code> mezőket az n8n és a frontend is <strong>nyers string</strong>-ként kezelik, miközben az alkalmazás logikája a <code>transaction_id</code> alapján dönt a fizetési státuszról (useComputedStatus.ts):</p>
+
+<p><strong>Probléma — kettős igazságforrás:</strong></p>
+
+<pre><code><span class="comment">// useComputedStatus.ts (L12-13) — HELYES computed approach:</span>
+export function computePaymentStatus(transactionId: string | null | undefined): PaymentStatus {
+  return transactionId ? 'paid' : 'pending';
+}
+
+<span class="comment">// useSalaryData.ts (L89) — HELYTELEN: manuálisan ír 'Kifizetve' stringet:</span>
+const { error } = await supabase.from('salary').insert([{
+  ...
+  <span class="diff-del">statusz: 'Kifizetve',  // ❌ Hardcoded string!</span>
+  ...
+}]);
+
+<span class="comment">// TransactionDetailsDialog.tsx (L560) — Közvetlenül a DB stringet jeleníti meg:</span>
+<span class="diff-del">&lt;Badge variant="outline"&gt;{matchedSalary.statusz}&lt;/Badge&gt;  // ❌ DB string</span></code></pre>
+
+<div class="alert alert-warn">
+  <strong>📝 MEGJEGYZÉS:</strong> A <code>salary.statusz</code> oszlop <strong>nem törölhető</strong> azonnal, mert az n8n workflow-k is írják. Középtávon: (1) deprecated-ként jelöld, (2) computed column-ra cseréld, (3) a frontend-en mindenhol <code>computePaymentStatus(transaction_id)</code>-t használj.
+</div>
+
+<hr>
+
+<h2>2. MULTI-TENANCY ÉS BIZTONSÁG (RLS Audit)</h2>
+
+<h3><span class="tag tag-p0">P0</span> <code>nav_invoice_items</code> — RLS teljesen megkerülhető</h3>
+
+<pre><code><span class="comment">-- JELENLEGI POLICY — bármely autentikált user teljes hozzáférést kap:</span>
+CREATE POLICY "Service role can manage invoice items"
+  ON public.nav_invoice_items
+  FOR ALL
+  <span class="diff-del">USING (true)        -- ❌ BÁRKI OLVASHAT</span>
+  <span class="diff-del">WITH CHECK (true);  -- ❌ BÁRKI ÍRHAT</span></code></pre>
+
+<p><strong>Javítás:</strong></p>
+
+<pre><code><span class="diff-del">DROP POLICY "Service role can manage invoice items" ON public.nav_invoice_items;</span>
+
+<span class="comment">-- Hozd létre company_members alapú policy-t:</span>
+<span class="diff-add">CREATE POLICY "Members can view nav_invoice_items" ON public.nav_invoice_items
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM nav_invoices ni
+      JOIN company_members cm ON cm.company_id = ni.company_id
+      WHERE ni.id = nav_invoice_items.nav_invoice_id
+        AND cm.user_id = auth.uid()
+    )
+  );</span>
+
+<span class="comment">-- INSERT/UPDATE/DELETE-re service_role-t használj, ne public-ot</span></code></pre>
+
+<h3><span class="tag tag-p1">P1</span> <code>dunning_sends</code> és <code>bank_transactions</code> — user_id alapú RLS</h3>
+
+<pre><code><span class="comment">-- dunning_sends: user_id-re szűr, nem company_members-re</span>
+"Users can view own dunning sends" → USING (auth.uid() = user_id)
+
+<span class="comment">-- bank_transactions: parent-en (bank_statements) user_id-re szűr</span>
+"Users can view transactions from their bank statements"
+  → USING (EXISTS (SELECT 1 FROM bank_statements 
+     WHERE bank_statements.id = bank_transactions.bank_statement_id 
+       AND bank_statements.user_id = auth.uid()))</code></pre>
+
+<p><strong>Kockázat:</strong> Ha a <code>dunning_sends</code> egy felhasználó által készül <strong>egy megosztott cégben</strong>, a többi cégtagnak <strong>nem lesz hozzáférése</strong>. Fordítva: ha egy user elhagyja a céget, a <code>user_id</code> alapú policy <strong>továbbra is engedi az adatokhoz való hozzáférést</strong>.</p>
+
+<h3><span class="tag tag-ok">✅</span> Pozitív megállapítások</h3>
+
+<p>A fő táblák (<code>invoices</code>, <code>transactions</code>, <code>salary</code>, <code>nav_invoices</code>, <code>partners</code>, <code>categories</code>, <code>projects</code>) <strong>mind helyesen használják</strong> a <code>company_members</code> join-os RLS pattern-t.</p>
+
+<hr>
+
+<h2>3. SKÁLÁZHATÓSÁGI SZŰK KERESZTMETSZETEK</h2>
+
+<h3><span class="tag tag-p0">P0</span> Auto-approve side-effect a queryFn-ben</h3>
+
+<pre><code><span class="comment">// TransactionsPage.tsx (L243-260):</span>
+queryFn: async () => {
+  <span class="comment">// ... fetch data ...</span>
+  
+  <span class="comment">// ❌ WRITE MŰVELET egy READ QUERY-BEN!</span>
+  <span class="diff-del">const toAutoApprove = fetchedTransactions.filter(
+    t => t.matched_invoice_id && !t.is_verified && t.confidence_score >= 0.9
+  );
+  if (toAutoApprove.length > 0) {
+    await supabase
+      .from('transactions')
+      .update({ is_verified: true, match_type: 'auto' })
+      .in('id', ids);
+  }</span>
+}</code></pre>
+
+<p><strong>Miért kritikus:</strong></p>
+<ul>
+  <li>Minden oldal-navigáció, refetch, vagy TanStack Query retry alkalmával <strong>mellékhatás történik</strong></li>
+  <li>Ha a query hibázik a write után, a felhasználó azt látja hogy hiba van, de az adat már módosult</li>
+  <li>Tesztelhetetlen, nem szándékos duplikált futások</li>
+</ul>
+
+<p><strong>Javítás — DB trigger:</strong></p>
+
+<pre><code><span class="diff-add">CREATE FUNCTION auto_approve_high_confidence() RETURNS trigger AS $$
+BEGIN
+  IF NEW.confidence_score >= 0.9 AND NEW.matched_invoice_id IS NOT NULL THEN
+    NEW.is_verified := true;
+    NEW.match_type := 'auto';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;</span></code></pre>
+
+<h3><span class="tag tag-p1">P1</span> Filter dropdown query 500 soros limittel</h3>
+
+<pre><code><span class="comment">// TransactionsPage.tsx (L180-184):</span>
+const { data, error } = await supabase
+  .from('transactions')
+  .select('currency, type')
+  .eq('company_id', selectedCompany!.id)
+  <span class="diff-del">.limit(500);  // ❌ Ha 10K+ tranzakció van, hiányos filter options</span></code></pre>
+
+<p><strong>Javítás:</strong> Használj <code>DISTINCT</code> server-side lekérdezést RPC-vel.</p>
+
+<h3><span class="tag tag-p2">P2</span> Realtime — 8 listener egyetlen channelen</h3>
+
+<p>A <code>useRealtimeInvalidation.ts</code> 8 táblára figyel egy channelen. Egy <code>transactions</code> UPDATE <strong>15 query key-t</strong> invalidál egyszerre. Javaslat: szétválasztani 2-3 channelre.</p>
+
+<hr>
+
+<h2>4. KÓD MINŐSÉG ÉS ANTI-PATTERNEK</h2>
+
+<h3><span class="tag tag-p1">P1</span> Duplikált <code>exportToFile</code> függvény</h3>
+
+<p><strong>Két helyen identikus implementáció:</strong></p>
+<table>
+  <thead><tr><th>Fájl</th><th>Sor</th></tr></thead>
+  <tbody>
+    <tr><td><code>TransactionsPage.tsx</code></td><td>380–409</td></tr>
+    <tr><td><code>useInvoiceMutations.ts</code></td><td>271–297</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Javítás — kiszervezés közös utility-be:</strong></p>
+
+<pre><code><span class="comment">// lib/exportUtils.ts [NEW]</span>
+<span class="diff-add">import * as XLSX from 'xlsx';
+import { toast } from 'sonner';
+
+export function exportToFile(
+  headers: string[], data: string[][],
+  format: 'csv' | 'xlsx', filename: string
+) {
+  const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+  if (format === 'csv') {
+    const csvContent = [headers.join(','),
+      ...data.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}_${timestamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Exportálva CSV formátumban');
+  } else {
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, filename);
+    XLSX.writeFile(wb, `${filename}_${timestamp}.xlsx`);
+    toast.success('Exportálva XLSX formátumban');
+  }
+}</span></code></pre>
+
+<h3><span class="tag tag-p1">P1</span> Duplikált <code>formatCurrency</code></h3>
+
+<p><code>Analytics.tsx</code> (L230) saját lokális <code>formatCurrency</code>-t definiál <code>compact</code> támogatással, miközben a globális verzió a <code>lib/utils.ts</code>-ben van. Javítás: bővítsd a globális verziót.</p>
+
+<h3><span class="tag tag-ok">✅</span> Error Handling — Megfelelő</h3>
+
+<p>A legtöbb Supabase hívás <code>toast</code> alapú hibajelzéssel rendelkezik. TanStack Query automatikus error boundary is működik.</p>
+
+<hr>
+
+<h2>5. SUPABASE SECURITY ADVISOR (Élő eredmények)</h2>
+
+<table>
+  <thead><tr><th>Szint</th><th>Probléma</th><th>Részletek</th></tr></thead>
+  <tbody>
+    <tr><td><span class="tag tag-p1">WARN</span></td><td>Function search_path mutable</td><td><code>public.update_updated_at</code></td></tr>
+    <tr><td><span class="tag tag-p1">WARN</span></td><td>Function search_path mutable</td><td><code>public.update_updated_at_column</code></td></tr>
+    <tr><td><span class="tag tag-p1">WARN</span></td><td>Extension in public schema</td><td><code>pg_net</code></td></tr>
+    <tr><td><span class="tag tag-p0">WARN</span></td><td>RLS Policy Always True</td><td><code>nav_invoice_items</code></td></tr>
+    <tr><td><span class="tag tag-p1">WARN</span></td><td>Leaked Password Protection</td><td>Auth — kikapcsolva</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2>6. AZONNAL REFAKTORÁLANDÓ FÁJLOK</h2>
+
+<table>
+  <thead><tr><th>#</th><th>Fájl</th><th>Miért</th><th>Prior.</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>DB: <code>nav_invoice_items</code> RLS</td><td><strong>Adatszivárgás</strong> — bárki teljes hozzáférést kap</td><td><span class="tag tag-p0">P0</span></td></tr>
+    <tr><td>2</td><td>DB: <code>invoices.category_id</code> FK</td><td>Kategória törlés <strong>blokkolódik</strong>, hibás constraint név</td><td><span class="tag tag-p0">P0</span></td></tr>
+    <tr><td>3</td><td><code>TransactionsPage.tsx</code> L243-260</td><td>Auto-approve write a queryFn-ben</td><td><span class="tag tag-p0">P0</span></td></tr>
+    <tr><td>4</td><td><code>useSalaryData.ts</code> L89</td><td><code>statusz: 'Kifizetve'</code> hardcoded string</td><td><span class="tag tag-p1">P1</span></td></tr>
+    <tr><td>5</td><td>TransactionsPage + useInvoiceMutations</td><td>Duplikált <code>exportToFile</code></td><td><span class="tag tag-p1">P1</span></td></tr>
+    <tr><td>6</td><td><code>Analytics.tsx</code> L230</td><td>Duplikált <code>formatCurrency</code></td><td><span class="tag tag-p1">P1</span></td></tr>
+    <tr><td>7</td><td>DB: <code>dunning_sends</code> RLS</td><td><code>user_id</code> alapú, nem <code>company_id</code></td><td><span class="tag tag-p1">P1</span></td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<p class="subtitle" style="margin-top: 32px;">
+  <strong>Audit módszertan:</strong> 18 oldal, 28 komponens, 11 hook, 5 context áttekintése. Élő adatbázis: 90+ RLS policy, 31 FK constraint, 5 security advisor warning elemzése.<br>
+  <em>Generálta: Antigravity AI Coding Assistant — 2026-03-20</em>
+</p>
+
+</body>
+</html>

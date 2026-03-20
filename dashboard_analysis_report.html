@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Adat-folyam Analízis — Visibill</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-2: #22252f;
+      --border: #2d3040;
+      --text: #e4e6f0;
+      --text-dim: #8b8fa3;
+      --accent: #7c5cfc;
+      --accent-light: #a78bfa;
+      --green: #34d399;
+      --green-dim: #065f46;
+      --red: #f87171;
+      --red-dim: #7f1d1d;
+      --amber: #fbbf24;
+      --amber-dim: #78350f;
+      --cyan: #22d3ee;
+      --cyan-dim: #164e63;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 40px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .report-header {
+      text-align: center;
+      padding: 48px 32px;
+      background: linear-gradient(135deg, #1a1d27 0%, #1e1640 50%, #1a1d27 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-bottom: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .report-header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--cyan), var(--accent));
+    }
+    .report-header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #fff 0%, var(--accent-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .report-header .subtitle {
+      font-size: 15px;
+      color: var(--text-dim);
+      font-weight: 400;
+    }
+    .report-header .date {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--text-dim);
+      opacity: 0.7;
+    }
+
+    /* Sections */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+
+    .section-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      border-radius: 8px;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      letter-spacing: -0.3px;
+    }
+
+    h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 28px 0 14px;
+      color: var(--accent-light);
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h4 {
+      font-size: 13px;
+      font-weight: 600;
+      margin: 18px 0 10px;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    p, li { font-size: 14px; color: var(--text); }
+    p { margin-bottom: 12px; }
+
+    ul, ol {
+      padding-left: 20px;
+      margin-bottom: 14px;
+    }
+    li { margin-bottom: 6px; }
+    li::marker { color: var(--accent-light); }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+    thead th {
+      background: var(--surface-2);
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+    }
+    tbody td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+    tbody tr:hover {
+      background: var(--surface-2);
+    }
+
+    /* Code */
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: var(--surface-2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--cyan);
+      border: 1px solid var(--border);
+    }
+    pre {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      overflow-x: auto;
+      margin: 14px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+    pre .keyword { color: var(--accent-light); }
+    pre .string { color: var(--green); }
+    pre .comment { color: var(--text-dim); font-style: italic; }
+    pre .fn { color: var(--cyan); }
+    pre .num { color: var(--amber); }
+
+    /* Alert boxes */
+    .alert {
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin: 16px 0;
+      font-size: 13px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .alert-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .alert-caution {
+      background: rgba(248, 113, 113, 0.08);
+      border: 1px solid rgba(248, 113, 113, 0.25);
+      color: var(--red);
+    }
+    .alert-warning {
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.25);
+      color: var(--amber);
+    }
+    .alert-info {
+      background: rgba(124, 92, 252, 0.08);
+      border: 1px solid rgba(124, 92, 252, 0.25);
+      color: var(--accent-light);
+    }
+    .alert-note {
+      background: rgba(34, 211, 238, 0.08);
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      color: var(--cyan);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .badge-green { background: var(--green-dim); color: var(--green); }
+    .badge-red { background: var(--red-dim); color: var(--red); }
+    .badge-amber { background: var(--amber-dim); color: var(--amber); }
+    .badge-purple { background: rgba(124,92,252,0.15); color: var(--accent-light); }
+
+    /* Component tree */
+    .tree {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.8;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin: 16px 0;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .tree .component { color: var(--cyan); font-weight: 500; }
+    .tree .source { color: var(--text-dim); font-style: italic; }
+    .tree .arrow { color: var(--accent-light); }
+
+    /* Comparison table highlight */
+    .compare-table td:nth-child(2) { color: var(--green); }
+    .compare-table td:nth-child(3) { color: var(--amber); }
+
+    /* Summary table */
+    .summary-table tbody tr:nth-child(1) td:first-child,
+    .summary-table tbody tr:nth-child(2) td:first-child,
+    .summary-table tbody tr:nth-child(3) td:first-child,
+    .summary-table tbody tr:nth-child(4) td:first-child,
+    .summary-table tbody tr:nth-child(5) td:first-child,
+    .summary-table tbody tr:nth-child(6) td:first-child {
+      font-weight: 700;
+      color: var(--red);
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: #fff;
+        color: #1a1a2e;
+        padding: 20px;
+      }
+      .report-header {
+        background: #f8f9ff;
+        border-color: #ddd;
+      }
+      .report-header h1 {
+        background: none;
+        -webkit-text-fill-color: #1a1a2e;
+        color: #1a1a2e;
+      }
+      .report-header::before {
+        background: linear-gradient(90deg, #7c5cfc, #22d3ee, #7c5cfc);
+      }
+      .section {
+        background: #fff;
+        border-color: #e2e4e9;
+        break-inside: avoid;
+      }
+      h3 { border-color: #e2e4e9; color: #5b3cc4; }
+      code {
+        background: #f3f4f6;
+        border-color: #e2e4e9;
+        color: #0e7490;
+      }
+      pre {
+        background: #f8f9fb;
+        border-color: #e2e4e9;
+        color: #1a1a2e;
+      }
+      thead th {
+        background: #f3f4f6;
+        color: #555;
+        border-color: #ddd;
+      }
+      tbody td { border-color: #eee; color: #333; }
+      .alert-caution { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+      .alert-warning { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+      .alert-info { background: #f5f3ff; border-color: #c4b5fd; color: #6d28d9; }
+      .alert-note { background: #ecfeff; border-color: #a5f3fc; color: #0e7490; }
+      .badge-green { background: #d1fae5; color: #065f46; }
+      .badge-red { background: #fee2e2; color: #991b1b; }
+      .badge-amber { background: #fef3c7; color: #78350f; }
+      .badge-purple { background: #ede9fe; color: #5b21b6; }
+      .tree { background: #f8f9fb; border-color: #e2e4e9; }
+      .tree .component { color: #0e7490; }
+      .tree .source { color: #888; }
+      .tree .arrow { color: #6d28d9; }
+      p, li { color: #333; }
+      .section-number { background: #5b3cc4; }
+    }
+
+    @page {
+      size: A4;
+      margin: 15mm;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════ HEADER ═══════════════════════ -->
+  <div class="report-header">
+    <h1>Dashboard Adat-folyam Analízis</h1>
+    <div class="subtitle">Visibill — Index.tsx Struktúra Report</div>
+    <div class="date">Készült: 2026. március 20. &nbsp;|&nbsp; Forrás: src/pages/Index.tsx (1253 sor)</div>
+  </div>
+
+  <!-- ═══════════════════════ 1. ADATFORRÁSOK ═══════════════════════ -->
+  <div class="section">
+    <h2><span class="section-number">1</span> Adatforrások feltérképezése</h2>
+
+    <h3>1.1 Lekérdezések táblázata</h3>
+    <p>A Dashboard <strong>6 különálló adatlekérdezést</strong> hajt végre, mindegyik <code>useQuery</code> (TanStack Query) hookon keresztül.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Query neve</th>
+          <th>Tábla / RPC</th>
+          <th>DateRange szűrés</th>
+          <th>Cél</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><code>metrics</code></td>
+          <td>RPC: <code>get_invoice_aggregates</code></td>
+          <td><span class="badge badge-green">✅ Szerver</span></td>
+          <td>KPI: „Feltöltött számlák"</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><code>navVatData</code></td>
+          <td>RPC: <code>get_nav_invoice_aggregates</code></td>
+          <td><span class="badge badge-green">✅ Szerver</span></td>
+          <td>KPI: bevétel, kiadás, „Várható ÁFA"</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><code>analyticsRaw</code></td>
+          <td>Direkt: <code>nav_invoices</code> + <code>salary</code></td>
+          <td><span class="badge badge-amber">⚠️ Éves range</span></td>
+          <td>Bevétel/Kiadás AreaChart</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><code>vatBreakdown</code></td>
+          <td>Direkt: <code>nav_invoice_items</code> JOIN <code>nav_invoices</code></td>
+          <td><span class="badge badge-green">✅ Szerver</span></td>
+          <td>ÁFA diagram + analitikai táblák</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td><code>invoices</code></td>
+          <td>Direkt: <code>invoices</code></td>
+          <td><span class="badge badge-red">❌ Nincs</span></td>
+          <td>„Legutóbbi számlák" (limit 10)</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><code>pettyCashBalance</code></td>
+          <td>RPC: <code>get_petty_cash_balance</code></td>
+          <td><span class="badge badge-red">❌ Nincs</span></td>
+          <td>„Házipénztár" KPI</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>1.2 Táblák használata</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Supabase tábla</th>
+          <th>Hol használják a Dashboardon</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>invoices</code></td>
+          <td><code>get_invoice_aggregates</code> RPC (feltöltött számlák szám) + Recent Invoices lista + Projekt breakdown</td>
+        </tr>
+        <tr>
+          <td><code>nav_invoices</code></td>
+          <td><code>get_nav_invoice_aggregates</code> RPC (bevétel/kiadás/ÁFA KPI-k) + <code>analyticsRaw</code> (chart) + <code>InvoiceStatusTables</code> (fizetendő/hiányzó)</td>
+        </tr>
+        <tr>
+          <td><code>nav_invoice_items</code></td>
+          <td><code>vatBreakdown</code> query (ÁFA analitikai diagram + táblázatok)</td>
+        </tr>
+        <tr>
+          <td><code>salary</code></td>
+          <td><code>analyticsRaw</code> (chart béradatok)</td>
+        </tr>
+        <tr>
+          <td><code>transactions</code></td>
+          <td>Közvetlenül NEM lekérdezett, de a <code>transaction_id</code> mező határozza meg a paid/unpaid állapotot</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>1.3 Van-e Union / Merge logika?</h3>
+    <div class="alert alert-caution">
+      <span class="alert-icon">⛔</span>
+      <div><strong>NINCS.</strong> A manuális számlák (<code>invoices</code>) és a NAV-ból érkező adatok (<code>nav_invoices</code>) <strong>teljesen szeparált adatfolyamokban</strong> kezelődnek. Sehol nincs összefésülés.</div>
+    </div>
+    <ul>
+      <li><code>get_invoice_aggregates</code> → <strong>kizárólag</strong> <code>invoices</code> tábla (feltöltött/manuális számlák)</li>
+      <li><code>get_nav_invoice_aggregates</code> → <strong>kizárólag</strong> <code>nav_invoices</code> tábla</li>
+      <li>A bevétel/kiadás KPI kártyák <strong>kizárólag NAV adatot</strong> mutatnak</li>
+      <li>A „Feltöltött számlák" KPI <strong>kizárólag manuális számlákat</strong> számol</li>
+    </ul>
+
+    <h3>1.4 DateRange szűrés helye</h3>
+    <p>A szűrés <strong>szerver oldalon</strong> történik az RPC-kben és direkt query-kben. A kliens <strong>nem végez utólagos dátumszűrést</strong>.</p>
+    <div class="alert alert-warning">
+      <span class="alert-icon">⚠️</span>
+      <div><strong>Kivétel:</strong> Az <code>analyticsRaw</code> query az <strong>egész évet</strong> lekéri (<code>yyyy-01-01</code> – <code>yyyy-12-31</code>), nem a DateRangeContext-ből kapott tartományt!</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ 2. ÁFA SZÁMÍTÁSI LOGIKÁK ═══════════════════════ -->
+  <div class="section">
+    <h2><span class="section-number">2</span> ÁFA számítási logikák összehasonlítása</h2>
+
+    <div class="alert alert-caution">
+      <span class="alert-icon">🚨</span>
+      <div><strong>KRITIKUS INKONZISZTENCIA:</strong> A „Várható ÁFA" KPI kártya és a „Becsült ÁFA pozíció" diagram <strong>más adatforrásból</strong> és <strong>más logikával</strong> számolja az ÁFA pozíciót.</div>
+    </div>
+
+    <h3>2.1 „Várható ÁFA" — KPI Kártya</h3>
+    <p><strong>Forráskód:</strong> Index.tsx, sor 642–651</p>
+    <pre><span class="comment">// Forrás: navVatData (get_nav_invoice_aggregates RPC)</span>
+<span class="keyword">const</span> inboundTotal = Object.<span class="fn">entries</span>(navVatData.inboundVat)
+  .<span class="fn">reduce</span>((total, [currency, amount]) => {
+    <span class="keyword">return</span> total + <span class="fn">convertToSelectedCurrency</span>(amount, currency);
+  }, <span class="num">0</span>);
+<span class="keyword">const</span> outboundTotal = Object.<span class="fn">entries</span>(navVatData.outboundVat)
+  .<span class="fn">reduce</span>((total, [currency, amount]) => {
+    <span class="keyword">return</span> total + <span class="fn">convertToSelectedCurrency</span>(amount, currency);
+  }, <span class="num">0</span>);
+payableVat = outboundTotal - inboundTotal;</pre>
+
+    <table>
+      <thead>
+        <tr><th>Jellemző</th><th>Érték</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Adatforrás</td><td><code>get_nav_invoice_aggregates</code> RPC → <code>navVatData.outboundVat - inboundVat</code></td></tr>
+        <tr><td>SQL tábla</td><td><code>nav_invoices</code> (fejléc szintű <code>invoice_vat_amount</code>)</td></tr>
+        <tr><td>Képlet</td><td><code>SUM(OUTBOUND vat) - SUM(INBOUND vat)</code></td></tr>
+        <tr><td>Devizakezelés</td><td><span class="badge badge-green">✅ Van</span> — <code>convertToSelectedCurrency()</code></td></tr>
+        <tr><td>Aggregáció szintje</td><td>Számla fejléc szintű</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2.2 „Becsült ÁFA pozíció" — Diagram (Bar Chart)</h3>
+    <p><strong>Forráskód:</strong> Index.tsx, sor 542–549 (számítás) + sor 388–461 (query)</p>
+    <pre><span class="comment">// Forrás: vatBreakdown (nav_invoice_items query)</span>
+<span class="keyword">const</span> netVatPosition = totalOutboundVat - totalInboundVat;
+
+<span class="comment">// A vatBreakdown query a nav_invoice_items táblából</span>
+<span class="comment">// tétel szintű vat_amount értékeket összegzi</span>
+<span class="keyword">const</span> totalOutboundVat = vatBreakdown?.totalOutboundVat || <span class="num">0</span>;
+<span class="keyword">const</span> totalInboundVat = vatBreakdown?.totalInboundVat || <span class="num">0</span>;</pre>
+
+    <table>
+      <thead>
+        <tr><th>Jellemző</th><th>Érték</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Adatforrás</td><td><code>nav_invoice_items</code> JOIN <code>nav_invoices</code> → tétel szintű ÁFA</td></tr>
+        <tr><td>SQL tábla</td><td><code>nav_invoice_items</code> (tétel szintű <code>vat_amount</code>)</td></tr>
+        <tr><td>Képlet</td><td><code>SUM(OUTBOUND items.vat_amount) - SUM(INBOUND items.vat_amount)</code></td></tr>
+        <tr><td>Devizakezelés</td><td><span class="badge badge-red">❌ NINCS</span> — rögzített HUF</td></tr>
+        <tr><td>Aggregáció szintje</td><td>Tétel szintű</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2.3 Az eltérés oka (819 748 Ft vs 875 309 Ft)</h3>
+
+    <div class="alert alert-caution">
+      <span class="alert-icon">⚠️</span>
+      <div>A két érték eltérésének <strong>három lehetséges oka</strong> van:</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>#</th><th>Ok</th><th>Részletek</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1</strong></td>
+          <td>Aggregáció szintje eltér</td>
+          <td>A KPI a <strong>számla fejléc</strong> szintű <code>invoice_vat_amount</code>-ot összegzi, míg a diagram a <strong>tétel szintű</strong> <code>item.vat_amount</code>-okat. Kerekítési különbségek a fejléc és tételek összege között eltérést okoznak.</td>
+        </tr>
+        <tr>
+          <td><strong>2</strong></td>
+          <td>Devizakezelés különbözik</td>
+          <td>KPI: <code>convertToSelectedCurrency()</code> API-s árfolyammal konvertál. Diagram: semmilyen konverziót nem végez, rögzített HUF. EUR/USD számlák esetén ez eltérést okoz.</td>
+        </tr>
+        <tr>
+          <td><strong>3</strong></td>
+          <td>Hiányzó tételek</td>
+          <td>Ha egyes <code>nav_invoices</code> rekordokhoz <strong>nincsenek</strong> <code>nav_invoice_items</code> sorok, a diagram fallback-je <strong>csak akkor aktiválódik, ha EGYETLEN tétel sincs</strong> az egész időszakban — nem számlánként. A tételes számolás így egyes számlák ÁFA-ját kihagyhatja.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>2.4 Összehasonlító táblázat</h3>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Szempont</th>
+          <th>„Várható ÁFA" (KPI kártya)</th>
+          <th>„Becsült ÁFA pozíció" (Diagram)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Adatforrás</td>
+          <td><code>get_nav_invoice_aggregates</code> RPC</td>
+          <td><code>nav_invoice_items</code> JOIN query</td>
+        </tr>
+        <tr>
+          <td>SQL tábla</td>
+          <td><code>nav_invoices</code></td>
+          <td><code>nav_invoice_items</code></td>
+        </tr>
+        <tr>
+          <td>Aggregáció</td>
+          <td>Számla fejléc szintű</td>
+          <td>Tétel szintű</td>
+        </tr>
+        <tr>
+          <td>Deviza konverzió</td>
+          <td><span class="badge badge-green">✅ Van</span></td>
+          <td><span class="badge badge-red">❌ Nincs</span></td>
+        </tr>
+        <tr>
+          <td>ÁFA kulcs bontás</td>
+          <td>Nincs (egy összeg)</td>
+          <td>Van (27%, 5%, stb.)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════ 3. KOMPONENS HIERARCHIA ═══════════════════════ -->
+  <div class="section">
+    <h2><span class="section-number">3</span> Komponens hierarchia</h2>
+
+    <h3>3.1 Struktúra fa</h3>
+    <div class="tree"><span class="component">Index.tsx</span> <span class="source">(Dashboard oldal)</span>
+├── <span class="component">EmptyStateDashboard</span>           <span class="arrow">←</span> <span class="source">ha nincs cég</span>
+├── <span class="component">LoadingSpinner</span>                <span class="arrow">←</span> <span class="source">betöltés közben</span>
+│
+├── Welcome Section               <span class="arrow">←</span> <span class="source">üdvözlés + pénznem választó</span>
+├── Nettó/Bruttó Switch            <span class="arrow">←</span> <span class="source">globális toggle</span>
+│
+├── <span class="component">MetricCard</span> × 7                <span class="arrow">←</span> <span class="source">KPI kártyák grid</span>
+│   ├── [1] Feltöltött számlák     <span class="arrow">←</span> <span class="source">metrics (invoices tábla)</span>
+│   ├── [2] Kimenő számlaösszeg   <span class="arrow">←</span> <span class="source">navVatData.revenueGross/Net</span>
+│   ├── [3] Kintlévőség           <span class="arrow">←</span> <span class="source">navVatData.unpaidOutbound</span>
+│   ├── [4] Házipénztár            <span class="arrow">←</span> <span class="source">pettyCashBalance RPC</span>
+│   ├── [5] Bejövő számlaösszeg   <span class="arrow">←</span> <span class="source">navVatData.expensesGross/Net</span>
+│   ├── [6] Várható ÁFA            <span class="arrow">←</span> <span class="source">navVatData.outboundVat - inboundVat</span>
+│   └── [7] Követelés             <span class="arrow">←</span> <span class="source">navVatData.unpaidInbound</span>
+│
+├── ÁFA Section <span class="source">(Collapsible Card)</span>
+│   ├── BAL: ÁFA bar chart        <span class="arrow">←</span> <span class="source">vatBreakdown</span>
+│   └── JOBB: ÁFA analitikai táblák
+│       ├── Kimenő számlák ÁFA    <span class="arrow">←</span> <span class="source">outboundVatCategories</span>
+│       └── Bejövő számlák ÁFA    <span class="arrow">←</span> <span class="source">inboundVatCategories</span>
+│
+├── <span class="component">InvoiceStatusTables</span>            <span class="arrow">←</span> <span class="source">SAJÁT query (nav_invoices)</span>
+│   ├── Tab: Fizetendő            <span class="arrow">←</span> <span class="source">WHERE transaction_id IS NULL</span>
+│   └── Tab: Hiányzó              <span class="arrow">←</span> <span class="source">WHERE submitted IS NULL/false</span>
+│
+├── Bevétel/Kiadás Section <span class="source">(Collapsible Card)</span>
+│   ├── Checkbox szűrők            <span class="arrow">←</span> <span class="source">UI state</span>
+│   ├── Havi eredmény sor          <span class="arrow">←</span> <span class="source">monthlyData (useMemo)</span>
+│   └── AreaChart <span class="source">(Recharts)</span>       <span class="arrow">←</span> <span class="source">monthlyData (éves range!)</span>
+│
+├── Main Grid <span class="source">(3 oszlop)</span>
+│   ├── <span class="component">RecentInvoices</span> <span class="source">(2 col)</span>  <span class="arrow">←</span> <span class="source">invoices prop (top 10)</span>
+│   ├── <span class="component">SubscriptionUsage</span>         <span class="arrow">←</span> <span class="source">SAJÁT query</span>
+│   └── <span class="component">ProjectBreakdown</span>          <span class="arrow">←</span> <span class="source">getCategoryBreakdownData() prop</span>
+│
+├── Profile Summary Card           <span class="arrow">←</span> <span class="source">profile query</span>
+├── Quick Actions <span class="source">(3 link card)</span>
+├── <span class="component">InvoiceImageDialog</span>            <span class="arrow">←</span> <span class="source">selectedInvoice state</span>
+└── <span class="component">ProductTour</span>                   <span class="arrow">←</span> <span class="source">tour state</span></div>
+
+    <h3>3.2 Adatok (props) vándorlása</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Adat</th>
+          <th>Honnan</th>
+          <th>Hogyan jut a komponensbe</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>invoices</code> (top 10)</td>
+          <td><code>useQuery</code> → <code>invoices</code> tábla</td>
+          <td><strong>Props:</strong> Index → RecentInvoices, Index → ProjectBreakdown</td>
+        </tr>
+        <tr>
+          <td><code>navVatData</code></td>
+          <td><code>useQuery</code> → RPC</td>
+          <td><strong>Lokálisan felhasználva</strong> (KPI kártyák inline render)</td>
+        </tr>
+        <tr>
+          <td><code>metrics</code></td>
+          <td><code>useQuery</code> → RPC</td>
+          <td><strong>Lokálisan</strong> + props ProjectBreakdown-nak (<code>totalAmount</code>)</td>
+        </tr>
+        <tr>
+          <td><code>vatBreakdown</code></td>
+          <td><code>useQuery</code> → direkt query</td>
+          <td><strong>Lokálisan felhasználva</strong> (ÁFA szekció)</td>
+        </tr>
+        <tr>
+          <td><code>monthlyData</code></td>
+          <td><code>useMemo</code> ← <code>analyticsRaw</code></td>
+          <td><strong>Lokálisan felhasználva</strong> (AreaChart <code>data</code> prop)</td>
+        </tr>
+        <tr>
+          <td>Fizetendő/Hiányzó</td>
+          <td>—</td>
+          <td><code>InvoiceStatusTables</code> <strong>SAJÁT query</strong>, NEM kap props-ot</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="alert alert-note">
+      <span class="alert-icon">💡</span>
+      <div>A legtöbb adat <strong>nem props-ként vándorol</strong>, hanem az Index.tsx-ben lokálisan használódik. Az <code>InvoiceStatusTables</code> és <code>SubscriptionUsage</code> teljesen önálló adatlekérdezéssel rendelkezik.</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ 4. ANALITIKAI TÁBLÁZATOK ═══════════════════════ -->
+  <div class="section">
+    <h2><span class="section-number">4</span> Analitikai táblázatok (Jobb oldal)</h2>
+
+    <h3>4.1 „Kimenő számlák ÁFA tartalma"</h3>
+    <p><strong>Forráskód:</strong> Index.tsx, sor 794–835</p>
+    <table>
+      <thead>
+        <tr><th>Tábla oszlop</th><th>Forrás változó</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ÁFA kategóriák</td><td><code>outboundVatCategories[].rate</code> (pl. "27%", "ÁFA mentes")</td></tr>
+        <tr><td>Fizetendő ÁFA</td><td><code>outboundVatCategories[].vatAmount</code></td></tr>
+        <tr><td>Árbevétel</td><td><code>cat.netAmount + cat.vatAmount</code> (nettó + ÁFA = bruttó)</td></tr>
+        <tr><td><strong>Összesen</strong></td><td><code>outboundTotalVat</code> / <code>outboundTotalNet + outboundTotalVat</code></td></tr>
+      </tbody>
+    </table>
+    <p><strong>Adathalmaz:</strong> <code>nav_invoice_items</code> JOIN <code>nav_invoices</code> WHERE <code>invoice_direction = 'OUTBOUND'</code>, csoportosítva <code>vat_rate</code> szerint.</p>
+
+    <h3>4.2 „Bejövő számlák ÁFA tartalma"</h3>
+    <p><strong>Forráskód:</strong> Index.tsx, sor 837–878</p>
+    <table>
+      <thead>
+        <tr><th>Tábla oszlop</th><th>Forrás változó</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ÁFA kategóriák</td><td><code>inboundVatCategories[].rate</code></td></tr>
+        <tr><td>Levonható ÁFA</td><td><code>inboundVatCategories[].vatAmount</code></td></tr>
+        <tr><td>Költségek</td><td><code>cat.netAmount + cat.vatAmount</code></td></tr>
+        <tr><td><strong>Összesen</strong></td><td><code>inboundTotalVat</code> / <code>inboundTotalNet + inboundTotalVat</code></td></tr>
+      </tbody>
+    </table>
+    <p><strong>Adathalmaz:</strong> <code>nav_invoice_items</code> JOIN <code>nav_invoices</code> WHERE <code>invoice_direction = 'INBOUND'</code>, csoportosítva <code>vat_rate</code> szerint.</p>
+
+    <h3>4.3 Fallback mechanizmus</h3>
+    <div class="alert alert-warning">
+      <span class="alert-icon">⚠️</span>
+      <div>Ha a <code>nav_invoice_items</code> query <strong>üres eredményt</strong> ad (nincs egyetlen tétel sem), a kód átkapcsol egy fallback ágra: ilyenkor a <code>nav_invoices</code> fejléc szintű mezőkből dolgozik, és egyetlen "Összesített" kategóriát mutat ÁFA kulcs bontás nélkül.</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ 5. ÖSSZEFOGLALÓ ═══════════════════════ -->
+  <div class="section">
+    <h2><span class="section-number">5</span> Azonosított inkonzisztenciák</h2>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Probléma</th>
+          <th>Hely</th>
+          <th>Hatás</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>KPI „Várható ÁFA" és diagram „Becsült ÁFA pozíció" <strong>más adatforrásból</strong> számol</td>
+          <td>KPI: <code>navVatData</code> (RPC)<br>Diagram: <code>vatBreakdown</code> (items query)</td>
+          <td>Eltérő értékek (819k vs 875k)</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>KPI devizát konvertál, a diagram nem</td>
+          <td>KPI: <code>convertToSelectedCurrency()</code><br>Diagram: rögzített HUF</td>
+          <td>EUR/USD számlák esetén eltérés</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>Az AreaChart <strong>éves range-et</strong> használ, nem a DateRange-t</td>
+          <td><code>analyticsRaw</code> query: <code>yyyy-01-01</code> – <code>yyyy-12-31</code></td>
+          <td>A chart nem tükrözi a kiválasztott dátumtartományt</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>A <code>vatBreakdown</code> fallback logika <strong>globális</strong></td>
+          <td><code>vatBreakdown</code> query, sor 398</td>
+          <td>ÁFA alulszámlálás tételes módban, ha vannak számla-fejléc-only rekordok</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>A „Feltöltött számlák" és bevétel/kiadás KPI-k <strong>különböző táblákból</strong> jönnek</td>
+          <td><code>invoices</code> vs <code>nav_invoices</code></td>
+          <td>A felhasználónak nem egyértelmű, mit lát</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><code>InvoiceStatusTables</code> <strong>nem szűr DateRange-re</strong></td>
+          <td>Saját query, nincs <code>dateFrom</code>/<code>dateTo</code></td>
+          <td>Mindig az ÖSSZES fizetendő/hiányzó számlát mutatja</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <div style="text-align: center; padding: 32px 0 16px; color: var(--text-dim); font-size: 12px;">
+    <div style="width: 60px; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); margin: 0 auto 16px;"></div>
+    Visibill Dashboard Analysis Report — 2026. március 20.
+  </div>
+
+</body>
+</html>

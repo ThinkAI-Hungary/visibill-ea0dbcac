@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
+import { exportToFile } from '@/lib/exportUtils';
 import type { NavInvoice, SubmittedInvoice } from './useInvoiceData';
 
 interface UseInvoiceMutationsParams {
@@ -267,34 +267,6 @@ export function useInvoiceMutations({
   };
 
   // ── Export ──
-
-  const exportToFile = (headers: string[], data: string[][], exportFormat: 'csv' | 'xlsx', filename: string) => {
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-
-    if (exportFormat === 'csv') {
-      const csvContent = [
-        headers.join(','),
-        ...data.map(row => row.map(cell => `"${cell}"`).join(','))
-      ].join('\n');
-
-      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `${filename}_${timestamp}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Számlák exportálva CSV formátumban");
-    } else {
-      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Számlák');
-      XLSX.writeFile(workbook, `${filename}_${timestamp}.xlsx`);
-      toast.success("Számlák exportálva XLSX formátumban");
-    }
-  };
 
   const handleExportNav = (exportFormat: 'csv' | 'xlsx') => {
     const getExportData = (invoice: NavInvoice) => {

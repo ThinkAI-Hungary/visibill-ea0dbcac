@@ -19,6 +19,7 @@ import {
 import { ChevronUp, Loader2 } from "lucide-react";
 import { format, parseISO, subMonths } from "date-fns";
 import { hu } from "date-fns/locale";
+import { formatCurrency } from "@/lib/utils";
 
 interface MonthlyData {
   month: string;
@@ -227,14 +228,7 @@ export default function Analytics() {
     return Object.values(monthlyMap);
   }, [rawInvoices, rawSalaries, showBrutto]);
 
-  const formatCurrency = (amount: number, compact = false) => {
-    if (compact && Math.abs(amount) >= 1000000) {
-      return `${(amount / 1000000).toFixed(2).replace('.', ',')} M Ft`;
-    }
-    return new Intl.NumberFormat("hu-HU", {
-      maximumFractionDigits: 0
-    }).format(amount) + " Ft";
-  };
+
 
   const netVatPosition = totalOutboundVat - totalInboundVat;
   const maxVatValue = Math.max(totalOutboundVat, totalInboundVat, Math.abs(netVatPosition));
@@ -531,7 +525,7 @@ export default function Analytics() {
                     const result = data.revenue - data.expenses - data.salaries;
                     return (
                       <div key={i} className="text-sm text-purple-600 font-medium">
-                        {result === 0 ? "0 Ft" : formatCurrency(result, true)}
+                        {result === 0 ? "0 Ft" : formatCurrency(result, 'HUF', true)}
                       </div>
                     );
                   })}

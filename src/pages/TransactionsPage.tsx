@@ -22,7 +22,7 @@ import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
+import { exportToFile } from '@/lib/exportUtils';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
 import { TransactionReasonCell } from '@/components/TransactionReasonCell';
 import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
@@ -63,45 +63,13 @@ const isAutoApproved = (transaction: Transaction): boolean => {
   return !!(transaction.confidence_score && transaction.confidence_score >= 0.9 && transaction.matched_invoice_id);
 };
 
-const isNoCategoryMatch = (transaction: Transaction): boolean => {
-  return transaction.match_type === 'no_match_category';
-};
-
-const isBankCostType = (transaction: Transaction): boolean => {
-  return !!transaction.type && transaction.type.toLowerCase().trim() === 'bankköltség';
-};
-
-const isCashTransactionType = (transaction: Transaction): boolean => {
-  const cashTypes = [
-    'atm készpénzfelvét',
-    'pénztári kp felvét',
-    'pénztári kp befizetés',
-    'kp befizetés atm-en keresztül',
-  ];
-  return !!transaction.type && cashTypes.includes(transaction.type.toLowerCase());
-};
-
-const getMatchStatus = (transaction: Transaction): MatchStatus => {
-  return computeMatchStatus(transaction);
-};
-
-const getMatchStatusIcon = (status: MatchStatus) => {
-  switch (status) {
-    case 'matched':
-      return <CheckCircle2 className="h-4 w-4 text-success" />;
-    case 'suggested':
-      return <AlertCircle className="h-4 w-4 text-warning" />;
-    case 'unmatched':
-      return <HelpCircle className="h-4 w-4 text-destructive" />;
-  }
-};
-
 const getRowBackgroundClass = (transaction: Transaction): string => {
   const hoverClass = 'hover:shadow-[inset_0_0_0_100vw_rgba(0,0,0,0.04)] dark:hover:shadow-[inset_0_0_0_100vw_rgba(255,255,255,0.06)]';
-  if (isNoCategoryMatch(transaction) || isCashTransactionType(transaction) || isBankCostType(transaction) || (transaction.is_verified && transaction.matched_invoice_id)) {
+  const status = computeMatchStatus(transaction);
+  if (status === 'matched') {
     return `bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40 ${hoverClass}`;
   }
-  if (transaction.matched_invoice_id && !transaction.is_verified) {
+  if (status === 'suggested') {
     return `bg-[hsl(var(--warning-row-bg))] text-[hsl(var(--warning-row-text))] border-l-4 border-l-warning border-b border-border/40 ${hoverClass}`;
   }
   return `bg-[hsl(var(--error-row-bg))] text-[hsl(var(--error-row-text))] border-l-4 border-l-destructive border-b border-border/40 ${hoverClass}`;
@@ -239,26 +207,6 @@ const TransactionsPage = () => {
 
       const fetchedTransactions = (data || []) as Transaction[];
 
-      // Auto-approve transactions with confidence_score >= 0.9 (current page only)
-      const toAutoApprove = fetchedTransactions.filter(
-        t => t.matched_invoice_id && !t.is_verified && t.confidence_score && t.confidence_score >= 0.9
-      );
-
-      if (toAutoApprove.length > 0) {
-        const ids = toAutoApprove.map(t => t.id);
-        await supabase
-          .from('transactions')
-          .update({ is_verified: true, match_type: 'auto' })
-          .in('id', ids);
-
-        fetchedTransactions.forEach(t => {
-          if (ids.includes(t.id)) {
-            t.is_verified = true;
-            t.match_type = 'auto';
-          }
-        });
-      }
-
       return { rows: fetchedTransactions, totalCount: count ?? 0 };
     },
     enabled: !!user && !!selectedCompany?.id,
@@ -290,7 +238,7 @@ const TransactionsPage = () => {
 
     // Match status filter (computed field, not in DB)
     if (filters.matchStatus !== 'all') {
-      result = result.filter(t => getMatchStatus(t) === filters.matchStatus);
+      result = result.filter(t => computeMatchStatus(t) === filters.matchStatus);
     }
 
     return result;
@@ -357,7 +305,7 @@ const TransactionsPage = () => {
     ];
 
     const exportData = filteredTransactions.map(transaction => {
-      const matchStatus = getMatchStatus(transaction);
+      const matchStatus = computeMatchStatus(transaction);
       const statusText = matchStatus === 'matched' ? 'Párosított'
         : matchStatus === 'suggested' ? 'Javasolt'
           : 'Párosítatlan';
@@ -377,36 +325,7 @@ const TransactionsPage = () => {
     exportToFile(headers, exportData, exportFormat, 'tranzakciok');
   };
 
-  const exportToFile = (headers: string[], data: string[][], exportFormat: 'csv' | 'xlsx', filename: string) => {
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
 
-    if (exportFormat === 'csv') {
-      const csvContent = [
-        headers.join(','),
-        ...data.map(row => row.map(cell => `"${cell}"`).join(','))
-      ].join('\n');
-
-      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `${filename}_${timestamp}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast.success("Tranzakciók exportálva CSV formátumban");
-    } else {
-      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Tranzakciók');
-
-      XLSX.writeFile(workbook, `${filename}_${timestamp}.xlsx`);
-
-      toast.success("Tranzakciók exportálva XLSX formátumban");
-    }
-  };
 
   if (!selectedCompany) {
     return (
@@ -605,7 +524,7 @@ const TransactionsPage = () => {
                     />
                   ) : (
                     paginatedTransactions.map((transaction) => {
-                      const matchStatus = getMatchStatus(transaction);
+                      const matchStatus = computeMatchStatus(transaction);
 
                       return (
                         <TableRow
@@ -658,7 +577,9 @@ const TransactionsPage = () => {
                               <Tooltip>
                                 <TooltipTrigger>
                                   <div className="flex items-center justify-center gap-1">
-                                    {getMatchStatusIcon(matchStatus)}
+                                    {matchStatus === 'matched' && <CheckCircle2 className="h-4 w-4 text-success" />}
+                                    {matchStatus === 'suggested' && <AlertCircle className="h-4 w-4 text-warning" />}
+                                    {matchStatus === 'unmatched' && <HelpCircle className="h-4 w-4 text-destructive" />}
                                     {transaction.match_type === 'auto' && (
                                       <Sparkles className="h-3 w-3 text-success" />
                                     )}

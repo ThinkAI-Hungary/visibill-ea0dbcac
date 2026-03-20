@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { computeMatchStatus } from '@/hooks/useComputedStatus';
+import { computeMatchStatus, getPaymentStatusBadge } from '@/hooks/useComputedStatus';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,7 +65,7 @@ interface MatchedSalary {
   összeg: number;
   tipus: string;
   fizetesi_mod: string;
-  statusz: string;
+  transaction_id: string | null;
   dátum: string | null;
   munkavallalo_neve: string | null;
   megjegyzes: string | null;
@@ -177,7 +177,7 @@ export const TransactionDetailsDialog = ({
               összeg: salaryData['összeg'],
               tipus: salaryData.tipus,
               fizetesi_mod: salaryData.fizetesi_mod,
-              statusz: salaryData.statusz,
+              transaction_id: salaryData.transaction_id,
               dátum: salaryData['dátum'],
               munkavallalo_neve: salaryData.munkavallalo_neve,
               megjegyzes: salaryData.megjegyzes,
@@ -557,7 +557,10 @@ export const TransactionDetailsDialog = ({
                     </div>
                     <div>
                       <span className="text-muted-foreground">Státusz:</span>
-                      <Badge variant="outline" className="ml-1 text-[10px] h-5">{matchedSalary.statusz}</Badge>
+                      {(() => {
+                        const badge = getPaymentStatusBadge(matchedSalary.transaction_id);
+                        return <Badge variant="outline" className={cn("ml-1 text-[10px] h-5", badge.className)}>{badge.label}</Badge>;
+                      })()}
                     </div>
                     {matchedSalary.megjegyzes && (
                       <div className="col-span-2">

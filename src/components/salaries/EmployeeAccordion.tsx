@@ -3,8 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { formatCurrency } from '@/lib/utils';
-import { Edit, User, CheckCircle2, Clock } from 'lucide-react';
-import { getTypeBadge } from '@/lib/salary-helpers';
+import { Edit, User } from 'lucide-react';
+import { getTypeBadge, getStatusBadge } from '@/lib/salary-helpers';
 import type { SalaryItem } from '@/lib/salary-helpers';
 
 interface Props {
@@ -53,38 +53,24 @@ export function EmployeeAccordion({ employeeGroups, allNavPaid, onEdit }: Props)
             return (
               <AccordionItem key={employeeName} value={employeeName} className="border-border/50">
                 <AccordionTrigger className="hover:no-underline py-0 rounded-lg hover:bg-muted/40 transition-colors relative [&>svg]:absolute [&>svg]:right-4 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2">
-                  <div className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center w-full px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-sm font-bold text-primary">
-                          {employeeName.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                        </span>
-                      </div>
-                      <div className="text-left">
-                        <p className="font-semibold text-base">{employeeName}</p>
-                        <p className="text-xs text-muted-foreground">{items.length} tétel</p>
-                      </div>
+                  <div className="grid grid-cols-[1fr_120px_140px_140px_40px] items-center w-full px-4 py-3">
+                    <span className="font-medium text-left">{employeeName}</span>
+                    <div className="text-center">
+                      {(() => {
+                        const badge = allPaid
+                          ? { label: 'Fizetve', className: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/20' }
+                          : { label: 'Nyitott', className: 'bg-amber-500/15 text-amber-500 border-amber-500/20' };
+                        return (
+                          <Badge variant="outline" className={`text-xs ${badge.className}`}>
+                            {badge.label}
+                          </Badge>
+                        );
+                      })()}
                     </div>
-                    <div className="flex justify-center">
-                      {allPaid ? (
-                        <div className="flex items-center gap-1.5 text-emerald-500">
-                          <CheckCircle2 className="h-4 w-4" />
-                          <span className="text-xs font-medium">Fizetve</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 text-amber-500">
-                          <Clock className="h-4 w-4" />
-                          <span className="text-xs font-medium">Nyitott</span>
-                        </div>
-                      )}
-                    </div>
-                    <span />
-                    <div className="text-right">
-                      <span className="font-mono font-bold text-base tabular-nums">
-                        {formatCurrency(netTotal)}
-                      </span>
-                      <p className="text-xs text-muted-foreground">nettó</p>
-                    </div>
+                    <span className="text-xs text-muted-foreground text-center">{items.length} tétel</span>
+                    <span className="font-mono font-semibold tabular-nums text-right">
+                      {formatCurrency(netTotal)}
+                    </span>
                     <span />
                   </div>
                 </AccordionTrigger>

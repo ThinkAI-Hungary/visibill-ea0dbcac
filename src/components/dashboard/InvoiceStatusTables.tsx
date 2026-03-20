@@ -69,6 +69,7 @@ const InvoiceStatusTables = () => {
   const navigate = useNavigate();
   const { selectedCompany } = useCompany();
   const [activeTab, setActiveTab] = useState<'payable' | 'missing'>('payable');
+  const [visibleCount, setVisibleCount] = useState(20);
 
   const companyId = selectedCompany?.id;
 
@@ -134,7 +135,7 @@ const InvoiceStatusTables = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {invoices.slice(0, 20).map((invoice) => (
+            {invoices.slice(0, visibleCount).map((invoice) => (
               <TableRow key={invoice.id}>
                 <TableCell className="font-medium min-w-[130px]">
                   <TooltipProvider>
@@ -165,9 +166,16 @@ const InvoiceStatusTables = () => {
             ))}
           </TableBody>
         </Table>
-        {invoices.length > 20 && (
-          <div className="text-center py-2 text-sm text-muted-foreground">
-            + {invoices.length - 20} további számla
+        {invoices.length > visibleCount && (
+          <div className="text-center py-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-sm text-muted-foreground hover:text-foreground"
+              onClick={() => setVisibleCount(prev => prev + 20)}
+            >
+              + {invoices.length - visibleCount} további számla
+            </Button>
           </div>
         )}
       </div>
@@ -183,7 +191,7 @@ const InvoiceStatusTables = () => {
         <CardTitle className="text-lg">Bejövő számlák állapota</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'payable' | 'missing')}>
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'payable' | 'missing'); setVisibleCount(20); }}>
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="payable" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
