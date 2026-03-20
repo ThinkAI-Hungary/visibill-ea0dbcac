@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
+import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -39,6 +40,7 @@ const PettyCashPage = () => {
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
   const queryClient = useQueryClient();
+  useRealtimeInvalidation(selectedCompany?.id);
   const [saving, setSaving] = useState(false);
   const [openingBalance, setOpeningBalance] = useState<string>('');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);

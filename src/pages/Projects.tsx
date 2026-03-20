@@ -1,4 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
+import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,14 +45,13 @@ interface ProjectFinancials {
 
 const Projects = () => {
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [projectFinancials, setProjectFinancials] = useState<ProjectFinancials[]>([]);
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  useRealtimeInvalidation(selectedCompany?.id);
 
   const emptyProject: Project = {
     name: '',
@@ -62,76 +64,60 @@ const Projects = () => {
     project_type: 'one_time',
   };
 
-  useEffect(() => {
-    loadProjects();
-  }, [user, selectedCompany]);
-
-  const loadProjects = async () => {
-    if (!user || !selectedCompany) return;
-
-    try {
+  // TanStack Query: fetch projects + financials
+  const { data: queryData, isLoading: initialLoading } = useQuery({
+    queryKey: queryKeys.projects(selectedCompany?.id || ''),
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .eq('company_id', selectedCompany.id)
+        .eq('company_id', selectedCompany!.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProjects((data || []).map(p => ({
+      const projects = (data || []).map(p => ({
         ...p,
         project_type: p.project_type || 'one_time'
-      })) as Project[]);
+      })) as Project[];
 
       // Fetch project financials from nav_invoices
-      if (selectedCompany) {
-        const { data: invoiceData, error: invoiceError } = await supabase
-          .from('nav_invoices')
-          .select('project_id, invoice_direction, invoice_gross_amount')
-          .eq('company_id', selectedCompany.id)
-          .not('project_id', 'is', null);
+      const { data: invoiceData, error: invoiceError } = await supabase
+        .from('nav_invoices')
+        .select('project_id, invoice_direction, invoice_gross_amount')
+        .eq('company_id', selectedCompany!.id)
+        .not('project_id', 'is', null);
 
-        if (invoiceError) throw invoiceError;
+      if (invoiceError) throw invoiceError;
 
-        // Calculate financials per project
-        const financialsMap = new Map<string, { outbound: number; inbound: number }>();
-        
-        (invoiceData || []).forEach((inv: any) => {
-          if (!inv.project_id) return;
-          
-          if (!financialsMap.has(inv.project_id)) {
-            financialsMap.set(inv.project_id, { outbound: 0, inbound: 0 });
-          }
-          
-          const current = financialsMap.get(inv.project_id)!;
-          const amount = inv.invoice_gross_amount || 0;
-          
-          if (inv.invoice_direction === 'OUTBOUND') {
-            current.outbound += amount;
-          } else if (inv.invoice_direction === 'INBOUND') {
-            current.inbound += amount;
-          }
-        });
-
-        const financials: ProjectFinancials[] = Array.from(financialsMap.entries()).map(([projectId, data]) => ({
-          projectId,
-          outboundTotal: data.outbound,
-          inboundTotal: data.inbound,
-          profit: data.outbound - data.inbound
-        }));
-
-        setProjectFinancials(financials);
-      }
-    } catch (error) {
-      console.error('Error loading projects:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Hiba történt',
-        description: 'Nem sikerült betölteni a projekteket.'
+      const financialsMap = new Map<string, { outbound: number; inbound: number }>();
+      (invoiceData || []).forEach((inv: any) => {
+        if (!inv.project_id) return;
+        if (!financialsMap.has(inv.project_id)) {
+          financialsMap.set(inv.project_id, { outbound: 0, inbound: 0 });
+        }
+        const current = financialsMap.get(inv.project_id)!;
+        const amount = inv.invoice_gross_amount || 0;
+        if (inv.invoice_direction === 'OUTBOUND') {
+          current.outbound += amount;
+        } else if (inv.invoice_direction === 'INBOUND') {
+          current.inbound += amount;
+        }
       });
-    } finally {
-      setInitialLoading(false);
-    }
-  };
+
+      const financials: ProjectFinancials[] = Array.from(financialsMap.entries()).map(([projectId, data]) => ({
+        projectId,
+        outboundTotal: data.outbound,
+        inboundTotal: data.inbound,
+        profit: data.outbound - data.inbound
+      }));
+
+      return { projects, financials };
+    },
+    enabled: !!user && !!selectedCompany?.id,
+  });
+
+  const projects = queryData?.projects || [];
+  const projectFinancials = queryData?.financials || [];
 
   const getProjectFinancials = (projectId: string): ProjectFinancials | undefined => {
     return projectFinancials.find(f => f.projectId === projectId);
@@ -202,7 +188,7 @@ const Projects = () => {
 
       setEditingProject(null);
       setIsCreating(false);
-      await loadProjects();
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects(selectedCompany?.id || '') });
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -235,7 +221,7 @@ const Projects = () => {
         description: 'A projekt sikeresen törölve.'
       });
 
-      await loadProjects();
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects(selectedCompany?.id || '') });
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -456,7 +442,7 @@ const Projects = () => {
                     projectId={editingProject.id}
                     projectName={editingProject.name}
                     companyId={selectedCompany.id}
-                    onAssignmentChange={loadProjects}
+                    onAssignmentChange={() => queryClient.invalidateQueries({ queryKey: queryKeys.projects(selectedCompany?.id || '') })}
                   />
                 )}
 
