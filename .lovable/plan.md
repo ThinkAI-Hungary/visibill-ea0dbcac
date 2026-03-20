@@ -27,11 +27,7 @@
 - `useInvoiceData` egyszerűsítve: bulk NAV fetch eltávolítva
 - Nincs többé 1000 soros Supabase limit probléma
 
----
-
-## Folyamatban
-
-### 🔄 6. fázis — Nagy fájlok szétbontása
+### ✅ 6. fázis — Nagy fájlok szétbontása
 
 #### ✅ 6.0 — Helper és hook fájlok létrehozva
 - `src/lib/kintlevo-helpers.ts` — típusok + segédfüggvények
@@ -39,11 +35,19 @@
 - `src/lib/salary-helpers.ts` — típusok + segédfüggvények
 - `src/hooks/useSalaryData.ts` — adatlekérés + mutációk hook
 
-#### ⏳ 6a. Settings.tsx szétbontása
-- `src/hooks/useSettingsData.ts` + 4 section komponens
+#### ✅ 6b. KintlevoPage.tsx átírása (778 → ~75 sor)
+- `src/components/kintlevo/KintlevoSummaryCards.tsx` — 4 összesítő kártya
+- `src/components/kintlevo/KintlevoCompanyTable.tsx` — cégcsoportos tábla
+- `src/components/kintlevo/DunningDialog.tsx` — felszólító email dialog
 
-#### ⏳ 6b. KintlevoPage.tsx átírása hook-ra
-- KintlevoPage.tsx: import useKintlevoData + UI szétbontás
+#### ✅ 6c. SalariesPage.tsx átírása (817 → ~85 sor)
+- `src/components/salaries/SalaryKpiCards.tsx` — 4 KPI kártya
+- `src/components/salaries/EmployeeAccordion.tsx` — dolgozói bontás
+- `src/components/salaries/NavSummaryTable.tsx` — NAV összesítő
+- `src/components/salaries/SalaryDialogs.tsx` — KP + Edit dialog
 
-#### ⏳ 6c. SalariesPage.tsx átírása hook-ra
-- SalariesPage.tsx: import useSalaryData + UI szétbontás
+#### ✅ 6a. Settings.tsx szétbontása (1045 → ~250 sor)
+- `src/components/settings/ProfileSection.tsx`
+- `src/components/settings/BusinessSection.tsx`
+- `src/components/settings/SystemSection.tsx`
+- `src/components/settings/SecuritySection.tsx`
