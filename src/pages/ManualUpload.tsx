@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +26,13 @@ const ManualUpload = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { canProcessInvoice, incrementUsage, remainingInvoices } = useSubscription();
+  const queryClient = useQueryClient();
+
+  const delayedUploadHistoryInvalidation = useCallback(() => {
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
+    }, 800);
+  }, [queryClient]);
 
   const handleInvoiceFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -339,6 +347,7 @@ const ManualUpload = () => {
 
         setSelectedInvoiceFiles([]);
         setUploadRefreshKey(k => k + 1);
+        delayedUploadHistoryInvalidation();
       } else {
         toast({
           variant: "destructive",
@@ -438,6 +447,8 @@ const ManualUpload = () => {
       });
 
       setSelectedBankFiles([]);
+      setUploadRefreshKey(k => k + 1);
+      delayedUploadHistoryInvalidation();
     } catch (error) {
       console.error('Bank statement upload error:', error);
       toast({
@@ -534,6 +545,8 @@ const ManualUpload = () => {
       });
 
       setSelectedSalaryFiles([]);
+      setUploadRefreshKey(k => k + 1);
+      delayedUploadHistoryInvalidation();
     } catch (error) {
       console.error('Salary upload error:', error);
       toast({
@@ -669,6 +682,7 @@ const ManualUpload = () => {
 
         setSelectedTransactionFiles([]);
         setUploadRefreshKey(k => k + 1);
+        delayedUploadHistoryInvalidation();
       } else {
         toast({
           variant: "destructive",
