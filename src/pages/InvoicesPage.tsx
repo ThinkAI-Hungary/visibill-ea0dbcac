@@ -497,7 +497,7 @@ const InvoicesPage = () => {
                   <UnifiedPagination
                     currentPage={navCurrentPage}
                     totalPages={navTotalPages}
-                    totalItems={filteredAndSortedNavInvoices.length}
+                    totalItems={navTotalCount}
                     pageSize={navPageSize}
                     onPageChange={setNavCurrentPage}
                     onPageSizeChange={(size) => { setNavPageSize(size); setNavCurrentPage(1); }}
