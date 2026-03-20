@@ -164,7 +164,7 @@ export default function KintlevoPage() {
   });
 
   const { data: manualInvoices = [], isLoading: loadingManual } = useQuery({
-    queryKey: ['kintlevo-manual', selectedCompany?.id],
+    queryKey: queryKeys.kintlevoManual(selectedCompany?.id || ''),
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
