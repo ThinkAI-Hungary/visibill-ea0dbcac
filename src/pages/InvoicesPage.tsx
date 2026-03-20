@@ -305,7 +305,7 @@ const InvoicesPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('nav_invoices')
-        .select('*')
+        .select('id, invoice_number, invoice_direction, invoice_issue_date, invoice_delivery_date, supplier_tax_number, supplier_name, supplier_address, customer_tax_number, customer_name, customer_address, invoice_net_amount, invoice_gross_amount, invoice_vat_amount, currency, payment_method, invoice_operation, payment_date, paid, submitted, details_fetched, company_id, user_id, created_at, fetched_at, project_id, category_id, transaction_id')
         .eq('company_id', companyId)
         .gte('invoice_issue_date', dateFromFormatted)
         .lte('invoice_issue_date', dateToFormatted)
