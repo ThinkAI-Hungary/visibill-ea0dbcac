@@ -724,6 +724,18 @@ const ManualUpload = () => {
           if (triggerError) {
             console.error('Edge function error:', triggerError);
           } else if (triggerData?.success) {
+            addToUploadHistoryCache({
+              id: uploadRecord.id,
+              file_name: file.name,
+              file_size: file.size,
+              file_type: file.type,
+              file_url: urlData.publicUrl,
+              user_id: user.id,
+              upload_status: 'uploaded',
+              processing_status: 'pending',
+              created_at: new Date().toISOString(),
+              error_message: null,
+            });
             successfulUploads++;
           } else {
             console.error('Webhook failed via edge function:', triggerData);
