@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queryKeys";
+import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -72,6 +74,7 @@ export default function PartnersPage() {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
+  useRealtimeInvalidation(selectedCompany?.id);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -90,13 +93,13 @@ export default function PartnersPage() {
 
   // Fetch partners - company scoped (required)
   const { data: partners, isLoading } = useQuery({
-    queryKey: ["partners", selectedCompany?.id],
+    queryKey: queryKeys.partners(selectedCompany?.id || ''),
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
 
       const { data, error } = await supabase
         .from("partners")
-        .select("*")
+        .select("id, name, tax_number, address, email, partner_type, company_id, user_id, default_project_id, created_at, updated_at")
         .eq("company_id", selectedCompany.id)
         .order("name", { ascending: true });
 
@@ -135,7 +138,7 @@ export default function PartnersPage() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["partners"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.partners(selectedCompany?.id || '') });
       toast({
         title: editingPartner ? "Partner frissítve" : "Partner létrehozva",
         description: "A partner sikeresen mentve.",
@@ -161,7 +164,7 @@ export default function PartnersPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["partners"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.partners(selectedCompany?.id || '') });
       toast({
         title: "Partner törölve",
         description: "A partner sikeresen törölve.",

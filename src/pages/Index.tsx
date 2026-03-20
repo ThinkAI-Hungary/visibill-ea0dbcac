@@ -337,51 +337,17 @@ const Index = () => {
     enabled: !!companyId,
   });
 
-  // ── Petty cash balance ──
+  // ── Petty cash balance (single RPC instead of 5 queries) ──
   const { data: pettyCashBalance = null } = useQuery<number | null>({
     queryKey: queryKeys.dashboardPettyCash(companyId),
     queryFn: async () => {
-      const { data: hpSettings } = await supabase
-        .from('hp_settings')
-        .select('opening_balance, start_date')
-        .eq('company_id', companyId)
-        .maybeSingle();
-
-      const hasValidSettings = hpSettings && hpSettings.start_date;
-      if (!hasValidSettings) return null;
-
-      const ob = hpSettings.opening_balance || 0;
-      const startDateFilter = hpSettings.start_date;
-
-      let withdrawalsQuery = supabase.from('transactions').select('amount').eq('company_id', companyId).in('type', ['atm készpénzfelvét', 'pénztári kp felvét']);
-      if (startDateFilter) withdrawalsQuery = withdrawalsQuery.gte('transaction_date', startDateFilter);
-
-      let cashDepositsQuery = supabase.from('transactions').select('amount').eq('company_id', companyId).in('type', ['pénztári kp befizetés', 'kp befizetés atm-en keresztül']);
-      if (startDateFilter) cashDepositsQuery = cashDepositsQuery.gte('transaction_date', startDateFilter);
-
-      let cashSalesQuery = supabase.from('nav_invoices').select('invoice_gross_amount').eq('company_id', companyId).eq('invoice_direction', 'OUTBOUND').in('payment_method', ['CASH', 'KÉSZPÉNZ']);
-      if (startDateFilter) cashSalesQuery = cashSalesQuery.gte('invoice_issue_date', startDateFilter);
-
-      let cashExpensesQuery = supabase.from('invoices').select('brutto_vegosszeg, bizonylatsorszam').eq('company_id', companyId).ilike('fizetesi_mod', '%készpénz%').is('reference_number', null);
-      if (startDateFilter) cashExpensesQuery = cashExpensesQuery.gte('kibocsatas_datuma', startDateFilter);
-
-      let navCashExpensesQuery = supabase.from('nav_invoices').select('invoice_gross_amount, invoice_number').eq('company_id', companyId).eq('invoice_direction', 'INBOUND').in('payment_method', ['CASH', 'KÉSZPÉNZ']);
-      if (startDateFilter) navCashExpensesQuery = navCashExpensesQuery.gte('invoice_issue_date', startDateFilter);
-
-      const [withdrawalsRes, cashDepositsRes, cashSalesRes, cashExpensesRes, navCashExpensesRes] = await Promise.all([
-        withdrawalsQuery, cashDepositsQuery, cashSalesQuery, cashExpensesQuery, navCashExpensesQuery
-      ]);
-
-      const withdrawals = (withdrawalsRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
-      const cashDeposits = (cashDepositsRes.data || []).reduce((sum: number, t: any) => sum + Math.abs(t.amount), 0);
-      const cashSales = (cashSalesRes.data || []).reduce((sum: number, inv: any) => sum + Math.abs(inv.invoice_gross_amount || 0), 0);
-      const cashExpenses = (cashExpensesRes.data || []).reduce((sum: number, inv: any) => sum + Math.abs(inv.brutto_vegosszeg || 0), 0);
-      const invoiceNumbers = new Set((cashExpensesRes.data || []).map((inv: any) => inv.bizonylatsorszam).filter(Boolean));
-      const navCashExpenses = (navCashExpensesRes.data || [])
-        .filter((inv: any) => !inv.invoice_number || !invoiceNumbers.has(inv.invoice_number))
-        .reduce((sum: number, inv: any) => sum + Math.abs(inv.invoice_gross_amount || 0), 0);
-
-      return ob + withdrawals - cashDeposits + cashSales - cashExpenses - navCashExpenses;
+      const { data, error } = await supabase.rpc('get_petty_cash_balance', {
+        p_company_id: companyId,
+      });
+      if (error) throw error;
+      const row = data?.[0];
+      if (!row || !row.has_settings) return null;
+      return Number(row.balance);
     },
     enabled: !!companyId,
   });

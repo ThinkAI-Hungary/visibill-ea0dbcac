@@ -9,17 +9,19 @@
 ### ✅ 2. fázis — select('*') eltávolítása (12 fájl)
 - CompanyContext, Projects, Integrations, SubscriptionContext, EmailAliasManager, InvoiceDetailPopup, EmailPreferences, PettyCashPage, Onboarding, Index, InvoiceItemsDialog, TransactionDetailsDialog
 
-### ✅ 4. fázis (részleges) — queryKeys + realtime
+### ✅ 3. fázis — PettyCash RPC aggregáció
+- `get_petty_cash_balance(p_company_id)` RPC létrehozva
+- Index.tsx dashboardPettyCash: 5 query → 1 RPC hívás
+
+### ✅ 4. fázis — queryKeys + realtime
 - KintlevoPage: 4 inline key → queryKeys factory
 - Integrations: syncLogs → queryKeys factory
+- PartnersPage: queryKeys factory + useRealtimeInvalidation + select('*') eltávolítás
 - useRealtimeInvalidation: partners tábla hozzáadva
 
 ---
 
 ## Hátralévő fázisok
-
-### 3. fázis — PettyCash RPC aggregáció
-- `get_petty_cash_balance()` RPC → PettyCashPage + Index.tsx egyszerűsítés
 
 ### 5. fázis — InvoicesPage server-side szűrés
 - `get_filtered_nav_invoices()` RPC + useInvoiceFilters átírás
