@@ -33,43 +33,25 @@ const Integrations = () => {
   const { user } = useAuth();
   const { selectedCompany, loading: companyLoading } = useCompany();
   const isOwner = selectedCompany?.owner_id === user?.id;
-  const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
-  const [logsLoading, setLogsLoading] = useState(true);
   const [activeNavTab, setActiveNavTab] = useState('credentials');
-  const [initialLoading, setInitialLoading] = useState(true);
 
-  useEffect(() => {
-    if (!companyLoading) {
-      if (selectedCompany) {
-        loadSyncLogs();
-      } else {
-        setInitialLoading(false);
-      }
-    }
-  }, [selectedCompany, companyLoading]);
-
-  const loadSyncLogs = async () => {
-    if (!selectedCompany) return;
-    setLogsLoading(true);
-    try {
+  const { data: syncLogs = [], isLoading: logsLoading } = useQuery({
+    queryKey: ['syncLogs', selectedCompany?.id],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('nav_sync_logs')
         .select('*')
-        .eq('company_id', selectedCompany.id)
+        .eq('company_id', selectedCompany!.id)
         .order('started_at', { ascending: false })
         .limit(20);
-
       if (error) throw error;
-      setSyncLogs(data || []);
-    } catch (error: any) {
-      console.error('Error loading sync logs:', error);
-    } finally {
-      setLogsLoading(false);
-      setInitialLoading(false);
-    }
-  };
+      return (data || []) as SyncLog[];
+    },
+    enabled: !!selectedCompany?.id,
+    staleTime: 2 * 60 * 1000,
+  });
 
-  if (initialLoading || companyLoading) {
+  if (companyLoading) {
     return <LoadingSpinner message="Integrációk betöltése..." />;
   }
 
