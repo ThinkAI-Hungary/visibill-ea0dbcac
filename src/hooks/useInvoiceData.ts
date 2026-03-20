@@ -89,22 +89,8 @@ export function useInvoiceData(
 ) {
   const queryClient = useQueryClient();
 
-  const { data: invoices = [], isLoading: navLoading } = useQuery({
-    queryKey: queryKeys.navInvoices(companyId, dateFromFormatted, dateToFormatted),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('nav_invoices')
-        .select('id, invoice_number, invoice_direction, invoice_issue_date, invoice_delivery_date, supplier_tax_number, supplier_name, supplier_address, customer_tax_number, customer_name, customer_address, invoice_net_amount, invoice_gross_amount, invoice_vat_amount, currency, payment_method, invoice_operation, payment_date, paid, submitted, details_fetched, company_id, user_id, created_at, fetched_at, project_id, category_id, transaction_id')
-        .eq('company_id', companyId)
-        .gte('invoice_issue_date', dateFromFormatted)
-        .lte('invoice_issue_date', dateToFormatted)
-        .order('invoice_issue_date', { ascending: false });
-      if (error) throw error;
-      return (data || []) as NavInvoice[];
-    },
-    enabled,
-  });
-
+  // NAV invoices are now fetched server-side via useInvoiceFilters RPC.
+  // We still need a lightweight query for submitted invoices (for lookup maps + linked invoices).
   const { data: submittedInvoices = [], isLoading: submittedLoading } = useQuery({
     queryKey: queryKeys.submittedInvoices(companyId, dateFromFormatted, dateToFormatted),
     queryFn: async () => {
@@ -197,7 +183,7 @@ export function useInvoiceData(
     [allTransactions]
   );
 
-  const loading = navLoading || submittedLoading || txLoading;
+  const loading = submittedLoading || txLoading;
 
   const { data: credentialsExist = false } = useQuery({
     queryKey: queryKeys.navCredentials(selectedCompanyId || ''),
@@ -220,10 +206,11 @@ export function useInvoiceData(
     queryClient.invalidateQueries({ queryKey: ['categories', companyId] });
     queryClient.invalidateQueries({ queryKey: ['projectsList', companyId] });
     queryClient.invalidateQueries({ queryKey: ['invoiceTransactions', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices', companyId] });
   };
 
   return {
-    invoices,
     submittedInvoices,
     linkedInvoicesPool,
     partners,

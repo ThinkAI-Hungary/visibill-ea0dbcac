@@ -62,12 +62,12 @@ const InvoicesPage = () => {
 
   // ── Data hook ──
   const {
-    invoices, submittedInvoices, linkedInvoicesPool,
+    submittedInvoices, linkedInvoicesPool,
     partners, categories, projects, allTransactions,
-    matchedInvoiceIds, loading, credentialsExist, invalidateInvoiceData,
+    matchedInvoiceIds, loading: dataLoading, credentialsExist, invalidateInvoiceData,
   } = useInvoiceData(companyId, enabled, dateFromFormatted, dateToFormatted, selectedCompany?.id);
 
-  // ── Filters hook ──
+  // ── Filters hook (server-side) ──
   const {
     navFilters, setNavFilters, submittedFilters, setSubmittedFilters,
     clearNavFilters, clearSubmittedFilters,
@@ -75,10 +75,14 @@ const InvoicesPage = () => {
     navPageSize, setNavPageSize, submittedPageSize, setSubmittedPageSize,
     navCurrentPage, setNavCurrentPage, submittedCurrentPage, setSubmittedCurrentPage,
     navTotalPages, submittedTotalPages,
+    navLoading, submittedFilterLoading,
     filteredAndSortedNavInvoices, filteredAndSortedSubmittedInvoices,
     paginatedNavInvoices, paginatedSubmittedInvoices,
+    navTotalCount, submittedTotalCount,
     getInvoicePartnerName, getPartnerTaxNumber, getCategoryName, getProjectName, getPaymentMethodLabel,
-  } = useInvoiceFilters(invoices, submittedInvoices, partners, categories, projects, activeTab);
+  } = useInvoiceFilters(companyId, enabled, dateFromFormatted, dateToFormatted, partners, categories, projects, activeTab);
+
+  const loading = dataLoading || navLoading || submittedFilterLoading;
 
   // ── Mutations hook ──
   const {
@@ -181,13 +185,13 @@ const InvoicesPage = () => {
 
   const submittedToNavMap = useMemo(() => {
     const map = new Map<string, NavInvoice[]>();
-    invoices.forEach(inv => {
+    paginatedNavInvoices.forEach(inv => {
       const existing = map.get(inv.invoice_number) || [];
       existing.push(inv);
       map.set(inv.invoice_number, existing);
     });
     return map;
-  }, [invoices]);
+  }, [paginatedNavInvoices]);
 
   const submittedIdToTransactionsMap = useMemo(() => {
     const map = new Map<string, TransactionRecord[]>();
@@ -305,8 +309,8 @@ const InvoicesPage = () => {
   };
 
   const getResultCount = () => {
-    if (isSubmittedTab) return filteredAndSortedSubmittedInvoices.length;
-    return filteredAndSortedNavInvoices.length;
+    if (isSubmittedTab) return submittedTotalCount;
+    return navTotalCount;
   };
 
   return (
@@ -421,8 +425,8 @@ const InvoicesPage = () => {
                       <SelectTrigger className="h-9 bg-secondary/50 border border-white/10"><SelectValue placeholder="Pénznem" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Minden pénznem</SelectItem>
-                        {Array.from(new Set(invoices.map(inv => inv.currency).filter(Boolean))).sort().map((currency) => (
-                          <SelectItem key={currency} value={currency!}>{currency}</SelectItem>
+                        {['HUF', 'EUR', 'USD', 'GBP', 'CHF', 'CZK', 'PLN', 'RON'].map((currency) => (
+                          <SelectItem key={currency} value={currency}>{currency}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -493,7 +497,7 @@ const InvoicesPage = () => {
                   <UnifiedPagination
                     currentPage={navCurrentPage}
                     totalPages={navTotalPages}
-                    totalItems={filteredAndSortedNavInvoices.length}
+                    totalItems={navTotalCount}
                     pageSize={navPageSize}
                     onPageChange={setNavCurrentPage}
                     onPageSizeChange={(size) => { setNavPageSize(size); setNavCurrentPage(1); }}
@@ -663,7 +667,7 @@ const InvoicesPage = () => {
                   <UnifiedPagination
                     currentPage={navCurrentPage}
                     totalPages={navTotalPages}
-                    totalItems={filteredAndSortedNavInvoices.length}
+                    totalItems={navTotalCount}
                     pageSize={navPageSize}
                     onPageChange={setNavCurrentPage}
                     onPageSizeChange={(size) => { setNavPageSize(size); setNavCurrentPage(1); }}
@@ -706,7 +710,7 @@ const InvoicesPage = () => {
                   <UnifiedPagination
                     currentPage={submittedCurrentPage}
                     totalPages={submittedTotalPages}
-                    totalItems={filteredAndSortedSubmittedInvoices.length}
+                    totalItems={submittedTotalCount}
                     pageSize={submittedPageSize}
                     onPageChange={setSubmittedCurrentPage}
                     onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}
@@ -848,7 +852,7 @@ const InvoicesPage = () => {
                   <UnifiedPagination
                     currentPage={submittedCurrentPage}
                     totalPages={submittedTotalPages}
-                    totalItems={filteredAndSortedSubmittedInvoices.length}
+                    totalItems={submittedTotalCount}
                     pageSize={submittedPageSize}
                     onPageChange={setSubmittedCurrentPage}
                     onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}
