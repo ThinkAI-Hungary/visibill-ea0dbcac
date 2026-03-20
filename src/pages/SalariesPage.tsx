@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { format } from 'date-fns';
+import { hu } from 'date-fns/locale';
 import { useSalaryData } from '@/hooks/useSalaryData';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
