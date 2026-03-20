@@ -471,6 +471,22 @@ const ManualUpload = () => {
         }
       }
 
+      // Optimistic update for each uploaded bank file
+      for (const file of selectedBankFiles) {
+        addToUploadHistoryCache({
+          id: crypto.randomUUID(),
+          file_name: file.name,
+          file_size: file.size,
+          file_type: file.type,
+          file_url: '',
+          user_id: user.id,
+          upload_status: 'uploaded',
+          processing_status: 'pending',
+          created_at: new Date().toISOString(),
+          error_message: null,
+        });
+      }
+
       toast({
         title: "Feltöltés sikeres!",
         description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá."
