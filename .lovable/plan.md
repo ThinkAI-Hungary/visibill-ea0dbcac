@@ -13,8 +13,10 @@
 5. **`Analytics.tsx`** — Teljes átírás `useQuery`-re (`analyticsRaw` + `analyticsVat` query key-ek), `useRealtimeInvalidation` hozzáadva
 6. **`Projects.tsx`** — Teljes átírás `useQuery`-re (`projects` query key), `useRealtimeInvalidation` hozzáadva
 
+### Fázis 3 — InvoicesPage + Settings nagy refaktor
+7. **`InvoicesPage.tsx`** — `fetchInvoiceData` useState/useEffect eltávolítva, helyette 7 db `useQuery` hook (`navInvoices`, `submittedInvoices`, `linkedInvoices`, `partners`, `categories`, `projects`, `invoiceTransactions`). Saját realtime channel eltávolítva, `useRealtimeInvalidation` gondoskodik a frissítésről. `setInvoices` inline mutációk lecserélve `invalidateInvoiceData()` hívásokra.
+8. **`Settings.tsx`** — `CompanyMembersCard` `useEffect`/`useState` lecserélve `useQuery`-re (`settingsMembers` query key), `removeMember` után `invalidateQueries`.
+
 ## 🔲 Fennmaradó feladatok
 
-### Fázis 3 — Nagy refaktor (jövőbeli)
-7. **`InvoicesPage.tsx`** — 2300+ soros fájl, `fetchInvoiceData` useState/useEffect → useQuery migráció. Már van saját realtime channel + `useRealtimeInvalidation`, tehát a valós idejű frissítés működik, de a TanStack Query cache előnyei hiányoznak.
-8. **`Settings.tsx`** — `CompanyMembersCard` useQuery migráció (alacsony prioritás)
+Nincs — az audit összes pontja implementálva.
