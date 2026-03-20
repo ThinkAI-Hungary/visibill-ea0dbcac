@@ -174,15 +174,7 @@ const InvoicesPage = () => {
   const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const queryClient = useQueryClient();
   useRealtimeInvalidation(selectedCompany?.id);
-  const [invoices, setInvoices] = useState<NavInvoice[]>([]);
-  const [submittedInvoices, setSubmittedInvoices] = useState<SubmittedInvoice[]>([]);
-  const [linkedInvoicesPool, setLinkedInvoicesPool] = useState<SubmittedInvoice[]>([]);
-  const [allTransactions, setAllTransactions] = useState<TransactionRecord[]>([]);
-  const [partners, setPartners] = useState<Partner[]>([]);
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<InvoiceTab>('OUTBOUND');
   const [sortField, setSortField] = useState<string>('invoice_issue_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
