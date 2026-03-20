@@ -1,4 +1,6 @@
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queryKeys";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
