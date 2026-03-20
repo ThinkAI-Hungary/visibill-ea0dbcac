@@ -14,7 +14,7 @@ interface Props {
   periodLabel: string;
 }
 
-export function EmployeeAccordion({ employeeGroups, onEdit }: Props) {
+export function EmployeeAccordion({ employeeGroups, onEdit, isSingleMonth, periodLabel }: Props) {
   if (employeeGroups.length === 0) return null;
 
   const getSubtotal = (items: SalaryItem[]) =>
@@ -34,6 +34,9 @@ export function EmployeeAccordion({ employeeGroups, onEdit }: Props) {
           <h2 className="text-lg font-semibold">
             Dolgozói bontás{' '}
             <span className="text-muted-foreground font-normal">({employeeGroups.length} fő)</span>
+            {!isSingleMonth && (
+              <span className="text-muted-foreground font-normal"> — {periodLabel}</span>
+            )}
           </h2>
         </div>
 

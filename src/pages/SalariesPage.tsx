@@ -64,10 +64,12 @@ export default function SalariesPage() {
       <EmployeeAccordion
         employeeGroups={employeeGroups}
         onEdit={openEditModal}
+        isSingleMonth={isSingleMonth}
+        periodLabel={periodLabel}
       />
 
       {/* NAV Summary Table */}
-      <NavSummaryTable navItems={navItems} onEdit={openEditModal} />
+      <NavSummaryTable navItems={navItems} onEdit={openEditModal} isSingleMonth={isSingleMonth} periodLabel={periodLabel} />
 
       {/* Empty state */}
       {employeeGroups.length === 0 && navItems.length === 0 && (

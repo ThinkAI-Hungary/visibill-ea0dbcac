@@ -13,7 +13,7 @@ interface Props {
   periodLabel: string;
 }
 
-export function NavSummaryTable({ navItems, onEdit }: Props) {
+export function NavSummaryTable({ navItems, onEdit, isSingleMonth, periodLabel }: Props) {
   if (navItems.length === 0) return null;
 
   return (
@@ -21,7 +21,11 @@ export function NavSummaryTable({ navItems, onEdit }: Props) {
       <CardContent className="p-6">
         <div className="flex items-center gap-2 mb-4">
           <Building2 className="h-5 w-5 text-amber-500" />
-          <h2 className="text-lg font-semibold">Havi bérösszesítő (NAV utalások)</h2>
+          <h2 className="text-lg font-semibold">
+            {isSingleMonth
+              ? 'Havi bérösszesítő (NAV utalások)'
+              : <>Bérösszesítő (NAV utalások) a következő periódusra: <span className="text-muted-foreground font-normal">{periodLabel}</span></>}
+          </h2>
         </div>
 
         <div className="rounded-lg border border-border/50 overflow-hidden">
