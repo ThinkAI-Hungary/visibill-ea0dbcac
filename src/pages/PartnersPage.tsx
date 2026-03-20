@@ -138,7 +138,7 @@ export default function PartnersPage() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["partners"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.partners(selectedCompany?.id || '') });
       toast({
         title: editingPartner ? "Partner frissítve" : "Partner létrehozva",
         description: "A partner sikeresen mentve.",
