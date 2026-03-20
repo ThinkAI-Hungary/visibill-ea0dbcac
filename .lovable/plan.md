@@ -1,88 +1,98 @@
 
 
-# Audit: Fennmaradó inkonzisztenciák — Adatbázis ↔ Frontend szinkron
+# Teljes menüátfogó audit — Fennmaradó inkonzisztenciák
 
-## Talált problémák
-
-### 1. KintlevoPage — `invoices` tábla `fizetve` boolean szűrés (MAGAS)
-**Fájl:** `src/pages/KintlevoPage.tsx` (170-173. sor)
-
-A manuális számlák lekérdezése továbbra is a `fizetve` boolean-ra szűr:
-```
-.select('...fizetve,melleklet_url')
-.or('fizetve.is.null,fizetve.eq.false')
-```
-Ez az előző auditban is szerepelt, de **nem lett javítva** az `invoices` táblánál — csak a `nav_invoices` query lett átírva `transaction_id.is.null`-ra. Ha egy tranzakciót törölnek, a trigger reseteli a `transaction_id`-t NULL-ra, DE a `fizetve` boolean resetelését semmi sem garantálja az `invoices` táblán (a `reset_paid_on_transaction_delete` trigger nem módosítja a `fizetve` mezőt).
-
-**Javítás:** A query-t átírni `transaction_id`-re:
-- select: `fizetve` helyett `transaction_id`
-- szűrő: `.is('transaction_id', null)`
+Az alábbi audit minden oldalt és komponenst átvizsgálva tárja fel azokat a helyeket, ahol a frontend nem tükrözi megbízhatóan az adatbázis állapotát, vagy ahol a kód pattern megakadályozza a valós idejű frissülést.
 
 ---
 
-### 2. Analytics oldal — Nem szűri a kifizetett/kifizetetlen státuszt és nem használ realtime-ot (KÖZEPES)
-**Fájl:** `src/pages/Analytics.tsx` (118-140. sor)
+## 1. InvoicesPage — useEffect/useState, nincs TanStack Query (MAGAS)
+**Fájl:** `src/pages/InvoicesPage.tsx`
 
-- A `fetchRawData` a `salary` táblából mindent lekérdez (`select("*")`), nem szűri a `transaction_id` alapján — tehát a bérek grafikonon kifizetetlen bérek is megjelennek.
-- A Dashboard (`Index.tsx`) ezzel szemben helyesen szűri: `.filter((s: any) => !!s.transaction_id)` (290. sor).
-- Az Analytics oldal **nem használja a `useRealtimeInvalidation` hookot**, és nem is TanStack Query-t, hanem `useEffect`-et + `useState`-et. Ha a háttérben változik egy tranzakció, az Analytics oldal NEM frissül.
+A Számlák oldal a teljes adatlekérést (`fetchInvoiceData`) `useEffect` + `useState` mintával végzi (307-670. sor). Bár van egy saját realtime channel (317-343), az csupán `fetchInvoiceData()`-t hívja újra, ami a teljes adathalmazt újratölti minden egyes változáskor — és NEM TanStack Query-n keresztül. Következmények:
+- A `useRealtimeInvalidation` hook hiába invalidálja a `submittedInvoices` és `navInvoices` query key-eket, azok nem léteznek TanStack Query-ként ezen az oldalon
+- A teljes újratöltés lassú és nem inkrementális
+- A `setInvoices`, `setSubmittedInvoices` state-ek nem szinkronizálódnak más oldalakkal
 
-**Javítás:**
-- A salary query-t szűrni `transaction_id IS NOT NULL` alapján, VAGY a feldolgozásnál szűrni mint az Index.tsx-ben
-- Opcionálisan: `useRealtimeInvalidation` hozzáadása (bár ha useEffect-alapú, manuális refetch kell)
-
----
-
-### 3. InvoiceStatusTables (Dashboard) — Nem használ TanStack Query-t, nem frissül realtime-ban (MAGAS)
-**Fájl:** `src/components/dashboard/InvoiceStatusTables.tsx`
-
-Ez a komponens **`useEffect` + `useState`**-et használ a `fetchData`-val, nem TanStack Query-t. A `useRealtimeInvalidation` hook a szülő `Index.tsx`-ben fut, és invalidálja a `['dashboardData']` query key-t — de ez NEM érinti az `InvoiceStatusTables` lokális state-jét, mert az nem query.
-
-Következmény: Ha egy tranzakciót párosítanak vagy törölnek, a "Fizetendő" és "Hiányzó" listák **NEM frissülnek** amíg a felhasználó nem navigál el és vissza.
-
-**Javítás:** Az `InvoiceStatusTables`-t átírni TanStack Query-ra (pl. `useQuery` + saját query key), vagy a realtime channel változáskor `fetchData()`-t meghívni.
+**Javítás:** A `fetchInvoiceData`-t szétbontani `useQuery` hívásokra (navInvoices, submittedInvoices, partners, categories, projects, transactions), és a realtime subscription-t lecserélni a már meglévő `useRealtimeInvalidation` hookra.
 
 ---
 
-### 4. Realtime hook hiányzó query key-ek (KÖZEPES)
+## 2. Analytics oldal — useEffect/useState, nincs realtime (KÖZEPES)
+**Fájl:** `src/pages/Analytics.tsx`
+
+Az Analytics oldal `useEffect` + `useState` mintát használ (98-102. sor), NEM használ `useRealtimeInvalidation`-t és NEM TanStack Query-t. Ha a háttérben tranzakció változik, az oldal NEM frissül.
+
+**Javítás:** `useRealtimeInvalidation` hookot hozzáadni, és a `fetchAnalyticsData`-t `useQuery`-re migrálni (vagy legalább a realtime hook segítségével manuálisan újratölteni).
+
+---
+
+## 3. Projects oldal — useEffect/useState, nincs realtime (KÖZEPES)
+**Fájl:** `src/pages/Projects.tsx`
+
+A projektek oldal `useEffect` + `useState` mintát használ (65-134. sor). Nincs `useRealtimeInvalidation`, nincs TanStack Query. Ha egy másik felhasználó számlát rendel egy projekthez, a pénzügyi összesítők NEM frissülnek.
+
+**Javítás:** A `loadProjects`-et `useQuery`-re migrálni, a `projectFinancials`-t külön query-ként, és `useRealtimeInvalidation` hozzáadni.
+
+---
+
+## 4. PettyCashPage — Nincs realtime invalidáció (KÖZEPES)
+**Fájl:** `src/pages/PettyCashPage.tsx`
+
+A Házipénztár oldal TanStack Query-t használ (helyes!), de NEM használja a `useRealtimeInvalidation` hookot. A `pettyCashEntries` query key nincs a realtime hook invalidáció listáján sem. Ha új ATM tranzakció érkezik a háttérben, a házipénztár egyenleg NEM frissül.
+
+**Javítás:** `useRealtimeInvalidation` hookot hozzáadni, és a `transactions` tábla változáskor a `pettyCashEntries` és `pettyCashSettings` query key-eket is invalidálni.
+
+---
+
+## 5. Settings — CompanyMembersCard useEffect/useState (ALACSONY)
+**Fájl:** `src/pages/Settings.tsx` (202-233. sor)
+
+A `CompanyMembersCard` komponens `useEffect` + `useState` mintát használ. Nincs realtime frissítés — ha egy új tag csatlakozik a céghez, a lista nem frissül.
+
+**Javítás:** `useQuery`-re migrálni.
+
+---
+
+## 6. InvoiceDetailPopup — `fizetve` boolean az interfészben (ALACSONY)
+**Fájl:** `src/components/InvoiceDetailPopup.tsx` (26. sor)
+
+A `FullInvoice` interfészben még szerepel `fizetve: boolean | null`. Bár a badge már `!!invoice.transaction_id`-t használ (155. sor), a `fizetve` mező feleslegesen van az interfészben — zavaró lehet fejlesztőknek.
+
+**Javítás:** Eltávolítani `fizetve`-t a `FullInvoice` interfészből, mivel nem használt.
+
+---
+
+## 7. BaseInvoice type — `fizetve` boolean maradék (ALACSONY)
+**Fájl:** `src/types/invoices.ts` (17. sor)
+
+A `BaseInvoice` interfészben még mindig szerepel `fizetve?: boolean`. Ez az elavult mező, amit sehol sem kellene frontend logikában használni.
+
+**Javítás:** Eltávolítani a `fizetve` mezőt a `BaseInvoice`-ból.
+
+---
+
+## 8. useRealtimeInvalidation — hiányzó query key-ek (KÖZEPES)
 **Fájl:** `src/hooks/useRealtimeInvalidation.ts`
 
-A hook a `transactions` tábla változásakor invalidálja:
-- `['transactions', companyId]`
-- `['salaries', companyId]`
-- `['submittedInvoices', companyId]`
-- `['dashboardData', companyId]`
+A `transactions` tábla változásakor NEM invalidálja:
+- `['pettyCashEntries', companyId]` — házipénztár egyenleg
+- `['invoiceStatusPartners', companyId]` — dashboard partner cache
 
-**Hiányzik:**
-- `['kintlevo-nav', companyId]` — a KintlevoPage NAV query-je
-- `['kintlevo-manual', companyId]` — a KintlevoPage manual invoice query-je
-- `['dashboardAnalytics', companyId]` — a transactions változáskor (jelenleg csak a salary handler invalidálja)
+Az `invoices` tábla változásakor NEM invalidálja:
+- `['linkedInvoices', companyId]` — bizonylatlánc
+- `['invoiceTransactions', companyId]` — tranzakció párosítások
 
-Következmény: Ha a Kintlévőségek oldalon van a user és a háttérben egy tranzakció párosítás történik (pl. egy másik felhasználó által), a kintlévőség lista NEM frissül.
-
-**Javítás:** A `transactions` handler-hez hozzáadni a hiányzó query key invalidációkat.
+**Javítás:** Hozzáadni a hiányzó query key-eket.
 
 ---
 
-### 5. Dashboard `fetchDashboardData` — `useEffect`/`useState` minta (ALACSONY)
-**Fájl:** `src/pages/Index.tsx` (140-160. sor)
+## 9. `nav_invoices` tábla nincs a realtime hookban (MAGAS)
+**Fájl:** `src/hooks/useRealtimeInvalidation.ts`
 
-Az `Index.tsx` egy hibrid mintát használ: TanStack Query wrapper van (`dashboardData` key), de a tényleges adat `useState`-ekben van (profile, categories, invoices, metrics, navVatData, stb.). A realtime invalidáció ugyan újrafuttatja a query-t, de a pattern törékeny — ha a `fetchDashboardData` hibát dob, a state-ek részben frissülhetnek.
+A hook figyeli a `salary`, `invoices`, és `transactions` táblákat, de **NEM figyeli a `nav_invoices` táblát**. Ha egy NAV számla `transaction_id`-je változik (pl. triggerből), a frontend NEM kap értesítést. A Számlák oldal saját channel-t épít erre (InvoicesPage.tsx 317-343), de a Dashboard, KintlevoPage és Analytics oldalak NEM kapnak értesítést nav_invoices változásról.
 
-Ez nem kritikus hiba, de **inkonzisztens** a Salaries és Transactions oldalak tiszta TanStack Query mintájával.
-
-**Javítás:** Hosszú távon a dashboard adatokat is tiszta `useQuery`-kre migrálni. Rövid távon elfogadható.
-
----
-
-### 6. Analytics oldal — Béreknél nincs `transaction_id` szűrés (KÖZEPES)
-**Fájl:** `src/pages/Analytics.tsx` (131-139. sor)
-
-A `salary` lekérdezés minden bér tételt lekérdez a grafikonhoz. A Dashboard (`Index.tsx`, 290. sor) **szűri** a béreket `!!s.transaction_id` alapján (csak a kifizetett béreket jeleníti meg a grafikonon). Az Analytics oldal ezt NEM teszi — minden bért megjelenít függetlenül attól, hogy ki van-e fizetve.
-
-Ha ez szándékos (teljes bérkiadás megjelenítése), ez rendben van. De ha a cél a tényleges cash flow (amit a Dashboard mutat), akkor inkonzisztens.
-
-**Javítás:** Egyeztetni az üzleti logikát a Dashboard és Analytics között — ha cash flow, szűrni `transaction_id`-re.
+**Javítás:** A `useRealtimeInvalidation` hookba felvenni a `nav_invoices` tábla figyelését, és az `navInvoices`, `kintlevo-nav`, `invoiceStatusPayable`, `invoiceStatusMissing`, `dashboardData` query key-ek invalidálását.
 
 ---
 
@@ -90,16 +100,28 @@ Ha ez szándékos (teljes bérkiadás megjelenítése), ez rendben van. De ha a 
 
 | # | Fájl | Probléma | Súlyosság |
 |---|------|----------|-----------|
-| 1 | `KintlevoPage.tsx` | `invoices` tábla `fizetve` boolean szűrés `transaction_id` helyett | MAGAS |
-| 2 | `Analytics.tsx` | Bérek nem szűrtek `transaction_id`-re + nincs realtime | KÖZEPES |
-| 3 | `InvoiceStatusTables.tsx` | useState/useEffect, nem frissül realtime-ban | MAGAS |
-| 4 | `useRealtimeInvalidation.ts` | Hiányzó query key-ek (kintlevo, dashboardAnalytics) | KÖZEPES |
-| 5 | `Index.tsx` | Hibrid useState + useQuery minta | ALACSONY |
-| 6 | `Analytics.tsx` | Bérek cash flow inkonzisztencia a Dashboard-dal | KÖZEPES |
+| 1 | `InvoicesPage.tsx` | useEffect/useState minta, nem TanStack Query | MAGAS |
+| 2 | `Analytics.tsx` | useEffect/useState, nincs realtime | KÖZEPES |
+| 3 | `Projects.tsx` | useEffect/useState, nincs realtime | KÖZEPES |
+| 4 | `PettyCashPage.tsx` | TanStack Query van, de nincs realtime hook | KÖZEPES |
+| 5 | `Settings.tsx` | CompanyMembersCard useState | ALACSONY |
+| 6 | `InvoiceDetailPopup.tsx` | `fizetve` maradék az interfészben | ALACSONY |
+| 7 | `types/invoices.ts` | `fizetve` maradék a BaseInvoice-ban | ALACSONY |
+| 8 | `useRealtimeInvalidation.ts` | Hiányzó query key-ek (pettyCash, partners) | KÖZEPES |
+| 9 | `useRealtimeInvalidation.ts` | `nav_invoices` tábla nincs figyelve | MAGAS |
 
 ### Javasolt implementációs sorrend
-1. **KintlevoPage** — `fizetve` → `transaction_id` szűrő csere (gyors, kritikus)
-2. **useRealtimeInvalidation** — hiányzó query key-ek hozzáadása
-3. **InvoiceStatusTables** — átírás TanStack Query-ra a realtime frissítés érdekében
-4. **Analytics** — salary `transaction_id` szűrés + konzisztencia a Dashboard-dal
+
+**Fázis 1 — Azonnali hatás, alacsony kockázat:**
+1. `useRealtimeInvalidation` — `nav_invoices` tábla figyelés hozzáadása + hiányzó query key-ek
+2. `PettyCashPage` — `useRealtimeInvalidation` hook bekötése
+3. `types/invoices.ts` + `InvoiceDetailPopup.tsx` — `fizetve` maradék takarítás
+
+**Fázis 2 — Közepes refaktor:**
+4. `Analytics.tsx` — `useRealtimeInvalidation` + TanStack Query migráció
+5. `Projects.tsx` — TanStack Query migráció
+
+**Fázis 3 — Nagy refaktor (kockázatos, sok kód érintett):**
+6. `InvoicesPage.tsx` — Teljes átírás useQuery-re (2300+ soros fájl, gondos tesztelés szükséges)
+7. `Settings.tsx` — CompanyMembersCard useQuery migráció
 
