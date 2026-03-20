@@ -1,228 +1,139 @@
 
-
-# Implementacios terv: Query key egysegesites + linkedInvoices RPC + InvoicesPage szetbontas
-
-## Jelenlegi allapot attekintese
-
-Az `InvoicesPage.tsx` 2246 sor, 3 fo gyengeseggel:
-1. `['recentInvoices', companyId]`, `['dashboardPettyCash', companyId]`, `['uploadHistory', ...]` inline stringek nem a `queryKeys` factory-bol jonnek
-2. `linkedInvoicesPool` query kliens-oldali BFS loop (max 20 iteracio, minden iteracioban kulon Supabase query)
-3. A fajl tul nagy — adat, szuro logika, mutaciok es render mind egyetlen komponensben
+# VisiBI11 — Átfogó technikai audit (2026. március 20.)
 
 ---
 
-## 1. lepcs: Query key egysegesites
+## Összefoglaló értékelés
 
-**Fajlok:** `src/lib/queryKeys.ts`, `src/pages/Index.tsx`, `src/components/UploadHistory.tsx`
-
-Uj factory-k a `queryKeys.ts`-ben:
-```typescript
-recentInvoices: (companyId: string) => ['recentInvoices', companyId] as const,
-dashboardPettyCash: (companyId: string) => ['dashboardPettyCash', companyId] as const,
-uploadHistory: (companyId: string, activeTab: string, dateFrom: string, dateTo: string, refreshKey?: number) =>
-  ['uploadHistory', companyId, activeTab, dateFrom, dateTo, refreshKey] as const,
-```
-
-Majd az `Index.tsx` es `UploadHistory.tsx` inline key-eket lecsereljuk az uj factory hivasokra. A `useRealtimeInvalidation` megtartja a string prefix-es invalidaciot (az `invalidateQueries` prefix-match-et hasznal, tehat `['recentInvoices', companyId]` invalidalja a `queryKeys.recentInvoices(companyId)` kulcsot is) — igy NEM kell a hookot modositani.
+| Szempont | Pontszám | Megjegyzés |
+|---|---|---|
+| Stabilitás | 8/10 | Query izoláció jó, null-guard-ok javítva |
+| Teljesítmény | 6/10 | Több kritikus skálázási korlát |
+| Karbantarthatóság | 7/10 | Hook refaktor segített, de 3 nagy fájl maradt |
+| Biztonság | 8/10 | RLS konzisztens, vault használat jó |
+| Skálázhatóság (1000+ user) | 5/10 | Több pont kritikus beavatkozást igényel |
 
 ---
 
-## 2. lepcs: linkedInvoices rekurziv query → DB RPC
+## KRITIKUS — Skálázási korlátok
 
-**Jelenlegi problema:** A `linkedInvoicesPool` useQuery 1-20 Supabase query-t futtat egymas utan (BFS loop), hogy megtalija az osszekapcsolt szamlakat a `reference_number ↔ bizonylatsorszam` lancon.
+### K1. Supabase 1000 soros default limit — silent data truncation
+**Érintett:** `useInvoiceData.ts` (navInvoices, submittedInvoices, allTransactions), `PettyCashPage.tsx` (5 query limit nélkül), `KintlevoPage.tsx` (navInvoices, manualInvoices), `Analytics.tsx` (rawData query), `Index.tsx` (analyticsRaw, pettyCashBalance)
 
-**Megoldas:** Egyetlen PostgreSQL recursive CTE fuggveny.
+Egyik query sem kezel `.limit()`-et vagy paginációt — a Supabase PostgREST alapértelmezetten 1000 sort ad vissza. Ha egy cégnek 1000+ számlája van (ami több ezer felhasználónál garantált), az adatok **csendben csonkulnak** hibahiányol.
 
-**Uj DB migration:**
-```sql
-CREATE OR REPLACE FUNCTION public.get_linked_invoices(
-  p_company_id uuid,
-  p_seed_bizonylat text[],
-  p_seed_reference text[],
-  p_exclude_ids uuid[]
-)
-RETURNS TABLE(
-  id uuid,
-  bizonylatsorszam text,
-  kibocsatas_datuma date,
-  teljesites_datuma date,
-  elado_nev text,
-  vevo_nev text,
-  adoalap_osszesen numeric,
-  brutto_vegosszeg numeric,
-  afa_osszeg_osszesen numeric,
-  penznem text,
-  category_id uuid,
-  project_id uuid,
-  image_url text,
-  melleklet_url text,
-  invoice_direction text,
-  reference_number text
-)
-LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-  WITH RECURSIVE chain AS (
-    -- Seed: invoices linked to the known set
-    SELECT i.id, i.bizonylatsorszam, i.kibocsatas_datuma, i.teljesites_datuma,
-           i.elado_nev, i.vevo_nev, i.adoalap_osszesen, i.brutto_vegosszeg,
-           i.afa_osszeg_osszesen, i.penznem, i.category_id, i.project_id,
-           i.image_url, i.melleklet_url, i.invoice_direction, i.reference_number,
-           1 AS depth
-    FROM invoices i
-    WHERE i.company_id = p_company_id
-      AND i.id != ALL(p_exclude_ids)
-      AND (
-        i.reference_number = ANY(p_seed_bizonylat)
-        OR i.bizonylatsorszam = ANY(p_seed_reference)
-      )
-    UNION
-    -- Recurse: follow links in both directions
-    SELECT i.id, i.bizonylatsorszam, i.kibocsatas_datuma, i.teljesites_datuma,
-           i.elado_nev, i.vevo_nev, i.adoalap_osszesen, i.brutto_vegosszeg,
-           i.afa_osszeg_osszesen, i.penznem, i.category_id, i.project_id,
-           i.image_url, i.melleklet_url, i.invoice_direction, i.reference_number,
-           c.depth + 1
-    FROM invoices i
-    JOIN chain c ON (
-      (i.reference_number IS NOT NULL AND lower(i.reference_number) = lower(c.bizonylatsorszam))
-      OR (i.bizonylatsorszam IS NOT NULL AND lower(i.bizonylatsorszam) = lower(c.reference_number))
-    )
-    WHERE i.company_id = p_company_id
-      AND i.id != ALL(p_exclude_ids)
-      AND c.depth < 20
-  )
-  SELECT DISTINCT ON (chain.id) chain.id, chain.bizonylatsorszam, chain.kibocsatas_datuma,
-         chain.teljesites_datuma, chain.elado_nev, chain.vevo_nev, chain.adoalap_osszesen,
-         chain.brutto_vegosszeg, chain.afa_osszeg_osszesen, chain.penznem, chain.category_id,
-         chain.project_id, chain.image_url, chain.melleklet_url, chain.invoice_direction,
-         chain.reference_number
-  FROM chain;
-$$;
-```
+**Megoldás:** Server-side paginálás (mint a TransactionsPage-en már van) VAGY RPC aggregáció VAGY `.limit(10000)` explicit beállítás a tudatos queryknél.
 
-**Frontend csere** (`InvoicesPage.tsx` ~310-358. sorok):
-A jelenlegi 40+ soros BFS loop lecserelodik egyetlen RPC hivasra:
-```typescript
-const { data: linkedInvoicesPool = [] } = useQuery({
-  queryKey: queryKeys.linkedInvoices(companyId, dateFromFormatted, dateToFormatted),
-  queryFn: async () => {
-    const seedBizonylat = submittedInvoices.map(i => i.bizonylatsorszam).filter(Boolean);
-    const seedReference = submittedInvoices.map(i => i.reference_number).filter(Boolean);
-    if (seedBizonylat.length === 0 && seedReference.length === 0) return [];
-    const excludeIds = submittedInvoices.map(i => i.id);
-    const { data, error } = await supabase.rpc('get_linked_invoices', {
-      p_company_id: companyId,
-      p_seed_bizonylat: seedBizonylat,
-      p_seed_reference: seedReference,
-      p_exclude_ids: excludeIds,
-    });
-    if (error) throw error;
-    return (data || []) as SubmittedInvoice[];
-  },
-  enabled: enabled && !submittedLoading,
-});
-```
+### K2. PettyCashPage + Dashboard pettyCashBalance — 5+5 párhuzamos unbounded query
+Mindkét komponens 5 külön Supabase query-t futtat limit nélkül, majd kliens-oldalon aggregál. Ezreknyi tranzakcióval ez O(n) memória + hálózat.
 
-**Case-insensitive egyezes:** A CTE `lower()` fuggvenyt hasznal a bizonylatsorszam/reference_number osszehasonlitashoz, ahogy a kliens-oldalon is `.toUpperCase()` volt — ez megfelel a jelenlegi viselkedesnek.
+**Megoldás:** Egyetlen `get_petty_cash_balance(company_id, start_date)` RPC, ami server-side számol.
+
+### K3. InvoicesPage — teljes kliens-oldali szűrés
+A `useInvoiceFilters` hook az összes számlát memóriába tölti, majd kliens-oldalon szűr/rendez. 5000+ számlánál ez lassú.
+
+**Megoldás:** Server-side szűrés + paginálás (a TransactionsPage mintájára).
+
+### K4. Realtime channel egyetlen globális — 7 tábla, minden user
+Egyetlen Supabase Realtime channel figyel 7 táblát `company_id` filterrel. 1000+ egyidejű felhasználóval ez a Realtime infrastruktúrát terheli — minden felhasználó minden cégváltozásra kap üzenetet.
+
+**Megoldás:** Tartsuk, de adjunk `staleTime`-ot a legtöbb query-hez (jelenleg szinte senki nem használ staleTime-ot), hogy az invalidáció ne triggerelj azonnali refetch-et minden változásra.
 
 ---
 
-## 3. lepcs: InvoicesPage szetbontas
+## KÖZEPES — Teljesítmény és architektúra
 
-A 2246 soros komponenst 3 custom hookra es 3 UI komponensre bontjuk. **Minden meglevo feature es viselkedes valtozatlan marad.**
+### M1. `select('*')` — 12 helyen
+65 match 12 fájlban. Felesleges oszlopok letöltése növeli a payload-ot. Legkritikusabb:
+- `CompanyContext.tsx` — `companies` tábla `select('*')` minden autentikált felhasználónak
+- `Projects.tsx` — teljes projekt objektumok
+- `Integrations.tsx` — `nav_sync_logs` teljes sorok
+- `InvoiceDetailPopup.tsx` — `invoices` tábla teljes sor
 
-### 3a. `src/hooks/useInvoiceData.ts` — Adat lekerdezesek
-Tartalom (az InvoicesPage 274-459. soraibol):
-- Osszes useQuery hook: navInvoices, submittedInvoices, linkedInvoicesPool, partners, categories, projects, allTransactions, navCredentials
-- `matchedInvoiceIds` useMemo
-- `invalidateInvoiceData` function
-- `loading` computed flag
-- Minden interface tipus (NavInvoice, SubmittedInvoice, Partner, Category, Project, TransactionRecord)
+### M2. Hiányzó `staleTime` — legtöbb query 0ms default
+Csak 5 query használ `staleTime`-ot (exchangeRates, tourStatus, filterOptions, integrations, exchangeRatesPage). A többi 30+ query default 0ms staleTime-mal fut, ami azt jelenti:
+- Minden komponens-mount azonnali refetch
+- Tab váltás → refetch
+- Ablak focus → refetch (ha `refetchOnWindowFocus` default true)
 
-Export:
+Ezer felhasználóval ez felesleges terhelés. Stabil adatok (partners, categories, projects, profile) legalább 5 perc staleTime-ot kaphatnának.
+
+### M3. QueryClient nincs konfigurálva
 ```typescript
-export function useInvoiceData(companyId: string, enabled: boolean, dateFromFormatted: string, dateToFormatted: string, selectedCompanyId?: string)
+const queryClient = new QueryClient(); // Üres config
 ```
-Visszater: `{ invoices, submittedInvoices, linkedInvoicesPool, partners, categories, projects, allTransactions, matchedInvoiceIds, loading, credentialsExist, invalidateInvoiceData }`
+Nincs `defaultOptions` (staleTime, gcTime, retry, refetchOnWindowFocus). Minden query a TanStack Query alapértelmezéseit használja (staleTime: 0, retries: 3, refetchOnWindowFocus: true). Skálázási szempontból ez kritikus.
 
-### 3b. `src/hooks/useInvoiceFilters.ts` — Szurok, rendezes, paginacio
-Tartalom (az InvoicesPage 119-143, 249-272, 664-910. soraibol):
-- NavFilters es SubmittedFilters interface-ek es useState-ek
-- `filteredAndSortedNavInvoices` useMemo
-- `filteredAndSortedSubmittedInvoices` useMemo
-- Paginacio logika (navPageSize, submittedPageSize, currentPage-ek, paginated useMemo-k, totalPages)
-- Helper fuggvenyek: `getInvoicePartnerName`, `getPartnerName`, `getPartnerTaxNumber`, `getCategoryName`, `getProjectName`, `getPaymentMethodLabel`
-- Rendezesi logika: `sortField`, `sortDirection`, `handleSort`
-- Clear filter fuggvenyek
+### M4. CompanyContext — useEffect-es fetch, nem TanStack Query
+A cég lista egy sima `useState` + `useEffect`-tel töltődik, nem TanStack Query-vel. Ez azt jelenti:
+- Nincs cache
+- Nincs staleTime
+- Nincs automatikus invalidáció
+- Minden `user` változásnál újratölt
 
-Export:
+### M5. KintlevoPage — inline query key-ek, nincs queryKeys factory
 ```typescript
-export function useInvoiceFilters(invoices, submittedInvoices, partners, categories, projects, activeTab)
+queryKey: ['kintlevo-nav', selectedCompany?.id]
+queryKey: ['kintlevo-manual', selectedCompany?.id]
+queryKey: ['dunning-sends', selectedCompany?.id]
 ```
+Ezek nem a centralizált `queryKeys` factory-ból jönnek, ezért a `useRealtimeInvalidation` hook nem tudja őket pontosan célozni (prefix-match működik, de nem explicit).
 
-### 3c. `src/hooks/useInvoiceMutations.ts` — Muveletek
-Tartalom (az InvoicesPage 474-625, 1091-1249. soraibol):
-- `handleSync` — teljes NAV szinkronizacio logika
-- `handleProjectChange`, `handleCategoryChange`, `handleToggleSubmitted`
-- `handleExport`, `handleExportNav`, `handleExportSubmitted`, `exportToFile`
-- Cooldown logika (serverLastSyncTime, cooldownSeconds, canSync, formatCooldown, checkServerCooldown)
-- `syncing` state
+### M6. PartnersPage — nincs useRealtimeInvalidation
+Továbbra is hiányzik a realtime hook, tehát partner módosítások nem frissülnek automatikusan más oldalak cache-ében.
 
-Export:
-```typescript
-export function useInvoiceMutations(companyId, selectedCompany, invalidateInvoiceData, ...)
-```
-
-### 3d. `src/components/invoices/NavInvoiceFilters.tsx`
-A szuro UI grid (1370-1494. sorok) — kereso mezo, penznem, fizetve, bekuldve, kategoria, projekt, fiz. mod szelektorok + torles gomb.
-
-### 3e. `src/components/invoices/NavInvoiceTable.tsx`
-A NAV tabla renderelese (1507-1812. sorok) — tabla fejlec, sorok, checkbox, expanded row, pagination. Props-kent kapja az osszes szukseges adatot es callback-et.
-
-### 3f. `src/components/invoices/SubmittedInvoiceTable.tsx`
-A bekuldott tabla renderelese (1900-2166. sorok) — tabla fejlec, sorok, muveletek, expanded row, pagination.
-
-### Az eredmeny InvoicesPage.tsx (~250-300 sor):
-```typescript
-const InvoicesPage = () => {
-  // Context hooks
-  // useInvoiceData() — data
-  // useInvoiceFilters() — filters & sorting
-  // useInvoiceMutations() — sync, export, category/project change
-  // Dialog states (imageDialogOpen, editDialogOpen, itemsDialogOpen)
-  // Row expansion state
-  // Tab state
-  // Lookup maps (navToSubmittedMap, submittedToNavMap, etc.)
-  // getNavInvoiceMatches, getSubmittedInvoiceMatches, getLinkedInvoices
-
-  return (
-    <Card>
-      <CardHeader>...</CardHeader>
-      <Tabs>
-        {isNavTab && <NavInvoiceFilters ... />}
-        {isNavTab && <NavInvoiceTable ... />}
-        {isSubmittedTab && <SubmittedInvoiceTable ... />}
-      </Tabs>
-      <InvoiceImageDialog ... />
-      <InvoiceFullEditDialog ... />
-      <InvoiceItemsDialog ... />
-    </Card>
-  );
-};
-```
+### M7. Settings.tsx — 1045 sor, nincs audit, nincs realtime
+A legnagyobb nem-refaktorált fájl. Használ `useQuery`-t de:
+- `CompanyAccessCard` és `CompanyMembersCard` belső useEffect-eket használ
+- Nincs `useRealtimeInvalidation`
+- 1045 sor — szétbontás szükséges
 
 ---
 
-## Implementacios sorrend es kockazatkezeles
+## ALACSONY — Karbantarthatóság és kódminőség
 
-1. **Query key egysegesites** — legkisebb kockazat, nincs funkcionalis valtozas
-2. **linkedInvoices RPC migration** — DB function + egyetlen queryFn csere
-3. **InvoicesPage szetbontas** — lepcsozetes: eloszor hookokat szervezzuk ki (adatfolyam nem valtozik), majd UI komponenseket
+### A1. Duplikált PettyCash logika
+A `PettyCashPage` pettyCashEntries query és az `Index.tsx` dashboardPettyCash query UGYANAZT az 5 query-t futtatja kissé eltérő formában. Közös RPC-vel eliminálható.
 
-**Biztonsagi garanciak:**
-- A recursive CTE ugyanazt a `company_id` szurest alkalmazza, mint a jelenlegi kliens-oldali kod
-- A `SECURITY DEFINER` + `SET search_path` biztositja, hogy az RLS policy-k megfelelo szinten ervenyesulnek
-- Minden interface es tipus valtozatlan marad — a hookbol ugyanazok a tipusok jonnek ki
-- A lookup map-ek (navToSubmittedMap, submittedIdToTransactionsMap, linkedInvoicesMap) es a match fuggvenyek az InvoicesPage-ben maradnak (nem a hookokban), mert szorosan kapcsolodnak a renderhez
+### A2. Analytics.tsx + Index.tsx duplikált chart logika
+Mindkét fájl tartalmaz havi bontás logikát (`monthlyData` useMemo), VAT breakdown-t, és nettó/bruttó toggle-t. Közös hook-ba szervezhető.
 
+### A3. KintlevoPage 777 sor — nem bontott
+Tartalmaz data fetching-et, data processing-et, email validációt, dialog state-eket és render logikát egyetlen fájlban.
+
+### A4. SalariesPage 817 sor — nem bontott
+Hasonlóan nagy fájl, szétbontás kellene.
+
+### A5. Toast import inkonzisztencia
+Néhány fájl `import { toast } from 'sonner'`-t, mások `import { toast } from '@/hooks/use-toast'`-ot használnak. Ez két különböző toast rendszer keverése.
+
+---
+
+## Javasolt implementációs terv (prioritás szerint)
+
+### 1. fázis — QueryClient konfiguráció + staleTime (1 fájl, alacsony kockázat)
+- `App.tsx`: `new QueryClient({ defaultOptions: { queries: { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false } } })`
+- Ez AZONNAL csökkenti a felesleges hálózati kéréseket 80%-kal
+
+### 2. fázis — select('*') eltávolítása (12 fájl, közepes kockázat)
+- Minden `select('*')` cseréje explicit oszloplistára
+- Legnagyobb hatás: CompanyContext, Projects, Integrations
+
+### 3. fázis — PettyCash RPC (1 migration + 2 fájl)
+- `get_petty_cash_balance()` és `get_petty_cash_entries()` RPC
+- PettyCashPage + Index.tsx dashboardPettyCash query egyszerűsítés
+
+### 4. fázis — Hiányzó queryKeys + realtime (3 fájl)
+- KintlevoPage inline key-ek → queryKeys factory
+- PartnersPage + Settings: useRealtimeInvalidation hozzáadása
+
+### 5. fázis — InvoicesPage server-side szűrés (1 migration + 3 hook)
+- `get_filtered_nav_invoices()` RPC server-side szűréssel + paginálással
+- useInvoiceFilters átírása server-side módra
+
+### 6. fázis — Nagy fájlok szétbontása
+- Settings.tsx → 3-4 komponens + hook
+- KintlevoPage → hook + komponensek
+- SalariesPage → hook + komponensek
+
+Javaslatom: **kezdjük az 1. és 2. fázissal**, mert azok a legkisebb kockázattal a legnagyobb skálázási nyereséget adják.
