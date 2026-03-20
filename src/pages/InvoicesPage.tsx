@@ -1171,9 +1171,7 @@ const InvoicesPage = () => {
 
       if (error) throw error;
 
-      setInvoices(prev => prev.map(inv =>
-        inv.id === invoice.id ? { ...inv, submitted: newValue } : inv
-      ));
+      invalidateInvoiceData();
       toast.success(newValue ? 'Beküldve megjelölve' : 'Beküldve visszavonva');
     } catch (error) {
       console.error('Error updating submitted status:', error);
