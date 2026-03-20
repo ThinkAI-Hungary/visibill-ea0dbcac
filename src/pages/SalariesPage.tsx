@@ -8,6 +8,7 @@ import { getPaymentStatusBadge } from "@/hooks/useComputedStatus";
 import { useRealtimeInvalidation } from "@/hooks/useRealtimeInvalidation";
 import { useDateRange } from "@/contexts/DateRangeContext";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCurrency } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
