@@ -1,46 +1,36 @@
 
 
-# Bérek oldal - Dinamikus periódus-megjelenítés
+# Duplikált sorok összesítése többhónapos nézetben
 
-## Mi változik
+## Probléma
+Az adatbázisban minden hónapra külön sor létezik (pl. "Jámbor Viktor Ferenc" bér: jan 332 698 Ft + feb 332 698 Ft). Többhónapos nézetben ezek külön sorokként jelennek meg ahelyett, hogy összesítve lennének.
 
-Az adatszűrés már most is a DateRangeContext alapján történik (`useSalaryData` hook), tehát az összesítés és a dolgozói bontás automatikusan a kiválasztott időszakra vonatkozik. A fő változás a **fejlécek dinamikus szövege** és a **periódus-kontextus megjelenítése**.
+## Megoldás
+Aggregációs logika bevezetése a `useSalaryData` hook-ban: az azonos `név` + `tipus` kombinációjú tételek összegeit összeadni dolgozónként és a NAV szekción belül.
 
 ## Érintett fájlok
 
-### 1. `src/pages/SalariesPage.tsx`
-- Importálni `useDateRange`-et a DateRangeContext-ből
-- Kiszámítani, hogy a kiválasztott dátumtartomány egyetlen hónapra esik-e (`isSingleMonth`)
-- Formázott periódus-stringet előállítani (pl. "2026. jan." vs "2026. jan. 1. – 2026. feb. 28.")
-- Átadni `isSingleMonth` és `periodLabel` propokat a `NavSummaryTable` és `EmployeeAccordion` komponenseknek
+### 1. `src/hooks/useSalaryData.ts` — Aggregációs logika
+Az `employeeGroups` és `navItems` kiszámításánál (a meglévő `useMemo`-ban) az itemeket `név + tipus` kulcs alapján csoportosítani és összegezni:
 
-### 2. `src/components/salaries/NavSummaryTable.tsx`
-- Új propok: `isSingleMonth: boolean`, `periodLabel: string`
-- Fejléc logika:
-  - Ha `isSingleMonth` → "Havi bérösszesítő (NAV utalások)"
-  - Ha nem → "Bérösszesítő (NAV utalások) a következő periódusra: {periodLabel}"
+- **Dolgozói bontás**: Egy dolgozón belül az azonos `név`+`tipus` sorok → 1 összesített sor (összegek összeadva)
+- **NAV utalások**: Azonos `név` sorok → 1 összesített sor
+- Az aggregált rekord megőrzi az első előfordulás `id`-ját, `statusz`-át, `kifizetes_ideje`-t (a legfrissebb), és a `transaction_id`-t (ha bármelyiknek van)
+- A `fizetesi_mod` az első elemből öröklődik
 
-### 3. `src/components/salaries/EmployeeAccordion.tsx`
-- Új propok: `isSingleMonth: boolean`, `periodLabel: string`
-- Fejléc logika:
-  - Ha `isSingleMonth` → "Dolgozói bontás (X fő)"
-  - Ha nem → "Dolgozói bontás (X fő) — {periodLabel}"
+### 2. `src/components/salaries/EmployeeAccordion.tsx` — Tétel szám korrekció
+A fejlécben az `items.length` helyesen az aggregált tételek számát fogja mutatni (pl. 3 tétel 6 helyett).
 
-### 4. `src/components/salaries/SalaryKpiCards.tsx`
-- Nincs változtatás szükséges — a KPI-k már a szűrt `salaryItems` alapján számolódnak a `useSalaryData` hook-ban, tehát automatikusan a kiválasztott periódusra vonatkoznak.
+### Nincs UI változás szükséges
+A komponensek már `SalaryItem[]`-et fogadnak — az aggregált adatok ugyanolyan formátumúak lesznek, csak kevesebb sorral.
 
-## Technikai részletek
-
+## Aggregáció logikája (pseudocode)
 ```text
-Periódus-detekció logika (SalariesPage-ben):
-  const { dateFrom, dateTo } = useDateRange();
-  const isSingleMonth = dateFrom.getFullYear() === dateTo.getFullYear() 
-                      && dateFrom.getMonth() === dateTo.getMonth();
-  
-  const periodLabel = isSingleMonth
-    ? format(dateFrom, 'yyyy. MMM', { locale: hu })
-    : `${format(dateFrom, 'yyyy. MMM d.', { locale: hu })} – ${format(dateTo, 'yyyy. MMM d.', { locale: hu })}`;
+items csoportosítás "név|tipus" kulcs alapján:
+  - összeg: SUM(összeg)
+  - statusz: ha bármelyik paid → paid, egyébként az első
+  - kifizetes_ideje: a legkésőbbi dátum
+  - transaction_id: az első nem-null
+  - dátum: a legkésőbbi
 ```
-
-A dolgozói összesítés (employee grouping by `munkavallalo_neve`) már most is cross-month összesítést csinál — ha Jan-ban A,B,C van és Feb-ban A,B,C,D, a hook egyetlen csoportba gyűjti A, B, C tételeit mindkét hónapból, és D-t külön. Ez nem igényel változtatást.
 
