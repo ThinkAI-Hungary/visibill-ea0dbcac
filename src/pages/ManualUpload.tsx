@@ -585,6 +585,22 @@ const ManualUpload = () => {
         }
       }
 
+      // Optimistic update for each uploaded salary file
+      for (const file of selectedSalaryFiles) {
+        addToUploadHistoryCache({
+          id: crypto.randomUUID(),
+          file_name: file.name,
+          file_size: 0,
+          file_type: '',
+          file_url: '',
+          user_id: user.id,
+          upload_status: 'pending',
+          processing_status: 'pending',
+          created_at: new Date().toISOString(),
+          error_message: null,
+        });
+      }
+
       toast({
         title: "Feltöltés sikeres!",
         description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá."
