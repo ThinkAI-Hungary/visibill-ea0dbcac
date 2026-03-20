@@ -368,9 +368,9 @@ const Index = () => {
           .gte("invoice_issue_date", dateFromFormatted)
           .lte("invoice_issue_date", dateToFormatted),
         supabase.from("salary")
-          .select("dátum, összeg, statusz, transaction_id")
+          .select("dátum, összeg, statusz, transaction_id, fizetesi_mod")
           .eq("company_id", companyId)
-          .not("transaction_id", "is", null)
+          .or("transaction_id.not.is.null,fizetesi_mod.eq.készpénz")
           .gte("dátum", dateFromFormatted)
           .lte("dátum", dateToFormatted),
       ]);
