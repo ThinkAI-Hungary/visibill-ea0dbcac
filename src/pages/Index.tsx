@@ -755,7 +755,6 @@ const Index = () => {
   // Show empty state dashboard when no companies exist (check FIRST before any loading states)
   if (!companyLoading && companies.length === 0) {
     return <EmptyStateDashboard onOnboardingComplete={handleOnboardingComplete} />;
-    return <EmptyStateDashboard onOnboardingComplete={handleOnboardingComplete} />;
   }
 
   // Show loading spinner while company data is being fetched
