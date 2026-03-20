@@ -27,6 +27,7 @@ export function useRealtimeInvalidation(companyId: string | undefined) {
           invalidateAll([
             'salaries', 'dashboardData', 'dashboardAnalytics',
             'analyticsRaw', 'analyticsVat',
+            'pettyCashEntries',
           ]);
         }
       )
