@@ -13,7 +13,7 @@ import type { SalaryItem } from '@/lib/salary-helpers';
 export default function SalariesPage() {
   const {
     salaryItems, loading, employeeGroups, navItems,
-    metrics, allNavPaid, addMutation, editMutation,
+    metrics, addMutation, editMutation,
   } = useSalaryData();
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
