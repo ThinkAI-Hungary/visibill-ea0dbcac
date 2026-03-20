@@ -60,6 +60,8 @@ export const queryKeys = {
   // ── Projects ──
   projects: (companyId: string) =>
     ['projects', companyId] as const,
+  projectsList: (companyId: string) =>
+    ['projectsList', companyId] as const,
 
   // ── Categories ──
   categories: (companyId: string) =>

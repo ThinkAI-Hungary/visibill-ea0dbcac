@@ -410,7 +410,7 @@ const InvoicesPage = () => {
   });
 
   const { data: projects = [] } = useQuery({
-    queryKey: queryKeys.projects(companyId),
+    queryKey: queryKeys.projectsList(companyId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('projects')
@@ -449,7 +449,7 @@ const InvoicesPage = () => {
     queryClient.invalidateQueries({ queryKey: ['linkedInvoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['partners', companyId] });
     queryClient.invalidateQueries({ queryKey: ['categories', companyId] });
-    queryClient.invalidateQueries({ queryKey: ['projects', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['projectsList', companyId] });
     queryClient.invalidateQueries({ queryKey: ['invoiceTransactions', companyId] });
   };
 
