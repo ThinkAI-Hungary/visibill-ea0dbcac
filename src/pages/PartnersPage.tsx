@@ -99,7 +99,7 @@ export default function PartnersPage() {
 
       const { data, error } = await supabase
         .from("partners")
-        .select("*")
+        .select("id, name, tax_number, address, email, partner_type, company_id, user_id, default_project_id, created_at, updated_at")
         .eq("company_id", selectedCompany.id)
         .order("name", { ascending: true });
 
