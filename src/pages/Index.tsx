@@ -683,10 +683,10 @@ const Index = () => {
         {metrics && (() => {
           let payableVat = 0;
           if (navVatData) {
-            const inboundTotal = Object.entries(navVatData.inboundVat).reduce((total, [currency, amount]) => {
+            const inboundTotal = Object.entries(navVatData.inboundVat || {}).reduce((total, [currency, amount]) => {
               return total + convertToSelectedCurrency(amount, currency);
             }, 0);
-            const outboundTotal = Object.entries(navVatData.outboundVat).reduce((total, [currency, amount]) => {
+            const outboundTotal = Object.entries(navVatData.outboundVat || {}).reduce((total, [currency, amount]) => {
               return total + convertToSelectedCurrency(amount, currency);
             }, 0);
             payableVat = outboundTotal - inboundTotal;
