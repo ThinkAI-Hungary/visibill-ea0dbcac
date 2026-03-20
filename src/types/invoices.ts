@@ -14,7 +14,7 @@ export interface BaseInvoice {
   category_name?: string;
   project_id?: string;
   project_name?: string;
-  transaction_id?: string | null;
+  penznem?: string;
   penznem?: string;
   reference_number?: string;
   transaction_id?: string | null;
