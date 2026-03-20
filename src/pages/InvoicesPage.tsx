@@ -268,7 +268,7 @@ const InvoicesPage = () => {
   // Row selection state for recategorization
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
   const [selectedSubmittedIds, setSelectedSubmittedIds] = useState<Set<string>>(new Set());
-  const [matchedInvoiceIds, setMatchedInvoiceIds] = useState<Set<string>>(new Set());
+  
 
 
   const [navFilters, setNavFilters] = useState<NavFilters>({
