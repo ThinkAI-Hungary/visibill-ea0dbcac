@@ -164,7 +164,7 @@ export default function PartnersPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["partners"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.partners(selectedCompany?.id || '') });
       toast({
         title: "Partner törölve",
         description: "A partner sikeresen törölve.",
