@@ -137,9 +137,15 @@ const Index = () => {
   const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const navigate = useNavigate();
   useRealtimeInvalidation(selectedCompany?.id);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedCurrency, setSelectedCurrency] = useState<string>('HUF');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [navVatData, setNavVatData] = useState<NavVatData | null>(null);
 
   // Analytics UI toggles
   const [showBrutto, setShowBrutto] = useState(true);
@@ -150,6 +156,13 @@ const Index = () => {
   const [showExpensesPaid, setShowExpensesPaid] = useState(true);
   const [showExpensesUnpaid, setShowExpensesUnpaid] = useState(true);
   const [showSalaries, setShowSalaries] = useState(true);
+  const [rawInvoices, setRawInvoices] = useState<RawInvoice[]>([]);
+  const [rawSalaries, setRawSalaries] = useState<RawSalary[]>([]);
+  const [outboundVatCategories, setOutboundVatCategories] = useState<VatCategoryData[]>([]);
+  const [inboundVatCategories, setInboundVatCategories] = useState<VatCategoryData[]>([]);
+  const [totalOutboundVat, setTotalOutboundVat] = useState(0);
+  const [totalInboundVat, setTotalInboundVat] = useState(0);
+  const [pettyCashBalance, setPettyCashBalance] = useState<number | null>(null);
   
   // Product Tour state
   const [showTour, setShowTour] = useState(false);
