@@ -71,12 +71,8 @@ interface SalaryItem {
 
 // ---------- Helpers ----------
 
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("hu-HU", {
-    style: "currency",
-    currency: "HUF",
-    maximumFractionDigits: 0,
-  }).format(amount);
+// Use shared formatCurrency from utils
+import { formatCurrency } from '@/lib/utils';
 
 const formatDate = (dateString: string | null) => {
   if (!dateString) return "—";

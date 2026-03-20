@@ -60,38 +60,12 @@ interface Partner {
   updated_at: string;
 }
 
-// Helper to decode HTML entities
-const decodeHtmlEntities = (text: string): string => {
-  const textarea = document.createElement('textarea');
-  textarea.innerHTML = text;
-  return textarea.value;
-};
+// Import shared helpers
+import { decodeHtmlEntities, getInitials as _getInitials, getAvatarColor } from '@/lib/helpers';
 
-// Helper to get initials from name
+// Partner-specific getInitials with HTML entity decoding
 const getInitials = (name: string): string => {
-  const decoded = decodeHtmlEntities(name);
-  const words = decoded.trim().split(/\s+/);
-  if (words.length >= 2) {
-    return (words[0][0] + words[1][0]).toUpperCase();
-  }
-  return decoded.slice(0, 2).toUpperCase();
-};
-
-// Generate consistent color based on name
-const getAvatarColor = (name: string): string => {
-  const colors = [
-    'bg-primary/20 text-primary',
-    'bg-blue-500/20 text-blue-500',
-    'bg-purple-500/20 text-purple-500',
-    'bg-amber-500/20 text-amber-500',
-    'bg-emerald-500/20 text-emerald-500',
-    'bg-rose-500/20 text-rose-500',
-  ];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
+  return _getInitials(decodeHtmlEntities(name));
 };
 
 export default function PartnersPage() {
