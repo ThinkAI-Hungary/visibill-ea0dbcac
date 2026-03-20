@@ -65,7 +65,7 @@ export function useRealtimeInvalidation(companyId: string | undefined) {
             'invoiceTransactions', 'navInvoices',
             'pettyCashEntries', 'pettyCashSettings',
             'analyticsRaw', 'analyticsVat',
-            'projects',
+            'projects', 'projectsList',
           ]);
         }
       )
