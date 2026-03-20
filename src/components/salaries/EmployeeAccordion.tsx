@@ -9,7 +9,6 @@ import type { SalaryItem } from '@/lib/salary-helpers';
 
 interface Props {
   employeeGroups: [string, SalaryItem[]][];
-  allNavPaid: boolean;
   onEdit: (item: SalaryItem) => void;
 }
 
