@@ -221,7 +221,7 @@ const Index = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categories')
-        .select('*')
+        .select('id, name, description')
         .eq('company_id', companyId)
         .order('created_at', { ascending: false });
       if (error) throw error;

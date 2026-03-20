@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -36,11 +37,11 @@ const Integrations = () => {
   const [activeNavTab, setActiveNavTab] = useState('credentials');
 
   const { data: syncLogs = [], isLoading: logsLoading } = useQuery({
-    queryKey: ['syncLogs', selectedCompany?.id],
+    queryKey: queryKeys.syncLogs(selectedCompany?.id || ''),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('nav_sync_logs')
-        .select('*')
+        .select('id, status, sync_type, invoice_direction, invoices_fetched, error_message, started_at, completed_at, duration_ms, date_from, date_to')
         .eq('company_id', selectedCompany!.id)
         .order('started_at', { ascending: false })
         .limit(20);

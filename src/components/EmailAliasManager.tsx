@@ -40,7 +40,7 @@ const EmailAliasManager = () => {
       // First try to fetch existing alias for this company
       const { data, error } = await supabase
         .from('email_aliases')
-        .select('*')
+        .select('id, alias_email, company_name, status, mailgun_route_id, verified_at, company_id, user_id, created_at, updated_at')
         .eq('company_id', selectedCompany.id)
         .maybeSingle();
 
@@ -84,7 +84,7 @@ const EmailAliasManager = () => {
         // Refetch to get the newly created alias
         const { data: newAlias, error: fetchError } = await supabase
           .from('email_aliases')
-          .select('*')
+          .select('id, alias_email, company_name, status, mailgun_route_id, verified_at, company_id, user_id, created_at, updated_at')
           .eq('company_id', selectedCompany.id)
           .maybeSingle();
 

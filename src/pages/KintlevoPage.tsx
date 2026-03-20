@@ -4,6 +4,7 @@ import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -148,7 +149,7 @@ export default function KintlevoPage() {
   // ── Queries ────────────────────────────────────────────────────────────────
 
   const { data: navInvoices = [], isLoading: loadingNav } = useQuery({
-    queryKey: ['kintlevo-nav', selectedCompany?.id],
+    queryKey: queryKeys.kintlevoNav(selectedCompany?.id || ''),
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
@@ -164,7 +165,7 @@ export default function KintlevoPage() {
   });
 
   const { data: manualInvoices = [], isLoading: loadingManual } = useQuery({
-    queryKey: ['kintlevo-manual', selectedCompany?.id],
+    queryKey: queryKeys.kintlevoManual(selectedCompany?.id || ''),
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
@@ -180,7 +181,7 @@ export default function KintlevoPage() {
   });
 
   const { data: partners = [] } = useQuery({
-    queryKey: ['partners', selectedCompany?.id],
+    queryKey: queryKeys.partners(selectedCompany?.id || ''),
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase
@@ -194,7 +195,7 @@ export default function KintlevoPage() {
   });
 
   const { data: dunningSends = [] } = useQuery({
-    queryKey: ['dunning-sends', selectedCompany?.id],
+    queryKey: queryKeys.dunningSends(selectedCompany?.id || ''),
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase

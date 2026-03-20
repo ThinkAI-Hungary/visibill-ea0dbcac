@@ -70,7 +70,7 @@ const Projects = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
+        .select('id, name, description, status, budget, start_date, end_date, project_type, project_code, client_name, company_id, user_id, created_at, updated_at')
         .eq('company_id', selectedCompany!.id)
         .order('created_at', { ascending: false });
 

@@ -67,7 +67,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
       // Then get local usage data
       const { data: usageData, error: usageError } = await supabase
         .from('user_subscriptions')
-        .select('*')
+        .select('user_id, tier, invoice_limit, invoices_used, period_start, period_end, stripe_customer_id, stripe_subscription_id, updated_at')
         .eq('user_id', user?.id)
         .single();
 

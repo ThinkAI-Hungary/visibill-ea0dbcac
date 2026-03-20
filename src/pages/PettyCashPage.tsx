@@ -54,7 +54,7 @@ const PettyCashPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('hp_settings')
-        .select('*')
+        .select('id, company_id, opening_balance, start_date, created_at, updated_at, created_by')
         .eq('company_id', selectedCompany!.id)
         .maybeSingle();
 
