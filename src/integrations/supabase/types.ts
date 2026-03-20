@@ -1895,6 +1895,95 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: number
       }
+      get_filtered_nav_invoices: {
+        Args: {
+          p_amount_max?: number
+          p_amount_min?: number
+          p_category_id?: string
+          p_company_id: string
+          p_currency?: string
+          p_date_from: string
+          p_date_to: string
+          p_direction: string
+          p_page?: number
+          p_page_size?: number
+          p_paid?: string
+          p_payment_method?: string
+          p_project_id?: string
+          p_search?: string
+          p_sort_dir?: string
+          p_sort_field?: string
+          p_submitted?: string
+        }
+        Returns: {
+          category_id: string
+          company_id: string
+          created_at: string
+          currency: string
+          customer_address: string
+          customer_name: string
+          customer_tax_number: string
+          details_fetched: boolean
+          fetched_at: string
+          id: string
+          invoice_delivery_date: string
+          invoice_direction: string
+          invoice_gross_amount: number
+          invoice_issue_date: string
+          invoice_net_amount: number
+          invoice_number: string
+          invoice_operation: string
+          invoice_vat_amount: number
+          paid: boolean
+          payment_date: string
+          payment_method: string
+          project_id: string
+          submitted: boolean
+          supplier_address: string
+          supplier_name: string
+          supplier_tax_number: string
+          total_count: number
+          transaction_id: string
+          user_id: string
+        }[]
+      }
+      get_filtered_submitted_invoices: {
+        Args: {
+          p_amount_max?: number
+          p_amount_min?: number
+          p_category_id?: string
+          p_company_id: string
+          p_currency?: string
+          p_date_from: string
+          p_date_to: string
+          p_direction: string
+          p_page?: number
+          p_page_size?: number
+          p_project_id?: string
+          p_search?: string
+          p_sort_dir?: string
+          p_sort_field?: string
+        }
+        Returns: {
+          adoalap_osszesen: number
+          afa_osszeg_osszesen: number
+          bizonylatsorszam: string
+          brutto_vegosszeg: number
+          category_id: string
+          elado_nev: string
+          id: string
+          image_url: string
+          invoice_direction: string
+          kibocsatas_datuma: string
+          melleklet_url: string
+          penznem: string
+          project_id: string
+          reference_number: string
+          teljesites_datuma: string
+          total_count: number
+          vevo_nev: string
+        }[]
+      }
       get_invoice_aggregates: {
         Args: { p_company_id: string; p_date_from: string; p_date_to: string }
         Returns: {
