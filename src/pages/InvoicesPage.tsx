@@ -62,12 +62,12 @@ const InvoicesPage = () => {
 
   // ── Data hook ──
   const {
-    invoices, submittedInvoices, linkedInvoicesPool,
+    submittedInvoices, linkedInvoicesPool,
     partners, categories, projects, allTransactions,
-    matchedInvoiceIds, loading, credentialsExist, invalidateInvoiceData,
+    matchedInvoiceIds, loading: dataLoading, credentialsExist, invalidateInvoiceData,
   } = useInvoiceData(companyId, enabled, dateFromFormatted, dateToFormatted, selectedCompany?.id);
 
-  // ── Filters hook ──
+  // ── Filters hook (server-side) ──
   const {
     navFilters, setNavFilters, submittedFilters, setSubmittedFilters,
     clearNavFilters, clearSubmittedFilters,
@@ -75,10 +75,14 @@ const InvoicesPage = () => {
     navPageSize, setNavPageSize, submittedPageSize, setSubmittedPageSize,
     navCurrentPage, setNavCurrentPage, submittedCurrentPage, setSubmittedCurrentPage,
     navTotalPages, submittedTotalPages,
+    navLoading, submittedFilterLoading,
     filteredAndSortedNavInvoices, filteredAndSortedSubmittedInvoices,
     paginatedNavInvoices, paginatedSubmittedInvoices,
+    navTotalCount, submittedTotalCount,
     getInvoicePartnerName, getPartnerTaxNumber, getCategoryName, getProjectName, getPaymentMethodLabel,
-  } = useInvoiceFilters(invoices, submittedInvoices, partners, categories, projects, activeTab);
+  } = useInvoiceFilters(companyId, enabled, dateFromFormatted, dateToFormatted, partners, categories, projects, activeTab);
+
+  const loading = dataLoading || navLoading || submittedFilterLoading;
 
   // ── Mutations hook ──
   const {
