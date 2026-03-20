@@ -1139,9 +1139,7 @@ const InvoicesPage = () => {
 
       if (error) throw error;
 
-      setInvoices(prev => prev.map(inv =>
-        inv.id === invoiceId ? { ...inv, category_id: categoryId === 'none' ? null : categoryId } : inv
-      ));
+      invalidateInvoiceData();
       toast.success('Kategória hozzárendelve');
     } catch (error) {
       console.error('Error updating category:', error);
