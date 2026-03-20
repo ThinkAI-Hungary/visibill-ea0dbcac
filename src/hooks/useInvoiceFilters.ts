@@ -118,7 +118,7 @@ export function useInvoiceFilters(
       return (data || []) as (NavInvoice & { total_count: number })[];
     },
     enabled: enabled && isNavTab,
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
   });
 
   // ── Server-side submitted invoices query ──
