@@ -1950,6 +1950,13 @@ export type Database = {
           unpaid_net: number
         }[]
       }
+      get_petty_cash_balance: {
+        Args: { p_company_id: string }
+        Returns: {
+          balance: number
+          has_settings: boolean
+        }[]
+      }
       increment_invoice_usage: { Args: { user_uuid: string }; Returns: boolean }
       reset_monthly_usage: { Args: never; Returns: number }
       save_nav_credentials: {
