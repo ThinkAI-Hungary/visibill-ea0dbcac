@@ -350,6 +350,18 @@ const ManualUpload = () => {
             }
           }
 
+          addToUploadHistoryCache({
+            id: uploadRecord.id,
+            file_name: file.name,
+            file_size: file.size,
+            file_type: file.type,
+            file_url: fileUrl,
+            user_id: user?.id!,
+            upload_status: 'uploaded',
+            processing_status: 'pending',
+            created_at: new Date().toISOString(),
+            error_message: null,
+          });
           successfulUploads++;
         } catch (fileError) {
           console.error(`Error processing file ${file.name}:`, fileError);
