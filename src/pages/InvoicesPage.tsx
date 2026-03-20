@@ -310,52 +310,20 @@ const InvoicesPage = () => {
   const { data: linkedInvoicesPool = [] } = useQuery({
     queryKey: queryKeys.linkedInvoices(companyId, dateFromFormatted, dateToFormatted),
     queryFn: async () => {
-      const submittedList = submittedInvoices;
-      const knownIds = new Set(submittedList.map(inv => inv.id));
-      const allExtra: SubmittedInvoice[] = [];
-
-      let pendingBizonylat = new Set(
-        submittedList.map(inv => inv.bizonylatsorszam).filter(Boolean) as string[]
-      );
-      let pendingReference = new Set(
-        submittedList.map(inv => inv.reference_number).filter(Boolean) as string[]
-      );
-      const queriedBizonylat = new Set<string>();
-      const queriedReference = new Set<string>();
-
-      for (let depth = 0; depth < 20; depth++) {
-        const newBiz = [...pendingBizonylat].filter(k => !queriedBizonylat.has(k));
-        const newRef = [...pendingReference].filter(k => !queriedReference.has(k));
-        if (newBiz.length === 0 && newRef.length === 0) break;
-
-        newBiz.forEach(k => queriedBizonylat.add(k));
-        newRef.forEach(k => queriedReference.add(k));
-
-        const orParts: string[] = [];
-        if (newBiz.length > 0) orParts.push(`reference_number.in.(${newBiz.join(',')})`);
-        if (newRef.length > 0) orParts.push(`bizonylatsorszam.in.(${newRef.join(',')})`);
-
-        const { data: linkedData } = await supabase
-          .from('invoices')
-          .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number')
-          .eq('company_id', companyId)
-          .or(orParts.join(','));
-
-        const newInvoices = (linkedData || []).filter(inv => !knownIds.has(inv.id));
-        if (newInvoices.length === 0) break;
-
-        pendingBizonylat = new Set<string>();
-        pendingReference = new Set<string>();
-        for (const inv of newInvoices) {
-          knownIds.add(inv.id);
-          allExtra.push(inv as SubmittedInvoice);
-          if (inv.bizonylatsorszam) pendingBizonylat.add(inv.bizonylatsorszam);
-          if (inv.reference_number) pendingReference.add(inv.reference_number);
-        }
-      }
-      return allExtra;
+      const seedBizonylat = submittedInvoices.map(i => i.bizonylatsorszam).filter(Boolean) as string[];
+      const seedReference = submittedInvoices.map(i => i.reference_number).filter(Boolean) as string[];
+      if (seedBizonylat.length === 0 && seedReference.length === 0) return [];
+      const excludeIds = submittedInvoices.map(i => i.id);
+      const { data, error } = await supabase.rpc('get_linked_invoices', {
+        p_company_id: companyId,
+        p_seed_bizonylat: seedBizonylat,
+        p_seed_reference: seedReference,
+        p_exclude_ids: excludeIds,
+      });
+      if (error) throw error;
+      return (data || []) as SubmittedInvoice[];
     },
-    enabled: enabled && submittedInvoices.length >= 0 && !submittedLoading,
+    enabled: enabled && !submittedLoading,
   });
 
   const { data: partners = [] } = useQuery({
