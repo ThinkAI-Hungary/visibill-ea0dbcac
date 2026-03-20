@@ -1,6 +1,5 @@
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { getPaymentStatusBadge } from '@/hooks/useComputedStatus';
 
 export interface SalaryItem {
   id: string;
