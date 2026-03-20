@@ -1,35 +1,48 @@
 
 
-# Feltöltési előzmények frissítési probléma javítása
+# Feltöltési előzmény azonnali megjelenítése a toast-tal egyidőben
 
-## Feltárt problémák
+## Probléma
+A `setUploadRefreshKey` megváltoztatja a query key-t, ami új fetch-et indít, de ez aszinkron — a toast azonnal megjelenik, a lista viszont csak a fetch visszatérése után frissül (néhány száz ms késéssel).
 
-### 1. Hiányzó `refreshKey` növelés két upload handler-ben
-- **`handleSalaryUpload`**: sikeres feltöltés után NEM hívja a `setUploadRefreshKey(k => k + 1)`-et — a query key nem változik, így a lista nem frissül.
-- **`handleBankStatementUpload`**: szintén hiányzik a `setUploadRefreshKey` hívás.
-- Az `handleInvoiceUpload` és `handleTransactionUpload` viszont helyesen hívják.
+## Megoldás: Optimisztikus frissítés
+A sikeres DB insert után az upload rekord adatai már rendelkezésre állnak lokálisan. Ahelyett, hogy megvárnánk a refetch-et, **optimisztikusan hozzáadjuk az új rekordot a meglévő query cache-hez** a `queryClient.setQueryData` segítségével — így a lista azonnal frissül a toast-tal egy időben.
 
-### 2. Realtime versenyhelyzet (race condition)
-A Supabase Realtime értesítés a DB INSERT után azonnal kiváltódik, de gyakran *hamarabb* érkezik meg, mint hogy a kliens-oldali `await` visszatérne. Ilyenkor:
-1. Realtime esemény → query invalidáció → újra-fetch → **régi adat** (mert az INSERT még nem commitálódott a kliens szemszögéből)
-2. Kliens `await` visszatér → de már nincs újabb invalidáció → **elavult lista marad**
+## Érintett fájl
+`src/pages/ManualUpload.tsx`
 
-## Javítási terv
+## Lépések
 
-### 1. lépés — `setUploadRefreshKey` hozzáadása a hiányzó handler-ekhez
-**Fájl:** `src/pages/ManualUpload.tsx`
-- `handleSalaryUpload`: a `setSelectedSalaryFiles([])` után (sor ~536) hozzáadni `setUploadRefreshKey(k => k + 1)`
-- `handleBankStatementUpload`: a `setSelectedBankFiles([])` után (sor ~440) hozzáadni `setUploadRefreshKey(k => k + 1)`
+### 1. Segédfüggvény: optimisztikus upload cache frissítés
+Létrehozunk egy `addToUploadHistoryCache` függvényt, ami:
+- A `queryClient.getQueriesData` segítségével megkeresi az aktív `uploadHistory` query-t
+- `queryClient.setQueryData`-val az új rekordot a `records` tömb elejére szúrja
+- Ez **szinkron** — azonnal frissíti a UI-t
 
-### 2. lépés — Explicit query invalidáció a realtime mellett
-**Fájl:** `src/pages/ManualUpload.tsx`
-- Importálni `useQueryClient`-et a `@tanstack/react-query`-ből
-- Minden sikeres upload handler végén (invoice, salary, transaction, bank) explicit invalidálni:
-  ```
-  queryClient.invalidateQueries({ queryKey: ['uploadHistory'] })
-  ```
-- Ezt egy rövid `setTimeout(..., 800)` késleltetéssel meghívni, hogy a DB commit biztosan megtörténjen mire a refetch indul. Ez a „biztonsági háló" a realtime race condition ellen.
+### 2. Minden handler-ben: toast + optimistic update egyszerre
+A sikeres feltöltés után (ahol a DB insert már visszatért az `uploadRecord`-dal):
+1. Összeállítjuk az `UploadRecord` objektumot a kapott adatokból
+2. Meghívjuk `addToUploadHistoryCache(newRecord)`-ot
+3. Megjelenítjük a toast-ot
+4. A `setUploadRefreshKey` + `delayedUploadHistoryInvalidation` továbbra is megmarad háttér-biztonsági hálóként (a feldolgozási státusz frissüléséhez)
 
-### Érintett fájl
-- `src/pages/ManualUpload.tsx` — 2 hiányzó `setUploadRefreshKey` + delayed invalidation minden handler-ben
+### Technikai részletek
+```text
+Jelenlegi folyamat:
+  DB insert → toast (azonnali) → setRefreshKey → fetch (aszinkron, ~200-500ms) → UI frissül
+
+Új folyamat:
+  DB insert → setQueryData (szinkron) + toast (azonnali) → UI frissül AZONNAL
+            → setRefreshKey + delayed invalidation (háttérben, státusz frissítéshez)
+```
+
+A `setQueryData` hívás formátuma:
+```ts
+queryClient.setQueriesData(
+  { queryKey: ['uploadHistory'] },
+  (old) => old ? { ...old, records: [newRecord, ...old.records] } : old
+);
+```
+
+Ez mind a 4 handler-re (invoice, bank, salary, transaction) alkalmazandó.
 
