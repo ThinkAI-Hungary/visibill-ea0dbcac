@@ -1714,34 +1714,58 @@ export type Database = {
       }
       user_email_preferences: {
         Row: {
+          bank_statement_processed: boolean | null
           created_at: string | null
+          email_invoice_processed: boolean | null
           id: string
           invoice_failed: boolean | null
           invoice_processed: boolean | null
+          missing_invoices: boolean | null
           monthly_summary: boolean | null
+          nav_sync_complete: boolean | null
+          payment_reminders: boolean | null
+          salary_processed: boolean | null
           subscription_warnings: boolean | null
+          team_notifications: boolean | null
+          transaction_matched: boolean | null
           updated_at: string | null
           user_id: string
           weekly_summary: boolean | null
         }
         Insert: {
+          bank_statement_processed?: boolean | null
           created_at?: string | null
+          email_invoice_processed?: boolean | null
           id?: string
           invoice_failed?: boolean | null
           invoice_processed?: boolean | null
+          missing_invoices?: boolean | null
           monthly_summary?: boolean | null
+          nav_sync_complete?: boolean | null
+          payment_reminders?: boolean | null
+          salary_processed?: boolean | null
           subscription_warnings?: boolean | null
+          team_notifications?: boolean | null
+          transaction_matched?: boolean | null
           updated_at?: string | null
           user_id: string
           weekly_summary?: boolean | null
         }
         Update: {
+          bank_statement_processed?: boolean | null
           created_at?: string | null
+          email_invoice_processed?: boolean | null
           id?: string
           invoice_failed?: boolean | null
           invoice_processed?: boolean | null
+          missing_invoices?: boolean | null
           monthly_summary?: boolean | null
+          nav_sync_complete?: boolean | null
+          payment_reminders?: boolean | null
+          salary_processed?: boolean | null
           subscription_warnings?: boolean | null
+          team_notifications?: boolean | null
+          transaction_matched?: boolean | null
           updated_at?: string | null
           user_id?: string
           weekly_summary?: boolean | null
