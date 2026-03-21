@@ -1,16 +1,15 @@
 
 
-# Számla Feltöltött Fájlok dialog: lazy query
+# Query key invalidáció javítása a LiveNotificationProvider-ben
 
 ## Probléma
-Az `InvoiceFilesDialog` komponens query-jei (`invoice_uploads_with_invoices`, `company_members_profiles`) azonnal lefutnak, ha van `companyId`. Ugyanúgy kell működnie, mint a bér fájloknál: csak a dialog megnyitásakor.
+A `showNotification` függvényben (52. sor) a cache invalidáció `queryKey: [key]` formátumot használ, ami nem egyezik az alkalmazás többi részével (`useRealtimeInvalidation`, `queryKeys.ts`), ahol a kulcsok `[key, companyId]` formátumúak. Emiatt az invalidáció nem találja meg a tényleges cache bejegyzéseket.
 
-## Megoldás
-`src/components/invoices/InvoiceFilesDialog.tsx` módosítása:
+## Javítás
+`src/components/LiveNotificationProvider.tsx` — egyetlen módosítás:
 
-1. `isOpen` state bevezetése (`useState(false)`)
-2. `Dialog` komponens kontrolláltra alakítása: `open={isOpen} onOpenChange={setIsOpen}`
-3. Mindkét `useQuery` `enabled` feltételébe: `enabled: !!companyId && isOpen`
+- 51–53. sor: `queryClient.invalidateQueries({ queryKey: [key] })` → `queryClient.invalidateQueries({ queryKey: [key, companyId] })`
+- A `showNotification` callback dependency listájába és paraméterei közé fel kell venni a `companyId`-t, vagy a closure-ből kell olvasnia (jelenleg a `companyId` elérhető a komponens scope-ból, de a `useCallback` deps-ből hiányzik — ezt is pótolni kell)
 
-Egy az egyben ugyanaz a minta, mint a `SalaryFilesTable.tsx`-ben már megvalósítottuk.
+Összesen ~3 sor változás.
 
