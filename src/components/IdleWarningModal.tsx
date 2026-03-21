@@ -28,8 +28,8 @@ export function IdleWarningModal({ open, secondsLeft, onStay, onLogout }: IdleWa
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent
-        className="sm:max-w-md border-border/60 shadow-2xl"
-        overlayClassName="backdrop-blur-md bg-black/60"
+        className="sm:max-w-md border-border/60 shadow-2xl z-[9999]"
+        overlayClassName="backdrop-blur-md bg-black/60 z-[9999]"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}

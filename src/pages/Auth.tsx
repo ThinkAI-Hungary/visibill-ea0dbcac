@@ -181,7 +181,7 @@ const Auth = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCarouselIndex(prev => (prev + 1) % carouselSlides.length);
-    }, 6000);
+    }, 5000);
     return () => clearInterval(timer);
   }, []);
 
@@ -628,12 +628,12 @@ const Auth = () => {
           {/* Feature Carousel */}
           <div className="relative min-h-[480px] flex flex-col">
             {/* Subtitle - fades */}
-            <p className="text-lg text-muted-foreground dark:text-slate-300 max-w-md mb-6 min-h-[3.5rem]" key={`text-${carouselIndex}`} style={{ animation: 'fadeSlide 800ms ease-in-out' }}>
+            <p className="text-lg text-muted-foreground dark:text-slate-300 max-w-md mb-6 min-h-[3.5rem]" key={`text-${carouselIndex}`} style={{ animation: 'fadeSlide 1200ms ease-in-out' }}>
               {carouselSlides[carouselIndex].text}
             </p>
 
             {/* Visual - fades, fixed height centered */}
-            <div className="flex-1 flex items-start" key={`visual-${carouselIndex}`} style={{ animation: 'fadeSlide 800ms ease-in-out' }}>
+            <div className="flex-1 flex items-start" key={`visual-${carouselIndex}`} style={{ animation: 'fadeSlide 1200ms ease-in-out' }}>
               <div className="w-full">
                 {carouselSlides[carouselIndex].visual}
               </div>

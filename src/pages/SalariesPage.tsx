@@ -11,6 +11,7 @@ import { SalaryKpiCards } from '@/components/salaries/SalaryKpiCards';
 import { EmployeeAccordion } from '@/components/salaries/EmployeeAccordion';
 import { NavSummaryTable } from '@/components/salaries/NavSummaryTable';
 import { SalaryAddDialog, SalaryEditDialog } from '@/components/salaries/SalaryDialogs';
+import { SalaryFilesDialog } from '@/components/salaries/SalaryFilesTable';
 import type { SalaryItem } from '@/lib/salary-helpers';
 
 export default function SalariesPage() {
@@ -35,7 +36,7 @@ export default function SalariesPage() {
     setEditDialogOpen(true);
   };
 
-  if (loading) return <LoadingSpinner message="Bérek betöltése..." />;
+  if (loading) return <LoadingSpinner />;
 
   return (
     <div className="h-full space-y-4 px-2 py-2">
@@ -45,10 +46,13 @@ export default function SalariesPage() {
           <h1 className="text-2xl font-bold tracking-tight">Bérek / járulékok</h1>
           <p className="text-muted-foreground">Alkalmazottak bérének és járulékainak kezelése</p>
         </div>
-        <Button onClick={() => setAddDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          KP kifizetés
-        </Button>
+        <div className="flex items-center gap-2">
+          <SalaryFilesDialog />
+          <Button onClick={() => setAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            KP kifizetés
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}

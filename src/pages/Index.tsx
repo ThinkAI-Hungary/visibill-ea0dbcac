@@ -28,6 +28,7 @@ import ProjectBreakdown from '@/components/dashboard/ProjectBreakdown';
 import SubscriptionUsage from '@/components/SubscriptionUsage';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import InvoiceStatusTables from '@/components/dashboard/InvoiceStatusTables';
+import { ActivityLogSheet } from '@/components/dashboard/ActivityLogSheet';
 import { formatCurrency, cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
@@ -720,11 +721,11 @@ const Index = () => {
   }
 
   if (companyLoading) {
-    return <LoadingSpinner message="Irányítópult betöltése..." />;
+    return <LoadingSpinner />;
   }
 
   if (metricsLoading) {
-    return <LoadingSpinner message="Irányítópult betöltése..." />;
+    return <LoadingSpinner />;
   }
 
   return (
@@ -739,6 +740,7 @@ const Index = () => {
             </p>
           </div>
           <div className="flex gap-2 items-center flex-wrap">
+            <ActivityLogSheet />
             <div className="w-[200px]">
               <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
                 <SelectTrigger>
@@ -758,12 +760,34 @@ const Index = () => {
 
         {/* Nettó/Bruttó Toggle */}
         <div className="flex items-center gap-3">
-          <span className={cn("text-sm font-medium", !showBrutto && "text-primary")}>Nettó</span>
+          <button
+            type="button"
+            onClick={() => setShowBrutto(false)}
+            className={cn(
+              "text-base pb-1 border-b-2 transition-all duration-200 cursor-pointer",
+              !showBrutto
+                ? "text-slate-900 dark:text-white font-semibold border-primary"
+                : "text-slate-400 dark:text-slate-500 font-medium border-transparent hover:text-slate-600 dark:hover:text-slate-400"
+            )}
+          >
+            Nettó
+          </button>
           <Switch
             checked={showBrutto}
             onCheckedChange={setShowBrutto}
           />
-          <span className={cn("text-sm font-medium", showBrutto && "text-primary")}>Bruttó</span>
+          <button
+            type="button"
+            onClick={() => setShowBrutto(true)}
+            className={cn(
+              "text-base pb-1 border-b-2 transition-all duration-200 cursor-pointer",
+              showBrutto
+                ? "text-slate-900 dark:text-white font-semibold border-primary"
+                : "text-slate-400 dark:text-slate-500 font-medium border-transparent hover:text-slate-600 dark:hover:text-slate-400"
+            )}
+          >
+            Bruttó
+          </button>
         </div>
 
         {/* Metrics Cards */}
@@ -1021,7 +1045,7 @@ const Index = () => {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-lg font-medium">Kiadások és bevételek ({displayedPeriod})</span>
+                  <span className="text-lg font-medium">Kiadások és bevételek a {new Date().getFullYear()}. időszakra</span>
                 </div>
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm">

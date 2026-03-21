@@ -16,7 +16,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CalendarIcon, Search, X, CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, RefreshCw, Download, ChevronDown, FileText, Eye, Sparkles } from 'lucide-react';
+import { CalendarIcon, Search, X, CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, RefreshCw, Download, ChevronDown, FileText, Eye, Sparkles, RotateCcw } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -390,15 +390,15 @@ const TransactionsPage = () => {
 
           <CardContent className="space-y-6">
             {/* Filters */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 p-4 bg-muted/20 rounded-lg border border-border/30">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 p-4 bg-white dark:bg-muted/20 rounded-lg border border-slate-200 dark:border-border/30 shadow-sm">
               {/* Search */}
               <div className="relative col-span-2 md:col-span-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-muted-foreground" />
                 <Input
                   placeholder="Keresés..."
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  className="pl-9 h-9 bg-secondary/50 border border-white/10 focus:border-primary/50"
+                  className="pl-9 h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary"
                 />
               </div>
 
@@ -407,7 +407,7 @@ const TransactionsPage = () => {
                 value={filters.currency}
                 onValueChange={(value) => setFilters(prev => ({ ...prev, currency: value }))}
               >
-                <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
+                <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
                   <SelectValue placeholder="Pénznem" />
                 </SelectTrigger>
                 <SelectContent>
@@ -423,7 +423,7 @@ const TransactionsPage = () => {
                 value={filters.matchStatus}
                 onValueChange={(value) => setFilters(prev => ({ ...prev, matchStatus: value }))}
               >
-                <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
+                <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
                   <SelectValue placeholder="Státusz" />
                 </SelectTrigger>
                 <SelectContent>
@@ -439,7 +439,7 @@ const TransactionsPage = () => {
                 value={filters.type}
                 onValueChange={(value) => setFilters(prev => ({ ...prev, type: value }))}
               >
-                <SelectTrigger className="h-9 bg-secondary/50 border border-white/10">
+                <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
                   <SelectValue placeholder="Típus" />
                 </SelectTrigger>
                 <SelectContent>
@@ -450,18 +450,16 @@ const TransactionsPage = () => {
                 </SelectContent>
               </Select>
 
-
-
               {/* Clear button */}
               {hasActiveFilters && (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={clearFilters}
-                  className="h-9 text-muted-foreground hover:text-foreground"
+                  className="h-9 text-red-500 dark:text-red-400 border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600"
                 >
-                  <X className="h-4 w-4 mr-1" />
-                  Törlés
+                  <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                  Szűrők törlése
                 </Button>
               )}
             </div>

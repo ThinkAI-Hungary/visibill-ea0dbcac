@@ -192,12 +192,12 @@ const InvoiceStatusTables = () => {
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'payable' | 'missing'); setVisibleCount(20); }}>
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="payable" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-2 mb-4 bg-slate-100/80 dark:bg-muted border border-slate-200 dark:border-transparent">
+            <TabsTrigger value="payable" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-background data-[state=active]:text-slate-900 dark:data-[state=active]:text-foreground data-[state=active]:shadow-sm text-slate-500 dark:text-muted-foreground hover:text-slate-700 dark:hover:text-foreground">
               <CreditCard className="h-4 w-4" />
               Fizetendő ({payableInvoices.length})
             </TabsTrigger>
-            <TabsTrigger value="missing" className="flex items-center gap-2">
+            <TabsTrigger value="missing" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-background data-[state=active]:text-slate-900 dark:data-[state=active]:text-foreground data-[state=active]:shadow-sm text-slate-500 dark:text-muted-foreground hover:text-slate-700 dark:hover:text-foreground">
               <FileQuestion className="h-4 w-4" />
               Hiányzó ({missingCount})
             </TabsTrigger>
@@ -205,8 +205,8 @@ const InvoiceStatusTables = () => {
 
           <TabsContent value="payable">
             {payableInvoices.length > 0 && (
-              <div className="mb-4 p-3 bg-destructive/10 rounded-lg border border-destructive/20">
-                <p className="text-sm font-medium text-destructive">
+              <div className="mb-4 px-4 h-12 flex items-center justify-between rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/40">
+                <p className="text-sm font-medium text-red-700 dark:text-red-400">
                   Fizetendő összeg: {formatCurrency(payableTotal, 'HUF')}
                 </p>
               </div>
@@ -216,16 +216,17 @@ const InvoiceStatusTables = () => {
 
           <TabsContent value="missing">
             {missingInvoices.length > 0 && (
-              <div className="mb-4 p-3 bg-warning/10 rounded-lg border border-warning/20 flex items-center justify-between">
-                <p className="text-sm font-medium text-warning">
+              <div className="mb-4 px-4 h-12 flex items-center justify-between rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/40">
+                <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
                   {missingCount} számla vár beküldésre
                 </p>
                 <Button 
                   size="sm" 
+                  variant="outline"
                   onClick={() => navigate('/manual-upload')}
-                  className="gap-2"
+                  className="h-7 gap-1.5 text-xs border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40"
                 >
-                  <Upload className="h-4 w-4" />
+                  <Upload className="h-3.5 w-3.5" />
                   Beküldés
                 </Button>
               </div>

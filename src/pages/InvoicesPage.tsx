@@ -12,8 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn, formatCurrency } from '@/lib/utils';
-import { Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Pencil, Package } from 'lucide-react';
+import { Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Pencil, Package, RotateCcw } from 'lucide-react';
 import { RefreshCw } from 'lucide-react';
+import { InvoiceFilesDialog } from '@/components/invoices/InvoiceFilesDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 import { InvoiceImagePreview } from '@/components/InvoiceImagePreview';
@@ -363,6 +364,7 @@ const InvoicesPage = () => {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+                <InvoiceFilesDialog />
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -410,19 +412,19 @@ const InvoicesPage = () => {
               {(activeTab === 'OUTBOUND' || activeTab === 'INBOUND') && (
                 <TabsContent value={activeTab} className="space-y-4 mt-4">
                   {/* NAV Filters */}
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 p-4 bg-muted/20 rounded-lg border border-border/30">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 p-4 bg-white dark:bg-muted/20 rounded-lg border border-slate-200 dark:border-border/30 shadow-sm">
                     <div className="relative col-span-2 md:col-span-1">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-muted-foreground h-4 w-4" />
                       <Input
                         placeholder="Keresés..."
                         value={navFilters.search}
                         onChange={(e) => setNavFilters(prev => ({ ...prev, search: e.target.value }))}
-                        className="pl-9 h-9 bg-secondary/50 border border-white/10 focus:border-primary/50"
+                        className="pl-9 h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary"
                       />
                     </div>
 
                     <Select value={navFilters.currency} onValueChange={(value) => setNavFilters(prev => ({ ...prev, currency: value }))}>
-                      <SelectTrigger className="h-9 bg-secondary/50 border border-white/10"><SelectValue placeholder="Pénznem" /></SelectTrigger>
+                      <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Pénznem" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Minden pénznem</SelectItem>
                         {['HUF', 'EUR', 'USD', 'GBP', 'CHF', 'CZK', 'PLN', 'RON'].map((currency) => (
@@ -432,7 +434,7 @@ const InvoicesPage = () => {
                     </Select>
 
                     <Select value={navFilters.paid} onValueChange={(value) => setNavFilters(prev => ({ ...prev, paid: value }))}>
-                      <SelectTrigger className="h-9 bg-secondary/50 border border-white/10"><SelectValue placeholder="Fizetve" /></SelectTrigger>
+                      <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Fizetve" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Mind</SelectItem>
                         <SelectItem value="yes">Kifizetve</SelectItem>
@@ -442,7 +444,7 @@ const InvoicesPage = () => {
 
                     {activeTab === 'INBOUND' && (
                       <Select value={navFilters.submitted} onValueChange={(value) => setNavFilters(prev => ({ ...prev, submitted: value }))}>
-                        <SelectTrigger className="h-9 bg-secondary/50 border border-white/10"><SelectValue placeholder="Beküldve" /></SelectTrigger>
+                        <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Beküldve" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Mind</SelectItem>
                           <SelectItem value="yes">Igen</SelectItem>
@@ -453,7 +455,7 @@ const InvoicesPage = () => {
 
                     {activeTab === 'INBOUND' && (
                       <Select value={navFilters.category} onValueChange={(value) => setNavFilters(prev => ({ ...prev, category: value }))}>
-                        <SelectTrigger className="h-9 bg-secondary/50 border border-white/10"><SelectValue placeholder="Kategória" /></SelectTrigger>
+                        <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Kategória" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Minden kategória</SelectItem>
                           <SelectItem value="none">Nincs kategória</SelectItem>
@@ -465,7 +467,7 @@ const InvoicesPage = () => {
                     )}
 
                     <Select value={navFilters.project} onValueChange={(value) => setNavFilters(prev => ({ ...prev, project: value }))}>
-                      <SelectTrigger className="h-9 bg-secondary/50 border border-white/10"><SelectValue placeholder="Projekt" /></SelectTrigger>
+                      <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Projekt" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Minden projekt</SelectItem>
                         <SelectItem value="none">Nincs projekt</SelectItem>
@@ -476,7 +478,7 @@ const InvoicesPage = () => {
                     </Select>
 
                     <Select value={navFilters.paymentMethod} onValueChange={(value) => setNavFilters(prev => ({ ...prev, paymentMethod: value }))}>
-                      <SelectTrigger className="h-9 bg-secondary/50 border border-white/10"><SelectValue placeholder="Fiz. mód" /></SelectTrigger>
+                      <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Fiz. mód" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Minden fiz. mód</SelectItem>
                         <SelectItem value="none">Nem megadott</SelectItem>
@@ -488,9 +490,9 @@ const InvoicesPage = () => {
                       </SelectContent>
                     </Select>
 
-                    <Button variant="ghost" size="sm" onClick={clearNavFilters} className="h-9 text-muted-foreground hover:text-foreground">
-                      <X className="h-4 w-4 mr-1" />
-                      Törlés
+                    <Button variant="outline" size="sm" onClick={clearNavFilters} className="h-9 text-red-500 dark:text-red-400 border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600">
+                      <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                      Szűrők törlése
                     </Button>
                   </div>
 
@@ -688,13 +690,13 @@ const InvoicesPage = () => {
               {/* Submitted Invoices Tabs */}
               {isSubmittedTab && (
                 <TabsContent value={activeTab} className="space-y-4 mt-4">
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-muted/20 rounded-lg border border-border/30">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-white dark:bg-muted/20 rounded-lg border border-slate-200 dark:border-border/30 shadow-sm">
                     <div className="relative col-span-2 md:col-span-1">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                      <Input placeholder="Keresés..." value={submittedFilters.search} onChange={(e) => setSubmittedFilters(prev => ({ ...prev, search: e.target.value }))} className="pl-9 h-9 bg-secondary/50 border border-white/10 focus:border-primary/50" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-muted-foreground h-4 w-4" />
+                      <Input placeholder="Keresés..." value={submittedFilters.search} onChange={(e) => setSubmittedFilters(prev => ({ ...prev, search: e.target.value }))} className="pl-9 h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary" />
                     </div>
                     <Select value={submittedFilters.currency} onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, currency: value }))}>
-                      <SelectTrigger className="h-9 bg-secondary/50 border border-white/10"><SelectValue placeholder="Pénznem" /></SelectTrigger>
+                      <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Pénznem" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Minden pénznem</SelectItem>
                         {Array.from(new Set(submittedInvoices.map(inv => inv.penznem).filter(Boolean))).sort().map((currency) => (
@@ -702,8 +704,9 @@ const InvoicesPage = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button variant="ghost" size="sm" onClick={clearSubmittedFilters} className="h-9 text-muted-foreground hover:text-foreground">
-                      <X className="h-4 w-4 mr-1" />Törlés
+                    <Button variant="outline" size="sm" onClick={clearSubmittedFilters} className="h-9 text-red-500 dark:text-red-400 border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600">
+                      <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                      Szűrők törlése
                     </Button>
                   </div>
 

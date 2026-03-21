@@ -2,6 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
+/* View Transition: ultra-fast full-page crossfade on theme switch */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 100ms;
+  animation-timing-function: ease-out;
+  mix-blend-mode: normal !important;
+}
+
+/* Suppress all per-element transitions during theme switch */
+.no-transitions,
+.no-transitions *,
+.no-transitions *::before,
+.no-transitions *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Autofill background override — light mode */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px white inset !important;
+  -webkit-text-fill-color: black !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Autofill background override — dark mode */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #030712 inset !important;
+  -webkit-text-fill-color: white !important;
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
@@ -87,35 +123,35 @@ All colors MUST be HSL.
 
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Transaction type colors - Light mode (soft pastels) */
-    --tr-supplier-bg: 220 70% 93%;
-    --tr-supplier-text: 220 70% 35%;
-    --tr-customer-bg: 142 60% 90%;
-    --tr-customer-text: 142 71% 30%;
+    /* Transaction type colors - Light mode (high contrast pastels) */
+    --tr-supplier-bg: 220 75% 92%;
+    --tr-supplier-text: 220 80% 25%;
+    --tr-customer-bg: 152 60% 88%;
+    --tr-customer-text: 152 75% 20%;
     --tr-transfer-bg: 200 70% 90%;
-    --tr-transfer-text: 200 80% 25%;
+    --tr-transfer-text: 200 80% 22%;
     --tr-bankfee-bg: 30 80% 90%;
-    --tr-bankfee-text: 30 90% 30%;
+    --tr-bankfee-text: 30 90% 25%;
     --tr-cardfee-bg: 35 80% 90%;
-    --tr-cardfee-text: 35 90% 30%;
-    --tr-loan-bg: 330 60% 92%;
-    --tr-loan-text: 330 70% 35%;
-    --tr-atm-bg: 25 40% 88%;
-    --tr-atm-text: 25 50% 25%;
-    --tr-cashout-bg: 25 35% 90%;
-    --tr-cashout-text: 25 40% 30%;
-    --tr-cashin-bg: 142 45% 90%;
-    --tr-cashin-text: 142 50% 25%;
-    --tr-salary-bg: 270 45% 92%;
-    --tr-salary-text: 270 50% 30%;
-    --tr-tax-bg: 270 50% 90%;
-    --tr-tax-text: 270 60% 30%;
-    --tr-bankcost-bg: 180 50% 88%;
-    --tr-bankcost-text: 180 60% 25%;
-    --tr-interest-bg: 55 70% 88%;
-    --tr-interest-text: 55 80% 25%;
-    --tr-atmcash-bg: 15 60% 88%;
-    --tr-atmcash-text: 15 70% 25%;
+    --tr-cardfee-text: 35 90% 25%;
+    --tr-loan-bg: 330 65% 92%;
+    --tr-loan-text: 330 75% 25%;
+    --tr-atm-bg: 25 45% 88%;
+    --tr-atm-text: 25 55% 22%;
+    --tr-cashout-bg: 25 40% 90%;
+    --tr-cashout-text: 25 45% 22%;
+    --tr-cashin-bg: 152 50% 88%;
+    --tr-cashin-text: 152 55% 20%;
+    --tr-salary-bg: 270 55% 92%;
+    --tr-salary-text: 270 60% 22%;
+    --tr-tax-bg: 270 60% 90%;
+    --tr-tax-text: 270 70% 22%;
+    --tr-bankcost-bg: 185 55% 88%;
+    --tr-bankcost-text: 185 65% 18%;
+    --tr-interest-bg: 45 75% 88%;
+    --tr-interest-text: 45 85% 22%;
+    --tr-atmcash-bg: 15 65% 88%;
+    --tr-atmcash-text: 15 75% 22%;
 
     /* Row status colors - Light mode */
     --success-row-bg: 142 60% 88%;

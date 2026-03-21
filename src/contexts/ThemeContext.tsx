@@ -12,12 +12,10 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    // Sync with whatever the inline script already applied
     const saved = localStorage.getItem(STORAGE_KEYS.THEME) as Theme | null;
     return saved === 'dark' ? 'dark' : 'light';
   });
 
-  // Apply on mount (should match inline script, but just in case)
   useEffect(() => {
     applyTheme(theme);
   }, []);
@@ -26,14 +24,31 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = document.documentElement;
     root.classList.remove("light", "dark");
     root.classList.add(newTheme);
-    // CSS vars (--initial-bg, --initial-text) respond instantly via .dark selector
-    // No manual body.style needed — the CSS vars handle it
   };
 
   const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem(STORAGE_KEYS.THEME, newTheme);
-    applyTheme(newTheme);
+    const body = document.body;
+
+    const commit = () => {
+      // Suppress per-element transitions so colors snap instantly
+      body.classList.add('no-transitions');
+      setThemeState(newTheme);
+      localStorage.setItem(STORAGE_KEYS.THEME, newTheme);
+      applyTheme(newTheme);
+      // Re-enable transitions after a single frame
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          body.classList.remove('no-transitions');
+        });
+      });
+    };
+
+    // Use View Transitions API for a clean full-page crossfade
+    if ((document as any).startViewTransition) {
+      (document as any).startViewTransition(commit);
+    } else {
+      commit();
+    }
   };
 
   return (

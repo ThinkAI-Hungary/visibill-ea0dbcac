@@ -19,6 +19,8 @@ export function GlobalDatePicker() {
   const isPreviousMonth = isSameDay(dateFrom, startOfMonth(subMonths(new Date(), 1))) && isSameDay(dateTo, endOfMonth(subMonths(new Date(), 1)));
   const isThisYear = isSameDay(dateFrom, startOfYear(new Date())) && isSameDay(dateTo, endOfYear(new Date()));
 
+  const isCustom = !isThisMonth && !isPreviousMonth && !isThisYear;
+
   return (
     <div className="flex items-center gap-2 flex-wrap px-6 py-2 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <span className="text-sm font-medium text-muted-foreground mr-1">Időszak:</span>
@@ -60,9 +62,12 @@ export function GlobalDatePicker() {
             <Button
               variant="outline"
               size="sm"
-              className={cn("h-7 text-xs px-2.5 justify-start font-normal")}
+              className={cn(
+                "h-7 text-xs px-2.5 justify-start font-normal",
+                isCustom && "bg-primary text-primary-foreground border-primary hover:bg-primary/90 dark:bg-primary/10 dark:border-primary dark:text-primary dark:hover:bg-primary/20"
+              )}
             >
-              <CalendarIcon className="mr-1.5 h-3 w-3" />
+              <CalendarIcon className={cn("mr-1.5 h-3 w-3", isCustom && "text-primary-foreground dark:text-primary")} />
               {format(dateFrom, "yyyy. MMM dd.", { locale: hu })}
             </Button>
           </PopoverTrigger>
@@ -90,9 +95,12 @@ export function GlobalDatePicker() {
             <Button
               variant="outline"
               size="sm"
-              className={cn("h-7 text-xs px-2.5 justify-start font-normal")}
+              className={cn(
+                "h-7 text-xs px-2.5 justify-start font-normal",
+                isCustom && "bg-primary text-primary-foreground border-primary hover:bg-primary/90 dark:bg-primary/10 dark:border-primary dark:text-primary dark:hover:bg-primary/20"
+              )}
             >
-              <CalendarIcon className="mr-1.5 h-3 w-3" />
+              <CalendarIcon className={cn("mr-1.5 h-3 w-3", isCustom && "text-primary-foreground dark:text-primary")} />
               {format(dateTo, "yyyy. MMM dd.", { locale: hu })}
             </Button>
           </PopoverTrigger>
