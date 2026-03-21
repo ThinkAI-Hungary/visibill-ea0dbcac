@@ -129,7 +129,11 @@ export function LiveNotificationProvider() {
         }
       )
 
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status !== 'SUBSCRIBED') {
+          console.warn('[LiveNotifications] Realtime status:', status, err);
+        }
+      });
 
     channelRef.current = channel;
 
