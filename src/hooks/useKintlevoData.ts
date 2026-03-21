@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
-import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
+
 import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryKeys';
 import { differenceInDays, parseISO, format } from 'date-fns';
