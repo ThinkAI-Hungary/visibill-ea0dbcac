@@ -255,8 +255,6 @@ const TransactionsPage = () => {
   const clearFilters = () => {
     setFilters({
       search: '',
-      dateFrom: undefined,
-      dateTo: undefined,
       amountMin: '',
       amountMax: '',
       currency: 'all',
@@ -266,14 +264,14 @@ const TransactionsPage = () => {
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = filters.search || filters.dateFrom || filters.dateTo ||
+  const hasActiveFilters = filters.search ||
     filters.amountMin || filters.amountMax || filters.currency !== 'all' ||
     filters.type !== 'all' || filters.matchStatus !== 'all';
 
   // Reset page when server-side filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters.search, filters.dateFrom, filters.dateTo, filters.currency, filters.type, filters.matchStatus]);
+  }, [filters.search, dateFrom, dateTo, filters.currency, filters.type, filters.matchStatus]);
 
   // Sync function - refreshes the transactions table (prefix match invalidates all pages)
   const handleSync = async () => {
