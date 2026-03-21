@@ -35,6 +35,7 @@ export function SalaryFilesDialog() {
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
   const [deleteIds, setDeleteIds] = useState<string[] | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,7 +55,7 @@ export function SalaryFilesDialog() {
       if (error) throw error;
       return (data || []) as SalaryFileRow[];
     },
-    enabled: !!companyId,
+    enabled: !!companyId && isOpen,
   });
 
   // Fetch company members with their profile names
@@ -83,7 +84,7 @@ export function SalaryFilesDialog() {
         name: p.name,
       })) as CompanyMember[];
     },
-    enabled: !!companyId,
+    enabled: !!companyId && isOpen,
   });
 
   // Build profileMap from company members
@@ -143,7 +144,7 @@ export function SalaryFilesDialog() {
 
   return (
     <>
-      <Dialog>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <Button variant="outline">
             <FileText className="mr-2 h-4 w-4" />
