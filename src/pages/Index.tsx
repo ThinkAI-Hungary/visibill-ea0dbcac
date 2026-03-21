@@ -955,7 +955,7 @@ const Index = () => {
                           <thead>
                             <tr className="text-muted-foreground">
                               <th className="text-left py-2">ÁFA kategóriák:</th>
-                              <th className="text-right py-2">Fizetendő ÁFA:</th>
+                              <th className="text-right py-2">Összes ÁFA:</th>
                               <th className="text-right py-2">Árbevétel:</th>
                             </tr>
                           </thead>
