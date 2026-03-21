@@ -563,16 +563,26 @@ const ManualUpload = () => {
           console.error('Webhook trigger error:', webhookError);
         }
 
-        // Polling fallback: check if salary rows appeared (Realtime from service_role is unreliable)
+        // Polling fallback: bounded retry loop (5s interval, max 90s)
+        // Realtime from service_role INSERTs is unreliable, and processing takes ~20-30s
         const salaryFileId = uploadRecord.id;
-        const pollForProcessed = async (delayMs: number) => {
-          setTimeout(async () => {
+        const runPollingLoop = async () => {
+          const maxAttempts = 18; // 18 * 5s = 90s
+          const intervalMs = 5000;
+          console.log(`[SalaryPoll] Starting polling for salary_file_id=${salaryFileId}, max ${maxAttempts} attempts`);
+          
+          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            await new Promise(res => setTimeout(res, intervalMs));
             try {
+              // Check for salary rows first (primary success signal)
               const { data: salaryRows } = await supabase
                 .from('salary')
                 .select('id')
                 .eq('salary_file_id', salaryFileId)
                 .limit(1);
+              
+              console.log(`[SalaryPoll] Attempt ${attempt}/${maxAttempts}: found ${salaryRows?.length ?? 0} salary rows`);
+              
               if (salaryRows && salaryRows.length > 0) {
                 // Fetch file name for toast
                 const { data: sfData } = await supabase
@@ -591,18 +601,21 @@ const ManualUpload = () => {
                   duration: 5000,
                   icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
                 });
+                console.log(`[SalaryPoll] ✅ Toast shown for ${salaryFileId}`);
                 // Invalidate caches
                 queryClient.invalidateQueries({ queryKey: ['salaries'] });
                 queryClient.invalidateQueries({ queryKey: ['salary_files'] });
                 queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
+                return; // Done!
               }
             } catch (err) {
-              console.error('[Polling fallback] Error:', err);
+              console.error(`[SalaryPoll] Attempt ${attempt} error:`, err);
             }
-          }, delayMs);
+          }
+          console.log(`[SalaryPoll] ⚠️ Polling timed out for ${salaryFileId} after ${maxAttempts} attempts`);
         };
-        pollForProcessed(5000);
-        pollForProcessed(15000);
+        // Fire and forget - runs in background
+        runPollingLoop();
       }
 
       // Optimistic update for each uploaded salary file

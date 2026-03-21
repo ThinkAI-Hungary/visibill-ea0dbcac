@@ -126,10 +126,12 @@ export function LiveNotificationProvider() {
           if (!isMyCompany(payload)) return;
           console.log('[RealtimeSync] salary_files', payload.eventType);
           invalidate('salary_files', 'salaries', 'uploadHistory');
-          // Show notification when salary_files status changes to 'completed'
+          // Show notification when salary_files status changes to 'completed' or 'webhook_sent'
           if (payload.eventType === 'UPDATE') {
             const row = payload.new as any;
-            if (row.status === 'completed' && row.id) {
+            const oldRow = payload.old as any;
+            if (row.id && row.status === 'completed' && oldRow?.status !== 'completed') {
+              console.log('[RealtimeSync] 🔔 salary_files status → completed:', row.id);
               showNotification(row.id, 'salary_files');
             }
           }
