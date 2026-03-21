@@ -249,6 +249,65 @@ export function LiveNotificationProvider() {
           if (!isMyCompany(payload)) return;
           console.log('[RealtimeSync] transaction_uploads', payload.eventType);
           invalidate('uploadHistory', 'transactions');
+          // Show notification when processing_status changes to 'completed'
+          if (payload.eventType === 'UPDATE') {
+            const row = payload.new as any;
+            const oldRow = payload.old as any;
+            if (row.id && row.processing_status === 'completed' && oldRow?.processing_status !== 'completed') {
+              console.log('[RealtimeSync] 🔔 transaction_uploads status → completed:', row.id);
+              showNotification(row.id, 'transaction_uploads');
+            }
+          }
+        }
+      )
+
+      // ━━ CATEGORIES table ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'categories' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          console.log('[RealtimeSync] categories', payload.eventType);
+          invalidate(
+            'categories', 'filteredNavInvoices', 'filteredSubmittedInvoices',
+            'navInvoices', 'submittedInvoices',
+          );
+        }
+      )
+
+      // ━━ PROJECTS table ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'projects' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          console.log('[RealtimeSync] projects', payload.eventType);
+          invalidate(
+            'projects', 'projectsList',
+            'filteredNavInvoices', 'filteredSubmittedInvoices',
+            'navInvoices', 'submittedInvoices',
+          );
+        }
+      )
+
+      // ━━ DUNNING_SENDS table ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'dunning_sends' },
+        (payload) => {
+          console.log('[RealtimeSync] dunning_sends', payload.eventType);
+          invalidate('dunning-sends', 'kintlevo-nav');
+        }
+      )
+
+      // ━━ NAV_SYNC_LOGS table ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'nav_sync_logs' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          console.log('[RealtimeSync] nav_sync_logs', payload.eventType);
+          invalidate('syncLogs', 'navInvoices', 'filteredNavInvoices');
         }
       )
 
