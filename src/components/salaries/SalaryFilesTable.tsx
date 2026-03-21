@@ -84,7 +84,7 @@ export function SalaryFilesDialog() {
         name: p.name,
       })) as CompanyMember[];
     },
-    enabled: !!companyId,
+    enabled: !!companyId && isOpen,
   });
 
   // Build profileMap from company members
