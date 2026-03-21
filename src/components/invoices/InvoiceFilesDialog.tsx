@@ -36,6 +36,7 @@ export function InvoiceFilesDialog() {
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,7 +85,7 @@ export function InvoiceFilesDialog() {
         }))
         .filter(u => u.invoiceNumbers.length > 0) as UploadWithInvoices[];
     },
-    enabled: !!companyId,
+    enabled: !!companyId && isOpen,
     staleTime: 0,
   });
 
@@ -111,7 +112,7 @@ export function InvoiceFilesDialog() {
         name: p.name,
       })) as CompanyMember[];
     },
-    enabled: !!companyId,
+    enabled: !!companyId && isOpen,
   });
 
   const profileMap = useMemo(() => {
@@ -160,7 +161,7 @@ export function InvoiceFilesDialog() {
 
   return (
     <>
-      <Dialog>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <Button variant="outline" size="sm">
             <FileText className="h-4 w-4 mr-2" />
