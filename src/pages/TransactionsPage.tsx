@@ -1,321 +1,48 @@
-import { useState, useEffect, useMemo } from 'react';
-
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/queryKeys';
-import { useAuth } from '@/contexts/AuthContext';
-import { useCompany } from '@/contexts/CompanyContext';
-import { useDateRange } from '@/contexts/DateRangeContext';
-import { supabase } from '@/integrations/supabase/client';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { cn, formatCurrency } from '@/lib/utils';
-import { CalendarIcon, Search, X, CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, RefreshCw, Download, ChevronDown, FileText, Eye, Sparkles, RotateCcw } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { RefreshCw, Download, ChevronDown, FileText } from 'lucide-react';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
-import { toast } from 'sonner';
-import { exportToFile } from '@/lib/exportUtils';
-import { computeMatchStatus } from '@/hooks/useComputedStatus';
-import { TransactionReasonCell } from '@/components/TransactionReasonCell';
 import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
-import { TableSkeleton } from '@/components/ui/table-skeleton';
-import { TableEmptyState } from '@/components/ui/table-empty-state';
-import { TablePlaceholderRows } from '@/components/ui/table-placeholder-rows';
-
-interface Transaction {
-  id: string;
-  transaction_date: string;
-  description: string | null;
-  amount: number;
-  currency: string | null;
-  type: string | null;
-  matched_invoice_id: string | null;
-  confidence_score: number | null;
-  is_verified: boolean | null;
-  match_type: string | null;
-  reason: string | null;
-  created_at: string | null;
-  company_id: string | null;
-}
-
-interface TransactionFilters {
-  search: string;
-  amountMin: string;
-  amountMax: string;
-  currency: string;
-  type: string;
-  matchStatus: string;
-}
-
-type MatchStatus = 'matched' | 'suggested' | 'unmatched';
-
-const isAutoApproved = (transaction: Transaction): boolean => {
-  return !!(transaction.confidence_score && transaction.confidence_score >= 0.9 && transaction.matched_invoice_id);
-};
-
-const getRowBackgroundClass = (transaction: Transaction): string => {
-  const hoverClass = 'hover:shadow-[inset_0_0_0_100vw_rgba(0,0,0,0.04)] dark:hover:shadow-[inset_0_0_0_100vw_rgba(255,255,255,0.06)]';
-  const status = computeMatchStatus(transaction);
-  if (status === 'matched') {
-    return `bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40 ${hoverClass}`;
-  }
-  if (status === 'suggested') {
-    return `bg-[hsl(var(--warning-row-bg))] text-[hsl(var(--warning-row-text))] border-l-4 border-l-warning border-b border-border/40 ${hoverClass}`;
-  }
-  return `bg-[hsl(var(--error-row-bg))] text-[hsl(var(--error-row-text))] border-l-4 border-l-destructive border-b border-border/40 ${hoverClass}`;
-};
-
-// Type-based background color mapping
-const getTypeBgClass = (type: string | null): string => {
-  if (!type) return '';
-  const t = type.toLowerCase().trim();
-
-  if (t === 'szállítói tranzakció') return 'bg-[hsl(var(--tr-supplier-bg))] text-[hsl(var(--tr-supplier-text))]';
-  if (t === 'vevői tranzakció') return 'bg-[hsl(var(--tr-customer-bg))] text-[hsl(var(--tr-customer-text))]';
-  if (t === 'számlák közötti átvezetés') return 'bg-[hsl(var(--tr-transfer-bg))] text-[hsl(var(--tr-transfer-text))]';
-  if (t === 'banki számlavezetési díj') return 'bg-[hsl(var(--tr-bankfee-bg))] text-[hsl(var(--tr-bankfee-text))]';
-  if (t === 'kártyadíj') return 'bg-[hsl(var(--tr-cardfee-bg))] text-[hsl(var(--tr-cardfee-text))]';
-  if (t === 'hiteltörlesztés' || t === 'tranzakciós illeték' || t === 'kamat') return 'bg-[hsl(var(--tr-loan-bg))] text-[hsl(var(--tr-loan-text))]';
-  if (t === 'atm pénzfelvét') return 'bg-[hsl(var(--tr-atm-bg))] text-[hsl(var(--tr-atm-text))]';
-  if (t === 'pénztári kp felvét') return 'bg-[hsl(var(--tr-cashout-bg))] text-[hsl(var(--tr-cashout-text))]';
-  if (t === 'pénztári kp befizetés' || t === 'kp befizetés atm-en keresztül') return 'bg-[hsl(var(--tr-cashin-bg))] text-[hsl(var(--tr-cashin-text))]';
-  if (t === 'bérek') return 'bg-[hsl(var(--tr-salary-bg))] text-[hsl(var(--tr-salary-text))]';
-  if (t === 'járulékok/adók') return 'bg-[hsl(var(--tr-tax-bg))] text-[hsl(var(--tr-tax-text))]';
-  if (t === 'bankköltség') return 'bg-[hsl(var(--tr-bankcost-bg))] text-[hsl(var(--tr-bankcost-text))]';
-  if (t === 'kamatjóváírás') return 'bg-[hsl(var(--tr-interest-bg))] text-[hsl(var(--tr-interest-text))]';
-  if (t === 'atm készpénzfelvét') return 'bg-[hsl(var(--tr-atmcash-bg))] text-[hsl(var(--tr-atmcash-text))]';
-
-  return '';
-};
+import TransactionFilters from '@/components/transactions/TransactionFilters';
+import TransactionTable from '@/components/transactions/TransactionTable';
+import { useTransactionData, type Transaction } from '@/hooks/useTransactionData';
 
 const TransactionsPage = () => {
-  const { user } = useAuth();
-  const { selectedCompany } = useCompany();
-  const { dateFrom, dateTo } = useDateRange();
-  const queryClient = useQueryClient();
-  
-  const [syncing, setSyncing] = useState(false);
-  const [sortField, setSortField] = useState<string>('transaction_date');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-
-  // Pagination state
-  const [pageSize, setPageSize] = useState(50);
-  const [currentPage, setCurrentPage] = useState(1);
+  const {
+    selectedCompany,
+    filteredTransactions,
+    totalCount,
+    totalPages,
+    loading,
+    filters,
+    setFilters,
+    clearFilters,
+    hasActiveFilters,
+    uniqueCurrencies,
+    uniqueTypes,
+    handleSort,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    handlePageSizeChange,
+    syncing,
+    handleSync,
+    handleExport,
+    queryClient,
+  } = useTransactionData();
 
   // Details dialog state
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
-  const [filters, setFilters] = useState<Omit<TransactionFilters, 'dateFrom' | 'dateTo'>>({
-    search: '',
-    amountMin: '',
-    amountMax: '',
-    currency: 'all',
-    type: 'all',
-    matchStatus: 'all'
-  });
-
-  // dateFrom/dateTo come directly from context – no derived state needed
-
-  // Build server-side filter params for query key
-  const dateFromStr = dateFrom ? format(dateFrom, 'yyyy-MM-dd') : '';
-  const dateToStr = dateTo ? format(dateTo, 'yyyy-MM-dd') : '';
-  const serverFilters = useMemo(() => ({
-    currency: filters.currency,
-    type: filters.type,
-    search: filters.search,
-  }), [filters.currency, filters.type, filters.search]);
-
-  // Fetch distinct currency/type values for filter dropdowns (lightweight query)
-  const { data: filterOptions } = useQuery({
-    queryKey: queryKeys.transactionFilterOptions(selectedCompany?.id || ''),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('currency, type')
-        .eq('company_id', selectedCompany!.id)
-        .limit(500);
-      if (error) throw error;
-      const currencies = [...new Set((data || []).map(t => t.currency).filter(Boolean))] as string[];
-      const types = [...new Set((data || []).map(t => t.type).filter(Boolean))] as string[];
-      return { currencies, types };
-    },
-    enabled: !!user && !!selectedCompany?.id,
-    staleTime: 10 * 60 * 1000, // cache for 10 minutes
-  });
-
-  const uniqueCurrencies = filterOptions?.currencies || [];
-  const uniqueTypes = filterOptions?.types || [];
-
-  // TanStack Query: fetch transactions with server-side filtering + pagination
-  const { data: queryResult, isLoading: loading } = useQuery({
-    queryKey: [
-      ...queryKeys.transactions(
-        selectedCompany?.id || '',
-        dateFromStr,
-        dateToStr,
-        currentPage,
-        pageSize,
-        serverFilters
-      ),
-      sortField,
-      sortDirection,
-    ],
-    queryFn: async () => {
-      const from = (currentPage - 1) * pageSize;
-      const to = from + pageSize - 1;
-
-      let query = supabase
-        .from('transactions')
-        .select('*', { count: 'exact' })
-        .eq('company_id', selectedCompany!.id)
-        .order(sortField, { ascending: sortDirection === 'asc' });
-
-      // Server-side date filtering
-      if (dateFromStr) query = query.gte('transaction_date', dateFromStr);
-      if (dateToStr) query = query.lte('transaction_date', dateToStr);
-
-      // Server-side currency and type filtering
-      if (filters.currency !== 'all') query = query.eq('currency', filters.currency);
-      if (filters.type !== 'all') query = query.eq('type', filters.type);
-
-      // Server-side text search
-      if (filters.search) {
-        query = query.or(`description.ilike.%${filters.search}%,type.ilike.%${filters.search}%`);
-      }
-
-      // Server-side pagination
-      query = query.range(from, to);
-
-      const { data, error, count } = await query;
-      if (error) throw error;
-
-      const fetchedTransactions = (data || []) as Transaction[];
-
-      return { rows: fetchedTransactions, totalCount: count ?? 0 };
-    },
-    enabled: !!user && !!selectedCompany?.id && !!dateFromStr && !!dateToStr,
-  });
-
-  const transactions = queryResult?.rows ?? [];
-  const totalCount = queryResult?.totalCount ?? 0;
-
-  // Open details dialog
-  const handleOpenDetails = (transaction: Transaction) => {
+  const handleOpenDetails = useCallback((transaction: Transaction) => {
     setSelectedTransaction(transaction);
     setDetailsDialogOpen(true);
-  };
-
-  // Client-side post-filters (amount range, matchStatus – not feasible server-side)
-  const filteredTransactions = useMemo(() => {
-    let result = [...transactions];
-
-    // Amount filters (uses Math.abs, not feasible as simple server-side filter)
-    if (filters.amountMin) {
-      const min = parseFloat(filters.amountMin);
-      if (!isNaN(min)) result = result.filter(t => Math.abs(t.amount) >= min);
-    }
-    if (filters.amountMax) {
-      const max = parseFloat(filters.amountMax);
-      if (!isNaN(max)) result = result.filter(t => Math.abs(t.amount) <= max);
-    }
-
-    // Match status filter (computed field, not in DB)
-    if (filters.matchStatus !== 'all') {
-      result = result.filter(t => computeMatchStatus(t) === filters.matchStatus);
-    }
-
-    return result;
-  }, [transactions, filters.amountMin, filters.amountMax, filters.matchStatus]);
-
-  // Server-side pagination: totalPages comes from the exact count
-  const totalPages = Math.ceil(totalCount / pageSize);
-  // The current page data (post-filtered for amount/matchStatus)
-  const paginatedTransactions = filteredTransactions;
-
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('desc');
-    }
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      search: '',
-      amountMin: '',
-      amountMax: '',
-      currency: 'all',
-      type: 'all',
-      matchStatus: 'all'
-    });
-    setCurrentPage(1);
-  };
-
-  const hasActiveFilters = filters.search ||
-    filters.amountMin || filters.amountMax || filters.currency !== 'all' ||
-    filters.type !== 'all' || filters.matchStatus !== 'all';
-
-  // Reset page when server-side filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters.search, dateFrom, dateTo, filters.currency, filters.type, filters.matchStatus]);
-
-  // Sync function - refreshes the transactions table (prefix match invalidates all pages)
-  const handleSync = async () => {
-    setSyncing(true);
-    try {
-      await queryClient.invalidateQueries({ queryKey: ['transactions', selectedCompany?.id || ''] });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.transactionFilterOptions(selectedCompany?.id || '') });
-      toast.success('Tranzakciók frissítve!');
-    } catch (error: any) {
-      console.error('Sync error:', error);
-      toast.error('Frissítés sikertelen', {
-        description: error.message || 'Hiba történt a frissítés során'
-      });
-    } finally {
-      setSyncing(false);
-    }
-  };
-
-  // Export function
-  const handleExport = async (exportFormat: 'csv' | 'xlsx') => {
-    const headers = [
-      'Dátum', 'Leírás', 'Összeg', 'Pénznem', 'Típus', 'Státusz', 'Pontszám', 'Indoklás'
-    ];
-
-    const exportData = filteredTransactions.map(transaction => {
-      const matchStatus = computeMatchStatus(transaction);
-      const statusText = matchStatus === 'matched' ? 'Párosított'
-        : matchStatus === 'suggested' ? 'Javasolt'
-          : 'Párosítatlan';
-
-      return [
-        transaction.transaction_date || '',
-        transaction.description || '',
-        transaction.amount?.toString() || '0',
-        transaction.currency || 'HUF',
-        transaction.type || '',
-        statusText,
-        transaction.confidence_score ? Math.round(transaction.confidence_score * 100).toString() + '%' : '',
-        transaction.reason || ''
-      ];
-    });
-
-    await exportToFile(headers, exportData, exportFormat, 'tranzakciok');
-  };
-
-
+  }, []);
 
   if (!selectedCompany) {
     return (
@@ -380,256 +107,48 @@ const TransactionsPage = () => {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* Filters */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 p-4 bg-white dark:bg-muted/20 rounded-lg border border-slate-200 dark:border-border/30 shadow-sm">
-              {/* Search */}
-              <div className="relative col-span-2 md:col-span-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-muted-foreground" />
-                <Input
-                  placeholder="Keresés..."
-                  value={filters.search}
-                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  className="pl-9 h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary"
-                />
-              </div>
+            <TransactionFilters
+              filters={filters}
+              onFilterChange={setFilters}
+              onClearFilters={clearFilters}
+              hasActiveFilters={!!hasActiveFilters}
+              uniqueCurrencies={uniqueCurrencies}
+              uniqueTypes={uniqueTypes}
+            />
 
-              {/* Currency */}
-              <Select
-                value={filters.currency}
-                onValueChange={(value) => setFilters(prev => ({ ...prev, currency: value }))}
-              >
-                <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
-                  <SelectValue placeholder="Pénznem" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Minden pénznem</SelectItem>
-                  {uniqueCurrencies.map(currency => (
-                    <SelectItem key={currency} value={currency}>{currency}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Match Status */}
-              <Select
-                value={filters.matchStatus}
-                onValueChange={(value) => setFilters(prev => ({ ...prev, matchStatus: value }))}
-              >
-                <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
-                  <SelectValue placeholder="Státusz" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Minden státusz</SelectItem>
-                  <SelectItem value="matched">Párosított</SelectItem>
-                  <SelectItem value="suggested">Javasolt</SelectItem>
-                  <SelectItem value="unmatched">Párosítatlan</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Type */}
-              <Select
-                value={filters.type}
-                onValueChange={(value) => setFilters(prev => ({ ...prev, type: value }))}
-              >
-                <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
-                  <SelectValue placeholder="Típus" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Minden típus</SelectItem>
-                  {uniqueTypes.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Clear button */}
-              {hasActiveFilters && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="h-9 text-red-500 dark:text-red-400 border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600"
-                >
-                  <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-                  Szűrők törlése
-                </Button>
-              )}
-            </div>
-
-            {/* Top Pagination */}
             <UnifiedPagination
               currentPage={currentPage}
               totalPages={totalPages}
               totalItems={totalCount}
               pageSize={pageSize}
               onPageChange={setCurrentPage}
-              onPageSizeChange={(size) => {
-                setPageSize(size);
-                setCurrentPage(1);
-              }}
+              onPageSizeChange={handlePageSizeChange}
               className="mb-3"
             />
 
-            {/* Transactions Table */}
-            <div className="rounded-lg border border-border/50 overflow-auto max-h-[calc(100vh-320px)]">
-              <table className="w-full caption-bottom text-sm table-fixed compact-table">
-                <TableHeader className="sticky top-0 z-10">
-                  <TableRow className="bg-muted hover:bg-muted">
-                    <TableHead
-                      className="cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
-                      onClick={() => handleSort('transaction_date')}
-                    >
-                      <div className="flex items-center gap-2">
-                        Dátum
-                        <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-                      </div>
-                    </TableHead>
-                    <TableHead className="font-semibold w-[30%]">Leírás</TableHead>
-                    <TableHead
-                      className="cursor-pointer hover:bg-muted/50 text-right font-semibold w-[12%]"
-                      onClick={() => handleSort('amount')}
-                    >
-                      <div className="flex items-center justify-end gap-2">
-                        Összeg
-                        <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-                      </div>
-                    </TableHead>
-                    <TableHead className="font-semibold w-[7%]">Pénznem</TableHead>
-                    <TableHead className="font-semibold w-[14%]">Típus</TableHead>
-                    <TableHead className="font-semibold w-[8%] text-center">Státusz</TableHead>
-                    <TableHead className="font-semibold w-[9%]">Indoklás</TableHead>
-                    <TableHead className="font-semibold w-[10%] text-center">Művelet</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableSkeleton rows={10} columns={8} />
-                  ) : paginatedTransactions.length === 0 ? (
-                    <TableEmptyState
-                      colSpan={8}
-                      title="Nincs tranzakció"
-                      description="Tölts fel bankkivonatot a Feltöltés oldalon, vagy módosítsd a szűrőket."
-                      onClearFilters={hasActiveFilters ? clearFilters : undefined}
-                    />
-                  ) : (
-                    paginatedTransactions.map((transaction) => {
-                      const matchStatus = computeMatchStatus(transaction);
+            <TransactionTable
+              transactions={filteredTransactions}
+              loading={loading}
+              pageSize={pageSize}
+              hasActiveFilters={!!hasActiveFilters}
+              onClearFilters={clearFilters}
+              onSort={handleSort}
+              onOpenDetails={handleOpenDetails}
+            />
 
-                      return (
-                        <TableRow
-                          key={transaction.id}
-                          className={cn("h-10", getRowBackgroundClass(transaction))}
-                        >
-                          <TableCell className="font-medium text-xs">
-                            {transaction.transaction_date
-                              ? format(new Date(transaction.transaction_date), 'yyyy.MM.dd')
-                              : '-'
-                            }
-                          </TableCell>
-                          <TableCell className="max-w-[200px] text-xs">
-                            {transaction.description ? (
-                              <TooltipProvider delayDuration={0}>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="block truncate cursor-default">
-                                      {transaction.description}
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="max-w-[400px]">
-                                    <p className="whitespace-pre-wrap text-sm">{transaction.description}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            ) : '-'}
-                          </TableCell>
-                          <TableCell className={cn(
-                            "text-right font-mono text-xs",
-                            transaction.amount >= 0 ? "text-success" : "text-destructive"
-                          )}>
-                            {formatCurrency(transaction.amount, transaction.currency || 'HUF')}
-                          </TableCell>
-                          <TableCell className="text-xs">{transaction.currency || 'HUF'}</TableCell>
-                          <TableCell>
-                            {transaction.type ? (
-                              <span className={cn(
-                                "text-xs px-2.5 py-0.5 rounded-md inline-flex items-center justify-center text-center min-w-[170px] min-h-[24px] whitespace-nowrap",
-                                getTypeBgClass(transaction.type) || "text-muted-foreground"
-                              )}>
-                                {transaction.type}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <TooltipProvider delayDuration={0}>
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <div className="flex items-center justify-center gap-1">
-                                    {matchStatus === 'matched' && <CheckCircle2 className="h-4 w-4 text-success" />}
-                                    {matchStatus === 'suggested' && <AlertCircle className="h-4 w-4 text-warning" />}
-                                    {matchStatus === 'unmatched' && <HelpCircle className="h-4 w-4 text-destructive" />}
-                                    {transaction.match_type === 'auto' && (
-                                      <Sparkles className="h-3 w-3 text-success" />
-                                    )}
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  {matchStatus === 'matched' && transaction.match_type === 'auto' && 'Automatikusan jóváhagyva (≥97%)'}
-                                  {matchStatus === 'matched' && transaction.match_type !== 'auto' && 'Párosított és jóváhagyott'}
-                                  {matchStatus === 'suggested' && `Javasolt párosítás ${transaction.confidence_score ? `(${Math.round(transaction.confidence_score * 100)}%)` : ''}`}
-                                  {matchStatus === 'unmatched' && 'Nincs párosítva'}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </TableCell>
-                          <TableCell>
-                            <TransactionReasonCell reason={transaction.reason} />
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <TooltipProvider delayDuration={0}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-7 px-2 text-xs"
-                                    onClick={() => handleOpenDetails(transaction)}
-                                  >
-                                    <Eye className="h-3 w-3 mr-1" />
-                                    Számlák
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Tranzakció és számla részletei</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                  <TablePlaceholderRows currentCount={paginatedTransactions.length} pageSize={pageSize} columns={8} />
-                </TableBody>
-              </table>
-            </div>
-
-            {/* Bottom Pagination */}
             <UnifiedPagination
               currentPage={currentPage}
               totalPages={totalPages}
               totalItems={totalCount}
               pageSize={pageSize}
               onPageChange={setCurrentPage}
-              onPageSizeChange={(size) => {
-                setPageSize(size);
-                setCurrentPage(1);
-              }}
+              onPageSizeChange={handlePageSizeChange}
               className="mt-3"
             />
           </CardContent>
         </Card>
       </main>
 
-      {/* Details Dialog */}
       <TransactionDetailsDialog
         open={detailsDialogOpen}
         onOpenChange={setDetailsDialogOpen}
