@@ -5,7 +5,7 @@ import { useDashboardData } from '@/hooks/useDashboardData';
 import { useDashboardPreferences } from '@/hooks/useDashboardPreferences';
 import EmptyStateDashboard from '@/components/dashboard/EmptyStateDashboard';
 import { ProductTour } from '@/components/ProductTour';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import DashboardPageSkeleton from '@/components/dashboard/DashboardPageSkeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import DashboardWelcome from '@/components/dashboard/DashboardWelcome';
 import DashboardMetrics from '@/components/dashboard/DashboardMetrics';
