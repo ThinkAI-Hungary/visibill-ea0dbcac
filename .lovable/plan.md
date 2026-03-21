@@ -1,36 +1,75 @@
 
 
-# Duplikált sorok összesítése többhónapos nézetben
+# Invoice CASCADE törlés + cleanup triggerek
 
-## Probléma
-Az adatbázisban minden hónapra külön sor létezik (pl. "Jámbor Viktor Ferenc" bér: jan 332 698 Ft + feb 332 698 Ft). Többhónapos nézetben ezek külön sorokként jelennek meg ahelyett, hogy összesítve lennének.
+## Összefoglalás
+Két BEFORE DELETE trigger létrehozása az `invoices` táblán, amely biztosítja a teljes törlés→újrafeltöltés ciklust, plusz a meglévő build hibák javítása.
 
-## Megoldás
-Aggregációs logika bevezetése a `useSalaryData` hook-ban: az azonos `név` + `tipus` kombinációjú tételek összegeit összeadni dolgozónként és a NAV szekción belül.
+## 1. Migráció: Két új trigger
 
-## Érintett fájlok
+### P1: NAV submitted visszaállítás
+```sql
+CREATE OR REPLACE FUNCTION reset_nav_submitted_on_invoice_delete()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  UPDATE nav_invoices
+  SET submitted = false
+  WHERE invoice_number = OLD.bizonylatsorszam
+    AND company_id = OLD.company_id
+    AND submitted = true;
+  RETURN OLD;
+END;
+$$;
 
-### 1. `src/hooks/useSalaryData.ts` — Aggregációs logika
-Az `employeeGroups` és `navItems` kiszámításánál (a meglévő `useMemo`-ban) az itemeket `név + tipus` kulcs alapján csoportosítani és összegezni:
+CREATE TRIGGER trigger_reset_nav_submitted_on_invoice_delete
+  BEFORE DELETE ON invoices
+  FOR EACH ROW
+  EXECUTE FUNCTION reset_nav_submitted_on_invoice_delete();
+```
 
-- **Dolgozói bontás**: Egy dolgozón belül az azonos `név`+`tipus` sorok → 1 összesített sor (összegek összeadva)
-- **NAV utalások**: Azonos `név` sorok → 1 összesített sor
-- Az aggregált rekord megőrzi az első előfordulás `id`-ját, `statusz`-át, `kifizetes_ideje`-t (a legfrissebb), és a `transaction_id`-t (ha bármelyiknek van)
-- A `fizetesi_mod` az első elemből öröklődik
+### P2: Transaction match cleanup
+```sql
+CREATE OR REPLACE FUNCTION clear_transaction_match_on_invoice_delete()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  UPDATE transactions
+  SET matched_invoice_id = NULL, is_verified = false, match_type = NULL, confidence_score = NULL
+  WHERE matched_invoice_id = OLD.id;
+  RETURN OLD;
+END;
+$$;
 
-### 2. `src/components/salaries/EmployeeAccordion.tsx` — Tétel szám korrekció
-A fejlécben az `items.length` helyesen az aggregált tételek számát fogja mutatni (pl. 3 tétel 6 helyett).
+CREATE TRIGGER trigger_clear_transaction_on_invoice_delete
+  BEFORE DELETE ON invoices
+  FOR EACH ROW
+  EXECUTE FUNCTION clear_transaction_match_on_invoice_delete();
+```
 
-### Nincs UI változás szükséges
-A komponensek már `SalaryItem[]`-et fogadnak — az aggregált adatok ugyanolyan formátumúak lesznek, csak kevesebb sorral.
+**Kaszkád hatás**: A `transactions` UPDATE kiváltja a meglévő `reset_paid_on_transaction_unmatch` triggert → `nav_invoices.paid = false, transaction_id = NULL` automatikusan.
 
-## Aggregáció logikája (pseudocode)
+## 2. Build hibák javítása
+
+### LoadingSpinner `message` prop (9 hely)
+A `LoadingSpinner` komponenshez hozzáadni egy opcionális `message` propot:
+- `src/components/ui/loading-spinner.tsx` — prop hozzáadása az interface-hez + megjelenítés
+
+### ThemeContext `"system"` típus (Settings.tsx:364)
+- `src/pages/Settings.tsx` — a `setTheme` hívás előtt szűrni: ha `"system"`, akkor a `prefers-color-scheme` alapján `"dark"` vagy `"light"`-ra konvertálni
+
+## Törlés→Újrafeltöltés ciklus igazolása
+
 ```text
-items csoportosítás "név|tipus" kulcs alapján:
-  - összeg: SUM(összeg)
-  - statusz: ha bármelyik paid → paid, egyébként az első
-  - kifizetes_ideje: a legkésőbbi dátum
-  - transaction_id: az első nem-null
-  - dátum: a legkésőbbi
+TÖRLÉS:
+  invoice DELETE
+    → trigger: clear_transaction_match → transactions.matched_invoice_id = NULL
+      → trigger: reset_paid_on_transaction_unmatch → nav_invoices.paid=false, transaction_id=NULL
+    → trigger: reset_nav_submitted → nav_invoices.submitted=false
+
+ÚJRAFELTÖLTÉS:
+  invoice INSERT
+    → trigger: mark_nav_invoice_as_submitted → nav_invoices.submitted=true
+    → trigger: set_invoice_feldolgozva_on_upload_link → statusz='feldolgozott'
+  transaction re-match (n8n/manual)
+    → trigger: mark_nav_invoice_paid_on_transaction_match → nav_invoices.paid=true
 ```
 
