@@ -325,29 +325,20 @@ const ManualUpload = () => {
             throw new Error(`Adatbázis hiba: ${uploadError.message}`);
           }
 
-          // Trigger N8N webhook processing - call both webhooks
-          const webhookUrls = [
-            'https://n8n.thinkaikontir.hu/webhook-test/bd504dd3-8af8-45d6-90f6-cfc635a22da6',
-            'https://n8n.thinkaikontir.hu/webhook/bd504dd3-8af8-45d6-90f6-cfc635a22da6'
-          ];
-
-          for (const webhookUrl of webhookUrls) {
-            try {
-              const { error: webhookError } = await supabase.functions.invoke('trigger-invoice-processing', {
-                body: {
-                  uploadId: uploadRecord.id,
-                  webhookUrl
-                }
-              });
-
-              if (webhookError) {
-                console.error(`Webhook trigger error for ${webhookUrl}:`, webhookError);
-                // Don't throw here - file is uploaded, webhook is secondary
+          // Trigger N8N webhook processing (production only)
+          try {
+            const { error: webhookError } = await supabase.functions.invoke('trigger-invoice-processing', {
+              body: {
+                uploadId: uploadRecord.id,
+                webhookUrl: 'https://n8n.thinkaikontir.hu/webhook/bd504dd3-8af8-45d6-90f6-cfc635a22da6'
               }
-            } catch (webhookError) {
-              console.error(`Failed to trigger processing webhook ${webhookUrl}:`, webhookError);
-              // Continue - file upload succeeded
+            });
+
+            if (webhookError) {
+              console.error('Webhook trigger error:', webhookError);
             }
+          } catch (webhookError) {
+            console.error('Failed to trigger processing webhook:', webhookError);
           }
 
           addToUploadHistoryCache({
@@ -447,28 +438,20 @@ const ManualUpload = () => {
 
         if (dbError) throw dbError;
 
-        // Trigger processing webhook - call both webhooks
-        const webhookUrls = [
-          'https://n8n.thinkaikontir.hu/webhook-test/a6f3dbf0-9eab-4e1c-98cf-c8ff56a498f6',
-          'https://n8n.thinkaikontir.hu/webhook/a6f3dbf0-9eab-4e1c-98cf-c8ff56a498f6'
-        ];
-
-        for (const webhookUrl of webhookUrls) {
-          try {
-            const { error: webhookError } = await supabase.functions.invoke('trigger-bank-statement-processing', {
-              body: {
-                uploadId: uploadRecord.id,
-                webhookUrl
-              }
-            });
-
-            if (webhookError) {
-              console.error(`Webhook error for ${webhookUrl}:`, webhookError);
-              // Log but don't show toast for every webhook failure
+        // Trigger processing webhook (production only)
+        try {
+          const { error: webhookError } = await supabase.functions.invoke('trigger-bank-statement-processing', {
+            body: {
+              uploadId: uploadRecord.id,
+              webhookUrl: 'https://n8n.thinkaikontir.hu/webhook/a6f3dbf0-9eab-4e1c-98cf-c8ff56a498f6'
             }
-          } catch (webhookError) {
-            console.error(`Webhook trigger error for ${webhookUrl}:`, webhookError);
+          });
+
+          if (webhookError) {
+            console.error('Webhook error:', webhookError);
           }
+        } catch (webhookError) {
+          console.error('Webhook trigger error:', webhookError);
         }
       }
 
@@ -564,28 +547,62 @@ const ManualUpload = () => {
           continue;
         }
 
-        // Trigger processing via edge function (avoids CORS issues with direct webhook calls)
-        const webhookUrls = [
-          'https://n8n.thinkaikontir.hu/webhook-test/jarulek',
-          'https://n8n.thinkaikontir.hu/webhook/jarulek'
-        ];
-
-        for (const webhookUrl of webhookUrls) {
-          try {
-            const { error: triggerError } = await supabase.functions.invoke('trigger-salary-processing', {
-              body: {
-                uploadId: uploadRecord.id,
-                webhookUrl
-              }
-            });
-
-            if (triggerError) {
-              console.error(`Edge function error for ${webhookUrl}:`, triggerError);
+        // Trigger processing via edge function (production webhook only)
+        try {
+          const { error: triggerError } = await supabase.functions.invoke('trigger-salary-processing', {
+            body: {
+              uploadId: uploadRecord.id,
+              webhookUrl: 'https://n8n.thinkaikontir.hu/webhook/jarulek'
             }
-          } catch (webhookError) {
-            console.error(`Webhook trigger error for ${webhookUrl}:`, webhookError);
+          });
+
+          if (triggerError) {
+            console.error('Edge function error:', triggerError);
           }
+        } catch (webhookError) {
+          console.error('Webhook trigger error:', webhookError);
         }
+
+        // Polling fallback: check if salary rows appeared (Realtime from service_role is unreliable)
+        const salaryFileId = uploadRecord.id;
+        const pollForProcessed = async (delayMs: number) => {
+          setTimeout(async () => {
+            try {
+              const { data: salaryRows } = await supabase
+                .from('salary')
+                .select('id')
+                .eq('salary_file_id', salaryFileId)
+                .limit(1);
+              if (salaryRows && salaryRows.length > 0) {
+                // Fetch file name for toast
+                const { data: sfData } = await supabase
+                  .from('salary_files' as any)
+                  .select('file_name')
+                  .eq('id', salaryFileId)
+                  .single() as { data: { file_name: string } | null; error: any };
+                const fileName = sfData?.file_name || file.name;
+                // Show notification (deduplicated by toast id)
+                const { toast: sonnerToast } = await import('sonner');
+                const { createElement } = await import('react');
+                const { CheckCircle2 } = await import('lucide-react');
+                sonnerToast.success('Gratulálunk!', {
+                  id: `file-processed-${salaryFileId}`,
+                  description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
+                  duration: 5000,
+                  icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
+                });
+                // Invalidate caches
+                queryClient.invalidateQueries({ queryKey: ['salaries'] });
+                queryClient.invalidateQueries({ queryKey: ['salary_files'] });
+                queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
+              }
+            } catch (err) {
+              console.error('[Polling fallback] Error:', err);
+            }
+          }, delayMs);
+        };
+        pollForProcessed(5000);
+        pollForProcessed(15000);
       }
 
       // Optimistic update for each uploaded salary file
