@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: Database["public"]["Enums"]["audit_action_type"]
+          company_id: string
+          created_at: string | null
+          details: Json | null
+          entity: Database["public"]["Enums"]["audit_entity_type"]
+          entity_name: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["audit_action_type"]
+          company_id: string
+          created_at?: string | null
+          details?: Json | null
+          entity: Database["public"]["Enums"]["audit_entity_type"]
+          entity_name?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["audit_action_type"]
+          company_id?: string
+          created_at?: string | null
+          details?: Json | null
+          entity?: Database["public"]["Enums"]["audit_entity_type"]
+          entity_name?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_statement_uploads: {
         Row: {
           company_id: string | null
@@ -2072,6 +2113,18 @@ export type Database = {
       }
     }
     Enums: {
+      audit_action_type:
+        | "létrehozás"
+        | "módosítás"
+        | "törlés"
+        | "feltöltés"
+        | "párosítás"
+      audit_entity_type:
+        | "számla"
+        | "bérjegyzék"
+        | "tranzakció"
+        | "kategória"
+        | "dokumentum"
       salary_item_type: "bér" | "ÁFA" | "adó" | "járulék"
       salary_payment_method: "banki tranzakció" | "készpénz"
       salary_status_type: "Függő" | "Kifizetve"
@@ -2202,6 +2255,20 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      audit_action_type: [
+        "létrehozás",
+        "módosítás",
+        "törlés",
+        "feltöltés",
+        "párosítás",
+      ],
+      audit_entity_type: [
+        "számla",
+        "bérjegyzék",
+        "tranzakció",
+        "kategória",
+        "dokumentum",
+      ],
       salary_item_type: ["bér", "ÁFA", "adó", "járulék"],
       salary_payment_method: ["banki tranzakció", "készpénz"],
       salary_status_type: ["Függő", "Kifizetve"],
