@@ -372,7 +372,7 @@ const ManualUpload = () => {
         // Polling fallback for each invoice upload (5s interval, max 90s)
         for (const { id: uploadId, fileName } of uploadedIds) {
           const runInvoicePoll = async () => {
-            const maxAttempts = 18;
+            const maxAttempts = 54;
             const intervalMs = 5000;
             console.log(`[InvoicePoll] Starting polling for invoice_uploads_id=${uploadId}`);
             for (let attempt = 1; attempt <= maxAttempts; attempt++) {
