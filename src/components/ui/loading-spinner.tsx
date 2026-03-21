@@ -5,6 +5,7 @@ interface LoadingSpinnerProps {
   className?: string;
   size?: "sm" | "md" | "lg";
   fullPage?: boolean;
+  message?: string;
 }
 
 /** Remove the static HTML loader injected by index.html */

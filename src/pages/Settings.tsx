@@ -361,7 +361,7 @@ export default function Settings() {
         <TabsContent value="system">
           <SystemSection
             systemSettings={systemSettings}
-            onThemeChange={(value) => { setTheme(value as 'light' | 'dark' | 'system'); setSystemSettings(prev => ({ ...prev, theme: value })); }}
+            onThemeChange={(value) => { const resolved = value === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : value as 'light' | 'dark'; setTheme(resolved); setSystemSettings(prev => ({ ...prev, theme: value })); }}
             onSave={() => updateSettings('system', systemSettings)}
             loading={loading}
           />
