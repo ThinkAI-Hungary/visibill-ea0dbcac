@@ -49,9 +49,9 @@ export function LiveNotificationProvider() {
 
     // Invalidate relevant caches
     invalidateKeys.forEach(key => {
-      queryClient.invalidateQueries({ queryKey: [key] });
+      queryClient.invalidateQueries({ queryKey: [key, companyId] });
     });
-  }, [queryClient]);
+  }, [queryClient, companyId]);
 
   useEffect(() => {
     if (!companyId) return;
