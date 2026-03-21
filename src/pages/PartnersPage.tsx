@@ -168,6 +168,7 @@ export default function PartnersPage() {
       toast({
         title: "Partner törölve",
         description: "A partner sikeresen törölve.",
+        duration: 3000,
       });
     },
     onError: (error: any) => {
