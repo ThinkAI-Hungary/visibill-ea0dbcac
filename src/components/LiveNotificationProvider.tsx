@@ -147,6 +147,7 @@ export function LiveNotificationProvider() {
           console.log('[RealtimeSync] invoices', payload.eventType);
           invalidate(
             'submittedInvoices', 'linkedInvoices', 'invoiceTransactions',
+            'filteredNavInvoices', 'filteredSubmittedInvoices',
             'dashboardData', 'dashboardAnalytics',
             'kintlevo-manual', 'kintlevo-nav',
             'invoiceStatusPayable', 'invoiceStatusMissing',
@@ -170,7 +171,16 @@ export function LiveNotificationProvider() {
         (payload) => {
           if (!isMyCompany(payload)) return;
           console.log('[RealtimeSync] invoice_uploads', payload.eventType);
-          invalidate('uploadHistory', 'submittedInvoices');
+          invalidate('uploadHistory', 'submittedInvoices', 'filteredSubmittedInvoices');
+          // Show notification when processing_status changes to 'completed'
+          if (payload.eventType === 'UPDATE') {
+            const row = payload.new as any;
+            const oldRow = payload.old as any;
+            if (row.id && row.processing_status === 'completed' && oldRow?.processing_status !== 'completed') {
+              console.log('[RealtimeSync] 🔔 invoice_uploads status → completed:', row.id);
+              showNotification(row.id, 'invoice_uploads');
+            }
+          }
         }
       )
 
