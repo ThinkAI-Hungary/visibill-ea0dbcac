@@ -74,8 +74,8 @@ const Index = () => {
   if (!companyLoading && companies.length === 0) {
     return <EmptyStateDashboard onOnboardingComplete={handleOnboardingComplete} />;
   }
-  if (companyLoading || metricsLoading) {
-    return <LoadingSpinner />;
+  if (companyLoading || (metricsLoading && !metrics)) {
+    return <DashboardPageSkeleton />;
   }
 
   return (

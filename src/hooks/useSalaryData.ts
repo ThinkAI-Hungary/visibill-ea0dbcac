@@ -34,6 +34,7 @@ export function useSalaryData() {
       return (data as unknown as SalaryItem[]) || [];
     },
     enabled: !!user && !!selectedCompany?.id && !!dateFromStr && !!dateToStr,
+    placeholderData: keepPreviousData,
   });
 
   const invalidateSalaries = () => {

@@ -36,7 +36,7 @@ export default function SalariesPage() {
     setEditDialogOpen(true);
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading && salaryItems.length === 0) return <SalaryPageSkeleton />;
 
   return (
     <div className="h-full space-y-4 px-2 py-2">

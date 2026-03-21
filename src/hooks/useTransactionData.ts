@@ -123,6 +123,7 @@ export function useTransactionData() {
       return { rows: (data || []) as Transaction[], totalCount: count ?? 0 };
     },
     enabled: !!user && !!selectedCompany?.id && !!dateFromStr && !!dateToStr,
+    placeholderData: keepPreviousData,
   });
 
   const transactions = queryResult?.rows ?? [];
