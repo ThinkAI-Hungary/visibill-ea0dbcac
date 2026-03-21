@@ -116,10 +116,8 @@ const TransactionsPage = () => {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
-  const [filters, setFilters] = useState<TransactionFilters>({
+  const [filters, setFilters] = useState<Omit<TransactionFilters, 'dateFrom' | 'dateTo'>>({
     search: '',
-    dateFrom: undefined,
-    dateTo: undefined,
     amountMin: '',
     amountMax: '',
     currency: 'all',
@@ -127,10 +125,7 @@ const TransactionsPage = () => {
     matchStatus: 'all'
   });
 
-  // Sync filters.dateFrom/dateTo with global date range
-  useEffect(() => {
-    setFilters(prev => ({ ...prev, dateFrom, dateTo }));
-  }, [dateFrom, dateTo]);
+  // dateFrom/dateTo come directly from context – no derived state needed
 
   // Build server-side filter params for query key
   const dateFromStr = filters.dateFrom ? format(filters.dateFrom, 'yyyy-MM-dd') : '';
