@@ -1,15 +1,43 @@
 
 
-# Query key invalidáció javítása a LiveNotificationProvider-ben
+# LiveNotificationProvider — hibaelhárítás és javítás
 
-## Probléma
-A `showNotification` függvényben (52. sor) a cache invalidáció `queryKey: [key]` formátumot használ, ami nem egyezik az alkalmazás többi részével (`useRealtimeInvalidation`, `queryKeys.ts`), ahol a kulcsok `[key, companyId]` formátumúak. Emiatt az invalidáció nem találja meg a tényleges cache bejegyzéseket.
+## Valószínű ok
 
-## Javítás
-`src/components/LiveNotificationProvider.tsx` — egyetlen módosítás:
+A komponens jelenleg **két kritikus ponton elnémítja a hibákat**:
 
-- 51–53. sor: `queryClient.invalidateQueries({ queryKey: [key] })` → `queryClient.invalidateQueries({ queryKey: [key, companyId] })`
-- A `showNotification` callback dependency listájába és paraméterei közé fel kell venni a `companyId`-t, vagy a closure-ből kell olvasnia (jelenleg a `companyId` elérhető a komponens scope-ból, de a `useCallback` deps-ből hiányzik — ezt is pótolni kell)
+1. **`.subscribe()` státusz nincs figyelve** — ha a Realtime csatorna nem tud csatlakozni (pl. subscription limit, hálózati hiba), semmi nem jelzi
+2. **`catch` blokk teljesen néma** — ha a fájlnév-lekérdezés sikertelen, sem toast, sem console log nem jelenik meg
 
-Összesen ~3 sor változás.
+Ezen felül a `useRealtimeInvalidation` hook ugyanazokat a táblákat figyeli egy másik csatornán, ami összesen 11 `.on()` listenert jelent — közel lehet a Supabase Realtime limithez.
+
+## Javítások (`src/components/LiveNotificationProvider.tsx`)
+
+### 1. Subscription státusz figyelése
+A `.subscribe()` híváshoz callback hozzáadása, ami logol, ha nem `SUBSCRIBED`:
+```typescript
+.subscribe((status, err) => {
+  if (status !== 'SUBSCRIBED') {
+    console.warn('[LiveNotifications] Realtime status:', status, err);
+  }
+});
+```
+
+### 2. Catch blokk javítása — fallback toast + console.error
+Ha a fájlnév-lekérdezés sikertelen, jelenjen meg generikus toast és logoljon:
+```typescript
+catch (err) {
+  console.error('[LiveNotifications] File lookup failed:', err);
+  toast.success('Gratulálunk!', {
+    description: 'Egy fájl sikeresen fel lett dolgozva!',
+    duration: 7000,
+    icon: ...,
+  });
+}
+```
+
+### 3. Cache invalidáció kiemelése a try-catch-en kívülre
+Jelenleg a kód helyes (a try-catch-en kívül van), de a toast megjelenés a try-n belül — ha hiba van, a fallback catch-ben is megjelenik.
+
+Összesen ~10 sor módosítás egyetlen fájlban.
 
