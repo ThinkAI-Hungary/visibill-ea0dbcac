@@ -131,7 +131,7 @@ export function SalaryFilesDialog() {
         .in('id', ids);
       if (error) throw error;
 
-      toast({ title: 'Sikeres törlés', description: 'A dokumentum és a hozzá tartozó adatok törölve lettek.' });
+      toast({ title: 'Sikeres törlés', description: 'A dokumentum és a hozzá tartozó adatok törölve lettek.', duration: 3000 });
       queryClient.invalidateQueries({ queryKey: ['salary_files', companyId] });
       queryClient.invalidateQueries({ queryKey: ['salaries', companyId] });
     } catch (err: any) {

@@ -147,7 +147,7 @@ export function InvoiceFilesDialog() {
         .eq('id', id);
       if (error) throw error;
 
-      toast({ title: 'Sikeres törlés', description: 'A dokumentum és a hozzá tartozó számlák törölve lettek.' });
+      toast({ title: 'Sikeres törlés', description: 'A dokumentum és a hozzá tartozó számlák törölve lettek.', duration: 3000 });
       queryClient.invalidateQueries({ queryKey: ['invoice_uploads_with_invoices', companyId] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['nav_invoices'] });
