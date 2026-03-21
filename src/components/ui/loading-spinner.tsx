@@ -34,7 +34,7 @@ export function LoadingSpinner({
   if (fullPage) {
     return (
       <div className={cn(
-        "flex-1 flex items-center justify-center bg-background min-h-[200px]",
+        "flex h-screen w-full flex-col items-center justify-center bg-background",
         className
       )}>
         {spinner}
