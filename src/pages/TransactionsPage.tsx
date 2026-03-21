@@ -48,8 +48,6 @@ interface Transaction {
 
 interface TransactionFilters {
   search: string;
-  dateFrom: Date | undefined;
-  dateTo: Date | undefined;
   amountMin: string;
   amountMax: string;
   currency: string;
