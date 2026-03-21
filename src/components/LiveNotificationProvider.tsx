@@ -147,6 +147,7 @@ export function LiveNotificationProvider() {
           console.log('[RealtimeSync] invoices', payload.eventType);
           invalidate(
             'submittedInvoices', 'linkedInvoices', 'invoiceTransactions',
+            'filteredNavInvoices', 'filteredSubmittedInvoices',
             'dashboardData', 'dashboardAnalytics',
             'kintlevo-manual', 'kintlevo-nav',
             'invoiceStatusPayable', 'invoiceStatusMissing',
@@ -170,7 +171,16 @@ export function LiveNotificationProvider() {
         (payload) => {
           if (!isMyCompany(payload)) return;
           console.log('[RealtimeSync] invoice_uploads', payload.eventType);
-          invalidate('uploadHistory', 'submittedInvoices');
+          invalidate('uploadHistory', 'submittedInvoices', 'filteredSubmittedInvoices');
+          // Show notification when processing_status changes to 'completed'
+          if (payload.eventType === 'UPDATE') {
+            const row = payload.new as any;
+            const oldRow = payload.old as any;
+            if (row.id && row.processing_status === 'completed' && oldRow?.processing_status !== 'completed') {
+              console.log('[RealtimeSync] 🔔 invoice_uploads status → completed:', row.id);
+              showNotification(row.id, 'invoice_uploads');
+            }
+          }
         }
       )
 
@@ -182,7 +192,7 @@ export function LiveNotificationProvider() {
           if (!isMyCompany(payload)) return;
           console.log('[RealtimeSync] nav_invoices', payload.eventType);
           invalidate(
-            'navInvoices', 'kintlevo-nav',
+            'navInvoices', 'filteredNavInvoices', 'kintlevo-nav',
             'dashboardData', 'dashboardAnalytics',
             'invoiceStatusPayable', 'invoiceStatusMissing',
             'analyticsRaw', 'analyticsVat',
@@ -201,6 +211,7 @@ export function LiveNotificationProvider() {
           console.log('[RealtimeSync] transactions', payload.eventType);
           invalidate(
             'transactions', 'salaries', 'submittedInvoices',
+            'filteredNavInvoices', 'filteredSubmittedInvoices',
             'dashboardData', 'dashboardAnalytics',
             'kintlevo-nav', 'kintlevo-manual',
             'invoiceStatusPayable', 'invoiceStatusMissing',
@@ -238,6 +249,65 @@ export function LiveNotificationProvider() {
           if (!isMyCompany(payload)) return;
           console.log('[RealtimeSync] transaction_uploads', payload.eventType);
           invalidate('uploadHistory', 'transactions');
+          // Show notification when processing_status changes to 'completed'
+          if (payload.eventType === 'UPDATE') {
+            const row = payload.new as any;
+            const oldRow = payload.old as any;
+            if (row.id && row.processing_status === 'completed' && oldRow?.processing_status !== 'completed') {
+              console.log('[RealtimeSync] 🔔 transaction_uploads status → completed:', row.id);
+              showNotification(row.id, 'transaction_uploads');
+            }
+          }
+        }
+      )
+
+      // ━━ CATEGORIES table ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'categories' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          console.log('[RealtimeSync] categories', payload.eventType);
+          invalidate(
+            'categories', 'filteredNavInvoices', 'filteredSubmittedInvoices',
+            'navInvoices', 'submittedInvoices',
+          );
+        }
+      )
+
+      // ━━ PROJECTS table ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'projects' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          console.log('[RealtimeSync] projects', payload.eventType);
+          invalidate(
+            'projects', 'projectsList',
+            'filteredNavInvoices', 'filteredSubmittedInvoices',
+            'navInvoices', 'submittedInvoices',
+          );
+        }
+      )
+
+      // ━━ DUNNING_SENDS table ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'dunning_sends' },
+        (payload) => {
+          console.log('[RealtimeSync] dunning_sends', payload.eventType);
+          invalidate('dunning-sends', 'kintlevo-nav');
+        }
+      )
+
+      // ━━ NAV_SYNC_LOGS table ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'nav_sync_logs' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          console.log('[RealtimeSync] nav_sync_logs', payload.eventType);
+          invalidate('syncLogs', 'navInvoices', 'filteredNavInvoices');
         }
       )
 
@@ -258,11 +328,13 @@ export function LiveNotificationProvider() {
         // Broad invalidation on tab refocus to catch any missed events
         invalidate(
           'salaries', 'salary_files', 'submittedInvoices', 'linkedInvoices',
-          'navInvoices', 'transactions', 'dashboardData', 'dashboardAnalytics',
+          'navInvoices', 'filteredNavInvoices', 'filteredSubmittedInvoices',
+          'transactions', 'dashboardData', 'dashboardAnalytics',
           'kintlevo-nav', 'kintlevo-manual', 'uploadHistory',
           'analyticsRaw', 'analyticsVat', 'recentInvoices',
           'partners', 'projects', 'projectsList',
           'pettyCashEntries', 'dashboardPettyCash',
+          'categories', 'dunning-sends', 'syncLogs',
         );
       }
     };

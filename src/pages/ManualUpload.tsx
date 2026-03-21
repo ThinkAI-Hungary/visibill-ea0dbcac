@@ -277,6 +277,7 @@ const ManualUpload = () => {
     try {
       // Process each invoice and increment usage
       let successfulUploads = 0;
+      const uploadedIds: { id: string; fileName: string }[] = [];
 
       for (const file of selectedInvoiceFiles) {
         // Check if we can still process this invoice
@@ -353,6 +354,7 @@ const ManualUpload = () => {
             created_at: new Date().toISOString(),
             error_message: null,
           });
+          uploadedIds.push({ id: uploadRecord.id, fileName: file.name });
           successfulUploads++;
         } catch (fileError) {
           console.error(`Error processing file ${file.name}:`, fileError);
@@ -366,6 +368,45 @@ const ManualUpload = () => {
           description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.",
           duration: 3000,
         });
+
+        // Polling fallback for each invoice upload (5s interval, max 90s)
+        for (const { id: uploadId, fileName } of uploadedIds) {
+          const runInvoicePoll = async () => {
+            const maxAttempts = 18;
+            const intervalMs = 5000;
+            console.log(`[InvoicePoll] Starting polling for invoice_uploads_id=${uploadId}`);
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+              await new Promise(res => setTimeout(res, intervalMs));
+              try {
+                const { data: invoiceRows } = await supabase
+                  .from('invoices')
+                  .select('id')
+                  .eq('invoice_uploads_id', uploadId)
+                  .limit(1);
+                console.log(`[InvoicePoll] Attempt ${attempt}/${maxAttempts}: found ${invoiceRows?.length ?? 0} rows`);
+                if (invoiceRows && invoiceRows.length > 0) {
+                  const { toast: sonnerToast } = await import('sonner');
+                  const { createElement } = await import('react');
+                  const { CheckCircle2 } = await import('lucide-react');
+                  sonnerToast.success('Gratulálunk!', {
+                    id: `file-processed-${uploadId}`,
+                    description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
+                    duration: 5000,
+                    icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
+                  });
+                  queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
+                  queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
+                  queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
+                  return;
+                }
+              } catch (err) {
+                console.error(`[InvoicePoll] Attempt ${attempt} error:`, err);
+              }
+            }
+            console.log(`[InvoicePoll] ⚠️ Polling timed out for ${uploadId}`);
+          };
+          runInvoicePoll();
+        }
 
         setSelectedInvoiceFiles([]);
         setUploadRefreshKey(k => k + 1);
@@ -711,6 +752,7 @@ const ManualUpload = () => {
 
     try {
       let successfulUploads = 0;
+      const txUploadedIds: { id: string; fileName: string }[] = [];
 
       for (const file of selectedTransactionFiles) {
         // Upload file to storage
@@ -770,6 +812,7 @@ const ManualUpload = () => {
               created_at: new Date().toISOString(),
               error_message: null,
             });
+            txUploadedIds.push({ id: uploadRecord.id, fileName: file.name });
             successfulUploads++;
           } else {
             console.error('Webhook failed via edge function:', triggerData);
@@ -788,6 +831,44 @@ const ManualUpload = () => {
           description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.",
           duration: 3000,
         });
+
+        // Polling fallback for each transaction upload (5s interval, max 90s)
+        for (const { id: uploadId, fileName } of txUploadedIds) {
+          const runTxPoll = async () => {
+            const maxAttempts = 18;
+            const intervalMs = 5000;
+            console.log(`[TxPoll] Starting polling for upload_id=${uploadId}`);
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+              await new Promise(res => setTimeout(res, intervalMs));
+              try {
+                const { data: txRows } = await supabase
+                  .from('transactions')
+                  .select('id')
+                  .eq('upload_id', uploadId)
+                  .limit(1);
+                console.log(`[TxPoll] Attempt ${attempt}/${maxAttempts}: found ${txRows?.length ?? 0} rows`);
+                if (txRows && txRows.length > 0) {
+                  const { toast: sonnerToast } = await import('sonner');
+                  const { createElement } = await import('react');
+                  const { CheckCircle2 } = await import('lucide-react');
+                  sonnerToast.success('Gratulálunk!', {
+                    id: `file-processed-${uploadId}`,
+                    description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
+                    duration: 5000,
+                    icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
+                  });
+                  queryClient.invalidateQueries({ queryKey: ['transactions'] });
+                  queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
+                  return;
+                }
+              } catch (err) {
+                console.error(`[TxPoll] Attempt ${attempt} error:`, err);
+              }
+            }
+            console.log(`[TxPoll] ⚠️ Polling timed out for ${uploadId}`);
+          };
+          runTxPoll();
+        }
 
         setSelectedTransactionFiles([]);
         setUploadRefreshKey(k => k + 1);
