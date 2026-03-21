@@ -51,7 +51,7 @@ const Projects = () => {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  useRealtimeInvalidation(selectedCompany?.id);
+  
 
   const emptyProject: Project = {
     name: '',

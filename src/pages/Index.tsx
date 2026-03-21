@@ -140,7 +140,7 @@ const Index = () => {
   const { selectedCompany, companies, loading: companyLoading } = useCompany();
   const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const navigate = useNavigate();
-  useRealtimeInvalidation(selectedCompany?.id);
+  
 
   const companyId = selectedCompany?.id || '';
 

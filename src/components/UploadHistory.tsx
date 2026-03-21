@@ -54,7 +54,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
-  useRealtimeInvalidation(selectedCompany?.id);
+  
 
   const companyId = selectedCompany?.id || '';
   const tableName = activeTab === 'invoices' ? 'invoice_uploads' : activeTab === 'salaries' ? 'salary_files' : 'transaction_uploads';

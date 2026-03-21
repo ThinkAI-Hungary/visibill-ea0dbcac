@@ -15,7 +15,7 @@ export function useSalaryData() {
   const { selectedCompany } = useCompany();
   const { dateFrom, dateTo } = useDateRange();
   const queryClient = useQueryClient();
-  useRealtimeInvalidation(selectedCompany?.id);
+  
 
   const dateFromStr = dateFrom.toISOString().slice(0, 10);
   const dateToStr = dateTo.toISOString().slice(0, 10);

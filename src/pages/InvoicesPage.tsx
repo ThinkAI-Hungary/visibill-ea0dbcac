@@ -41,7 +41,7 @@ const InvoicesPage = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
-  useRealtimeInvalidation(selectedCompany?.id);
+  
 
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<InvoiceTab>('OUTBOUND');

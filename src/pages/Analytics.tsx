@@ -59,7 +59,7 @@ export default function Analytics() {
   const [vatSectionOpen, setVatSectionOpen] = useState(true);
   const [revenueSectionOpen, setRevenueSectionOpen] = useState(true);
   
-  useRealtimeInvalidation(selectedCompany?.id);
+  
 
   // Filter toggles
   const [showRevenue, setShowRevenue] = useState(true);
