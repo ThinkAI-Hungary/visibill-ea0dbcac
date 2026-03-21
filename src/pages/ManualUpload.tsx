@@ -551,6 +551,7 @@ const ManualUpload = () => {
             status: 'pending',
             file_url: urlData.publicUrl,
             file_name: file.name,
+            file_size: file.size,
             source: 'automated'
           })
           .select()
@@ -590,7 +591,7 @@ const ManualUpload = () => {
         addToUploadHistoryCache({
           id: crypto.randomUUID(),
           file_name: file.name,
-          file_size: 0,
+          file_size: file.size,
           file_type: '',
           file_url: '',
           user_id: user.id,

@@ -1,0 +1,1 @@
+ALTER TABLE public.salary_files ADD COLUMN file_size integer DEFAULT NULL;
