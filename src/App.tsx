@@ -14,6 +14,8 @@ import AuthGuard from "./components/AuthGuard";
 import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { useIdleTimeout } from "./hooks/useIdleTimeout";
 import { IdleWarningModal } from "./components/IdleWarningModal";
+import { Toaster as SonnerToaster } from "./components/ui/sonner";
+import { LiveNotificationProvider } from "./components/LiveNotificationProvider";
 import { supabase } from "./integrations/supabase/client";
 
 // Route-level code splitting – each page loads as a separate chunk
@@ -88,6 +90,8 @@ const App = () => (
             <SubscriptionProvider>
               <TooltipProvider>
                 <Toaster />
+                <SonnerToaster />
+                <LiveNotificationProvider />
                 <BrowserRouter>
                   <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
                     <Routes>
