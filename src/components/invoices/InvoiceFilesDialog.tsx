@@ -85,7 +85,7 @@ export function InvoiceFilesDialog() {
         }))
         .filter(u => u.invoiceNumbers.length > 0) as UploadWithInvoices[];
     },
-    enabled: !!companyId,
+    enabled: !!companyId && isOpen,
     staleTime: 0,
   });
 
