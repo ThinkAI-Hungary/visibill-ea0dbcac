@@ -1,16 +1,16 @@
 
 
-# Bér fájlok lekérdezése csak kattintásra
+# Számla Feltöltött Fájlok dialog: lazy query
 
 ## Probléma
-A `SalaryFilesDialog` komponens a `useQuery`-t `enabled: !!companyId` feltétellel használja, ami az oldal betöltésekor azonnal lefut. A query-nek csak akkor kellene futnia, amikor a felhasználó megnyitja a dialogot.
+Az `InvoiceFilesDialog` komponens query-jei (`invoice_uploads_with_invoices`, `company_members_profiles`) azonnal lefutnak, ha van `companyId`. Ugyanúgy kell működnie, mint a bér fájloknál: csak a dialog megnyitásakor.
 
 ## Megoldás
-`src/components/salaries/SalaryFilesTable.tsx` módosítása:
+`src/components/invoices/InvoiceFilesDialog.tsx` módosítása:
 
-1. A `Dialog` komponenst kontrolláltra alakítani (`open` + `onOpenChange` state)
-2. Egy `isOpen` state bevezetése
-3. Mindkét query `enabled` feltételébe bekötni: `enabled: !!companyId && isOpen`
-4. A `DialogTrigger` helyett a gomb `onClick`-jével nyitni a dialogot
+1. `isOpen` state bevezetése (`useState(false)`)
+2. `Dialog` komponens kontrolláltra alakítása: `open={isOpen} onOpenChange={setIsOpen}`
+3. Mindkét `useQuery` `enabled` feltételébe: `enabled: !!companyId && isOpen`
 
-Ez biztosítja, hogy a salary_files és company_members_profiles query-k csak a dialog megnyitásakor indulnak el.
+Egy az egyben ugyanaz a minta, mint a `SalaryFilesTable.tsx`-ben már megvalósítottuk.
+
