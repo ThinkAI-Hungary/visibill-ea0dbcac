@@ -161,7 +161,7 @@ export function InvoiceFilesDialog() {
 
   return (
     <>
-      <Dialog>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <Button variant="outline" size="sm">
             <FileText className="h-4 w-4 mr-2" />
