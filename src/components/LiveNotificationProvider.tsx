@@ -27,13 +27,10 @@ export function LiveNotificationProvider() {
   const queryClientRef = useRef(queryClient);
   queryClientRef.current = queryClient;
 
-  /** Check if the event belongs to the current company.
-   *  If company_id is missing from payload (e.g. DELETE event), accept it —
-   *  RLS already ensures only authorized events reach the client.
-   */
+  /** Check if the event belongs to the current company. */
   const isMyCompany = useCallback((payload: any): boolean => {
     const row = payload.new || payload.old;
-    if (!row?.company_id) return true; // Accept if company_id not in payload
+    if (!row?.company_id) return true;
     return row.company_id === companyIdRef.current;
   }, []);
 
@@ -62,23 +59,24 @@ export function LiveNotificationProvider() {
     toast.success('Gratulálunk!', {
       id: `file-processed-${uploadId}`,
       description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
-      duration: 8000,
+      duration: 5000,
       icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
     });
   }, []);
 
-  // ── Debounced cache invalidation (500ms) ──
+  // ── Debounced cache invalidation (500ms) with companyId scoping ──
   const debounceTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const invalidate = useCallback((...keys: string[]) => {
+    const cid = companyIdRef.current;
+    if (!cid) return;
     const cacheKey = keys.sort().join(',');
-    // Clear existing timer for this key set
     const existing = debounceTimers.current.get(cacheKey);
     if (existing) clearTimeout(existing);
-    // Set new timer — fires once after 500ms of no new events
     debounceTimers.current.set(cacheKey, setTimeout(() => {
       keys.forEach(key => {
-        queryClientRef.current.invalidateQueries({ queryKey: [key] });
+        // Prefix match: [key, companyId] matches [key, companyId, dateFrom, dateTo, ...]
+        queryClientRef.current.invalidateQueries({ queryKey: [key, cid] });
       });
       debounceTimers.current.delete(cacheKey);
     }, 500));
@@ -105,7 +103,12 @@ export function LiveNotificationProvider() {
         (payload) => {
           if (!isMyCompany(payload)) return;
           console.log('[RealtimeSync] salary', payload.eventType);
-          invalidate('salaries', 'salary_files');
+          invalidate(
+            'salaries', 'salary_files',
+            'dashboardData', 'dashboardAnalytics',
+            'analyticsRaw', 'analyticsVat',
+            'pettyCashEntries', 'uploadHistory',
+          );
           if (payload.eventType === 'INSERT') {
             const row = payload.new as any;
             if (row.salary_file_id) {
@@ -122,7 +125,7 @@ export function LiveNotificationProvider() {
         (payload) => {
           if (!isMyCompany(payload)) return;
           console.log('[RealtimeSync] salary_files', payload.eventType);
-          invalidate('salary_files', 'salaries');
+          invalidate('salary_files', 'salaries', 'uploadHistory');
         }
       )
 
@@ -133,7 +136,15 @@ export function LiveNotificationProvider() {
         (payload) => {
           if (!isMyCompany(payload)) return;
           console.log('[RealtimeSync] invoices', payload.eventType);
-          invalidate('invoices', 'invoice_uploads_with_invoices', 'nav_invoices');
+          invalidate(
+            'submittedInvoices', 'linkedInvoices', 'invoiceTransactions',
+            'dashboardData', 'dashboardAnalytics',
+            'kintlevo-manual', 'kintlevo-nav',
+            'invoiceStatusPayable', 'invoiceStatusMissing',
+            'recentInvoices', 'uploadHistory',
+            'analyticsRaw', 'analyticsVat',
+            'dashboardPettyCash',
+          );
           if (payload.eventType === 'INSERT') {
             const row = payload.new as any;
             if (row.invoice_uploads_id) {
@@ -150,7 +161,25 @@ export function LiveNotificationProvider() {
         (payload) => {
           if (!isMyCompany(payload)) return;
           console.log('[RealtimeSync] invoice_uploads', payload.eventType);
-          invalidate('invoice_uploads_with_invoices', 'invoices');
+          invalidate('uploadHistory', 'submittedInvoices');
+        }
+      )
+
+      // ━━ NAV_INVOICES table ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'nav_invoices' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          console.log('[RealtimeSync] nav_invoices', payload.eventType);
+          invalidate(
+            'navInvoices', 'kintlevo-nav',
+            'dashboardData', 'dashboardAnalytics',
+            'invoiceStatusPayable', 'invoiceStatusMissing',
+            'analyticsRaw', 'analyticsVat',
+            'projects', 'projectsList',
+            'dashboardPettyCash',
+          );
         }
       )
 
@@ -161,13 +190,45 @@ export function LiveNotificationProvider() {
         (payload) => {
           if (!isMyCompany(payload)) return;
           console.log('[RealtimeSync] transactions', payload.eventType);
-          invalidate('transactions');
+          invalidate(
+            'transactions', 'salaries', 'submittedInvoices',
+            'dashboardData', 'dashboardAnalytics',
+            'kintlevo-nav', 'kintlevo-manual',
+            'invoiceStatusPayable', 'invoiceStatusMissing',
+            'invoiceTransactions', 'navInvoices',
+            'pettyCashEntries', 'pettyCashSettings',
+            'analyticsRaw', 'analyticsVat',
+            'projects', 'projectsList',
+            'dashboardPettyCash',
+          );
           if (payload.eventType === 'INSERT') {
             const row = payload.new as any;
             if (row.upload_id) {
               showNotification(row.upload_id, 'transaction_uploads');
             }
           }
+        }
+      )
+
+      // ━━ PARTNERS table ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'partners' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          console.log('[RealtimeSync] partners', payload.eventType);
+          invalidate('partners', 'kintlevo-nav', 'kintlevo-manual');
+        }
+      )
+
+      // ━━ Upload tables (for upload history) ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'transaction_uploads' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          console.log('[RealtimeSync] transaction_uploads', payload.eventType);
+          invalidate('uploadHistory', 'transactions');
         }
       )
 
@@ -185,14 +246,21 @@ export function LiveNotificationProvider() {
           console.log('[RealtimeSync] Reconnecting on tab focus...');
           channelRef.current.subscribe();
         }
-        invalidate('salaries', 'salary_files', 'invoices', 'invoice_uploads_with_invoices', 'nav_invoices', 'transactions');
+        // Broad invalidation on tab refocus to catch any missed events
+        invalidate(
+          'salaries', 'salary_files', 'submittedInvoices', 'linkedInvoices',
+          'navInvoices', 'transactions', 'dashboardData', 'dashboardAnalytics',
+          'kintlevo-nav', 'kintlevo-manual', 'uploadHistory',
+          'analyticsRaw', 'analyticsVat', 'recentInvoices',
+          'partners', 'projects', 'projectsList',
+          'pettyCashEntries', 'dashboardPettyCash',
+        );
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
-      // Clean up debounce timers
       debounceTimers.current.forEach(timer => clearTimeout(timer));
       debounceTimers.current.clear();
       if (channelRef.current) {

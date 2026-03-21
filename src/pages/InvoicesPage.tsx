@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -41,7 +41,7 @@ const InvoicesPage = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
-  useRealtimeInvalidation(selectedCompany?.id);
+  
 
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<InvoiceTab>('OUTBOUND');

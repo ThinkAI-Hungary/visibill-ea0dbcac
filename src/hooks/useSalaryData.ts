@@ -4,7 +4,7 @@ import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
-import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { isSalaryItemPaid } from '@/lib/salary-helpers';
@@ -15,7 +15,7 @@ export function useSalaryData() {
   const { selectedCompany } = useCompany();
   const { dateFrom, dateTo } = useDateRange();
   const queryClient = useQueryClient();
-  useRealtimeInvalidation(selectedCompany?.id);
+  
 
   const dateFromStr = dateFrom.toISOString().slice(0, 10);
   const dateToStr = dateTo.toISOString().slice(0, 10);

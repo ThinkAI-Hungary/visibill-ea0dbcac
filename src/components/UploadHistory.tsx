@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
-import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
+
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,7 +54,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
-  useRealtimeInvalidation(selectedCompany?.id);
+  
 
   const companyId = selectedCompany?.id || '';
   const tableName = activeTab === 'invoices' ? 'invoice_uploads' : activeTab === 'salaries' ? 'salary_files' : 'transaction_uploads';

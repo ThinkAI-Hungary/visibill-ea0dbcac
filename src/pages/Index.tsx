@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { STORAGE_KEYS } from '@/lib/constants';
 import { startOfYear, endOfYear } from 'date-fns';
-import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
+
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useNavigate } from 'react-router-dom';
@@ -140,7 +140,7 @@ const Index = () => {
   const { selectedCompany, companies, loading: companyLoading } = useCompany();
   const { dateFrom, dateTo, dateFromFormatted, dateToFormatted } = useDateRange();
   const navigate = useNavigate();
-  useRealtimeInvalidation(selectedCompany?.id);
+  
 
   const companyId = selectedCompany?.id || '';
 
