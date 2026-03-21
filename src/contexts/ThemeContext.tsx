@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { STORAGE_KEYS } from '@/lib/constants';
 
 type Theme = "light" | "dark" | "system";
 
@@ -14,7 +15,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Load theme from localStorage on mount
-    const savedTheme = localStorage.getItem("theme") as Theme | null;
+    const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) as Theme | null;
     if (savedTheme) {
       setThemeState(savedTheme);
       applyTheme(savedTheme);
@@ -41,7 +42,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem("theme", newTheme);
+    localStorage.setItem(STORAGE_KEYS.THEME, newTheme);
     applyTheme(newTheme);
   };
 

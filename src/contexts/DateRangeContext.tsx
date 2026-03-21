@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, addDays, differenceInDays } from 'date-fns';
+import { STORAGE_KEYS } from '@/lib/constants';
 
 const MAX_RANGE_DAYS = 365;
 
@@ -24,9 +25,37 @@ function formatDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/** Restore persisted date range from localStorage, or default to "This Year". */
+function getInitialDates(): { from: Date; to: Date } {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.DATE_RANGE);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      const from = new Date(parsed.from);
+      const to = new Date(parsed.to);
+      if (!isNaN(from.getTime()) && !isNaN(to.getTime())) {
+        return { from, to };
+      }
+    }
+  } catch {
+    // Corrupt data – fall through to default
+  }
+  // Default: This Year
+  return { from: startOfYear(new Date()), to: endOfYear(new Date()) };
+}
+
 export function DateRangeProvider({ children }: { children: ReactNode }) {
-  const [dateFrom, setDateFromRaw] = useState<Date>(startOfMonth(new Date()));
-  const [dateTo, setDateToRaw] = useState<Date>(endOfMonth(new Date()));
+  const initial = getInitialDates();
+  const [dateFrom, setDateFromRaw] = useState<Date>(initial.from);
+  const [dateTo, setDateToRaw] = useState<Date>(initial.to);
+
+  // Persist to localStorage on every change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.DATE_RANGE, JSON.stringify({
+      from: formatDate(dateFrom),
+      to: formatDate(dateTo),
+    }));
+  }, [dateFrom, dateTo]);
 
   const setDateFrom = useCallback((newFrom: Date) => {
     setDateFromRaw(newFrom);

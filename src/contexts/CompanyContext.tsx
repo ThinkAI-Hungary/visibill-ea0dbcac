@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
+import { STORAGE_KEYS } from '@/lib/constants';
 
 export interface Company {
   id: string;
@@ -23,7 +24,7 @@ interface CompanyContextType {
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
-const SELECTED_COMPANY_KEY = 'selectedCompanyId';
+const SELECTED_COMPANY_KEY = STORAGE_KEYS.SELECTED_COMPANY_ID;
 
 export const CompanyProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();

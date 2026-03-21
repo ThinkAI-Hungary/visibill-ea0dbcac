@@ -1,8 +1,9 @@
+import { Suspense, lazy, useCallback } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { CompanyProvider } from "./contexts/CompanyContext";
@@ -10,24 +11,30 @@ import { DateRangeProvider } from "./contexts/DateRangeContext";
 import { ProtectedLayout } from "./components/ProtectedLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthGuard from "./components/AuthGuard";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Onboarding from "./pages/Onboarding";
-import ManualUpload from "./pages/ManualUpload";
-import InvoicesPage from "./pages/InvoicesPage";
-import Integrations from "./pages/Integrations";
-import Settings from "./pages/Settings";
-import Projects from "./pages/Projects";
-import Pricing from "./pages/Pricing";
-import ExchangeRates from "./pages/ExchangeRates";
-import SalariesPage from "./pages/SalariesPage";
-import Analytics from "./pages/Analytics";
-import PartnersPage from "./pages/PartnersPage";
-import TransactionsPage from "./pages/TransactionsPage";
-import NotFound from "./pages/NotFound";
-import KintlevoPage from "./pages/KintlevoPage";
-import PettyCashPage from "./pages/PettyCashPage";
-import ResetPassword from "./pages/ResetPassword";
+import { LoadingSpinner } from "./components/ui/loading-spinner";
+import { useIdleTimeout } from "./hooks/useIdleTimeout";
+import { IdleWarningModal } from "./components/IdleWarningModal";
+import { supabase } from "./integrations/supabase/client";
+
+// Route-level code splitting – each page loads as a separate chunk
+const Index = lazy(() => import("./pages/Index"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const ManualUpload = lazy(() => import("./pages/ManualUpload"));
+const InvoicesPage = lazy(() => import("./pages/InvoicesPage"));
+const Integrations = lazy(() => import("./pages/Integrations"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Projects = lazy(() => import("./pages/Projects"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const ExchangeRates = lazy(() => import("./pages/ExchangeRates"));
+const SalariesPage = lazy(() => import("./pages/SalariesPage"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const PartnersPage = lazy(() => import("./pages/PartnersPage"));
+const TransactionsPage = lazy(() => import("./pages/TransactionsPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const KintlevoPage = lazy(() => import("./pages/KintlevoPage"));
+const PettyCashPage = lazy(() => import("./pages/PettyCashPage"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,7 +48,31 @@ const queryClient = new QueryClient({
 });
 
 function ProtectedPage({ children }: { children: React.ReactNode }) {
-  return <ProtectedRoute>{children}</ProtectedRoute>;
+  const { signOut, user } = useAuth();
+  const { showWarning, secondsLeft, stayActive } = useIdleTimeout(
+    () => signOut(),
+    { warningAfterMs: 28 * 60 * 1000, countdownSec: 120, enabled: !!user }
+  );
+
+  const handleStay = useCallback(async () => {
+    stayActive();
+    // Refresh the Supabase session token
+    try {
+      await supabase.auth.refreshSession();
+    } catch {}
+  }, [stayActive]);
+
+  return (
+    <ProtectedRoute>
+      {children}
+      <IdleWarningModal
+        open={showWarning}
+        secondsLeft={secondsLeft}
+        onStay={handleStay}
+        onLogout={() => signOut()}
+      />
+    </ProtectedRoute>
+  );
 }
 
 function AuthGuardPage({ children }: { children: React.ReactNode }) {
@@ -58,7 +89,8 @@ const App = () => (
               <TooltipProvider>
                 <Toaster />
                 <BrowserRouter>
-                  <Routes>
+                  <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+                    <Routes>
                     {/* Auth route without layout */}
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
@@ -114,6 +146,7 @@ const App = () => (
 
                     <Route path="*" element={<NotFound />} />
                   </Routes>
+                  </Suspense>
                 </BrowserRouter>
               </TooltipProvider>
             </SubscriptionProvider>

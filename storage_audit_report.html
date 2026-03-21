@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visibill – Cache, Cookie & Storage Audit Report</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #334155;
+      --border: #475569;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --green: #4ade80;
+      --yellow: #fbbf24;
+      --red: #f87171;
+      --blue: #60a5fa;
+      --purple: #a78bfa;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 40px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    @media print {
+      body { background: #fff; color: #1e293b; padding: 20px; font-size: 11pt; }
+      .card { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; }
+      .alert { border-left-color: #475569 !important; }
+      h1, h2, h3 { color: #0f172a !important; }
+      table th { background: #e2e8f0 !important; color: #1e293b !important; }
+      table td { border-color: #e2e8f0 !important; color: #334155 !important; }
+      code { background: #e2e8f0 !important; color: #1e293b !important; }
+      pre { background: #f1f5f9 !important; border-color: #e2e8f0 !important; }
+      pre code { color: #334155 !important; }
+      .badge { color: #1e293b !important; }
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 40px;
+      border-bottom: 1px solid var(--surface2);
+      padding-bottom: 20px;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin: 40px 0 16px 0;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--surface2);
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 24px 0 12px 0;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 0.88rem;
+    }
+
+    table th {
+      background: var(--surface2);
+      color: var(--accent);
+      font-weight: 600;
+      text-align: left;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    table td {
+      padding: 8px 12px;
+      border: 1px solid var(--surface2);
+      vertical-align: top;
+      color: var(--text);
+    }
+
+    table tr:nth-child(even) td {
+      background: rgba(30, 41, 59, 0.5);
+    }
+
+    code {
+      background: var(--surface2);
+      color: var(--accent);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85em;
+    }
+
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      margin: 12px 0;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .alert {
+      border-left: 4px solid;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 0.9rem;
+    }
+
+    .alert-warning {
+      border-left-color: var(--yellow);
+      background: rgba(251, 191, 36, 0.08);
+    }
+
+    .alert-warning .alert-title { color: var(--yellow); }
+
+    .alert-info {
+      border-left-color: var(--blue);
+      background: rgba(96, 165, 250, 0.08);
+    }
+
+    .alert-info .alert-title { color: var(--blue); }
+
+    .alert-tip {
+      border-left-color: var(--green);
+      background: rgba(74, 222, 128, 0.08);
+    }
+
+    .alert-tip .alert-title { color: var(--green); }
+
+    .alert-important {
+      border-left-color: var(--purple);
+      background: rgba(167, 139, 250, 0.08);
+    }
+
+    .alert-important .alert-title { color: var(--purple); }
+
+    .alert-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .badge-ok { background: rgba(74, 222, 128, 0.15); color: var(--green); }
+    .badge-warn { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+    .badge-err { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+    .badge-info { background: rgba(96, 165, 250, 0.15); color: var(--blue); }
+
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin: 24px 0;
+    }
+
+    .toc-title {
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    .toc ol {
+      padding-left: 20px;
+      color: var(--text-muted);
+    }
+
+    .toc li { margin: 4px 0; }
+    .toc a { color: var(--accent); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    .file-ref { color: var(--text-muted); font-style: italic; font-size: 0.82em; }
+
+    .page-break { page-break-before: always; }
+  </style>
+</head>
+<body>
+
+  <h1>🔍 Cache, Cookie & Storage Audit Report</h1>
+  <p class="subtitle">
+    Visibill Frontend Alkalmazás &bull; Készült: 2026. március 21. &bull; Állapot: Status Quo Felmérés
+  </p>
+
+  <nav class="toc">
+    <div class="toc-title">📋 Tartalomjegyzék</div>
+    <ol>
+      <li><a href="#localstorage">LocalStorage & SessionStorage</a></li>
+      <li><a href="#tanstack">API Caching (TanStack Query)</a></li>
+      <li><a href="#cookies">Cookie kezelés</a></li>
+      <li><a href="#consistency">Adat-konzisztenciák</a></li>
+      <li><a href="#recommendations">Összefoglaló & Javaslatok</a></li>
+    </ol>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <h2 id="localstorage">1. LocalStorage & SessionStorage</h2>
+
+  <h3>1.1 Használt kulcsok</h3>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Kulcs</th>
+          <th>Típus</th>
+          <th>Író komponens</th>
+          <th>Olvasó komponens</th>
+          <th>Cél</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>theme</code></td>
+          <td><code>"dark" | "light"</code></td>
+          <td>ThemeContext.tsx</td>
+          <td>ThemeContext.tsx</td>
+          <td>Téma preferencia megőrzése</td>
+        </tr>
+        <tr>
+          <td><code>selectedCompanyId</code></td>
+          <td><code>string (UUID)</code></td>
+          <td>CompanyContext.tsx</td>
+          <td>CompanyContext.tsx</td>
+          <td>Kiválasztott cég megjegyzése</td>
+        </tr>
+        <tr>
+          <td><code>sb-vxxg...-auth-token</code></td>
+          <td><code>JSON (session)</code></td>
+          <td>Supabase SDK (auto)</td>
+          <td>Supabase SDK, AuthContext</td>
+          <td>Supabase auth session perzisztencia</td>
+        </tr>
+        <tr>
+          <td><code>supabase.auth.token</code></td>
+          <td><code>JSON (session)</code></td>
+          <td>Supabase SDK (legacy)</td>
+          <td>AuthContext.tsx</td>
+          <td>Legacy auth token (régi SDK)</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin-top: 8px; color: var(--text-muted); font-size: 0.85rem;">
+      <strong>SessionStorage:</strong> Nincs használatban sehol az alkalmazásban.
+    </p>
+  </div>
+
+  <h3>1.2 Életciklus – Kijelentkezéskor (Logout)</h3>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Kulcs</th>
+          <th>Törlődik logout-kor?</th>
+          <th>Forrásfájl</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>sb-...-auth-token</code></td>
+          <td><span class="badge badge-ok">✅ Igen</span></td>
+          <td class="file-ref">AuthContext.tsx:142</td>
+        </tr>
+        <tr>
+          <td><code>supabase.auth.token</code></td>
+          <td><span class="badge badge-ok">✅ Igen</span></td>
+          <td class="file-ref">AuthContext.tsx:143</td>
+        </tr>
+        <tr>
+          <td><code>theme</code></td>
+          <td><span class="badge badge-info">❌ Nem (szándékos)</span></td>
+          <td class="file-ref">–</td>
+        </tr>
+        <tr>
+          <td><code>selectedCompanyId</code></td>
+          <td><span class="badge badge-err">⚠️ NEM törlődik!</span></td>
+          <td class="file-ref">Hiányzik a signOut-ból</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert alert-warning">
+    <div class="alert-title">⚠️ Biztonsági figyelmeztetés</div>
+    <code>selectedCompanyId</code> nem törlődik kijelentkezéskor. Ha User A kijelentkezik és User B bejelentkezik ugyanazon a gépen, a <code>selectedCompanyId</code> még User A cégére mutat. Az RLS megvéd adatszivárgástól, de felesleges hibákat generálhat és az UX nem ideális.
+  </div>
+
+  <h3>1.3 Multi-tenancy – Cégváltás</h3>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Szempont</th><th>Státusz</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>selectedCompanyId</code> frissül cégváltáskor?</td>
+          <td><span class="badge badge-ok">✅ Igen</span></td>
+        </tr>
+        <tr>
+          <td>TanStack Query cache invalidálódik cégváltáskor?</td>
+          <td><span class="badge badge-ok">✅ Igen</span> – queryKey-ek tartalmazzák a companyId-t</td>
+        </tr>
+        <tr>
+          <td>DateRange szűrők cégváltáskor resetelődnek?</td>
+          <td><span class="badge badge-warn">❌ NEM</span> – DateRangeContext globális</td>
+        </tr>
+        <tr>
+          <td>Szűrő-state (filters) cégváltáskor resetelődnek?</td>
+          <td><span class="badge badge-ok">✅ Igen</span> – InvoicesPage explicit reset</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert alert-info">
+    <div class="alert-title">ℹ️ Megjegyzés</div>
+    A DateRange megmaradása cégváltáskor <strong>elfogadható viselkedés</strong> – a user valószínűleg ugyanarra az időszakra kíváncsi a másik cégben is. Ha ez nem szándékos, érdemes lehet resetelni.
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <h2 id="tanstack" class="page-break">2. API Caching (TanStack Query)</h2>
+
+  <h3>2.1 Globális konfiguráció</h3>
+  <div class="card">
+    <pre><code>// App.tsx:37-46
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,        // 5 perc
+      gcTime: 10 * 60 * 1000,           // 10 perc GC
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});</code></pre>
+  </div>
+
+  <h3>2.2 Per-query staleTime felülírások</h3>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Query</th><th>staleTime</th><th>Forrás</th><th>Értékelés</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Globális default</td>
+          <td>5 perc</td>
+          <td class="file-ref">App.tsx:40</td>
+          <td><span class="badge badge-ok">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td><code>transactionFilterOptions</code></td>
+          <td>10 perc</td>
+          <td class="file-ref">TransactionsPage.tsx:159</td>
+          <td><span class="badge badge-ok">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td><code>integrations</code></td>
+          <td>2 perc</td>
+          <td class="file-ref">Integrations.tsx:52</td>
+          <td><span class="badge badge-ok">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td><code>exchangeRatesPage</code></td>
+          <td>1 óra</td>
+          <td class="file-ref">ExchangeRates.tsx:67</td>
+          <td><span class="badge badge-ok">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td>Dashboard <code>exchangeRates</code></td>
+          <td>1 óra</td>
+          <td class="file-ref">Index.tsx:184</td>
+          <td><span class="badge badge-ok">✅ OK</span></td>
+        </tr>
+        <tr>
+          <td>Dashboard <code>categories</code></td>
+          <td><strong>Infinity</strong></td>
+          <td class="file-ref">Index.tsx:214</td>
+          <td><span class="badge badge-warn">⚠️ Túl agresszív</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert alert-warning">
+    <div class="alert-title">⚠️ Over-caching</div>
+    A Dashboard <code>categories</code> query <code>staleTime: Infinity</code>-vel fut. Ha a user egy másik tabon új kategóriát hoz létre, a Dashboard nem fogja látni amíg ki nem lép. Javasolt: <code>30 * 60 * 1000</code> (30 perc).
+  </div>
+
+  <h3>2.3 QueryKey struktúra – Multi-tenancy biztonság</h3>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Szempont</th><th>Státusz</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Minden queryKey tartalmaz <code>companyId</code>-t?</td>
+          <td><span class="badge badge-ok">✅ Igen</span> – kivétel: <code>exchangeRates()</code> ami globális (rendben van)</td>
+        </tr>
+        <tr>
+          <td>Dátum-függő query-k tartalmazzák a dateFrom/dateTo-t?</td>
+          <td><span class="badge badge-ok">✅ Igen</span></td>
+        </tr>
+        <tr>
+          <td>Van-e hard-coded queryKey a kódban?</td>
+          <td><span class="badge badge-ok">✅ Nincs</span> – minden a <code>queryKeys</code> factory-ból jön</td>
+        </tr>
+        <tr>
+          <td>Centralizált queryKey fájl?</td>
+          <td><span class="badge badge-ok">✅ queryKeys.ts</span> – tipizált, jól struktúrált</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert alert-tip">
+    <div class="alert-title">💡 Pozitív megállapítás</div>
+    A queryKey struktúra <strong>kiváló</strong> – centralizált, tipizált, és minden cég-specifikus adat izolált. Cégváltáskor a TanStack Query automatikusan új adat-lekérést indít, mert a queryKey megváltozik.
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <h2 id="cookies" class="page-break">3. Cookie kezelés</h2>
+
+  <h3>3.1 Használt sütik</h3>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Cookie neve</th><th>Beállítja</th><th>Típus</th><th>Értéke</th><th>Max-Age</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>sidebar:state</code></td>
+          <td class="file-ref">sidebar.tsx:79</td>
+          <td>UI preferencia</td>
+          <td><code>"true" | "false"</code></td>
+          <td>7 nap</td>
+        </tr>
+        <tr>
+          <td>Supabase auth cookies</td>
+          <td>Supabase SDK</td>
+          <td>Auth</td>
+          <td>session data</td>
+          <td>SDK kezeli</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>3.2 Biztonsági értékelés – <code>sidebar:state</code></h3>
+  <div class="card">
+    <pre><code>// sidebar.tsx:79
+document.cookie = `sidebar:state=${openState}; path=/; max-age=604800`;</code></pre>
+    <table style="margin-top: 12px;">
+      <thead>
+        <tr><th>Flag</th><th>Beállítva?</th><th>Értékelés</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>Secure</code></td>
+          <td><span class="badge badge-warn">❌ Hiányzik</span></td>
+          <td>Nem kritikus (UI pref.), de best practice lenne HTTPS-en</td>
+        </tr>
+        <tr>
+          <td><code>SameSite</code></td>
+          <td><span class="badge badge-warn">❌ Hiányzik</span></td>
+          <td>Default: Lax a legtöbb böngészőben – elfogadható</td>
+        </tr>
+        <tr>
+          <td><code>HttpOnly</code></td>
+          <td><span class="badge badge-info">N/A</span></td>
+          <td>Kliens-oldali cookie, JS-ből kell olvasni</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <h2 id="consistency">4. Adat-konzisztenciák</h2>
+
+  <h3>4.1 Duplikált tárolás</h3>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Adat</th><th>Hol?</th><th>Szinkronban?</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>selectedCompanyId</code></td>
+          <td>localStorage + CompanyContext state</td>
+          <td><span class="badge badge-ok">✅ Igen</span> – együtt frissülnek</td>
+        </tr>
+        <tr>
+          <td><code>theme</code></td>
+          <td>localStorage + ThemeContext state</td>
+          <td><span class="badge badge-ok">✅ Igen</span> – együtt frissülnek</td>
+        </tr>
+        <tr>
+          <td>Auth session</td>
+          <td>localStorage (SDK) + AuthContext state</td>
+          <td><span class="badge badge-ok">✅ Igen</span> – onAuthStateChange listener</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin-top: 10px; color: var(--green); font-weight: 600;">✅ Duplikáció nincs – minden localStorage érték pontosan egy Context state-tel van szinkronban.</p>
+  </div>
+
+  <h3>4.2 Race Condition kockázat</h3>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Szcenárió</th><th>Kockázat</th><th>Magyarázat</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>localStorage olvasás vs API hívás</td>
+          <td><span class="badge badge-ok">✅ Nincs</span></td>
+          <td>Helyes sorrend: API válasz → localStorage check → state set</td>
+        </tr>
+        <tr>
+          <td>DateRange init vs query indulás</td>
+          <td><span class="badge badge-ok">✅ Nincs</span></td>
+          <td>useState default értékek szinkronban azonnal rendelkezésre állnak</td>
+        </tr>
+        <tr>
+          <td>Supabase session restore vs first query</td>
+          <td><span class="badge badge-warn">⚠️ Minimális</span></td>
+          <td>Az <code>enabled: !!user</code> guard megvédi</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>4.3 DateRangeContext – Perzisztencia hiánya</h3>
+  <div class="alert alert-important">
+    <div class="alert-title">ℹ️ Fontos</div>
+    A <code>DateRangeContext</code> <strong>kizárólag React state-et</strong> használ (nem localStorage). Default: aktuális hónap elejétől végéig. Oldal újratöltésekor resetelődik. Ez lehet szándékos, de ha a user gyakran vált dátumot és refreshel, elveszíti a beállítást.
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <h2 id="recommendations" class="page-break">5. Összefoglaló & Javaslatok</h2>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Kulcs / Terület</th>
+          <th>Típus</th>
+          <th>Cél</th>
+          <th>Probléma</th>
+          <th>Javasolt módosítás</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>selectedCompanyId</code></td>
+          <td>localStorage</td>
+          <td>Cég megjegyzése</td>
+          <td><span class="badge badge-err">Nem törlődik logout-kor</span></td>
+          <td>Logout-kor törölni a <code>signOut</code> fn-ben</td>
+        </tr>
+        <tr>
+          <td><code>theme</code></td>
+          <td>localStorage</td>
+          <td>Téma megőrzése</td>
+          <td><span class="badge badge-ok">Rendben</span></td>
+          <td>–</td>
+        </tr>
+        <tr>
+          <td><code>sb-...-auth-token</code></td>
+          <td>localStorage</td>
+          <td>Auth session</td>
+          <td><span class="badge badge-ok">Törlődik logout-kor</span></td>
+          <td>–</td>
+        </tr>
+        <tr>
+          <td><code>supabase.auth.token</code></td>
+          <td>localStorage</td>
+          <td>Legacy auth</td>
+          <td><span class="badge badge-warn">Felesleges lehet</span></td>
+          <td>Supabase SDK v2 nem ezt használja – ellenőrizni, törölhető-e</td>
+        </tr>
+        <tr>
+          <td><code>sidebar:state</code></td>
+          <td>Cookie</td>
+          <td>Sidebar nyitva/zárva</td>
+          <td><span class="badge badge-warn">Hiányzik Secure flag</span></td>
+          <td><code>; Secure; SameSite=Lax</code> hozzáadása</td>
+        </tr>
+        <tr>
+          <td>DateRange</td>
+          <td>React state</td>
+          <td>Dátum szűrő</td>
+          <td><span class="badge badge-info">Nincs perzisztencia</span></td>
+          <td><strong>Opcionális:</strong> localStorage-ba mentés</td>
+        </tr>
+        <tr>
+          <td>Dashboard categories</td>
+          <td>TanStack Query</td>
+          <td>Kategória cache</td>
+          <td><span class="badge badge-warn">staleTime: Infinity</span></td>
+          <td>Csökkenteni 30 percre</td>
+        </tr>
+        <tr>
+          <td>Hard-coded kulcsok</td>
+          <td>String literálok</td>
+          <td>–</td>
+          <td><span class="badge badge-warn">"theme", auth token kulcsok</span></td>
+          <td>Konstansokba szervezni (<code>storageKeys.ts</code>)</td>
+        </tr>
+        <tr>
+          <td><code>queryKeys.ts</code></td>
+          <td>TanStack Query</td>
+          <td>Cache key factory</td>
+          <td><span class="badge badge-ok">Kiváló struktúra</span></td>
+          <td>–</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Hard-coded string kulcsok helyszínei</h3>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Kulcs</th><th>Fájl : Sor</th><th>Már konstansban?</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>"theme"</code></td>
+          <td>ThemeContext.tsx : 17, 44</td>
+          <td><span class="badge badge-err">❌ Nem</span></td>
+        </tr>
+        <tr>
+          <td><code>'selectedCompanyId'</code></td>
+          <td>CompanyContext.tsx : 26</td>
+          <td><span class="badge badge-ok">✅ Igen</span> (<code>SELECTED_COMPANY_KEY</code>)</td>
+        </tr>
+        <tr>
+          <td><code>'sb-vxxg...-auth-token'</code></td>
+          <td>AuthContext.tsx : 49, 142</td>
+          <td><span class="badge badge-err">❌ Nem</span></td>
+        </tr>
+        <tr>
+          <td><code>'supabase.auth.token'</code></td>
+          <td>AuthContext.tsx : 143</td>
+          <td><span class="badge badge-err">❌ Nem</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert alert-tip" style="margin-top: 24px;">
+    <div class="alert-title">💡 Javaslat</div>
+    Érdemes egy közös <code>src/lib/storageKeys.ts</code> fájlt létrehozni, amely tartalmazza az összes localStorage/cookie kulcsot konstansként. Ez megkönnyíti a karbantartást és megelőzi az elgépelésből eredő hibákat.
+  </div>
+
+  <div style="margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--surface2); text-align: center; color: var(--text-muted); font-size: 0.8rem;">
+    Visibill Storage Audit Report &bull; 2026. március 21. &bull; Generálta: Antigravity AI
+  </div>
+
+</body>
+</html>

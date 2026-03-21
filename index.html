@@ -8,10 +8,12 @@
     <meta name="description" content="Modern invoice and financial management system" />
     <meta name="author" content="Visibill" />
     
-    <!-- Montserrat Font -->
+    <!-- Montserrat Font (non-render-blocking) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"></noscript>
 
     <meta property="og:title" content="Visibill" />
     <meta property="og:description" content="Modern invoice and financial management system" />
@@ -21,24 +23,50 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <style>
+      @keyframes initial-spin { to { transform: rotate(360deg); } }
+      #initial-loader {
+        position: fixed; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        background-color: #030712; z-index: 9999;
+        transition: opacity 200ms ease-out;
+      }
+      #initial-loader.fade-out { opacity: 0; pointer-events: none; }
+      #initial-loader .spinner {
+        width: 32px; height: 32px; border-radius: 50%;
+        border: 4px solid #18b8a0; border-right-color: transparent;
+        animation: initial-spin 1s linear infinite;
+      }
+      #initial-loader .label {
+        margin-top: 8px; color: #94a3b8; font-size: 14px;
+        font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+      }
+    </style>
   </head>
 
   <body style="background-color:#030712;">
+    <div id="initial-loader">
+      <div class="spinner"></div>
+      <p class="label">Azonosítás...</p>
+    </div>
     <script>
       // Prevent FOUC (Flash of Unstyled Content) by applying theme immediately
       (function() {
         var theme = localStorage.getItem('theme');
         var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         var isDark = theme === 'dark' || (theme === 'system' && prefersDark) || (!theme && prefersDark);
+        var loader = document.getElementById('initial-loader');
         
         if (isDark) {
           document.documentElement.classList.add('dark');
           document.documentElement.classList.remove('light');
           document.body.style.backgroundColor = '#030712';
+          if (loader) loader.style.backgroundColor = '#030712';
         } else {
           document.documentElement.classList.remove('dark');
           document.documentElement.classList.add('light');
           document.body.style.backgroundColor = '#f1f3f5';
+          if (loader) loader.style.backgroundColor = '#f1f3f5';
         }
       })();
     </script>

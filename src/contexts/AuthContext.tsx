@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { STORAGE_KEYS, SIGNOUT_DELETE_KEYS } from '@/lib/constants';
 
 interface AuthContextType {
   user: User | null;
@@ -46,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // If refresh token is invalid, clear local storage and reset state
         if (error.message.includes('Refresh Token') || error.message.includes('refresh_token')) {
           console.log('Invalid refresh token detected, clearing session...');
-          localStorage.removeItem('sb-vxxgvdlqvvchtlmqnrqf-auth-token');
+          localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
           setSession(null);
           setUser(null);
         }
@@ -138,9 +139,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn('signOut fallback (forced):', err?.message || err);
     } finally {
       try {
-        // Supabase auth token kulcs a projekt ref alapján
-        localStorage.removeItem('sb-vxxgvdlqvvchtlmqnrqf-auth-token');
-        localStorage.removeItem('supabase.auth.token');
+        // Selective cleanup: only security-sensitive keys
+        // UX preferences (theme, date_range, dashboard prefs) are preserved
+        SIGNOUT_DELETE_KEYS.forEach(key => localStorage.removeItem(key));
       } catch {}
       setUser(null);
       setSession(null);

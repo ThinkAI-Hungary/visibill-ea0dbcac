@@ -268,7 +268,7 @@ export function useInvoiceMutations({
 
   // ── Export ──
 
-  const handleExportNav = (exportFormat: 'csv' | 'xlsx') => {
+  const handleExportNav = async (exportFormat: 'csv' | 'xlsx') => {
     const getExportData = (invoice: NavInvoice) => {
       const partnerTaxNumber = getPartnerTaxNumber(invoice);
       return [
@@ -294,10 +294,10 @@ export function useInvoiceMutations({
     ];
 
     const exportData = filteredAndSortedNavInvoices.map(invoice => getExportData(invoice));
-    exportToFile(headers, exportData, exportFormat, 'nav_szamlak');
+    await exportToFile(headers, exportData, exportFormat, 'nav_szamlak');
   };
 
-  const handleExportSubmitted = (exportFormat: 'csv' | 'xlsx') => {
+  const handleExportSubmitted = async (exportFormat: 'csv' | 'xlsx') => {
     const getExportData = (invoice: SubmittedInvoice) => {
       return [
         invoice.kibocsatas_datuma || '',
@@ -320,7 +320,7 @@ export function useInvoiceMutations({
     ];
 
     const exportData = filteredAndSortedSubmittedInvoices.map(invoice => getExportData(invoice));
-    exportToFile(headers, exportData, exportFormat, 'bekuldott_szamlak');
+    await exportToFile(headers, exportData, exportFormat, 'bekuldott_szamlak');
   };
 
   const handleExport = (exportFormat: 'csv' | 'xlsx') => {

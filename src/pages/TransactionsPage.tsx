@@ -209,8 +209,7 @@ const TransactionsPage = () => {
 
       return { rows: fetchedTransactions, totalCount: count ?? 0 };
     },
-    enabled: !!user && !!selectedCompany?.id,
-    placeholderData: (previousData) => previousData, // keep previous data while loading new page
+    enabled: !!user && !!selectedCompany?.id && !!dateFromStr && !!dateToStr,
   });
 
   const transactions = queryResult?.rows ?? [];
@@ -299,7 +298,7 @@ const TransactionsPage = () => {
   };
 
   // Export function
-  const handleExport = (exportFormat: 'csv' | 'xlsx') => {
+  const handleExport = async (exportFormat: 'csv' | 'xlsx') => {
     const headers = [
       'Dátum', 'Leírás', 'Összeg', 'Pénznem', 'Típus', 'Státusz', 'Pontszám', 'Indoklás'
     ];
@@ -322,7 +321,7 @@ const TransactionsPage = () => {
       ];
     });
 
-    exportToFile(headers, exportData, exportFormat, 'tranzakciok');
+    await exportToFile(headers, exportData, exportFormat, 'tranzakciok');
   };
 
 

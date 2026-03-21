@@ -57,7 +57,7 @@ const InvoicesPage = () => {
   const [selectedSubmittedIds, setSelectedSubmittedIds] = useState<Set<string>>(new Set());
 
   const companyId = selectedCompany?.id || '';
-  const enabled = !!user && !!selectedCompany;
+  const enabled = !!user && !!selectedCompany && !!dateFromFormatted && !!dateToFormatted;
   const isSubmittedTab = activeTab === 'SUBMITTED_INBOUND' || activeTab === 'SUBMITTED_OUTBOUND';
 
   // ── Data hook ──

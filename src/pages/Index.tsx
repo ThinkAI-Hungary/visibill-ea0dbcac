@@ -1,4 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { STORAGE_KEYS } from '@/lib/constants';
+import { startOfYear, endOfYear } from 'date-fns';
 import { useRealtimeInvalidation } from '@/hooks/useRealtimeInvalidation';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
@@ -141,19 +143,58 @@ const Index = () => {
 
   const companyId = selectedCompany?.id || '';
 
-  // UI-only state
+  // Chart always shows full current year (independent of global date picker)
+  const chartYearFrom = useMemo(() => startOfYear(new Date()), []);
+  const chartYearTo = useMemo(() => endOfYear(new Date()), []);
+  const chartYearFromStr = useMemo(() => {
+    const y = chartYearFrom.getFullYear();
+    return `${y}-01-01`;
+  }, [chartYearFrom]);
+  const chartYearToStr = useMemo(() => {
+    const y = chartYearTo.getFullYear();
+    return `${y}-12-31`;
+  }, [chartYearTo]);
+
+  // UI-only state (persisted preferences)
   const [selectedCurrency, setSelectedCurrency] = useState<string>('HUF');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [showBrutto, setShowBrutto] = useState(true);
+
+  // ── Persisted preferences ──
+  const [showBrutto, setShowBruttoRaw] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.DASHBOARD_SHOW_BRUTTO);
+    return saved !== null ? saved === 'true' : false; // Default: Nettó
+  });
+
+  const chartLineDefaults = { revenuePaid: true, revenueUnpaid: true, expensesPaid: true, expensesUnpaid: true, salaries: true, cashFlow: true };
+  const [chartLines, setChartLinesRaw] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.DASHBOARD_CHART_LINES);
+      if (saved) return { ...chartLineDefaults, ...JSON.parse(saved) };
+    } catch {}
+    return chartLineDefaults;
+  });
+
+  const setShowBrutto = (v: boolean) => {
+    setShowBruttoRaw(v);
+    localStorage.setItem(STORAGE_KEYS.DASHBOARD_SHOW_BRUTTO, String(v));
+  };
+  const setChartLine = (key: keyof typeof chartLineDefaults, v: boolean) => {
+    setChartLinesRaw(prev => {
+      const next = { ...prev, [key]: v };
+      localStorage.setItem(STORAGE_KEYS.DASHBOARD_CHART_LINES, JSON.stringify(next));
+      return next;
+    });
+  };
+
   const [vatSectionOpen, setVatSectionOpen] = useState(true);
   const [revenueSectionOpen, setRevenueSectionOpen] = useState(true);
-  const [showRevenuePaid, setShowRevenuePaid] = useState(true);
-  const [showRevenueUnpaid, setShowRevenueUnpaid] = useState(true);
-  const [showExpensesPaid, setShowExpensesPaid] = useState(true);
-  const [showExpensesUnpaid, setShowExpensesUnpaid] = useState(true);
-  const [showSalaries, setShowSalaries] = useState(true);
-  const [showCashFlow, setShowCashFlow] = useState(false);
+  const showRevenuePaid = chartLines.revenuePaid;
+  const showRevenueUnpaid = chartLines.revenueUnpaid;
+  const showExpensesPaid = chartLines.expensesPaid;
+  const showExpensesUnpaid = chartLines.expensesUnpaid;
+  const showSalaries = chartLines.salaries;
+  const showCashFlow = chartLines.cashFlow;
   const [showTour, setShowTour] = useState(false);
 
   const vatChartRef = useRef<HTMLDivElement>(null);
@@ -357,22 +398,22 @@ const Index = () => {
     enabled: !!companyId,
   });
 
-  // ── Analytics raw data (for chart) ──
+  // ── Analytics raw data (for chart – always full current year) ──
   const { data: analyticsRaw, isLoading: analyticsLoading } = useQuery({
-    queryKey: queryKeys.analyticsRaw(companyId, dateFromFormatted, dateToFormatted),
+    queryKey: queryKeys.analyticsRaw(companyId, chartYearFromStr, chartYearToStr),
     queryFn: async () => {
       const [navRes, salRes] = await Promise.all([
         supabase.from("nav_invoices")
           .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, transaction_id, currency")
           .eq("company_id", companyId)
-          .gte("invoice_issue_date", dateFromFormatted)
-          .lte("invoice_issue_date", dateToFormatted),
+          .gte("invoice_issue_date", chartYearFromStr)
+          .lte("invoice_issue_date", chartYearToStr),
         supabase.from("salary")
           .select("dátum, összeg, statusz, transaction_id, fizetesi_mod")
           .eq("company_id", companyId)
           .or("transaction_id.not.is.null,fizetesi_mod.eq.készpénz")
-          .gte("dátum", dateFromFormatted)
-          .lte("dátum", dateToFormatted),
+          .gte("dátum", chartYearFromStr)
+          .lte("dátum", chartYearToStr),
       ]);
 
       return {
@@ -553,17 +594,12 @@ const Index = () => {
       return amount / rate;
     };
 
-    // Build months based on the selected date range
-    const startMonth = dateFrom.getMonth();
-    const endMonth = dateTo.getMonth();
-    const startYear = dateFrom.getFullYear();
-    const endYear = dateTo.getFullYear();
-
+    // Chart always shows full current year (Jan–Dec)
+    const currentYear = new Date().getFullYear();
     const monthlyMap: { [key: string]: MonthlyData } = {};
     const monthKeys: string[] = [];
-    let y = startYear, m = startMonth;
-    while (y < endYear || (y === endYear && m <= endMonth)) {
-      const key = `${y}-${m}`;
+    for (let m = 0; m <= 11; m++) {
+      const key = `${currentYear}-${m}`;
       monthKeys.push(key);
       monthlyMap[key] = {
         month: MONTH_NAMES[m],
@@ -575,8 +611,6 @@ const Index = () => {
         salaries: 0,
         cashFlow: 0,
       };
-      m++;
-      if (m > 11) { m = 0; y++; }
     }
 
     rawInvoices.forEach(inv => {
@@ -617,7 +651,7 @@ const Index = () => {
     });
 
     return result;
-  }, [rawInvoices, rawSalaries, showBrutto, exchangeRates, dateFrom, dateTo]);
+  }, [rawInvoices, rawSalaries, showBrutto, exchangeRates]);
 
 
 
@@ -639,25 +673,25 @@ const Index = () => {
   const displayVatPosition = displayOutboundVat - displayInboundVat;
   const maxVatValue = Math.max(displayOutboundVat, displayInboundVat, Math.abs(displayVatPosition));
 
-  const vatBarData = [
+  const vatBarData = useMemo(() => [
     { name: "Összes ÁFA", value: displayOutboundVat, color: "#F59E0B" },
     { name: "Levonható ÁFA", value: displayInboundVat, color: "#8B5CF6" },
     { name: "Fizetendő ÁFA", value: displayVatPosition, color: "#A78BFA" }
-  ];
+  ], [displayOutboundVat, displayInboundVat, displayVatPosition]);
 
-  const outboundTotalVat = outboundVatCategories.reduce((sum, c) => sum + c.vatAmount, 0);
-  const outboundTotalNet = outboundVatCategories.reduce((sum, c) => sum + c.netAmount, 0);
-  const inboundTotalVat = inboundVatCategories.reduce((sum, c) => sum + c.vatAmount, 0);
-  const inboundTotalNet = inboundVatCategories.reduce((sum, c) => sum + c.netAmount, 0);
+  const outboundTotalVat = useMemo(() => outboundVatCategories.reduce((sum, c) => sum + c.vatAmount, 0), [outboundVatCategories]);
+  const outboundTotalNet = useMemo(() => outboundVatCategories.reduce((sum, c) => sum + c.netAmount, 0), [outboundVatCategories]);
+  const inboundTotalVat = useMemo(() => inboundVatCategories.reduce((sum, c) => sum + c.vatAmount, 0), [inboundVatCategories]);
+  const inboundTotalNet = useMemo(() => inboundVatCategories.reduce((sum, c) => sum + c.netAmount, 0), [inboundVatCategories]);
 
-  const getCategoryBreakdownData = () => {
+  const categoryBreakdownData = useMemo(() => {
     if (!categories.length || !invoices.length) return [];
 
-    const categoryStats = categories.map(category => {
+    const allTotal = metrics?.totalAmountByCurrency ? Object.values(metrics.totalAmountByCurrency).reduce((sum, val) => sum + val, 0) : 0;
+
+    return categories.map(category => {
       const categoryInvoices = invoices.filter(invoice => invoice.category_id === category.id && !(invoice as any).reference_number);
       const totalAmount = categoryInvoices.reduce((sum, invoice) => sum + invoice.brutto_vegosszeg, 0);
-
-      const allTotal = metrics?.totalAmountByCurrency ? Object.values(metrics.totalAmountByCurrency).reduce((sum, val) => sum + val, 0) : 0;
 
       return {
         id: category.id,
@@ -670,9 +704,7 @@ const Index = () => {
       };
     }).filter(category => category.invoice_count > 0)
       .sort((a, b) => b.total_amount - a.total_amount);
-
-    return categoryStats;
-  };
+  }, [categories, invoices, metrics]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -1007,7 +1039,7 @@ const Index = () => {
                     <label className="flex items-center gap-2 cursor-pointer">
                       <Checkbox 
                         checked={showRevenuePaid} 
-                        onCheckedChange={(checked) => setShowRevenuePaid(!!checked)}
+                        onCheckedChange={(checked) => setChartLine('revenuePaid', !!checked)}
                         className="border-green-600 data-[state=checked]:bg-green-600"
                       />
                       <span className="text-sm text-green-600">Bevétel (fizetett)</span>
@@ -1015,7 +1047,7 @@ const Index = () => {
                     <label className="flex items-center gap-2 cursor-pointer">
                       <Checkbox 
                         checked={showRevenueUnpaid} 
-                        onCheckedChange={(checked) => setShowRevenueUnpaid(!!checked)}
+                        onCheckedChange={(checked) => setChartLine('revenueUnpaid', !!checked)}
                         className="border-cyan-500 data-[state=checked]:bg-cyan-500"
                       />
                       <span className="text-sm text-cyan-500">Kintlévőségek</span>
@@ -1023,7 +1055,7 @@ const Index = () => {
                     <label className="flex items-center gap-2 cursor-pointer">
                       <Checkbox 
                         checked={showExpensesPaid} 
-                        onCheckedChange={(checked) => setShowExpensesPaid(!!checked)}
+                        onCheckedChange={(checked) => setChartLine('expensesPaid', !!checked)}
                         className="border-red-600 data-[state=checked]:bg-red-600"
                       />
                       <span className="text-sm text-red-600">Kiadás (fizetett)</span>
@@ -1031,7 +1063,7 @@ const Index = () => {
                     <label className="flex items-center gap-2 cursor-pointer">
                       <Checkbox 
                         checked={showExpensesUnpaid} 
-                        onCheckedChange={(checked) => setShowExpensesUnpaid(!!checked)}
+                        onCheckedChange={(checked) => setChartLine('expensesUnpaid', !!checked)}
                         className="border-amber-500 data-[state=checked]:bg-amber-500"
                       />
                       <span className="text-sm text-amber-500">Követelések</span>
@@ -1039,7 +1071,7 @@ const Index = () => {
                     <label className="flex items-center gap-2 cursor-pointer">
                       <Checkbox 
                         checked={showSalaries} 
-                        onCheckedChange={(checked) => setShowSalaries(!!checked)}
+                        onCheckedChange={(checked) => setChartLine('salaries', !!checked)}
                         className="border-purple-500 data-[state=checked]:bg-purple-500"
                       />
                       <span className="text-sm text-purple-500">Bérek</span>
@@ -1047,7 +1079,7 @@ const Index = () => {
                     <label className="flex items-center gap-2 cursor-pointer">
                       <Checkbox 
                         checked={showCashFlow} 
-                        onCheckedChange={(checked) => setShowCashFlow(!!checked)}
+                        onCheckedChange={(checked) => setChartLine('cashFlow', !!checked)}
                         className="border-indigo-500 data-[state=checked]:bg-indigo-500"
                       />
                       <span className="text-sm text-indigo-500">Cash-flow</span>
@@ -1256,7 +1288,7 @@ const Index = () => {
             <SubscriptionUsage />
             {/* Category Breakdown */}
             <ProjectBreakdown 
-              projects={getCategoryBreakdownData()}
+              projects={categoryBreakdownData}
               totalAmount={Object.values(metrics?.totalAmountByCurrency || {}).reduce((sum, val) => sum + val, 0)}
             />
           </div>
