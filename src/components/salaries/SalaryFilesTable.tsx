@@ -144,7 +144,7 @@ export function SalaryFilesDialog() {
 
   return (
     <>
-      <Dialog>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
           <Button variant="outline">
             <FileText className="mr-2 h-4 w-4" />
