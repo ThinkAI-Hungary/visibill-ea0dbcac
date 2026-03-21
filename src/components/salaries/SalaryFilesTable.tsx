@@ -35,6 +35,7 @@ export function SalaryFilesDialog() {
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
   const [deleteIds, setDeleteIds] = useState<string[] | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
