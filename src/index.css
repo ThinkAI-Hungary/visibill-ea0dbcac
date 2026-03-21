@@ -512,20 +512,21 @@ All colors MUST be HSL.
   to   { transform: translateX(calc(100% + 1rem)); opacity: 0; }
 }
 
-/* Force vertical list: use margin instead of translateY so transform is free for slide */
+/* Force vertical list — no stacking shrink, but leave transform to animations */
 [data-sonner-toaster] [data-sonner-toast] {
-  opacity: 1 !important;
   visibility: visible !important;
   scale: 1 !important;
-  transform: none !important;
+  --lift-amount: 0 !important;
 }
 
 /* Slide in on mount */
-[data-sonner-toast][data-mounted="true"] {
+[data-sonner-toaster] [data-sonner-toast][data-mounted="true"] {
   animation: sonner-slide-in-right 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards !important;
+  transform: translateX(0) !important;
+  opacity: 1 !important;
 }
 
 /* Slide out on removal */
-[data-sonner-toast][data-removed="true"] {
+[data-sonner-toaster] [data-sonner-toast][data-removed="true"] {
   animation: sonner-slide-out-right 0.3s ease-in forwards !important;
 }
