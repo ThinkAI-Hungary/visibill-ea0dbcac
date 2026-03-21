@@ -192,7 +192,7 @@ export function LiveNotificationProvider() {
           if (!isMyCompany(payload)) return;
           console.log('[RealtimeSync] nav_invoices', payload.eventType);
           invalidate(
-            'navInvoices', 'kintlevo-nav',
+            'navInvoices', 'filteredNavInvoices', 'kintlevo-nav',
             'dashboardData', 'dashboardAnalytics',
             'invoiceStatusPayable', 'invoiceStatusMissing',
             'analyticsRaw', 'analyticsVat',
