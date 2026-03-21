@@ -128,8 +128,8 @@ const TransactionsPage = () => {
   // dateFrom/dateTo come directly from context – no derived state needed
 
   // Build server-side filter params for query key
-  const dateFromStr = filters.dateFrom ? format(filters.dateFrom, 'yyyy-MM-dd') : '';
-  const dateToStr = filters.dateTo ? format(filters.dateTo, 'yyyy-MM-dd') : '';
+  const dateFromStr = dateFrom ? format(dateFrom, 'yyyy-MM-dd') : '';
+  const dateToStr = dateTo ? format(dateTo, 'yyyy-MM-dd') : '';
   const serverFilters = useMemo(() => ({
     currency: filters.currency,
     type: filters.type,
