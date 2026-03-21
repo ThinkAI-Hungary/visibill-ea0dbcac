@@ -218,7 +218,8 @@ const Projects = () => {
 
       toast({
         title: 'Projekt törölve',
-        description: 'A projekt sikeresen törölve.'
+        description: 'A projekt sikeresen törölve.',
+        duration: 3000,
       });
 
       queryClient.invalidateQueries({ queryKey: queryKeys.projects(selectedCompany?.id || '') });
