@@ -5,6 +5,7 @@ interface LoadingSpinnerProps {
   className?: string;
   size?: "sm" | "md" | "lg";
   fullPage?: boolean;
+  message?: string;
 }
 
 /** Remove the static HTML loader injected by index.html */
@@ -19,7 +20,8 @@ function removeInitialLoader() {
 export function LoadingSpinner({ 
   className,
   size = "lg",
-  fullPage = true 
+  fullPage = true,
+  message
 }: LoadingSpinnerProps) {
 
   useEffect(() => {
@@ -44,10 +46,11 @@ export function LoadingSpinner({
   if (fullPage) {
     return (
       <div
-        className={cn("fixed inset-0 z-[9999] flex items-center justify-center", className)}
+        className={cn("fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-3", className)}
         style={{ backgroundColor: 'var(--initial-bg)' }}
       >
         {spinner}
+        {message && <p className="text-sm text-muted-foreground">{message}</p>}
       </div>
     );
   }
