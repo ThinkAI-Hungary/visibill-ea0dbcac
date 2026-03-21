@@ -501,39 +501,43 @@ All colors MUST be HSL.
   }
 }
 
-/* ── Sonner toast: preserve vertical stack + slide horizontally ── */
-@keyframes combined-slide-in {
-  from {
-    transform: translateX(calc(100% + 1rem)) var(--y);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0) var(--y);
-    opacity: 1;
-  }
-}
-
-@keyframes combined-slide-out {
-  from {
-    transform: translateX(0) var(--y);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(calc(100% + 1rem)) var(--y);
-    opacity: 0;
-  }
-}
+/* ── Sonner toast: horizontal slide + preserve vertical stack ──
+   Sonner handles vertical positioning via transform: var(--y).
+   We use the independent CSS 'translate' property for horizontal slide,
+   which composes with 'transform' without overriding it. ── */
 
 [data-sonner-toaster] [data-sonner-toast] {
   visibility: visible !important;
-  transition: transform 400ms cubic-bezier(0.23, 1, 0.32, 1), opacity 400ms ease !important;
 }
 
+/* Slide in from right on mount */
 [data-sonner-toaster] [data-sonner-toast][data-mounted="true"] {
-  transform: translateX(0) var(--y);
-  animation: combined-slide-in 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards !important;
+  animation: sonner-h-slide-in 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards !important;
 }
 
+/* Slide out to right on removal */
 [data-sonner-toaster] [data-sonner-toast][data-removed="true"] {
-  animation: combined-slide-out 0.3s ease-in forwards !important;
+  animation: sonner-h-slide-out 0.3s ease-in forwards !important;
+}
+
+@keyframes sonner-h-slide-in {
+  from {
+    translate: calc(100% + 2rem) 0;
+    opacity: 0;
+  }
+  to {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+@keyframes sonner-h-slide-out {
+  from {
+    translate: 0 0;
+    opacity: 1;
+  }
+  to {
+    translate: calc(100% + 2rem) 0;
+    opacity: 0;
+  }
 }
