@@ -501,28 +501,38 @@ All colors MUST be HSL.
   }
 }
 
-/* ── Sonner toast: horizontal slide + preserve vertical stack ──
-   Uses CSS 'translate' (independent of Sonner's transform: var(--y))
-   with TRANSITIONS instead of animations so only state changes trigger movement.
-   This prevents existing toasts from re-animating when new ones arrive. ── */
+/* ── Sonner toast: targeted horizontal slide for enter/exit only ──
+   Uses @keyframes so only genuinely entering/exiting toasts animate.
+   Existing toasts keep Sonner's native var(--y) vertical reflow. ── */
 
-[data-sonner-toaster] [data-sonner-toast] {
-  visibility: visible !important;
-  translate: calc(100% + 2rem) 0;
-  opacity: 0;
-  transition: translate 0.4s cubic-bezier(0.23, 1, 0.32, 1),
-              opacity 0.4s cubic-bezier(0.23, 1, 0.32, 1) !important;
+@keyframes sonner-slide-in-right {
+  from { translate: calc(100% + 2rem) 0; opacity: 0; }
+  to   { translate: 0 0; opacity: 1; }
 }
 
-/* Mounted → slide in from right */
-[data-sonner-toaster] [data-sonner-toast][data-mounted="true"] {
-  translate: 0 0;
+@keyframes sonner-slide-out-right {
+  from { translate: 0 0; opacity: 1; }
+  to   { translate: calc(100% + 2rem) 0; opacity: 0; }
+}
+
+/* Default: toasts are visible and in-place — no global offscreen override */
+[data-sonner-toaster] [data-sonner-toast] {
+  visibility: visible !important;
   opacity: 1;
 }
 
-/* Removed → slide out to right */
+/* Newly mounted toast slides in from the right */
+[data-sonner-toaster] [data-sonner-toast][data-mounted="true"]:not([data-removed="true"]) {
+  animation: sonner-slide-in-right 0.4s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+/* Already-visible toasts that just shift vertically: no horizontal animation */
+[data-sonner-toaster] [data-sonner-toast][data-expanded="true"][data-mounted="true"]:not([data-front="true"]):not([data-removed="true"]) {
+  animation: none;
+  translate: 0 0;
+}
+
+/* Removed toast slides out to the right */
 [data-sonner-toaster] [data-sonner-toast][data-removed="true"] {
-  translate: calc(100% + 2rem) 0;
-  opacity: 0;
-  transition: translate 0.3s ease-in, opacity 0.3s ease-in !important;
+  animation: sonner-slide-out-right 0.3s ease-in both;
 }
