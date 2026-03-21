@@ -490,7 +490,8 @@ const ManualUpload = () => {
 
       toast({
         title: "Feltöltés sikeres!",
-        description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá."
+        description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.",
+        duration: 3000,
       });
 
       setSelectedBankFiles([]);
