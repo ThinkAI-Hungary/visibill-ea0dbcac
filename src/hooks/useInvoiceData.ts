@@ -105,6 +105,7 @@ export function useInvoiceData(
       return (data || []) as SubmittedInvoice[];
     },
     enabled,
+    placeholderData: keepPreviousData,
   });
 
   const { data: linkedInvoicesPool = [] } = useQuery({
