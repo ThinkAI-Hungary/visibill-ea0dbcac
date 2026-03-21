@@ -328,11 +328,13 @@ export function LiveNotificationProvider() {
         // Broad invalidation on tab refocus to catch any missed events
         invalidate(
           'salaries', 'salary_files', 'submittedInvoices', 'linkedInvoices',
-          'navInvoices', 'transactions', 'dashboardData', 'dashboardAnalytics',
+          'navInvoices', 'filteredNavInvoices', 'filteredSubmittedInvoices',
+          'transactions', 'dashboardData', 'dashboardAnalytics',
           'kintlevo-nav', 'kintlevo-manual', 'uploadHistory',
           'analyticsRaw', 'analyticsVat', 'recentInvoices',
           'partners', 'projects', 'projectsList',
           'pettyCashEntries', 'dashboardPettyCash',
+          'categories', 'dunning-sends', 'syncLogs',
         );
       }
     };
