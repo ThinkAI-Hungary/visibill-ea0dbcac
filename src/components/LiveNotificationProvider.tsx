@@ -7,141 +7,200 @@ import { CheckCircle2 } from 'lucide-react';
 import { createElement } from 'react';
 
 /**
- * Listens on Supabase Realtime for INSERT events on data tables.
- * When rows are inserted from a new file upload, shows a success toast.
- * Uses a Set to debounce so each upload ID only triggers one notification per session.
+ * Global Realtime listener that:
+ * 1. Shows toast notifications when new files are processed (INSERT debounced per upload ID)
+ * 2. Silently invalidates TanStack Query caches on any INSERT/UPDATE/DELETE for auto-refresh
+ *
+ * NOTE: We do NOT use server-side filters because Supabase Realtime filters
+ * require FULL replica identity for UPDATE/DELETE, and service-role inserts
+ * may not pass through RLS-filtered channels. Instead, we listen to all events
+ * and do client-side company_id matching.
  */
 export function LiveNotificationProvider() {
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
   const companyId = selectedCompany?.id;
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  // Track already-notified upload IDs to prevent duplicate toasts
   const notifiedUploads = useRef<Set<string>>(new Set());
+  const companyIdRef = useRef(companyId);
+  companyIdRef.current = companyId;
+  const queryClientRef = useRef(queryClient);
+  queryClientRef.current = queryClient;
 
+  /** Check if the event belongs to the current company.
+   *  If company_id is missing from payload (e.g. DELETE event), accept it —
+   *  RLS already ensures only authorized events reach the client.
+   */
+  const isMyCompany = useCallback((payload: any): boolean => {
+    const row = payload.new || payload.old;
+    if (!row?.company_id) return true; // Accept if company_id not in payload
+    return row.company_id === companyIdRef.current;
+  }, []);
+
+  // ── Notification toast (only for first INSERT per upload) ──
   const showNotification = useCallback(async (
     uploadId: string,
     parentTable: 'salary_files' | 'invoice_uploads' | 'transaction_uploads',
-    invalidateKeys: string[]
   ) => {
-    // Anti-spam: skip if already notified for this upload
     if (notifiedUploads.current.has(uploadId)) return;
     notifiedUploads.current.add(uploadId);
 
+    console.log('[RealtimeSync] 🔔 New file processed:', parentTable, uploadId);
+
+    let fileName = 'Ismeretlen fájl';
     try {
-      // Look up the file name from the parent upload table
       const { data } = await supabase
         .from(parentTable)
         .select('file_name')
         .eq('id', uploadId)
         .single();
-
-      const fileName = data?.file_name || 'Ismeretlen fájl';
-
-      toast.success('Gratulálunk!', {
-        description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
-        duration: 5000,
-        icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
-      });
+      if (data?.file_name) fileName = data.file_name;
     } catch (err) {
-      console.error('[LiveNotifications] File lookup failed:', err);
-      toast.success('Gratulálunk!', {
-        description: 'Egy fájl sikeresen fel lett dolgozva!',
-        duration: 5000,
-        icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
-      });
+      console.error('[RealtimeSync] File lookup failed:', err);
     }
 
-    // Invalidate relevant caches
-    invalidateKeys.forEach(key => {
-      queryClient.invalidateQueries({ queryKey: [key, companyId] });
+    toast.success('Gratulálunk!', {
+      id: `file-processed-${uploadId}`,
+      description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
+      duration: 8000,
+      icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
     });
-  }, [queryClient, companyId]);
+  }, []);
+
+  // ── Debounced cache invalidation (500ms) ──
+  const debounceTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const invalidate = useCallback((...keys: string[]) => {
+    const cacheKey = keys.sort().join(',');
+    // Clear existing timer for this key set
+    const existing = debounceTimers.current.get(cacheKey);
+    if (existing) clearTimeout(existing);
+    // Set new timer — fires once after 500ms of no new events
+    debounceTimers.current.set(cacheKey, setTimeout(() => {
+      keys.forEach(key => {
+        queryClientRef.current.invalidateQueries({ queryKey: [key] });
+      });
+      debounceTimers.current.delete(cacheKey);
+    }, 500));
+  }, []);
 
   useEffect(() => {
     if (!companyId) return;
 
-    // Clean up previous channel
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
-
-    // Reset notified set when company changes
     notifiedUploads.current.clear();
 
+    console.log('[RealtimeSync] Subscribing (no server filter) for company:', companyId);
+
     const channel = supabase
-      .channel(`live-notifications-${companyId}`)
+      .channel(`realtime-sync-${companyId}`)
 
-      // salary table: INSERT with salary_file_id
+      // ━━ SALARY table ━━
       .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'salary',
-          filter: `company_id=eq.${companyId}`,
-        },
+        { event: '*', schema: 'public', table: 'salary' },
         (payload) => {
-          const row = payload.new as any;
-          if (row.salary_file_id) {
-            showNotification(row.salary_file_id, 'salary_files', [
-              'salary_files', 'salaries',
-            ]);
+          if (!isMyCompany(payload)) return;
+          console.log('[RealtimeSync] salary', payload.eventType);
+          invalidate('salaries', 'salary_files');
+          if (payload.eventType === 'INSERT') {
+            const row = payload.new as any;
+            if (row.salary_file_id) {
+              showNotification(row.salary_file_id, 'salary_files');
+            }
           }
         }
       )
 
-      // invoices table: INSERT with invoice_uploads_id
+      // ━━ SALARY_FILES table ━━
       .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'invoices',
-          filter: `company_id=eq.${companyId}`,
-        },
+        { event: '*', schema: 'public', table: 'salary_files' },
         (payload) => {
-          const row = payload.new as any;
-          if (row.invoice_uploads_id) {
-            showNotification(row.invoice_uploads_id, 'invoice_uploads', [
-              'invoices', 'invoice_uploads_with_invoices',
-            ]);
+          if (!isMyCompany(payload)) return;
+          console.log('[RealtimeSync] salary_files', payload.eventType);
+          invalidate('salary_files', 'salaries');
+        }
+      )
+
+      // ━━ INVOICES table ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'invoices' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          console.log('[RealtimeSync] invoices', payload.eventType);
+          invalidate('invoices', 'invoice_uploads_with_invoices', 'nav_invoices');
+          if (payload.eventType === 'INSERT') {
+            const row = payload.new as any;
+            if (row.invoice_uploads_id) {
+              showNotification(row.invoice_uploads_id, 'invoice_uploads');
+            }
           }
         }
       )
 
-      // transactions table: INSERT with upload_id
+      // ━━ INVOICE_UPLOADS table ━━
       .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'transactions',
-          filter: `company_id=eq.${companyId}`,
-        },
+        { event: '*', schema: 'public', table: 'invoice_uploads' },
         (payload) => {
-          const row = payload.new as any;
-          if (row.upload_id) {
-            showNotification(row.upload_id, 'transaction_uploads', [
-              'transactions',
-            ]);
+          if (!isMyCompany(payload)) return;
+          console.log('[RealtimeSync] invoice_uploads', payload.eventType);
+          invalidate('invoice_uploads_with_invoices', 'invoices');
+        }
+      )
+
+      // ━━ TRANSACTIONS table ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'transactions' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          console.log('[RealtimeSync] transactions', payload.eventType);
+          invalidate('transactions');
+          if (payload.eventType === 'INSERT') {
+            const row = payload.new as any;
+            if (row.upload_id) {
+              showNotification(row.upload_id, 'transaction_uploads');
+            }
           }
         }
       )
 
       .subscribe((status, err) => {
-        if (status !== 'SUBSCRIBED') {
-          console.warn('[LiveNotifications] Realtime status:', status, err);
-        }
+        console.log('[RealtimeSync] Status:', status, err || '');
       });
 
     channelRef.current = channel;
 
-    return () => {
-      supabase.removeChannel(channel);
-      channelRef.current = null;
+    // Reconnect on tab visibility change
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && channelRef.current) {
+        const state = channelRef.current.state;
+        if (state !== 'joined' && state !== 'joining') {
+          console.log('[RealtimeSync] Reconnecting on tab focus...');
+          channelRef.current.subscribe();
+        }
+        invalidate('salaries', 'salary_files', 'invoices', 'invoice_uploads_with_invoices', 'nav_invoices', 'transactions');
+      }
     };
-  }, [companyId, showNotification]);
+    document.addEventListener('visibilitychange', handleVisibility);
 
-  return null; // Renderless component
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      // Clean up debounce timers
+      debounceTimers.current.forEach(timer => clearTimeout(timer));
+      debounceTimers.current.clear();
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [companyId, showNotification, invalidate, isMyCompany]);
+
+  return null;
 }
