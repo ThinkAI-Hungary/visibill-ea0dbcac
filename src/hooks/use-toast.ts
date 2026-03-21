@@ -27,18 +27,24 @@ interface ToastOptions {
 function toast(opts: ToastOptions) {
   const { title, description, variant, duration } = opts;
 
+  let toastId: string | number;
+
   // Map shadcn's "destructive" variant to Sonner's error style
   if (variant === "destructive") {
-    sonnerToast.error(title ?? "Hiba", {
+    toastId = sonnerToast.error(title ?? "Hiba", {
       description: typeof description === 'string' ? description : undefined,
       duration,
     });
   } else {
-    sonnerToast(title ?? "", {
+    toastId = sonnerToast(title ?? "", {
       description: typeof description === 'string' ? description : undefined,
       duration,
     });
   }
+
+  return {
+    dismiss: () => sonnerToast.dismiss(toastId),
+  };
 }
 
 /**
