@@ -835,7 +835,7 @@ const ManualUpload = () => {
         // Polling fallback for each transaction upload (5s interval, max 90s)
         for (const { id: uploadId, fileName } of txUploadedIds) {
           const runTxPoll = async () => {
-            const maxAttempts = 18;
+            const maxAttempts = 54;
             const intervalMs = 5000;
             console.log(`[TxPoll] Starting polling for upload_id=${uploadId}`);
             for (let attempt = 1; attempt <= maxAttempts; attempt++) {
