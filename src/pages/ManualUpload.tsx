@@ -354,6 +354,7 @@ const ManualUpload = () => {
             created_at: new Date().toISOString(),
             error_message: null,
           });
+          uploadedIds.push({ id: uploadRecord.id, fileName: file.name });
           successfulUploads++;
         } catch (fileError) {
           console.error(`Error processing file ${file.name}:`, fileError);
