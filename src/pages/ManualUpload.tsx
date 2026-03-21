@@ -277,6 +277,7 @@ const ManualUpload = () => {
     try {
       // Process each invoice and increment usage
       let successfulUploads = 0;
+      const uploadedIds: { id: string; fileName: string }[] = [];
 
       for (const file of selectedInvoiceFiles) {
         // Check if we can still process this invoice
