@@ -1,32 +1,13 @@
-import { useEffect } from 'react';
-import { useNavigate, Outlet } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Outlet } from 'react-router-dom';
 import { AppLayout } from '@/components/AppLayout';
 
 /**
- * ProtectedLayout combines authentication checking with layout rendering.
- * This ensures the sidebar only appears after confirming the user is authenticated,
- * preventing the flash of layout before redirect to login.
+ * ProtectedLayout provides the sidebar + content shell.
+ * Auth gating is handled exclusively by ProtectedRoute (wrapping each page's children),
+ * so this component does NOT duplicate loading / user checks — that was causing
+ * a double full-page spinner flash (P0-1).
  */
 export function ProtectedLayout() {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
-
-  if (loading) {
-    return <LoadingSpinner message="Azonosítás..." />;
-  }
-
-  if (!user) {
-    return null; // Redirect in progress
-  }
-
   return (
     <AppLayout>
       <Outlet />

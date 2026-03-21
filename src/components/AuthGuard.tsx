@@ -18,7 +18,11 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   }, [user, loading, navigate]);
 
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[50vh]">
+        <LoadingSpinner fullPage={false} />
+      </div>
+    );
   }
 
   if (!user) {

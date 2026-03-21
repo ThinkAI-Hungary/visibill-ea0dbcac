@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -114,6 +114,7 @@ const Projects = () => {
       return { projects, financials };
     },
     enabled: !!user && !!selectedCompany?.id,
+    placeholderData: keepPreviousData,
   });
 
   const projects = queryData?.projects || [];
@@ -259,7 +260,11 @@ const Projects = () => {
   };
 
   if (initialLoading) {
-    return <LoadingSpinner message="Projektek betöltése..." />;
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[50vh]">
+        <LoadingSpinner fullPage={false} message="Projektek betöltése..." />
+      </div>
+    );
   }
 
   return (

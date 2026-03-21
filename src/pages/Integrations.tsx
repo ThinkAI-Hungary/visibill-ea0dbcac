@@ -53,7 +53,11 @@ const Integrations = () => {
   });
 
   if (companyLoading) {
-    return <LoadingSpinner message="Integrációk betöltése..." />;
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[50vh]">
+        <LoadingSpinner fullPage={false} message="Integrációk betöltése..." />
+      </div>
+    );
   }
 
   const getStatusBadge = (status: string) => {

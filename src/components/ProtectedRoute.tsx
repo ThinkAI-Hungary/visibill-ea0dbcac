@@ -45,7 +45,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }, [profileStatus, navigate]);
 
   if (loading || (profileLoading && !profileStatus)) {
-    return <LoadingSpinner />;
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[50vh]">
+        <LoadingSpinner fullPage={false} />
+      </div>
+    );
   }
 
   if (!user || profileStatus !== 'complete') {

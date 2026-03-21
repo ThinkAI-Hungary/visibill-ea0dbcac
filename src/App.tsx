@@ -1,5 +1,5 @@
 import { Suspense, lazy, useCallback } from "react";
-import { Toaster } from "@/components/ui/toaster";
+
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -89,17 +89,18 @@ const App = () => (
           <DateRangeProvider>
             <SubscriptionProvider>
               <TooltipProvider>
-                <Toaster />
+
                 <SonnerToaster />
                 <LiveNotificationProvider />
                 <BrowserRouter>
-                  <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
                     <Routes>
-                    {/* Auth route without layout */}
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/reset-password" element={<ResetPassword />} />
+                    {/* Auth routes – no sidebar, own Suspense for lazy chunks */}
+                    <Route path="/auth" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><Auth /></Suspense>} />
+                    <Route path="/reset-password" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ResetPassword /></Suspense>} />
 
-                    {/* All protected routes with ProtectedLayout */}
+                    {/* All protected routes with ProtectedLayout (sidebar is persistent).
+                         AppLayout has its own <Suspense> around just the content area,
+                         so lazy pages only replace the content — the sidebar stays mounted. */}
                     <Route element={<ProtectedLayout />}>
                       <Route path="/onboarding" element={
                         <AuthGuardPage><Onboarding /></AuthGuardPage>
@@ -148,9 +149,8 @@ const App = () => (
                       } />
                     </Route>
 
-                    <Route path="*" element={<NotFound />} />
+                    <Route path="*" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NotFound /></Suspense>} />
                   </Routes>
-                  </Suspense>
                 </BrowserRouter>
               </TooltipProvider>
             </SubscriptionProvider>

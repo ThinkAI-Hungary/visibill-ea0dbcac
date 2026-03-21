@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 
@@ -32,6 +32,7 @@ export function useKintlevoData() {
       return data ?? [];
     },
     enabled: !!user?.id && !!selectedCompany?.id,
+    placeholderData: keepPreviousData,
   });
 
   const { data: manualInvoices = [], isLoading: loadingManual } = useQuery({
@@ -48,6 +49,7 @@ export function useKintlevoData() {
       return data ?? [];
     },
     enabled: !!user?.id && !!selectedCompany?.id,
+    placeholderData: keepPreviousData,
   });
 
   const { data: partners = [] } = useQuery({
@@ -62,6 +64,7 @@ export function useKintlevoData() {
       return data ?? [];
     },
     enabled: !!user?.id && !!selectedCompany?.id,
+    placeholderData: keepPreviousData,
   });
 
   const { data: dunningSends = [] } = useQuery({
@@ -77,6 +80,7 @@ export function useKintlevoData() {
       return data ?? [];
     },
     enabled: !!user?.id && !!selectedCompany?.id,
+    placeholderData: keepPreviousData,
   });
 
   const updatePartnerEmail = useMutation({

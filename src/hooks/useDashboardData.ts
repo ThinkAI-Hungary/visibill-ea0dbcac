@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -119,6 +119,7 @@ export function useDashboardData() {
       return data.rates as { [key: string]: number };
     },
     staleTime: 60 * 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 
   // ── Profile ──
@@ -134,7 +135,7 @@ export function useDashboardData() {
       return data as Profile;
     },
     enabled: !!user,
-    staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 
   // ── Tour status ──
@@ -150,6 +151,7 @@ export function useDashboardData() {
     },
     enabled: !!user && !!selectedCompany,
     staleTime: Infinity,
+    placeholderData: keepPreviousData,
   });
 
   // ── Categories ──
@@ -165,7 +167,7 @@ export function useDashboardData() {
       return (data || []) as Category[];
     },
     enabled: !!companyId,
-    staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 
   // ── Recent invoices ──
@@ -185,7 +187,7 @@ export function useDashboardData() {
       })) as Invoice[];
     },
     enabled: !!companyId,
-    staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 
   // ── Metrics ──
@@ -223,7 +225,7 @@ export function useDashboardData() {
       } as DashboardMetrics;
     },
     enabled: !!companyId,
-    staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 
   // ── NAV aggregates ──
@@ -275,7 +277,7 @@ export function useDashboardData() {
       return { inboundVat, outboundVat, revenueNet, revenueGross, expensesNet, expensesGross, unpaidInboundNet, unpaidInboundGross, unpaidOutboundNet, unpaidOutboundGross } as NavVatData;
     },
     enabled: !!companyId,
-    staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 
   // ── Petty cash ──
@@ -291,7 +293,7 @@ export function useDashboardData() {
       return Number(row.balance);
     },
     enabled: !!companyId,
-    staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 
   // ── Analytics raw data (always full current year) ──

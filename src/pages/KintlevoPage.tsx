@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useKintlevoData } from '@/hooks/useKintlevoData';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -8,6 +8,28 @@ import { Mail, Search } from 'lucide-react';
 import { KintlevoSummaryCards } from '@/components/kintlevo/KintlevoSummaryCards';
 import { KintlevoCompanyTable } from '@/components/kintlevo/KintlevoCompanyTable';
 import { DunningDialog } from '@/components/kintlevo/DunningDialog';
+
+function KintlevoSkeleton() {
+  return (
+    <div className="h-full space-y-4 px-4 pt-4 pb-6 animate-in fade-in duration-200">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Kintlévőség</h1>
+        <p className="text-muted-foreground text-sm">Kifizetetlen kimenő számlák cégenként csoportosítva</p>
+      </div>
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-24 rounded-xl" />
+        ))}
+      </div>
+      <Skeleton className="h-10 max-w-sm rounded-lg" />
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-16 rounded-lg" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function KintlevoPage() {
   const {
@@ -19,7 +41,7 @@ export default function KintlevoPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  if (isLoading) return <LoadingSpinner message="Kintlévőségek betöltése..." />;
+  if (isLoading) return <KintlevoSkeleton />;
 
   return (
     <TooltipProvider>

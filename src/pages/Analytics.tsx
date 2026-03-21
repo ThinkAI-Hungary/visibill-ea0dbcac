@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -105,6 +105,7 @@ export default function Analytics() {
       };
     },
     enabled: !!user && !!selectedCompany?.id,
+    placeholderData: keepPreviousData,
   });
 
   const rawInvoices = rawData?.invoices || [];
@@ -141,6 +142,7 @@ export default function Analytics() {
       };
     },
     enabled: !!user && !!selectedCompany?.id,
+    placeholderData: keepPreviousData,
   });
 
   const loading = rawLoading || vatLoading;

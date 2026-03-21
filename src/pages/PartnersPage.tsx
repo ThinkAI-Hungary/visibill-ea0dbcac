@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -107,6 +107,7 @@ export default function PartnersPage() {
       return data as Partner[];
     },
     enabled: !!user?.id && !!selectedCompany?.id,
+    placeholderData: keepPreviousData,
   });
 
   // Create/Update mutation

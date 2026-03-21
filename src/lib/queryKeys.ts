@@ -4,6 +4,10 @@
  * Date-dependent queries also include date range in the key.
  */
 export const queryKeys = {
+  // ── Companies ──
+  companies: (userId: string) =>
+    ['companies', userId] as const,
+
   // ── Transactions ──
   transactions: (
     companyId: string,

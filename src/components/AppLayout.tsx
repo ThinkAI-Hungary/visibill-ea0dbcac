@@ -10,7 +10,11 @@ interface AppLayoutProps {
 }
 
 function ContentLoader() {
-  return <LoadingSpinner />;
+  return (
+    <div className="flex-1 flex items-center justify-center min-h-[50vh]">
+      <LoadingSpinner fullPage={false} />
+    </div>
+  );
 }
 
 export function AppLayout({ children }: AppLayoutProps) {

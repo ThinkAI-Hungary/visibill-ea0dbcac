@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -65,6 +65,7 @@ export default function ExchangeRates() {
       return { rates: formattedRates, lastUpdate: new Date().toLocaleString('hu-HU') };
     },
     staleTime: 60 * 60 * 1000, // 1 hour
+    placeholderData: keepPreviousData,
   });
 
   const rates = ratesData?.rates || [];
@@ -138,7 +139,11 @@ export default function ExchangeRates() {
   };
 
   if (initialLoading) {
-    return <LoadingSpinner message="Árfolyamok betöltése..." />;
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[50vh]">
+        <LoadingSpinner fullPage={false} message="Árfolyamok betöltése..." />
+      </div>
+    );
   }
 
   return (

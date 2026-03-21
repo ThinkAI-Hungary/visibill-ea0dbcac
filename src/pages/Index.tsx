@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardData } from '@/hooks/useDashboardData';
@@ -22,6 +22,36 @@ import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import type { Invoice } from '@/hooks/useDashboardData';
+
+/**
+ * Wrapper that isolates dialog state so opening/closing the image preview
+ * does NOT re-render the entire Dashboard (P0-3 fix).
+ */
+function RecentInvoicesWithDialog({ invoices }: { invoices: Invoice[] }) {
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleViewInvoice = useCallback((invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setIsDialogOpen(true);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setIsDialogOpen(false);
+    setSelectedInvoice(null);
+  }, []);
+
+  return (
+    <>
+      <RecentInvoices invoices={invoices} onViewInvoice={handleViewInvoice} />
+      <InvoiceImageDialog
+        invoice={selectedInvoice}
+        open={isDialogOpen}
+        onClose={handleClose}
+      />
+    </>
+  );
+}
 
 const Index = () => {
   const { user, signOut } = useAuth();
@@ -51,9 +81,7 @@ const Index = () => {
     }
   }, [tourCompleted]);
 
-  // Invoice image dialog state
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // Invoice image dialog state is now isolated in RecentInvoicesWithDialog (P0-3)
 
   // Computed
   const displayedPeriod = useMemo(
@@ -130,13 +158,7 @@ const Index = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="lg:col-span-2">
-                  <RecentInvoices
-                    invoices={invoices}
-                    onViewInvoice={(invoice) => {
-                      setSelectedInvoice(invoice);
-                      setIsDialogOpen(true);
-                    }}
-                  />
+                  <RecentInvoicesWithDialog invoices={invoices} />
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -158,14 +180,7 @@ const Index = () => {
         <QuickActions />
       </main>
 
-      <InvoiceImageDialog
-        invoice={selectedInvoice}
-        open={isDialogOpen}
-        onClose={() => {
-          setIsDialogOpen(false);
-          setSelectedInvoice(null);
-        }}
-      />
+      {/* InvoiceImageDialog is now inside RecentInvoicesWithDialog */}
 
       <ProductTour
         run={showTour}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -124,6 +124,7 @@ function CompanyMembersCard({ companyId, ownerId, isOwner, toast }: { companyId:
       }
       return [];
     },
+    placeholderData: keepPreviousData,
   });
 
   const removeMember = async (memberId: string, userId: string) => {
@@ -300,7 +301,11 @@ export default function Settings() {
     finally { setExportLoading(false); }
   };
 
-  if (!initialDataLoaded || companiesLoading) return <LoadingSpinner message="Beállítások betöltése..." />;
+  if (!initialDataLoaded || companiesLoading) return (
+    <div className="flex-1 flex items-center justify-center min-h-[50vh]">
+      <LoadingSpinner fullPage={false} message="Beállítások betöltése..." />
+    </div>
+  );
 
   return (
     <div className="container mx-auto py-8 px-6">

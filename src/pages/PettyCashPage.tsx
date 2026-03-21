@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -65,6 +65,7 @@ const PettyCashPage = () => {
       return data as HpSettings | null;
     },
     enabled: !!user && !!selectedCompany?.id,
+    placeholderData: keepPreviousData,
   });
 
   // Sync local form state when settings load
@@ -167,6 +168,7 @@ const PettyCashPage = () => {
       return allEntries;
     },
     enabled: !!user && !!selectedCompany?.id,
+    placeholderData: keepPreviousData,
   });
 
   const handleSave = async () => {
@@ -283,7 +285,11 @@ const PettyCashPage = () => {
   }
 
   if (loading) {
-    return <LoadingSpinner message="Házipénztár betöltése..." />;
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[50vh]">
+        <LoadingSpinner fullPage={false} message="Házipénztár betöltése..." />
+      </div>
+    );
   }
 
   return (
