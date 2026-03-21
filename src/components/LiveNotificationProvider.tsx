@@ -59,7 +59,7 @@ export function LiveNotificationProvider() {
     toast.success('Gratulálunk!', {
       id: `file-processed-${uploadId}`,
       description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
-      duration: 5000,
+      duration: 3000,
       icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
     });
   }, []);
