@@ -752,6 +752,7 @@ const ManualUpload = () => {
 
     try {
       let successfulUploads = 0;
+      const txUploadedIds: { id: string; fileName: string }[] = [];
 
       for (const file of selectedTransactionFiles) {
         // Upload file to storage
