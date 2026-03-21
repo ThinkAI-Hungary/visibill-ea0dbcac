@@ -367,6 +367,11 @@ const ManualUpload = () => {
           duration: 3000,
         });
 
+        // Start polling for each uploaded invoice file
+        for (const file of selectedInvoiceFiles) {
+          // We need the upload record IDs - get the latest ones
+        }
+
         setSelectedInvoiceFiles([]);
         setUploadRefreshKey(k => k + 1);
         delayedUploadHistoryInvalidation();
