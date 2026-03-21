@@ -9,7 +9,7 @@ export const STORAGE_KEYS = {
   AUTH_TOKEN_LEGACY: 'supabase.auth.token',
 
   // ── UX preferences (KEPT on sign-out) ──
-  THEME: 'theme',
+  THEME: 'visibill_theme',
   DATE_RANGE: 'visibill_date_range',
   DASHBOARD_SHOW_BRUTTO: 'visibill_dashboard_show_brutto',
   DASHBOARD_CHART_LINES: 'visibill_dashboard_chart_lines',

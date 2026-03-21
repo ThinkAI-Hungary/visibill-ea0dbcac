@@ -1,14 +1,162 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sun, Moon, Mail, Lock, User, TrendingUp, PieChart, BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Sun, Moon, Mail, Lock, User, TrendingUp, PieChart, BarChart3, ArrowUpRight, ArrowDownRight, FileText, CheckCircle2, Clock, AlertTriangle, Users, Wallet, Landmark, ArrowLeftRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+
+/* Carousel fade animation */
+const carouselStyle = document.createElement('style');
+carouselStyle.textContent = `@keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }`;
+if (!document.head.querySelector('[data-carousel-anim]')) { carouselStyle.setAttribute('data-carousel-anim',''); document.head.appendChild(carouselStyle); }
+
+interface CarouselSlide { text: string; visual: ReactNode; }
+
+const carouselSlides: CarouselSlide[] = [
+  {
+    text: 'Valós idejű pénzügyi dashboard és automatizált elemzések.',
+    visual: (
+      <div className="space-y-4">
+        <div className="flex gap-4">
+          <div className="bg-background/90 backdrop-blur-md rounded-xl p-4 flex-1 shadow-xl border border-border/50">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground">Bevétel</span>
+              <ArrowUpRight className="h-4 w-4 text-emerald-500" />
+            </div>
+            <p className="text-2xl font-bold text-foreground">2,4M Ft</p>
+            <p className="text-xs text-emerald-500">+12.5%</p>
+          </div>
+          <div className="bg-background/90 backdrop-blur-md rounded-xl p-4 flex-1 shadow-xl border border-border/50">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground">Kiadás</span>
+              <ArrowDownRight className="h-4 w-4 text-rose-500" />
+            </div>
+            <p className="text-2xl font-bold text-foreground">890K Ft</p>
+            <p className="text-xs text-rose-500">-3.2%</p>
+          </div>
+        </div>
+        <div className="bg-background/90 backdrop-blur-md rounded-xl p-6 shadow-2xl border border-border/50">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-medium text-foreground">Havi áttekintés</span>
+            <div className="flex gap-2">
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              <TrendingUp className="h-4 w-4 text-primary" />
+            </div>
+          </div>
+          <div className="flex items-end gap-2 h-24">
+            {[40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 95, 80].map((h, i) => (
+              <div key={i} className="flex-1 rounded-t bg-gradient-to-t from-primary/60 to-primary" style={{ height: `${h}%` }} />
+            ))}
+          </div>
+          <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+            <span>Jan</span><span>Márc</span><span>Máj</span><span>Júl</span><span>Szept</span><span>Nov</span>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    text: 'Automata számlaletöltés a NAV-tól és intelligens státuszkezelés.',
+    visual: (
+      <div className="space-y-3">
+        {[
+          { name: 'INV-2026-0142', partner: 'TechCorp Kft.', amount: '1 250 000 Ft', status: 'Fizetve', color: 'text-emerald-500', icon: CheckCircle2, bg: 'bg-emerald-500/10' },
+          { name: 'INV-2026-0143', partner: 'Design Studio Bt.', amount: '480 000 Ft', status: 'Függőben', color: 'text-amber-500', icon: Clock, bg: 'bg-amber-500/10' },
+          { name: 'INV-2026-0144', partner: 'Global Trade Zrt.', amount: '2 100 000 Ft', status: 'Lejárt', color: 'text-rose-500', icon: AlertTriangle, bg: 'bg-rose-500/10' },
+          { name: 'INV-2026-0145', partner: 'NetSolutions Kft.', amount: '720 000 Ft', status: 'Fizetve', color: 'text-emerald-500', icon: CheckCircle2, bg: 'bg-emerald-500/10' },
+        ].map((inv) => (
+          <div key={inv.name} className="bg-background/90 backdrop-blur-md rounded-xl p-4 shadow-lg border border-border/50 flex items-center gap-4">
+            <div className={`p-2 rounded-lg ${inv.bg}`}>
+              <FileText className={`h-5 w-5 ${inv.color}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-foreground">{inv.name}</span>
+                <span className="text-xs text-muted-foreground truncate">{inv.partner}</span>
+              </div>
+              <span className="text-xs text-muted-foreground">{inv.amount}</span>
+            </div>
+            <div className={`flex items-center gap-1 ${inv.color}`}>
+              <inv.icon className="h-3.5 w-3.5" />
+              <span className="text-xs font-medium">{inv.status}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    ),
+  },
+  {
+    text: 'Átlátható bérszámfejtési riportok és adókötelezettség figyelés.',
+    visual: (
+      <div className="space-y-3">
+        <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-border/50">
+          <div className="flex items-center gap-2 mb-4">
+            <Wallet className="h-5 w-5 text-primary" />
+            <span className="text-sm font-semibold text-foreground">Bérösszesítő — 2026. Március</span>
+          </div>
+          <div className="space-y-3">
+            {[
+              { name: 'Kovács Anna', gross: '650 000', net: '432 000' },
+              { name: 'Nagy Péter', gross: '520 000', net: '348 000' },
+              { name: 'Szabó Éva', gross: '780 000', net: '512 000' },
+              { name: 'Tóth Balázs', gross: '420 000', net: '285 000' },
+            ].map((emp) => (
+              <div key={emp.name} className="flex items-center gap-3 py-2 border-b border-border/30 last:border-0">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Users className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-sm font-medium text-foreground flex-1">{emp.name}</span>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-foreground">{emp.net} Ft</p>
+                  <p className="text-xs text-muted-foreground">bruttó {emp.gross}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 pt-3 border-t border-border/50 flex justify-between">
+            <span className="text-sm font-medium text-muted-foreground">Összesen (nettó)</span>
+            <span className="text-sm font-bold text-primary">1 577 000 Ft</span>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    text: 'Intelligens tranzakció-szinkron és automatikus kifizetés-azonosítás.',
+    visual: (
+      <div className="space-y-3">
+        {[
+          { bank: 'K&H 10200812-32145698', amount: '-480 000 Ft', invoice: 'INV-2026-0143', matched: true },
+          { bank: 'OTP 11773312-01234567', amount: '-1 250 000 Ft', invoice: 'INV-2026-0142', matched: true },
+          { bank: 'Wise EUR 2 800.00', amount: '+1 120 000 Ft', invoice: '—', matched: false },
+        ].map((tx, i) => (
+          <div key={i} className="bg-background/90 backdrop-blur-md rounded-xl p-4 shadow-lg border border-border/50">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Landmark className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{tx.bank}</p>
+                <p className={`text-sm font-bold ${tx.amount.startsWith('+') ? 'text-emerald-500' : 'text-rose-500'}`}>{tx.amount}</p>
+              </div>
+            </div>
+            <div className={`flex items-center gap-2 rounded-lg p-2 ${tx.matched ? 'bg-emerald-500/10' : 'bg-amber-500/10'}`}>
+              <ArrowLeftRight className={`h-4 w-4 ${tx.matched ? 'text-emerald-500' : 'text-amber-500'}`} />
+              <span className={`text-xs font-medium ${tx.matched ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                {tx.matched ? `Párosítva → ${tx.invoice}` : 'Párosítás szükséges'}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    ),
+  },
+];
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -21,12 +169,21 @@ const Auth = () => {
   const { signIn, signUp, user } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const [carouselIndex, setCarouselIndex] = useState(0);
 
   useEffect(() => {
     if (user) {
       navigate('/');
     }
   }, [user, navigate]);
+
+  // Auto-advance carousel every 6 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCarouselIndex(prev => (prev + 1) % carouselSlides.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,9 +247,7 @@ const Auth = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  const currentTheme = theme === 'system' 
-    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-    : theme;
+  const currentTheme = theme;
 
   return (
     <div className="flex min-h-screen">
@@ -134,14 +289,14 @@ const Auth = () => {
 
           {/* Segmented Control Tabs */}
           <div className="mb-8">
-            <div className="inline-flex rounded-lg bg-secondary/50 p-1">
+            <div className="inline-flex rounded-lg bg-slate-100/80 dark:bg-secondary/50 border border-slate-200/60 dark:border-transparent p-1">
               <button
                 onClick={() => setActiveTab('signin')}
                 className={cn(
                   "px-6 py-2 text-sm font-medium rounded-md transition-all duration-200",
                   activeTab === 'signin'
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-white dark:bg-background text-foreground shadow-sm"
+                    : "text-slate-500 dark:text-muted-foreground hover:text-slate-700 dark:hover:text-foreground"
                 )}
               >
                 Bejelentkezés
@@ -151,8 +306,8 @@ const Auth = () => {
                 className={cn(
                   "px-6 py-2 text-sm font-medium rounded-md transition-all duration-200",
                   activeTab === 'signup'
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-white dark:bg-background text-foreground shadow-sm"
+                    : "text-slate-500 dark:text-muted-foreground hover:text-slate-700 dark:hover:text-foreground"
                 )}
               >
                 Regisztráció
@@ -175,7 +330,7 @@ const Auth = () => {
                     placeholder="pelda@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-secondary/30 border-0 focus:bg-secondary/50 transition-colors"
+                    className="pl-10 bg-white dark:bg-secondary/30 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                     required
                   />
                 </div>
@@ -204,7 +359,7 @@ const Auth = () => {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 bg-secondary/30 border-0 focus:bg-secondary/50 transition-colors"
+                    className="pl-10 bg-white dark:bg-secondary/30 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                     required
                   />
                 </div>
@@ -231,7 +386,7 @@ const Auth = () => {
                     placeholder="Kovács János"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="pl-10 bg-secondary/30 border-0 focus:bg-secondary/50 transition-colors"
+                    className="pl-10 bg-white dark:bg-secondary/30 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                     required
                   />
                 </div>
@@ -248,7 +403,7 @@ const Auth = () => {
                     placeholder="pelda@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-secondary/30 border-0 focus:bg-secondary/50 transition-colors"
+                    className="pl-10 bg-white dark:bg-secondary/30 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                     required
                   />
                 </div>
@@ -265,7 +420,7 @@ const Auth = () => {
                     placeholder="Legalább 6 karakter"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 bg-secondary/30 border-0 focus:bg-secondary/50 transition-colors"
+                    className="pl-10 bg-white dark:bg-secondary/30 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                     required
                   />
                 </div>
@@ -345,7 +500,7 @@ const Auth = () => {
                         placeholder="pelda@email.com"
                         value={forgotEmail}
                         onChange={(e) => setForgotEmail(e.target.value)}
-                        className="pl-10 bg-secondary/30 border-0 focus:bg-secondary/50"
+                        className="pl-10 bg-white dark:bg-secondary/30 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20"
                         required
                         autoFocus
                       />
@@ -468,72 +623,36 @@ const Auth = () => {
             <h2 className="text-4xl font-bold text-foreground dark:text-white mb-4">
               Tartsd kézben a pénzügyeidet
             </h2>
-            <p className="text-lg text-muted-foreground dark:text-slate-300 max-w-md">
-              Automatizált számlakezelés, NAV integráció és valós idejű pénzügyi áttekintés egy helyen.
-            </p>
           </div>
 
-          {/* Mock Dashboard Preview */}
-          <div className="space-y-4">
-            {/* Stats Row */}
-            <div className="flex gap-4">
-              <div className="bg-background/90 backdrop-blur-md rounded-xl p-4 flex-1 shadow-xl border border-border/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-muted-foreground">Bevétel</span>
-                  <ArrowUpRight className="h-4 w-4 text-emerald-500" />
-                </div>
-                <p className="text-2xl font-bold text-foreground">2,4M Ft</p>
-                <p className="text-xs text-emerald-500">+12.5%</p>
-              </div>
-              <div className="bg-background/90 backdrop-blur-md rounded-xl p-4 flex-1 shadow-xl border border-border/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-muted-foreground">Kiadás</span>
-                  <ArrowDownRight className="h-4 w-4 text-rose-500" />
-                </div>
-                <p className="text-2xl font-bold text-foreground">890K Ft</p>
-                <p className="text-xs text-rose-500">-3.2%</p>
+          {/* Feature Carousel */}
+          <div className="relative min-h-[480px] flex flex-col">
+            {/* Subtitle - fades */}
+            <p className="text-lg text-muted-foreground dark:text-slate-300 max-w-md mb-6 min-h-[3.5rem]" key={`text-${carouselIndex}`} style={{ animation: 'fadeSlide 800ms ease-in-out' }}>
+              {carouselSlides[carouselIndex].text}
+            </p>
+
+            {/* Visual - fades, fixed height centered */}
+            <div className="flex-1 flex items-start" key={`visual-${carouselIndex}`} style={{ animation: 'fadeSlide 800ms ease-in-out' }}>
+              <div className="w-full">
+                {carouselSlides[carouselIndex].visual}
               </div>
             </div>
 
-            {/* Chart Preview */}
-            <div className="bg-background/90 backdrop-blur-md rounded-xl p-6 shadow-2xl border border-border/50">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-medium text-foreground">Havi áttekintés</span>
-                <div className="flex gap-2">
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                  <PieChart className="h-4 w-4 text-muted-foreground" />
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                </div>
-              </div>
-              {/* Mock Chart Bars */}
-              <div className="flex items-end gap-2 h-24">
-                {[40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 95, 80].map((height, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 rounded-t bg-gradient-to-t from-primary/60 to-primary transition-all hover:from-primary/80 hover:to-primary"
-                    style={{ height: `${height}%` }}
-                  />
-                ))}
-              </div>
-              <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                <span>Jan</span>
-                <span>Márc</span>
-                <span>Máj</span>
-                <span>Júl</span>
-                <span>Szept</span>
-                <span>Nov</span>
-              </div>
-            </div>
-
-            {/* Features */}
-            <div className="flex gap-3">
-              {['NAV integráció', 'Automatikus feldolgozás', 'Valós idejű elemzés'].map((feature) => (
-                <span
-                  key={feature}
-                  className="px-3 py-1.5 bg-primary/15 text-primary text-xs font-medium rounded-full border border-primary/20"
-                >
-                  {feature}
-                </span>
+            {/* Dot indicators */}
+            <div className="flex justify-center gap-2 mt-6">
+              {carouselSlides.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCarouselIndex(i)}
+                  className={cn(
+                    "w-2 h-2 rounded-full transition-all duration-300",
+                    i === carouselIndex
+                      ? "bg-primary w-6"
+                      : "bg-foreground/20 dark:bg-white/20 hover:bg-foreground/40 dark:hover:bg-white/40"
+                  )}
+                  aria-label={`Slide ${i + 1}`}
+                />
               ))}
             </div>
           </div>

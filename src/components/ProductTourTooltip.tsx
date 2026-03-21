@@ -15,8 +15,7 @@ export function ProductTourTooltip({
   size,
 }: TooltipRenderProps) {
   const { theme } = useTheme();
-  const isDark = theme === 'dark' ||
-    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDark = theme === 'dark';
 
   const currentStep = index + 1;
   const totalSteps = size;

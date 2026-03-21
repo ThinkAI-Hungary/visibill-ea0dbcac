@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { STORAGE_KEYS } from '@/lib/constants';
 
-type Theme = "light" | "dark" | "system";
+type Theme = "light" | "dark";
 
 interface ThemeContextType {
   theme: Theme;
@@ -11,33 +11,23 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
+  const [theme, setThemeState] = useState<Theme>(() => {
+    // Sync with whatever the inline script already applied
+    const saved = localStorage.getItem(STORAGE_KEYS.THEME) as Theme | null;
+    return saved === 'dark' ? 'dark' : 'light';
+  });
 
+  // Apply on mount (should match inline script, but just in case)
   useEffect(() => {
-    // Load theme from localStorage on mount
-    const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) as Theme | null;
-    if (savedTheme) {
-      setThemeState(savedTheme);
-      applyTheme(savedTheme);
-    } else {
-      // Default to system preference
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      setThemeState("system");
-      applyTheme("system");
-    }
+    applyTheme(theme);
   }, []);
 
   const applyTheme = (newTheme: Theme) => {
     const root = document.documentElement;
-    
-    if (newTheme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      root.classList.remove("light", "dark");
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.remove("light", "dark");
-      root.classList.add(newTheme);
-    }
+    root.classList.remove("light", "dark");
+    root.classList.add(newTheme);
+    // CSS vars (--initial-bg, --initial-text) respond instantly via .dark selector
+    // No manual body.style needed — the CSS vars handle it
   };
 
   const setTheme = (newTheme: Theme) => {
