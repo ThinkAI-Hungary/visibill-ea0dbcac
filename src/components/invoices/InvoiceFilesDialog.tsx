@@ -112,7 +112,7 @@ export function InvoiceFilesDialog() {
         name: p.name,
       })) as CompanyMember[];
     },
-    enabled: !!companyId,
+    enabled: !!companyId && isOpen,
   });
 
   const profileMap = useMemo(() => {
