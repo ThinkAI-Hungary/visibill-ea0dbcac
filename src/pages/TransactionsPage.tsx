@@ -48,8 +48,6 @@ interface Transaction {
 
 interface TransactionFilters {
   search: string;
-  dateFrom: Date | undefined;
-  dateTo: Date | undefined;
   amountMin: string;
   amountMax: string;
   currency: string;
@@ -116,10 +114,8 @@ const TransactionsPage = () => {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
-  const [filters, setFilters] = useState<TransactionFilters>({
+  const [filters, setFilters] = useState<Omit<TransactionFilters, 'dateFrom' | 'dateTo'>>({
     search: '',
-    dateFrom: undefined,
-    dateTo: undefined,
     amountMin: '',
     amountMax: '',
     currency: 'all',
@@ -127,14 +123,11 @@ const TransactionsPage = () => {
     matchStatus: 'all'
   });
 
-  // Sync filters.dateFrom/dateTo with global date range
-  useEffect(() => {
-    setFilters(prev => ({ ...prev, dateFrom, dateTo }));
-  }, [dateFrom, dateTo]);
+  // dateFrom/dateTo come directly from context – no derived state needed
 
   // Build server-side filter params for query key
-  const dateFromStr = filters.dateFrom ? format(filters.dateFrom, 'yyyy-MM-dd') : '';
-  const dateToStr = filters.dateTo ? format(filters.dateTo, 'yyyy-MM-dd') : '';
+  const dateFromStr = dateFrom ? format(dateFrom, 'yyyy-MM-dd') : '';
+  const dateToStr = dateTo ? format(dateTo, 'yyyy-MM-dd') : '';
   const serverFilters = useMemo(() => ({
     currency: filters.currency,
     type: filters.type,
@@ -260,8 +253,6 @@ const TransactionsPage = () => {
   const clearFilters = () => {
     setFilters({
       search: '',
-      dateFrom: undefined,
-      dateTo: undefined,
       amountMin: '',
       amountMax: '',
       currency: 'all',
@@ -271,14 +262,14 @@ const TransactionsPage = () => {
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = filters.search || filters.dateFrom || filters.dateTo ||
+  const hasActiveFilters = filters.search ||
     filters.amountMin || filters.amountMax || filters.currency !== 'all' ||
     filters.type !== 'all' || filters.matchStatus !== 'all';
 
   // Reset page when server-side filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters.search, filters.dateFrom, filters.dateTo, filters.currency, filters.type, filters.matchStatus]);
+  }, [filters.search, dateFrom, dateTo, filters.currency, filters.type, filters.matchStatus]);
 
   // Sync function - refreshes the transactions table (prefix match invalidates all pages)
   const handleSync = async () => {
