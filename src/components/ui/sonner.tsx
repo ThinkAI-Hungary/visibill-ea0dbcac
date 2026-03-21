@@ -13,6 +13,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
       position="bottom-right"
       richColors
       closeButton
+      expand
+      visibleToasts={5}
       toastOptions={{
         classNames: {
           toast:
