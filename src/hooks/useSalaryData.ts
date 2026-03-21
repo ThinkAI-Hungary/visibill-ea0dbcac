@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -34,6 +34,7 @@ export function useSalaryData() {
       return (data as unknown as SalaryItem[]) || [];
     },
     enabled: !!user && !!selectedCompany?.id && !!dateFromStr && !!dateToStr,
+    placeholderData: keepPreviousData,
   });
 
   const invalidateSalaries = () => {

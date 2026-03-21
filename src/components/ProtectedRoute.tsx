@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -11,56 +12,43 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [profileLoading, setProfileLoading] = useState(true);
-  const [hasProfile, setHasProfile] = useState(false);
+
+  const { data: profileStatus, isLoading: profileLoading } = useQuery({
+    queryKey: ['profile-check', user?.id],
+    queryFn: async () => {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('user_id', user!.id)
+        .single();
+
+      if (error && error.code === 'PGRST116') return 'no-profile' as const;
+      if (error) throw error;
+      if (!profile?.name) return 'incomplete' as const;
+      return 'complete' as const;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
-      return;
-    }
-
-    if (user) {
-      checkProfile();
     }
   }, [user, loading, navigate]);
 
-  const checkProfile = async () => {
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('name, position, company')
-        .eq('user_id', user!.id)
-        .single();
-
-      if (error && error.code === 'PGRST116') {
-        // Profile doesn't exist, redirect to onboarding
-        navigate('/onboarding');
-        return;
-      }
-
-      if (error) throw error;
-
-      // Check if profile is complete (at least name is filled)
-      if (!profile?.name) {
-        navigate('/onboarding');
-        return;
-      }
-
-      setHasProfile(true);
-    } catch (error) {
-      console.error('Error checking profile:', error);
+  useEffect(() => {
+    if (profileStatus === 'no-profile' || profileStatus === 'incomplete') {
       navigate('/onboarding');
-    } finally {
-      setProfileLoading(false);
     }
-  };
+  }, [profileStatus, navigate]);
 
-  if (loading || profileLoading) {
+  if (loading || (profileLoading && !profileStatus)) {
     return <LoadingSpinner />;
   }
 
-  if (!user || !hasProfile) {
+  if (!user || profileStatus !== 'complete') {
     return null;
   }
 

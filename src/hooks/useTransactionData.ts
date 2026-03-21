@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -123,6 +123,7 @@ export function useTransactionData() {
       return { rows: (data || []) as Transaction[], totalCount: count ?? 0 };
     },
     enabled: !!user && !!selectedCompany?.id && !!dateFromStr && !!dateToStr,
+    placeholderData: keepPreviousData,
   });
 
   const transactions = queryResult?.rows ?? [];

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -105,6 +105,7 @@ export function useInvoiceData(
       return (data || []) as SubmittedInvoice[];
     },
     enabled,
+    placeholderData: keepPreviousData,
   });
 
   const { data: linkedInvoicesPool = [] } = useQuery({

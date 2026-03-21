@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useSalaryData } from '@/hooks/useSalaryData';
 import { useDateRange } from '@/contexts/DateRangeContext';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import SalaryPageSkeleton from '@/components/salaries/SalaryPageSkeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus, Users } from 'lucide-react';
@@ -36,7 +36,7 @@ export default function SalariesPage() {
     setEditDialogOpen(true);
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading && salaryItems.length === 0) return <SalaryPageSkeleton />;
 
   return (
     <div className="h-full space-y-4 px-2 py-2">
