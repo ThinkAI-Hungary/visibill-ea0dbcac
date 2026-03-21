@@ -20,8 +20,12 @@ export const queryKeys = {
   // ── Invoices ──
   navInvoices: (companyId: string, dateFrom: string, dateTo: string) =>
     ['navInvoices', companyId, dateFrom, dateTo] as const,
+  filteredNavInvoices: (companyId: string, ...rest: unknown[]) =>
+    ['filteredNavInvoices', companyId, ...rest] as const,
   submittedInvoices: (companyId: string, dateFrom: string, dateTo: string) =>
     ['submittedInvoices', companyId, dateFrom, dateTo] as const,
+  filteredSubmittedInvoices: (companyId: string, ...rest: unknown[]) =>
+    ['filteredSubmittedInvoices', companyId, ...rest] as const,
   linkedInvoices: (companyId: string, dateFrom: string, dateTo: string) =>
     ['linkedInvoices', companyId, dateFrom, dateTo] as const,
   invoiceTransactions: (companyId: string) =>
