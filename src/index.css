@@ -239,12 +239,28 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
-  /* Global removal of focus rings */
+  /* Global removal of focus rings (except keyboard focus-visible for accessibility) */
   *:focus,
-  *:focus-visible,
   *:focus-within {
     outline: none !important;
     box-shadow: none !important;
+  }
+
+  /* Kill visual flash on mouse/touch clicks – keep keyboard focus-visible intact */
+  *:focus:not(:focus-visible) {
+    outline: none !important;
+    box-shadow: none !important;
+    transition: none !important;
+  }
+
+  /* Disable browser tap-highlight on interactive elements */
+  button,
+  a,
+  [role="button"],
+  [type="button"],
+  [type="submit"],
+  [type="reset"] {
+    -webkit-tap-highlight-color: transparent;
   }
 
   html {
