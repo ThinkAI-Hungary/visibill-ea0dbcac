@@ -608,7 +608,7 @@ const ManualUpload = () => {
         // Realtime from service_role INSERTs is unreliable, and processing takes ~20-30s
         const salaryFileId = uploadRecord.id;
         const runPollingLoop = async () => {
-          const maxAttempts = 18; // 18 * 5s = 90s
+          const maxAttempts = 54; // 54 * 5s = 270s
           const intervalMs = 5000;
           console.log(`[SalaryPoll] Starting polling for salary_file_id=${salaryFileId}, max ${maxAttempts} attempts`);
           
