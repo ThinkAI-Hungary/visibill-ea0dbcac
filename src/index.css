@@ -501,53 +501,39 @@ All colors MUST be HSL.
   }
 }
 
-/* ── Sonner toast: vertical list + horizontal slide animation ── */
-@keyframes sonner-slide-in-right {
+/* ── Sonner toast: preserve vertical stack + slide horizontally ── */
+@keyframes combined-slide-in {
   from {
-    transform: var(--y) translateX(calc(100% + 1rem));
+    transform: translateX(calc(100% + 1rem)) var(--y);
     opacity: 0;
   }
   to {
-    transform: var(--y) translateX(0);
+    transform: translateX(0) var(--y);
     opacity: 1;
   }
 }
 
-@keyframes sonner-slide-out-right {
+@keyframes combined-slide-out {
   from {
-    transform: var(--y) translateX(0);
+    transform: translateX(0) var(--y);
     opacity: 1;
   }
   to {
-    transform: var(--y) translateX(calc(100% + 1rem));
+    transform: translateX(calc(100% + 1rem)) var(--y);
     opacity: 0;
   }
 }
 
-/* Keep Sonner's vertical positioning, remove deck shrinking */
 [data-sonner-toaster] [data-sonner-toast] {
   visibility: visible !important;
-  scale: 1 !important;
-  --lift-amount: 0 !important;
+  transition: transform 400ms cubic-bezier(0.23, 1, 0.32, 1), opacity 400ms ease !important;
 }
 
-/* Mounted toasts: keep final resting state in the list */
 [data-sonner-toaster] [data-sonner-toast][data-mounted="true"] {
-  transform: var(--y) translateX(0);
-  opacity: 1;
+  transform: translateX(0) var(--y);
+  animation: combined-slide-in 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards !important;
 }
 
-/* New toast enters from the right */
-[data-sonner-toaster] [data-sonner-toast][data-mounted="true"][data-front="true"] {
-  animation: sonner-slide-in-right 0.4s cubic-bezier(0.23, 1, 0.32, 1) !important;
-}
-
-/* Removing toast exits to the right */
 [data-sonner-toaster] [data-sonner-toast][data-removed="true"] {
-  animation: sonner-slide-out-right 0.3s ease-in forwards !important;
-}
-
-/* Smooth vertical repositioning for older toasts */
-[data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
-  transition: transform 400ms cubic-bezier(0.23, 1, 0.32, 1), opacity 300ms ease !important;
+  animation: combined-slide-out 0.3s ease-in forwards !important;
 }
