@@ -14,9 +14,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
       richColors
       closeButton
       expand={true}
-      visibleToasts={5}
-      gap={12}
+      visibleToasts={6}
+      gap={10}
       toastOptions={{
+        duration: 3000,
         classNames: {
           toast:
             "group toast group-[.toaster]:bg-background/95 group-[.toaster]:backdrop-blur-sm group-[.toaster]:text-foreground group-[.toaster]:border group-[.toaster]:border-border group-[.toaster]:shadow-xl group-[.toaster]:pr-10 group-[.toaster]:relative",
