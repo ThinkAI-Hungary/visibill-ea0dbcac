@@ -46,10 +46,11 @@ export function LoadingSpinner({
   if (fullPage) {
     return (
       <div
-        className={cn("fixed inset-0 z-[9999] flex items-center justify-center", className)}
+        className={cn("fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-3", className)}
         style={{ backgroundColor: 'var(--initial-bg)' }}
       >
         {spinner}
+        {message && <p className="text-sm text-muted-foreground">{message}</p>}
       </div>
     );
   }
