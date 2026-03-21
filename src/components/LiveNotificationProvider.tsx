@@ -211,6 +211,7 @@ export function LiveNotificationProvider() {
           console.log('[RealtimeSync] transactions', payload.eventType);
           invalidate(
             'transactions', 'salaries', 'submittedInvoices',
+            'filteredNavInvoices', 'filteredSubmittedInvoices',
             'dashboardData', 'dashboardAnalytics',
             'kintlevo-nav', 'kintlevo-manual',
             'invoiceStatusPayable', 'invoiceStatusMissing',
