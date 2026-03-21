@@ -372,7 +372,8 @@ const ManualUpload = () => {
       if (successfulUploads > 0) {
         toast({
           title: "Feltöltés sikeres!",
-          description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá."
+          description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.",
+          duration: 3000,
         });
 
         setSelectedInvoiceFiles([]);
@@ -489,7 +490,8 @@ const ManualUpload = () => {
 
       toast({
         title: "Feltöltés sikeres!",
-        description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá."
+        description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.",
+        duration: 3000,
       });
 
       setSelectedBankFiles([]);
@@ -604,7 +606,8 @@ const ManualUpload = () => {
 
       toast({
         title: "Feltöltés sikeres!",
-        description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá."
+        description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.",
+        duration: 3000,
       });
 
       setSelectedSalaryFiles([]);
@@ -752,7 +755,8 @@ const ManualUpload = () => {
       if (successfulUploads > 0) {
         toast({
           title: "Feltöltés sikeres!",
-          description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá."
+          description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.",
+          duration: 3000,
         });
 
         setSelectedTransactionFiles([]);
