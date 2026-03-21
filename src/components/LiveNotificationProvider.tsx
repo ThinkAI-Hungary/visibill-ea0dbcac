@@ -40,7 +40,7 @@ export function LiveNotificationProvider() {
 
       toast.success('Gratulálunk!', {
         description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
-        duration: 2000,
+        duration: 7000,
         icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
       });
     } catch {
