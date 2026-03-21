@@ -551,6 +551,7 @@ const ManualUpload = () => {
             status: 'pending',
             file_url: urlData.publicUrl,
             file_name: file.name,
+            file_size: file.size,
             source: 'automated'
           })
           .select()

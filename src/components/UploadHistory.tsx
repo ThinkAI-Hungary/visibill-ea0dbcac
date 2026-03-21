@@ -72,7 +72,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
       if (activeTab === 'salaries') {
         const res = await (supabase
           .from('salary_files')
-          .select('id, file_name, file_url, user_id, status, created_at')
+          .select('id, file_name, file_size, file_url, user_id, status, created_at')
           .gte('created_at', dateFromFormatted)
           .lte('created_at', dateToFormatted + 'T23:59:59')
           .order('created_at', { ascending: false }) as any)
@@ -82,7 +82,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
         if (res.error) throw res.error;
         records = (res.data || []).map((r: any) => ({
           ...r,
-          file_size: 0,
+          file_size: r.file_size || 0,
           file_type: '',
           upload_status: r.status || 'pending',
           processing_status: r.status || 'pending',
