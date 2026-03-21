@@ -20,7 +20,8 @@ function removeInitialLoader() {
 export function LoadingSpinner({ 
   className,
   size = "lg",
-  fullPage = true 
+  fullPage = true,
+  message
 }: LoadingSpinnerProps) {
 
   useEffect(() => {
