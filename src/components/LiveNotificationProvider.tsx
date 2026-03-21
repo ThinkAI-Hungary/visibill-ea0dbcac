@@ -43,8 +43,13 @@ export function LiveNotificationProvider() {
         duration: 7000,
         icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
       });
-    } catch {
-      // Silently fail — don't show toast if file lookup fails
+    } catch (err) {
+      console.error('[LiveNotifications] File lookup failed:', err);
+      toast.success('Gratulálunk!', {
+        description: 'Egy fájl sikeresen fel lett dolgozva!',
+        duration: 7000,
+        icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
+      });
     }
 
     // Invalidate relevant caches
@@ -124,7 +129,11 @@ export function LiveNotificationProvider() {
         }
       )
 
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status !== 'SUBSCRIBED') {
+          console.warn('[LiveNotifications] Realtime status:', status, err);
+        }
+      });
 
     channelRef.current = channel;
 
