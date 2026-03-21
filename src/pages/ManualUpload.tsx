@@ -325,29 +325,20 @@ const ManualUpload = () => {
             throw new Error(`Adatbázis hiba: ${uploadError.message}`);
           }
 
-          // Trigger N8N webhook processing - call both webhooks
-          const webhookUrls = [
-            'https://n8n.thinkaikontir.hu/webhook-test/bd504dd3-8af8-45d6-90f6-cfc635a22da6',
-            'https://n8n.thinkaikontir.hu/webhook/bd504dd3-8af8-45d6-90f6-cfc635a22da6'
-          ];
-
-          for (const webhookUrl of webhookUrls) {
-            try {
-              const { error: webhookError } = await supabase.functions.invoke('trigger-invoice-processing', {
-                body: {
-                  uploadId: uploadRecord.id,
-                  webhookUrl
-                }
-              });
-
-              if (webhookError) {
-                console.error(`Webhook trigger error for ${webhookUrl}:`, webhookError);
-                // Don't throw here - file is uploaded, webhook is secondary
+          // Trigger N8N webhook processing (production only)
+          try {
+            const { error: webhookError } = await supabase.functions.invoke('trigger-invoice-processing', {
+              body: {
+                uploadId: uploadRecord.id,
+                webhookUrl: 'https://n8n.thinkaikontir.hu/webhook/bd504dd3-8af8-45d6-90f6-cfc635a22da6'
               }
-            } catch (webhookError) {
-              console.error(`Failed to trigger processing webhook ${webhookUrl}:`, webhookError);
-              // Continue - file upload succeeded
+            });
+
+            if (webhookError) {
+              console.error('Webhook trigger error:', webhookError);
             }
+          } catch (webhookError) {
+            console.error('Failed to trigger processing webhook:', webhookError);
           }
 
           addToUploadHistoryCache({
