@@ -126,6 +126,13 @@ export function LiveNotificationProvider() {
           if (!isMyCompany(payload)) return;
           console.log('[RealtimeSync] salary_files', payload.eventType);
           invalidate('salary_files', 'salaries', 'uploadHistory');
+          // Show notification when salary_files status changes to 'completed'
+          if (payload.eventType === 'UPDATE') {
+            const row = payload.new as any;
+            if (row.status === 'completed' && row.id) {
+              showNotification(row.id, 'salary_files');
+            }
+          }
         }
       )
 

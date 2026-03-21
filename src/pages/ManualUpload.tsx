@@ -438,28 +438,20 @@ const ManualUpload = () => {
 
         if (dbError) throw dbError;
 
-        // Trigger processing webhook - call both webhooks
-        const webhookUrls = [
-          'https://n8n.thinkaikontir.hu/webhook-test/a6f3dbf0-9eab-4e1c-98cf-c8ff56a498f6',
-          'https://n8n.thinkaikontir.hu/webhook/a6f3dbf0-9eab-4e1c-98cf-c8ff56a498f6'
-        ];
-
-        for (const webhookUrl of webhookUrls) {
-          try {
-            const { error: webhookError } = await supabase.functions.invoke('trigger-bank-statement-processing', {
-              body: {
-                uploadId: uploadRecord.id,
-                webhookUrl
-              }
-            });
-
-            if (webhookError) {
-              console.error(`Webhook error for ${webhookUrl}:`, webhookError);
-              // Log but don't show toast for every webhook failure
+        // Trigger processing webhook (production only)
+        try {
+          const { error: webhookError } = await supabase.functions.invoke('trigger-bank-statement-processing', {
+            body: {
+              uploadId: uploadRecord.id,
+              webhookUrl: 'https://n8n.thinkaikontir.hu/webhook/a6f3dbf0-9eab-4e1c-98cf-c8ff56a498f6'
             }
-          } catch (webhookError) {
-            console.error(`Webhook trigger error for ${webhookUrl}:`, webhookError);
+          });
+
+          if (webhookError) {
+            console.error('Webhook error:', webhookError);
           }
+        } catch (webhookError) {
+          console.error('Webhook trigger error:', webhookError);
         }
       }
 
