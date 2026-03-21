@@ -55,7 +55,7 @@ export function SalaryFilesDialog() {
       if (error) throw error;
       return (data || []) as SalaryFileRow[];
     },
-    enabled: !!companyId,
+    enabled: !!companyId && isOpen,
   });
 
   // Fetch company members with their profile names
