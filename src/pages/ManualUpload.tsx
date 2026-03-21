@@ -812,6 +812,7 @@ const ManualUpload = () => {
               created_at: new Date().toISOString(),
               error_message: null,
             });
+            txUploadedIds.push({ id: uploadRecord.id, fileName: file.name });
             successfulUploads++;
           } else {
             console.error('Webhook failed via edge function:', triggerData);
