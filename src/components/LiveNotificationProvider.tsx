@@ -47,7 +47,7 @@ export function LiveNotificationProvider() {
       console.error('[LiveNotifications] File lookup failed:', err);
       toast.success('Gratulálunk!', {
         description: 'Egy fájl sikeresen fel lett dolgozva!',
-        duration: 7000,
+        duration: 5000,
         icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
       });
     }
