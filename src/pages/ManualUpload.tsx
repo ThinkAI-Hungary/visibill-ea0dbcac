@@ -901,9 +901,6 @@ const ManualUpload = () => {
                   .limit(1);
                 console.log(`[TxPoll] Attempt ${attempt}/${maxAttempts}: found ${txRows?.length ?? 0} rows`);
                 if (txRows && txRows.length > 0) {
-                  // (dynamic sonner import removed - using static import)
-                  const { createElement } = await import('react');
-                  const { CheckCircle2 } = await import('lucide-react');
                   toast({ title: '✅ Gratulálunk!',
                     description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
                     duration: 5000,
