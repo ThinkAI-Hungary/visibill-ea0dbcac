@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { computeMatchStatus, getPaymentStatusBadge } from '@/hooks/useComputedStatus';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Search, Check, AlertTriangle, FileText, CheckCircle2, HelpCircle, Link2, Eye, Wallet } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { format, subDays, addDays } from 'date-fns';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
 
@@ -236,7 +236,7 @@ export const TransactionDetailsDialog = ({
       setAvailableInvoices(invoicesWithPayments);
     } catch (error) {
       console.error('Error fetching invoices:', error);
-      toast.error('Hiba a számlák betöltésekor');
+      toast({ title: 'Hiba a számlák betöltésekor', variant: 'destructive' });
     } finally {
       setLoadingAvailable(false);
     }
@@ -259,12 +259,12 @@ export const TransactionDetailsDialog = ({
 
       if (error) throw error;
 
-      toast.success('Tranzakció jóváhagyva!');
+      toast({ title: 'Tranzakció jóváhagyva!' });
       onUpdate();
       onOpenChange(false);
     } catch (error) {
       console.error('Error verifying transaction:', error);
-      toast.error('Hiba a jóváhagyás során');
+      toast({ title: 'Hiba a jóváhagyás során', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -286,12 +286,12 @@ export const TransactionDetailsDialog = ({
 
       if (error) throw error;
 
-      toast.success('Tranzakció sikeresen párosítva!');
+      toast({ title: 'Tranzakció sikeresen párosítva!' });
       onUpdate();
       onOpenChange(false);
     } catch (error) {
       console.error('Error matching transaction:', error);
-      toast.error('Hiba a párosítás mentésekor');
+      toast({ title: 'Hiba a párosítás mentésekor', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -313,12 +313,12 @@ export const TransactionDetailsDialog = ({
 
       if (error) throw error;
 
-      toast.success('Párosítás megszüntetve!');
+      toast({ title: 'Párosítás megszüntetve!' });
       onUpdate();
       onOpenChange(false);
     } catch (error) {
       console.error('Error unmatching transaction:', error);
-      toast.error('Hiba a párosítás megszüntetésekor');
+      toast({ title: 'Hiba a párosítás megszüntetésekor', variant: 'destructive' });
     } finally {
       setSaving(false);
     }

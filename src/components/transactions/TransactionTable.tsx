@@ -15,7 +15,7 @@ import type { Transaction } from '@/hooks/useTransactionData';
 // ── Row styling helpers (static, outside component) ──
 
 const getRowBackgroundClass = (transaction: Transaction): string => {
-  const hoverClass = 'hover:shadow-[inset_0_0_0_100vw_rgba(0,0,0,0.04)] dark:hover:shadow-[inset_0_0_0_100vw_rgba(255,255,255,0.06)]';
+  const hoverClass = '';
   const status = computeMatchStatus(transaction);
   if (status === 'matched') {
     return `bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40 ${hoverClass}`;

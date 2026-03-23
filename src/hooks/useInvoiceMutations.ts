@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { exportToFile } from '@/lib/exportUtils';
 import type { NavInvoice, SubmittedInvoice } from './useInvoiceData';
 
@@ -104,12 +104,12 @@ export function useInvoiceMutations({
 
   const handleSync = async () => {
     if (!selectedCompany) {
-      toast.error('Nincs kiválasztott cég');
+      toast({ title: 'Nincs kiválasztott cég', variant: 'destructive' });
       return;
     }
 
     if (!canSync) {
-      toast.error(`Kérlek várj még ${formatCooldown(cooldownSeconds)} a következő szinkronizálásig`);
+      toast({ title: `Kérlek várj még ${formatCooldown(cooldownSeconds)} a következő szinkronizálásig`, variant: 'destructive' });
       return;
     }
 
@@ -117,7 +117,7 @@ export function useInvoiceMutations({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        toast.error('Nincs érvényes munkamenet');
+        toast({ title: 'Nincs érvényes munkamenet', variant: 'destructive' });
         return;
       }
 
@@ -187,11 +187,11 @@ export function useInvoiceMutations({
       if (errors.length === 2) {
         throw new Error(errors.join('; '));
       } else if (errors.length === 1) {
-        toast.info(`Szinkronizálás részben sikeres`, {
+        toast({ title: `Szinkronizálás részben sikeres`,
           description: `${totalInvoices} számla letöltve (${totalOutbound} kimenő, ${totalInbound} bejövő). Hibák: ${errors.join('; ')}`
         });
       } else {
-        toast.success(`Sikeres szinkronizálás!`, {
+        toast({ title: `Sikeres szinkronizálás!`,
           description: `Összesen ${totalInvoices} számla: ${totalOutbound} kimenő, ${totalInbound} bejövő`
         });
       }
@@ -214,7 +214,7 @@ export function useInvoiceMutations({
       invalidateInvoiceData();
     } catch (error: any) {
       console.error('Sync error:', error);
-      toast.error(error.message || 'Nem sikerült szinkronizálni a számlákat');
+      toast({ title: error.message || 'Nem sikerült szinkronizálni a számlákat', variant: 'destructive' });
     } finally {
       setSyncing(false);
     }
@@ -228,10 +228,10 @@ export function useInvoiceMutations({
         .eq('id', invoiceId);
       if (error) throw error;
       invalidateInvoiceData();
-      toast.success('Projekt hozzárendelve');
+      toast({ title: 'Projekt hozzárendelve' });
     } catch (error) {
       console.error('Error updating project:', error);
-      toast.error('Hiba a projekt hozzárendelésekor');
+      toast({ title: 'Hiba a projekt hozzárendelésekor', variant: 'destructive' });
     }
   };
 
@@ -243,10 +243,10 @@ export function useInvoiceMutations({
         .eq('id', invoiceId);
       if (error) throw error;
       invalidateInvoiceData();
-      toast.success('Kategória hozzárendelve');
+      toast({ title: 'Kategória hozzárendelve' });
     } catch (error) {
       console.error('Error updating category:', error);
-      toast.error('Hiba a kategória hozzárendelésekor');
+      toast({ title: 'Hiba a kategória hozzárendelésekor', variant: 'destructive' });
     }
   };
 
@@ -259,10 +259,10 @@ export function useInvoiceMutations({
         .eq('id', invoice.id);
       if (error) throw error;
       invalidateInvoiceData();
-      toast.success(newValue ? 'Beküldve megjelölve' : 'Beküldve visszavonva');
+      toast({ title: newValue ? 'Beküldve megjelölve' : 'Beküldve visszavonva' });
     } catch (error) {
       console.error('Error updating submitted status:', error);
-      toast.error('Hiba a státusz frissítésekor');
+      toast({ title: 'Hiba a státusz frissítésekor', variant: 'destructive' });
     }
   };
 

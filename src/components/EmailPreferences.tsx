@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import { Loader2, Mail } from "lucide-react";
 
 interface EmailPreferences {
@@ -57,7 +57,7 @@ export function EmailPreferences() {
       }
     } catch (error) {
       console.error('Error loading email preferences:', error);
-      toast.error('Nem sikerült betölteni az email beállításokat');
+      toast({ title: 'Nem sikerült betölteni az email beállításokat', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -81,10 +81,10 @@ export function EmailPreferences() {
       if (error) throw error;
 
       setPreferences(prev => ({ ...prev, [key]: value }));
-      toast.success('Beállítás frissítve');
+      toast({ title: 'Beállítás frissítve' });
     } catch (error) {
       console.error('Error updating preference:', error);
-      toast.error('Nem sikerült frissíteni a beállítást');
+      toast({ title: 'Nem sikerült frissíteni a beállítást', variant: 'destructive' });
     } finally {
       setSaving(false);
     }

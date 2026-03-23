@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from 'react';
+﻿import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Sun, Moon, Mail, Lock, User, TrendingUp, PieChart, BarChart3, ArrowUpRight, ArrowDownRight, FileText, CheckCircle2, Clock, AlertTriangle, Users, Wallet, Landmark, ArrowLeftRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 /* Carousel fade animation */
@@ -216,7 +216,7 @@ const Auth = () => {
     });
     
     if (error) {
-      toast.error('Google bejelentkezés sikertelen');
+      toast({ title: 'Google bejelentkezés sikertelen', variant: 'destructive' });
       console.error('Google sign in error:', error);
     }
   };
@@ -224,7 +224,7 @@ const Auth = () => {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail) {
-      toast.error('Kérlek add meg az email címed');
+      toast({ title: 'Kérlek add meg az email címed', variant: 'destructive' });
       return;
     }
     setLoading(true);
@@ -233,11 +233,11 @@ const Auth = () => {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
-      toast.success('Jelszó visszaállító email elküldve! Ellenőrizd a postaládádat.');
+      toast({ title: 'Jelszó visszaállító email elküldve! Ellenőrizd a postaládádat.' });
       setShowForgotPassword(false);
     } catch (error: any) {
       console.error('Password reset error:', error);
-      toast.error(error.message || 'Hiba történt');
+      toast({ title: error.message || 'Hiba történt', variant: 'destructive' });
     } finally {
       setLoading(false);
     }

@@ -13,7 +13,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AuthGuard from "./components/AuthGuard";
 import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { IdleWarningModal } from "./components/IdleWarningModal";
-import { Toaster as SonnerToaster } from "./components/ui/sonner";
+import { Toaster } from "./components/ui/toaster";
 import { LiveNotificationProvider } from "./components/LiveNotificationProvider";
 
 // Route-level code splitting – each page loads as a separate chunk
@@ -76,7 +76,7 @@ const App = () => (
             <SubscriptionProvider>
               <TooltipProvider>
 
-                <SonnerToaster />
+                <Toaster />
                 <LiveNotificationProvider />
                 <BrowserRouter>
                     <Routes>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+﻿import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,7 +6,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { exportToFile } from '@/lib/exportUtils';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
 
@@ -179,12 +179,11 @@ export function useTransactionData() {
     try {
       await queryClient.invalidateQueries({ queryKey: ['transactions', selectedCompany?.id || ''] });
       await queryClient.invalidateQueries({ queryKey: queryKeys.transactionFilterOptions(selectedCompany?.id || '') });
-      toast.success('Tranzakciók frissítve!');
+      toast({ title: 'Tranzakciók frissítve!' });
     } catch (error: any) {
       console.error('Sync error:', error);
-      toast.error('Frissítés sikertelen', {
-        description: error.message || 'Hiba történt a frissítés során'
-      });
+      toast({ title: 'Frissítés sikertelen', description: error.message || 'Hiba történt a frissítés során'
+      , variant: 'destructive' });
     } finally {
       setSyncing(false);
     }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -12,7 +12,7 @@ import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 interface Category {
   id: string;
@@ -101,12 +101,12 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
 
       if (error) throw error;
 
-      toast.success('Számla sikeresen frissítve');
+      toast({ title: 'Számla sikeresen frissítve' });
       onSave();
       onClose();
     } catch (error) {
       console.error('Error updating invoice:', error);
-      toast.error('Nem sikerült menteni a változtatásokat');
+      toast({ title: 'Nem sikerült menteni a változtatásokat', variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }

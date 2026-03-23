@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 
@@ -18,7 +18,7 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { CalendarIcon, Save, Banknote, Settings2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 
 interface HpSettings {
@@ -207,11 +207,11 @@ const PettyCashPage = () => {
         if (error) throw error;
       }
 
-      toast.success('Házipénztár beállítások mentve!');
+      toast({ title: 'Házipénztár beállítások mentve!' });
       queryClient.invalidateQueries({ queryKey: queryKeys.pettyCashSettings(selectedCompany!.id) });
     } catch (error: any) {
       console.error('Error saving settings:', error);
-      toast.error('Hiba a mentés során', { description: error.message });
+      toast({ title: 'Hiba a mentés során', description: error.message , variant: 'destructive' });
     } finally {
       setSaving(false);
     }

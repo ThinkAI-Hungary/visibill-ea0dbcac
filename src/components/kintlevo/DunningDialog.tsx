@@ -1,11 +1,11 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Mail, Send } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { CAT, fmt, validateEmail } from '@/lib/kintlevo-helpers';
@@ -75,7 +75,7 @@ export function DunningDialog({
 
   const handleSend = async () => {
     const targets = companyGroups.filter(g => selectedCompanies.has(g.companyName));
-    if (targets.length === 0) { toast.error('Nincs kiválasztott cég'); return; }
+    if (targets.length === 0) { toast({ title: 'Nincs kiválasztott cég', variant: 'destructive' }); return; }
 
     const errors: Record<string, string> = {};
     for (const t of targets) {
@@ -126,13 +126,13 @@ export function DunningDialog({
         }
       }
       if (successCount > 0) {
-        toast.success(`${successCount} felszólítás sikeresen elküldve!`);
+        toast({ title: `${successCount} felszólítás sikeresen elküldve!` });
         queryClient.invalidateQueries({ queryKey: ['dunning-sends'] });
       }
-      if (errorCount > 0) toast.error(`${errorCount} levél küldése sikertelen`);
+      if (errorCount > 0) toast({ title: `${errorCount} levél küldése sikertelen`, variant: 'destructive' });
       if (successCount > 0) onOpenChange(false);
     } catch (err: any) {
-      toast.error('Hiba: ' + err.message);
+      toast({ title: 'Hiba: ' + err.message, variant: 'destructive' });
     } finally {
       setSending(false);
     }

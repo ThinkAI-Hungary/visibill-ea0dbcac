@@ -1,9 +1,9 @@
-/**
+﻿/**
  * Shared file export utilities.
  * Consolidates CSV/XLSX export logic used across TransactionsPage and InvoicesPage.
  * XLSX library is dynamically imported only when needed to reduce initial bundle size.
  */
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 export async function exportToFile(
   headers: string[],
@@ -31,7 +31,7 @@ export async function exportToFile(
     link.click();
     document.body.removeChild(link);
 
-    toast.success(`${label} exportálva CSV formátumban`);
+    toast({ title: `${label} exportálva CSV formátumban` });
   } else {
     // Dynamic import – XLSX is only loaded when user actually exports to XLSX
     const XLSX = await import('xlsx');
@@ -40,6 +40,6 @@ export async function exportToFile(
     XLSX.utils.book_append_sheet(workbook, worksheet, label.slice(0, 31));
     XLSX.writeFile(workbook, `${filename}_${timestamp}.xlsx`);
 
-    toast.success(`${label} exportálva XLSX formátumban`);
+    toast({ title: `${label} exportálva XLSX formátumban` });
   }
 }

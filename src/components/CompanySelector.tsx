@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const CompanySelector = () => {
@@ -49,8 +49,8 @@ const CompanySelector = () => {
 
   const handleCreateCompany = async () => {
     if (!newCompanyName.trim() || !newCompanyTaxNumber.trim() || !user) {
-      if (!newCompanyName.trim()) toast.error('A cég neve kötelező!');
-      if (!newCompanyTaxNumber.trim()) toast.error('Az adószám kötelező!');
+      if (!newCompanyName.trim()) toast({ title: 'A cég neve kötelező!', variant: 'destructive' });
+      if (!newCompanyTaxNumber.trim()) toast({ title: 'Az adószám kötelező!', variant: 'destructive' });
       return;
     }
 
@@ -75,10 +75,10 @@ const CompanySelector = () => {
       setNewCompanyTaxNumber('');
       setNewCompanyAddress('');
       setIsCreateDialogOpen(false);
-      toast.success('Cég sikeresen létrehozva!');
+      toast({ title: 'Cég sikeresen létrehozva!' });
     } catch (error) {
       console.error('Error creating company:', error);
-      toast.error('Hiba történt a cég létrehozása során');
+      toast({ title: 'Hiba történt a cég létrehozása során', variant: 'destructive' });
     } finally {
       setIsCreating(false);
     }
@@ -86,7 +86,7 @@ const CompanySelector = () => {
 
   const handleJoinCompany = async () => {
     if (!joinCode.trim()) {
-      toast.error('A csatlakozási kód kötelező!');
+      toast({ title: 'A csatlakozási kód kötelező!', variant: 'destructive' });
       return;
     }
 
@@ -105,19 +105,19 @@ const CompanySelector = () => {
       if (error) throw error;
 
       if (data?.error === 'already_member') {
-        toast.error('Már tagja vagy ennek a cégnek!');
+        toast({ title: 'Már tagja vagy ennek a cégnek!', variant: 'destructive' });
         return;
       }
       if (data?.error === 'invalid_code') {
-        toast.error('Érvénytelen csatlakozási kód!');
+        toast({ title: 'Érvénytelen csatlakozási kód!', variant: 'destructive' });
         return;
       }
       if (data?.error === 'token_expired') {
-        toast.error('A csatlakozási kód lejárt! Kérj új kódot a cég tulajdonosától.');
+        toast({ title: 'A csatlakozási kód lejárt! Kérj új kódot a cég tulajdonosától.', variant: 'destructive' });
         return;
       }
       if (data?.error) {
-        toast.error(data.error);
+        toast({ title: data.error, variant: 'destructive' });
         return;
       }
 
@@ -127,10 +127,10 @@ const CompanySelector = () => {
       }
       setJoinCode('');
       setIsCreateDialogOpen(false);
-      toast.success('Sikeresen csatlakoztál a céghez!');
+      toast({ title: 'Sikeresen csatlakoztál a céghez!' });
     } catch (error) {
       console.error('Error joining company:', error);
-      toast.error('Hiba történt a csatlakozás során');
+      toast({ title: 'Hiba történt a csatlakozás során', variant: 'destructive' });
     } finally {
       setIsJoining(false);
     }
@@ -146,8 +146,8 @@ const CompanySelector = () => {
 
   const handleUpdateCompany = async () => {
     if (!editName.trim() || !editTaxNumber.trim() || !editingCompany) {
-      if (!editName.trim()) toast.error('A cég neve kötelező!');
-      if (!editTaxNumber.trim()) toast.error('Az adószám kötelező!');
+      if (!editName.trim()) toast({ title: 'A cég neve kötelező!', variant: 'destructive' });
+      if (!editTaxNumber.trim()) toast({ title: 'Az adószám kötelező!', variant: 'destructive' });
       return;
     }
 
@@ -176,10 +176,10 @@ const CompanySelector = () => {
       
       setIsEditDialogOpen(false);
       setEditingCompany(null);
-      toast.success('Cég sikeresen frissítve!');
+      toast({ title: 'Cég sikeresen frissítve!' });
     } catch (error) {
       console.error('Error updating company:', error);
-      toast.error('Hiba történt a cég frissítése során');
+      toast({ title: 'Hiba történt a cég frissítése során', variant: 'destructive' });
     } finally {
       setIsUpdating(false);
     }
@@ -210,10 +210,10 @@ const CompanySelector = () => {
       
       setIsDeleteDialogOpen(false);
       setDeletingCompany(null);
-      toast.success('Cég sikeresen törölve!');
+      toast({ title: 'Cég sikeresen törölve!' });
     } catch (error) {
       console.error('Error deleting company:', error);
-      toast.error('Hiba történt a cég törlése során. Lehet, hogy vannak még hozzá kapcsolódó adatok.');
+      toast({ title: 'Hiba történt a cég törlése során. Lehet, hogy vannak még hozzá kapcsolódó adatok.', variant: 'destructive' });
     } finally {
       setIsDeleting(false);
     }

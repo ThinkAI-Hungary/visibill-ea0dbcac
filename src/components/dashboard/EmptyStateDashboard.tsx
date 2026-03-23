@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+﻿import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle, Users } from 'lucide-react';
 import { useState, useMemo } from 'react';
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -134,8 +134,8 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
 
   const handleAddProject = () => {
     if (!newProjectName.trim() || !newProjectClient.trim()) {
-      if (!newProjectName.trim()) toast.error('A projekt neve kötelező!');
-      if (!newProjectClient.trim()) toast.error('Az ügyfél neve kötelező!');
+      if (!newProjectName.trim()) toast({ title: 'A projekt neve kötelező!', variant: 'destructive' });
+      if (!newProjectClient.trim()) toast({ title: 'Az ügyfél neve kötelező!', variant: 'destructive' });
       return;
     }
 
@@ -158,7 +158,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
 
   const handleAddCategory = () => {
     if (!newCategoryName.trim()) {
-      toast.error('A kategória neve kötelező!');
+      toast({ title: 'A kategória neve kötelező!', variant: 'destructive' });
       return;
     }
 
@@ -204,17 +204,17 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
 
       if (data?.success) {
         setNavValidationStatus('valid');
-        toast.success('NAV kapcsolat sikeresen ellenőrizve!');
+        toast({ title: 'NAV kapcsolat sikeresen ellenőrizve!' });
       } else {
         setNavValidationStatus('invalid');
         setNavValidationError(data?.error || data?.message || 'A megadott adatok hibásak');
-        toast.error(data?.error || data?.message || 'NAV validálás sikertelen');
+        toast({ title: data?.error || data?.message || 'NAV validálás sikertelen', variant: 'destructive' });
       }
     } catch (error: any) {
       console.error('NAV validation error:', error);
       setNavValidationStatus('invalid');
       setNavValidationError(error.message || 'Hiba történt a validálás során');
-      toast.error(error.message || 'NAV validálás sikertelen');
+      toast({ title: error.message || 'NAV validálás sikertelen', variant: 'destructive' });
     }
   };
 
@@ -347,7 +347,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
             }
             
             if (successCount > 0) {
-              toast.success('NAV számlák szinkronizálása elindult a háttérben');
+              toast({ title: 'NAV számlák szinkronizálása elindult a háttérben' });
             }
           })();
         }
@@ -355,13 +355,13 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
 
       await refreshCompanies();
       setSelectedCompany(companyData);
-      toast.success('Beállítás sikeres! Üdvözöljük a Visibillben!');
+      toast({ title: 'Beállítás sikeres! Üdvözöljük a Visibillben!' });
       
       // Trigger the product tour after successful onboarding
       onOnboardingComplete?.();
     } catch (error) {
       console.error('Error during onboarding:', error);
-      toast.error('Hiba történt a beállítás során');
+      toast({ title: 'Hiba történt a beállítás során', variant: 'destructive' });
     } finally {
       setIsCreating(false);
     }
@@ -369,7 +369,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
 
   const handleJoinCompany = async () => {
     if (!joinCode.trim()) {
-      toast.error('A csatlakozási kód kötelező!');
+      toast({ title: 'A csatlakozási kód kötelező!', variant: 'destructive' });
       return;
     }
 
@@ -388,19 +388,19 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
       if (error) throw error;
 
       if (data?.error === 'already_member') {
-        toast.error('Már tagja vagy ennek a cégnek!');
+        toast({ title: 'Már tagja vagy ennek a cégnek!', variant: 'destructive' });
         return;
       }
       if (data?.error === 'invalid_code') {
-        toast.error('Érvénytelen csatlakozási kód!');
+        toast({ title: 'Érvénytelen csatlakozási kód!', variant: 'destructive' });
         return;
       }
       if (data?.error === 'token_expired') {
-        toast.error('A csatlakozási kód lejárt! Kérj új kódot a cég tulajdonosától.');
+        toast({ title: 'A csatlakozási kód lejárt! Kérj új kódot a cég tulajdonosától.', variant: 'destructive' });
         return;
       }
       if (data?.error) {
-        toast.error(data.error);
+        toast({ title: data.error, variant: 'destructive' });
         return;
       }
 
@@ -408,11 +408,11 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
       if (data?.company) {
         setSelectedCompany(data.company);
       }
-      toast.success('Sikeresen csatlakoztál a céghez!');
+      toast({ title: 'Sikeresen csatlakoztál a céghez!' });
       onOnboardingComplete?.();
     } catch (error) {
       console.error('Error joining company:', error);
-      toast.error('Hiba történt a csatlakozás során');
+      toast({ title: 'Hiba történt a csatlakozás során', variant: 'destructive' });
     } finally {
       setIsJoining(false);
     }

@@ -2,9 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { CheckCircle2 } from 'lucide-react';
-import { createElement } from 'react';
+import { toast } from '@/hooks/use-toast';
 
 /**
  * Global Realtime listener that:
@@ -56,11 +54,11 @@ export function LiveNotificationProvider() {
       console.error('[RealtimeSync] File lookup failed:', err);
     }
 
-    toast.success('Gratulálunk!', {
-      id: `file-processed-${uploadId}`,
+    toast({
+      title: 'Gratulálunk!',
       description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
+      variant: 'default',
       duration: 3000,
-      icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
     });
   }, []);
 

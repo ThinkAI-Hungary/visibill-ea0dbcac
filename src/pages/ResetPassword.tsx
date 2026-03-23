@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Lock } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
@@ -35,12 +35,12 @@ const ResetPassword = () => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      toast.error('A jelszavak nem egyeznek');
+      toast({ title: 'A jelszavak nem egyeznek', variant: 'destructive' });
       return;
     }
 
     if (password.length < 6) {
-      toast.error('A jelszónak legalább 6 karakter hosszúnak kell lennie');
+      toast({ title: 'A jelszónak legalább 6 karakter hosszúnak kell lennie', variant: 'destructive' });
       return;
     }
 
@@ -50,11 +50,11 @@ const ResetPassword = () => {
 
       if (error) throw error;
 
-      toast.success('Jelszó sikeresen megváltoztatva!');
+      toast({ title: 'Jelszó sikeresen megváltoztatva!' });
       navigate('/');
     } catch (error: any) {
       console.error('Password reset error:', error);
-      toast.error(error.message || 'Hiba történt a jelszó visszaállítása során');
+      toast({ title: error.message || 'Hiba történt a jelszó visszaállítása során', variant: 'destructive' });
     } finally {
       setLoading(false);
     }

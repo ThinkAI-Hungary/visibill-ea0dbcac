@@ -1,11 +1,11 @@
-import React from 'react';
+﻿import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Check, Zap, Star, Crown, Gem } from 'lucide-react';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 // Pricing data structure with all your Stripe products
 const pricingData = {
@@ -128,7 +128,7 @@ const Pricing: React.FC = () => {
   const handleSubscribe = async (planKey: string) => {
     const selectedVolume = selectedVolumes[planKey];
     if (!selectedVolume && planKey !== 'salmon') {
-      toast.error('Kérjük válasszon számla mennyiséget');
+      toast({ title: 'Kérjük válasszon számla mennyiséget', variant: 'destructive' });
       return;
     }
 
@@ -140,7 +140,7 @@ const Pricing: React.FC = () => {
     const priceData = Array.isArray(prices) ? prices[volumeIndex] : null;
     
     if (!priceData?.priceId) {
-      toast.error('Hiba történt az árazási információk betöltésekor');
+      toast({ title: 'Hiba történt az árazási információk betöltésekor', variant: 'destructive' });
       return;
     }
 
@@ -149,7 +149,7 @@ const Pricing: React.FC = () => {
       window.open(checkoutUrl, '_blank');
     } catch (error) {
       console.error('Error creating checkout:', error);
-      toast.error('Hiba történt a fizetés indításakor');
+      toast({ title: 'Hiba történt a fizetés indításakor', variant: 'destructive' });
     }
   };
 
@@ -159,7 +159,7 @@ const Pricing: React.FC = () => {
       window.open(portalUrl, '_blank');
     } catch (error) {
       console.error('Error opening customer portal:', error);
-      toast.error('Hiba történt az előfizetés kezelés megnyitásakor');
+      toast({ title: 'Hiba történt az előfizetés kezelés megnyitásakor', variant: 'destructive' });
     }
   };
 

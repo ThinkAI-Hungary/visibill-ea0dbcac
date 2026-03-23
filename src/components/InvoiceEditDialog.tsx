@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Invoice } from '@/types/invoices';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { getPaymentStatusBadge } from '@/hooks/useComputedStatus';
 
 interface Category {
@@ -58,12 +58,12 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
 
       if (error) throw error;
 
-      toast.success('Számla sikeresen frissítve');
+      toast({ title: 'Számla sikeresen frissítve' });
       onSave();
       onClose();
     } catch (error) {
       console.error('Error updating invoice:', error);
-      toast.error('Nem sikerült menteni a változtatásokat');
+      toast({ title: 'Nem sikerült menteni a változtatásokat', variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }

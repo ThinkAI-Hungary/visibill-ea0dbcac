@@ -362,13 +362,9 @@ All colors MUST be HSL.
     @apply bg-card/50 backdrop-blur-sm border-border/50;
   }
 
-  /* Smooth interactions */
+  /* Smooth interactions (flat — no hover shadow or scale) */
   .interactive {
-    @apply transition-all duration-200 ease-out;
-  }
-
-  .interactive:hover {
-    @apply scale-[1.02] shadow-lg;
+    @apply transition-colors duration-200 ease-out;
   }
 
   /* Override browser autofill background - Light mode */
@@ -501,5 +497,10 @@ All colors MUST be HSL.
   }
 }
 
-/* ── Sonner toast: custom animation TEMPORARILY DISABLED for debugging ──
-   Uncomment below once the right approach is determined. ── */
+/* ── Global: ban all hover-based shadows & elevation ── */
+@layer base {
+  *[class*="hover:shadow"]:hover {
+    box-shadow: none !important;
+    transform: none !important;
+  }
+}

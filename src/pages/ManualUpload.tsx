@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+﻿import { useState, useCallback } from 'react';
 import { formatFileSize, extractStoragePath } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -403,10 +403,10 @@ const ManualUpload = () => {
                   .limit(1);
                 console.log(`[InvoicePoll] Attempt ${attempt}/${maxAttempts}: found ${invoiceRows?.length ?? 0} rows`);
                 if (invoiceRows && invoiceRows.length > 0) {
-                  const { toast: sonnerToast } = await import('sonner');
+                  // (dynamic sonner import removed - using static import)
                   const { createElement } = await import('react');
                   const { CheckCircle2 } = await import('lucide-react');
-                  sonnerToast.success('Gratulálunk!', {
+                  toast({ title: 'Gratulálunk!',
                     id: `file-processed-${uploadId}`,
                     description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
                     duration: 5000,
@@ -423,8 +423,8 @@ const ManualUpload = () => {
             }
             console.log(`[InvoicePoll] ⚠️ Polling timed out for ${uploadId}`);
             // BUG #1 FIX: Show timeout toast to user
-            const { toast: sonnerToast } = await import('sonner');
-            sonnerToast.warning('Feldolgozás időtúllépés', {
+            // (dynamic sonner import removed - using static import)
+            toast({ title: 'Feldolgozás időtúllépés',
               id: `file-timeout-${uploadId}`,
               description: `A "${fileName}" fájl feldolgozása a vártnál tovább tart. Kérlek ellenőrizd később.`,
               duration: 10000,
@@ -688,10 +688,10 @@ const ManualUpload = () => {
                   .single() as { data: { file_name: string } | null; error: any };
                 const fileName = sfData?.file_name || file.name;
                 // Show notification (deduplicated by toast id)
-                const { toast: sonnerToast } = await import('sonner');
+                // (dynamic sonner import removed - using static import)
                 const { createElement } = await import('react');
                 const { CheckCircle2 } = await import('lucide-react');
-                sonnerToast.success('Gratulálunk!', {
+                toast({ title: 'Gratulálunk!',
                   id: `file-processed-${salaryFileId}`,
                   description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
                   duration: 5000,
@@ -710,8 +710,8 @@ const ManualUpload = () => {
           }
           console.log(`[SalaryPoll] ⚠️ Polling timed out for ${salaryFileId} after ${maxAttempts} attempts`);
           // BUG #1 FIX: Show timeout toast to user
-          const { toast: sonnerToast } = await import('sonner');
-          sonnerToast.warning('Feldolgozás időtúllépés', {
+          // (dynamic sonner import removed - using static import)
+          toast({ title: 'Feldolgozás időtúllépés',
             id: `file-timeout-${salaryFileId}`,
             description: `A "${file.name}" fájl feldolgozása a vártnál tovább tart. Kérlek ellenőrizd később.`,
             duration: 10000,
@@ -914,10 +914,10 @@ const ManualUpload = () => {
                   .limit(1);
                 console.log(`[TxPoll] Attempt ${attempt}/${maxAttempts}: found ${txRows?.length ?? 0} rows`);
                 if (txRows && txRows.length > 0) {
-                  const { toast: sonnerToast } = await import('sonner');
+                  // (dynamic sonner import removed - using static import)
                   const { createElement } = await import('react');
                   const { CheckCircle2 } = await import('lucide-react');
-                  sonnerToast.success('Gratulálunk!', {
+                  toast({ title: 'Gratulálunk!',
                     id: `file-processed-${uploadId}`,
                     description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
                     duration: 5000,
@@ -933,8 +933,8 @@ const ManualUpload = () => {
             }
             console.log(`[TxPoll] ⚠️ Polling timed out for ${uploadId}`);
             // BUG #1 FIX: Show timeout toast to user
-            const { toast: sonnerToast } = await import('sonner');
-            sonnerToast.warning('Feldolgozás időtúllépés', {
+            // (dynamic sonner import removed - using static import)
+            toast({ title: 'Feldolgozás időtúllépés',
               id: `file-timeout-${uploadId}`,
               description: `A "${fileName}" fájl feldolgozása a vártnál tovább tart. Kérlek ellenőrizd később.`,
               duration: 10000,
