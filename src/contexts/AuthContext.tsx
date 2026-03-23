@@ -1,9 +1,11 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { STORAGE_KEYS, SIGNOUT_DELETE_KEYS } from '@/lib/constants';
 import { useSessionGuard, type SessionGuardState } from '@/hooks/useSessionGuard';
+
+const ABSOLUTE_LIMIT_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 interface AuthContextType {
   user: User | null;
@@ -12,7 +14,7 @@ interface AuthContextType {
   sessionGuard: SessionGuardState;
   signUp: (email: string, password: string, name?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signOut: () => Promise<void>;
+  signOut: (options?: { silent?: boolean }) => Promise<void>;
   updatePassword: (currentPassword: string, newPassword: string) => Promise<{ error: any }>;
 }
 
@@ -26,42 +28,79 @@ export const useAuth = () => {
   return context;
 };
 
+/** Check if lastActive timestamp is older than 4 hours (synchronous) */
+function isSessionExpired(): boolean {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.LAST_ACTIVE);
+    if (!stored) return false; // first visit — no gate
+    const elapsed = Date.now() - parseInt(stored, 10);
+    return elapsed >= ABSOLUTE_LIMIT_MS;
+  } catch {
+    return false;
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const gateCheckedRef = useRef(false);
 
   useEffect(() => {
+    // ── PRE-FLIGHT: Absolute 4h gate ──
+    // Runs BEFORE session restore.  If expired, kill session immediately.
+    const expired = isSessionExpired();
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      (event, currentSession) => {
+        // If gate already killed the session, ignore incoming auth events
+        // that try to restore it (except fresh SIGNED_IN from login form)
+        if (gateCheckedRef.current && expired && event !== 'SIGNED_IN') {
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
         setLoading(false);
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('Session error:', error.message);
-        // If refresh token is invalid, clear local storage and reset state
-        if (error.message.includes('Refresh Token') || error.message.includes('refresh_token')) {
-          console.log('Invalid refresh token detected, clearing session...');
-          localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-          setSession(null);
-          setUser(null);
+    if (expired) {
+      // Session is stale — force sign out silently, don't restore anything
+      gateCheckedRef.current = true;
+      supabase.auth.signOut().catch(() => {});
+      try {
+        SIGNOUT_DELETE_KEYS.forEach(key => localStorage.removeItem(key));
+      } catch {}
+      setSession(null);
+      setUser(null);
+      setLoading(false);
+    } else {
+      // Normal path — check for existing session
+      gateCheckedRef.current = true;
+      supabase.auth.getSession().then(({ data: { session: existingSession }, error }) => {
+        if (error) {
+          console.error('Session error:', error.message);
+          if (error.message.includes('Refresh Token') || error.message.includes('refresh_token')) {
+            console.log('Invalid refresh token detected, clearing session...');
+            localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            setSession(null);
+            setUser(null);
+          }
+        } else {
+          setSession(existingSession);
+          setUser(existingSession?.user ?? null);
         }
-      } else {
-        setSession(session);
-        setUser(session?.user ?? null);
-      }
-      setLoading(false);
-    }).catch((err) => {
-      console.error('Failed to get session:', err);
-      setLoading(false);
-    });
+        setLoading(false);
+      }).catch((err) => {
+        console.error('Failed to get session:', err);
+        setLoading(false);
+      });
+    }
 
     return () => subscription.unsubscribe();
   }, []);
@@ -90,8 +129,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Elküldtünk egy megerősítő linket."
       });
 
-      // Send welcome email immediately (don't wait for email confirmation)
-      // The edge function will check email preferences before sending
       supabase.functions.invoke('send-welcome-email', {
         body: {
           userId: data.user?.id,
@@ -124,30 +161,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Bejelentkezés sikertelen",
         description: error.message
       });
+    } else {
+      // ── Login success: reset lastActive so gate won't block ──
+      try {
+        localStorage.setItem(STORAGE_KEYS.LAST_ACTIVE, Date.now().toString());
+      } catch {}
     }
     
     return { error };
   };
 
-  const signOut = async () => {
+  const signOut = async (options?: { silent?: boolean }) => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error && !`${error.message}`.toLowerCase().includes('session')) {
-        // Ha nem "session missing" jellegű hiba, jelezzük
         throw error;
       }
     } catch (err: any) {
-      // Nem kritikus – kliens oldalon kényszerített kijelentkezés
       console.warn('signOut fallback (forced):', err?.message || err);
     } finally {
       try {
-        // Selective cleanup: only security-sensitive keys
-        // UX preferences (theme, date_range, dashboard prefs) are preserved
         SIGNOUT_DELETE_KEYS.forEach(key => localStorage.removeItem(key));
       } catch {}
       setUser(null);
       setSession(null);
-      toast({ title: 'Kijelentkezve', description: 'Sikeresen kijelentkeztél.' });
+      // Only show toast for explicit user-initiated sign-outs, not gate/timeout
+      if (!options?.silent) {
+        toast({ title: 'Kijelentkezve', description: 'Sikeresen kijelentkeztél.' });
+      }
     }
   };
 
@@ -156,7 +197,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: { message: "Nincs bejelentkezett felhasználó" } };
     }
 
-    // Re-authenticate with current password
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: user.email,
       password: currentPassword,
@@ -171,7 +211,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: signInError };
     }
 
-    // Update to new password
     const { error } = await supabase.auth.updateUser({
       password: newPassword
     });
@@ -192,7 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  // ── Session guard: absolute expiry + idle warning + multi-tab sync ──
+  // ── Session guard: idle warning + multi-tab sync (absolute gate handled above) ──
   const sessionGuard = useSessionGuard(signOut, !!user);
 
   const value = {

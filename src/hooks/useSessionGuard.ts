@@ -46,7 +46,7 @@ export interface SessionGuardState {
  * 5. Multi-tab sync   – `storage` event resets the timer cross-tab.
  */
 export function useSessionGuard(
-  signOut: () => Promise<void>,
+  signOut: (options?: { silent?: boolean }) => Promise<void>,
   enabled: boolean,
 ): SessionGuardState {
   const [showWarning, setShowWarning] = useState(false);
@@ -61,12 +61,12 @@ export function useSessionGuard(
   const totalTimeoutMs = WARNING_AFTER_MS + COUNTDOWN_SEC * 1000; // 30 min
 
   // ── Absolute expiry check (runs once on mount) ──
+  // Note: The main gate is in AuthContext (pre-flight). This is a backup.
   useEffect(() => {
     if (!enabled) return;
     const elapsed = Date.now() - getLastActive();
     if (elapsed >= ABSOLUTE_LIMIT_MS) {
-      // Stale session — sign out before anything renders
-      signOutRef.current();
+      signOutRef.current({ silent: true });
     }
   }, [enabled]);
 
@@ -85,13 +85,13 @@ export function useSessionGuard(
     if (remaining <= 0) {
       const elapsed = Date.now() - getLastActive();
       if (elapsed >= totalTimeoutMs) {
-        signOutRef.current();
+        signOutRef.current({ silent: true });
         return;
       }
       // Between 28-30 min — show warning with adjusted countdown
       const cdRemaining = Math.max(0, Math.ceil((totalTimeoutMs - elapsed) / 1000));
       if (cdRemaining <= 0) {
-        signOutRef.current();
+        signOutRef.current({ silent: true });
         return;
       }
       setSecondsLeft(cdRemaining);
@@ -117,7 +117,7 @@ export function useSessionGuard(
         if (prev <= 1) {
           clearInterval(countdownRef.current!);
           setShowWarning(false);
-          signOutRef.current();
+          signOutRef.current({ silent: true });
           return 0;
         }
         return prev - 1;
@@ -157,8 +157,9 @@ export function useSessionGuard(
       return;
     }
 
-    // Touch on mount (page refresh = activity)
-    setLastActive();
+    // Do NOT touch lastActive on mount — the pre-flight gate in AuthContext
+    // needs the original timestamp to decide if the session is stale.
+    // Activity events will update it naturally.
     startIdleTimer();
 
     // User interaction → reset idle (Phase 1 only)
