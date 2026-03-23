@@ -196,7 +196,7 @@ async function sha512(input: string): Promise<string> {
 function sha3_512(input: string): string {
   const encoder = new TextEncoder()
   const data = encoder.encode(input)
-  const hash = Sha3.sha3_512(data)
+  const hash = noble_sha3_512(data)
   return Array.from(hash)
     .map(b => b.toString(16).padStart(2, '0'))
     .join('')
