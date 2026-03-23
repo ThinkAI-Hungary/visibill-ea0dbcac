@@ -1413,7 +1413,7 @@ const ManualUpload = () => {
         </div>
       </div>
 
-      <UploadHistory activeTab={activeTab} refreshKey={uploadRefreshKey} />
+      <UploadHistory activeTab={activeTab} />
     </div>
   );
 };

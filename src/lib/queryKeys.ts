@@ -104,8 +104,8 @@ export const queryKeys = {
     ['dashboardPettyCash', companyId] as const,
 
   // ── Upload History ──
-  uploadHistory: (companyId: string, activeTab: string, dateFrom: string, dateTo: string, refreshKey?: number) =>
-    ['uploadHistory', companyId, activeTab, dateFrom, dateTo, refreshKey] as const,
+  uploadHistory: (companyId: string, activeTab: string, dateFrom: string, dateTo: string) =>
+    ['uploadHistory', companyId, activeTab, dateFrom, dateTo] as const,
 
   // ── Exchange Rates Page ──
   exchangeRatesPage: (base: string) =>
