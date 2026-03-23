@@ -709,7 +709,6 @@ const ManualUpload = () => {
           // BUG #1 FIX: Show timeout toast to user
           // (dynamic sonner import removed - using static import)
           toast({ title: 'Feldolgozás időtúllépés',
-            id: `file-timeout-${salaryFileId}`,
             description: `A "${file.name}" fájl feldolgozása a vártnál tovább tart. Kérlek ellenőrizd később.`,
             duration: 10000,
           });
