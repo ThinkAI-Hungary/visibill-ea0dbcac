@@ -744,7 +744,6 @@ const ManualUpload = () => {
       });
 
       setSelectedSalaryFiles([]);
-      setUploadRefreshKey(k => k + 1);
       delayedUploadHistoryInvalidation();
     } catch (error) {
       console.error('Salary upload error:', error);
