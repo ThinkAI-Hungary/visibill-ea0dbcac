@@ -681,10 +681,6 @@ const ManualUpload = () => {
                   .eq('id', salaryFileId)
                   .single() as { data: { file_name: string } | null; error: any };
                 const fileName = sfData?.file_name || file.name;
-                // Show notification (deduplicated by toast id)
-                // (dynamic sonner import removed - using static import)
-                const { createElement } = await import('react');
-                const { CheckCircle2 } = await import('lucide-react');
                 toast({ title: '✅ Gratulálunk!',
                   description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
                   duration: 5000,
