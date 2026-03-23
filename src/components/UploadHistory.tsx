@@ -29,7 +29,6 @@ interface UploadRecord {
 
 interface UploadHistoryProps {
   activeTab: string;
-  refreshKey?: number;
 }
 
 const errorStatuses = new Set(['webhook_failed', 'failed', 'error']);
