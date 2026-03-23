@@ -403,14 +403,9 @@ const ManualUpload = () => {
                   .limit(1);
                 console.log(`[InvoicePoll] Attempt ${attempt}/${maxAttempts}: found ${invoiceRows?.length ?? 0} rows`);
                 if (invoiceRows && invoiceRows.length > 0) {
-                  // (dynamic sonner import removed - using static import)
-                  const { createElement } = await import('react');
-                  const { CheckCircle2 } = await import('lucide-react');
-                  toast({ title: 'Gratulálunk!',
-                    id: `file-processed-${uploadId}`,
+                  toast({ title: '✅ Gratulálunk!',
                     description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
                     duration: 5000,
-                    icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
                   });
                   queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
                   queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
@@ -425,7 +420,6 @@ const ManualUpload = () => {
             // BUG #1 FIX: Show timeout toast to user
             // (dynamic sonner import removed - using static import)
             toast({ title: 'Feldolgozás időtúllépés',
-              id: `file-timeout-${uploadId}`,
               description: `A "${fileName}" fájl feldolgozása a vártnál tovább tart. Kérlek ellenőrizd később.`,
               duration: 10000,
             });
@@ -687,15 +681,9 @@ const ManualUpload = () => {
                   .eq('id', salaryFileId)
                   .single() as { data: { file_name: string } | null; error: any };
                 const fileName = sfData?.file_name || file.name;
-                // Show notification (deduplicated by toast id)
-                // (dynamic sonner import removed - using static import)
-                const { createElement } = await import('react');
-                const { CheckCircle2 } = await import('lucide-react');
-                toast({ title: 'Gratulálunk!',
-                  id: `file-processed-${salaryFileId}`,
+                toast({ title: '✅ Gratulálunk!',
                   description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
                   duration: 5000,
-                  icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
                 });
                 console.log(`[SalaryPoll] ✅ Toast shown for ${salaryFileId}`);
                 // Invalidate caches
@@ -712,7 +700,6 @@ const ManualUpload = () => {
           // BUG #1 FIX: Show timeout toast to user
           // (dynamic sonner import removed - using static import)
           toast({ title: 'Feldolgozás időtúllépés',
-            id: `file-timeout-${salaryFileId}`,
             description: `A "${file.name}" fájl feldolgozása a vártnál tovább tart. Kérlek ellenőrizd később.`,
             duration: 10000,
           });
@@ -914,14 +901,9 @@ const ManualUpload = () => {
                   .limit(1);
                 console.log(`[TxPoll] Attempt ${attempt}/${maxAttempts}: found ${txRows?.length ?? 0} rows`);
                 if (txRows && txRows.length > 0) {
-                  // (dynamic sonner import removed - using static import)
-                  const { createElement } = await import('react');
-                  const { CheckCircle2 } = await import('lucide-react');
-                  toast({ title: 'Gratulálunk!',
-                    id: `file-processed-${uploadId}`,
+                  toast({ title: '✅ Gratulálunk!',
                     description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
                     duration: 5000,
-                    icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
                   });
                   queryClient.invalidateQueries({ queryKey: ['transactions'] });
                   queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
@@ -935,7 +917,6 @@ const ManualUpload = () => {
             // BUG #1 FIX: Show timeout toast to user
             // (dynamic sonner import removed - using static import)
             toast({ title: 'Feldolgozás időtúllépés',
-              id: `file-timeout-${uploadId}`,
               description: `A "${fileName}" fájl feldolgozása a vártnál tovább tart. Kérlek ellenőrizd később.`,
               duration: 10000,
             });
