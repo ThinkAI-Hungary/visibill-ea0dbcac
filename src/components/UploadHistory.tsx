@@ -51,11 +51,11 @@ function getStatus(record: UploadRecord, processedIds: Set<string>): { label: st
   return { label: 'Feltöltve', variant: 'secondary' };
 }
 
-export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryProps) {
+export default function UploadHistory({ activeTab }: UploadHistoryProps) {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
-  
+  const queryClient = useQueryClient();
 
   const companyId = selectedCompany?.id || '';
   // BUG #3 FIX: Added bank-statements tab support
