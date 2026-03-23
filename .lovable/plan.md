@@ -1,40 +1,24 @@
 
 
-# Számla feltöltési előzmények konzisztencia javítás
+# Build Error Fixes
 
-## Azonosított problémák
+## Problem 1: `send-invoice-notification/index.ts` — `npm:` imports
+Lines 3-4 use `npm:resend@4.0.0` and `npm:@react-email/components@0.0.22` which fail in the Deno build. Replace with `esm.sh` imports (same pattern as `send-email/index.ts`).
 
-### 1. `refreshKey` megtöri az optimisztikus cache-t (FŐ BUG)
-A feltöltés után két ellentétes művelet fut:
-- `addToUploadHistoryCache()` — hozzáadja az új rekordot a `['uploadHistory', ...]` cache-hez
-- `setUploadRefreshKey(k => k + 1)` — megváltoztatja a query key-t
+## Problem 2: `ManualUpload.tsx` — `id` not in Toast type
+The `Toast` type is `Omit<ToasterToast, "id">`, so passing `id` is a TS error. The `id` was used for deduplication, but the `toast()` function auto-generates IDs. Fix: remove `id` from all 6 toast calls (lines 410, 428, 695, 715, 921, 938).
 
-Mivel a `refreshKey` a query key része (`['uploadHistory', companyId, activeTab, dateFrom, dateTo, refreshKey]`), a key változása:
-1. Az optimisztikus rekordot tartalmazó régi cache-t elárvítja
-2. Új query-t indít az új key-vel, ami üres/loading állapotot mutat
-3. A friss fetch-ig "Még nincs feltöltési előzmény" villan be
+## Problem 3: AuthContext — Already correct
+The 4h gate is already fully implemented with pre-flight check, `expiredRef`, `gateCheckedRef`, silent signOut, login reset, and PASSWORD_RECOVERY bypass. No changes needed.
 
-### 2. `addToUploadHistoryCache` prefix match vs. pontos key
-A `setQueriesData({ queryKey: ['uploadHistory'] })` az összes `uploadHistory` prefixű query-t frissíti — ez helyes. De a `refreshKey` változás miatt az éppen aktív query már egy másik key-en van, így az optimisztikus adat sosem jelenik meg az új query-ben.
+---
 
-## Javítási terv
+## Files to edit
 
-### `UploadHistory.tsx`
-- **Törölni a `refreshKey`-t a query key-ből**: A `queryKeys.uploadHistory()` hívásból eltávolítani a `refreshKey` paramétert
-- A `refreshKey` prop megmarad, de nem a query key része lesz, hanem egy `useEffect`-ben figyeljük, és `refreshKey` változásakor `invalidateQueries`-t hívunk
-
-### `src/lib/queryKeys.ts`
-- Az `uploadHistory` factory-ból eltávolítani a `refreshKey` paramétert: `(companyId, activeTab, dateFrom, dateTo)` — 4 paraméter
-
-### `ManualUpload.tsx`
-- A `setUploadRefreshKey(k => k + 1)` hívásokat **eltávolítani** — feleslegesek, mert az `addToUploadHistoryCache` + `delayedUploadHistoryInvalidation` már biztosítja a frissítést
-- A `delayedUploadHistoryInvalidation` marad biztonsági hálóként
-
-### Érintett fájlok
-
-| Fájl | Változás |
+| File | Change |
 |---|---|
-| `src/lib/queryKeys.ts` | `refreshKey` eltávolítása az `uploadHistory` key-ből |
-| `src/components/UploadHistory.tsx` | `refreshKey` prop eltávolítása a query key-ből, `useEffect` alapú invalidáció hozzáadása |
-| `src/pages/ManualUpload.tsx` | `uploadRefreshKey` state és `setUploadRefreshKey` hívások eltávolítása |
+| `supabase/functions/send-invoice-notification/index.ts` | `npm:resend@4.0.0` → `https://esm.sh/resend@4.0.0`, `npm:@react-email/components@0.0.22` → `https://esm.sh/@react-email/components@0.0.22`, `npm:react@18.3.1` → `https://esm.sh/react@18.3.1` |
+| `src/pages/ManualUpload.tsx` | Remove `id` property from 6 toast calls (lines 410, 428, 695, 715, 921, 938) |
+
+No AuthContext changes needed — the implementation is already complete and correct.
 
