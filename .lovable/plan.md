@@ -1,94 +1,124 @@
 
 
-# Persistent Layout & Zero-Flicker Cache Refaktor
+# Számla-Tranzakció & Számla-Számla Láncolat Audit Report
 
-## Jelenlegi állapot
+## Build Error Fix (Azonnali)
 
-### Layout probléma
-A `ProtectedLayout` már jól tartalmazza az `AppSidebar`-t + `Outlet`-et, DE a `ProtectedRoute` (amit minden egyes route child-jába be van csomagolva) **minden navigációnál újra futtatja** a profil-ellenőrzést (`checkProfile`), ami `profileLoading = true` → `<LoadingSpinner />` → **teljes képernyős spinner a sidebar fölött**. Ez okozza a villanást.
+A `jsr:@supabase/supabase-js@2` import 5 edge function-ben nem tud feloldani egy tranzitív függőséget (`@supabase/realtime-js@2.100.0`). Megoldás: cserélni `https://esm.sh/@supabase/supabase-js@2.57.4` importra (amit a többi edge function már használ).
 
-### Loading anti-patternek
-- **Index.tsx (77. sor):** `if (companyLoading || metricsLoading) return <LoadingSpinner />;` — teljes oldalcsere
-- **SalariesPage.tsx (39. sor):** `if (loading) return <LoadingSpinner />;` — teljes oldalcsere
-- **TransactionsPage.tsx:** `loading` prop a `TransactionTable`-nek → az már `TableSkeleton`-t használ (jó!)
-- **InvoicesPage.tsx:** `loading` összevonás → valószínűleg hasonló full-page spinner
-
-### Query cache
-A globális `staleTime: 5 min` már be van állítva. A `placeholderData: keepPreviousData` viszont **sehol sincs** alkalmazva.
+**Érintett fájlok:**
+- `supabase/functions/nav-token/index.ts`
+- `supabase/functions/save-credentials/index.ts`
+- `supabase/functions/query-nav-invoices/index.ts`
+- `supabase/functions/nav-sync/index.ts`
+- `supabase/functions/join-company/index.ts`
 
 ---
 
-## Implementációs terv
+## 1. Számla-Tranzakció Dinamika — AUDIT EREDMÉNY
 
-### 1. ProtectedRoute profil-check cache-elése (fő villanás ok)
+### Relációs térkép
 
-A `ProtectedRoute` minden mount-nál Supabase `select`-et indít és `profileLoading = true`-ra áll. Ezt **TanStack Query-re** kell cserélni fix `staleTime`-mal, így navigáció közben a cache-ből jön az adat, nincs loading.
-
-**`src/components/ProtectedRoute.tsx`:**
-- `useState + useEffect + checkProfile()` → `useQuery` a profil lekérésre, `staleTime: 5 * 60 * 1000`
-- `if (isLoading && !data)` → spinner; ha `data` megvan → azonnal renderel
-- A profil query key: `['profile-check', user.id]`
-
-### 2. Index.tsx — Skeleton a spinner helyett
-
-**77. sor cseréje:**
-```tsx
-// Régi:
-if (companyLoading || metricsLoading) return <LoadingSpinner />;
-
-// Új:
-if (companyLoading || (metricsLoading && !metrics)) {
-  return <DashboardSkeleton />;
-}
+```text
+transactions.id ──────────────────────────────────────────┐
+  │                                                        │
+  ├─ transactions.matched_invoice_id ──► invoices.id       │
+  │                                    nav_invoices.id     │
+  │                                    salary.id           │
+  │                                                        │
+  ├─ invoices.transaction_id ──────────► transactions.id   │ ON DELETE SET NULL ✓
+  ├─ nav_invoices.transaction_id ──────► transactions.id   │ ON DELETE SET NULL ✓
+  └─ salary.transaction_id ───────────► transactions.id    │ ON DELETE SET NULL ✓
 ```
 
-A `DashboardSkeleton` már létezik (`MetricsGridSkeleton`, `VatChartSkeleton`, `RevenueChartSkeleton`). Egy összerakott `DashboardSkeleton` wrapper kell, ami ezeket kombinálja.
+### Forward Integrity (Tranzakció → Számla) — OK
+- `ON DELETE SET NULL` minden FK-n (`invoices`, `nav_invoices`, `salary` → `transactions.id`)
+- Trigger `reset_paid_on_transaction_delete`: ha tranzakció törlődik, a kapcsolt `nav_invoices.paid = false`, `nav_invoices.transaction_id = NULL`, `invoices.transaction_id = NULL`, `salary.transaction_id = NULL`
+- Trigger `reset_paid_on_transaction_unmatch`: ha `matched_invoice_id` NULL-ra áll, ugyanez
 
-### 3. SalariesPage — Skeleton a spinner helyett
+### Backward Integrity (Számla → Tranzakció) — OK
+- Trigger `clear_transaction_match_on_invoice_delete`: ha beküldött számla törlődik, a kapcsolt `transactions.matched_invoice_id = NULL`, `is_verified = false`
+- Trigger `mark_nav_invoice_paid_on_transaction_match`: ha tranzakció `matched_invoice_id` beáll, automatikusan beállítja a `transaction_id`-t a számlákon
 
-**39. sor cseréje:**
-```tsx
-// Régi:
-if (loading) return <LoadingSpinner />;
+### Computed Status a Frontenden — HELYES
+- `useComputedStatus.ts` → `computePaymentStatus(transactionId)` — kizárólag `transaction_id IS NOT NULL` alapján
+- `getPaymentStatusBadge()` → zöld "Fizetve" / sárga "Nyitott"
+- A frontend **sehol sem használja** a `fizetve` boolean mezőt (0 találat)
+- A `paid` mező csak szűrőparaméterként használatos, és az RPC (`get_filtered_nav_invoices`) is `transaction_id IS NOT NULL`-ot vizsgál
 
-// Új:  
-if (loading && salaryItems.length === 0) return <SalaryPageSkeleton />;
-```
-
-Új `SalaryPageSkeleton` komponens: KPI kártyák skeleton + accordion placeholder.
-
-### 4. InvoicesPage — Skeleton a spinner helyett
-
-Hasonló minta: `if (loading && !paginatedNavInvoices.length)` → `InvoicesPageSkeleton`.
-
-### 5. `placeholderData: keepPreviousData` alkalmazása
-
-A következő query-kben:
-- `useTransactionData.ts` — fő tranzakció query (92. sor)
-- `useSalaryData.ts` — salary query (23. sor)
-- `useInvoiceData.ts` — submitted invoices query (94. sor)
-- `useInvoiceFilters.ts` — NAV invoice RPC query
-
-Hozzáadni: `placeholderData: keepPreviousData` — így lapozáskor/szűréskor a régi adat kint marad, amíg az új betölt.
-
-### 6. Összefoglaló skeleton komponens
-
-Új fájl: `src/components/dashboard/DashboardPageSkeleton.tsx` — kombinálja a meglévő skeleton elemeket egy teljes dashboard elrendezéssé.
+### Maradék `paid` boolean — TISZTÍTANDÓ (alacsony prioritás)
+A `nav_invoices.paid` boolean mező továbbra is létezik és a triggerek (`mark_nav_invoice_paid_on_transaction_match`, `reset_paid_on_transaction_delete`) még írják. Ez redundáns — a `transaction_id` az igazság forrása. A `paid` mező eltávolítása lehetséges, de nem kritikus, mert a frontend nem használja döntésre.
 
 ---
 
-## Érintett fájlok
+## 2. Számla-Számla Láncolat — AUDIT EREDMÉNY
 
-| Fájl | Változás |
-|---|---|
-| `src/components/ProtectedRoute.tsx` | profil-check → useQuery cache |
-| `src/pages/Index.tsx` | LoadingSpinner → DashboardPageSkeleton, `!metrics` guard |
-| `src/pages/SalariesPage.tsx` | LoadingSpinner → SalaryPageSkeleton, `!data` guard |
-| `src/pages/InvoicesPage.tsx` | loading logika → skeleton, `!data` guard |
-| `src/hooks/useTransactionData.ts` | `placeholderData: keepPreviousData` |
-| `src/hooks/useSalaryData.ts` | `placeholderData: keepPreviousData` |
-| `src/hooks/useInvoiceData.ts` | `placeholderData: keepPreviousData` |
-| `src/hooks/useInvoiceFilters.ts` | `placeholderData: keepPreviousData` (ha van paginated query) |
-| `src/components/dashboard/DashboardPageSkeleton.tsx` | ÚJ — full dashboard skeleton wrapper |
-| `src/components/salaries/SalaryPageSkeleton.tsx` | ÚJ — salary page skeleton |
+### Láncolási mechanizmus
+
+```text
+invoices.reference_number ──► invoices.bizonylatsorszam
+          (gyerek)                    (szülő)
+
+Példa lánc:
+  Díjbekérő (E-THINK-2025-85)
+    └─ reference_number: null
+  Előlegszámla (E-THINK-2025-86)
+    └─ reference_number: "E-THINK-2025-85"  ──► szülő
+  Végszámla (E-THINK-2025-87)
+    └─ reference_number: "E-THINK-2025-86"  ──► szülő
+```
+
+### Struktúra
+- **Nincs külön kapcsolótábla** — a `reference_number` mező tartalmazza a szülő `bizonylatsorszam` értékét
+- **1:N** reláció: egy számlának egy szülője (`reference_number`) és tetszőleges számú gyereke lehet
+- **Rekurzív CTE** a DB-ben: `get_linked_invoices()` RPC — max 20 szint mélységig, mindkét irányba keres
+- **Frontend traversal**: `getLinkedInvoices()` az `InvoicesPage.tsx`-ben (~230-258. sor) — iteratív BFS szülők és gyerekek felé
+
+### Törlés hatása a láncra — RÉSZBEN KEZELT
+- Ha a lánc közepén lévő bizonylatot töröljük, a szomszédos bizonylatok **nem tudják**, hogy a lánc megszakadt
+- **Viszont**: a frontend `ExpandedInvoiceRow.tsx` tartalmaz "Megszakadt láncolat" (`hasBrokenChain`) figyelmeztetést — ha a `reference_number` létezik, de nincs hozzá tartozó bizonylat, sárga warning jelenik meg
+- A `get_linked_invoices` RPC egyszerűen nem találja meg a hiányzó elemet — a lánc a törött pontnál végződik, de nincs hiba
+
+### Nincs kaszkád törlési trigger a láncolatra — ELFOGADHATÓ
+A láncolat nem FK-alapú (soft reference: szöveg egyezés), tehát nincs `ON DELETE CASCADE` lehetőség. A jelenlegi "broken chain warning" megoldás megfelelő.
+
+---
+
+## 3. Vizuális Renderelés & Reaktivitás
+
+### Frissülés mechanizmusa
+- **Nem Realtime**: a kapcsolt bizonylatok frissülése query invalidation-nel történik (`invalidateInvoiceData`), nem Supabase Realtime-mal
+- Ha egy hivatkozott bizonylat kifizetetté válik, a szülő nézete **nem frissül automatikusan** — csak oldalújratöltéssel vagy manuális szinkronizálással
+- A `LiveNotificationProvider` létezik, de a számlák láncolatát nem figyeli
+
+### Performance — ELFOGADHATÓ
+- `linkedInvoicesMap` (useMemo) + `getLinkedInvoices()` (BFS) minden lenyitásnál fut
+- A `linkedInvoicesPool` query egyszer fut a dátumtartományra, és a `getLinkedInvoices` ebből a pool-ból dolgozik — nem indít új query-t
+- `ExpandedInvoiceRow` nincs `React.memo`-val burkolva, de az accordion pattern (csak lenyitott sorok renderelődnek) limitálja a hatást
+
+---
+
+## 4. Kritikus Hiba Keresés — EREDMÉNY
+
+### Manuális státusz-állítás maradványai
+A `nav_invoices.paid` boolean mező még triggerekkel íródik, de a **frontend kizárólag `transaction_id`-t használ**. Ez nem hiba, csak redundancia.
+
+### Tényleges hiba: NINCS
+A rendszer teljes egészében Computed Status alapú. Nincs olyan hely a frontenden, ahol manuálisan kellene átírni a státuszt.
+
+---
+
+## Összefoglaló & Javítási Terv
+
+| # | Feladat | Prioritás | Fájlok |
+|---|---------|-----------|--------|
+| 1 | **Build error fix**: `jsr:` → `esm.sh` import 5 edge function-ben | KRITIKUS | 5 edge function |
+| 2 | `nav_invoices.paid` boolean mező deprecálása (triggerekből eltávolítás, mező törlés) | ALACSONY | DB migráció |
+| 3 | `ExpandedInvoiceRow` React.memo burkolás | ALACSONY | 1 fájl |
+
+### Nem szükséges javítani
+- Számla-tranzakció forward/backward integrity — teljesen működik triggerekkel
+- Számla-láncolat logika — helyes, broken chain warning megvan
+- Computed Status — konzisztens, nincs manuális státusz a frontenden
+- Kaszkád törlés a láncolatra — a soft reference + broken chain warning elegendő
 
