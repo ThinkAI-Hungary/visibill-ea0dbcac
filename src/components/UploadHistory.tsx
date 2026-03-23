@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { History, FileText, Landmark, Banknote, CreditCard, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface UploadRecord {
   id: string;
@@ -28,7 +29,6 @@ interface UploadRecord {
 
 interface UploadHistoryProps {
   activeTab: string;
-  refreshKey?: number;
 }
 
 const errorStatuses = new Set(['webhook_failed', 'failed', 'error']);
@@ -50,11 +50,11 @@ function getStatus(record: UploadRecord, processedIds: Set<string>): { label: st
   return { label: 'Feltöltve', variant: 'secondary' };
 }
 
-export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryProps) {
+export default function UploadHistory({ activeTab }: UploadHistoryProps) {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
-  
+  const queryClient = useQueryClient();
 
   const companyId = selectedCompany?.id || '';
   // BUG #3 FIX: Added bank-statements tab support
@@ -75,7 +75,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
 
   // ── Main data query (records + processed IDs + user names) ──
   const { data, isLoading: loading } = useQuery({
-    queryKey: queryKeys.uploadHistory(companyId, activeTab, dateFromFormatted, dateToFormatted, refreshKey),
+    queryKey: queryKeys.uploadHistory(companyId, activeTab, dateFromFormatted, dateToFormatted),
     queryFn: async () => {
       let records: UploadRecord[] = [];
 

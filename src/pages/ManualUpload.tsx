@@ -22,7 +22,6 @@ const ManualUpload = () => {
   const [selectedTransactionFiles, setSelectedTransactionFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('invoices');
-  const [uploadRefreshKey, setUploadRefreshKey] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
@@ -435,7 +434,6 @@ const ManualUpload = () => {
         }
 
         setSelectedInvoiceFiles([]);
-        setUploadRefreshKey(k => k + 1);
         delayedUploadHistoryInvalidation();
       } else {
         toast({
@@ -562,7 +560,6 @@ const ManualUpload = () => {
       });
 
       setSelectedBankFiles([]);
-      setUploadRefreshKey(k => k + 1);
       delayedUploadHistoryInvalidation();
     } catch (error) {
       console.error('Bank statement upload error:', error);
@@ -747,7 +744,6 @@ const ManualUpload = () => {
       });
 
       setSelectedSalaryFiles([]);
-      setUploadRefreshKey(k => k + 1);
       delayedUploadHistoryInvalidation();
     } catch (error) {
       console.error('Salary upload error:', error);
@@ -948,7 +944,6 @@ const ManualUpload = () => {
         }
 
         setSelectedTransactionFiles([]);
-        setUploadRefreshKey(k => k + 1);
         delayedUploadHistoryInvalidation();
       } else {
         toast({
@@ -1418,7 +1413,7 @@ const ManualUpload = () => {
         </div>
       </div>
 
-      <UploadHistory activeTab={activeTab} refreshKey={uploadRefreshKey} />
+      <UploadHistory activeTab={activeTab} />
     </div>
   );
 };
