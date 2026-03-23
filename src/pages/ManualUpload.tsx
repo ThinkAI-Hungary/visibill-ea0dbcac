@@ -434,7 +434,6 @@ const ManualUpload = () => {
         }
 
         setSelectedInvoiceFiles([]);
-        setUploadRefreshKey(k => k + 1);
         delayedUploadHistoryInvalidation();
       } else {
         toast({
