@@ -911,10 +911,9 @@ const ManualUpload = () => {
                   // (dynamic sonner import removed - using static import)
                   const { createElement } = await import('react');
                   const { CheckCircle2 } = await import('lucide-react');
-                  toast({ title: 'Gratulálunk!',
+                  toast({ title: '✅ Gratulálunk!',
                     description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
                     duration: 5000,
-                    icon: createElement(CheckCircle2, { className: 'h-5 w-5 text-emerald-500' }),
                   });
                   queryClient.invalidateQueries({ queryKey: ['transactions'] });
                   queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
