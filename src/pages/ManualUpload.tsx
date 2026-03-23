@@ -944,7 +944,6 @@ const ManualUpload = () => {
         }
 
         setSelectedTransactionFiles([]);
-        setUploadRefreshKey(k => k + 1);
         delayedUploadHistoryInvalidation();
       } else {
         toast({
