@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { supabase } from '@/integrations/supabase/client';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -285,11 +285,7 @@ const PettyCashPage = () => {
   }
 
   if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center min-h-[50vh]">
-        <LoadingSpinner fullPage={false} message="Házipénztár betöltése..." />
-      </div>
-    );
+    return <ContentSkeleton />;
   }
 
   return (

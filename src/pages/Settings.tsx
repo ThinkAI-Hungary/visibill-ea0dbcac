@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ContentSkeleton } from "@/components/ui/content-skeleton";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { EmailPreferences } from "@/components/EmailPreferences";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -301,11 +301,7 @@ export default function Settings() {
     finally { setExportLoading(false); }
   };
 
-  if (!initialDataLoaded || companiesLoading) return (
-    <div className="flex-1 flex items-center justify-center min-h-[50vh]">
-      <LoadingSpinner fullPage={false} message="Beállítások betöltése..." />
-    </div>
-  );
+  if (!initialDataLoaded || companiesLoading) return <ContentSkeleton />;
 
   return (
     <div className="container mx-auto py-8 px-6">

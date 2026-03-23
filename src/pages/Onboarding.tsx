@@ -10,7 +10,7 @@ import { Plus } from 'lucide-react';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 import { CategoryCard } from '@/components/CategoryCard';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { ContentSkeleton } from '@/components/ui/content-skeleton';
 
 interface Category {
   id?: string;
@@ -204,11 +204,7 @@ const Onboarding = () => {
   };
 
   if (!user || !selectedCompany || initialLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center min-h-[50vh]">
-        <LoadingSpinner fullPage={false} message="Kategóriák betöltése..." />
-      </div>
-    );
+    return <ContentSkeleton />;
   }
 
   return (

@@ -3,11 +3,13 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { STORAGE_KEYS, SIGNOUT_DELETE_KEYS } from '@/lib/constants';
+import { useSessionGuard, type SessionGuardState } from '@/hooks/useSessionGuard';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  sessionGuard: SessionGuardState;
   signUp: (email: string, password: string, name?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -190,10 +192,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
+  // ── Session guard: absolute expiry + idle warning + multi-tab sync ──
+  const sessionGuard = useSessionGuard(signOut, !!user);
+
   const value = {
     user,
     session,
     loading,
+    sessionGuard,
     signUp,
     signIn,
     signOut,

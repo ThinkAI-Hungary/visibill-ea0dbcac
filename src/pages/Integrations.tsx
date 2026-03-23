@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryKeys';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { ContentSkeleton } from '@/components/ui/content-skeleton';
 
 interface SyncLog {
   id: string;
@@ -53,11 +53,7 @@ const Integrations = () => {
   });
 
   if (companyLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center min-h-[50vh]">
-        <LoadingSpinner fullPage={false} message="Integrációk betöltése..." />
-      </div>
-    );
+    return <ContentSkeleton />;
   }
 
   const getStatusBadge = (status: string) => {

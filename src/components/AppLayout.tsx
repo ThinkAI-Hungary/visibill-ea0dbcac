@@ -2,7 +2,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Outlet } from "react-router-dom";
 import { Suspense } from "react";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ContentSkeleton } from "@/components/ui/content-skeleton";
 import { GlobalDatePicker } from "@/components/GlobalDatePicker";
 
 interface AppLayoutProps {
@@ -10,11 +10,7 @@ interface AppLayoutProps {
 }
 
 function ContentLoader() {
-  return (
-    <div className="flex-1 flex items-center justify-center min-h-[50vh]">
-      <LoadingSpinner fullPage={false} />
-    </div>
-  );
+  return <ContentSkeleton />;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {

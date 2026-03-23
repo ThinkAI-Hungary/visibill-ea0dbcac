@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { ContentSkeleton } from '@/components/ui/content-skeleton';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -45,11 +45,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }, [profileStatus, navigate]);
 
   if (loading || (profileLoading && !profileStatus)) {
-    return (
-      <div className="flex-1 flex items-center justify-center min-h-[50vh]">
-        <LoadingSpinner fullPage={false} />
-      </div>
-    );
+    return <ContentSkeleton />;
   }
 
   if (!user || profileStatus !== 'complete') {

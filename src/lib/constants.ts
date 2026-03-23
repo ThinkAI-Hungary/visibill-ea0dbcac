@@ -13,6 +13,7 @@ export const STORAGE_KEYS = {
   DATE_RANGE: 'visibill_date_range',
   DASHBOARD_SHOW_BRUTTO: 'visibill_dashboard_show_brutto',
   DASHBOARD_CHART_LINES: 'visibill_dashboard_chart_lines',
+  LAST_ACTIVE: 'visibill_last_active',
 
   // Sidebar
   SIDEBAR_STATE: 'sidebar:state',

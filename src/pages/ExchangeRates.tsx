@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TrendingUp, TrendingDown, RefreshCw, Clock, ArrowRightLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ContentSkeleton } from "@/components/ui/content-skeleton";
 
 interface ExchangeRate {
   currency: string;
@@ -139,11 +139,7 @@ export default function ExchangeRates() {
   };
 
   if (initialLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center min-h-[50vh]">
-        <LoadingSpinner fullPage={false} message="Árfolyamok betöltése..." />
-      </div>
-    );
+    return <ContentSkeleton />;
   }
 
   return (

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { ContentSkeleton } from '@/components/ui/content-skeleton';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -18,11 +18,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   }, [user, loading, navigate]);
 
   if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center min-h-[50vh]">
-        <LoadingSpinner fullPage={false} />
-      </div>
-    );
+    return <ContentSkeleton />;
   }
 
   if (!user) {

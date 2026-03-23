@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback } from "react";
+import { Suspense, lazy } from "react";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -12,11 +12,9 @@ import { ProtectedLayout } from "./components/ProtectedLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthGuard from "./components/AuthGuard";
 import { LoadingSpinner } from "./components/ui/loading-spinner";
-import { useIdleTimeout } from "./hooks/useIdleTimeout";
 import { IdleWarningModal } from "./components/IdleWarningModal";
 import { Toaster as SonnerToaster } from "./components/ui/sonner";
 import { LiveNotificationProvider } from "./components/LiveNotificationProvider";
-import { supabase } from "./integrations/supabase/client";
 
 // Route-level code splitting – each page loads as a separate chunk
 const Index = lazy(() => import("./pages/Index"));
@@ -50,27 +48,15 @@ const queryClient = new QueryClient({
 });
 
 function ProtectedPage({ children }: { children: React.ReactNode }) {
-  const { signOut, user } = useAuth();
-  const { showWarning, secondsLeft, stayActive } = useIdleTimeout(
-    () => signOut(),
-    { warningAfterMs: 28 * 60 * 1000, countdownSec: 120, enabled: !!user }
-  );
-
-  const handleStay = useCallback(async () => {
-    stayActive();
-    // Refresh the Supabase session token
-    try {
-      await supabase.auth.refreshSession();
-    } catch {}
-  }, [stayActive]);
+  const { signOut, sessionGuard } = useAuth();
 
   return (
     <ProtectedRoute>
       {children}
       <IdleWarningModal
-        open={showWarning}
-        secondsLeft={secondsLeft}
-        onStay={handleStay}
+        open={sessionGuard.showWarning}
+        secondsLeft={sessionGuard.secondsLeft}
+        onStay={sessionGuard.stayActive}
         onLogout={() => signOut()}
       />
     </ProtectedRoute>
