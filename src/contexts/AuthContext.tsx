@@ -63,14 +63,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (event, currentSession) => {
         // If gate already killed the session, ignore incoming auth events
         // that try to restore it (except fresh SIGNED_IN from login form)
-        if (gateCheckedRef.current && expiredRef.current && event !== 'SIGNED_IN') {
+        if (gateCheckedRef.current && expiredRef.current && event !== 'SIGNED_IN' && event !== 'PASSWORD_RECOVERY') {
           setSession(null);
           setUser(null);
           setLoading(false);
           return;
         }
-        // A fresh SIGNED_IN resets the expired flag so subsequent events work
-        if (event === 'SIGNED_IN') {
+        // A fresh SIGNED_IN or PASSWORD_RECOVERY resets the expired flag so subsequent events work
+        if (event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') {
           expiredRef.current = false;
         }
         setSession(currentSession);
