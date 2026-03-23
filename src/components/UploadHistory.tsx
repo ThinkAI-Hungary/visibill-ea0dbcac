@@ -4,11 +4,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
+import { formatFileSize } from '@/lib/utils';
 
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { supabase } from '@/integrations/supabase/client';
-import { History, FileText, Landmark, Banknote, Loader2 } from 'lucide-react';
+import { History, FileText, Landmark, Banknote, CreditCard, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 
@@ -31,14 +32,9 @@ interface UploadHistoryProps {
 }
 
 const errorStatuses = new Set(['webhook_failed', 'failed', 'error']);
+const processingStatuses = new Set(['processing', 'webhook_sent']);
 
-function formatFileSize(bytes: number) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
+// formatFileSize is now imported from @/lib/utils
 
 function getStatus(record: UploadRecord, processedIds: Set<string>): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } {
   if (errorStatuses.has(record.processing_status)) {
@@ -46,6 +42,10 @@ function getStatus(record: UploadRecord, processedIds: Set<string>): { label: st
   }
   if (processedIds.has(record.id)) {
     return { label: 'Feldolgozva', variant: 'default' };
+  }
+  // BUG #2 FIX: Show processing/webhook_sent as 'Feldolgozás alatt'
+  if (processingStatuses.has(record.processing_status)) {
+    return { label: 'Feldolgozás alatt', variant: 'outline' };
   }
   return { label: 'Feltöltve', variant: 'secondary' };
 }
@@ -57,11 +57,21 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
   
 
   const companyId = selectedCompany?.id || '';
-  const tableName = activeTab === 'invoices' ? 'invoice_uploads' : activeTab === 'salaries' ? 'salary_files' : 'transaction_uploads';
-  const icon = activeTab === 'invoices' ? <FileText className="h-5 w-5" /> : activeTab === 'salaries' ? <Banknote className="h-5 w-5" /> : <Landmark className="h-5 w-5" />;
-  const title = activeTab === 'invoices' ? 'Számla feltöltési' : activeTab === 'salaries' ? 'Bér/járulék feltöltési' : 'Tranzakció feltöltési';
+  // BUG #3 FIX: Added bank-statements tab support
+  const tableName = activeTab === 'invoices' ? 'invoice_uploads'
+    : activeTab === 'salaries' ? 'salary_files'
+    : activeTab === 'bank-statements' ? 'bank_statement_uploads'
+    : 'transaction_uploads';
+  const icon = activeTab === 'invoices' ? <FileText className="h-5 w-5" />
+    : activeTab === 'salaries' ? <Banknote className="h-5 w-5" />
+    : activeTab === 'bank-statements' ? <CreditCard className="h-5 w-5" />
+    : <Landmark className="h-5 w-5" />;
+  const title = activeTab === 'invoices' ? 'Számla feltöltési'
+    : activeTab === 'salaries' ? 'Bér/járulék feltöltési'
+    : activeTab === 'bank-statements' ? 'Bankkivonat feltöltési'
+    : 'Tranzakció feltöltési';
 
-  const isValidTab = activeTab === 'invoices' || activeTab === 'transactions' || activeTab === 'salaries';
+  const isValidTab = activeTab === 'invoices' || activeTab === 'transactions' || activeTab === 'salaries' || activeTab === 'bank-statements';
 
   // ── Main data query (records + processed IDs + user names) ──
   const { data, isLoading: loading } = useQuery({
@@ -70,21 +80,24 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
       let records: UploadRecord[] = [];
 
       if (activeTab === 'salaries') {
-        const res = await (supabase
+        // BUG #8 FIX: Reordered query to avoid `as any` casting
+        const query = supabase
           .from('salary_files')
           .select('id, file_name, file_size, file_url, user_id, status, created_at')
+          .eq('company_id', companyId)
           .gte('created_at', dateFromFormatted)
           .lte('created_at', dateToFormatted + 'T23:59:59')
-          .order('created_at', { ascending: false }) as any)
-          .eq('company_id', companyId)
+          .order('created_at', { ascending: false })
           .limit(50);
 
+        const res = await (query as any);
         if (res.error) throw res.error;
         records = (res.data || []).map((r: any) => ({
           ...r,
           file_size: r.file_size || 0,
           file_type: '',
           upload_status: r.status || 'pending',
+          // BUG #2 FIX: Map salary status values correctly
           processing_status: r.status || 'pending',
           error_message: null,
         }));
@@ -114,8 +127,9 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
           .from('profiles')
           .select('user_id, name')
           .in('user_id', uniqueUserIds);
+        // BUG #7 FIX: Standardized fallback text
         (profiles || []).forEach(p => {
-          userNames[p.user_id] = p.name || 'Ismeretlen';
+          userNames[p.user_id] = p.name || 'Ismeretlen felhasználó';
         });
       }
 
@@ -142,6 +156,18 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
           .in('salary_file_id', uploadIds);
         processedIds = new Set(
           (salaries || []).map((s: any) => s.salary_file_id).filter(Boolean) as string[]
+        );
+      }
+
+      // BUG #3 FIX: Fetch processed IDs for transactions too
+      if (activeTab === 'transactions' && uploadIds.length > 0 && companyId) {
+        const { data: txRows } = await supabase
+          .from('transactions')
+          .select('upload_id')
+          .eq('company_id', companyId)
+          .in('upload_id', uploadIds);
+        processedIds = new Set(
+          (txRows || []).map((t: any) => t.upload_id).filter(Boolean) as string[]
         );
       }
 
@@ -200,7 +226,7 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
                         {formatFileSize(record.file_size || 0)}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                        {userNames[record.user_id] || 'Ismeretlen'}
+                        {userNames[record.user_id] || 'Ismeretlen felhasználó'}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                         {format(new Date(record.created_at), 'yyyy.MM.dd HH:mm', { locale: hu })}
@@ -228,11 +254,15 @@ export default function UploadHistory({ activeTab, refreshKey }: UploadHistoryPr
             <div className="flex flex-wrap gap-3">
               <div className="flex items-center gap-1.5">
                 <Badge variant="secondary" className="text-xs">Feltöltve</Badge>
-                <span className="text-xs text-muted-foreground">— A fájl feltöltésre került, feldolgozás folyamatban</span>
+                <span className="text-xs text-muted-foreground">— A fájl feltöltésre került</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Badge variant="outline" className="text-xs">Feldolgozás alatt</Badge>
+                <span className="text-xs text-muted-foreground">— A feldolgozás folyamatban van</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Badge variant="default" className="text-xs">Feldolgozva</Badge>
-                <span className="text-xs text-muted-foreground">— A számla sikeresen feldolgozva és rögzítve</span>
+                <span className="text-xs text-muted-foreground">— Sikeresen feldolgozva és rögzítve</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Badge variant="destructive" className="text-xs">A feltöltés sikertelen</Badge>

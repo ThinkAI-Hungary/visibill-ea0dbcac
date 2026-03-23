@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
+import { extractStoragePath } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -125,15 +126,33 @@ export function SalaryFilesDialog() {
   const handleDelete = async (ids: string[]) => {
     setDeleting(true);
     try {
+      // BUG #6 FIX: Fetch file URLs before deleting so we can clean up Storage
+      const { data: fileData } = await supabase
+        .from('salary_files')
+        .select('file_url')
+        .in('id', ids);
+
       const { error } = await supabase
         .from('salary_files')
         .delete()
         .in('id', ids);
       if (error) throw error;
 
+      // BUG #6 FIX: Remove files from Storage bucket
+      if (fileData && fileData.length > 0) {
+        const storagePaths = fileData
+          .map((f: any) => f.file_url ? extractStoragePath(f.file_url, 'salaries') : null)
+          .filter(Boolean) as string[];
+        if (storagePaths.length > 0) {
+          await supabase.storage.from('salaries').remove(storagePaths);
+          console.log('Deleted Storage files:', storagePaths);
+        }
+      }
+
       toast({ title: 'Sikeres törlés', description: 'A dokumentum és a hozzá tartozó adatok törölve lettek.', duration: 3000 });
       queryClient.invalidateQueries({ queryKey: ['salary_files', companyId] });
       queryClient.invalidateQueries({ queryKey: ['salaries', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     } catch (err: any) {
       toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
     } finally {

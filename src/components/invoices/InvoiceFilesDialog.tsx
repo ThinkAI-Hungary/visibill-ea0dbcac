@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
+import { extractStoragePath } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -141,16 +142,33 @@ export function InvoiceFilesDialog() {
   const handleDelete = async (id: string) => {
     setDeleting(true);
     try {
+      // BUG #6 FIX: Fetch file URL before deleting so we can clean up Storage
+      const { data: uploadData } = await supabase
+        .from('invoice_uploads')
+        .select('file_url')
+        .eq('id', id)
+        .single();
+
       const { error } = await supabase
         .from('invoice_uploads')
         .delete()
         .eq('id', id);
       if (error) throw error;
 
+      // BUG #6 FIX: Remove file from Storage bucket
+      if (uploadData?.file_url) {
+        const storagePath = extractStoragePath(uploadData.file_url, 'invoice-uploads');
+        if (storagePath) {
+          await supabase.storage.from('invoice-uploads').remove([storagePath]);
+          console.log('Deleted Storage file:', storagePath);
+        }
+      }
+
       toast({ title: 'Sikeres törlés', description: 'A dokumentum és a hozzá tartozó számlák törölve lettek.', duration: 3000 });
       queryClient.invalidateQueries({ queryKey: ['invoice_uploads_with_invoices', companyId] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['nav_invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     } catch (err: any) {
       toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
     } finally {

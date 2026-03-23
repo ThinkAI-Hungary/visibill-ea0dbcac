@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { formatFileSize, extractStoragePath } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -323,6 +324,12 @@ const ManualUpload = () => {
 
           if (uploadError) {
             console.error('Database insert error:', uploadError);
+            // BUG #5 FIX: Rollback — remove orphaned Storage file
+            const storagePath = extractStoragePath(fileUrl, 'invoice-uploads');
+            if (storagePath) {
+              await supabase.storage.from('invoice-uploads').remove([storagePath]);
+              console.log('Rolled back Storage file:', storagePath);
+            }
             throw new Error(`Adatbázis hiba: ${uploadError.message}`);
           }
 
@@ -337,9 +344,21 @@ const ManualUpload = () => {
 
             if (webhookError) {
               console.error('Webhook trigger error:', webhookError);
+              // BUG #4 FIX: Show toast on webhook failure
+              toast({
+                variant: 'destructive',
+                title: 'Feldolgozási hiba',
+                description: `A "${file.name}" fájl feltöltve, de a feldolgozás indítása sikertelen. Kérlek próbáld újra.`,
+              });
             }
           } catch (webhookError) {
             console.error('Failed to trigger processing webhook:', webhookError);
+            // BUG #4 FIX: Show toast on webhook failure
+            toast({
+              variant: 'destructive',
+              title: 'Feldolgozási hiba',
+              description: `A "${file.name}" fájl feltöltve, de a feldolgozás indítása sikertelen.`,
+            });
           }
 
           addToUploadHistoryCache({
@@ -404,6 +423,13 @@ const ManualUpload = () => {
               }
             }
             console.log(`[InvoicePoll] ⚠️ Polling timed out for ${uploadId}`);
+            // BUG #1 FIX: Show timeout toast to user
+            const { toast: sonnerToast } = await import('sonner');
+            sonnerToast.warning('Feldolgozás időtúllépés', {
+              id: `file-timeout-${uploadId}`,
+              description: `A "${fileName}" fájl feldolgozása a vártnál tovább tart. Kérlek ellenőrizd később.`,
+              duration: 10000,
+            });
           };
           runInvoicePoll();
         }
@@ -477,7 +503,12 @@ const ManualUpload = () => {
           .select()
           .single();
 
-        if (dbError) throw dbError;
+        if (dbError) {
+          // BUG #5 FIX: Rollback — remove orphaned Storage file
+          await supabase.storage.from('bank-statements').remove([uploadData.path]);
+          console.log('Rolled back Storage file:', uploadData.path);
+          throw dbError;
+        }
 
         // Trigger processing webhook (production only)
         try {
@@ -490,9 +521,21 @@ const ManualUpload = () => {
 
           if (webhookError) {
             console.error('Webhook error:', webhookError);
+            // BUG #4 FIX: Show toast on webhook failure
+            toast({
+              variant: 'destructive',
+              title: 'Feldolgozási hiba',
+              description: `A "${file.name}" bankkivonat feltöltve, de a feldolgozás indítása sikertelen.`,
+            });
           }
         } catch (webhookError) {
           console.error('Webhook trigger error:', webhookError);
+          // BUG #4 FIX: Show toast on webhook failure
+          toast({
+            variant: 'destructive',
+            title: 'Feldolgozási hiba',
+            description: `A "${file.name}" bankkivonat feltöltve, de a feldolgozás indítása sikertelen.`,
+          });
         }
       }
 
@@ -585,6 +628,9 @@ const ManualUpload = () => {
 
         if (dbError) {
           console.error('Database insert error:', dbError);
+          // BUG #5 FIX: Rollback — remove orphaned Storage file
+          await supabase.storage.from('salaries').remove([uploadData.path]);
+          console.log('Rolled back Storage file:', uploadData.path);
           continue;
         }
 
@@ -599,9 +645,21 @@ const ManualUpload = () => {
 
           if (triggerError) {
             console.error('Edge function error:', triggerError);
+            // BUG #4 FIX: Show toast on webhook failure
+            toast({
+              variant: 'destructive',
+              title: 'Feldolgozási hiba',
+              description: `A "${file.name}" fájl feltöltve, de a feldolgozás indítása sikertelen.`,
+            });
           }
         } catch (webhookError) {
           console.error('Webhook trigger error:', webhookError);
+          // BUG #4 FIX: Show toast on webhook failure
+          toast({
+            variant: 'destructive',
+            title: 'Feldolgozási hiba',
+            description: `A "${file.name}" fájl feltöltve, de a feldolgozás indítása sikertelen.`,
+          });
         }
 
         // Polling fallback: bounded retry loop (5s interval, max 90s)
@@ -654,6 +712,13 @@ const ManualUpload = () => {
             }
           }
           console.log(`[SalaryPoll] ⚠️ Polling timed out for ${salaryFileId} after ${maxAttempts} attempts`);
+          // BUG #1 FIX: Show timeout toast to user
+          const { toast: sonnerToast } = await import('sonner');
+          sonnerToast.warning('Feldolgozás időtúllépés', {
+            id: `file-timeout-${salaryFileId}`,
+            description: `A "${file.name}" fájl feldolgozása a vártnál tovább tart. Kérlek ellenőrizd később.`,
+            duration: 10000,
+          });
         };
         // Fire and forget - runs in background
         runPollingLoop();
@@ -779,7 +844,12 @@ const ManualUpload = () => {
           .select()
           .single();
 
-        if (dbError) throw dbError;
+        if (dbError) {
+          // BUG #5 FIX: Rollback — remove orphaned Storage file
+          await supabase.storage.from('transactions').remove([uploadData.path]);
+          console.log('Rolled back Storage file:', uploadData.path);
+          throw dbError;
+        }
 
         // Trigger processing via edge function (avoids CORS issues with direct webhook calls)
         const webhookUrl = 'https://n8n.thinkaikontir.hu/webhook/supabase-transaction_storage-trigger';
@@ -866,6 +936,13 @@ const ManualUpload = () => {
               }
             }
             console.log(`[TxPoll] ⚠️ Polling timed out for ${uploadId}`);
+            // BUG #1 FIX: Show timeout toast to user
+            const { toast: sonnerToast } = await import('sonner');
+            sonnerToast.warning('Feldolgozás időtúllépés', {
+              id: `file-timeout-${uploadId}`,
+              description: `A "${fileName}" fájl feldolgozása a vártnál tovább tart. Kérlek ellenőrizd később.`,
+              duration: 10000,
+            });
           };
           runTxPoll();
         }
@@ -898,13 +975,7 @@ const ManualUpload = () => {
     }
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  // formatFileSize is now imported from @/lib/utils
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
