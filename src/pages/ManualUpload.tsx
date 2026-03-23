@@ -22,7 +22,6 @@ const ManualUpload = () => {
   const [selectedTransactionFiles, setSelectedTransactionFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('invoices');
-  const [uploadRefreshKey, setUploadRefreshKey] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
