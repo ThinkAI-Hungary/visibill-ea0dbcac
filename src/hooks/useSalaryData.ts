@@ -117,7 +117,7 @@ export function useSalaryData() {
       const { error } = await supabase.from('salary').insert([{
         user_id: user.id, company_id: selectedCompany.id,
         név: form.megnevezes, összeg: parseFloat(form.osszeg),
-        dátum: form.datum || null, statusz: 'Kifizetve',
+        dátum: form.datum || null, statusz: 'Nyitott',
         fizetesi_mod: 'készpénz', tipus: 'bér', kifizetes_ideje: now,
       }]);
       if (error) throw error;

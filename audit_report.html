@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visibill – Technikai Audit Riport</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #334155;
+      --border: #475569;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #818cf8;
+      --primary-dim: rgba(129, 140, 248, 0.15);
+      --success: #34d399;
+      --success-dim: rgba(52, 211, 153, 0.12);
+      --warning: #fbbf24;
+      --warning-dim: rgba(251, 191, 36, 0.12);
+      --danger: #f87171;
+      --danger-dim: rgba(248, 113, 113, 0.12);
+      --info-dim: rgba(56, 189, 248, 0.12);
+      --info: #38bdf8;
+    }
+
+    @media print {
+      :root {
+        --bg: #ffffff;
+        --surface: #f8fafc;
+        --surface2: #e2e8f0;
+        --border: #cbd5e1;
+        --text: #0f172a;
+        --text-muted: #64748b;
+        --primary: #6366f1;
+        --primary-dim: rgba(99, 102, 241, 0.08);
+        --success: #059669;
+        --success-dim: rgba(5, 150, 105, 0.08);
+        --warning: #d97706;
+        --warning-dim: rgba(217, 119, 6, 0.08);
+        --danger: #dc2626;
+        --danger-dim: rgba(220, 38, 38, 0.08);
+        --info-dim: rgba(2, 132, 199, 0.08);
+        --info: #0284c7;
+      }
+      body { padding: 0; }
+      .page-break { page-break-before: always; }
+      .no-print { display: none !important; }
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .report-header {
+      text-align: center;
+      padding: 3rem 2rem;
+      background: linear-gradient(135deg, var(--surface), var(--bg));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-bottom: 2.5rem;
+    }
+    .report-header .badge {
+      display: inline-block;
+      background: var(--primary-dim);
+      color: var(--primary);
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .report-header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+    .report-header .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    .report-header .meta {
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Sections ── */
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin: 2.5rem 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border);
+      letter-spacing: -0.01em;
+    }
+    h2 .num {
+      color: var(--primary);
+      font-weight: 800;
+      margin-right: 0.5rem;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.75rem;
+      color: var(--text);
+    }
+    h3 .num { color: var(--text-muted); margin-right: 0.35rem; }
+
+    p { margin-bottom: 0.75rem; color: var(--text); font-size: 0.9rem; }
+
+    /* ── Tables ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0 1.5rem;
+      font-size: 0.82rem;
+    }
+    thead th {
+      background: var(--surface);
+      color: var(--text-muted);
+      text-align: left;
+      padding: 0.6rem 0.75rem;
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 2px solid var(--border);
+    }
+    tbody td {
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+      vertical-align: top;
+    }
+    tbody tr:hover { background: var(--primary-dim); }
+
+    /* ── Code ── */
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--surface);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      border: 1px solid var(--border);
+    }
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+      font-size: 0.78rem;
+      line-height: 1.6;
+    }
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+    }
+
+    /* ── Alert boxes ── */
+    .alert {
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.85rem;
+      border-left: 4px solid;
+    }
+    .alert-danger { background: var(--danger-dim); border-color: var(--danger); }
+    .alert-warning { background: var(--warning-dim); border-color: var(--warning); }
+    .alert-success { background: var(--success-dim); border-color: var(--success); }
+    .alert-info { background: var(--info-dim); border-color: var(--info); }
+    .alert .title {
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.25rem;
+    }
+    .alert-danger .title { color: var(--danger); }
+    .alert-warning .title { color: var(--warning); }
+    .alert-success .title { color: var(--success); }
+    .alert-info .title { color: var(--info); }
+
+    /* ── Status badges ── */
+    .badge-ok { display: inline-block; background: var(--success-dim); color: var(--success); padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 600; font-size: 0.75rem; }
+    .badge-warn { display: inline-block; background: var(--warning-dim); color: var(--warning); padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 600; font-size: 0.75rem; }
+    .badge-crit { display: inline-block; background: var(--danger-dim); color: var(--danger); padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 600; font-size: 0.75rem; }
+
+    /* ── ER Diagram (ASCII) ── */
+    .er-diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    /* ── Summary card ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+    }
+    .summary-card .card-title {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .summary-card .card-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+    }
+    .summary-card .card-detail {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    /* ── File reference ── */
+    .file-ref {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--primary);
+      background: var(--primary-dim);
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+    }
+
+    /* ── Print button ── */
+    .print-btn {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(129, 140, 248, 0.4);
+      transition: transform 0.15s;
+      z-index: 100;
+    }
+    .print-btn:hover { transform: translateY(-2px); }
+
+    ul, ol { margin: 0.5rem 0 1rem 1.5rem; font-size: 0.88rem; }
+    li { margin-bottom: 0.35rem; }
+
+    .divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+  </style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">📄 PDF Mentés (Ctrl+P)</button>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━ HEADER ━━━━━━━━━━━━━━━━━━━━━ -->
+<div class="report-header">
+  <span class="badge">Technikai Audit</span>
+  <h1>Számla-Tranzakció & Számla-Számla Láncolat</h1>
+  <p class="subtitle">Mélyreható vizsgálat a Visibill rendszer adat-hálózatáról</p>
+  <div class="meta">
+    <span>📅 2026. március 23.</span>
+    <span>🏢 Visibill Invoice Management</span>
+    <span>🗄️ Supabase / PostgreSQL 17</span>
+  </div>
+</div>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━ EXECUTIVE SUMMARY ━━━━━━━━━━━━━━━━━━━━━ -->
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="card-title">FK Integritás</div>
+    <div class="card-value" style="color:var(--success)">✅ 3/3</div>
+    <div class="card-detail">Minden ON DELETE SET NULL rendben</div>
+  </div>
+  <div class="summary-card">
+    <div class="card-title">Computed Status</div>
+    <div class="card-value" style="color:var(--warning)">⚠️ 4/5</div>
+    <div class="card-detail">salary.statusz manuális string</div>
+  </div>
+  <div class="summary-card">
+    <div class="card-title">Invoice Chaining</div>
+    <div class="card-value" style="color:var(--warning)">⚠️ Text-based</div>
+    <div class="card-detail">Nincs FK, törlés-védelem hiányzik</div>
+  </div>
+  <div class="summary-card">
+    <div class="card-title">Realtime Sync</div>
+    <div class="card-value" style="color:var(--success)">✅ Teljes</div>
+    <div class="card-detail">Minden tábla figyelt, debounced</div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━ 1. RELÁCIÓS TÉRKÉP ━━━━━━━━━━━━━━━━━━━━━ -->
+<h2><span class="num">1.</span> Relációs Térkép</h2>
+
+<div class="er-diagram">
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            TRANSACTIONS                                     │
+│  id (PK)                                                                    │
+│  matched_invoice_id  ──── soft ref ────►  invoices / nav_invoices / salary  │
+│  is_verified                               (⚠️ NINCS FK CONSTRAINT!)        │
+│  match_type                                                                 │
+│  confidence_score                                                           │
+└──────────┬───────────────────────┬──────────────────────┬───────────────────┘
+           │ ON DELETE SET NULL    │ ON DELETE SET NULL    │ ON DELETE SET NULL
+           ▼                      ▼                      ▼
+┌──────────────────┐  ┌──────────────────────┐  ┌────────────────┐
+│    INVOICES       │  │    NAV_INVOICES       │  │    SALARY       │
+│  id (PK)          │  │  id (PK)              │  │  id (PK)        │
+│  transaction_id ──┘  │  transaction_id ──────┘  │  transaction_id ┘
+│  bizonylatsorszam │  │  invoice_number        │  │  statusz ⚠️     │
+│  reference_number │  │  paid (bool)           │  │  (manuális!)    │
+│  statusz          │  │  transaction_id        │  └─────────────────┘
+│                   │  └────────────────────────┘
+│   ▲       │       │
+│   │     text      │
+│   │   matching    │
+│   │       ▼       │
+│  reference_number │
+│  ↕ bizonylatsorsz │           ┌──────────────────────────────────┐
+│  (LÁNCOLAT)       │◄─────────►│  get_linked_invoices RPC         │
+└───────────────────┘           │  Rekurzív CTE, max 20 szint     │
+                                └──────────────────────────────────┘</div>
+
+<h3><span class="num">1.1</span> Kettős Hivatkozási Modell (Forward + Backward)</h3>
+
+<table>
+  <thead>
+    <tr><th>Irány</th><th>Mező</th><th>Tábla</th><th>Leírás</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Forward</strong> (Trx → Számla)</td>
+      <td><code>transactions.matched_invoice_id</code></td>
+      <td>transactions</td>
+      <td>Bármely számla ID-re mutat — <span class="badge-warn">⚠️ NINCS FK</span></td>
+    </tr>
+    <tr>
+      <td><strong>Backward</strong> (Számla → Trx)</td>
+      <td><code>invoices.transaction_id</code></td>
+      <td>invoices</td>
+      <td>FK → transactions.id — <span class="badge-ok">ON DELETE SET NULL</span></td>
+    </tr>
+    <tr>
+      <td><strong>Backward</strong> (NAV → Trx)</td>
+      <td><code>nav_invoices.transaction_id</code></td>
+      <td>nav_invoices</td>
+      <td>FK → transactions.id — <span class="badge-ok">ON DELETE SET NULL</span></td>
+    </tr>
+    <tr>
+      <td><strong>Backward</strong> (Bér → Trx)</td>
+      <td><code>salary.transaction_id</code></td>
+      <td>salary</td>
+      <td>FK → transactions.id — <span class="badge-ok">ON DELETE SET NULL</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="alert alert-warning">
+  <div class="title">⚠️ FONTOS</div>
+  A <code>transactions.matched_invoice_id</code> mező <strong>NEM rendelkezik FK constraint-tel</strong> az adatbázisban! Ez egy „soft reference" — árva hivatkozások keletkezhetnek, ha egy számlát törölnek.
+</div>
+
+<hr class="divider">
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━ 2. SZÁMLA-TRANZAKCIÓ DINAMIKA ━━━━━━━━━━━━━━━━━━━━━ -->
+<h2><span class="num">2.</span> Számla-Tranzakció Dinamika (Forward/Backward Integrity)</h2>
+
+<h3><span class="num">2.1</span> FK Kényszerek</h3>
+
+<table>
+  <thead>
+    <tr><th>Constraint</th><th>Source</th><th>Target</th><th>ON DELETE</th><th>Állapot</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>invoices_transaction_id_fkey</code></td>
+      <td>invoices.transaction_id</td>
+      <td>transactions.id</td>
+      <td>SET NULL</td>
+      <td><span class="badge-ok">✅ OK</span></td>
+    </tr>
+    <tr>
+      <td><code>nav_invoices_transaction_id_fkey</code></td>
+      <td>nav_invoices.transaction_id</td>
+      <td>transactions.id</td>
+      <td>SET NULL</td>
+      <td><span class="badge-ok">✅ OK</span></td>
+    </tr>
+    <tr>
+      <td><code>salary_transaction_id_fkey</code></td>
+      <td>salary.transaction_id</td>
+      <td>transactions.id</td>
+      <td>SET NULL</td>
+      <td><span class="badge-ok">✅ OK</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Eredmény:</strong> Ha egy tranzakciót törlünk, az összes hozzákapcsolt számla/bérjegyzék <code>transaction_id</code> mezője automatikusan <code>NULL</code>-ra áll.</p>
+
+<h3><span class="num">2.2</span> Frontend Computed State – Hogyan Vált Színt?</h3>
+
+<p>A frontend <strong>computed logikát</strong> használ a legtöbb helyen: a <code>transaction_id</code> jelenlétéből számítja a fizetési állapotot.</p>
+
+<table>
+  <thead>
+    <tr><th>Komponens</th><th>Fájl</th><th>Módszer</th><th>Állapot</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>useComputedStatus.ts</td>
+      <td><span class="file-ref">hooks/useComputedStatus.ts</span></td>
+      <td><code>computePaymentStatus(transactionId)</code></td>
+      <td><span class="badge-ok">✅ Computed</span></td>
+    </tr>
+    <tr>
+      <td>NAV számla sorok</td>
+      <td><span class="file-ref">pages/InvoicesPage.tsx:607</span></td>
+      <td><code>invoice.transaction_id ? 'Kifizetve' : 'Nyitott'</code></td>
+      <td><span class="badge-ok">✅ Computed</span></td>
+    </tr>
+    <tr>
+      <td>InvoiceDetailPopup</td>
+      <td><span class="file-ref">components/InvoiceDetailPopup.tsx:154</span></td>
+      <td><code>!!invoice.transaction_id → "Fizetve" badge</code></td>
+      <td><span class="badge-ok">✅ Computed</span></td>
+    </tr>
+    <tr>
+      <td>ExpandedInvoiceRow</td>
+      <td><span class="file-ref">components/ExpandedInvoiceRow.tsx:287</span></td>
+      <td><code>!!inv.transaction_id → "Fizetve" badge</code></td>
+      <td><span class="badge-ok">✅ Computed</span></td>
+    </tr>
+    <tr>
+      <td>Salary tétel létrehozás</td>
+      <td><span class="file-ref">hooks/useSalaryData.ts:120</span></td>
+      <td><code>statusz: 'Kifizetve'</code> — hard-coded string!</td>
+      <td><span class="badge-crit">🔴 Manuális</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3><span class="num">2.3</span> Tranzakció Törlés → Automatikus Visszaállás?</h3>
+
+<div class="alert alert-success">
+  <div class="title">✅ IGEN, GARANTÁLT (backward irány)</div>
+  <ol>
+    <li><strong>DB szint:</strong> <code>ON DELETE SET NULL</code> → <code>transaction_id</code> = NULL</li>
+    <li><strong>Realtime:</strong> <code>LiveNotificationProvider</code> figyeli a transactions tábla összes eseményét → cache invalidáció</li>
+    <li><strong>Computed logic:</strong> A szín <code>transaction_id</code> jelenlétéből származik → ha NULL, automatikusan pirosra vált</li>
+  </ol>
+</div>
+
+<div class="alert alert-danger">
+  <div class="title">🔴 Forward irány NEM védett!</div>
+  A <code>transactions.matched_invoice_id</code> NEM nullázódik automatikusan ha egy számlát törölnek — nincs FK constraint!
+</div>
+
+<hr class="divider">
+<div class="page-break"></div>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━ 3. SZÁMLA-SZÁMLA LÁNCOLAT ━━━━━━━━━━━━━━━━━━━━━ -->
+<h2><span class="num">3.</span> Számla-Számla Láncolat (Invoice Chaining)</h2>
+
+<h3><span class="num">3.1</span> Hogyan Tároljuk a Láncolatot?</h3>
+
+<p><strong>Nincs <code>parent_id</code>, nincs kapcsolótábla.</strong> A láncolat text-alapú matching:</p>
+
+<table>
+  <thead>
+    <tr><th>Mező</th><th>Leírás</th><th>Példa</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>invoices.bizonylatsorszam</code></td>
+      <td>A számla egyedi azonosítója</td>
+      <td><code>E-THINK-2025-85</code></td>
+    </tr>
+    <tr>
+      <td><code>invoices.reference_number</code></td>
+      <td>Hivatkozás egy másik számla bizonylatsorszámára</td>
+      <td><code>E-THINK-2025-42</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Ha egy számla <code>reference_number</code> = <code>E-THINK-2025-42</code>, az azt jelenti, hogy az <code>E-THINK-2025-42</code> bizonylatsorszámú számla a <strong>szülő</strong> (hivatkozott bizonylat).</p>
+
+<h3><span class="num">3.2</span> DB Oldali Láncolat – <code>get_linked_invoices</code> RPC</h3>
+
+<pre><code>-- Rekurzív CTE, max 20 szint mélységig
+WITH RECURSIVE chain AS (
+  -- Seed: kiindulási számlák
+  SELECT ... FROM invoices i
+  WHERE lower(i.reference_number) = ANY(seed_bizonylat)
+     OR lower(i.bizonylatsorszam) = ANY(seed_reference)
+  UNION
+  -- Rekurzió: mindkét irányban követi a linkeket
+  SELECT ... FROM invoices i
+  JOIN chain c ON (
+    lower(i.reference_number) = lower(c.bizonylatsorszam)
+    OR lower(i.bizonylatsorszam) = lower(c.reference_number)
+  )
+  WHERE depth &lt; 20
+)</code></pre>
+
+<h3><span class="num">3.3</span> Frontend Oldali Láncolat</h3>
+
+<p>A <code>getLinkedInvoices()</code> függvény (<span class="file-ref">InvoicesPage.tsx:230-258</span>) két irányban járja be a láncot:</p>
+
+<ol>
+  <li><strong>Felfelé (parents):</strong> Követi a <code>reference_number</code> → <code>bizonylatsorszam</code> láncot</li>
+  <li><strong>Lefelé (children):</strong> BFS kereséssel megtalálja az összes gyerek számlát</li>
+</ol>
+
+<h3><span class="num">3.4</span> Kapcsolat Típusa</h3>
+
+<p><strong>1:N</strong> (egy szülőnek több gyereke) de text-based, tehát:</p>
+<ul>
+  <li>Nincs referential integrity (FK)</li>
+  <li>Törlés esetén a lánc „csendben" megszakad</li>
+  <li>Elgépelés a <code>reference_number</code>-ben = elveszett kapcsolat</li>
+  <li>Nincs unique constraint a <code>bizonylatsorszam</code>-on → duplikátumok lehetségesek</li>
+</ul>
+
+<h3><span class="num">3.5</span> Mi Történik Törléskor?</h3>
+
+<div class="alert alert-danger">
+  <div class="title">🔴 KRITIKUS – Lánc megszakadás védelem NINCS</div>
+  <ul>
+    <li>A többi bizonylat <strong>NEM kap értesítést</strong> a törlésről</li>
+    <li>A <code>reference_number</code> hivatkozás <strong>árva (dangling)</strong> lesz</li>
+    <li>A frontend <code>getLinkedInvoices()</code> egyszerűen <strong>nem találja meg</strong> a törölt elemet → a lánc kettéválik</li>
+    <li><strong>Nincs DB-szintű védelem</strong> (nincs FK, nincs trigger)</li>
+  </ul>
+</div>
+
+<hr class="divider">
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━ 4. REAKTIVITÁS ━━━━━━━━━━━━━━━━━━━━━ -->
+<h2><span class="num">4.</span> Vizuális Renderelés és Reaktivitás</h2>
+
+<h3><span class="num">4.1</span> „Kapcsolt bizonylatok" Szekció</h3>
+
+<p>Renderelő komponens: <span class="file-ref">ExpandedInvoiceRow.tsx</span></p>
+<ul>
+  <li>A <code>linkedInvoices</code> prop-ot kapja az <code>InvoicesPage.tsx</code>-ból</li>
+  <li>Minden linked invoice-hoz kártyát renderel <code>relationDirection</code> (parent/child) badge-dzsel</li>
+</ul>
+
+<h3><span class="num">4.2</span> Realtime Frissülés</h3>
+
+<p>A <span class="file-ref">LiveNotificationProvider.tsx</span> figyeli az összes releváns táblát és invalidálja a TanStack Query cache-t:</p>
+
+<table>
+  <thead>
+    <tr><th>Tábla Eseménye</th><th>Invalidált Cache-ek</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>invoices</code> változás</td>
+      <td>submittedInvoices, linkedInvoices, invoiceTransactions, dashboardData, stb.</td>
+    </tr>
+    <tr>
+      <td><code>transactions</code> változás</td>
+      <td>transactions, invoiceTransactions, submittedInvoices, navInvoices, stb.</td>
+    </tr>
+    <tr>
+      <td><code>nav_invoices</code> változás</td>
+      <td>navInvoices, filteredNavInvoices, dashboardData, stb.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Eredmény:</strong> Ha egy hivatkozott bizonylat módosul, az <code>invoices</code> tábla Realtime listener invalidálja a <code>linkedInvoices</code> cache-t → a szülő számla nézete <strong>automatikusan frissül</strong>.</p>
+
+<h3><span class="num">4.3</span> Performance – Felesleges Újrarenderelések?</h3>
+
+<div class="alert alert-success">
+  <div class="title">✅ RENDBEN</div>
+  A <code>useMemo</code> hookok megvédik a felesleges renderelésektől. A <code>ExpandedInvoiceRow</code> komponens csak akkor renderelődik, ha a sor ki van bontva (<code>expandedRowIds.has(id)</code>).
+</div>
+
+<hr class="divider">
+<div class="page-break"></div>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━ 5. KRITIKUS HIBÁK ━━━━━━━━━━━━━━━━━━━━━ -->
+<h2><span class="num">5.</span> Kritikus Hibák és Problémák</h2>
+
+<div class="alert alert-danger">
+  <div class="title">🔴 KRITIKUS #1: salary.statusz manuális string</div>
+  <p>Fájl: <span class="file-ref">hooks/useSalaryData.ts:120</span></p>
+  <pre><code>// Kézi 'Kifizetve' string beírás a DB-be!
+statusz: 'Kifizetve',</code></pre>
+  <p>A <code>salary</code> tábla <code>statusz</code> mezője manuálisan van beállítva, NEM computed a <code>transaction_id</code> jelenlétéből. Ha utólag törlik a tranzakció-linket, a statusz <strong>nem áll vissza automatikusan</strong>.</p>
+</div>
+
+<div class="alert alert-danger">
+  <div class="title">🔴 KRITIKUS #2: Invoice Chaining – nincs törlés-védelem</div>
+  <p>A text-based matching (<code>reference_number</code> ↔ <code>bizonylatsorszam</code>) nincs DB szinten védve. Nincs FK, nincs trigger — a lánc csendben megszakadhat.</p>
+</div>
+
+<div class="alert alert-warning">
+  <div class="title">⚠️ FIGYELEM #3: transactions.matched_invoice_id – nincs FK</div>
+  <p>A <code>transactions.matched_invoice_id</code> mező nem rendelkezik FK constraint-tel. Ha egy számlát törölnek, a tranzakció <code>matched_invoice_id</code> mezője <strong>nem nullázódik</strong> automatikusan → árva hivatkozások.</p>
+</div>
+
+<div class="alert alert-info">
+  <div class="title">ℹ️ MEGJEGYZÉS: invoices.statusz mező</div>
+  <p>Az <code>invoices.statusz</code> a <strong>feldolgozási állapotot</strong> jelzi (feldolgozás_alatt / feldolgozott), NEM a fizetési állapotot. A fizetési állapot a <code>transaction_id</code> jelenlétéből van compute-olva. A két koncepció nem keveredik, de a név félrevezető lehet.</p>
+</div>
+
+<hr class="divider">
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━ 6. JAVASLATOK ━━━━━━━━━━━━━━━━━━━━━ -->
+<h2><span class="num">6.</span> Javaslatok</h2>
+
+<h3><span class="num">6.1</span> Fájlok Amiket Computed Logic-ra Kell Átírni</h3>
+
+<table>
+  <thead>
+    <tr><th>Fájl</th><th>Probléma</th><th>Javítás</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="file-ref">hooks/useSalaryData.ts:120</span></td>
+      <td><code>statusz: 'Kifizetve'</code> hard-coded beírás</td>
+      <td>Használd a <code>computePaymentStatus(transaction_id)</code> függvényt</td>
+    </tr>
+    <tr>
+      <td><span class="file-ref">hooks/useDashboardData.ts:310-319</span></td>
+      <td><code>statusz</code> stringet fetch-el közvetlenül a salary táblából</td>
+      <td>Computed status a <code>transaction_id</code> alapján</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3><span class="num">6.2</span> FK Hozzáadása – matched_invoice_id</h3>
+
+<pre><code>-- ⚠️ NEM működik közvetlenül, mert a matched_invoice_id 
+-- három különböző táblára mutathat (polimorf referencia)
+ALTER TABLE transactions 
+ADD CONSTRAINT transactions_matched_invoice_id_fkey 
+  FOREIGN KEY (matched_invoice_id) 
+  REFERENCES invoices(id) 
+  ON DELETE SET NULL;</code></pre>
+
+<div class="alert alert-info">
+  <div class="title">ℹ️ Design Trade-off</div>
+  A <code>matched_invoice_id</code> polimorf re&shy;ferencia (3 táblára mutat&shy;hat). Alternatív megoldás: szét&shy;bontani 3 külön FK mezőre (<code>matched_invoice_id</code>, <code>matched_nav_invoice_id</code>, <code>matched_salary_id</code>).
+</div>
+
+<h3><span class="num">6.3</span> Láncolat Stabilitásának Megőrzése</h3>
+
+<p><strong>A) Soft-delete bevezetése:</strong></p>
+<p>Bizonylatok ne legyenek fizikailag törölhetők, csak <code>statusz = 'torolt'</code>. Így a lánc sosem szakad meg.</p>
+
+<p><strong>B) DB Trigger a lánc-megszakadásra:</strong></p>
+<pre><code>CREATE OR REPLACE FUNCTION notify_chain_break() RETURNS trigger AS $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM invoices 
+    WHERE lower(reference_number) = lower(OLD.bizonylatsorszam)
+  ) THEN
+    RAISE WARNING 'Chain break: % is referenced', OLD.bizonylatsorszam;
+  END IF;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_chain_break
+  BEFORE DELETE ON invoices
+  FOR EACH ROW EXECUTE FUNCTION notify_chain_break();</code></pre>
+
+<p><strong>C) Frontend jelzés:</strong> Ha a <code>reference_number</code> nem feloldható, jelenjen meg egy ⚠️ ikon a „Kapcsolt bizonylatok" szekcióban „Megszakadt lánc" felirattal.</p>
+
+<hr class="divider">
+<div class="page-break"></div>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━ 7. ÖSSZESÍTŐ ━━━━━━━━━━━━━━━━━━━━━ -->
+<h2><span class="num">7.</span> Állapot Összesítő</h2>
+
+<table>
+  <thead>
+    <tr><th>Terület</th><th>Állapot</th><th>Megjegyzés</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>FK ON DELETE SET NULL (Számla→Trx)</td>
+      <td><span class="badge-ok">✅ RENDBEN</span></td>
+      <td>Mind a 3 tábla (invoices, nav_invoices, salary)</td>
+    </tr>
+    <tr>
+      <td>Computed fizetési státusz (NAV/Invoice sorok)</td>
+      <td><span class="badge-ok">✅ RENDBEN</span></td>
+      <td><code>transaction_id</code> jelenlétéből</td>
+    </tr>
+    <tr>
+      <td>Computed fizetési státusz (Salary)</td>
+      <td><span class="badge-crit">🔴 HIÁNYZIK</span></td>
+      <td>Manuális <code>statusz: 'Kifizetve'</code> string</td>
+    </tr>
+    <tr>
+      <td>Realtime frissítés</td>
+      <td><span class="badge-ok">✅ RENDBEN</span></td>
+      <td><code>LiveNotificationProvider</code> figyel minden táblát</td>
+    </tr>
+    <tr>
+      <td>Invoice Chaining – DB (get_linked_invoices)</td>
+      <td><span class="badge-ok">✅ MŰKÖDIK</span></td>
+      <td>Rekurzív CTE, max 20 szint</td>
+    </tr>
+    <tr>
+      <td>Invoice Chaining – FK integritás</td>
+      <td><span class="badge-warn">⚠️ HIÁNYZIK</span></td>
+      <td>Text-based matching, törlésvédelem nincs</td>
+    </tr>
+    <tr>
+      <td><code>matched_invoice_id</code> FK constraint</td>
+      <td><span class="badge-warn">⚠️ HIÁNYZIK</span></td>
+      <td>Polimorf soft ref, árva hivatkozások lehetségesek</td>
+    </tr>
+    <tr>
+      <td>Performance (felesleges renderelés)</td>
+      <td><span class="badge-ok">✅ RENDBEN</span></td>
+      <td>useMemo + conditional render védi</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr class="divider">
+
+<div style="text-align:center; padding:2rem 0; color:var(--text-muted); font-size:0.8rem;">
+  <p>Visibill Technikai Audit Riport • 2026. március 23.</p>
+  <p>Generálva automatikusan a forráskód és adatbázis-séma elemzése alapján</p>
+</div>
+
+</body>
+</html>

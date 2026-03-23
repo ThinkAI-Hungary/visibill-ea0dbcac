@@ -570,7 +570,13 @@ export const TransactionDetailsDialog = ({
                     )}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-xs">Számla nem található</p>
+                  <div className="flex items-center gap-2 py-1">
+                    <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-amber-500">Törölt bizonylat</p>
+                      <p className="text-[10px] text-muted-foreground">A párosított bizonylat már nem létezik az adatbázisban (árva hivatkozás).</p>
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>

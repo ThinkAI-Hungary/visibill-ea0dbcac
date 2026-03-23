@@ -108,7 +108,7 @@ export function useInvoiceData(
     placeholderData: keepPreviousData,
   });
 
-  const { data: linkedInvoicesPool = [] } = useQuery({
+  const { data: linkedInvoicesPool = [], isLoading: linkedInvoicesLoading } = useQuery({
     queryKey: queryKeys.linkedInvoices(companyId, dateFromFormatted, dateToFormatted),
     queryFn: async () => {
       const seedBizonylat = submittedInvoices.map(i => i.bizonylatsorszam).filter(Boolean) as string[];
@@ -214,6 +214,7 @@ export function useInvoiceData(
   return {
     submittedInvoices,
     linkedInvoicesPool,
+    linkedInvoicesLoading,
     partners,
     categories,
     projects,

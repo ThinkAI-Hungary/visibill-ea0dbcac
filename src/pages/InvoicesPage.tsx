@@ -63,7 +63,7 @@ const InvoicesPage = () => {
 
   // ── Data hook ──
   const {
-    submittedInvoices, linkedInvoicesPool,
+    submittedInvoices, linkedInvoicesPool, linkedInvoicesLoading,
     partners, categories, projects, allTransactions,
     matchedInvoiceIds, loading: dataLoading, credentialsExist, invalidateInvoiceData,
   } = useInvoiceData(companyId, enabled, dateFromFormatted, dateToFormatted, selectedCompany?.id);
@@ -653,6 +653,7 @@ const InvoicesPage = () => {
                                       matchedNavInvoices={[]}
                                       matchedTransactions={matches.matchedTransactions}
                                       linkedInvoices={matches.linkedInvoices}
+                                      linkedInvoicesLoading={linkedInvoicesLoading}
                                       onViewInvoice={(inv) => { setSelectedInvoice(inv as any); setImageDialogOpen(true); }}
                                     />
                                   );
@@ -840,6 +841,8 @@ const InvoicesPage = () => {
                                     matchedNavInvoices={matches.matchedNav}
                                     matchedTransactions={matches.matchedTransactions}
                                     linkedInvoices={matches.linkedInvoices}
+                                    invoiceReferenceNumber={invoice.reference_number}
+                                    linkedInvoicesLoading={linkedInvoicesLoading}
                                     onViewInvoice={(inv) => { setSelectedInvoice(inv as any); setImageDialogOpen(true); }}
                                   />
                                 );

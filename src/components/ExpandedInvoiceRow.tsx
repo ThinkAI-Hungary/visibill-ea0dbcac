@@ -1,11 +1,12 @@
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch } from 'lucide-react';
+import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { TableCell, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 interface MatchedSubmittedInvoice {
@@ -61,6 +62,8 @@ interface ExpandedInvoiceRowProps {
   matchedNavInvoices: MatchedNavInvoice[];
   matchedTransactions: MatchedTransaction[];
   linkedInvoices?: LinkedInvoice[];
+  invoiceReferenceNumber?: string | null;
+  linkedInvoicesLoading?: boolean;
   onViewInvoice?: (invoice: MatchedSubmittedInvoice) => void;
   onViewNavItems?: (invoice: MatchedNavInvoice) => void;
 }
@@ -71,10 +74,19 @@ const ExpandedInvoiceRow = ({
   matchedNavInvoices,
   matchedTransactions,
   linkedInvoices = [],
+  invoiceReferenceNumber,
+  linkedInvoicesLoading = false,
   onViewInvoice,
   onViewNavItems,
 }: ExpandedInvoiceRowProps) => {
-  const hasAny = matchedSubmittedInvoices.length > 0 || matchedNavInvoices.length > 0 || matchedTransactions.length > 0 || linkedInvoices.length > 0;
+  // Detect broken chain: reference_number exists but no matching linked invoice found
+  const hasBrokenChain = !linkedInvoicesLoading
+    && !!invoiceReferenceNumber
+    && !linkedInvoices.some(
+      (inv) => inv.bizonylatsorszam?.toUpperCase() === invoiceReferenceNumber.toUpperCase()
+    );
+
+  const hasAny = matchedSubmittedInvoices.length > 0 || matchedNavInvoices.length > 0 || matchedTransactions.length > 0 || linkedInvoices.length > 0 || hasBrokenChain;
 
   return (
     <>
@@ -121,6 +133,30 @@ const ExpandedInvoiceRow = ({
                   <p className="text-sm text-muted-foreground italic">Nincs párosított tétel ehhez a számlához.</p>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Broken chain warning */}
+            {hasBrokenChain && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Card className="bg-amber-500/8 border-amber-500/30 expand-stagger-1">
+                      <CardContent className="p-3 flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+                        <div className="text-xs">
+                          <span className="font-medium text-amber-500">Megszakadt láncolat</span>
+                          <span className="text-muted-foreground ml-1.5">
+                            — hivatkozott bizonylat: <code className="font-mono text-[11px] bg-muted px-1 rounded">{invoiceReferenceNumber}</code>
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <p className="text-xs">A rendszer nem találja a(z) <strong>{invoiceReferenceNumber}</strong> sorszámú bizonylatot. Lehet, hogy törölték, vagy hibás a hivatkozás.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
 
             {/* Linked invoices (reference_number based) */}
