@@ -403,9 +403,6 @@ const ManualUpload = () => {
                   .limit(1);
                 console.log(`[InvoicePoll] Attempt ${attempt}/${maxAttempts}: found ${invoiceRows?.length ?? 0} rows`);
                 if (invoiceRows && invoiceRows.length > 0) {
-                  // (dynamic sonner import removed - using static import)
-                  const { createElement } = await import('react');
-                  const { CheckCircle2 } = await import('lucide-react');
                   toast({ title: '✅ Gratulálunk!',
                     description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
                     duration: 5000,
