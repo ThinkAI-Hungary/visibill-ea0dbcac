@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4'
-import { Sha3 } from 'npm:@noble/hashes@1.3.3/sha3'
+import { sha3_512 as noble_sha3_512 } from "https://esm.sh/@noble/hashes@1.3.0/sha3";
 
 Deno.serve(async (req) => {
   const corsHeaders = {
