@@ -560,7 +560,6 @@ const ManualUpload = () => {
       });
 
       setSelectedBankFiles([]);
-      setUploadRefreshKey(k => k + 1);
       delayedUploadHistoryInvalidation();
     } catch (error) {
       console.error('Bank statement upload error:', error);
