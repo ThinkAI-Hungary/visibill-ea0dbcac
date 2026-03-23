@@ -1,5 +1,5 @@
-import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { Sha3 } from 'npm:@noble/hashes@1.3.3/sha3'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4'
+import { sha3_512 as noble_sha3_512 } from "https://esm.sh/@noble/hashes@1.3.0/sha3";
 
 Deno.serve(async (req) => {
   const corsHeaders = {
@@ -196,7 +196,7 @@ async function sha512(input: string): Promise<string> {
 function sha3_512(input: string): string {
   const encoder = new TextEncoder()
   const data = encoder.encode(input)
-  const hash = Sha3.sha3_512(data)
+  const hash = noble_sha3_512(data)
   return Array.from(hash)
     .map(b => b.toString(16).padStart(2, '0'))
     .join('')
