@@ -46,22 +46,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const gateCheckedRef = useRef(false);
+  const expiredRef = useRef(false);
 
   useEffect(() => {
     // ── PRE-FLIGHT: Absolute 4h gate ──
     // Runs BEFORE session restore.  If expired, kill session immediately.
     const expired = isSessionExpired();
+    expiredRef.current = expired;
 
-    // Set up auth state listener FIRST
+    // Mark gate as checked BEFORE registering the listener to prevent
+    // any synchronous INITIAL_SESSION event from bypassing the gate.
+    gateCheckedRef.current = true;
+
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         // If gate already killed the session, ignore incoming auth events
         // that try to restore it (except fresh SIGNED_IN from login form)
-        if (gateCheckedRef.current && expired && event !== 'SIGNED_IN') {
+        if (gateCheckedRef.current && expiredRef.current && event !== 'SIGNED_IN') {
           setSession(null);
           setUser(null);
           setLoading(false);
           return;
+        }
+        // A fresh SIGNED_IN resets the expired flag so subsequent events work
+        if (event === 'SIGNED_IN') {
+          expiredRef.current = false;
         }
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
@@ -71,17 +81,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (expired) {
       // Session is stale — force sign out silently, don't restore anything
-      gateCheckedRef.current = true;
       supabase.auth.signOut().catch(() => {});
       try {
         SIGNOUT_DELETE_KEYS.forEach(key => localStorage.removeItem(key));
+        localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVE);
       } catch {}
       setSession(null);
       setUser(null);
       setLoading(false);
     } else {
       // Normal path — check for existing session
-      gateCheckedRef.current = true;
       supabase.auth.getSession().then(({ data: { session: existingSession }, error }) => {
         if (error) {
           console.error('Session error:', error.message);
