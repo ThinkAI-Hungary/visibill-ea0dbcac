@@ -42,7 +42,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const [selectedCompany, setSelectedCompanyState] = useState<Company | null>(null);
 
-  const { data: companies = [], isLoading } = useQuery({
+  const { data: companies = [], isPending, isFetching } = useQuery({
     queryKey: queryKeys.companies(user?.id || ''),
     queryFn: async () => {
       const { data, error } = await supabase
@@ -55,6 +55,12 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
     },
     enabled: !!user,
   });
+
+  // Use isPending (not isLoading) to avoid false-negative when query
+  // transitions from disabled→enabled but hasn't started fetching yet.
+  // Also treat "user exists but no data yet" as loading to prevent
+  // the EmptyStateDashboard flash after re-login.
+  const isCompanyLoading = isPending && (!!user || isFetching);
 
   // When companies load (or change), restore the selected company
   useEffect(() => {
@@ -104,7 +110,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
         companies,
         selectedCompany,
         setSelectedCompany,
-        loading: isLoading,
+        loading: isCompanyLoading,
         refreshCompanies,
       }}
     >
