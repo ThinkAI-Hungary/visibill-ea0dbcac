@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { ContentSkeleton } from '@/components/ui/content-skeleton';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -18,7 +18,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   }, [user, loading, navigate]);
 
   if (loading) {
-    return <ContentSkeleton />;
+    return <LoadingSpinner message="Betöltés..." />;
   }
 
   if (!user) {

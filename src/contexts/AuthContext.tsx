@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/use-toast';
 import { STORAGE_KEYS, SIGNOUT_DELETE_KEYS } from '@/lib/constants';
 import { useSessionGuard, type SessionGuardState } from '@/hooks/useSessionGuard';
@@ -45,6 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const gateCheckedRef = useRef(false);
   const expiredRef = useRef(false);
 
@@ -192,6 +194,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         SIGNOUT_DELETE_KEYS.forEach(key => localStorage.removeItem(key));
       } catch {}
+      // Clear ALL cached data to prevent stale data flash on next login
+      queryClient.clear();
       setUser(null);
       setSession(null);
       // Only show toast for explicit user-initiated sign-outs, not gate/timeout

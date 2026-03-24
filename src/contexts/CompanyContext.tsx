@@ -21,6 +21,7 @@ interface CompanyContextType {
   selectedCompany: Company | null;
   setSelectedCompany: (company: Company | null) => void;
   loading: boolean;
+  isInitialLoading: boolean;
   refreshCompanies: () => Promise<void>;
 }
 
@@ -56,11 +57,10 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
     enabled: !!user,
   });
 
-  // Use isPending (not isLoading) to avoid false-negative when query
-  // transitions from disabled→enabled but hasn't started fetching yet.
-  // Also treat "user exists but no data yet" as loading to prevent
-  // the EmptyStateDashboard flash after re-login.
-  const isCompanyLoading = isPending && (!!user || isFetching);
+  // True while we have a user but the companies query hasn't resolved yet.
+  // This prevents premature "no company" decisions (onboarding redirect).
+  const isInitialLoading = !!user && isPending;
+  const isCompanyLoading = isInitialLoading || (!!user && isFetching && companies.length === 0);
 
   // When companies load (or change), restore the selected company
   useEffect(() => {
@@ -111,6 +111,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
         selectedCompany,
         setSelectedCompany,
         loading: isCompanyLoading,
+        isInitialLoading,
         refreshCompanies,
       }}
     >
