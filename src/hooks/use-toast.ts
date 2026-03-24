@@ -161,3 +161,8 @@ function useToast() {
 }
 
 export { useToast, toast };
+
+// ─── E2E test helper: expose toast on window ───────────
+if (typeof window !== "undefined") {
+  (window as any).__visibillTestToast = toast;
+}
