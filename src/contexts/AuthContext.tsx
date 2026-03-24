@@ -12,6 +12,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isPasswordRecovery: boolean;
+  clearPasswordRecovery: () => void;
   sessionGuard: SessionGuardState;
   signUp: (email: string, password: string, name?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
@@ -45,6 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const gateCheckedRef = useRef(false);
@@ -74,6 +77,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // A fresh SIGNED_IN or PASSWORD_RECOVERY resets the expired flag so subsequent events work
         if (event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') {
           expiredRef.current = false;
+        }
+        if (event === 'PASSWORD_RECOVERY') {
+          setIsPasswordRecovery(true);
         }
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
