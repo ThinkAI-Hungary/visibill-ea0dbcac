@@ -1,24 +1,57 @@
 
 
-# Build Error Fixes
+# Audit: "record 'old' has no field 'status'" hiba
 
-## Problem 1: `send-invoice-notification/index.ts` — `npm:` imports
-Lines 3-4 use `npm:resend@4.0.0` and `npm:@react-email/components@0.0.22` which fail in the Deno build. Replace with `esm.sh` imports (same pattern as `send-email/index.ts`).
+## Gyökérok
 
-## Problem 2: `ManualUpload.tsx` — `id` not in Toast type
-The `Toast` type is `Omit<ToasterToast, "id">`, so passing `id` is a TS error. The `id` was used for deduplication, but the `toast()` function auto-generates IDs. Fix: remove `id` from all 6 toast calls (lines 410, 428, 695, 715, 921, 938).
+A hibát egy trigger-láncolat okozza:
 
-## Problem 3: AuthContext — Already correct
-The 4h gate is already fully implemented with pre-flight check, `expiredRef`, `gateCheckedRef`, silent signOut, login reset, and PASSWORD_RECOVERY bypass. No changes needed.
+```text
+n8n INSERT → invoices tábla
+  └─ trg_mark_invoice_upload_completed (AFTER INSERT)
+       └─ UPDATE invoice_uploads SET processing_status = 'completed'
+            └─ audit_update_processed_func (BEFORE/AFTER UPDATE)
+                 └─ OLD.status ← HIBA! invoice_uploads-ban nincs "status" oszlop
+```
 
----
+Az `audit_update_processed_func` függvény ezt tartalmazza:
 
-## Files to edit
+```sql
+IF (OLD.status IS DISTINCT FROM NEW.status AND NEW.status = 'processed') THEN
+```
 
-| File | Change |
+De az `invoice_uploads` táblában a mező neve **`processing_status`**, nem `status`. A `salary_files` táblában viszont valóban `status` a mező neve — tehát a függvény a `salary_files`-ra íródott, de az `invoice_uploads`-ra is rá lett kötve.
+
+Ugyanez a probléma vonatkozik a `global_audit_trigger_func`-ra is, amelynek UPDATE ága szintén `OLD.status`-t ellenőriz az `invoice_uploads`/`salary_files` tábláknál.
+
+## Érintett függvények és problémáik
+
+| Függvény | Probléma |
 |---|---|
-| `supabase/functions/send-invoice-notification/index.ts` | `npm:resend@4.0.0` → `https://esm.sh/resend@4.0.0`, `npm:@react-email/components@0.0.22` → `https://esm.sh/@react-email/components@0.0.22`, `npm:react@18.3.1` → `https://esm.sh/react@18.3.1` |
-| `src/pages/ManualUpload.tsx` | Remove `id` property from 6 toast calls (lines 410, 428, 695, 715, 921, 938) |
+| `audit_update_processed_func` | `OLD.status` / `NEW.status` hivatkozás — `invoice_uploads`-ban `processing_status` a mező |
+| `global_audit_trigger_func` | Ugyanaz: UPDATE ágban `OLD.status` / `NEW.status` hivatkozás, ami `invoice_uploads`-on crashel |
+| `audit_insert_delete_func` | Nem érintett (INSERT/DELETE, nem használ `OLD.status`-t) |
 
-No AuthContext changes needed — the implementation is already complete and correct.
+## Javítási terv
+
+### 1. `audit_update_processed_func` újraírása
+A függvénynek tábla-specifikusan kell kezelnie a mező nevét:
+- `invoice_uploads` → `OLD.processing_status` / `NEW.processing_status`, és `'completed'` a cél (nem `'processed'`)
+- `salary_files` → `OLD.status` / `NEW.status`
+
+### 2. `global_audit_trigger_func` UPDATE ágának javítása
+Ugyanaz a logika: táblanév alapján eldönteni, melyik mezőt kell vizsgálni:
+- `invoice_uploads` → `processing_status` mező, `'completed'` érték
+- `salary_files` → `status` mező, `'processed'` érték
+- `invoices` → `statusz` mező (ez már helyes a kódban)
+
+### 3. Migration SQL
+
+Egyetlen migration, amely mindkét függvényt `CREATE OR REPLACE`-szel frissíti a helyes mezőnevekkel. Trigger-ek újrakötése nem szükséges — a függvény cseréje elegendő.
+
+### Érintett fájlok
+
+| Elem | Változás |
+|---|---|
+| Új migration SQL | `audit_update_processed_func` és `global_audit_trigger_func` javítása `processing_status` használatra `invoice_uploads` esetén |
 
