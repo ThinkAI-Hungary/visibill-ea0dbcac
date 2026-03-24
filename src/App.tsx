@@ -1,8 +1,8 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -67,6 +67,21 @@ function AuthGuardPage({ children }: { children: React.ReactNode }) {
   return <AuthGuard>{children}</AuthGuard>;
 }
 
+/** Navigates to /reset-password when PASSWORD_RECOVERY event fires (regardless of landing URL) */
+function PasswordRecoveryRedirect() {
+  const { isPasswordRecovery, clearPasswordRecovery } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isPasswordRecovery) {
+      clearPasswordRecovery();
+      navigate('/reset-password', { replace: true });
+    }
+  }, [isPasswordRecovery, clearPasswordRecovery, navigate]);
+
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -79,6 +94,7 @@ const App = () => (
                 <Toaster />
                 <LiveNotificationProvider />
                 <BrowserRouter>
+                    <PasswordRecoveryRedirect />
                     <Routes>
                     {/* Auth routes – no sidebar, own Suspense for lazy chunks */}
                     <Route path="/auth" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><Auth /></Suspense>} />
