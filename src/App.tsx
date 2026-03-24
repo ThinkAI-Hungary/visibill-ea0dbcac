@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect } from "react";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -67,17 +67,34 @@ function AuthGuardPage({ children }: { children: React.ReactNode }) {
   return <AuthGuard>{children}</AuthGuard>;
 }
 
-/** Navigates to /reset-password when PASSWORD_RECOVERY event fires (regardless of landing URL) */
 function PasswordRecoveryRedirect() {
   const { isPasswordRecovery, clearPasswordRecovery } = useAuth();
-  const navigate = useNavigate();
+  const location = useLocation();
+
+  const hashParams = new URLSearchParams(location.hash.startsWith("#") ? location.hash.slice(1) : location.hash);
+  const hasRecoveryHash = hashParams.get("type") === "recovery" && (
+    hashParams.has("access_token") ||
+    hashParams.has("refresh_token") ||
+    hashParams.has("token")
+  );
 
   useEffect(() => {
-    if (isPasswordRecovery) {
+    if (isPasswordRecovery && location.pathname === "/reset-password") {
       clearPasswordRecovery();
-      navigate('/reset-password', { replace: true });
     }
-  }, [isPasswordRecovery, clearPasswordRecovery, navigate]);
+  }, [isPasswordRecovery, clearPasswordRecovery, location.pathname]);
+
+  if ((hasRecoveryHash || isPasswordRecovery) && location.pathname !== "/reset-password") {
+    return (
+      <Navigate
+        replace
+        to={{
+          pathname: "/reset-password",
+          hash: location.hash,
+        }}
+      />
+    );
+  }
 
   return null;
 }
