@@ -110,7 +110,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
         companies,
         selectedCompany,
         setSelectedCompany,
-        loading: isLoading,
+        loading: isCompanyLoading,
         refreshCompanies,
       }}
     >
