@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -48,33 +48,19 @@ export function InvoiceItemsDialog({
   invoiceNumber,
   currency,
 }: InvoiceItemsDialogProps) {
-  const [items, setItems] = useState<InvoiceLineItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (open && invoiceId) {
-      fetchInvoiceItems();
-    }
-  }, [open, invoiceId]);
-
-  const fetchInvoiceItems = async () => {
-    setLoading(true);
-    try {
+  const { data: items = [], isLoading: loading } = useQuery({
+    queryKey: ['navInvoiceItems', invoiceId],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('nav_invoice_items')
         .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount')
         .eq('nav_invoice_id', invoiceId)
         .order('line_number', { ascending: true });
-
       if (error) throw error;
-      setItems(data || []);
-    } catch (error) {
-      console.error('Error fetching invoice items:', error);
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return (data || []) as InvoiceLineItem[];
+    },
+    enabled: open && !!invoiceId,
+  });
 
   const formatAmount = (amount: number | null) => {
     if (amount === null || amount === undefined) return '-';
@@ -87,7 +73,6 @@ export function InvoiceItemsDialog({
     return unit ? `${formatted} ${unit}` : formatted;
   };
 
-  // Calculate gross from net + vat if gross_amount is null
   const getGrossAmount = (item: InvoiceLineItem) => {
     if (item.gross_amount !== null) return item.gross_amount;
     if (item.net_amount !== null && item.vat_amount !== null) {
@@ -97,12 +82,11 @@ export function InvoiceItemsDialog({
     return null;
   };
 
-  // Calculate totals
-  const totals = {
+  const totals = useMemo(() => ({
     net: items.reduce((sum, item) => sum + (item.net_amount || 0), 0),
     vat: items.reduce((sum, item) => sum + (item.vat_amount || 0), 0),
     gross: items.reduce((sum, item) => sum + (getGrossAmount(item) || 0), 0),
-  };
+  }), [items]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

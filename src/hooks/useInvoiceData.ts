@@ -108,8 +108,15 @@ export function useInvoiceData(
     placeholderData: keepPreviousData,
   });
 
+  // Derive a stable fingerprint from submittedInvoices so linkedInvoicesPool
+  // automatically refetches when the submitted set changes (fixes race condition).
+  const submittedFingerprint = useMemo(
+    () => submittedInvoices.map(i => i.id).sort().join(','),
+    [submittedInvoices]
+  );
+
   const { data: linkedInvoicesPool = [], isLoading: linkedInvoicesLoading } = useQuery({
-    queryKey: queryKeys.linkedInvoices(companyId, dateFromFormatted, dateToFormatted),
+    queryKey: [...queryKeys.linkedInvoices(companyId, dateFromFormatted, dateToFormatted), submittedFingerprint],
     queryFn: async () => {
       const seedBizonylat = submittedInvoices.map(i => i.bizonylatsorszam).filter(Boolean) as string[];
       const seedReference = submittedInvoices.map(i => i.reference_number).filter(Boolean) as string[];

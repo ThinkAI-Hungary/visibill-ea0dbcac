@@ -298,6 +298,16 @@ export function LiveNotificationProvider() {
         }
       )
 
+      // ━━ NAV_INVOICE_ITEMS table ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'nav_invoice_items' },
+        (payload) => {
+          console.log('[RealtimeSync] nav_invoice_items', payload.eventType);
+          invalidate('navInvoiceItems', 'filteredNavInvoices', 'analyticsVat');
+        }
+      )
+
       // ━━ NAV_SYNC_LOGS table ━━
       .on(
         'postgres_changes',
