@@ -253,10 +253,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // ── Session guard: idle warning + multi-tab sync (absolute gate handled above) ──
   const sessionGuard = useSessionGuard(signOut, !!user);
 
+  const clearPasswordRecovery = () => setIsPasswordRecovery(false);
+
   const value = {
     user,
     session,
     loading,
+    isPasswordRecovery,
+    clearPasswordRecovery,
     sessionGuard,
     signUp,
     signIn,
