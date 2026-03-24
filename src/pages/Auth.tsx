@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -13,10 +13,11 @@ import { cn } from '@/lib/utils';
 /* Carousel fade animation */
 const carouselStyle = document.createElement('style');
 carouselStyle.textContent = `@keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }`;
-if (!document.head.querySelector('[data-carousel-anim]')) { carouselStyle.setAttribute('data-carousel-anim',''); document.head.appendChild(carouselStyle); }
-
-const PASSWORD_RESET_REDIRECT_URL = 'https://visibill.lovable.app/reset-password';
-
+if (!document.head.querySelector('[data-carousel-anim]')) { carouselStyle.setAttribute('data-carousel-anim', ''); document.head.appendChild(carouselStyle); }
+// Uses the current domain (e.g. app.visibill.hu or localhost:3000) for the redirect link.
+// If you want to force it to always be 'https://app.visibill.hu/reset-password',
+// you can replace `${window.location.origin}` with that explicitly.
+const PASSWORD_RESET_REDIRECT_URL = `${window.location.origin}/reset-password`;
 interface CarouselSlide { text: string; visual: ReactNode; }
 
 const carouselSlides: CarouselSlide[] = [
@@ -217,22 +218,22 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     const { error } = await signIn(email, password);
-    
+
     if (!error) {
       navigate('/');
     }
-    
+
     setLoading(false);
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     const { error } = await signUp(email, password, name);
-    
+
     setLoading(false);
   };
 
@@ -243,7 +244,7 @@ const Auth = () => {
         redirectTo: `${window.location.origin}/`,
       },
     });
-    
+
     if (error) {
       toast({ title: 'Google bejelentkezés sikertelen', variant: 'destructive' });
       console.error('Google sign in error:', error);
@@ -310,8 +311,8 @@ const Auth = () => {
               {activeTab === 'signin' ? 'Üdv újra!' : 'Kezdjük el!'}
             </h1>
             <p className="text-muted-foreground">
-              {activeTab === 'signin' 
-                ? 'Jelentkezz be a fiókodba a folytatáshoz' 
+              {activeTab === 'signin'
+                ? 'Jelentkezz be a fiókodba a folytatáshoz'
                 : 'Hozd létre a fiókodat néhány egyszerű lépésben'}
             </p>
           </div>
@@ -393,8 +394,8 @@ const Auth = () => {
                   />
                 </div>
               </div>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full h-11 font-medium"
                 disabled={loading}
               >
@@ -454,8 +455,8 @@ const Auth = () => {
                   />
                 </div>
               </div>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full h-11 font-medium"
                 disabled={loading}
               >
@@ -559,7 +560,7 @@ const Auth = () => {
       <div className="hidden lg:flex lg:w-[55%] bg-gradient-to-br from-primary/5 via-background to-background relative overflow-hidden">
         {/* Edge Gradient - Smooth transition from left panel */}
         <div className="absolute left-0 top-0 bottom-0 w-64 bg-gradient-to-r from-background via-background/80 to-transparent z-20 pointer-events-none" />
-        
+
         {/* Background Pattern - Subtle glowing orbs */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
@@ -567,7 +568,7 @@ const Auth = () => {
         </div>
 
         {/* Isometric Dashboard Perspective - Single cohesive tilted dashboard */}
-        <div 
+        <div
           className="absolute -right-20 top-10 w-[150%] h-[150%] blur-[2px] opacity-30"
           style={{ transform: 'rotate(-12deg) skewY(12deg) scale(1.1)' }}
         >
@@ -582,7 +583,7 @@ const Auth = () => {
                 ))}
               </div>
             </div>
-            
+
             {/* Header Strip */}
             <div className="absolute left-16 top-0 right-0 h-14 bg-foreground/5 dark:bg-white/5 border-b border-foreground/5 dark:border-white/5 flex items-center px-6 gap-4">
               <div className="w-32 h-6 rounded bg-foreground/10 dark:bg-white/10" />
@@ -590,7 +591,7 @@ const Auth = () => {
               <div className="w-24 h-6 rounded bg-foreground/10 dark:bg-white/10" />
               <div className="w-8 h-8 rounded-full bg-foreground/10 dark:bg-white/10" />
             </div>
-            
+
             {/* Main Content Area */}
             <div className="absolute left-20 top-20 right-8 bottom-8 p-6">
               {/* Top Stats Row */}
@@ -603,7 +604,7 @@ const Auth = () => {
                   </div>
                 ))}
               </div>
-              
+
               {/* Main Chart Card */}
               <div className="h-64 rounded-xl bg-foreground/5 dark:bg-white/5 border border-foreground/5 dark:border-white/5 p-6 mb-6">
                 <div className="flex justify-between items-center mb-4">
@@ -616,15 +617,15 @@ const Auth = () => {
                 {/* Chart skeleton */}
                 <div className="flex items-end gap-3 h-40 pt-4">
                   {[40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 95, 80].map((h, i) => (
-                    <div 
-                      key={i} 
-                      className="flex-1 rounded-t bg-primary/20" 
-                      style={{ height: `${h}%` }} 
+                    <div
+                      key={i}
+                      className="flex-1 rounded-t bg-primary/20"
+                      style={{ height: `${h}%` }}
                     />
                   ))}
                 </div>
               </div>
-              
+
               {/* Bottom Cards Row */}
               <div className="grid grid-cols-2 gap-4">
                 {[...Array(2)].map((_, i) => (
