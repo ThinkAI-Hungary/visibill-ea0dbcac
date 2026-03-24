@@ -343,6 +343,7 @@ export function LiveNotificationProvider() {
           'partners', 'projects', 'projectsList',
           'pettyCashEntries', 'dashboardPettyCash',
           'categories', 'dunning-sends', 'syncLogs',
+          'navInvoiceItems',
         );
       }
     };
