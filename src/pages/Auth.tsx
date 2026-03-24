@@ -171,6 +171,33 @@ const Auth = () => {
   const navigate = useNavigate();
   const [carouselIndex, setCarouselIndex] = useState(0);
 
+  // Handle expired/invalid recovery links that redirect to root with error hash
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes('error=')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const errorCode = params.get('error_code');
+      const errorDescription = params.get('error_description');
+
+      if (errorCode === 'otp_expired' || errorDescription?.includes('expired')) {
+        toast({
+          title: 'A jelszó-visszaállító link lejárt',
+          description: 'Kérj új linket az email címedre.',
+          variant: 'destructive',
+        });
+        setShowForgotPassword(true);
+        // Clean the hash from URL
+        window.history.replaceState(null, '', window.location.pathname);
+      } else if (errorDescription) {
+        toast({
+          title: decodeURIComponent(errorDescription.replace(/\+/g, ' ')),
+          variant: 'destructive',
+        });
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (user) {
       navigate('/');
