@@ -260,7 +260,7 @@ export function ActivityLogSheet() {
                   timePeriod === key
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'bg-secondary/30 hover:bg-secondary/60'
-                }`}
+                } ${key === 'yesterday' ? 'text-amber-500' : ''}`}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handlePeriodChange(key)}
               >
