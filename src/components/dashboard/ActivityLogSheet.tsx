@@ -256,8 +256,12 @@ export function ActivityLogSheet() {
                 key={key}
                 variant={timePeriod === key ? 'default' : 'outline'}
                 size="sm"
-                className={`h-7 px-3 text-xs font-medium transition-all ${
-                  timePeriod === key
+                className={`h-7 px-3 text-xs font-medium transition-all border-transparent ${
+                  key === 'today'
+                    ? timePeriod === key
+                      ? 'bg-pink-500 text-white hover:bg-pink-600 shadow-sm dark:bg-pink-500 dark:text-white dark:hover:bg-pink-600'
+                      : 'bg-pink-500/80 text-white hover:bg-pink-500 shadow-sm dark:bg-pink-500/80 dark:text-white dark:hover:bg-pink-500'
+                    : timePeriod === key
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'bg-secondary/30 hover:bg-secondary/60'
                 }`}
