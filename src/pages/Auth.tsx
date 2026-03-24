@@ -15,6 +15,8 @@ const carouselStyle = document.createElement('style');
 carouselStyle.textContent = `@keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }`;
 if (!document.head.querySelector('[data-carousel-anim]')) { carouselStyle.setAttribute('data-carousel-anim',''); document.head.appendChild(carouselStyle); }
 
+const PASSWORD_RESET_REDIRECT_URL = 'https://visibill.lovable.app/reset-password';
+
 interface CarouselSlide { text: string; visual: ReactNode; }
 
 const carouselSlides: CarouselSlide[] = [
@@ -257,7 +259,7 @@ const Auth = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: PASSWORD_RESET_REDIRECT_URL,
       });
       if (error) throw error;
       toast({ title: 'Jelszó visszaállító email elküldve! Ellenőrizd a postaládádat.' });
