@@ -835,7 +835,7 @@ const ManualUpload = () => {
         }
 
         // Trigger processing via edge function (avoids CORS issues with direct webhook calls)
-        const webhookUrl = 'https://n8n.thinkaikontir.hu/webhook/supabase-transaction_storage-trigger';
+        const webhookUrl = 'https://n8n.thinkaikontir.hu/webhook-test/supabase-transaction_storage-trigger';
 
         try {
           console.log('Triggering transaction processing via edge function:', { uploadId: uploadRecord.id });
