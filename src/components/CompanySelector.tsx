@@ -76,9 +76,10 @@ const CompanySelector = () => {
       setNewCompanyAddress('');
       setIsCreateDialogOpen(false);
       toast({ title: 'Cég sikeresen létrehozva!' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating company:', error);
-      toast({ title: 'Hiba történt a cég létrehozása során', variant: 'destructive' });
+      const msg = error?.message || error?.details || JSON.stringify(error);
+      toast({ title: 'Hiba történt a cég létrehozása során', description: msg, variant: 'destructive' });
     } finally {
       setIsCreating(false);
     }
