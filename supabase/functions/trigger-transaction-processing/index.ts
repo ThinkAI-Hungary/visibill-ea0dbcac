@@ -16,69 +16,85 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { uploadId, webhookUrl, fileUrl, fileName, companyId } = await req.json();
+    const body = await req.json();
 
-    if (!uploadId) {
+    // Support batch format: { uploads: [...], webhookUrl, companyId }
+    // Also support legacy single format: { uploadId, webhookUrl, fileUrl, fileName, companyId }
+    const { webhookUrl, companyId } = body;
+    const uploads: { uploadId: string; fileUrl: string; fileName: string }[] = body.uploads || [
+      { uploadId: body.uploadId, fileUrl: body.fileUrl, fileName: body.fileName }
+    ];
+
+    if (!uploads.length || !uploads[0].uploadId) {
       return new Response(
-        JSON.stringify({ error: 'Upload ID is required' }),
+        JSON.stringify({ error: 'At least one upload is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Processing transaction upload trigger:', { uploadId, webhookUrl });
+    console.log('Processing batch transaction upload trigger:', { count: uploads.length, webhookUrl });
 
-    // Update processing status
+    // Update all uploads to processing status
+    const uploadIds = uploads.map(u => u.uploadId);
     await supabase
       .from('transaction_uploads')
       .update({ 
         processing_status: 'processing',
         updated_at: new Date().toISOString()
       })
-      .eq('id', uploadId);
+      .in('id', uploadIds);
 
     if (webhookUrl) {
       const webhookPayload = {
-        file_url: fileUrl,
-        file_name: fileName,
-        upload_id: uploadId,
+        uploads: uploads.map(u => ({
+          file_url: u.fileUrl,
+          file_name: u.fileName,
+          upload_id: u.uploadId,
+        })),
         company_id: companyId,
         supabaseUrl: supabaseUrl
       };
 
-      console.log('Sending webhook to N8N (fire-and-forget):', { webhookUrl });
+      console.log('Sending batch webhook to N8N (fire-and-forget):', { webhookUrl, count: uploads.length });
 
-      // Fire-and-forget: don't await the webhook response
+      // Fire-and-forget
       fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(webhookPayload)
       }).then(async (res) => {
-        if (res.ok) {
-          console.log('Webhook sent successfully');
-          await supabase
-            .from('transaction_uploads')
-            .update({ processing_status: 'webhook_sent', updated_at: new Date().toISOString() })
-            .eq('id', uploadId);
-        } else {
+        const status = res.ok ? 'webhook_sent' : 'webhook_failed';
+        const update: Record<string, string> = { 
+          processing_status: status, 
+          updated_at: new Date().toISOString() 
+        };
+        if (!res.ok) {
+          update.error_message = `Webhook failed: ${res.status}`;
           console.error('Webhook failed with status:', res.status);
-          await supabase
-            .from('transaction_uploads')
-            .update({ processing_status: 'webhook_failed', error_message: `Webhook failed: ${res.status}`, updated_at: new Date().toISOString() })
-            .eq('id', uploadId);
+        } else {
+          console.log('Batch webhook sent successfully');
         }
+        await supabase
+          .from('transaction_uploads')
+          .update(update)
+          .in('id', uploadIds);
       }).catch(async (err) => {
         console.error('Webhook error:', err);
         await supabase
           .from('transaction_uploads')
-          .update({ processing_status: 'webhook_failed', error_message: `Webhook error: ${err.message}`, updated_at: new Date().toISOString() })
-          .eq('id', uploadId);
+          .update({ 
+            processing_status: 'webhook_failed', 
+            error_message: `Webhook error: ${err.message}`, 
+            updated_at: new Date().toISOString() 
+          })
+          .in('id', uploadIds);
       });
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        uploadId,
+        uploadIds,
         status: webhookUrl ? 'webhook_sent' : 'processing'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
