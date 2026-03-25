@@ -56,29 +56,27 @@ const CompanySelector = () => {
 
     setIsCreating(true);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('companies')
         .insert({
           name: newCompanyName.trim(),
           tax_number: newCompanyTaxNumber.trim() || null,
           address: newCompanyAddress.trim() || null,
           owner_id: user.id,
-        })
-        .select()
-        .single();
+        });
 
       if (error) throw error;
 
       await refreshCompanies();
-      setSelectedCompany(data);
       setNewCompanyName('');
       setNewCompanyTaxNumber('');
       setNewCompanyAddress('');
       setIsCreateDialogOpen(false);
       toast({ title: 'Cég sikeresen létrehozva!' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating company:', error);
-      toast({ title: 'Hiba történt a cég létrehozása során', variant: 'destructive' });
+      const msg = error?.message || error?.details || JSON.stringify(error);
+      toast({ title: 'Hiba történt a cég létrehozása során', description: msg, variant: 'destructive' });
     } finally {
       setIsCreating(false);
     }
