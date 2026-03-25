@@ -225,6 +225,17 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
     let rollbackNeeded = false;
     let createdCompanyId: string | null = null;
     try {
+      // 0. Refresh session to ensure JWT is valid before DB operations
+      const { data: { session: freshSession }, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError || !freshSession) {
+        toast({
+          title: 'A munkamenet lejárt',
+          description: 'Kérjük, jelentkezzen be újra a folytatáshoz.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       // 1. Create company
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
