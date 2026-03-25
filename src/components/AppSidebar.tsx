@@ -169,7 +169,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarContent>
+      <SidebarContent className="select-none">
         {/* Header */}
         <div className={`p-4 border-b border-primary/30 ${isCollapsed ? 'flex justify-center' : ''}`}>
           {!isCollapsed ? (
@@ -198,7 +198,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
         <SidebarGroup>
           {!isCollapsed && <SidebarGroupLabel>Navigáció</SidebarGroupLabel>}
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="select-none">
               {navigationItems.map((item) => {
                 const isDisabled = hasNoCompany;
                 const active = isActive(item.url);

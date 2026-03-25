@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     }
 
     // Parse request
-    const { invoiceDirection, dateFrom, dateTo, page = 1 } = await req.json()
+    const { invoiceDirection, dateFrom, dateTo, page = 1, companyId } = await req.json()
 
     if (!invoiceDirection) {
       return new Response(
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
     // Get user's NAV credentials
     const { data: credentials, error: credError } = await supabaseClient.rpc(
       'get_nav_credentials',
-      { p_user_id: user.id }
+      { p_user_id: user.id, p_company_id: companyId || null }
     )
 
     if (credError || !credentials || credentials.error) {
@@ -143,8 +143,8 @@ async function getNavToken(creds: any): Promise<string> {
 async function queryInvoices(creds: any, token: string, params: any): Promise<any[]> {
   const requestId = generateRequestId()
   const timestamp = new Date().toISOString()
-  // For queryInvoiceDigest, passwordHash = SHA-512(requestId + password)
-  const passwordHash = await sha512(requestId + creds.nav_password)
+  // For queryInvoiceDigest, passwordHash = SHA-512(password only) per NAV v3 spec
+  const passwordHash = await sha512(creds.nav_password)
   
   // Convert ISO timestamp to compact format (yyyyMMddHHmmss) for signature
   const date = new Date(timestamp)

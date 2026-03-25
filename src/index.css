@@ -299,6 +299,19 @@ All colors MUST be HSL.
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* Prevent text-selection cursor on navigational / clickable elements */
+  .sidebar-item,
+  [data-sidebar="menu-button"],
+  [data-sidebar="menu-item"],
+  button,
+  a,
+  [role="button"],
+  .nav-link {
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: pointer;
+  }
+
   html {
     height: 100%;
     overflow: hidden !important;

@@ -126,9 +126,10 @@ const CompanySelector = () => {
       setJoinCode('');
       setIsCreateDialogOpen(false);
       toast({ title: 'Sikeresen csatlakoztál a céghez!' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error joining company:', error);
-      toast({ title: 'Hiba történt a csatlakozás során', variant: 'destructive' });
+      const msg = error?.message || error?.details || JSON.stringify(error);
+      toast({ title: 'Hiba történt a csatlakozás során', description: msg, variant: 'destructive' });
     } finally {
       setIsJoining(false);
     }
@@ -175,9 +176,10 @@ const CompanySelector = () => {
       setIsEditDialogOpen(false);
       setEditingCompany(null);
       toast({ title: 'Cég sikeresen frissítve!' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating company:', error);
-      toast({ title: 'Hiba történt a cég frissítése során', variant: 'destructive' });
+      const msg = error?.message || error?.details || JSON.stringify(error);
+      toast({ title: 'Hiba történt a cég frissítése során', description: msg, variant: 'destructive' });
     } finally {
       setIsUpdating(false);
     }
@@ -209,9 +211,10 @@ const CompanySelector = () => {
       setIsDeleteDialogOpen(false);
       setDeletingCompany(null);
       toast({ title: 'Cég sikeresen törölve!' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting company:', error);
-      toast({ title: 'Hiba történt a cég törlése során. Lehet, hogy vannak még hozzá kapcsolódó adatok.', variant: 'destructive' });
+      const msg = error?.message || error?.details || JSON.stringify(error);
+      toast({ title: 'Hiba történt a cég törlése során', description: msg || 'Lehet, hogy vannak még hozzá kapcsolódó adatok.', variant: 'destructive' });
     } finally {
       setIsDeleting(false);
     }

@@ -216,6 +216,30 @@ Deno.serve(async (req) => {
 
     console.log('[NAV-QUERY-OUTBOUND] Using endpoint:', endpoint);
 
+    // Step 1: Get exchange token from NAV API (REQUIRED for queryInvoiceDigest)
+    let exchangeToken: string;
+    try {
+      exchangeToken = await getNavToken(credentials, navApiUrl);
+      console.log('[NAV-QUERY-OUTBOUND] 🔑 Got NAV exchange token');
+    } catch (tokenError) {
+      console.error('[NAV-QUERY-OUTBOUND] Failed to get NAV token:', tokenError);
+      if (syncLogId) {
+        await serviceClient
+          .from('nav_sync_logs')
+          .update({
+            status: 'failed',
+            error_message: `Failed to get NAV exchange token: ${tokenError.message}`,
+            completed_at: new Date().toISOString(),
+            duration_ms: Date.now() - startTime
+          })
+          .eq('id', syncLogId);
+      }
+      return new Response(
+        JSON.stringify({ error: 'Failed to get NAV exchange token', details: tokenError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Fetch up to 3 pages
     const allInvoices: any[] = [];
     let currentPage = 1;
@@ -249,13 +273,14 @@ Deno.serve(async (req) => {
         .join('')
         .toUpperCase();
 
-      // Build XML request
+      // Build XML request (with exchange token)
       const xmlBody = buildQueryXML({
         requestId,
         timestamp,
         credentials,
         passwordHash,
         requestSignature,
+        exchangeToken,
         page: currentPage,
         dateFrom,
         dateTo,
@@ -442,6 +467,7 @@ Deno.serve(async (req) => {
       user.id,
       companyId,
       credentials,
+      exchangeToken,
       navApiUrl,
       invoiceDirection
     );
@@ -541,6 +567,7 @@ async function fetchInvoiceDetails(
   userId: string,
   companyId: string,
   credentials: NavCredentials,
+  exchangeToken: string,
   navApiUrl: string,
   direction: string
 ): Promise<number> {
@@ -668,7 +695,8 @@ async function queryInvoiceData(
   credentials: NavCredentials,
   navApiUrl: string,
   invoiceNumber: string,
-  direction: string
+  direction: string,
+  _exchangeToken?: string
 ): Promise<InvoiceDetails | null> {
   const requestId = generateRequestId();
   const now = new Date();
@@ -910,6 +938,68 @@ function buildAddressString(xml: string, addressTag: string): string {
   return '';
 }
 
+// Get NAV exchange token (required for queryInvoiceDigest and queryInvoiceData)
+async function getNavToken(credentials: NavCredentials, navApiUrl: string): Promise<string> {
+  const requestId = generateRequestId();
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const compactTimestamp = getCompactTimestamp(now);
+
+  const passwordHash = await sha512Hash(credentials.nav_password);
+  const signatureInput = `${requestId}${compactTimestamp}${credentials.nav_sign_key}`;
+  const signature = sha3Hash(signatureInput);
+
+  const tokenXml = `<?xml version="1.0" encoding="UTF-8"?>
+<TokenExchangeRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api" xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common">
+  <common:header>
+    <common:requestId>${requestId}</common:requestId>
+    <common:timestamp>${timestamp}</common:timestamp>
+    <common:requestVersion>3.0</common:requestVersion>
+    <common:headerVersion>1.0</common:headerVersion>
+  </common:header>
+  <common:user>
+    <common:login>${credentials.nav_username}</common:login>
+    <common:passwordHash cryptoType="SHA-512">${passwordHash}</common:passwordHash>
+    <common:taxNumber>${credentials.nav_tax_number}</common:taxNumber>
+    <common:requestSignature cryptoType="SHA3-512">${signature}</common:requestSignature>
+  </common:user>
+  <software>
+    <softwareId>${credentials.software_id}</softwareId>
+    <softwareName>Visibill</softwareName>
+    <softwareOperation>ONLINE_SERVICE</softwareOperation>
+    <softwareMainVersion>1.0</softwareMainVersion>
+    <softwareDevName>${credentials.software_dev_name || 'Visibill'}</softwareDevName>
+    <softwareDevContact>${credentials.software_dev_contact || 'support@visibill.hu'}</softwareDevContact>
+  </software>
+</TokenExchangeRequest>`;
+
+  const response = await fetch(`${navApiUrl}/tokenExchange`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/xml; charset=UTF-8',
+      'Accept': 'application/xml'
+    },
+    body: tokenXml
+  });
+
+  const responseText = await response.text();
+
+  if (!response.ok) {
+    const errorCode = extractTag(responseText, 'funcCode') || extractTag(responseText, 'resultCode');
+    const errorMessage = extractTag(responseText, 'message') || extractTag(responseText, 'errorDetail');
+    console.error(`[NAV-QUERY-OUTBOUND] Token error: ${responseText.substring(0, 500)}`);
+    throw new Error(`NAV token request failed (${response.status}): ${errorCode || 'UNKNOWN'} - ${errorMessage || 'No details'}`);
+  }
+
+  const tokenMatch = responseText.match(/<(?:\w+:)?encodedExchangeToken>([^<]+)<\/(?:\w+:)?encodedExchangeToken>/);
+  if (!tokenMatch) {
+    console.error(`[NAV-QUERY-OUTBOUND] Token response without token: ${responseText.substring(0, 500)}`);
+    throw new Error('Failed to extract token from NAV response');
+  }
+
+  return tokenMatch[1];
+}
+
 // Extract tag value from XML
 function extractTag(xml: string, tagName: string): string {
   // Handle both prefixed and non-prefixed tags
@@ -949,13 +1039,14 @@ function buildQueryXML(params: {
   credentials: NavCredentials;
   passwordHash: string;
   requestSignature: string;
+  exchangeToken: string;
   page: number;
   dateFrom: string;
   dateTo: string;
   additionalFilters?: any;
   invoiceDirection: string;
 }): string {
-  const { requestId, timestamp, credentials, passwordHash, requestSignature, page, dateFrom, dateTo, additionalFilters, invoiceDirection } = params;
+  const { requestId, timestamp, credentials, passwordHash, requestSignature, exchangeToken, page, dateFrom, dateTo, additionalFilters, invoiceDirection } = params;
 
   let additionalParamsXML = '';
   if (additionalFilters) {
@@ -991,6 +1082,7 @@ function buildQueryXML(params: {
     <softwareDevName>${credentials.software_dev_name || 'Visibill'}</softwareDevName>
     <softwareDevContact>${credentials.software_dev_contact || 'support@visibill.hu'}</softwareDevContact>
   </software>
+  <exchangeToken>${exchangeToken}</exchangeToken>
   <page>${page}</page>
   <invoiceDirection>${invoiceDirection}</invoiceDirection>
   <invoiceQueryParams>

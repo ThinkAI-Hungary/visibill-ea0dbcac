@@ -1,4 +1,4 @@
-﻿import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle, Users } from 'lucide-react';
 import { useState, useMemo } from 'react';
@@ -222,6 +222,8 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
     if (!user) return;
 
     setIsCreating(true);
+    let rollbackNeeded = false;
+    let createdCompanyId: string | null = null;
     try {
       // 1. Create company
       const { data: companyData, error: companyError } = await supabase
@@ -236,22 +238,28 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
         .single();
 
       if (companyError) throw companyError;
+      createdCompanyId = companyData.id;
 
       // 2. Create projects
-      const projectsToInsert = projects.map(p => ({
-        user_id: user.id,
-        company_id: companyData.id,
-        name: p.name,
-        client_name: p.client_name,
-        description: p.description || null,
-        status: p.status,
-      }));
+      if (projects.length > 0) {
+        const projectsToInsert = projects.map(p => ({
+          user_id: user.id,
+          company_id: companyData.id,
+          name: p.name,
+          client_name: p.client_name,
+          description: p.description || null,
+          status: p.status,
+        }));
 
-      const { error: projectsError } = await supabase
-        .from('projects')
-        .insert(projectsToInsert);
+        const { error: projectsError } = await supabase
+          .from('projects')
+          .insert(projectsToInsert);
 
-      if (projectsError) throw projectsError;
+        if (projectsError) {
+          rollbackNeeded = true;
+          throw projectsError;
+        }
+      }
 
       // 3. Create categories (if any)
       if (categories.length > 0) {
@@ -266,7 +274,10 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
           .from('categories')
           .insert(categoriesToInsert);
 
-        if (categoriesError) throw categoriesError;
+        if (categoriesError) {
+          rollbackNeeded = true;
+          throw categoriesError;
+        }
       }
 
       // 4. Save NAV credentials with company_id (first and only save)
@@ -359,9 +370,16 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
       
       // Trigger the product tour after successful onboarding
       onOnboardingComplete?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error during onboarding:', error);
-      toast({ title: 'Hiba történt a beállítás során', variant: 'destructive' });
+      const msg = error?.message || error?.details || JSON.stringify(error);
+      toast({ title: 'Hiba történt a beállítás során', description: msg, variant: 'destructive' });
+
+      // Rollback: delete the company if it was created but sub-steps failed
+      if (rollbackNeeded && createdCompanyId) {
+        console.warn('[Onboarding] Rolling back company:', createdCompanyId);
+        await supabase.from('companies').delete().eq('id', createdCompanyId);
+      }
     } finally {
       setIsCreating(false);
     }
@@ -410,9 +428,10 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
       }
       toast({ title: 'Sikeresen csatlakoztál a céghez!' });
       onOnboardingComplete?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error joining company:', error);
-      toast({ title: 'Hiba történt a csatlakozás során', variant: 'destructive' });
+      const msg = error?.message || error?.details || JSON.stringify(error);
+      toast({ title: 'Hiba történt a csatlakozás során', description: msg, variant: 'destructive' });
     } finally {
       setIsJoining(false);
     }
