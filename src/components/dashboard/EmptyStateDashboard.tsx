@@ -283,7 +283,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
       // 4. Save NAV credentials with company_id (first and only save)
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const { error: navError } = await supabase.functions.invoke('save-credentials', {
+        const { data: navData, error: navError } = await supabase.functions.invoke('save-credentials', {
           body: {
             navUsername: navCredentials.nav_username,
             navPassword: navCredentials.nav_password,
@@ -292,11 +292,20 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
             navExchangeKey: navCredentials.nav_exchange_key,
             companyId: companyData.id,
           },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
         });
 
-        if (navError) {
-          console.error('NAV credentials save error:', navError);
-          // Don't throw - company is created, just log the error
+        if (navError || navData?.error) {
+          const navMsg = navError?.message || navData?.error || 'Ismeretlen NAV hiba';
+          console.error('NAV credentials save error:', navMsg);
+          // Don't throw - company is created, but inform the user
+          toast({
+            title: 'NAV mentési figyelmeztetés',
+            description: `A cég létrejött, de a NAV adatok mentése sikertelen: ${navMsg}. Az Integrációk menüben újra megpróbálhatod.`,
+            variant: 'destructive',
+          });
         } else {
           // Trigger initial NAV sync in background (last 90 days)
           // Split into 35-day chunks due to NAV API limit
@@ -339,7 +348,10 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                     dateFrom: chunk.from,
                     dateTo: chunk.to,
                     companyId: companyData.id
-                  }
+                  },
+                  headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                  },
                 }),
                 supabase.functions.invoke('nav-query-outbound-invoices', {
                   body: {
@@ -347,7 +359,10 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                     dateFrom: chunk.from,
                     dateTo: chunk.to,
                     companyId: companyData.id
-                  }
+                  },
+                  headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                  },
                 })
               ]);
               
