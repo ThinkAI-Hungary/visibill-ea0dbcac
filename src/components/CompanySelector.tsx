@@ -56,21 +56,18 @@ const CompanySelector = () => {
 
     setIsCreating(true);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('companies')
         .insert({
           name: newCompanyName.trim(),
           tax_number: newCompanyTaxNumber.trim() || null,
           address: newCompanyAddress.trim() || null,
           owner_id: user.id,
-        })
-        .select()
-        .single();
+        });
 
       if (error) throw error;
 
       await refreshCompanies();
-      setSelectedCompany(data);
       setNewCompanyName('');
       setNewCompanyTaxNumber('');
       setNewCompanyAddress('');
