@@ -801,17 +801,16 @@ const ManualUpload = () => {
     try {
       let successfulUploads = 0;
       const txUploadedIds: { id: string; fileName: string }[] = [];
+      const batchUploads: { uploadId: string; fileUrl: string; fileName: string }[] = [];
 
+      // Step 1: Upload all files to storage and create DB records
       for (const file of selectedTransactionFiles) {
-        // Upload file to storage
         const uploadData = await uploadFileToStorage(file, 'transactions', user.id);
 
-        // Get the public URL
         const { data: urlData } = supabase.storage
           .from('transactions')
           .getPublicUrl(uploadData.path);
 
-        // Save to transaction_uploads table for tracking with pending status
         const { data: uploadRecord, error: dbError } = await supabase
           .from('transaction_uploads')
           .insert({
@@ -828,46 +827,51 @@ const ManualUpload = () => {
           .single();
 
         if (dbError) {
-          // BUG #5 FIX: Rollback — remove orphaned Storage file
           await supabase.storage.from('transactions').remove([uploadData.path]);
           console.log('Rolled back Storage file:', uploadData.path);
           throw dbError;
         }
 
-        // Trigger processing via edge function (avoids CORS issues with direct webhook calls)
+        addToUploadHistoryCache({
+          id: uploadRecord.id,
+          file_name: file.name,
+          file_size: file.size,
+          file_type: file.type,
+          file_url: urlData.publicUrl,
+          user_id: user.id,
+          upload_status: 'uploaded',
+          processing_status: 'pending',
+          created_at: new Date().toISOString(),
+          error_message: null,
+        });
+
+        batchUploads.push({
+          uploadId: uploadRecord.id,
+          fileUrl: urlData.publicUrl,
+          fileName: file.name,
+        });
+        txUploadedIds.push({ id: uploadRecord.id, fileName: file.name });
+        successfulUploads++;
+      }
+
+      // Step 2: Send a single batch webhook with all uploads
+      if (batchUploads.length > 0) {
         const webhookUrl = 'https://n8n.thinkaikontir.hu/webhook/supabase-transaction_storage-trigger';
 
         try {
-          console.log('Triggering transaction processing via edge function:', { uploadId: uploadRecord.id });
+          console.log('Triggering batch transaction processing via edge function:', { count: batchUploads.length });
 
           const { data: triggerData, error: triggerError } = await supabase.functions.invoke('trigger-transaction-processing', {
             body: {
-              uploadId: uploadRecord.id,
+              uploads: batchUploads,
               webhookUrl,
-              fileUrl: urlData.publicUrl,
-              fileName: file.name,
               companyId: selectedCompany.id
             }
           });
 
           if (triggerError) {
             console.error('Edge function error:', triggerError);
-          } else if (triggerData?.success) {
-            addToUploadHistoryCache({
-              id: uploadRecord.id,
-              file_name: file.name,
-              file_size: file.size,
-              file_type: file.type,
-              file_url: urlData.publicUrl,
-              user_id: user.id,
-              upload_status: 'uploaded',
-              processing_status: 'pending',
-              created_at: new Date().toISOString(),
-              error_message: null,
-            });
-            txUploadedIds.push({ id: uploadRecord.id, fileName: file.name });
-            successfulUploads++;
-          } else {
+          } else if (!triggerData?.success) {
             console.error('Webhook failed via edge function:', triggerData);
           }
         } catch (webhookError) {
