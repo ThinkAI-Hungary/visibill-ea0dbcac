@@ -655,15 +655,15 @@ const Auth = () => {
             </h2>
           </div>
 
-          {/* Feature Carousel */}
-          <div className="relative min-h-[480px] flex flex-col">
+          {/* Feature Carousel — fixed-height frame so nothing shifts */}
+          <div className="relative h-[520px] flex flex-col">
             {/* Subtitle - fades */}
-            <p className="text-lg text-muted-foreground dark:text-slate-300 max-w-md mb-6 min-h-[3.5rem]" key={`text-${carouselIndex}`} style={{ animation: 'fadeSlide 1200ms ease-in-out' }}>
+            <p className="text-lg text-muted-foreground dark:text-slate-300 max-w-md mb-6 h-[3.5rem] overflow-hidden" key={`text-${carouselIndex}`} style={{ animation: 'fadeSlide 1200ms ease-in-out' }}>
               {carouselSlides[carouselIndex].text}
             </p>
 
             {/* Visual - fades, fixed height centered */}
-            <div className="flex-1 flex items-start" key={`visual-${carouselIndex}`} style={{ animation: 'fadeSlide 1200ms ease-in-out' }}>
+            <div className="flex-1 flex items-start overflow-hidden" key={`visual-${carouselIndex}`} style={{ animation: 'fadeSlide 1200ms ease-in-out' }}>
               <div className="w-full">
                 {carouselSlides[carouselIndex].visual}
               </div>
