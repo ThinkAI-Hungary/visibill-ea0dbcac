@@ -4,16 +4,16 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+
 import {
   Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger,
 } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   History, Plus, Pencil, Trash2, Upload, Link2, FileText, Banknote,
-  ArrowLeftRight, Tag, ClipboardList, Search, User, CalendarDays, CheckCircle2, Bot, ExternalLink, AlertCircle, Filter, ListFilter, Check
+  ArrowLeftRight, Tag, ClipboardList, Search, User, CalendarDays, CheckCircle2, Bot, ExternalLink, AlertCircle, Filter, ListFilter, Check, ChevronRight
 } from 'lucide-react';
 import { format, startOfDay, endOfDay, subDays, startOfWeek } from 'date-fns';
 import { formatDistanceToNow } from 'date-fns';
@@ -117,27 +117,48 @@ function LocalSelect({
   const [search, setSearch] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Always-fresh ref so the document mousedown handler can read current search
+  const searchRef = useRef('');
 
-  const toggleOpen = (newOpen: boolean) => {
-    setOpen(newOpen);
-    onOpenChange?.(newOpen);
-    if (!newOpen) {
-      setSearch('');
-    } else {
-      setTimeout(() => inputRef.current?.focus(), 0);
+  const updateSearch = (v: string) => {
+    setSearch(v);
+    searchRef.current = v;
+  };
+
+  const tryAutoSelect = () => {
+    const currentSearch = searchRef.current;
+    if (!currentSearch) return;
+    const matched = options.filter(o => o.label.toLowerCase().includes(currentSearch.toLowerCase()));
+    if (matched.length === 1) {
+      onChange(matched[0].value);
     }
+  };
+
+  const closeSelect = () => {
+    setOpen(false);
+    onOpenChange?.(false);
+    searchRef.current = '';
+    setSearch('');
+  };
+
+  const openSelect = () => {
+    setOpen(true);
+    onOpenChange?.(true);
+    setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   useEffect(() => {
     if (!open) return;
-    const clickHandler = (e: MouseEvent) => {
+    const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        toggleOpen(false);
+        // Auto-select before closing if exactly one option matches
+        tryAutoSelect();
+        closeSelect();
       }
     };
-    document.addEventListener('mousedown', clickHandler);
-    return () => document.removeEventListener('mousedown', clickHandler);
-  }, [open]);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open, options, onChange]);
 
   const filteredOptions = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
   
@@ -145,9 +166,7 @@ function LocalSelect({
     <div ref={containerRef} className={`relative ${className}`}>
       <div 
         className="flex h-8 w-full items-center justify-between rounded-md border border-input bg-background/50 px-2 py-1 text-xs shadow-sm cursor-text hover:bg-accent/50 transition-colors"
-        onClick={() => {
-          if (!open) toggleOpen(true);
-        }}
+        onClick={() => { if (!open) openSelect(); }}
       >
         {open ? (
           <input
@@ -155,20 +174,20 @@ function LocalSelect({
             type="text"
             className="w-full bg-transparent outline-none truncate font-medium placeholder:text-muted-foreground leading-none"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => updateSearch(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && filteredOptions.length === 1) {
                 e.preventDefault();
                 onChange(filteredOptions[0].value);
-                toggleOpen(false);
+                closeSelect();
               }
+              if (e.key === 'Escape') closeSelect();
             }}
             placeholder={options.find(o => o.value === value)?.label || placeholder}
             onBlur={() => {
-              if (search && filteredOptions.length === 1) {
-                onChange(filteredOptions[0].value);
-              }
-              toggleOpen(false);
+              // Fallback: fires when the entire browser window loses focus
+              tryAutoSelect();
+              closeSelect();
             }}
           />
         ) : (
@@ -189,7 +208,7 @@ function LocalSelect({
                   e.preventDefault();
                   e.stopPropagation(); 
                   onChange(o.value); 
-                  toggleOpen(false); 
+                  closeSelect(); 
                 }}
               >
                 {o.label}
@@ -206,96 +225,87 @@ function LocalSelect({
   )
 }
 
+
 export function ActivityLogSheet() {
   const { selectedCompany } = useCompany();
   const companyId = selectedCompany?.id;
 
-  // Filter state
+  // ── Filter state ─────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('');
-  const [uploaderFilter, setUploaderFilter] = useState('all');
-  
-  // Real active filter state
+
+  // Unified filter menu
+  const [isMainFilterOpen, setIsMainFilterOpen] = useState(false);
+  const [activeSubPanel, setActiveSubPanel] = useState<'actions' | 'time' | 'users' | 'docs' | null>(null);
+  const mainFilterTimeoutRef = useRef<NodeJS.Timeout>();
+  const [userSearch, setUserSearch] = useState('');
+
+  // Action filter
+  const [selectedActions, setSelectedActions] = useState<string[]>([]);
+  const [isActionFilterActive, setIsActionFilterActive] = useState(false);
+
+  // Time filter
   const [customFrom, setCustomFrom] = useState<string>('');
   const [customTo, setCustomTo] = useState<string>('');
   const [isFilterActive, setIsFilterActive] = useState(false);
-  const [selectedActions, setSelectedActions] = useState<string[]>([]);
-  const [isActionFilterActive, setIsActionFilterActive] = useState(false);
-  
-  // Temporary state for the popover inputs
   const [tempYearFrom, setTempYearFrom] = useState<string>('');
   const [tempMonthFrom, setTempMonthFrom] = useState<string>('');
   const [tempDayFrom, setTempDayFrom] = useState<string>('');
   const [tempHourFrom, setTempHourFrom] = useState('');
   const [tempMinFrom, setTempMinFrom] = useState('');
-  
   const [tempYearTo, setTempYearTo] = useState<string>('');
   const [tempMonthTo, setTempMonthTo] = useState<string>('');
   const [tempDayTo, setTempDayTo] = useState<string>('');
   const [tempHourTo, setTempHourTo] = useState('');
   const [tempMinTo, setTempMinTo] = useState('');
-  
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isActionFilterOpen, setIsActionFilterOpen] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
   const [activeDropdowns, setActiveDropdowns] = useState(0);
-
   const filterTimeoutRef = useRef<NodeJS.Timeout>();
-  const actionFilterTimeoutRef = useRef<NodeJS.Timeout>();
 
-  const handleMouseEnter = () => {
-    if (filterTimeoutRef.current) clearTimeout(filterTimeoutRef.current);
-    if (!isFilterOpen) {
-      if (customFrom || customTo) {
-        if (customFrom) {
-          const d = new Date(customFrom);
-          setTempYearFrom(format(d, 'yyyy'));
-          setTempMonthFrom(format(d, 'MM'));
-          setTempDayFrom(format(d, 'dd'));
-          setTempHourFrom(format(d, 'HH'));
-          const m = Math.round(d.getMinutes() / 5) * 5;
-          setTempMinFrom(m.toString().padStart(2, '0'));
-        }
-        if (customTo) {
-          const d = new Date(customTo);
-          setTempYearTo(format(d, 'yyyy'));
-          setTempMonthTo(format(d, 'MM'));
-          setTempDayTo(format(d, 'dd'));
-          setTempHourTo(format(d, 'HH'));
-          const m = Math.round(d.getMinutes() / 5) * 5;
-          setTempMinTo(m.toString().padStart(2, '0'));
-        }
-      } else {
-        setTempYearFrom('');
-        setTempMonthFrom('');
-        setTempDayFrom('');
-        setTempHourFrom('');
-        setTempMinFrom('');
-        
-        setTempYearTo('');
-        setTempMonthTo('');
-        setTempDayTo('');
-        setTempHourTo('');
-        setTempMinTo('');
-      }
-      setIsFilterOpen(true);
+  // User filter (multi-select, client-side)
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [isUserFilterActive, setIsUserFilterActive] = useState(false);
+
+  // Document filter
+  const [docSearchQuery, setDocSearchQuery] = useState('');
+  const [isDocFilterActive, setIsDocFilterActive] = useState(false);
+
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Time sub-panel: populate temp values when panel opens
+  const handleTimeSubPanelOpen = () => {
+    if (customFrom) {
+      const d = new Date(customFrom);
+      setTempYearFrom(format(d, 'yyyy'));
+      setTempMonthFrom(format(d, 'MM'));
+      setTempDayFrom(format(d, 'dd'));
+      setTempHourFrom(format(d, 'HH'));
+      setTempMinFrom((Math.round(d.getMinutes() / 5) * 5).toString().padStart(2, '0'));
+    }
+    if (customTo) {
+      const d = new Date(customTo);
+      setTempYearTo(format(d, 'yyyy'));
+      setTempMonthTo(format(d, 'MM'));
+      setTempDayTo(format(d, 'dd'));
+      setTempHourTo(format(d, 'HH'));
+      setTempMinTo((Math.round(d.getMinutes() / 5) * 5).toString().padStart(2, '0'));
     }
   };
 
-  const handleMouseLeave = () => {
+  const handleMainFilterMouseEnter = () => {
+    if (mainFilterTimeoutRef.current) clearTimeout(mainFilterTimeoutRef.current);
+    setIsMainFilterOpen(true);
+  };
+
+  const handleMainFilterMouseLeave = () => {
     if (activeDropdowns > 0) return;
-    filterTimeoutRef.current = setTimeout(() => {
-      setIsFilterOpen(false);
-    }, 800);
+    mainFilterTimeoutRef.current = setTimeout(() => {
+      setIsMainFilterOpen(false);
+      setActiveSubPanel(null);
+    }, 600);
   };
 
-  const handleFilterClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsFilterActive(prev => !prev);
-  };
-
+  // Build customFrom/customTo from temp values whenever time sub-panel is active
   useEffect(() => {
-    if (!isFilterOpen) return;
-    
+    if (activeSubPanel !== 'time') return;
     if (tempYearFrom && tempMonthFrom && tempDayFrom) {
       const fromD = new Date(`${tempYearFrom}-${tempMonthFrom}-${tempDayFrom}T00:00:00`);
       fromD.setHours(tempHourFrom ? parseInt(tempHourFrom, 10) : 0, tempMinFrom ? parseInt(tempMinFrom, 10) : 0, 0, 0);
@@ -303,7 +313,6 @@ export function ActivityLogSheet() {
     } else {
       setCustomFrom('');
     }
-
     if (tempYearTo && tempMonthTo && tempDayTo) {
       const toD = new Date(`${tempYearTo}-${tempMonthTo}-${tempDayTo}T00:00:00`);
       toD.setHours(tempHourTo ? parseInt(tempHourTo, 10) : 23, tempMinTo ? parseInt(tempMinTo, 10) : 59, 59, 999);
@@ -311,13 +320,11 @@ export function ActivityLogSheet() {
     } else {
       setCustomTo('');
     }
-  }, [tempYearFrom, tempMonthFrom, tempDayFrom, tempYearTo, tempMonthTo, tempDayTo, tempHourFrom, tempHourTo, tempMinFrom, tempMinTo, isFilterOpen]);
+  }, [tempYearFrom, tempMonthFrom, tempDayFrom, tempYearTo, tempMonthTo, tempDayTo, tempHourFrom, tempHourTo, tempMinFrom, tempMinTo, activeSubPanel]);
 
-  // Auto-activate filter as soon as a value is set
+  // Auto-activate time filter when values are set
   useEffect(() => {
-    if (customFrom || customTo) {
-      setIsFilterActive(true);
-    }
+    if (customFrom || customTo) setIsFilterActive(true);
   }, [customFrom, customTo]);
 
   // PDF Preview State
@@ -326,6 +333,14 @@ export function ActivityLogSheet() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState(false);
+  const [pdfErrorType, setPdfErrorType] = useState<'not_found' | 'unreachable' | 'invalid_format' | null>(null);
+  // For non-PDF files that are images: show inline with a notice
+  const [previewIsImage, setPreviewIsImage] = useState(false);
+  const [previewActualExt, setPreviewActualExt] = useState<string | null>(null);
+  // Track the log entry currently being previewed (for retry)
+  const [currentPreviewLog, setCurrentPreviewLog] = useState<AuditLogRow | null>(null);
+  // Track blob URL so we can revoke it when a new one is created
+  const blobUrlRef = useRef<string | null>(null);
 
   // User Activity Dialog State
   const [selectedUserDialog, setSelectedUserDialog] = useState<{
@@ -344,10 +359,9 @@ export function ActivityLogSheet() {
 
   // ── MAIN QUERY: audit_logs with STRICT company_id filter ─────────────────
   const { data: logs = [], isLoading } = useQuery({
-    queryKey: ['audit_logs', companyId, dateRange.from, dateRange.to, uploaderFilter],
+    queryKey: ['audit_logs', companyId, dateRange.from, dateRange.to],
     queryFn: async () => {
-      // SECURITY: ALWAYS filter by company_id — strict multi-tenancy
-      let query = supabase
+      const { data, error } = await supabase
         .from('audit_logs' as any)
         .select('*')
         .eq('company_id', companyId!)
@@ -355,17 +369,6 @@ export function ActivityLogSheet() {
         .lte('created_at', dateRange.to)
         .order('created_at', { ascending: false })
         .limit(200);
-
-      // Server-side user filter
-      if (uploaderFilter !== 'all') {
-        if (uploaderFilter === '__system__') {
-          query = query.is('user_id', null);
-        } else {
-          query = query.eq('user_id', uploaderFilter);
-        }
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
       return (data || []) as unknown as AuditLogRow[];
     },
@@ -373,7 +376,7 @@ export function ActivityLogSheet() {
     staleTime: 30_000,
   });
 
-  // ── Company members for the uploader dropdown ────────────────────────────
+  // ── Company members ──────────────────────────────────────────────────────
   const { data: companyMembers = [] } = useQuery({
     queryKey: ['company_members_profiles', companyId],
     queryFn: async () => {
@@ -383,18 +386,13 @@ export function ActivityLogSheet() {
         .eq('company_id', companyId!);
       if (membersError) throw membersError;
       if (!members || members.length === 0) return [];
-
       const memberUserIds = members.map(m => m.user_id);
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, name')
         .in('user_id', memberUserIds);
       if (profilesError) throw profilesError;
-
-      return (profiles || []).map(p => ({
-        user_id: p.user_id,
-        name: p.name,
-      })) as CompanyMember[];
+      return (profiles || []).map(p => ({ user_id: p.user_id, name: p.name })) as CompanyMember[];
     },
     enabled: !!companyId && isOpen,
   });
@@ -410,10 +408,13 @@ export function ActivityLogSheet() {
     return profileMap.get(userId) || 'Felhasználó';
   }, [profileMap]);
 
-  // ── Client-side text search & action filters ─────────────────────────────────
+  // Strips everything that isn't a letter or digit — ignores dots, dashes, underscores, spaces, etc.
+  const normalize = (s: string) => s.replace(/[^a-zA-Z0-9\u00C0-\u024F]/g, '').toLowerCase();
+
   const filteredLogs = useMemo(() => {
     let result = logs;
 
+    // 1. Action filter
     if (isActionFilterActive && selectedActions.length > 0) {
       result = result.filter(log => {
         const isProcessed = isProcessingComplete(log);
@@ -422,17 +423,54 @@ export function ActivityLogSheet() {
       });
     }
 
+    // 2. Time filter (already applied server-side via customFrom/customTo, but guard here too)
+    if (isFilterActive && (customFrom || customTo)) {
+      result = result.filter(log => {
+        const t = new Date(log.created_at).getTime();
+        if (customFrom && t < new Date(customFrom).getTime()) return false;
+        if (customTo && t > new Date(customTo).getTime()) return false;
+        return true;
+      });
+    }
+
+    // 3. User filter
+    if (isUserFilterActive && selectedUserIds.length > 0) {
+      result = result.filter(log => {
+        if (selectedUserIds.includes('__system__') && !log.user_id) return true;
+        return log.user_id ? selectedUserIds.includes(log.user_id) : false;
+      });
+    }
+
+    // 4. Doc filter — alphanumeric only, ignores all punctuation
+    if (isDocFilterActive && docSearchQuery.trim()) {
+      const q = normalize(docSearchQuery);
+      result = result.filter(log => {
+        const raw = log.entity_name || '';
+        const name = normalize(raw);
+        // Also match against display name (getDisplayName may append .pdf)
+        const nameWithPdf = raw.toLowerCase().endsWith('.pdf') ? name : normalize(raw + '.pdf');
+        return name.includes(q) || nameWithPdf.includes(q);
+      });
+    }
+
+    // 5. Search bar — runs on top of already-filtered result, alphanumeric only
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(log =>
-        (log.entity_name && log.entity_name.toLowerCase().includes(q)) ||
-        log.action.toLowerCase().includes(q) ||
-        log.entity.toLowerCase().includes(q)
-      );
+      const q = normalize(searchQuery);
+      result = result.filter(log => {
+        const raw = log.entity_name || '';
+        const name = normalize(raw);
+        // Also match against display name (getDisplayName may append .pdf)
+        const nameWithPdf = raw.toLowerCase().endsWith('.pdf') ? name : normalize(raw + '.pdf');
+        const action = normalize(log.action);
+        const entity = normalize(log.entity);
+        const user = normalize(getUserName(log.user_id));
+        return name.includes(q) || nameWithPdf.includes(q) || action.includes(q) || entity.includes(q) || user.includes(q);
+      });
     }
 
     return result;
-  }, [logs, searchQuery, selectedActions]);
+  }, [logs, searchQuery, selectedActions, isActionFilterActive, selectedUserIds, isUserFilterActive, docSearchQuery, isDocFilterActive, isFilterActive, customFrom, customTo, getUserName]);
+
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -455,13 +493,24 @@ export function ActivityLogSheet() {
   const handlePdfClick = async (log: AuditLogRow) => {
     if (!isLikelyPdf(log)) return;
 
+    // Revoke previous blob URL to free memory
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+
+    setCurrentPreviewLog(log);
     setPreviewTitle(getDisplayName(log));
     setIsPreviewOpen(true);
     setIsLoadingPdf(true);
     setPdfError(false);
+    setPdfErrorType(null);
+    setPreviewIsImage(false);
+    setPreviewActualExt(null);
+    setPreviewUrl('');
 
     try {
-      let url = null;
+      let url: string | null = null;
       const originalName = log.entity_name || '';
 
       if (log.entity === 'számla') {
@@ -488,8 +537,51 @@ export function ActivityLogSheet() {
         }
       }
 
-      if (!url) throw new Error('File not found in any related tables');
-      setPreviewUrl(url);
+      if (!url) {
+        setPdfErrorType('not_found');
+        throw new Error('File not found in any related tables');
+      }
+
+      // Fetch as blob to bypass Content-Disposition: attachment headers
+      const response = await fetch(url);
+      if (!response.ok) {
+        setPdfErrorType('unreachable');
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const blob = await response.blob();
+
+      // Detect actual file type from magic bytes (first 12 bytes)
+      const headerBytes = await blob.slice(0, 12).arrayBuffer();
+      const h = new Uint8Array(headerBytes);
+
+      const isPdf  = h[0]===0x25 && h[1]===0x50 && h[2]===0x44 && h[3]===0x46; // %PDF
+      const isPng  = h[0]===0x89 && h[1]===0x50 && h[2]===0x4E && h[3]===0x47; // \x89PNG
+      const isJpeg = h[0]===0xFF && h[1]===0xD8 && h[2]===0xFF;
+      const isGif  = h[0]===0x47 && h[1]===0x49 && h[2]===0x46 && h[3]===0x38; // GIF8
+      const isWebp = h[0]===0x52 && h[1]===0x49 && h[2]===0x46 && h[3]===0x46 && // RIFF
+                     h[8]===0x57 && h[9]===0x45 && h[10]===0x42 && h[11]===0x50; // WEBP
+      const isBmp  = h[0]===0x42 && h[1]===0x4D; // BM
+
+      if (isPdf) {
+        const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+        blobUrlRef.current = blobUrl;
+        setPreviewUrl(blobUrl);
+      } else if (isPng || isJpeg || isGif || isWebp || isBmp) {
+        const mimeMap: Record<string, string> = {
+          png: 'image/png', jpg: 'image/jpeg', gif: 'image/gif',
+          webp: 'image/webp', bmp: 'image/bmp',
+        };
+        const ext = isPng ? 'png' : isJpeg ? 'jpg' : isGif ? 'gif' : isWebp ? 'webp' : 'bmp';
+        const mime = mimeMap[ext];
+        const blobUrl = URL.createObjectURL(new Blob([blob], { type: mime }));
+        blobUrlRef.current = blobUrl;
+        setPreviewIsImage(true);
+        setPreviewActualExt(ext);
+        setPreviewUrl(blobUrl);
+      } else {
+        setPdfErrorType('invalid_format');
+        throw new Error('Unrecognized file format');
+      }
     } catch (err) {
       console.error('PDF Preview Error:', err);
       setPdfError(true);
@@ -507,144 +599,263 @@ export function ActivityLogSheet() {
             Műveleti napló
           </Button>
         </SheetTrigger>
-        <SheetContent className="w-full sm:max-w-4xl flex flex-col overflow-hidden p-0" onCloseAutoFocus={(e) => e.preventDefault()}>
+        <SheetContent className="w-full sm:max-w-[720px] flex flex-col overflow-hidden p-0" onCloseAutoFocus={(e) => e.preventDefault()}>
           <SheetHeader className="px-12 pt-6 pb-0">
             <SheetTitle>Műveleti napló</SheetTitle>
             <SheetDescription>Az aktuális cég eseményeinek idővonala.</SheetDescription>
           </SheetHeader>
 
-          {/* ── STICKY FILTER BAR ─────────────────────────────────────────── */}
-          <div className="sticky top-0 z-20 bg-background border-b border-border/50 px-12 py-3 space-y-3">
-
-            {/* Row 1: Search + User filter */}
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Keresés név, művelet..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 h-8 text-sm bg-secondary/30 border-border/50"
-                />
-              </div>
-              <Select value={uploaderFilter} onValueChange={setUploaderFilter}>
-                <SelectTrigger className="h-8 w-[180px] text-sm bg-secondary/30 border-border/50">
-                  <User className="h-3 w-3 mr-1.5 text-muted-foreground shrink-0" />
-                  <SelectValue placeholder="Feltöltő" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Összes felhasználó</SelectItem>
-                  <SelectItem value="__system__">
-                    <span className="flex items-center gap-1.5">
-                      <Bot className="h-3 w-3" />
-                      Automatizált rendszer
-                    </span>
-                  </SelectItem>
-                  {companyMembers.map(member => (
-                    <SelectItem key={member.user_id} value={member.user_id}>
-                      {member.name || 'Névtelen felhasználó'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* ── STICKY HEADER (search + filter) ─────────────────────────────── */}
+          <div className="sticky top-0 z-20 bg-background border-b border-border/50 px-12 py-3 space-y-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Keresés név, művelet..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-8 text-sm bg-secondary/30 border-border/50"
+              />
             </div>
-          </div>
 
-          {/* ── TIMELINE CONTENT ──────────────────────────────────────────── */}
-          <div className="flex-1 overflow-y-auto px-12 py-4">
 
-            {/* Timeline Header Row (for filters) */}
-            <div className="flex flex-col px-3 mb-2">
-              {/* Row 1: Buttons — mirrors table row layout: w-[42px] icon | gap-4 | min-w-[48px] time */}
+
+            {/* Unified filter button + indicators */}
+            <div className="flex flex-col px-3">
+              {/* Filter button row — at icon column position */}
               <div className="flex items-center">
-                {/* Action filter button — sits in icon column position (w-[42px]) */}
                 <div className="w-[42px] flex justify-center shrink-0">
-                  <Popover open={isActionFilterOpen} onOpenChange={setIsActionFilterOpen}>
+                  <Popover open={isMainFilterOpen} onOpenChange={(open) => { setIsMainFilterOpen(open); if (!open) setActiveSubPanel(null); }}>
                     <PopoverTrigger asChild>
                       <div
-                        onMouseEnter={() => {
-                          if (actionFilterTimeoutRef.current) clearTimeout(actionFilterTimeoutRef.current);
-                          setIsActionFilterOpen(true);
-                        }}
-                        onMouseLeave={() => {
-                          actionFilterTimeoutRef.current = setTimeout(() => setIsActionFilterOpen(false), 800);
-                        }}
+                        onMouseEnter={handleMainFilterMouseEnter}
+                        onMouseLeave={handleMainFilterMouseLeave}
                       >
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className={`h-9 w-9 rounded-full flex items-center justify-center transition-none ${(isActionFilterActive && selectedActions.length > 0) ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:bg-secondary'}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (selectedActions.length > 0) {
-                              setIsActionFilterActive(prev => !prev);
-                            } else {
-                              setIsActionFilterOpen(prev => !prev);
-                            }
-                          }}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`h-9 w-9 rounded-full flex items-center justify-center transition-none ${
+                            (isActionFilterActive && selectedActions.length > 0) || (isFilterActive && (customFrom || customTo)) || (isUserFilterActive && selectedUserIds.length > 0) || (isDocFilterActive && docSearchQuery.trim())
+                              ? 'bg-primary/20 text-primary'
+                              : 'text-muted-foreground hover:bg-secondary'
+                          }`}
                         >
-                          <Filter className={`h-[18px] w-[18px] ${(isActionFilterActive && selectedActions.length > 0) ? 'fill-primary' : ''}`} />
+                          <Filter className={`h-[18px] w-[18px] ${
+                            (isActionFilterActive && selectedActions.length > 0) || (isFilterActive && (customFrom || customTo)) || (isUserFilterActive && selectedUserIds.length > 0) || (isDocFilterActive && docSearchQuery.trim())
+                              ? 'fill-primary' : ''
+                          }`} />
                         </Button>
                       </div>
                     </PopoverTrigger>
-                    <PopoverContent 
-                      className="w-[200px] p-2 z-[200]" 
+                    <PopoverContent
+                      className="w-[180px] p-0 z-[200] overflow-visible"
                       align="start"
-                      alignOffset={-48}
                       sideOffset={4}
-                      onMouseEnter={() => {
-                        if (actionFilterTimeoutRef.current) clearTimeout(actionFilterTimeoutRef.current);
-                      }}
-                      onMouseLeave={() => {
-                        actionFilterTimeoutRef.current = setTimeout(() => setIsActionFilterOpen(false), 800);
-                      }}
+                      onMouseEnter={handleMainFilterMouseEnter}
+                      onMouseLeave={handleMainFilterMouseLeave}
                     >
-                      <div className="space-y-1">
-                        <div className="px-2 pt-1 pb-2">
-                          <h4 className="font-medium text-xs leading-none">Műveletek szűrése</h4>
-                        </div>
-                        <div className="grid grid-cols-1 gap-0.5">
-                          {AVAILABLE_ACTIONS.map(action => {
-                            const isSelected = selectedActions.includes(action.id);
-                            return (
-                              <div 
-                                key={action.id}
-                                className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent group ${isSelected ? 'bg-accent/50' : ''}`}
-                                onClick={() => {
-                                  setSelectedActions(prev => {
-                                    const next = isSelected 
-                                      ? prev.filter(id => id !== action.id)
-                                      : [...prev, action.id];
-                                    if (next.length > 0) setIsActionFilterActive(true);
-                                    else setIsActionFilterActive(false);
-                                    return next;
-                                  });
-                                }}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <div className={`h-4 w-4 rounded-full flex items-center justify-center ${action.color}`}>
-                                    <action.icon className="h-2 w-2" />
-                                  </div>
-                                  <span className={`text-xs ${isSelected ? 'font-medium' : ''}`}>{action.label}</span>
-                                </div>
-                                {isSelected && <Check className="h-3 w-3" />}
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {selectedActions.length > 0 && (
-                          <div className="pt-2 px-1">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="w-full h-7 text-[10px] text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors" 
-                              onClick={() => {
-                                setSelectedActions([]);
-                                setIsActionFilterActive(false);
+                      <div className="relative">
+                        {/* Left panel: category list — fixed width, matches popover */}
+                        <div className="w-full py-1">
+                          {([
+                            { id: 'actions' as const, label: 'Műveletek szűrése', active: isActionFilterActive && selectedActions.length > 0 },
+                            { id: 'time' as const, label: 'Időszak szűrése', active: isFilterActive && !!(customFrom || customTo) },
+                            { id: 'users' as const, label: 'Felhasználók szűrése', active: isUserFilterActive && selectedUserIds.length > 0 },
+                            { id: 'docs' as const, label: 'Dokumentumok szűrése', active: isDocFilterActive && !!docSearchQuery.trim() },
+                          ] as const).map(item => (
+                            <div
+                              key={item.id}
+                              className={`flex items-center justify-between px-3 py-2 cursor-pointer text-xs transition-colors ${activeSubPanel === item.id ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/60'}`}
+                              onMouseEnter={() => {
+                                setActiveSubPanel(item.id);
+                                if (item.id === 'time') handleTimeSubPanelOpen();
                               }}
                             >
-                              Szűrések törlése
-                            </Button>
+                              <span className={item.active ? 'font-semibold text-primary' : ''}>{item.label}</span>
+                              <div className="flex items-center gap-1">
+                                {item.active && <div className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Right panel: sub-content — floats absolutely to the right */}
+                        {activeSubPanel && (
+                          <div className="absolute left-full top-0 border border-border/50 rounded-md bg-popover shadow-lg max-w-[540px]">
+
+                            {/* Actions sub-panel */}
+                            {activeSubPanel === 'actions' && (
+                              <div className="p-2 space-y-1">
+                                <div className="px-2 pt-1 pb-2 flex items-center justify-between">
+                                  <h4 className="font-medium text-xs leading-none">Műveletek</h4>
+                                  {selectedActions.length > 0 && (
+                                    <button className="text-[10px] text-muted-foreground hover:text-destructive" onClick={() => { setSelectedActions([]); setIsActionFilterActive(false); }}>Törlés</button>
+                                  )}
+                                </div>
+                                {AVAILABLE_ACTIONS.map(action => {
+                                  const isSelected = selectedActions.includes(action.id);
+                                  return (
+                                    <div
+                                      key={action.id}
+                                      className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent ${isSelected ? 'bg-accent/50' : ''}`}
+                                      onClick={() => {
+                                        setSelectedActions(prev => {
+                                          const next = isSelected ? prev.filter(id => id !== action.id) : [...prev, action.id];
+                                          setIsActionFilterActive(next.length > 0);
+                                          return next;
+                                        });
+                                      }}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <div className={`h-4 w-4 rounded-full flex items-center justify-center ${action.color}`}>
+                                          <action.icon className="h-2 w-2" />
+                                        </div>
+                                        <span className={`text-xs ${isSelected ? 'font-medium' : ''}`}>{action.label}</span>
+                                      </div>
+                                      {isSelected && <Check className="h-3 w-3 shrink-0" />}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {/* Time sub-panel */}
+                            {activeSubPanel === 'time' && (
+                              <div className="p-2 space-y-2 w-[280px]">
+                                <div className="px-1 pt-1 flex items-center justify-between">
+                                  <h4 className="font-medium text-xs leading-none">Időszak</h4>
+                                  {(customFrom || customTo) && (
+                                    <button className="text-[10px] text-muted-foreground hover:text-destructive" onClick={() => {
+                                      setIsFilterActive(false);
+                                      setCustomFrom(''); setCustomTo('');
+                                      setTempYearFrom(''); setTempMonthFrom(''); setTempDayFrom(''); setTempHourFrom(''); setTempMinFrom('');
+                                      setTempYearTo(''); setTempMonthTo(''); setTempDayTo(''); setTempHourTo(''); setTempMinTo('');
+                                    }}>Törlés</button>
+                                  )}
+                                </div>
+                                <div className="space-y-2 bg-secondary/10 p-2.5 rounded-md border border-border/50">
+                                  <label className="text-xs font-semibold text-foreground">Mettől</label>
+                                  <div className="space-y-1.5">
+                                    <div className="flex justify-center">
+                                      <LocalSelect value={tempYearFrom} onChange={(v) => { setTempYearFrom(v); if (!tempMonthFrom) setTempMonthFrom('01'); if (!tempDayFrom) setTempDayFrom('01'); }} options={YEAR_OPTIONS} placeholder="Év" className="w-[90px]" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
+                                    </div>
+                                    <div className="flex gap-1.5 items-center">
+                                      <LocalSelect value={tempMonthFrom} onChange={setTempMonthFrom} options={MONTH_OPTIONS} placeholder="Hó" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
+                                      <LocalSelect value={tempDayFrom} onChange={setTempDayFrom} options={DAY_OPTIONS} placeholder="Nap" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
+                                    </div>
+                                    <div className="flex gap-1.5 items-center">
+                                      <LocalSelect value={tempHourFrom} onChange={setTempHourFrom} options={HOUR_OPTIONS} placeholder="Óra" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
+                                      <span className="font-bold text-muted-foreground pb-0.5">:</span>
+                                      <LocalSelect value={tempMinFrom} onChange={setTempMinFrom} options={MIN_OPTIONS} placeholder="Perc" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="space-y-2 bg-secondary/10 p-2.5 rounded-md border border-border/50">
+                                  <label className="text-xs font-semibold text-foreground">Meddig</label>
+                                  <div className="space-y-1.5">
+                                    <div className="flex justify-center">
+                                      <LocalSelect value={tempYearTo} onChange={(v) => { setTempYearTo(v); if (!tempMonthTo) setTempMonthTo('01'); if (!tempDayTo) setTempDayTo('01'); }} options={YEAR_OPTIONS} placeholder="Év" className="w-[90px]" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
+                                    </div>
+                                    <div className="flex gap-1.5 items-center">
+                                      <LocalSelect value={tempMonthTo} onChange={setTempMonthTo} options={MONTH_OPTIONS} placeholder="Hó" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
+                                      <LocalSelect value={tempDayTo} onChange={setTempDayTo} options={DAY_OPTIONS} placeholder="Nap" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
+                                    </div>
+                                    <div className="flex gap-1.5 items-center">
+                                      <LocalSelect value={tempHourTo} onChange={setTempHourTo} options={HOUR_OPTIONS} placeholder="Óra" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
+                                      <span className="font-bold text-muted-foreground pb-0.5">:</span>
+                                      <LocalSelect value={tempMinTo} onChange={setTempMinTo} options={MIN_OPTIONS} placeholder="Perc" className="flex-1" onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))} />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Users sub-panel */}
+                            {activeSubPanel === 'users' && (() => {
+                              const normalizedUserSearch = userSearch.toLowerCase();
+                              const sortedMembers = [...companyMembers].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'hu'));
+                              const filteredMembers = sortedMembers.filter(m => (m.name || 'Névtelen').toLowerCase().includes(normalizedUserSearch));
+                              const showSystem = 'rendszer'.includes(normalizedUserSearch);
+                              return (
+                                <div className="p-2 space-y-1 w-[220px]">
+                                  <div className="px-2 pt-1 pb-1 flex items-center justify-between">
+                                    <h4 className="font-medium text-xs leading-none">Felhasználók</h4>
+                                    {selectedUserIds.length > 0 && (
+                                      <button className="text-[10px] text-muted-foreground hover:text-destructive" onClick={() => { setSelectedUserIds([]); setIsUserFilterActive(false); }}>Törlés</button>
+                                    )}
+                                  </div>
+                                  <div className="relative px-1 pb-1">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                                    <input
+                                      type="text"
+                                      placeholder="Keresés..."
+                                      value={userSearch}
+                                      onChange={e => setUserSearch(e.target.value)}
+                                      className="w-full pl-6 pr-2 py-1 text-xs bg-secondary/30 border border-border/50 rounded-md outline-none focus:ring-1 focus:ring-primary/40"
+                                    />
+                                  </div>
+                                  <div className="max-h-[220px] overflow-y-auto space-y-0.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
+                                    {showSystem && (() => {
+                                      const isSelected = selectedUserIds.includes('__system__');
+                                      return (
+                                        <div
+                                          className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent ${isSelected ? 'bg-accent/50' : ''}`}
+                                          onClick={() => { setSelectedUserIds(prev => { const next = isSelected ? prev.filter(id => id !== '__system__') : [...prev, '__system__']; setIsUserFilterActive(next.length > 0); return next; }); }}
+                                        >
+                                          <div className="flex items-center gap-2"><Bot className="h-3.5 w-3.5 text-muted-foreground" /><span className={`text-xs ${isSelected ? 'font-medium' : ''}`}>Rendszer</span></div>
+                                          {isSelected && <Check className="h-3 w-3 shrink-0" />}
+                                        </div>
+                                      );
+                                    })()}
+                                    {filteredMembers.map(member => {
+                                      const isSelected = selectedUserIds.includes(member.user_id);
+                                      return (
+                                        <div
+                                          key={member.user_id}
+                                          className={`flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer hover:bg-accent ${isSelected ? 'bg-accent/50' : ''}`}
+                                          onClick={() => { setSelectedUserIds(prev => { const next = isSelected ? prev.filter(id => id !== member.user_id) : [...prev, member.user_id]; setIsUserFilterActive(next.length > 0); return next; }); }}
+                                        >
+                                          <div className="flex items-center gap-2"><User className="h-3.5 w-3.5 text-muted-foreground" /><span className={`text-xs ${isSelected ? 'font-medium' : ''}`}>{member.name || 'Névtelen'}</span></div>
+                                          {isSelected && <Check className="h-3 w-3 shrink-0" />}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Docs sub-panel */}
+                            {activeSubPanel === 'docs' && (
+                              <div className="p-3 w-[180px] min-h-[152px] space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="font-medium text-xs leading-none">Dokumentumok</h4>
+                                  {docSearchQuery && (
+                                    <button className="text-[10px] text-muted-foreground hover:text-destructive" onClick={() => { setDocSearchQuery(''); setIsDocFilterActive(false); }}>Törlés</button>
+                                  )}
+                                </div>
+                                <div className="relative">
+                                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                                  <Input
+                                    placeholder="Fájlnév keresése..."
+                                    value={docSearchQuery}
+                                    onChange={(e) => { setDocSearchQuery(e.target.value); setIsDocFilterActive(!!e.target.value.trim()); }}
+                                    className="pl-6 h-7 text-xs bg-secondary/30 border-border/50"
+                                    autoFocus
+                                  />
+                                </div>
+                                {docSearchQuery.trim() && (
+                                  <div className="space-y-0.5 max-h-[160px] overflow-y-auto">
+                                    {logs
+                                      .filter(l => l.entity_name && normalize(l.entity_name).includes(normalize(docSearchQuery)))
+                                      .slice(0, 8)
+                                      .map((l, i) => (
+                                        <div key={i} className="px-2 py-1 text-xs text-muted-foreground rounded hover:bg-accent truncate">{l.entity_name}</div>
+                                      ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -652,244 +863,57 @@ export function ActivityLogSheet() {
                   </Popover>
                 </div>
 
-                {/* gap-4 spacer to match table gap */}
-                <div className="w-4 shrink-0" />
+                {/* Indicator rows — each filter category on its own row, to the right of the icon */}
+                {((isActionFilterActive && selectedActions.length > 0) || (isFilterActive && (customFrom || customTo)) || (isUserFilterActive && selectedUserIds.length > 0) || (isDocFilterActive && docSearchQuery.trim())) && (
+                  <div className="flex flex-col gap-1 ml-2 self-start pt-2">
 
-                {/* Time Filter button — sits in time column position (w-[48px], centered) */}
-                <div className="w-[48px] flex justify-center shrink-0">
-                  <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-                    <PopoverTrigger asChild>
-                      <div 
-                        onMouseEnter={handleMouseEnter}
-                        onMouseLeave={handleMouseLeave}
-                      >
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className={`h-9 w-9 rounded-full flex items-center justify-center transition-none ${(isFilterActive && (customFrom || customTo)) ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:bg-secondary'}`}
-                          onClick={handleFilterClick}
-                        >
-                          <Filter className={`h-[18px] w-[18px] ${(isFilterActive && (customFrom || customTo)) ? 'fill-primary' : ''}`} />
-                        </Button>
+                    {/* 1. Time row — single line: from - to */}
+                    {(isFilterActive && (customFrom || customTo)) && (
+                      <div className="text-[9px] font-bold text-primary/70 tracking-wider whitespace-nowrap leading-tight">
+                        {customFrom ? format(new Date(customFrom), 'yyyy MM.dd. HH:mm') : '??'}{' - '}{customTo ? format(new Date(customTo), 'yyyy MM.dd. HH:mm') : '??'}
                       </div>
-                    </PopoverTrigger>
-                    <PopoverContent 
-                      className="w-[280px] p-3 z-[200]" 
-                      align="center"
-                      sideOffset={4}
-                      onMouseEnter={handleMouseEnter}
-                      onMouseLeave={handleMouseLeave}
-                    >
-                      <div className="space-y-3">
-                        <h4 className="font-medium text-sm leading-none text-center">Időszak szűrése</h4>
-                        
-                        <div className="space-y-2">
-                          <div className="space-y-2 bg-secondary/10 p-2.5 rounded-md border border-border/50 pointer-events-auto">
-                            <label className="text-xs font-semibold text-foreground">Mettől</label>
-                            <div className="space-y-1.5">
-                              <div className="flex justify-center">
-                                <LocalSelect 
-                                  value={tempYearFrom} 
-                                  onChange={(v) => {
-                                    setTempYearFrom(v);
-                                    if (!tempMonthFrom) setTempMonthFrom('01');
-                                    if (!tempDayFrom) setTempDayFrom('01');
-                                  }} 
-                                  options={YEAR_OPTIONS} 
-                                  placeholder="Év"
-                                  className="w-[90px]"
-                                  onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))}
-                                />
-                              </div>
-                              <div className="flex gap-1.5 items-center">
-                                <LocalSelect 
-                                  value={tempMonthFrom} 
-                                  onChange={setTempMonthFrom} 
-                                  options={MONTH_OPTIONS} 
-                                  placeholder="Hó"
-                                  className="flex-1"
-                                  onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))}
-                                />
-                                <LocalSelect 
-                                  value={tempDayFrom} 
-                                  onChange={setTempDayFrom} 
-                                  options={DAY_OPTIONS} 
-                                  placeholder="Nap"
-                                  className="flex-1"
-                                  onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))}
-                                />
-                              </div>
-                              <div className="flex gap-1.5 items-center">
-                                <LocalSelect 
-                                  value={tempHourFrom} 
-                                  onChange={setTempHourFrom} 
-                                  options={HOUR_OPTIONS} 
-                                  placeholder="Óra"
-                                  className="flex-1"
-                                  onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))}
-                                />
-                                <span className="font-bold text-muted-foreground pb-0.5">:</span>
-                                <LocalSelect 
-                                  value={tempMinFrom} 
-                                  onChange={setTempMinFrom} 
-                                  options={MIN_OPTIONS} 
-                                  placeholder="Perc"
-                                  className="flex-1"
-                                  onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))}
-                                />
-                              </div>
-                            </div>
-                          </div>
+                    )}
 
-                          <div className="space-y-2 bg-secondary/10 p-2.5 rounded-md border border-border/50 pointer-events-auto">
-                            <label className="text-xs font-semibold text-foreground">Meddig</label>
-                            <div className="space-y-1.5">
-                              <div className="flex justify-center">
-                                <LocalSelect 
-                                  value={tempYearTo} 
-                                  onChange={(v) => {
-                                    setTempYearTo(v);
-                                    if (!tempMonthTo) setTempMonthTo('01');
-                                    if (!tempDayTo) setTempDayTo('01');
-                                  }} 
-                                  options={YEAR_OPTIONS} 
-                                  placeholder="Év"
-                                  className="w-[90px]"
-                                  onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))}
-                                />
-                              </div>
-                              <div className="flex gap-1.5 items-center">
-                                <LocalSelect 
-                                  value={tempMonthTo} 
-                                  onChange={setTempMonthTo} 
-                                  options={MONTH_OPTIONS} 
-                                  placeholder="Hó"
-                                  className="flex-1"
-                                  onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))}
-                                />
-                                <LocalSelect 
-                                  value={tempDayTo} 
-                                  onChange={setTempDayTo} 
-                                  options={DAY_OPTIONS} 
-                                  placeholder="Nap"
-                                  className="flex-1"
-                                  onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))}
-                                />
-                              </div>
-                              <div className="flex gap-1.5 items-center">
-                                <LocalSelect 
-                                  value={tempHourTo} 
-                                  onChange={setTempHourTo} 
-                                  options={HOUR_OPTIONS} 
-                                  placeholder="Óra"
-                                  className="flex-1"
-                                  onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))}
-                                />
-                                <span className="font-bold text-muted-foreground pb-0.5">:</span>
-                                <LocalSelect 
-                                  value={tempMinTo} 
-                                  onChange={setTempMinTo} 
-                                  options={MIN_OPTIONS} 
-                                  placeholder="Perc"
-                                  className="flex-1"
-                                  onOpenChange={(op) => setActiveDropdowns(p => op ? p + 1 : Math.max(0, p - 1))}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="pt-1 flex gap-2">
-                          {(tempYearFrom || tempYearTo || customFrom || customTo) && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="flex-1 h-8 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors" 
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setIsFilterActive(false);
-                                setTempYearFrom('');
-                                setTempMonthFrom('');
-                                setTempDayFrom('');
-                                setTempHourFrom('');
-                                setTempMinFrom('');
-                                setTempYearTo('');
-                                setTempMonthTo('');
-                                setTempDayTo('');
-                                setTempHourTo('');
-                                setTempMinTo('');
-                                setCustomFrom('');
-                                setCustomTo('');
-                              }}
-                            >
-                              Szűrés törlése
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div className="flex-1" />
-              </div>
-
-              {/* Row 2: Indicators — same column structure as table rows */}
-              {((isActionFilterActive && selectedActions.length > 0) || (isFilterActive && (customFrom || customTo))) && (
-                <div className="flex items-start mt-2">
-                  {/* Action icons — single column, no circle, 20% smaller, fits within w-[42px] */}
-                  <div className="w-[42px] flex justify-center shrink-0 overflow-visible">
+                    {/* 2. Actions row */}
                     {(isActionFilterActive && selectedActions.length > 0) && (
-                      <div className="flex flex-col items-center gap-0.5">
+                      <div className="flex flex-wrap gap-0.5 items-center">
                         {selectedActions.map(id => {
                           const action = AVAILABLE_ACTIONS.find(a => a.id === id);
                           if (!action) return null;
                           const iconColorClass = action.color.split(' ').find(c => c.startsWith('text-')) || 'text-primary';
-                          return (
-                            <action.icon key={id} className={`h-[29px] w-[29px] ${iconColorClass}`} />
-                          );
+                          return <action.icon key={id} className={`h-5 w-5 ${iconColorClass}`} />;
                         })}
                       </div>
                     )}
-                  </div>
 
-                  {/* gap-4 spacer */}
-                  <div className="w-4 shrink-0" />
-
-                  {/* Time display — exact w-[48px] so center is fixed at same position as time button */}
-                  <div className="w-[48px] flex justify-center shrink-0 overflow-visible">
-                    {(isFilterActive && (customFrom || customTo)) && (
-                      <div className="flex flex-col items-center text-[9px] font-bold text-primary/70 tracking-wider whitespace-nowrap pointer-events-none leading-tight">
-                        {customFrom ? (
-                          <>
-                            <span>{format(new Date(customFrom), 'yyyy')}</span>
-                            <span>{format(new Date(customFrom), 'MM.dd. HH:mm')}</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="opacity-0">0000</span>
-                            <span className="opacity-0">00.00. 00:00</span>
-                          </>
-                        )}
-                        <span className="my-0.5">-</span>
-                        {customTo ? (
-                          <>
-                            <span>{format(new Date(customTo), 'yyyy')}</span>
-                            <span>{format(new Date(customTo), 'MM.dd. HH:mm')}</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="opacity-0">0000</span>
-                            <span className="opacity-0">00.00. 00:00</span>
-                          </>
-                        )}
+                    {/* 3. Users row */}
+                    {(isUserFilterActive && selectedUserIds.length > 0) && (
+                      <div className="flex flex-wrap gap-0.5">
+                        {selectedUserIds.map(uid => (
+                          <span key={uid} className="text-[9px] font-bold text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                            {uid === '__system__' ? 'Rendszer' : (profileMap.get(uid) || 'Felh.')}
+                          </span>
+                        ))}
                       </div>
                     )}
-                  </div>
-                </div>
-              )}
-            </div>
 
+                    {/* 4. Docs row */}
+                    {(isDocFilterActive && docSearchQuery.trim()) && (
+                      <span className="text-[9px] font-bold text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded-full whitespace-nowrap max-w-[200px] truncate">
+                        📄 {docSearchQuery}
+                      </span>
+                    )}
+
+                  </div>
+                )}
+              </div>
+
+          </div>
+
+          </div>
+
+          {/* ── TIMELINE CONTENT ──────────────────────────────────────────── */}
+          <div className="flex-1 overflow-y-auto px-12 py-4">
 
             {isLoading ? (
               <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
@@ -949,58 +973,66 @@ export function ActivityLogSheet() {
                           <div className="flex flex-col items-center text-[10px] text-muted-foreground font-medium uppercase tracking-wide leading-tight mt-0.5">
                             <span>{format(new Date(log.created_at), 'MMM', { locale: hu })}</span>
                             <span>{format(new Date(log.created_at), 'd.', { locale: hu })}</span>
+                            <span>{format(new Date(log.created_at), 'yyyy', { locale: hu })}</span>
                           </div>
                         </div>
 
-                        {/* Content */}
+                        {/* Content — two rows */}
                         <div className="min-w-0 flex-1">
                           {isSystemAction ? (
-                            // Processing complete message — attributed to original uploader
-                            <p className="text-sm leading-snug">
-                              <button
-                                onClick={() => setSelectedUserDialog({ userId: log.user_id, userName, isSystem: !log.user_id || isSystemAction })}
-                                className="font-semibold hover:text-primary transition-colors hover:underline outline-none align-bottom overflow-hidden inline"
-                              >
-                                {userName}
-                              </button>
-                              {' '}
-                              <span className="text-muted-foreground">feltöltése feldolgozva:</span>
-                              {' '}
-                              <span className="font-medium text-green-600 dark:text-green-400">
-                                {getDisplayName(log) ? (
-                                  isLikelyPdf(log) ? (
-                                    <button onClick={() => handlePdfClick(log)} className="hover:underline hover:text-green-700 dark:hover:text-green-300 inline-flex items-center gap-1 transition-colors relative top-px">
-                                      {getDisplayName(log)}
-                                    </button>
-                                  ) : getDisplayName(log)
-                                ) : 'ismeretlen fájl'}
-                              </span>
-                            </p>
-                          ) : (
-                            // Normal activity message
-                            <p className="text-sm leading-snug">
-                              <button
-                                onClick={() => setSelectedUserDialog({ userId: log.user_id, userName, isSystem: !log.user_id || isSystemAction })}
-                                className="font-semibold hover:text-primary transition-colors hover:underline outline-none align-bottom overflow-hidden inline"
-                              >
-                                {userName}
-                              </button>
-                              {' '}
-                              <span className="text-muted-foreground">{actionCfg.label} egy {entityCfg.label}</span>
+                            <>
+                              {/* Row 1: action sentence */}
+                              <p className="text-sm leading-snug">
+                                <button
+                                  onClick={() => setSelectedUserDialog({ userId: log.user_id, userName, isSystem: !log.user_id || isSystemAction })}
+                                  className="font-semibold hover:text-primary transition-colors hover:underline outline-none"
+                                >
+                                  {userName}
+                                </button>
+                                {' '}
+                                <span className="text-muted-foreground">feltöltése feldolgozva</span>
+                              </p>
+                              {/* Row 2: filename */}
                               {getDisplayName(log) && (
-                                <>
-                                  {': '}
+                                <p className="text-xs mt-0.5">
                                   {isLikelyPdf(log) ? (
-                                    <button onClick={() => handlePdfClick(log)} className="font-medium text-blue-500 hover:text-blue-600 hover:underline inline-flex items-center gap-1 transition-colors relative top-px">
+                                    <button onClick={() => handlePdfClick(log)} className="font-medium text-green-600 dark:text-green-400 hover:underline hover:text-green-700 dark:hover:text-green-300 inline-flex items-center gap-1 transition-colors">
+                                      <FileText className="h-3 w-3 shrink-0" />
                                       {getDisplayName(log)}
-                                      <ExternalLink className="h-3 w-3" />
                                     </button>
                                   ) : (
                                     <span className="font-medium text-foreground">{getDisplayName(log)}</span>
                                   )}
-                                </>
+                                </p>
                               )}
-                            </p>
+                            </>
+                          ) : (
+                            <>
+                              {/* Row 1: action sentence */}
+                              <p className="text-sm leading-snug">
+                                <button
+                                  onClick={() => setSelectedUserDialog({ userId: log.user_id, userName, isSystem: !log.user_id || isSystemAction })}
+                                  className="font-semibold hover:text-primary transition-colors hover:underline outline-none"
+                                >
+                                  {userName}
+                                </button>
+                                {' '}
+                                <span className="text-muted-foreground">{actionCfg.label} egy {entityCfg.label}</span>
+                              </p>
+                              {/* Row 2: filename */}
+                              {getDisplayName(log) && (
+                                <p className="text-xs mt-0.5">
+                                  {isLikelyPdf(log) ? (
+                                    <button onClick={() => handlePdfClick(log)} className="font-medium text-blue-500 hover:text-blue-600 hover:underline inline-flex items-center gap-1 transition-colors">
+                                      <FileText className="h-3 w-3 shrink-0" />
+                                      {getDisplayName(log)}
+                                    </button>
+                                  ) : (
+                                    <span className="font-medium text-foreground">{getDisplayName(log)}</span>
+                                  )}
+                                </p>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
@@ -1025,6 +1057,12 @@ export function ActivityLogSheet() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-6">
           <DialogHeader className="mb-2">
             <DialogTitle className="truncate pr-8" title={previewTitle || ''}>{previewTitle}</DialogTitle>
+            {previewIsImage && previewActualExt && (
+              <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-md px-2.5 py-1.5 mt-1 w-fit">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                Ez a fájl nem PDF, hanem <span className="font-semibold">.{previewActualExt}</span> formátumú.
+              </div>
+            )}
           </DialogHeader>
 
           <div className="flex-1 overflow-auto min-h-[50vh] flex flex-col relative w-full items-center justify-center p-0 rounded-md border bg-muted/20">
@@ -1038,21 +1076,56 @@ export function ActivityLogSheet() {
             )}
 
             {pdfError ? (
-              <div className="text-center p-8 text-muted-foreground flex flex-col items-center max-w-sm">
-                <AlertCircle className="h-10 w-10 text-destructive mb-3" />
-                <p className="font-medium text-foreground">A dokumentum nem tölthető be.</p>
-                <p className="text-sm opacity-80 mt-1">Lehet, hogy a fájl törlésre került a tárhelyről, vagy a korábbi naplóbejegyzésből nem azonosítható be a forrás.</p>
+              <div className="text-center p-8 text-muted-foreground flex flex-col items-center max-w-sm gap-3">
+                <AlertCircle className="h-10 w-10 text-destructive mb-1" />
+                {pdfErrorType === 'not_found' ? (
+                  <>
+                    <p className="font-medium text-foreground">A fájl nem található.</p>
+                    <p className="text-sm opacity-80">Ez a fájl már nem létezik a rendszerben — valószínűleg törölve lett, vagy soha nem került feltöltésre.</p>
+                  </>
+                ) : pdfErrorType === 'invalid_format' ? (
+                  <>
+                    <p className="font-medium text-foreground">A fájl nem PDF formátumú.</p>
+                    <p className="text-sm opacity-80">A fájl neve .pdf-re végződik, de a tartalma nem PDF dokumentum, ezért nem jeleníthető meg.</p>
+                  </>
+                ) : pdfErrorType === 'unreachable' ? (
+                  <>
+                    <p className="font-medium text-foreground">A fájl jelenleg nem elérhető.</p>
+                    <p className="text-sm opacity-80">A rendszer megtalálta a fájlt, de nem sikerült letölteni. Ellenőrizd az internetkapcsolatot, vagy próbáld újra később.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-medium text-foreground">A dokumentum nem tölthető be.</p>
+                    <p className="text-sm opacity-80">Ismeretlen hiba történt a fájl betöltése közben.</p>
+                  </>
+                )}
+                {currentPreviewLog && pdfErrorType !== 'not_found' && pdfErrorType !== 'invalid_format' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePdfClick(currentPreviewLog)}
+                    className="mt-1"
+                  >
+                    Újratöltés
+                  </Button>
+                )}
               </div>
             ) : previewUrl ? (
-              <iframe
-                src={previewUrl}
-                className={`w-full h-[65vh] transition-opacity duration-300 ${isLoadingPdf ? 'opacity-0' : 'opacity-100'}`}
-                onLoad={() => setIsLoadingPdf(false)}
-                onError={() => {
-                  setPdfError(true);
-                  setIsLoadingPdf(false);
-                }}
-              />
+              previewIsImage ? (
+                <img
+                  src={previewUrl}
+                  alt={previewTitle || ''}
+                  className={`max-w-full max-h-[65vh] object-contain transition-opacity duration-300 ${isLoadingPdf ? 'opacity-0' : 'opacity-100'}`}
+                  onLoad={() => setIsLoadingPdf(false)}
+                />
+              ) : (
+                <embed
+                  src={previewUrl}
+                  type="application/pdf"
+                  className={`w-full h-[65vh] transition-opacity duration-300 ${isLoadingPdf ? 'opacity-0' : 'opacity-100'}`}
+                  onLoad={() => setIsLoadingPdf(false)}
+                />
+              )
             ) : null}
           </div>
 
