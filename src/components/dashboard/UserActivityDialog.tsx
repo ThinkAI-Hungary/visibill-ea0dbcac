@@ -43,13 +43,16 @@ export function UserActivityDialog({ userId, userName, isSystem, companyId, open
     enabled: !!companyId && open,
   });
 
+  // Same normalize as ActivityLogSheet: strip everything that isn't a letter or digit
+  const normalize = (s: string) => s.replace(/[^a-zA-Z0-9\u00C0-\u024F]/g, '').toLowerCase();
+
   const filteredLogs = logs.filter((log: any) => {
     if (!search.trim()) return true;
-    const q = search.toLowerCase();
+    const q = normalize(search);
     return (
-      (log.entity_name && log.entity_name.toLowerCase().includes(q)) ||
-      (log.action && log.action.toLowerCase().includes(q)) ||
-      (log.entity && log.entity.toLowerCase().includes(q))
+      normalize(log.entity_name || '').includes(q) ||
+      normalize(log.action || '').includes(q) ||
+      normalize(log.entity || '').includes(q)
     );
   });
 
