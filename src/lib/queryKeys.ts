@@ -32,8 +32,8 @@ export const queryKeys = {
     ['filteredSubmittedInvoices', companyId, ...rest] as const,
   linkedInvoices: (companyId: string, dateFrom: string, dateTo: string) =>
     ['linkedInvoices', companyId, dateFrom, dateTo] as const,
-  invoiceTransactions: (companyId: string) =>
-    ['invoiceTransactions', companyId] as const,
+  invoiceTransactions: (companyId: string, dateFrom?: string, dateTo?: string) =>
+    ['invoiceTransactions', companyId, dateFrom, dateTo] as const,
   navSyncCooldown: (companyId: string) =>
     ['navSyncCooldown', companyId] as const,
   navCredentials: (companyId: string) =>

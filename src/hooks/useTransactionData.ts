@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
@@ -67,19 +67,19 @@ export function useTransactionData() {
     search: filters.search,
   }), [filters.currency, filters.type, filters.search]);
 
-  // Filter options (currencies + types)
+  // Filter options (currencies + types) — uses server-side DISTINCT via RPC
   const { data: filterOptions } = useQuery({
     queryKey: queryKeys.transactionFilterOptions(selectedCompany?.id || ''),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('currency, type')
-        .eq('company_id', selectedCompany!.id)
-        .limit(500);
+      const { data, error } = await (supabase.rpc as any)('get_transaction_filter_options', {
+        p_company_id: selectedCompany!.id,
+      });
       if (error) throw error;
-      const currencies = [...new Set((data || []).map(t => t.currency).filter(Boolean))] as string[];
-      const types = [...new Set((data || []).map(t => t.type).filter(Boolean))] as string[];
-      return { currencies, types };
+      const row = data?.[0] || { currencies: [], types: [] };
+      return {
+        currencies: (row.currencies || []) as string[],
+        types: (row.types || []) as string[],
+      };
     },
     enabled: !!user && !!selectedCompany?.id,
     staleTime: 10 * 60 * 1000,
