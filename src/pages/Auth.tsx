@@ -718,13 +718,12 @@ const Auth = () => {
                     placeholder="••••••••"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`pl-10 bg-white dark:bg-secondary/30 border transition-colors ${
-                      confirmPassword.length > 0
+                    className={`pl-10 bg-white dark:bg-secondary/30 border transition-colors ${confirmPassword.length > 0
                         ? password === confirmPassword
                           ? 'border-emerald-500 dark:border-emerald-500'
                           : 'border-red-500 dark:border-red-500'
                         : 'border-slate-200 dark:border-slate-800'
-                    } focus:ring-2 focus:ring-primary/20`}
+                      } focus:ring-2 focus:ring-primary/20`}
                     required
                   />
                 </div>
@@ -990,10 +989,12 @@ const Auth = () => {
                 {[...carouselSlides, ...carouselSlides].map((slide, i) => (
                   <div
                     key={i}
-                    className="pb-8 relative cursor-pointer"
+                    className="pb-8 relative cursor-pointer tape-slide"
                     onClick={(e) => { e.stopPropagation(); handleSlideClick(i, e.currentTarget); }}
                   >
-                    {slide.visual}
+                    <div className="tape-slide-inner">
+                      {slide.visual}
+                    </div>
                   </div>
                 ))}
               </div>

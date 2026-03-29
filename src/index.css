@@ -502,3 +502,23 @@ All colors MUST be HSL.
     transform: none !important;
   }
 }
+
+/* ── Waterfall tape slide hover pulse ── */
+
+/* Buffer padding so scaled inner never overflows the overflow:hidden container boundary */
+.tape-slide {
+  padding-top: 14px;
+  padding-left: 14px;
+  padding-right: 14px;
+  /* pb-8 (32px) is already provided by the Tailwind class on the element */
+}
+
+/* Transition replaces @keyframes — reverses automatically when hover ends mid-animation */
+.tape-slide-inner {
+  transition: transform 0.5s ease-in-out;
+  transform-origin: center center;
+}
+
+.tape-slide:hover .tape-slide-inner {
+  transform: scale(1.05);
+}
