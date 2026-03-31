@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-/* Carousel fade animation */
+/* Tape showcase animations */
 const carouselStyle = document.createElement('style');
 carouselStyle.textContent = `@keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }`;
 if (!document.head.querySelector('[data-carousel-anim]')) { carouselStyle.setAttribute('data-carousel-anim', ''); document.head.appendChild(carouselStyle); }
@@ -164,15 +164,16 @@ const carouselSlides: CarouselSlide[] = [
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
-  const [carouselIndex, setCarouselIndex] = useState(0);
 
   // Handle expired/invalid recovery links that redirect to root with error hash
   useEffect(() => {
@@ -202,18 +203,286 @@ const Auth = () => {
   }, []);
 
   useEffect(() => {
-    if (user) {
-      navigate('/');
+    const COOKIE = 'vb_visited';
+    const hasVisited = document.cookie.split(';').some(c => c.trim().startsWith(COOKIE + '='));
+    if (!hasVisited) {
+      setIsFirstVisit(true);
+      const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+      document.cookie = `${COOKIE}=1; expires=${expires}; path=/; SameSite=Lax`;
     }
+  }, []);
+  // Waterfall tape refs
+  const tapeRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const posRef = useRef(0);
+  const rafRef = useRef<number>();
+  const isHoverRef = useRef(false);
+  const scrollVelRef = useRef(0); // smooth scroll momentum
+
+  // Click-to-inspect state
+  const [selectedAbsIdx, setSelectedAbsIdx] = useState<number | null>(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [selectedDims, setSelectedDims] = useState<{ w: number; h: number } | null>(null);
+  const pausedRef = useRef(false);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const svgPath1Ref = useRef<SVGPathElement>(null); // CW top half (mid-left → mid-right)
+  const svgPath2Ref = useRef<SVGPathElement>(null); // CCW bottom half (mid-left → mid-right)
+  const svgConnRef = useRef<SVGSVGElement>(null);
+  const svgConnPathRef = useRef<SVGPathElement>(null); // L connector path
+  const svgConnTopRef = useRef<SVGPathElement>(null); // popup top border trace
+  const svgConnLeftRef = useRef<SVGPathElement>(null); // popup left border trace
+  const popupRef = useRef<HTMLDivElement>(null); // measured for dynamic dims
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const borderAnimRef = useRef<number>();
+  const targetPosRef = useRef<number | null>(null);
+  const onScrollDone = useRef<(() => void) | null>(null);
+  const [dismissing, setDismissing] = useState(false);
+  const dismissingRef = useRef(false);
+  const dismissTimerRef = useRef<number>();
+  const fadingDimsRef = useRef<{ w: number; h: number } | null>(null);
+  const selectedDimsRef = useRef<{ w: number; h: number } | null>(null);
+  const selectedOffsetTopRef = useRef(0);
+
+  selectedDimsRef.current = selectedDims; // keep in sync on every render
+
+  useEffect(() => {
+    if (user) { navigate('/'); }
   }, [user, navigate]);
 
-  // Auto-advance carousel every 6 seconds
+  // Non-passive wheel listener — adds to scroll velocity for smooth momentum
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCarouselIndex(prev => (prev + 1) % carouselSlides.length);
-    }, 5000);
-    return () => clearInterval(timer);
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      // If tape is paused (slide selected), fade-dismiss on scroll
+      if (pausedRef.current && !dismissingRef.current) {
+        fadingDimsRef.current = selectedDimsRef.current;
+        dismissingRef.current = true;
+        pausedRef.current = false;
+        targetPosRef.current = null;
+        onScrollDone.current = null;
+        // Fade out connector imperatively (avoids React style-prop conflicts)
+        const conn = svgConnRef.current;
+        if (conn) { conn.style.transition = 'opacity 0.5s ease'; conn.style.opacity = '0'; }
+        setDismissing(true);
+        clearTimeout(dismissTimerRef.current);
+        dismissTimerRef.current = window.setTimeout(() => {
+          dismissingRef.current = false;
+          fadingDimsRef.current = null;
+          if (conn) { conn.style.transition = 'none'; conn.style.opacity = '0'; }
+          setDismissing(false);
+          setSelectedAbsIdx(null);
+          setSelectedDims(null);
+          setShowPopup(false);
+        }, 500);
+      }
+      scrollVelRef.current += -e.deltaY * 0.06;
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
   }, []);
+
+  // Continuous downward waterfall animation
+  useEffect(() => {
+    const SPEED = 0.45;
+    const tick = () => {
+      const strip = tapeRef.current;
+      if (strip) {
+        const base = pausedRef.current ? 0 : (isHoverRef.current ? SPEED * 0.1 : SPEED);
+        const vel = scrollVelRef.current;
+        scrollVelRef.current = Math.abs(vel) < 0.01 ? 0 : vel * 0.90;
+        const half = strip.scrollHeight / 2;
+        let step: number;
+        if (targetPosRef.current !== null) {
+          // Smooth scroll to center: lerp 12% per frame, take shortest circular path
+          let diff = targetPosRef.current - posRef.current;
+          // Wrap diff into [-half/2, half/2] to always take the short way round
+          if (diff > half / 2) diff -= half;
+          if (diff < -half / 2) diff += half;
+          step = diff * 0.12;
+          if (Math.abs(diff) < 0.6) {
+            posRef.current = targetPosRef.current;
+            targetPosRef.current = null;
+            step = 0; // already at target
+            if (onScrollDone.current) { onScrollDone.current(); onScrollDone.current = null; }
+          }
+        } else {
+          step = base + vel;
+        }
+        posRef.current = ((posRef.current + step) % half + half) % half;
+        strip.style.transform = `translate3d(0, ${posRef.current - half}px, 0)`;
+        // Keep SVG border stuck to the selected slide every frame
+        if (svgRef.current && svgRef.current.style.display !== 'none') {
+          svgRef.current.style.top = `${selectedOffsetTopRef.current + (posRef.current - half)}px`;
+        }
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current!);
+  }, []);
+
+  // Border sweep + L connector animation
+  useLayoutEffect(() => {
+    if (selectedAbsIdx === null || !selectedDims) return;
+    const p1 = svgPath1Ref.current;
+    const p2 = svgPath2Ref.current;
+    const svg = svgRef.current;
+    const cp = svgConnPathRef.current;
+    const cs = svgConnRef.current;
+    if (!p1 || !p2 || !svg) return;
+    const rx = 12;
+    const { w, h } = selectedDims;
+    // halfPerim: left-side half + top/bottom edge + right-side half + two quarter-arcs
+    const halfPerim = (h / 2 - rx) + (w - 2 * rx) + (h / 2 - rx) + Math.PI * rx;
+
+    // ── Phase 1: border sweep via RAF (0.6 s, linear) — immune to CSS reflow timing ──
+    const SWEEP_MS = 600;
+    const sweepStart = performance.now();
+    [p1, p2].forEach(path => {
+      path.style.transition = 'none';
+      path.style.strokeDasharray = String(halfPerim);
+      path.style.strokeDashoffset = String(halfPerim);
+    });
+    svg.style.filter = 'drop-shadow(0 0 4px rgba(20,220,170,.95)) drop-shadow(0 0 12px rgba(20,220,170,.6))';
+    if (cs) cs.style.opacity = '0';
+
+    const sweepTick = (now: number) => {
+      if (dismissingRef.current) return;
+      const progress = Math.min((now - sweepStart) / SWEEP_MS, 1);
+      const offset = halfPerim * (1 - progress);
+      p1.style.strokeDashoffset = String(offset);
+      p2.style.strokeDashoffset = String(offset);
+      if (progress < 1) {
+        borderAnimRef.current = requestAnimationFrame(sweepTick);
+      }
+    };
+    cancelAnimationFrame(borderAnimRef.current!);
+    borderAnimRef.current = requestAnimationFrame(sweepTick);
+
+
+    // ── Phase 2: L connector + popup full border (TL→BR via CW and CCW) ──
+    const t1 = window.setTimeout(() => {
+      // Bail if dismiss started while border was sweeping
+      if (dismissingRef.current) return;
+      const cp = svgConnPathRef.current;
+      const cs = svgConnRef.current;
+      const cwP = svgConnTopRef.current;
+      const ccwP = svgConnLeftRef.current;
+      const popup = popupRef.current;
+      if (!cp || !cs || !containerRef.current || !wrapperRef.current || !popup) { setShowPopup(true); return; }
+      const wRect = wrapperRef.current.getBoundingClientRect();
+      const cRect = containerRef.current.getBoundingClientRect();
+      const pRect = popup.getBoundingClientRect();
+      const cardMidY = cRect.top - wRect.top + 330;
+      const pl = pRect.left - wRect.left;
+      const pt = pRect.top - wRect.top;
+      const pw = pRect.width;
+      const ph = pRect.height;
+      const rp = 12;
+      const lr = 16;
+      const lHoriz = pl - lr - w;
+      const lVert = cardMidY - lr - (pt + rp);
+      const lArc = Math.PI * lr / 2;
+      const connLen = lHoriz + lArc + lVert;
+      cp.setAttribute('d', `M ${w},${cardMidY} H ${pl - lr} A ${lr},${lr} 0 0,0 ${pl},${cardMidY - lr} V ${pt + rp}`);
+      cp.style.transition = 'none';
+      cp.style.strokeDasharray = String(connLen);
+      cp.style.strokeDashoffset = String(connLen);
+      const cwLen = (Math.PI * rp / 2) * 3 + (pw - 2 * rp) + (ph - 2 * rp);
+      if (cwP) {
+        cwP.setAttribute('d',
+          `M ${pl},${pt + rp} A ${rp},${rp} 0 0,1 ${pl + rp},${pt}` +
+          ` H ${pl + pw - rp} A ${rp},${rp} 0 0,1 ${pl + pw},${pt + rp}` +
+          ` V ${pt + ph - rp} A ${rp},${rp} 0 0,1 ${pl + pw - rp},${pt + ph}`);
+        cwP.style.transition = 'none';
+        cwP.style.strokeDasharray = String(cwLen);
+        cwP.style.strokeDashoffset = String(cwLen);
+      }
+      const ccwLen = (Math.PI * rp / 2) + (ph - 2 * rp) + (pw - 2 * rp);
+      if (ccwP) {
+        ccwP.setAttribute('d',
+          `M ${pl},${pt + rp} V ${pt + ph - rp} A ${rp},${rp} 0 0,0 ${pl + rp},${pt + ph}` +
+          ` H ${pl + pw - rp}`);
+        ccwP.style.transition = 'none';
+        ccwP.style.strokeDasharray = String(ccwLen);
+        ccwP.style.strokeDashoffset = String(ccwLen);
+      }
+      cs.style.opacity = '1';
+      void cp.getBoundingClientRect();
+      cp.style.transition = 'stroke-dashoffset 0.4s linear';
+      cp.style.strokeDashoffset = '0';
+      const traceDur = 0.45;
+      const ccwDur = traceDur * (ccwLen / cwLen);
+      window.setTimeout(() => {
+        if (dismissingRef.current) return; // bail if dismiss started during L animation
+        if (cwP) { cwP.style.transition = `stroke-dashoffset ${traceDur}s linear`; cwP.style.strokeDashoffset = '0'; }
+        if (ccwP) { ccwP.style.transition = `stroke-dashoffset ${ccwDur.toFixed(3)}s linear`; ccwP.style.strokeDashoffset = '0'; }
+      }, 420);
+    }, 620);
+
+    // ── Phase 3: reveal popup after traces complete ──
+    const t2 = window.setTimeout(() => {
+      if (dismissingRef.current) return;
+      setShowPopup(true);
+    }, 620 + 420 + 470);
+
+    return () => { clearTimeout(t1); clearTimeout(t2); cancelAnimationFrame(borderAnimRef.current!); };
+  }, [selectedAbsIdx, selectedDims]);
+
+  const handleSlideClick = (absIdx: number, el: HTMLElement) => {
+    // Locked while a slide is active — must scroll or click Bezárás to close
+    if (pausedRef.current || dismissingRef.current) return;
+    cancelAnimationFrame(borderAnimRef.current!);
+    setShowPopup(false);
+    setSelectedDims(null);
+    setSelectedAbsIdx(absIdx);
+    pausedRef.current = true;
+    const strip = tapeRef.current;
+    if (!strip) return;
+    const CONTAINER_H = 660;
+    const slideH = el.offsetHeight - 32;
+    const dims = { w: el.offsetWidth, h: slideH };
+    const half = strip.scrollHeight / 2;
+    selectedOffsetTopRef.current = el.offsetTop;
+    const rawTarget = (CONTAINER_H - slideH) / 2 - el.offsetTop + half;
+    targetPosRef.current = ((rawTarget % half) + half) % half;
+    onScrollDone.current = () => {
+      // Recompute selectedOffsetTopRef from the final posRef so the SVG sticky-tracking formula
+      // always places the border at the right screen position, even when the tape wrapped around
+      // (e.g. element was near the top — the lerp wrap makes the second tape copy show instead).
+      // Formula derivation: selectedOffsetTopRef + (posRef - half) = (CONTAINER_H - dims.h) / 2
+      selectedOffsetTopRef.current = (CONTAINER_H - dims.h) / 2 + half - posRef.current;
+      setSelectedDims(dims);
+    };
+  };
+
+  const handleDismiss = () => handleFadeDismiss();
+
+  // Fade-dismiss when clicking outside the tape area
+  const handleFadeDismiss = () => {
+    if (!pausedRef.current && !dismissingRef.current) return;
+    clearTimeout(dismissTimerRef.current);
+    fadingDimsRef.current = selectedDimsRef.current;
+    dismissingRef.current = true;
+    pausedRef.current = false;
+    targetPosRef.current = null;
+    onScrollDone.current = null;
+    setDismissing(true);
+    // Fade out connector imperatively
+    const conn = svgConnRef.current;
+    if (conn) { conn.style.transition = 'opacity 0.5s ease'; conn.style.opacity = '0'; }
+    dismissTimerRef.current = window.setTimeout(() => {
+      dismissingRef.current = false;
+      fadingDimsRef.current = null;
+      if (conn) { conn.style.transition = 'none'; conn.style.opacity = '0'; }
+      setDismissing(false);
+      setSelectedAbsIdx(null);
+      setSelectedDims(null);
+      setShowPopup(false);
+    }, 500);
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,6 +499,10 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      toast({ title: 'A jelszavak nem egyeznek', description: 'Kérlek ellenőrizd a megadott jelszavakat.', variant: 'destructive' });
+      return;
+    }
     setLoading(true);
 
     const { error } = await signUp(email, password, name);
@@ -305,10 +578,10 @@ const Auth = () => {
             </span>
           </div>
 
-          {/* Welcome Text */}
-          <div className="mb-8">
+          {/* Welcome Text – min-h reserves space for 2-line subtitle, preventing layout shifts */}
+          <div className="mb-8 min-h-[6.5rem]">
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              {activeTab === 'signin' ? 'Üdv újra!' : 'Kezdjük el!'}
+              {activeTab === 'signin' ? (isFirstVisit ? 'Üdv!' : 'Üdv újra!') : 'Kezdjük el!'}
             </h1>
             <p className="text-muted-foreground">
               {activeTab === 'signin'
@@ -458,7 +731,7 @@ const Auth = () => {
               <Button
                 type="submit"
                 className="w-full h-11 font-medium"
-                disabled={loading}
+                disabled={loading || !(name.trim().length > 0 && email.includes('@') && password.length > 0 && password === confirmPassword)}
               >
                 {loading ? 'Fiók létrehozása...' : 'Regisztráció'}
               </Button>
@@ -648,45 +921,114 @@ const Auth = () => {
         </div>
 
         {/* Content - Above all background layers */}
-        <div className="relative z-30 flex flex-col justify-center px-16 xl:px-24">
-          <div className="mb-8">
-            <h2 className="text-4xl font-bold text-foreground dark:text-white mb-4">
+        <div
+          className="relative z-30 flex flex-col items-center justify-center h-full px-8 xl:px-12"
+          onClick={handleFadeDismiss}
+        >
+          <div ref={wrapperRef} className="relative w-full max-w-[480px]">
+
+            {/* Title — static */}
+            <h2 className="text-4xl font-bold text-foreground dark:text-white mb-8">
               Tartsd kézben a pénzügyeidet
             </h2>
-          </div>
 
-          {/* Feature Carousel — fixed-height frame so nothing shifts */}
-          <div className="relative h-[520px] flex flex-col">
-            {/* Subtitle - fades */}
-            <p className="text-lg text-muted-foreground dark:text-slate-300 max-w-md mb-6 h-[3.5rem] overflow-hidden" key={`text-${carouselIndex}`} style={{ animation: 'fadeSlide 1200ms ease-in-out' }}>
-              {carouselSlides[carouselIndex].text}
-            </p>
+            {/* Waterfall tape window */}
+            <div
+              ref={containerRef}
+              className="relative h-[660px] overflow-hidden cursor-default"
+              onClick={e => e.stopPropagation()}
+              style={{
+                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 10%, black 22%, black 78%, rgba(0,0,0,0.6) 90%, transparent 100%)',
+                maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 10%, black 22%, black 78%, rgba(0,0,0,0.6) 90%, transparent 100%)',
+              }}
+              onMouseEnter={() => { isHoverRef.current = true; }}
+              onMouseLeave={() => { isHoverRef.current = false; }}
+            >
+              {/* Subtle greenish LED flare behind the tape */}
+              <div
+                className="absolute inset-0 pointer-events-none z-0"
+                style={{ background: 'radial-gradient(ellipse 90% 55% at 50% 50%, rgba(20,220,170,0.09) 0%, rgba(20,220,170,0.03) 45%, transparent 70%)' }}
+              />
+              {/* Always-mounted neon border overlay — positioned over the centered slide */}
+              <svg
+                ref={svgRef}
+                className="absolute pointer-events-none z-20"
+                style={{
+                  display: 'block',
+                  left: 0,
+                  width: (selectedDims ?? fadingDimsRef.current)?.w ?? 0,
+                  height: (selectedDims ?? fadingDimsRef.current)?.h ?? 0,
+                  overflow: 'visible',
+                  opacity: (!selectedDims && !dismissing) ? 0 : (dismissing ? 0 : 1),
+                  transition: dismissing ? 'opacity 0.5s ease' : 'none',
+                }}
+              >
+                {/* CW: mid-left → up → top-right corner → down to mid-right */}
+                <path
+                  ref={svgPath1Ref}
+                  fill="none" stroke="rgba(20,220,170,0.96)" strokeWidth="2.5" strokeLinecap="round"
+                  d={selectedDims
+                    ? `M 1,${selectedDims.h / 2} V 13 A 12,12 0 0,1 13,1 H ${selectedDims.w - 13} A 12,12 0 0,1 ${selectedDims.w - 1},13 V ${selectedDims.h / 2}`
+                    : ''}
+                />
+                {/* CCW: mid-left → down → bottom-right corner → up to mid-right */}
+                <path
+                  ref={svgPath2Ref}
+                  fill="none" stroke="rgba(20,220,170,0.96)" strokeWidth="2.5" strokeLinecap="round"
+                  d={selectedDims
+                    ? `M 1,${selectedDims.h / 2} V ${selectedDims.h - 13} A 12,12 0 0,0 13,${selectedDims.h - 1} H ${selectedDims.w - 13} A 12,12 0 0,0 ${selectedDims.w - 1},${selectedDims.h - 13} V ${selectedDims.h / 2}`
+                    : ''}
+                />
+              </svg>
 
-            {/* Visual - fades, fixed height centered */}
-            <div className="flex-1 flex items-start overflow-hidden" key={`visual-${carouselIndex}`} style={{ animation: 'fadeSlide 1200ms ease-in-out' }}>
-              <div className="w-full">
-                {carouselSlides[carouselIndex].visual}
+              {/* The tape — two copies stacked for seamless downward loop */}
+              <div ref={tapeRef} className="will-change-transform relative z-1">
+                {[...carouselSlides, ...carouselSlides].map((slide, i) => (
+                  <div
+                    key={i}
+                    className="pb-8 relative cursor-pointer tape-slide"
+                    onClick={(e) => { e.stopPropagation(); handleSlideClick(i, e.currentTarget); }}
+                  >
+                    <div className="tape-slide-inner">
+                      {slide.visual}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Dot indicators */}
-            <div className="flex justify-center gap-2 mt-6">
-              {carouselSlides.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCarouselIndex(i)}
-                  className={cn(
-                    "w-2 h-2 rounded-full transition-all duration-300",
-                    i === carouselIndex
-                      ? "bg-primary w-6"
-                      : "bg-foreground/20 dark:bg-white/20 hover:bg-foreground/40 dark:hover:bg-white/40"
-                  )}
-                  aria-label={`Slide ${i + 1}`}
-                />
-              ))}
-            </div>
+            {/* Popup — invisible until traced, then fades in */}
+            {selectedDims && selectedAbsIdx !== null && (
+              <div
+                ref={popupRef}
+                className="absolute left-full top-0 ml-16 w-64"
+                style={{
+                  opacity: showPopup ? (dismissing ? 0 : 1) : 0,
+                  transition: dismissing ? 'opacity 0.5s ease' : (showPopup ? 'opacity 0.3s ease' : 'none'),
+                }}
+              >
+                <div className="rounded-xl border border-primary/40 bg-background/90 backdrop-blur-md p-5 shadow-2xl">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {carouselSlides[selectedAbsIdx % carouselSlides.length].text}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Connector SVG — L line + popup top/left border traces */}
+            <svg
+              ref={svgConnRef}
+              className="absolute left-0 top-0 w-full h-full pointer-events-none z-30"
+              style={{ overflow: 'visible' }}
+            >
+              <path ref={svgConnPathRef} fill="none" stroke="rgba(20,220,170,0.96)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path ref={svgConnTopRef} fill="none" stroke="rgba(20,220,170,0.96)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path ref={svgConnLeftRef} fill="none" stroke="rgba(20,220,170,0.96)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+
           </div>
         </div>
+
       </div>
     </div>
   );
