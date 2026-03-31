@@ -19,24 +19,7 @@
   animation: none !important;
 }
 
-/* Autofill background override — light mode */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px white inset !important;
-  -webkit-text-fill-color: black !important;
-  transition: background-color 5000s ease-in-out 0s;
-}
 
-/* Autofill background override — dark mode */
-.dark input:-webkit-autofill,
-.dark input:-webkit-autofill:hover,
-.dark input:-webkit-autofill:focus,
-.dark input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px #030712 inset !important;
-  -webkit-text-fill-color: white !important;
-}
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
@@ -289,6 +272,17 @@ All colors MUST be HSL.
     transition: none !important;
   }
 
+  /* Prevent border/color changes on programmatic or mouse focus (e.g. password manager autofill).
+     :focus-visible only activates on keyboard navigation, so this only suppresses mouse/JS focus. */
+  input:focus:not(:focus-visible),
+  textarea:focus:not(:focus-visible),
+  select:focus:not(:focus-visible) {
+    border-color: inherit !important;
+    box-shadow: none !important;
+    transition: none !important;
+  }
+
+
   /* Disable browser tap-highlight on interactive elements */
   button,
   a,
@@ -367,7 +361,8 @@ All colors MUST be HSL.
     @apply transition-colors duration-200 ease-out;
   }
 
-  /* Override browser autofill background - Light mode */
+  /* Override browser autofill background - Light mode
+     hsl(var(--muted)) matches the default light input surface */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
@@ -380,14 +375,16 @@ All colors MUST be HSL.
   select:-webkit-autofill:hover,
   select:-webkit-autofill:focus,
   select:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px hsl(var(--muted)) inset !important;
+    -webkit-box-shadow: 0 0 0 1000px hsl(var(--muted)) inset !important;
     -webkit-text-fill-color: hsl(var(--foreground)) !important;
+    color: hsl(var(--foreground)) !important;
     background-color: transparent !important;
     caret-color: hsl(var(--foreground)) !important;
-    transition: background-color 5000s ease-in-out 0s;
+    transition: background-color 9999s ease-in-out 0s, color 9999s ease-in-out 0s;
   }
 
-  /* Override browser autofill background - Dark mode */
+  /* Override browser autofill background - Dark mode
+     hsl(222 37% 10%) = composited result of dark:bg-secondary/30 over --background */
   .dark input:-webkit-autofill,
   .dark input:-webkit-autofill:hover,
   .dark input:-webkit-autofill:focus,
@@ -400,11 +397,12 @@ All colors MUST be HSL.
   .dark select:-webkit-autofill:hover,
   .dark select:-webkit-autofill:focus,
   .dark select:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px hsl(var(--secondary)) inset !important;
+    -webkit-box-shadow: 0 0 0 1000px hsl(222 37% 10%) inset !important;
     -webkit-text-fill-color: hsl(var(--foreground)) !important;
+    color: hsl(var(--foreground)) !important;
     background-color: transparent !important;
     caret-color: hsl(var(--foreground)) !important;
-    transition: background-color 5000s ease-in-out 0s;
+    transition: background-color 9999s ease-in-out 0s, color 9999s ease-in-out 0s;
   }
 
   /* Date input calendar icon styling for dark mode */
@@ -503,4 +501,24 @@ All colors MUST be HSL.
     box-shadow: none !important;
     transform: none !important;
   }
+}
+
+/* ── Waterfall tape slide hover pulse ── */
+
+/* Buffer padding so scaled inner never overflows the overflow:hidden container boundary */
+.tape-slide {
+  padding-top: 14px;
+  padding-left: 14px;
+  padding-right: 14px;
+  /* pb-8 (32px) is already provided by the Tailwind class on the element */
+}
+
+/* Transition replaces @keyframes — reverses automatically when hover ends mid-animation */
+.tape-slide-inner {
+  transition: transform 0.5s ease-in-out;
+  transform-origin: center center;
+}
+
+.tape-slide:hover .tape-slide-inner {
+  transform: scale(1.05);
 }
