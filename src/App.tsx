@@ -1,8 +1,8 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -67,6 +67,38 @@ function AuthGuardPage({ children }: { children: React.ReactNode }) {
   return <AuthGuard>{children}</AuthGuard>;
 }
 
+function PasswordRecoveryRedirect() {
+  const { isPasswordRecovery, clearPasswordRecovery } = useAuth();
+  const location = useLocation();
+
+  const hashParams = new URLSearchParams(location.hash.startsWith("#") ? location.hash.slice(1) : location.hash);
+  const hasRecoveryHash = hashParams.get("type") === "recovery" && (
+    hashParams.has("access_token") ||
+    hashParams.has("refresh_token") ||
+    hashParams.has("token")
+  );
+
+  useEffect(() => {
+    if (isPasswordRecovery && location.pathname === "/reset-password") {
+      clearPasswordRecovery();
+    }
+  }, [isPasswordRecovery, clearPasswordRecovery, location.pathname]);
+
+  if ((hasRecoveryHash || isPasswordRecovery) && location.pathname !== "/reset-password") {
+    return (
+      <Navigate
+        replace
+        to={{
+          pathname: "/reset-password",
+          hash: location.hash,
+        }}
+      />
+    );
+  }
+
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -79,6 +111,7 @@ const App = () => (
                 <Toaster />
                 <LiveNotificationProvider />
                 <BrowserRouter>
+                    <PasswordRecoveryRedirect />
                     <Routes>
                     {/* Auth routes – no sidebar, own Suspense for lazy chunks */}
                     <Route path="/auth" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><Auth /></Suspense>} />

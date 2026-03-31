@@ -12,18 +12,12 @@ import { cn } from '@/lib/utils';
 
 /* Tape showcase animations */
 const carouselStyle = document.createElement('style');
-carouselStyle.textContent = `
-  @keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes tapeIn  { from { transform: translateY(-108%); opacity: 0.4; } to { transform: translateY(0);    opacity: 1; } }
-  @keyframes tapeOut { from { transform: translateY(0);    opacity: 1; } to { transform: translateY(108%);  opacity: 0.4; } }
-  @keyframes tapePulse { 0%,100% { filter: brightness(1) saturate(1); } 50% { filter: brightness(1.2) saturate(1.15) drop-shadow(0 0 12px rgba(20,220,200,0.35)); } }
-  @keyframes neonPulse {
-    0%,100% { filter: drop-shadow(0 0 3px rgba(20,220,170,.9)) drop-shadow(0 0 8px rgba(20,220,170,.5)); }
-    50%     { filter: drop-shadow(0 0 8px rgba(20,220,170,1))  drop-shadow(0 0 18px rgba(20,220,170,.7)) drop-shadow(0 0 30px rgba(20,220,170,.35)); }
-  }
-`;
+carouselStyle.textContent = `@keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }`;
 if (!document.head.querySelector('[data-carousel-anim]')) { carouselStyle.setAttribute('data-carousel-anim', ''); document.head.appendChild(carouselStyle); }
-
+// Uses the current domain (e.g. app.visibill.hu or localhost:3000) for the redirect link.
+// If you want to force it to always be 'https://app.visibill.hu/reset-password',
+// you can replace `${window.location.origin}` with that explicitly.
+const PASSWORD_RESET_REDIRECT_URL = `${window.location.origin}/reset-password`;
 interface CarouselSlide { text: string; visual: ReactNode; }
 
 const carouselSlides: CarouselSlide[] = [
@@ -181,7 +175,33 @@ const Auth = () => {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
-  // Detect first visit via cookie
+  // Handle expired/invalid recovery links that redirect to root with error hash
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes('error=')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const errorCode = params.get('error_code');
+      const errorDescription = params.get('error_description');
+
+      if (errorCode === 'otp_expired' || errorDescription?.includes('expired')) {
+        toast({
+          title: 'A jelszó-visszaállító link lejárt',
+          description: 'Kérj új linket az email címedre.',
+          variant: 'destructive',
+        });
+        setShowForgotPassword(true);
+        // Clean the hash from URL
+        window.history.replaceState(null, '', window.location.pathname);
+      } else if (errorDescription) {
+        toast({
+          title: decodeURIComponent(errorDescription.replace(/\+/g, ' ')),
+          variant: 'destructive',
+        });
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const COOKIE = 'vb_visited';
     const hasVisited = document.cookie.split(';').some(c => c.trim().startsWith(COOKIE + '='));
@@ -484,7 +504,9 @@ const Auth = () => {
       return;
     }
     setLoading(true);
+
     const { error } = await signUp(email, password, name);
+
     setLoading(false);
   };
 
@@ -511,7 +533,7 @@ const Auth = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: PASSWORD_RESET_REDIRECT_URL,
       });
       if (error) throw error;
       toast({ title: 'Jelszó visszaállító email elküldve! Ellenőrizd a postaládádat.' });
@@ -705,31 +727,6 @@ const Auth = () => {
                     required
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signup-confirm-password" className="text-sm font-medium text-foreground">
-                  Jelszó ismétlése
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="signup-confirm-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`pl-10 bg-white dark:bg-secondary/30 border transition-colors ${confirmPassword.length > 0
-                        ? password === confirmPassword
-                          ? 'border-emerald-500 dark:border-emerald-500'
-                          : 'border-red-500 dark:border-red-500'
-                        : 'border-slate-200 dark:border-slate-800'
-                      } focus:ring-2 focus:ring-primary/20`}
-                    required
-                  />
-                </div>
-                {confirmPassword.length > 0 && password !== confirmPassword && (
-                  <p className="text-xs text-red-500 mt-1">A jelszavak nem egyeznek</p>
-                )}
               </div>
               <Button
                 type="submit"

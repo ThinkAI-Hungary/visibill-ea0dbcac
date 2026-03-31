@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visibill — Database Audit Report</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-alt: #1a2435;
+      --border: #334155;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #3b82f6;
+      --accent-light: #60a5fa;
+      --green: #22c55e;
+      --green-bg: rgba(34,197,94,0.12);
+      --yellow: #eab308;
+      --yellow-bg: rgba(234,179,8,0.12);
+      --red: #ef4444;
+      --red-bg: rgba(239,68,68,0.12);
+      --purple: #a855f7;
+      --purple-bg: rgba(168,85,247,0.12);
+      --cyan: #06b6d4;
+      --cyan-bg: rgba(6,182,212,0.1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 40px 32px;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      padding: 48px 32px;
+      margin-bottom: 40px;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1a1a2e 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--purple), var(--cyan));
+    }
+    .header .badge {
+      display: inline-block;
+      background: var(--cyan-bg);
+      color: var(--cyan);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      border: 1px solid rgba(6,182,212,0.25);
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .header .subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+    .header-meta {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .header-meta span {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    .header-meta span strong {
+      color: var(--text-muted);
+    }
+
+    /* ── Sections ── */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .section-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-number {
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      color: white;
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .section-body {
+      padding: 24px;
+    }
+
+    /* ── Sub-sections ── */
+    h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent-light);
+      margin: 24px 0 12px 0;
+    }
+    h3:first-child { margin-top: 0; }
+
+    h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin: 20px 0 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h4 .priority { font-size: 16px; }
+
+    /* ── Tables ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 20px 0;
+      font-size: 13px;
+    }
+    thead th {
+      background: var(--surface-alt);
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(51,65,85,0.5);
+      vertical-align: top;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(59,130,246,0.04); }
+
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      background: rgba(59,130,246,0.1);
+      color: var(--accent-light);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    /* ── Status badges ── */
+    .badge-ok {
+      display: inline-block;
+      background: var(--green-bg);
+      color: var(--green);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-warn {
+      display: inline-block;
+      background: var(--yellow-bg);
+      color: var(--yellow);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-err {
+      display: inline-block;
+      background: var(--red-bg);
+      color: var(--red);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-info {
+      display: inline-block;
+      background: var(--purple-bg);
+      color: var(--purple);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* ── Alert boxes ── */
+    .alert {
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin: 14px 0;
+      font-size: 13px;
+      line-height: 1.6;
+      border-left: 3px solid;
+    }
+    .alert-danger {
+      background: var(--red-bg);
+      border-color: var(--red);
+      color: #fca5a5;
+    }
+    .alert-warning {
+      background: var(--yellow-bg);
+      border-color: var(--yellow);
+      color: #fde047;
+    }
+    .alert-info {
+      background: var(--cyan-bg);
+      border-color: var(--cyan);
+      color: #67e8f9;
+    }
+    .alert-success {
+      background: var(--green-bg);
+      border-color: var(--green);
+      color: #86efac;
+    }
+    .alert strong { display: block; margin-bottom: 4px; }
+
+    /* ── Code blocks ── */
+    .code-block {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 14px 0;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.65;
+      color: #c9d1d9;
+    }
+    .code-block .comment { color: #8b949e; }
+    .code-block .keyword { color: #ff7b72; }
+    .code-block .string { color: #a5d6ff; }
+    .code-block .func { color: #d2a8ff; }
+    .code-block .type { color: #79c0ff; }
+    .code-block .section-divider {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ── Mermaid diagram (static) ── */
+    .diagram-box {
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 14px 0;
+      text-align: center;
+      font-size: 13px;
+    }
+    .diagram-box .arrow { color: var(--text-dim); font-size: 20px; }
+    .diagram-box .node {
+      display: inline-block;
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.3);
+      padding: 8px 16px;
+      border-radius: 8px;
+      color: var(--accent-light);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      margin: 4px 8px;
+    }
+    .diagram-box .node-target {
+      background: rgba(34,197,94,0.1);
+      border-color: rgba(34,197,94,0.3);
+      color: var(--green);
+    }
+
+    /* ── Summary cards ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .summary-card {
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .summary-card .label {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .summary-card .value {
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .summary-card .value.red { color: var(--red); }
+    .summary-card .value.yellow { color: var(--yellow); }
+    .summary-card .value.green { color: var(--green); }
+    .summary-card .value.blue { color: var(--accent-light); }
+
+    /* ── Print ── */
+    @media print {
+      body { background: white; color: #1e293b; font-size: 11px; }
+      .container { padding: 0; max-width: 100%; }
+      .header { background: #f1f5f9; border-color: #cbd5e1; page-break-inside: avoid; }
+      .header h1 { background: none; -webkit-text-fill-color: #1e293b; }
+      .header .badge { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+      .section { border-color: #cbd5e1; page-break-inside: avoid; }
+      .section-header { background: #f8fafc; border-color: #e2e8f0; }
+      .section-number { background: #3b82f6; }
+      thead th { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+      tbody td { border-color: #e2e8f0; color: #334155; }
+      code { background: #f1f5f9; color: #2563eb; }
+      .code-block { background: #f8fafc; border-color: #e2e8f0; color: #334155; }
+      .code-block .comment { color: #64748b; }
+      .code-block .keyword { color: #dc2626; }
+      .code-block .string { color: #2563eb; }
+      .alert { page-break-inside: avoid; }
+      .alert-danger { background: #fef2f2; color: #991b1b; }
+      .alert-warning { background: #fefce8; color: #854d0e; }
+      .alert-info { background: #ecfeff; color: #155e75; }
+      .alert-success { background: #f0fdf4; color: #166534; }
+      .badge-ok { background: #dcfce7; color: #166534; }
+      .badge-warn { background: #fef9c3; color: #854d0e; }
+      .badge-err { background: #fee2e2; color: #991b1b; }
+      .badge-info { background: #f3e8ff; color: #6b21a8; }
+      h3 { color: #2563eb; }
+      .summary-card { border-color: #e2e8f0; }
+      .summary-card .value.red { color: #dc2626; }
+      .summary-card .value.yellow { color: #ca8a04; }
+      .summary-card .value.green { color: #16a34a; }
+      .summary-card .value.blue { color: #2563eb; }
+      .diagram-box { background: #f8fafc; border-color: #e2e8f0; }
+      .diagram-box .node { background: #eff6ff; border-color: #93c5fd; color: #2563eb; }
+      .diagram-box .node-target { background: #f0fdf4; border-color: #86efac; color: #16a34a; }
+    }
+
+    @page { margin: 12mm 10mm; size: A4; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ════════ HEADER ════════ -->
+  <div class="header">
+    <div class="badge">Performance &amp; Integrity Audit</div>
+    <h1>🔍 Visibill — Database Audit Report</h1>
+    <p class="subtitle">Adatbázis-séma, indexelés és SQL query optimalizálás átfogó auditja</p>
+    <div class="header-meta">
+      <span><strong>Projekt:</strong> Invoice Management</span>
+      <span><strong>Projekt ID:</strong> vxxgvdlqvvchtlmqnrqf</span>
+      <span><strong>Dátum:</strong> 2026-03-29</span>
+      <span><strong>Postgres:</strong> v17.6</span>
+    </div>
+  </div>
+
+  <!-- ════════ OVERVIEW CARDS ════════ -->
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="label">Kritikus index hiány</div>
+      <div class="value red">3</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Ajánlott új index</div>
+      <div class="value yellow">8</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">FK javítandó</div>
+      <div class="value yellow">2</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Redundáns index</div>
+      <div class="value blue">5</div>
+    </div>
+  </div>
+
+  <!-- ════════ 1. INDEXELÉSI STRATÉGIA ════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <h2>Indexelési stratégia</h2>
+    </div>
+    <div class="section-body">
+
+      <h3>1.1 Jelenlegi helyzet — Meglévő indexek</h3>
+      <table>
+        <thead><tr><th>Tábla</th><th>Meglévő indexek (főbbek)</th><th>Értékelés</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>invoices</code></td>
+            <td><code>(company_id, kibocsatas_datuma DESC)</code>, <code>(company_id, invoice_direction, kibocsatas_datuma)</code>, <code>(statusz)</code>, <code>(bizonylatsorszam)</code>, <code>(transaction_id)</code></td>
+            <td><span class="badge-ok">✅ Jó alap</span></td>
+          </tr>
+          <tr>
+            <td><code>nav_invoices</code></td>
+            <td><code>(company_id, invoice_issue_date DESC)</code>, <code>(company_id, invoice_direction, invoice_issue_date)</code>, <code>(transaction_id)</code>, <code>(category_id)</code></td>
+            <td><span class="badge-ok">✅ Jó alap</span></td>
+          </tr>
+          <tr>
+            <td><code>salary</code></td>
+            <td><code>(company_id)</code>, <code>(user_id)</code>, <code>(transaction_id)</code>, <code>(salary_file_id)</code></td>
+            <td><span class="badge-err">⚠️ Hiányzó dátum-index</span></td>
+          </tr>
+          <tr>
+            <td><code>transactions</code></td>
+            <td><code>(company_id, transaction_date DESC)</code>, <code>(company_id, matched_invoice_id) WHERE ≠ NULL</code>, <code>(company_id, type)</code></td>
+            <td><span class="badge-warn">⚠️ Hiányzó currency index</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>1.2 Hiányzó indexek — Kritikus hiányosságok</h3>
+
+      <div class="alert alert-danger">
+        <strong>⚠️ KRITIKUS</strong>
+        A <code>salary</code> tábla <strong>nem rendelkezik dátum-indexszel</strong>, holott a <code>useSalaryData.ts</code> minden lekérdezést <code>(company_id + dátum)</code> szűréssel végez. 10.000+ bérjegyzéknél ez <strong>sequential scan</strong>-t eredményez!
+      </div>
+
+      <h4><span class="priority">🔴</span> P0 — Azonnal szükséges</h4>
+      <table>
+        <thead><tr><th>Index</th><th>Indoklás</th></tr></thead>
+        <tbody>
+          <tr><td><code>salary(company_id, dátum DESC)</code></td><td>Minden bér-lekérdezés ezt használja — jelenleg csak <code>company_id</code>-re van index</td></tr>
+          <tr><td><code>salary(company_id, dátum, tipus)</code></td><td><code>useSalaryData</code> metrika-számítás <code>tipus</code> szűrővel kombinál</td></tr>
+          <tr><td><code>transactions(company_id, transaction_date, currency)</code></td><td><code>useTransactionData</code> currency+date szűrés, jelenleg nincs currency index</td></tr>
+        </tbody>
+      </table>
+
+      <h4><span class="priority">🟡</span> P1 — Ajánlott a skálázhatósághoz</h4>
+      <table>
+        <thead><tr><th>Index</th><th>Indoklás</th></tr></thead>
+        <tbody>
+          <tr><td><code>nav_invoices(...) WHERE transaction_id IS NULL</code></td><td>Kintlévőség modul: OUTBOUND + unpaid lekérdezés</td></tr>
+          <tr><td><code>invoices(...) WHERE transaction_id IS NULL</code></td><td>Kintlévőség modul manuális számlákra</td></tr>
+          <tr><td><code>nav_invoices(...) WHERE payment_method IN ('CASH','KÉSZPÉNZ')</code></td><td><code>get_petty_cash_balance</code> RPC cash szűrése</td></tr>
+          <tr><td><code>invoices(...) WHERE fizetesi_mod ILIKE '%készpénz%'</code></td><td><code>get_petty_cash_balance</code> RPC cash kiadás szűrés</td></tr>
+          <tr><td><code>transactions(...) WHERE type IN ('atm...', 'pénztári...')</code></td><td>Készpénzes tranzakció típusok szűrése</td></tr>
+        </tbody>
+      </table>
+
+      <h4><span class="priority">⚪</span> P2 — Partial indexek (Specifikus szűrők)</h4>
+      <table>
+        <thead><tr><th>Index</th><th>Indoklás</th></tr></thead>
+        <tbody>
+          <tr><td><code>invoices(...) WHERE statusz = 'feldolgozas_alatt'</code></td><td>Csak a függő státuszú számlák gyors lekérdezése</td></tr>
+          <tr><td><code>invoices(company_id, lower(reference_number))</code></td><td><code>get_linked_invoices</code> rekurzív CTE gyorsítása</td></tr>
+          <tr><td><code>invoices(company_id, lower(bizonylatsorszam))</code></td><td>Láncolás keresés: lower() index</td></tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <!-- ════════ 2. QUERY OPTIMALIZÁLÁS ════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <h2>Query optimalizálás</h2>
+    </div>
+    <div class="section-body">
+
+      <h3>2.1 RPC Függvények értékelése</h3>
+      <table>
+        <thead><tr><th>RPC</th><th>Hatékonyság</th><th>Megjegyzés</th></tr></thead>
+        <tbody>
+          <tr><td><code>get_invoice_aggregates</code></td><td><span class="badge-ok">✅ Hatékony</span></td><td>GROUP BY currency + index → Index Scan</td></tr>
+          <tr><td><code>get_nav_invoice_aggregates</code></td><td><span class="badge-ok">✅ Hatékony</span></td><td>GROUP BY direction, currency + composite index</td></tr>
+          <tr><td><code>get_filtered_nav_invoices</code></td><td><span class="badge-ok">✅ Hatékony</span></td><td>Server-side pagination + <code>count(*) OVER()</code></td></tr>
+          <tr><td><code>get_filtered_submitted_invoices</code></td><td><span class="badge-ok">✅ Hatékony</span></td><td>Hasonló server-side pagination pattern</td></tr>
+          <tr><td><code>get_linked_invoices</code></td><td><span class="badge-warn">⚠️ Kockázatos</span></td><td>Rekurzív CTE depth&lt;20 — <code>lower()</code> hívások nem használnak indexet</td></tr>
+          <tr><td><code>get_petty_cash_balance</code></td><td><span class="badge-warn">⚠️ 5 külön SELECT</span></td><td>5 szekvenciális lekérdezés — nincs type/payment partial index</td></tr>
+        </tbody>
+      </table>
+
+      <h3>2.2 <code>get_petty_cash_balance</code> — Részletes elemzés</h3>
+      <div class="alert alert-warning">
+        <strong>⚠️ FIGYELEM</strong>
+        Ez az RPC <strong>5 különálló, szekvenciális SELECT-et</strong> futtat. A belső lekérdezések indexelés hiányában lassak lehetnek nagy adatmennyiségnél.
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Lekérdezés</th><th>Probléma</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>transactions WHERE type IN ('atm készpénzfelvét', ...)</code></td><td>Nincs type-specifikus partial index</td></tr>
+          <tr><td>2</td><td><code>transactions WHERE type IN ('pénztári kp befizetés', ...)</code></td><td>Ugyanaz</td></tr>
+          <tr><td>3</td><td><code>nav_invoices WHERE payment_method IN ('CASH','KÉSZPÉNZ')</code></td><td>Nincs payment_method partial index</td></tr>
+          <tr><td>4</td><td><code>invoices WHERE fizetesi_mod ILIKE '%készpénz%'</code></td><td>ILIKE nem használ indexet</td></tr>
+          <tr><td>5</td><td><code>nav_invoices ... NOT EXISTS(...)</code></td><td>Korrelált allekérdezés</td></tr>
+        </tbody>
+      </table>
+
+      <h3>2.3 N+1 Lekérdezés Analízis</h3>
+      <div class="alert alert-success">
+        <strong>✅ Jó hír</strong>
+        Az alkalmazás jól van felépítve — <strong>nincs klasszikus N+1 probléma</strong> a React komponensekben.
+      </div>
+      <table>
+        <thead><tr><th>Hook</th><th>Pattern</th><th>Értékelés</th></tr></thead>
+        <tbody>
+          <tr><td><code>useInvoiceFilters</code></td><td>Server-side RPC pagination</td><td><span class="badge-ok">✅ Optimális</span></td></tr>
+          <tr><td><code>useDashboardData</code></td><td>RPC aggregates + <code>Promise.all</code></td><td><span class="badge-ok">✅ Optimális</span></td></tr>
+          <tr><td><code>useTransactionData</code></td><td>Server-side pagination + <code>.range()</code></td><td><span class="badge-ok">✅ Jó</span></td></tr>
+          <tr><td><code>useSalaryData</code></td><td>Egyetlen <code>.select()</code> + client-side group</td><td><span class="badge-ok">✅ Elfogadható</span></td></tr>
+          <tr><td><code>useKintlevoData</code></td><td>4 párhuzamos query</td><td><span class="badge-warn">⚠️ Összevonható RPC-be</span></td></tr>
+          <tr><td><code>useInvoiceData</code></td><td>allTransactions — teljes betöltés</td><td><span class="badge-err">⚠️ Bottleneck 10K+ trx-nél</span></td></tr>
+        </tbody>
+      </table>
+
+      <h4><span class="priority">🔴</span> Javítandó: <code>useInvoiceData.ts</code> — allTransactions</h4>
+      <div class="code-block">
+<span class="comment">// JELENLEGI (L176-184): betölti az ÖSSZES párosított tranzakciót</span>
+<span class="keyword">const</span> { data: allTransactions = [] } = <span class="func">useQuery</span>({
+  <span class="func">queryFn</span>: <span class="keyword">async</span> () => {
+    <span class="keyword">const</span> { data } = <span class="keyword">await</span> supabase
+      .<span class="func">from</span>(<span class="string">'transactions'</span>)
+      .<span class="func">select</span>(<span class="string">'id, matched_invoice_id, transaction_date, ...'</span>)
+      .<span class="func">eq</span>(<span class="string">'company_id'</span>, companyId)
+      .<span class="func">not</span>(<span class="string">'matched_invoice_id'</span>, <span class="string">'is'</span>, <span class="keyword">null</span>); <span class="comment">// ← NINCS DÁTUMSZŰRÉS!</span>
+    <span class="keyword">return</span> data;
+  },
+});
+      </div>
+      <p style="margin: 8px 0; color: var(--text-muted)"><strong>Javaslat:</strong> Szűrés a számlák dátum-tartományára:</p>
+      <div class="code-block">
+.<span class="func">gte</span>(<span class="string">'transaction_date'</span>, dateFromFormatted)
+.<span class="func">lte</span>(<span class="string">'transaction_date'</span>, dateToFormatted)
+      </div>
+
+      <h4><span class="priority">🟡</span> Javítható: <code>useTransactionData.ts</code> — filterOptions</h4>
+      <p style="margin-bottom: 8px; color: var(--text-muted)">Jelenleg 500 sort tölt be kliens-oldali DISTINCT helyett. Javaslat — SQL DISTINCT RPC:</p>
+      <div class="code-block">
+<span class="keyword">CREATE OR REPLACE FUNCTION</span> <span class="func">get_transaction_filter_options</span>(p_company_id <span class="type">uuid</span>)
+<span class="keyword">RETURNS TABLE</span>(currencies <span class="type">text[]</span>, types <span class="type">text[]</span>)
+<span class="keyword">LANGUAGE</span> sql <span class="keyword">STABLE SECURITY DEFINER SET</span> search_path <span class="keyword">TO</span> <span class="string">'public'</span>
+<span class="keyword">AS</span> $$
+  <span class="keyword">SELECT</span>
+    <span class="func">array_agg</span>(<span class="keyword">DISTINCT</span> currency) <span class="keyword">FILTER</span> (<span class="keyword">WHERE</span> currency <span class="keyword">IS NOT NULL</span>),
+    <span class="func">array_agg</span>(<span class="keyword">DISTINCT</span> type) <span class="keyword">FILTER</span> (<span class="keyword">WHERE</span> type <span class="keyword">IS NOT NULL</span>)
+  <span class="keyword">FROM</span> transactions
+  <span class="keyword">WHERE</span> company_id = p_company_id;
+$$;
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════ 3. ADATINTEGRITÁS ════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <h2>Adatintegritás és FK kapcsolatok</h2>
+    </div>
+    <div class="section-body">
+
+      <h3>3.1 FK Constraint Összefoglaló</h3>
+      <table>
+        <thead><tr><th>Tábla.oszlop</th><th>Referencia</th><th>ON DELETE</th><th>Értékelés</th></tr></thead>
+        <tbody>
+          <tr><td><code>invoices.company_id</code></td><td><code>companies.id</code></td><td>CASCADE</td><td><span class="badge-ok">✅</span></td></tr>
+          <tr><td><code>invoices.category_id</code></td><td><code>categories.id</code></td><td>SET NULL</td><td><span class="badge-ok">✅</span></td></tr>
+          <tr><td><code>invoices.project_id</code></td><td><code>projects.id</code></td><td>SET NULL</td><td><span class="badge-ok">✅</span></td></tr>
+          <tr><td><code>invoices.transaction_id</code></td><td><code>transactions.id</code></td><td>SET NULL</td><td><span class="badge-ok">✅</span></td></tr>
+          <tr><td><code>nav_invoices.company_id</code></td><td><code>companies.id</code></td><td>CASCADE</td><td><span class="badge-ok">✅</span></td></tr>
+          <tr><td><code>nav_invoices.category_id</code></td><td><code>categories.id</code></td><td>SET NULL</td><td><span class="badge-ok">✅</span></td></tr>
+          <tr><td><code>nav_invoices.transaction_id</code></td><td><code>transactions.id</code></td><td>SET NULL</td><td><span class="badge-ok">✅</span></td></tr>
+          <tr><td><code>salary.company_id</code></td><td><code>companies.id</code></td><td>CASCADE</td><td><span class="badge-ok">✅</span></td></tr>
+          <tr><td><code>salary.transaction_id</code></td><td><code>transactions.id</code></td><td>SET NULL</td><td><span class="badge-ok">✅</span></td></tr>
+          <tr><td><code>salary.salary_file_id</code></td><td><code>salary_files.id</code></td><td>CASCADE</td><td><span class="badge-ok">✅</span></td></tr>
+          <tr><td><code>transactions.company_id</code></td><td><code>companies.id</code></td><td>CASCADE</td><td><span class="badge-ok">✅</span></td></tr>
+          <tr><td><code>transactions.upload_id</code></td><td><code>transaction_uploads.id</code></td><td>SET NULL</td><td><span class="badge-ok">✅</span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>3.2 Árva rekord kockázatok</h3>
+      <div class="alert alert-warning">
+        <strong>⚠️ 2 FK constraint NO ACTION szabályt használ — orphan rekordokat hagyhat!</strong>
+      </div>
+      <table>
+        <thead><tr><th>FK</th><th>ON DELETE</th><th>Kockázat</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>hp_settings.created_by</code> → <code>auth.users.id</code></td>
+            <td><span class="badge-err">NO ACTION</span></td>
+            <td>Ha a user törlődik, a <code>hp_settings</code> rekord "beragad" és nem törölhető</td>
+          </tr>
+          <tr>
+            <td><code>transaction_uploads.user_id</code> → <code>auth.users.id</code></td>
+            <td><span class="badge-err">NO ACTION</span></td>
+            <td>Ugyanez a probléma — user törlés blokkolva</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 8px; color: var(--text-muted)"><strong>Javaslat:</strong> Mindkettőt <code>SET NULL</code>-ra módosítani, mivel ezek az adatok a céghez tartoznak, nem a felhasználóhoz.</p>
+
+      <h3>3.3 <code>transactions.matched_invoice_id</code> — FK hiányzik</h3>
+      <div class="alert alert-info">
+        <strong>ℹ️ FONTOS</strong>
+        A <code>transactions.matched_invoice_id</code> oszlopon <strong>nincs Foreign Key constraint</strong>. Ez a polimorf referencia-design tudatos döntés, de referenciális integritás szempontjából kockázatos. Ha a trigger (<code>clear_transaction_match_on_invoice_delete</code>) elromlik, orphan <code>matched_invoice_id</code>-k maradnak.
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════ 4. POLIMORF HIVATKOZÁSOK ════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <h2>Polimorf hivatkozások (Transactions)</h2>
+    </div>
+    <div class="section-body">
+
+      <h3>4.1 A <code>matched_invoice_id</code> pattern</h3>
+      <p style="margin-bottom: 12px; color: var(--text-muted)">A <code>transactions.matched_invoice_id</code> UUID három különböző táblára mutathat:</p>
+
+      <div class="diagram-box">
+        <div class="node">transactions.matched_invoice_id</div>
+        <br><br>
+        <span class="arrow">↙</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↓</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="arrow">↘</span>
+        <br><br>
+        <div class="node node-target">invoices.id</div>
+        <div class="node node-target">nav_invoices.id</div>
+        <div class="node node-target">salary.id</div>
+      </div>
+
+      <h4>Triggerek amelyek kezelik ezt</h4>
+      <table>
+        <thead><tr><th>Trigger</th><th>Működés</th><th>Értékelés</th></tr></thead>
+        <tbody>
+          <tr><td><code>mark_nav_invoice_paid_on_transaction_match</code></td><td>INSERT/UPDATE → Megpróbálja: invoices → nav_invoices → salary</td><td><span class="badge-warn">⚠️ 3 szekvenciális lookup</span></td></tr>
+          <tr><td><code>reset_paid_on_transaction_delete</code></td><td>DELETE → Mindhárom táblát frissíti</td><td><span class="badge-ok">✅ Konzisztens</span></td></tr>
+          <tr><td><code>reset_paid_on_transaction_unmatch</code></td><td>UPDATE (unmatch) → Mindhárom táblát frissíti</td><td><span class="badge-ok">✅ Konzisztens</span></td></tr>
+        </tbody>
+      </table>
+
+      <h4>Teljesítmény hatás</h4>
+      <div class="alert alert-success">
+        <strong>✅ SELECT lekérdezésekre nincs hatással</strong>
+        A frontend hookok nem végeznek JOIN-t a <code>matched_invoice_id</code>-n. Az <code>useInvoiceData</code> egyszerűen egy Set-be gyűjti az ID-ket és booleanként használja.
+      </div>
+      <p style="margin: 12px 0; color: var(--text-muted)">
+        <strong>Hosszú távú javaslat (100K+ tranzakciónál):</strong> Egy <code>match_target_table</code> oszlop hozzáadása:
+      </p>
+      <div class="code-block">
+<span class="keyword">ALTER TABLE</span> transactions <span class="keyword">ADD COLUMN</span> match_target_table <span class="type">text</span>;
+<span class="comment">-- Lehetséges értékek: 'invoice', 'nav_invoice', 'salary'</span>
+<span class="comment">-- Ezzel a trigger elkerülheti a 3-as probe-ot</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════ 5. SQL MIGRÁCIÓ ════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">5</div>
+      <h2>SQL Migráció — Indexek és FK javítások</h2>
+    </div>
+    <div class="section-body">
+
+      <div class="alert alert-info">
+        <strong>ℹ️ MEGJEGYZÉS</strong>
+        A script <code>CREATE INDEX CONCURRENTLY</code>-t használ, ami nem blokkolja a táblákat. Supabase migration esetén egyenként futtassuk őket.
+      </div>
+
+      <div class="code-block">
+<span class="comment">-- ╔══════════════════════════════════════════════════════════════╗</span>
+<span class="comment">-- ║  P0 — KRITIKUS INDEXEK                                      ║</span>
+<span class="comment">-- ╚══════════════════════════════════════════════════════════════╝</span>
+
+<span class="comment">-- 1. salary: dátum + company_id composite</span>
+<span class="keyword">CREATE INDEX CONCURRENTLY IF NOT EXISTS</span> idx_salary_company_datum
+  <span class="keyword">ON</span> public.salary (company_id, dátum <span class="keyword">DESC</span>);
+
+<span class="comment">-- 2. salary: típus szűréshez (metrikák számítás)</span>
+<span class="keyword">CREATE INDEX CONCURRENTLY IF NOT EXISTS</span> idx_salary_company_datum_tipus
+  <span class="keyword">ON</span> public.salary (company_id, dátum, tipus);
+
+<span class="comment">-- 3. transactions: currency szűrés</span>
+<span class="keyword">CREATE INDEX CONCURRENTLY IF NOT EXISTS</span> idx_transactions_company_date_currency
+  <span class="keyword">ON</span> public.transactions (company_id, transaction_date <span class="keyword">DESC</span>, currency);
+
+
+<span class="comment">-- ╔══════════════════════════════════════════════════════════════╗</span>
+<span class="comment">-- ║  P1 — SKÁLÁZHATÓSÁGI INDEXEK                                ║</span>
+<span class="comment">-- ╚══════════════════════════════════════════════════════════════╝</span>
+
+<span class="comment">-- 4. Kintlévőség: kimenő, kifizetetlen NAV számlák</span>
+<span class="keyword">CREATE INDEX CONCURRENTLY IF NOT EXISTS</span> idx_nav_invoices_outbound_unpaid
+  <span class="keyword">ON</span> public.nav_invoices (company_id, invoice_direction, invoice_issue_date)
+  <span class="keyword">WHERE</span> invoice_direction = <span class="string">'OUTBOUND'</span> <span class="keyword">AND</span> transaction_id <span class="keyword">IS NULL</span>;
+
+<span class="comment">-- 5. Kintlévőség: kimenő, kifizetetlen manuális számlák</span>
+<span class="keyword">CREATE INDEX CONCURRENTLY IF NOT EXISTS</span> idx_invoices_outbound_unpaid
+  <span class="keyword">ON</span> public.invoices (company_id, invoice_direction, kibocsatas_datuma)
+  <span class="keyword">WHERE</span> invoice_direction = <span class="string">'OUTBOUND'</span> <span class="keyword">AND</span> transaction_id <span class="keyword">IS NULL</span>;
+
+<span class="comment">-- 6. Készpénzes NAV számlák (petty cash balance)</span>
+<span class="keyword">CREATE INDEX CONCURRENTLY IF NOT EXISTS</span> idx_nav_invoices_cash_payment
+  <span class="keyword">ON</span> public.nav_invoices (company_id, invoice_direction, invoice_issue_date)
+  <span class="keyword">WHERE</span> payment_method <span class="keyword">IN</span> (<span class="string">'CASH'</span>, <span class="string">'KÉSZPÉNZ'</span>);
+
+<span class="comment">-- 7. Készpénzes manuális számlák (petty cash balance)</span>
+<span class="keyword">CREATE INDEX CONCURRENTLY IF NOT EXISTS</span> idx_invoices_cash_fizmod
+  <span class="keyword">ON</span> public.invoices (company_id, kibocsatas_datuma)
+  <span class="keyword">WHERE</span> fizetesi_mod <span class="keyword">ILIKE</span> <span class="string">'%készpénz%'</span> <span class="keyword">AND</span> reference_number <span class="keyword">IS NULL</span>;
+
+<span class="comment">-- 8. Transactions type szűrés (petty cash KP típusok)</span>
+<span class="keyword">CREATE INDEX CONCURRENTLY IF NOT EXISTS</span> idx_transactions_cash_types
+  <span class="keyword">ON</span> public.transactions (company_id, transaction_date)
+  <span class="keyword">WHERE</span> type <span class="keyword">IN</span> (<span class="string">'atm készpénzfelvét'</span>, <span class="string">'pénztári kp felvét'</span>,
+                 <span class="string">'pénztári kp befizetés'</span>, <span class="string">'kp befizetés atm-en keresztül'</span>);
+
+
+<span class="comment">-- ╔══════════════════════════════════════════════════════════════╗</span>
+<span class="comment">-- ║  P2 — PARTIAL INDEXEK (Specifikus szűrők)                   ║</span>
+<span class="comment">-- ╚══════════════════════════════════════════════════════════════╝</span>
+
+<span class="comment">-- 9. Csak "feldolgozás alatt" státuszú számlák</span>
+<span class="keyword">CREATE INDEX CONCURRENTLY IF NOT EXISTS</span> idx_invoices_pending_status
+  <span class="keyword">ON</span> public.invoices (company_id, kibocsatas_datuma)
+  <span class="keyword">WHERE</span> statusz = <span class="string">'feldolgozas_alatt'</span>;
+
+<span class="comment">-- 10. Láncolás: reference_number keresés</span>
+<span class="keyword">CREATE INDEX CONCURRENTLY IF NOT EXISTS</span> idx_invoices_reference_lower
+  <span class="keyword">ON</span> public.invoices (company_id, <span class="func">lower</span>(reference_number))
+  <span class="keyword">WHERE</span> reference_number <span class="keyword">IS NOT NULL</span>;
+
+<span class="comment">-- 11. Láncolás: bizonylatsorszam lower() keresés</span>
+<span class="keyword">CREATE INDEX CONCURRENTLY IF NOT EXISTS</span> idx_invoices_bizonylat_lower
+  <span class="keyword">ON</span> public.invoices (company_id, <span class="func">lower</span>(bizonylatsorszam));
+
+
+<span class="comment">-- ╔══════════════════════════════════════════════════════════════╗</span>
+<span class="comment">-- ║  FK JAVÍTÁSOK — Orphan rekord megelőzés                     ║</span>
+<span class="comment">-- ╚══════════════════════════════════════════════════════════════╝</span>
+
+<span class="comment">-- 12. hp_settings.created_by: NO ACTION → SET NULL</span>
+<span class="keyword">ALTER TABLE</span> public.hp_settings
+  <span class="keyword">DROP CONSTRAINT</span> hp_settings_created_by_fkey,
+  <span class="keyword">ADD CONSTRAINT</span> hp_settings_created_by_fkey
+    <span class="keyword">FOREIGN KEY</span> (created_by) <span class="keyword">REFERENCES</span> auth.users(id)
+    <span class="keyword">ON DELETE SET NULL</span>;
+
+<span class="comment">-- 13. transaction_uploads.user_id: NO ACTION → SET NULL</span>
+<span class="keyword">ALTER TABLE</span> public.transaction_uploads
+  <span class="keyword">DROP CONSTRAINT</span> transaction_uploads_user_id_fkey,
+  <span class="keyword">ADD CONSTRAINT</span> transaction_uploads_user_id_fkey
+    <span class="keyword">FOREIGN KEY</span> (user_id) <span class="keyword">REFERENCES</span> auth.users(id)
+    <span class="keyword">ON DELETE SET NULL</span>;
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════ 6. REDUNDÁNS INDEXEK ════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">6</div>
+      <h2>Felesleges / Redundáns indexek</h2>
+    </div>
+    <div class="section-body">
+
+      <div class="alert alert-info">
+        <strong>ℹ️ TIPP</strong>
+        A következő indexek fedve vannak composite indexek által — törlésük javítja a write-teljesítményt.
+      </div>
+
+      <table>
+        <thead><tr><th>Index</th><th>Redundáns, mert...</th></tr></thead>
+        <tbody>
+          <tr><td><code>idx_invoices_company_id</code></td><td>Fedve van az <code>idx_invoices_company_date(company_id, kibocsatas_datuma)</code> által</td></tr>
+          <tr><td><code>idx_invoices_kibocsatas_datuma</code></td><td>Fedve van az <code>idx_invoices_company_date</code> által</td></tr>
+          <tr><td><code>idx_invoices_szamlaszam</code></td><td>Fedve van az <code>idx_invoices_bizonylatsorszam_company</code> által</td></tr>
+          <tr><td><code>idx_nav_invoices_company_id</code></td><td>Fedve van az <code>idx_nav_invoices_company_date</code> által</td></tr>
+          <tr><td><code>idx_nav_invoices_company_direction</code></td><td>Majdnem azonos az <code>idx_nav_invoices_company_direction_date</code>-tel</td></tr>
+        </tbody>
+      </table>
+
+      <div class="code-block">
+<span class="comment">-- Törlési script (óvatosan, csak ha nincs más use-case)</span>
+<span class="keyword">DROP INDEX CONCURRENTLY IF EXISTS</span> idx_invoices_company_id;
+<span class="keyword">DROP INDEX CONCURRENTLY IF EXISTS</span> idx_invoices_kibocsatas_datuma;
+<span class="keyword">DROP INDEX CONCURRENTLY IF EXISTS</span> idx_invoices_szamlaszam;
+<span class="keyword">DROP INDEX CONCURRENTLY IF EXISTS</span> idx_nav_invoices_company_id;
+<span class="comment">-- idx_nav_invoices_company_direction: csak ha igazoltan nem használják</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════ 7. ÖSSZEFOGLALÓ ════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">7</div>
+      <h2>Összefoglaló javaslatok</h2>
+    </div>
+    <div class="section-body">
+
+      <h3>TypeScript fájlok átalakítandók</h3>
+      <table>
+        <thead><tr><th>Fájl</th><th>Javaslat</th><th>Prioritás</th></tr></thead>
+        <tbody>
+          <tr><td><code>useInvoiceData.ts</code> (L176-187)</td><td><code>allTransactions</code> query: dátumszűrés hozzáadása</td><td><span class="badge-err">🔴 P0</span></td></tr>
+          <tr><td><code>useTransactionData.ts</code> (L71-86)</td><td><code>filterOptions</code>: DISTINCT RPC-re cserélni</td><td><span class="badge-warn">🟡 P1</span></td></tr>
+          <tr><td><code>useKintlevoData.ts</code> (L21-53)</td><td>2 párhuzamos query összevonása RPC-be</td><td><span class="badge-info">⚪ P2</span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Adatbázis műveletek</h3>
+      <table>
+        <thead><tr><th>Művelet</th><th>Hatás</th><th>Prioritás</th></tr></thead>
+        <tbody>
+          <tr><td>3 db P0 index létrehozása</td><td><code>salary</code> + <code>transactions</code>: seq scan → index scan</td><td><span class="badge-err">🔴 Azonnali</span></td></tr>
+          <tr><td>5 db P1 partial index</td><td>Kintlévőség + Házipénztár: 50-80%-os gyorsulás</td><td><span class="badge-warn">🟡 1 héten belül</span></td></tr>
+          <tr><td>3 db P2 partial index</td><td>Invoice chaining optimalizálás</td><td><span class="badge-info">⚪ Tervezett</span></td></tr>
+          <tr><td>2 FK javítás</td><td>Orphan rekord megelőzés</td><td><span class="badge-warn">🟡 1 héten belül</span></td></tr>
+          <tr><td>5 redundáns index törlése</td><td>Write-teljesítmény javulás (~5%), kevesebb storage</td><td><span class="badge-info">⚪ Tervezett</span></td></tr>
+        </tbody>
+      </table>
+
+      <h3>Várt eredmény 100K+ rekordnál</h3>
+      <table>
+        <thead><tr><th>Lekérdezés</th><th>Jelenleg (becsült)</th><th>Index után (becsült)</th></tr></thead>
+        <tbody>
+          <tr><td>Salary lista (dátumszűrt)</td><td style="color:#f87171">~200ms (seq scan)</td><td style="color:#4ade80"><strong>&lt; 5ms</strong></td></tr>
+          <tr><td>Dashboard aggregates</td><td style="color:#4ade80">~15ms</td><td style="color:#4ade80">~15ms (már jó)</td></tr>
+          <tr><td>Kintlévőség (unpaid filter)</td><td style="color:#facc15">~100ms</td><td style="color:#4ade80"><strong>&lt; 10ms</strong></td></tr>
+          <tr><td>Petty cash balance RPC</td><td style="color:#f87171">~300ms</td><td style="color:#4ade80"><strong>&lt; 20ms</strong></td></tr>
+          <tr><td>Transaction lista (szűrt)</td><td style="color:#facc15">~50ms</td><td style="color:#4ade80"><strong>&lt; 10ms</strong></td></tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <!-- ════════ FOOTER ════════ -->
+  <div style="text-align: center; padding: 24px 0; color: var(--text-dim); font-size: 12px; border-top: 1px solid var(--border); margin-top: 16px;">
+    <p>Visibill Database Audit Report — Generálva: 2026-03-29 | Postgres 17.6 | Supabase Platform</p>
+    <p style="margin-top: 4px; color: rgba(100,116,139,0.6)">Készítette: Visibill Engineering Team</p>
+  </div>
+
+</div>
+</body>
+</html>

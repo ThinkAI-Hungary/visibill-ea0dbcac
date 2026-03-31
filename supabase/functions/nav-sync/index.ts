@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4'
+import { sha3_512 } from 'https://esm.sh/@noble/hashes@1.3.0/sha3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -75,25 +76,15 @@ Deno.serve(async (req) => {
 
       const credentials = credsResult;
       
-      // Get token first
-      const tokenResponse = await fetch(`${req.url.replace('/nav-sync', '/nav-token')}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': authHeader,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: 'request_token' })
-      });
-
-      const tokenData = await tokenResponse.json();
-      if (!tokenData.success) {
-        throw new Error('Failed to get NAV token');
-      }
+      // Get exchange token first
+      const baseUrl = 'https://api.onlineszamla.nav.gov.hu/invoiceService/v3';
+      const token = await getNavToken(credentials, baseUrl);
+      console.log('[NAV-SYNC] Got exchange token');
 
       // Fetch invoices from NAV API
       const invoices = await fetchInvoicesFromNAV(
         credentials,
-        tokenData.token,
+        token,
         syncParams
       );
 
@@ -208,27 +199,28 @@ async function createQueryInvoiceDataRequest(
   const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
   const requestId = crypto.randomUUID();
 
-  const passwordHash = await hashPassword(credentials.nav_password, requestId);
+  const passwordHash = await hashPassword(credentials.nav_password);
   const signature = await createSignature(credentials, requestId, timestamp);
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<QueryInvoiceDataRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api">
-  <header>
-    <requestId>${requestId}</requestId>
-    <timestamp>${timestamp}</timestamp>
-    <requestVersion>3.0</requestVersion>
-    <headerVersion>1.0</headerVersion>
-  </header>
-  <user>
-    <login>${credentials.nav_username}</login>
-    <passwordHash>${passwordHash}</passwordHash>
-    <taxNumber>${credentials.nav_tax_number}</taxNumber>
-    <requestSignature>${signature}</requestSignature>
-  </user>
+<QueryInvoiceDataRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api"
+                        xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common">
+  <common:header>
+    <common:requestId>${requestId}</common:requestId>
+    <common:timestamp>${timestamp}</common:timestamp>
+    <common:requestVersion>3.0</common:requestVersion>
+    <common:headerVersion>1.0</common:headerVersion>
+  </common:header>
+  <common:user>
+    <common:login>${credentials.nav_username}</common:login>
+    <common:passwordHash cryptoType="SHA-512">${passwordHash}</common:passwordHash>
+    <common:taxNumber>${credentials.nav_tax_number}</common:taxNumber>
+    <common:requestSignature cryptoType="SHA3-512">${signature}</common:requestSignature>
+  </common:user>
   <software>
     <softwareId>${credentials.software_id}</softwareId>
     <softwareName>VisiBill NAV Integration</softwareName>
-    <softwareOperation>LOCAL_SOFTWARE</softwareOperation>
+    <softwareOperation>ONLINE_SERVICE</softwareOperation>
     <softwareMainVersion>1.0</softwareMainVersion>
     <softwareDevName>${credentials.software_dev_name || 'VisiBill'}</softwareDevName>
     <softwareDevContact>${credentials.software_dev_contact || 'support@visibill.hu'}</softwareDevContact>
@@ -286,10 +278,10 @@ function extractXMLValue(xml: string, tagName: string): string | null {
   return match ? match[1].trim() : null;
 }
 
-async function hashPassword(password: string, requestId: string): Promise<string> {
-  // NAV requires SHA512 hash of password + requestId
+async function hashPassword(password: string): Promise<string> {
+  // NAV v3: hash password only (not requestId+password)
   const encoder = new TextEncoder();
-  const data = encoder.encode(requestId + password);
+  const data = encoder.encode(password);
   const hash = await crypto.subtle.digest('SHA-512', data);
   return Array.from(new Uint8Array(hash))
     .map(b => b.toString(16).padStart(2, '0'))
@@ -298,13 +290,74 @@ async function hashPassword(password: string, requestId: string): Promise<string
 }
 
 async function createSignature(credentials: any, requestId: string, timestamp: string): Promise<string> {
-  // Simplified signature creation - in production, this would use proper cryptographic signing
-  const signatureBase = `${requestId}${timestamp}${credentials.nav_sign_key}`;
+  // NAV v3: SHA3-512 hash of requestId + compactTimestamp + signKey
+  const date = new Date(timestamp);
+  const compactTimestamp = date.getUTCFullYear().toString() +
+    (date.getUTCMonth() + 1).toString().padStart(2, '0') +
+    date.getUTCDate().toString().padStart(2, '0') +
+    date.getUTCHours().toString().padStart(2, '0') +
+    date.getUTCMinutes().toString().padStart(2, '0') +
+    date.getUTCSeconds().toString().padStart(2, '0');
+  const signatureBase = `${requestId}${compactTimestamp}${credentials.nav_sign_key}`;
   const encoder = new TextEncoder();
   const data = encoder.encode(signatureBase);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hash))
+  const hash = sha3_512(data);
+  return Array.from(hash)
     .map(b => b.toString(16).padStart(2, '0'))
     .join('')
     .toUpperCase();
+}
+
+// Get NAV exchange token
+async function getNavToken(credentials: any, navApiUrl: string): Promise<string> {
+  const requestId = crypto.randomUUID().replace(/-/g, '').substring(0, 30);
+  const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const passwordHash = await hashPassword(credentials.nav_password);
+  const signature = await createSignature(credentials, requestId, timestamp);
+
+  const tokenXml = `<?xml version="1.0" encoding="UTF-8"?>
+<TokenExchangeRequest xmlns="http://schemas.nav.gov.hu/OSA/3.0/api" xmlns:common="http://schemas.nav.gov.hu/NTCA/1.0/common">
+  <common:header>
+    <common:requestId>${requestId}</common:requestId>
+    <common:timestamp>${timestamp}</common:timestamp>
+    <common:requestVersion>3.0</common:requestVersion>
+    <common:headerVersion>1.0</common:headerVersion>
+  </common:header>
+  <common:user>
+    <common:login>${credentials.nav_username}</common:login>
+    <common:passwordHash cryptoType="SHA-512">${passwordHash}</common:passwordHash>
+    <common:taxNumber>${credentials.nav_tax_number}</common:taxNumber>
+    <common:requestSignature cryptoType="SHA3-512">${signature}</common:requestSignature>
+  </common:user>
+  <software>
+    <softwareId>${credentials.software_id}</softwareId>
+    <softwareName>VisiBill NAV Integration</softwareName>
+    <softwareOperation>ONLINE_SERVICE</softwareOperation>
+    <softwareMainVersion>1.0</softwareMainVersion>
+    <softwareDevName>${credentials.software_dev_name || 'VisiBill'}</softwareDevName>
+    <softwareDevContact>${credentials.software_dev_contact || 'support@visibill.hu'}</softwareDevContact>
+  </software>
+</TokenExchangeRequest>`;
+
+  const response = await fetch(`${navApiUrl}/tokenExchange`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/xml; charset=UTF-8',
+      'Accept': 'application/xml'
+    },
+    body: tokenXml
+  });
+
+  const responseText = await response.text();
+  
+  if (!response.ok) {
+    throw new Error(`NAV token request failed: ${response.status}`);
+  }
+
+  const tokenMatch = responseText.match(/<(?:\w+:)?encodedExchangeToken>([^<]+)<\/(?:\w+:)?encodedExchangeToken>/);
+  if (!tokenMatch) {
+    throw new Error('Failed to extract token from NAV response');
+  }
+
+  return tokenMatch[1];
 }

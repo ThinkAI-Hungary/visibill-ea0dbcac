@@ -1,4 +1,4 @@
-﻿import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle, Users } from 'lucide-react';
 import { useState, useMemo } from 'react';
@@ -222,7 +222,20 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
     if (!user) return;
 
     setIsCreating(true);
+    let rollbackNeeded = false;
+    let createdCompanyId: string | null = null;
     try {
+      // 0. Refresh session to ensure JWT is valid before DB operations
+      const { data: { session: freshSession }, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError || !freshSession) {
+        toast({
+          title: 'A munkamenet lejárt',
+          description: 'Kérjük, jelentkezzen be újra a folytatáshoz.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       // 1. Create company
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
@@ -236,22 +249,28 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
         .single();
 
       if (companyError) throw companyError;
+      createdCompanyId = companyData.id;
 
       // 2. Create projects
-      const projectsToInsert = projects.map(p => ({
-        user_id: user.id,
-        company_id: companyData.id,
-        name: p.name,
-        client_name: p.client_name,
-        description: p.description || null,
-        status: p.status,
-      }));
+      if (projects.length > 0) {
+        const projectsToInsert = projects.map(p => ({
+          user_id: user.id,
+          company_id: companyData.id,
+          name: p.name,
+          client_name: p.client_name,
+          description: p.description || null,
+          status: p.status,
+        }));
 
-      const { error: projectsError } = await supabase
-        .from('projects')
-        .insert(projectsToInsert);
+        const { error: projectsError } = await supabase
+          .from('projects')
+          .insert(projectsToInsert);
 
-      if (projectsError) throw projectsError;
+        if (projectsError) {
+          rollbackNeeded = true;
+          throw projectsError;
+        }
+      }
 
       // 3. Create categories (if any)
       if (categories.length > 0) {
@@ -266,13 +285,16 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
           .from('categories')
           .insert(categoriesToInsert);
 
-        if (categoriesError) throw categoriesError;
+        if (categoriesError) {
+          rollbackNeeded = true;
+          throw categoriesError;
+        }
       }
 
       // 4. Save NAV credentials with company_id (first and only save)
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const { error: navError } = await supabase.functions.invoke('save-credentials', {
+        const { data: navData, error: navError } = await supabase.functions.invoke('save-credentials', {
           body: {
             navUsername: navCredentials.nav_username,
             navPassword: navCredentials.nav_password,
@@ -281,11 +303,20 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
             navExchangeKey: navCredentials.nav_exchange_key,
             companyId: companyData.id,
           },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
         });
 
-        if (navError) {
-          console.error('NAV credentials save error:', navError);
-          // Don't throw - company is created, just log the error
+        if (navError || navData?.error) {
+          const navMsg = navError?.message || navData?.error || 'Ismeretlen NAV hiba';
+          console.error('NAV credentials save error:', navMsg);
+          // Don't throw - company is created, but inform the user
+          toast({
+            title: 'NAV mentési figyelmeztetés',
+            description: `A cég létrejött, de a NAV adatok mentése sikertelen: ${navMsg}. Az Integrációk menüben újra megpróbálhatod.`,
+            variant: 'destructive',
+          });
         } else {
           // Trigger initial NAV sync in background (last 90 days)
           // Split into 35-day chunks due to NAV API limit
@@ -328,7 +359,10 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                     dateFrom: chunk.from,
                     dateTo: chunk.to,
                     companyId: companyData.id
-                  }
+                  },
+                  headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                  },
                 }),
                 supabase.functions.invoke('nav-query-outbound-invoices', {
                   body: {
@@ -336,7 +370,10 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                     dateFrom: chunk.from,
                     dateTo: chunk.to,
                     companyId: companyData.id
-                  }
+                  },
+                  headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                  },
                 })
               ]);
               
@@ -359,9 +396,16 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
       
       // Trigger the product tour after successful onboarding
       onOnboardingComplete?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error during onboarding:', error);
-      toast({ title: 'Hiba történt a beállítás során', variant: 'destructive' });
+      const msg = error?.message || error?.details || JSON.stringify(error);
+      toast({ title: 'Hiba történt a beállítás során', description: msg, variant: 'destructive' });
+
+      // Rollback: delete the company if it was created but sub-steps failed
+      if (rollbackNeeded && createdCompanyId) {
+        console.warn('[Onboarding] Rolling back company:', createdCompanyId);
+        await supabase.from('companies').delete().eq('id', createdCompanyId);
+      }
     } finally {
       setIsCreating(false);
     }
@@ -410,9 +454,10 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
       }
       toast({ title: 'Sikeresen csatlakoztál a céghez!' });
       onOnboardingComplete?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error joining company:', error);
-      toast({ title: 'Hiba történt a csatlakozás során', variant: 'destructive' });
+      const msg = error?.message || error?.details || JSON.stringify(error);
+      toast({ title: 'Hiba történt a csatlakozás során', description: msg, variant: 'destructive' });
     } finally {
       setIsJoining(false);
     }

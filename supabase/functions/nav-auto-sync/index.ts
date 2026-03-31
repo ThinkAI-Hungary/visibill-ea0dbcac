@@ -412,7 +412,7 @@ async function syncInvoices(
       const { error: upsertError } = await supabase
         .from('nav_invoices')
         .upsert(invoicesToInsert, {
-          onConflict: 'invoice_number,user_id',
+          onConflict: 'company_id,invoice_number',
           ignoreDuplicates: false
         });
 

@@ -174,13 +174,15 @@ export function useInvoiceData(
   });
 
   const { data: allTransactions = [], isLoading: txLoading } = useQuery({
-    queryKey: queryKeys.invoiceTransactions(companyId),
+    queryKey: queryKeys.invoiceTransactions(companyId, dateFromFormatted, dateToFormatted),
     queryFn: async () => {
       const { data } = await supabase
         .from('transactions')
         .select('id, matched_invoice_id, transaction_date, amount, description, currency, type')
         .eq('company_id', companyId)
-        .not('matched_invoice_id', 'is', null);
+        .not('matched_invoice_id', 'is', null)
+        .gte('transaction_date', dateFromFormatted)
+        .lte('transaction_date', dateToFormatted);
       return (data || []) as TransactionRecord[];
     },
     enabled,
