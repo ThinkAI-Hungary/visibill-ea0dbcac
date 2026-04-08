@@ -42,7 +42,8 @@ import {
   Moon,
   Users,
   Banknote,
-  ReceiptText
+  ReceiptText,
+  BookOpen
 } from "lucide-react";
 import CompanySelector from "./CompanySelector";
 
@@ -88,6 +89,12 @@ const navigationItems = [
     url: "/transactions",
     icon: Landmark,
     tourId: "transactions",
+  },
+  {
+    title: "Főkönyv",
+    url: "/general-ledger",
+    icon: BookOpen,
+    tourId: "general-ledger",
   },
   {
     title: "Feltöltés",
@@ -168,7 +175,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="print:hidden">
       <SidebarContent className="select-none">
         {/* Header */}
         <div className={`p-4 border-b border-primary/30 ${isCollapsed ? 'flex justify-center' : ''}`}>

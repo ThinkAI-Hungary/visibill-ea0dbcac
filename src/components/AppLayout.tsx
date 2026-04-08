@@ -15,14 +15,16 @@ function ContentLoader() {
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <SidebarProvider className="h-screen w-full overflow-hidden flex !min-h-0">
+    <SidebarProvider className="h-screen w-full overflow-hidden flex !min-h-0 print:h-auto print:overflow-visible">
       <AppSidebar />
       
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-background">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-background print:h-auto print:overflow-visible">
         {/* Global Date Picker Header */}
-        <GlobalDatePicker />
+        <div className="print:hidden">
+          <GlobalDatePicker />
+        </div>
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-background p-6">
+        <main className="flex-1 overflow-y-auto bg-background p-6 print:p-0 print:overflow-visible">
           <Suspense fallback={<ContentLoader />}>
             {children || <Outlet />}
           </Suspense>

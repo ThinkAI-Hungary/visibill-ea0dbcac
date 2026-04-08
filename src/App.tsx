@@ -35,6 +35,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const KintlevoPage = lazy(() => import("./pages/KintlevoPage"));
 const PettyCashPage = lazy(() => import("./pages/PettyCashPage"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const GeneralLedgerPage = lazy(() => import("./pages/GeneralLedgerPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -145,7 +146,11 @@ const App = () => (
                       <Route path="/transactions" element={
                         <ProtectedPage><TransactionsPage /></ProtectedPage>
                       } />
+                      <Route path="/general-ledger" element={
+                        <ProtectedPage><GeneralLedgerPage /></ProtectedPage>
+                      } />
                       <Route path="/kintlevo" element={
+
                         <ProtectedPage><KintlevoPage /></ProtectedPage>
                       } />
                       <Route path="/petty-cash" element={
