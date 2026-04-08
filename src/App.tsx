@@ -36,6 +36,7 @@ const KintlevoPage = lazy(() => import("./pages/KintlevoPage"));
 const PettyCashPage = lazy(() => import("./pages/PettyCashPage"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const GeneralLedgerPage = lazy(() => import("./pages/GeneralLedgerPage"));
+const WorkingTimePage = lazy(() => import("./pages/WorkingTimePage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -164,6 +165,9 @@ const App = () => (
                       } />
                       <Route path="/salaries" element={
                         <ProtectedPage><SalariesPage /></ProtectedPage>
+                      } />
+                      <Route path="/working-time" element={
+                        <ProtectedPage><WorkingTimePage /></ProtectedPage>
                       } />
                       <Route path="/analytics" element={
                         <ProtectedPage><Analytics /></ProtectedPage>

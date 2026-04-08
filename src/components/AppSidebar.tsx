@@ -43,7 +43,8 @@ import {
   Users,
   Banknote,
   ReceiptText,
-  BookOpen
+  BookOpen,
+  Clock
 } from "lucide-react";
 import CompanySelector from "./CompanySelector";
 
@@ -107,6 +108,12 @@ const navigationItems = [
     url: "/salaries",
     icon: Wallet,
     tourId: "salaries",
+  },
+  {
+    title: "Munkaidő",
+    url: "/working-time",
+    icon: Clock,
+    tourId: "working-time",
   },
   {
     title: "Házipénztár",

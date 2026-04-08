@@ -300,9 +300,9 @@ export function useDashboardData() {
   const { data: analyticsRaw, isLoading: analyticsLoading } = useQuery({
     queryKey: queryKeys.analyticsRaw(companyId, chartYearFromStr, chartYearToStr),
     queryFn: async () => {
-      const [navRes, salRes] = await Promise.all([
+      const [navRes, salRes, invRes] = await Promise.all([
         supabase.from("nav_invoices")
-          .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, transaction_id, currency")
+          .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, transaction_id, currency, invoice_number")
           .eq("company_id", companyId)
           .gte("invoice_issue_date", chartYearFromStr)
           .lte("invoice_issue_date", chartYearToStr),
@@ -312,10 +312,39 @@ export function useDashboardData() {
           .or("transaction_id.not.is.null,fizetesi_mod.eq.készpénz")
           .gte("dátum", chartYearFromStr)
           .lte("dátum", chartYearToStr),
+        supabase.from("invoices")
+          .select("kibocsatas_datuma, invoice_direction, brutto_vegosszeg, adoalap_osszesen, fizetve, transaction_id, penznem, bizonylatsorszam")
+          .eq("company_id", companyId)
+          .eq("invoice_direction", "INBOUND")
+          .gte("kibocsatas_datuma", chartYearFromStr)
+          .lte("kibocsatas_datuma", chartYearToStr)
       ]);
 
+      const navInvoices = (navRes.data || []) as (RawInvoice & { invoice_number?: string | null })[];
+      const rawInvoices: RawInvoice[] = [...navInvoices];
+
+      const navInvoiceNumbers = new Set(
+        navInvoices.map(n => n.invoice_number?.replace(/\s+/g, '')).filter(Boolean)
+      );
+
+      const invoices = invRes.data || [];
+      invoices.forEach((inv) => {
+        const cleanBizonylatsorszam = inv.bizonylatsorszam?.replace(/\s+/g, '');
+        if (cleanBizonylatsorszam && !navInvoiceNumbers.has(cleanBizonylatsorszam)) {
+          const isPaid = inv.fizetve === true || !!inv.transaction_id;
+          rawInvoices.push({
+            invoice_issue_date: inv.kibocsatas_datuma,
+            invoice_direction: inv.invoice_direction,
+            invoice_gross_amount: inv.brutto_vegosszeg,
+            invoice_net_amount: inv.adoalap_osszesen,
+            transaction_id: isPaid ? "dummy_paid_id" : null,
+            currency: inv.penznem,
+          });
+        }
+      });
+
       return {
-        rawInvoices: (navRes.data || []) as RawInvoice[],
+        rawInvoices,
         rawSalaries: (salRes.data || []).map((s: any) => ({ dátum: s.dátum, összeg: s.összeg, statusz: s.statusz })) as RawSalary[],
       };
     },
