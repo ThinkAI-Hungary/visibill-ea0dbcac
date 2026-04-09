@@ -1,83 +1,53 @@
 
 
-# Miért nem frissülnek live-ban a kapcsolt bizonylatok és tételek?
+## Audit: Employee role menu flash problem
 
-## Két különálló gyökérok
+### Root cause identified
 
-### 1. `linkedInvoicesPool` — versenyhelyzet az invalidálásnál
+There is a **one-frame race condition** in `useUserRole` that causes the full menu to flash before the role resolves.
 
-A `linkedInvoicesPool` query a `submittedInvoices` adataiból épít seed-eket (bizonylatsorszam, reference_number). Amikor egy új számla INSERT történik, a `LiveNotificationProvider` **egyszerre** invalidálja a `submittedInvoices` és `linkedInvoices` kulcsokat.
+Here is the sequence:
 
-A probléma: a `linkedInvoices` query újrafuthat a **régi** `submittedInvoices` adatokkal, mert az még nem frissült. Eredmény: az RPC hívás a régi seed-ekkel fut, és nem találja meg az új láncszemet.
-
-**Javítás**: A `linkedInvoicesPool` query-t úgy kell módosítani, hogy a `submittedInvoices` frissülésére is reagáljon — nem egyidejű invalidálással, hanem a `submittedInvoices` adatból levezetett `queryKey`-vel vagy explicit függőséggel.
-
-### 2. `InvoiceItemsDialog` — nincs Realtime, nincs React Query
-
-Az `InvoiceItemsDialog` egy egyszerű `useState` + `useEffect` + `fetchInvoiceItems()` mintát használ. Nincs TanStack Query, nincs Realtime — a tételek csak a dialógus megnyitásakor töltődnek be, és soha nem frissülnek automatikusan.
-
-A `nav_invoice_items` tábla ráadásul **nem szerepel** a `LiveNotificationProvider`-ben.
-
----
-
-## Javítási terv
-
-### Fájl 1: `src/hooks/useInvoiceData.ts`
-
-A `linkedInvoicesPool` queryKey-be bele kell tenni a `submittedInvoices` egy stabil deriváltját (pl. az id-k hash-ét vagy count-ját), hogy az automatikusan újrafusson, amikor a `submittedInvoices` frissül:
-
-```typescript
-const submittedFingerprint = submittedInvoices.map(i => i.id).sort().join(',');
-
-const { data: linkedInvoicesPool = [] } = useQuery({
-  queryKey: [...queryKeys.linkedInvoices(companyId, dateFrom, dateTo), submittedFingerprint],
-  queryFn: async () => { /* ... existing RPC call ... */ },
-  enabled: enabled && !submittedLoading && submittedInvoices.length > 0,
-});
+```text
+Frame 1:  companyLoading=true  → useAppReady blocks → nothing rendered ✓
+Frame 2:  companyLoading=false, company resolved
+          useUserRole query just got enabled (enabled: true)
+          BUT TanStack Query v5: isPending=true, isFetching=false → isLoading=false
+          roleLoading = false (isLoading && !!companyId = false)
+          → useAppReady says isReady=true
+          → AppSidebar renders with role=null → isEmployee=false → FULL MENU SHOWN
+Frame 3:  Query starts fetching → isLoading=true → but too late, UI already painted
+Frame 4:  Query resolves → role='employee' → isEmployee=true → menu filters
 ```
 
-Így ha a `submittedInvoices` refetch után új id-ket tartalmaz, a `linkedInvoices` automatikusan újrafut.
+The bug is in `useUserRole` line 52: `isLoading: isLoading && !!companyId`. TanStack Query v5's `isLoading` equals `isPending && isFetching`. When a query transitions from `enabled:false` to `enabled:true`, there is one render where `isFetching` is still `false`, so `isLoading` is `false` -- but data hasn't been fetched yet.
 
-### Fájl 2: `src/components/InvoiceItemsDialog.tsx`
+### Additional issues found
 
-A `useState`/`useEffect` fetch-et TanStack Query-re cserélni:
+1. **`useUserRole` defaults to non-employee while loading** (line 46-48 comment: "default to non-employee (safe: shows everything)") -- this is the opposite of safe for employee accounts. It means during the gap frame, `isEmployee=false` and the full menu renders.
 
-```typescript
-const { data: items = [], isLoading } = useQuery({
-  queryKey: ['navInvoiceItems', invoiceId],
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from('nav_invoice_items')
-      .select('...')
-      .eq('nav_invoice_id', invoiceId)
-      .order('line_number');
-    if (error) throw error;
-    return data;
-  },
-  enabled: open && !!invoiceId,
-});
-```
+2. **Duplicate role queries**: `ProtectedRoute` fetches the role separately with query key `['user-role-guard', ...]` while `useUserRole` uses `['user-role', ...]`. These are two independent queries hitting the same table. Should be unified.
 
-### Fájl 3: `src/components/LiveNotificationProvider.tsx`
+3. **`ProtectedRoute` employee redirect is async**: The employee route guard uses `useEffect` + `navigate`, which means for one render the forbidden page content is visible before the redirect fires.
 
-Hozzáadni a `nav_invoice_items` tábla figyelését:
+### Fix plan (3 files)
 
-```typescript
-.on('postgres_changes', { event: '*', schema: 'public', table: 'nav_invoice_items' },
-  (payload) => {
-    console.log('[RealtimeSync] nav_invoice_items', payload.eventType);
-    invalidate('navInvoiceItems', 'filteredNavInvoices', 'analyticsVat');
-  }
-)
-```
+**1. `src/hooks/useUserRole.ts`** -- Fix the loading gap
 
-A tab-refocus invalidációs listába is hozzáadni: `'navInvoiceItems'`.
+- Change `isLoading` to use `isPending` instead of `isLoading` when enabled. `isPending` is true whenever there's no data yet, regardless of whether fetching has started.
+- Return value: `isLoading: isPending && !!companyId` (true until first successful fetch)
+- This ensures `useAppReady` blocks rendering until role data actually arrives.
 
-### Összefoglalás
+**2. `src/components/AppSidebar.tsx`** -- No changes needed
 
-| Fájl | Változás |
-|---|---|
-| `src/hooks/useInvoiceData.ts` | `linkedInvoicesPool` queryKey-be `submittedFingerprint` derivált |
-| `src/components/InvoiceItemsDialog.tsx` | `useState`/`useEffect` → TanStack Query |
-| `src/components/LiveNotificationProvider.tsx` | `nav_invoice_items` Realtime listener hozzáadása |
+The sidebar logic is correct -- it reads `isEmployee` from `useUserRole`. Once the loading gap is fixed, it will never render with stale defaults.
+
+**3. `src/components/ProtectedRoute.tsx`** -- Unify role query and block render
+
+- Remove the duplicate `user-role-guard` query. Use `useUserRole()` hook instead (same data, single cache entry).
+- Instead of `useEffect` redirect for employees, block rendering: if role is still loading, show `ContentSkeleton`; if role is `employee` and route is not allowed, return `null` (redirect via `useEffect` stays but content is hidden immediately).
+
+### Summary
+
+The core fix is a one-line change in `useUserRole.ts`: use `isPending` instead of `isLoading` from TanStack Query. This closes the gap frame completely. The `useAppReady` guard then correctly blocks all rendering (sidebar included) until the role is definitively known.
 
