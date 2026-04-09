@@ -1,34 +1,74 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/AppLayout';
+import { useAppReady } from '@/hooks/useAppReady';
 import { useAuth } from '@/contexts/AuthContext';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 /**
- * ProtectedLayout is the TOP-LEVEL auth gate.
+ * ProtectedLayout — Full-Stop Loading Guard + Sign-Out Overlay.
  *
- * If auth is loading or the user is null, it renders ONLY the dark
- * LoadingSpinner — no Sidebar, no Skeleton, zero flash.
- * The AppLayout (sidebar + content shell) only mounts after auth is confirmed.
+ * Renders NOTHING until auth + company + role are all resolved.
+ * The index.html #initial-loader stays visible during this time.
+ *
+ * When signing out, a full-screen overlay covers the layout
+ * so the user sees a clean "Kijelentkezés..." screen.
  */
 export function ProtectedLayout() {
-  const { user, loading } = useAuth();
+  const { isReady, user } = useAppReady();
+  const { isSigningOut } = useAuth();
   const navigate = useNavigate();
+  const loaderRemovedRef = useRef(false);
 
+  // Remove the HTML initial-loader once we're ready and rendering
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
+    if (isReady && !loaderRemovedRef.current) {
+      loaderRemovedRef.current = true;
+      requestAnimationFrame(() => {
+        const loader = document.getElementById('initial-loader');
+        if (loader) {
+          loader.classList.add('fade-out');
+          setTimeout(() => loader.remove(), 220);
+        }
+      });
     }
-  }, [user, loading, navigate]);
+  }, [isReady]);
 
-  // Block: show only the dark spinner, NO sidebar, NO skeleton
-  if (loading || !user) {
-    return <LoadingSpinner message="Betöltés..." />;
+  // Redirect to /auth if not logged in — use replace to clear history
+  useEffect(() => {
+    if (isReady && !user && !isSigningOut) {
+      const loader = document.getElementById('initial-loader');
+      if (loader) loader.remove();
+      navigate('/auth', { replace: true });
+    }
+  }, [isReady, user, isSigningOut, navigate]);
+
+  // Full-Stop: render NOTHING until ready
+  if (!isReady) {
+    return null;
+  }
+
+  // Not logged in — redirect is happening
+  if (!user && !isSigningOut) {
+    return null;
   }
 
   return (
-    <AppLayout>
-      <Outlet />
-    </AppLayout>
+    <>
+      <AppLayout>
+        <Outlet />
+      </AppLayout>
+
+      {/* Sign-Out Overlay */}
+      {isSigningOut && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/95 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-10 w-10 rounded-full border-4 border-primary border-r-transparent animate-spin" />
+            <p className="text-sm font-medium text-muted-foreground animate-pulse">
+              Kijelentkezés...
+            </p>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

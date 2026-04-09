@@ -12,6 +12,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isSigningOut: boolean;
   isPasswordRecovery: boolean;
   clearPasswordRecovery: () => void;
   sessionGuard: SessionGuardState;
@@ -47,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -189,6 +191,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async (options?: { silent?: boolean }) => {
+    // Show the signing-out overlay immediately
+    setIsSigningOut(true);
+
+    // Small delay so the overlay paints before we start clearing
+    await new Promise((r) => setTimeout(r, 100));
+
     try {
       const { error } = await supabase.auth.signOut();
       if (error && !`${error.message}`.toLowerCase().includes('session')) {
@@ -197,17 +205,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: any) {
       console.warn('signOut fallback (forced):', err?.message || err);
     } finally {
+      // ── Atomic Cleanup ──
+
+      // 1. Remove all security-sensitive keys
       try {
         SIGNOUT_DELETE_KEYS.forEach(key => localStorage.removeItem(key));
       } catch {}
-      // Clear ALL cached data to prevent stale data flash on next login
+
+      // 2. Remove LAST_ACTIVE
+      try {
+        localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVE);
+      } catch {}
+
+      // 3. Remove all visibill_ prefixed keys EXCEPT theme (UX preference)
+      try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('visibill_') && key !== STORAGE_KEYS.THEME) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((key) => localStorage.removeItem(key));
+      } catch {}
+
+      // 4. Clear ALL TanStack Query cached data
       queryClient.clear();
+
+      // 5. Clear React state
       setUser(null);
       setSession(null);
-      // Only show toast for explicit user-initiated sign-outs, not gate/timeout
+
+      // Only show toast for explicit user-initiated sign-outs
       if (!options?.silent) {
         toast({ title: 'Kijelentkezve', description: 'Sikeresen kijelentkeztél.' });
       }
+
+      // Brief delay so the overlay stays visible during transition
+      await new Promise((r) => setTimeout(r, 300));
+      setIsSigningOut(false);
     }
   };
 
@@ -259,6 +295,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     session,
     loading,
+    isSigningOut,
     isPasswordRecovery,
     clearPasswordRecovery,
     sessionGuard,

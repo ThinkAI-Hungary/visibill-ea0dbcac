@@ -122,4 +122,16 @@ export const queryKeys = {
   // ── Integrations ──
   syncLogs: (companyId: string) =>
     ['syncLogs', companyId] as const,
+
+  // ── Working Time ──
+  timeEntries: (companyId: string, date?: string) =>
+    ['timeEntries', companyId, date] as const,
+  employeeRates: (companyId: string) =>
+    ['employeeRates', companyId] as const,
+  companySettings: (companyId: string) =>
+    ['companySettings', companyId] as const,
+  projectLaborCosts: (companyId: string) =>
+    ['projectLaborCosts', companyId] as const,
+  projectList: (companyId: string) =>
+    ['projectList', companyId] as const,
 };

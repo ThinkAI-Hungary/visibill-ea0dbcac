@@ -1,20 +1,495 @@
-import { Card } from "@/components/ui/card";
-import { Clock } from "lucide-react";
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Clock,
+  Users,
+  DollarSign,
+  Calculator,
+  Settings2,
+  UserPlus,
+  Wallet,
+  CalendarPlus,
+  ClipboardCheck,
+  ClipboardList,
+} from 'lucide-react';
+import { startOfMonth, endOfMonth, format } from 'date-fns';
+import { useSalaryData } from '@/hooks/useSalaryData';
+import { useEmployeeRates } from '@/hooks/useEmployeeRates';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { useTimeEntries } from '@/hooks/useTimeEntries';
+import { useProjectList } from '@/hooks/useProjectList';
+import { useUserRole } from '@/hooks/useUserRole';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
+import { WorkingTimePageSkeleton } from '@/components/working-time/WorkingTimePageSkeleton';
+import { EmployeeRatesPanel } from '@/components/working-time/EmployeeRatesPanel';
+import { EmployeeListPanel } from '@/components/working-time/EmployeeListPanel';
+import { WorkSettingsDialog } from '@/components/working-time/WorkSettingsDialog';
+import { AddEmployeeDialog } from '@/components/working-time/AddEmployeeDialog';
+import { TimeEntryForm } from '@/components/working-time/TimeEntryForm';
+import { MonthlyTimesheetView } from '@/components/working-time/WeeklyTimesheetView';
+import { SubmittedEntriesPanel } from '@/components/working-time/SubmittedEntriesPanel';
+import { TimesheetTable } from '@/components/working-time/TimesheetTable';
+import { MonthlyBalanceCard } from '@/components/working-time/MonthlyBalanceCard';
+import {
+  formatHourlyRate,
+} from '@/lib/payrollUtils';
+import type { SalaryCostItem } from '@/lib/payrollUtils';
+import { formatCurrency } from '@/lib/utils';
 
 export default function WorkingTimePage() {
+  const { user } = useAuth();
+  const { selectedCompany } = useCompany();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
+
+  // Month navigation
+  const [monthDate, setMonthDate] = useState(new Date());
+  const monthStart = startOfMonth(monthDate);
+  const monthEnd = endOfMonth(monthDate);
+  const monthStartStr = format(monthStart, 'yyyy-MM-dd');
+  const monthEndStr = format(monthEnd, 'yyyy-MM-dd');
+
+  // Selected day for time entry form
+  const [selectedDate, setSelectedDate] = useState(
+    format(new Date(), 'yyyy-MM-dd')
+  );
+
+  const {
+    salaryItems,
+    loading: salaryLoading,
+    employeeGroups: rawEmployeeGroups,
+  } = useSalaryData();
+
+  const {
+    employeeRates,
+    isLoading: ratesLoading,
+    upsertMutation,
+    deleteMutation: deleteRateMutation,
+  } = useEmployeeRates();
+
+  const {
+    effectiveSettings,
+    saveMutation: settingsSaveMutation,
+  } = useCompanySettings();
+
+  // Time entries for the selected week
+  const {
+    timeEntries,
+    isLoading: entriesLoading,
+    addMutation,
+    deleteMutation: deleteEntryMutation,
+    submitWeekMutation,
+  } = useTimeEntries({ dateFrom: monthStartStr, dateTo: monthEndStr });
+
+  // Projects for dropdown and name lookup
+  const { projects } = useProjectList();
+  const { isEmployee, isAdmin } = useUserRole();
+
+  // Count submitted entries for admin badge
+  const { data: submittedCount = 0 } = useQuery({
+    queryKey: ['submitted-count', selectedCompany?.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('time_entries')
+        .select('id', { count: 'exact', head: true })
+        .eq('company_id', selectedCompany!.id)
+        .eq('status', 'submitted');
+
+      if (error) return 0;
+      return count || 0;
+    },
+    enabled: !!user && !!selectedCompany?.id && isAdmin,
+    refetchInterval: 30_000,
+  });
+  const projectNames = useMemo(() => {
+    const map: Record<string, string> = {};
+    projects.forEach((p) => {
+      map[p.id] = p.name;
+    });
+    return map;
+  }, [projects]);
+
+  // Transform salary employee groups for EmployeeRatesPanel
+  const employeeGroupsForPanel = useMemo(() => {
+    return rawEmployeeGroups.map(([name, items]) => ({
+      employeeName: name,
+      salaryItems: items.map(
+        (item) =>
+          ({
+            tipus: item.tipus,
+            összeg: item.összeg,
+          }) as SalaryCostItem
+      ),
+    }));
+  }, [rawEmployeeGroups]);
+
+  // KPI metrics
+  const kpiMetrics = useMemo(() => {
+    const uniqueEmployees = new Set([
+      ...rawEmployeeGroups.map(([name]) => name),
+      ...employeeRates.map((r) => r.employee_name),
+    ]);
+
+    const totalMonthlyCost = employeeRates.reduce(
+      (sum, r) => sum + Number(r.base_salary_cost || 0),
+      0
+    );
+
+    const ratesWithValue = employeeRates.filter(
+      (r) => r.hourly_rate && r.hourly_rate > 0
+    );
+    const avgHourlyRate =
+      ratesWithValue.length > 0
+        ? ratesWithValue.reduce(
+            (sum, r) => sum + Number(r.hourly_rate || 0),
+            0
+          ) / ratesWithValue.length
+        : 0;
+
+    const employeeCount = employeeRates.filter(
+      (r) => r.employee_type === 'employee'
+    ).length;
+    const contractorCount = employeeRates.filter(
+      (r) => r.employee_type === 'contractor'
+    ).length;
+
+    // Weekly hours from time entries
+    const weeklyHours = timeEntries.reduce(
+      (sum, e) => sum + Number(e.hours),
+      0
+    );
+
+    return {
+      totalEmployees: uniqueEmployees.size,
+      employeeCount,
+      contractorCount,
+      totalMonthlyCost,
+      avgHourlyRate,
+      weeklyHours,
+    };
+  }, [rawEmployeeGroups, employeeRates, timeEntries]);
+
+  const handleSaveRate = (data: {
+    employee_name: string;
+    base_salary_cost: number;
+    hourly_rate: number;
+  }) => {
+    upsertMutation.mutate({
+      employee_name: data.employee_name,
+      base_salary_cost: data.base_salary_cost,
+      hourly_rate: data.hourly_rate,
+    });
+  };
+
+  const handleAddEmployee = (data: {
+    employee_name: string;
+    employee_type: 'employee' | 'contractor';
+    email: string | null;
+    phone: string | null;
+    hourly_rate: number | null;
+  }) => {
+    upsertMutation.mutate(data, {
+      onSuccess: () => setAddEmployeeOpen(false),
+    });
+  };
+
+  const handleSaveSettings = (settings: {
+    work_start_time: string;
+    work_end_time: string;
+    admin_deadline: string;
+    monthly_working_hours: number;
+  }) => {
+    settingsSaveMutation.mutate(settings, {
+      onSuccess: () => setSettingsOpen(false),
+    });
+  };
+
+  const handleAddTimeEntry = (entry: {
+    project_id: string | null;
+    date: string;
+    hours: number;
+    description: string;
+    absence_type?: string | null;
+  }) => {
+    addMutation.mutate(entry);
+  };
+
+  const handleSaveAndSubmit = (entry: {
+    project_id: string | null;
+    date: string;
+    hours: number;
+    description: string;
+    absence_type?: string | null;
+  }) => {
+    // First save as draft, then submit all drafts
+    addMutation.mutate(entry, {
+      onSuccess: () => {
+        submitWeekMutation.mutate({
+          dateFrom: monthStartStr,
+          dateTo: monthEndStr,
+        });
+      },
+    });
+  };
+
+  const handleSubmitMonth = () => {
+    submitWeekMutation.mutate({
+      dateFrom: monthStartStr,
+      dateTo: monthEndStr,
+    });
+  };
+
+  if (salaryLoading && salaryItems.length === 0 && ratesLoading) {
+    return <WorkingTimePageSkeleton />;
+  }
+
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Munkaidő</h2>
+    <div className="h-full space-y-4 px-2 py-2">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Clock className="h-7 w-7 text-primary" />
+            Munkaidő
+          </h1>
+          <p className="text-muted-foreground">
+            {isEmployee
+              ? 'Saját munkaidő rögzítése'
+              : 'Munkaidő rögzítés, dolgozók kezelése és rezsióradíjak'}
+          </p>
+        </div>
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSettingsOpen(true)}
+            >
+              <Settings2 className="h-4 w-4 mr-2" />
+              Beállítások
+            </Button>
+            <Button size="sm" onClick={() => setAddEmployeeOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Dolgozó hozzáadása
+            </Button>
+          </div>
+        )}
       </div>
-      
-      <Card className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center bg-card/50 backdrop-blur-sm border-primary/20">
-        <Clock className="w-16 h-16 text-primary mb-4 opacity-50" />
-        <h3 className="text-2xl font-semibold text-foreground/80">Fejlesztés alatt!</h3>
-        <p className="text-muted-foreground mt-2">
-          Ez a funkció hamarosan elérhető lesz.
-        </p>
-      </Card>
+
+      {/* KPI Cards — admin only */}
+      {isAdmin && (
+        <div className="grid gap-4 md:grid-cols-4">
+        <Card className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm hover:border-primary/30 transition-colors">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Users className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-sm text-muted-foreground">
+                Bejelentett
+              </span>
+            </div>
+            <span className="text-2xl font-bold tabular-nums">
+              {kpiMetrics.employeeCount}
+            </span>
+            <span className="text-sm text-muted-foreground ml-1">fő</span>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm hover:border-orange-500/30 transition-colors">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-orange-500/10">
+                <Wallet className="h-4 w-4 text-orange-500" />
+              </div>
+              <span className="text-sm text-muted-foreground">
+                Alvállalkozók
+              </span>
+            </div>
+            <span className="text-2xl font-bold tabular-nums">
+              {kpiMetrics.contractorCount}
+            </span>
+            <span className="text-sm text-muted-foreground ml-1">fő</span>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm hover:border-emerald-500/30 transition-colors">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-emerald-500/10">
+                <DollarSign className="h-4 w-4 text-emerald-500" />
+              </div>
+              <span className="text-sm text-muted-foreground">
+                Havi bérköltség
+              </span>
+            </div>
+            <span className="text-2xl font-bold tabular-nums">
+              {formatCurrency(kpiMetrics.totalMonthlyCost)}
+            </span>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm hover:border-blue-500/30 transition-colors">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-blue-500/10">
+                <Calculator className="h-4 w-4 text-blue-500" />
+              </div>
+              <span className="text-sm text-muted-foreground">
+                Átlag óradíj
+              </span>
+            </div>
+            <span className="text-2xl font-bold tabular-nums text-primary">
+              {formatHourlyRate(Math.round(kpiMetrics.avgHourlyRate))}
+            </span>
+            <span className="text-sm text-muted-foreground ml-1">/óra</span>
+          </CardContent>
+        </Card>
+        </div>
+      )}
+
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="timesheet" className="w-full">
+        <TabsList>
+          <TabsTrigger value="timesheet" className="gap-2">
+            <CalendarPlus className="h-4 w-4" />
+            Időrögzítés
+          </TabsTrigger>
+          <TabsTrigger value="attendance" className="gap-2">
+            <ClipboardList className="h-4 w-4" />
+            Jelenléti ív
+          </TabsTrigger>
+          {isAdmin && (
+            <>
+              <TabsTrigger value="employees" className="gap-2">
+                <Users className="h-4 w-4" />
+                Dolgozók
+              </TabsTrigger>
+              <TabsTrigger value="submitted" className="gap-2 relative">
+                <ClipboardCheck className="h-4 w-4" />
+                Leadott
+                {submittedCount > 0 && (
+                  <span className="ml-1 inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-primary text-primary-foreground text-xs font-bold px-1.5">
+                    {submittedCount}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="rates" className="gap-2">
+                <Calculator className="h-4 w-4" />
+                Óradíjak
+              </TabsTrigger>
+            </>
+          )}
+        </TabsList>
+
+        <TabsContent value="timesheet" className="mt-4 space-y-4">
+          {/* Monthly timesheet */}
+          <MonthlyTimesheetView
+            timeEntries={timeEntries}
+            projectNames={projectNames}
+            monthDate={monthDate}
+            onMonthChange={setMonthDate}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            onDelete={(id) => deleteEntryMutation.mutate(id)}
+            isDeleting={deleteEntryMutation.isPending}
+            onSubmitMonth={handleSubmitMonth}
+            isSubmitting={submitWeekMutation.isPending}
+          />
+
+          {/* Color legend */}
+          <div className="flex items-center gap-4 text-[11px] text-muted-foreground px-1">
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded border-2 border-gray-400 bg-gray-200 dark:border-gray-500 dark:bg-gray-600" />
+              Piszkozat
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded border-2 border-blue-500 bg-blue-200 dark:border-blue-400 dark:bg-blue-500/40" />
+              Leadva (jóváhagyásra vár)
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded border-2 border-emerald-500 bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-500/40" />
+              Jóváhagyva
+            </span>
+          </div>
+
+          {/* Form + Balance side by side */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2">
+              {/* Time entry form */}
+              <TimeEntryForm
+                selectedDate={selectedDate}
+                onSubmit={handleAddTimeEntry}
+                onSubmitDrafts={handleSubmitMonth}
+                isSubmitting={addMutation.isPending}
+                isSaving={submitWeekMutation.isPending}
+                hasDraftEntries={timeEntries.some(e => e.status === 'draft')}
+              />
+            </div>
+            <div>
+              <MonthlyBalanceCard
+                monthDate={monthDate}
+                timeEntries={timeEntries}
+              />
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="attendance" className="mt-4">
+          <TimesheetTable
+            timeEntries={timeEntries}
+            monthDate={monthDate}
+            workStartTime={effectiveSettings.work_start_time}
+            workEndTime={effectiveSettings.work_end_time}
+            projectNames={projectNames}
+          />
+        </TabsContent>
+
+        <TabsContent value="employees" className="mt-4">
+          <EmployeeListPanel
+            employeeRates={employeeRates}
+            onDelete={(id) => deleteRateMutation.mutate(id)}
+            isDeleting={deleteRateMutation.isPending}
+            onEdit={(data) => upsertMutation.mutate(data)}
+            isEditing={upsertMutation.isPending}
+          />
+        </TabsContent>
+
+        <TabsContent value="submitted" className="mt-4">
+          <SubmittedEntriesPanel />
+        </TabsContent>
+
+        <TabsContent value="rates" className="mt-4">
+          <EmployeeRatesPanel
+            employeeGroups={employeeGroupsForPanel}
+            employeeRates={employeeRates}
+            monthlyWorkingHours={effectiveSettings.monthly_working_hours}
+            onSave={handleSaveRate}
+            isSaving={upsertMutation.isPending}
+          />
+        </TabsContent>
+      </Tabs>
+
+      {/* Dialogs */}
+      <WorkSettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        currentSettings={effectiveSettings}
+        onSave={handleSaveSettings}
+        isSaving={settingsSaveMutation.isPending}
+      />
+
+      <AddEmployeeDialog
+        open={addEmployeeOpen}
+        onOpenChange={setAddEmployeeOpen}
+        onSubmit={handleAddEmployee}
+        isSaving={upsertMutation.isPending}
+      />
     </div>
   );
 }
