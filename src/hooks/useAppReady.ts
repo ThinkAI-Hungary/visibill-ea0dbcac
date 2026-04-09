@@ -20,7 +20,7 @@ import { useUserRole } from '@/hooks/useUserRole';
  */
 export function useAppReady() {
   const { user, loading: authLoading } = useAuth();
-  const { loading: companyLoading, selectedCompany } = useCompany();
+  const { isInitialLoading: companyLoading } = useCompany();
   const { isLoading: roleLoading } = useUserRole();
 
   // Auth is still loading → not ready
@@ -33,11 +33,11 @@ export function useAppReady() {
     return { isReady: true, user: null, selectedCompany: null };
   }
 
-  // User exists but company or role still loading → not ready
+  // User exists but company initial load or role still loading → not ready
   if (companyLoading || roleLoading) {
-    return { isReady: false, user, selectedCompany };
+    return { isReady: false, user, selectedCompany: null };
   }
 
   // Everything resolved
-  return { isReady: true, user, selectedCompany };
+  return { isReady: true, user, selectedCompany: null };
 }
