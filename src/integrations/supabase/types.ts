@@ -297,6 +297,36 @@ export type Database = {
           },
         ]
       }
+      chart_of_accounts_presets: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           address: string | null
@@ -338,18 +368,21 @@ export type Database = {
           company_id: string
           created_at: string
           id: string
+          role: string
           user_id: string
         }
         Insert: {
           company_id: string
           created_at?: string
           id?: string
+          role?: string
           user_id: string
         }
         Update: {
           company_id?: string
           created_at?: string
           id?: string
+          role?: string
           user_id?: string
         }
         Relationships: [
@@ -357,6 +390,47 @@ export type Database = {
             foreignKeyName: "company_members_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_settings: {
+        Row: {
+          admin_deadline: string
+          company_id: string
+          created_at: string
+          id: string
+          monthly_working_hours: number
+          updated_at: string
+          work_end_time: string
+          work_start_time: string
+        }
+        Insert: {
+          admin_deadline?: string
+          company_id: string
+          created_at?: string
+          id?: string
+          monthly_working_hours?: number
+          updated_at?: string
+          work_end_time?: string
+          work_start_time?: string
+        }
+        Update: {
+          admin_deadline?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          monthly_working_hours?: number
+          updated_at?: string
+          work_end_time?: string
+          work_start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
@@ -516,6 +590,152 @@ export type Database = {
           },
         ]
       }
+      employee_rates: {
+        Row: {
+          base_salary_cost: number | null
+          company_id: string
+          created_at: string
+          effective_date: string
+          email: string | null
+          employee_name: string
+          employee_type: string
+          hourly_rate: number | null
+          id: string
+          phone: string | null
+          registration_token: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          base_salary_cost?: number | null
+          company_id: string
+          created_at?: string
+          effective_date?: string
+          email?: string | null
+          employee_name: string
+          employee_type?: string
+          hourly_rate?: number | null
+          id?: string
+          phone?: string | null
+          registration_token?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          base_salary_cost?: number | null
+          company_id?: string
+          created_at?: string
+          effective_date?: string
+          email?: string | null
+          employee_name?: string
+          employee_type?: string
+          hourly_rate?: number | null
+          id?: string
+          phone?: string | null
+          registration_token?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_rates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gl_accounts: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          gl_number: string
+          id: string
+          parent_id: string | null
+          preset_id: string
+          short_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          gl_number: string
+          id?: string
+          parent_id?: string | null
+          preset_id: string
+          short_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          gl_number?: string
+          id?: string
+          parent_id?: string | null
+          preset_id?: string
+          short_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gl_accounts_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "gl_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gl_accounts_preset_id_fkey"
+            columns: ["preset_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts_presets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gl_overrides_log: {
+        Row: {
+          created_at: string | null
+          id: string
+          new_gl_account_id: string
+          original_gl_account_id: string | null
+          transaction_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          new_gl_account_id: string
+          original_gl_account_id?: string | null
+          transaction_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          new_gl_account_id?: string
+          original_gl_account_id?: string | null
+          transaction_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gl_overrides_log_new_gl_account_id_fkey"
+            columns: ["new_gl_account_id"]
+            isOneToOne: false
+            referencedRelation: "gl_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gl_overrides_log_original_gl_account_id_fkey"
+            columns: ["original_gl_account_id"]
+            isOneToOne: false
+            referencedRelation: "gl_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hp_settings: {
         Row: {
           company_id: string
@@ -636,6 +856,9 @@ export type Database = {
           fizetve: boolean | null
           forditott_adozas: boolean | null
           frissitve: string
+          gl_account_id: string | null
+          gl_ai_confidence_score: number | null
+          gl_is_manually_overridden: boolean | null
           id: string
           image_url: string | null
           invoice_direction: string | null
@@ -683,6 +906,9 @@ export type Database = {
           fizetve?: boolean | null
           forditott_adozas?: boolean | null
           frissitve?: string
+          gl_account_id?: string | null
+          gl_ai_confidence_score?: number | null
+          gl_is_manually_overridden?: boolean | null
           id?: string
           image_url?: string | null
           invoice_direction?: string | null
@@ -730,6 +956,9 @@ export type Database = {
           fizetve?: boolean | null
           forditott_adozas?: boolean | null
           frissitve?: string
+          gl_account_id?: string | null
+          gl_ai_confidence_score?: number | null
+          gl_is_manually_overridden?: boolean | null
           id?: string
           image_url?: string | null
           invoice_direction?: string | null
@@ -768,6 +997,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "invoices_gl_account_id_fkey"
+            columns: ["gl_account_id"]
+            isOneToOne: false
+            referencedRelation: "gl_accounts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "invoices_invoice_uploads_id_fkey"
             columns: ["invoice_uploads_id"]
             isOneToOne: false
@@ -786,6 +1022,62 @@ export type Database = {
             columns: ["transaction_id"]
             isOneToOne: false
             referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_requests: {
+        Row: {
+          admin_note: string | null
+          company_id: string
+          created_at: string
+          end_date: string
+          id: string
+          leave_type: string
+          note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          start_date: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          company_id: string
+          created_at?: string
+          end_date: string
+          id?: string
+          leave_type?: string
+          note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          company_id?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          leave_type?: string
+          note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -858,6 +1150,9 @@ export type Database = {
           customer_tax_number: string | null
           details_fetched: boolean | null
           fetched_at: string | null
+          gl_account_id: string | null
+          gl_ai_confidence_score: number | null
+          gl_is_manually_overridden: boolean | null
           id: string
           invoice_delivery_date: string | null
           invoice_direction: string | null
@@ -890,6 +1185,9 @@ export type Database = {
           customer_tax_number?: string | null
           details_fetched?: boolean | null
           fetched_at?: string | null
+          gl_account_id?: string | null
+          gl_ai_confidence_score?: number | null
+          gl_is_manually_overridden?: boolean | null
           id?: string
           invoice_delivery_date?: string | null
           invoice_direction?: string | null
@@ -922,6 +1220,9 @@ export type Database = {
           customer_tax_number?: string | null
           details_fetched?: boolean | null
           fetched_at?: string | null
+          gl_account_id?: string | null
+          gl_ai_confidence_score?: number | null
+          gl_is_manually_overridden?: boolean | null
           id?: string
           invoice_delivery_date?: string | null
           invoice_direction?: string | null
@@ -956,6 +1257,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nav_invoices_gl_account_id_fkey"
+            columns: ["gl_account_id"]
+            isOneToOne: false
+            referencedRelation: "gl_accounts"
             referencedColumns: ["id"]
           },
           {
@@ -1605,6 +1913,63 @@ export type Database = {
           },
         ]
       }
+      time_entries: {
+        Row: {
+          absence_type: string | null
+          company_id: string
+          created_at: string
+          date: string
+          description: string | null
+          hours: number
+          id: string
+          project_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          absence_type?: string | null
+          company_id: string
+          created_at?: string
+          date?: string
+          description?: string | null
+          hours: number
+          id?: string
+          project_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          absence_type?: string | null
+          company_id?: string
+          created_at?: string
+          date?: string
+          description?: string | null
+          hours?: number
+          id?: string
+          project_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transaction_uploads: {
         Row: {
           company_id: string
@@ -1661,6 +2026,9 @@ export type Database = {
           created_at: string | null
           currency: string | null
           description: string | null
+          gl_account_id: string | null
+          gl_ai_confidence_score: number | null
+          gl_is_manually_overridden: boolean | null
           id: string
           is_verified: boolean | null
           match_type: string | null
@@ -1677,6 +2045,9 @@ export type Database = {
           created_at?: string | null
           currency?: string | null
           description?: string | null
+          gl_account_id?: string | null
+          gl_ai_confidence_score?: number | null
+          gl_is_manually_overridden?: boolean | null
           id?: string
           is_verified?: boolean | null
           match_type?: string | null
@@ -1693,6 +2064,9 @@ export type Database = {
           created_at?: string | null
           currency?: string | null
           description?: string | null
+          gl_account_id?: string | null
+          gl_ai_confidence_score?: number | null
+          gl_is_manually_overridden?: boolean | null
           id?: string
           is_verified?: boolean | null
           match_type?: string | null
@@ -1708,6 +2082,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_gl_account_id_fkey"
+            columns: ["gl_account_id"]
+            isOneToOne: false
+            referencedRelation: "gl_accounts"
             referencedColumns: ["id"]
           },
           {
@@ -1963,11 +2344,39 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      project_labor_costs: {
+        Row: {
+          company_id: string | null
+          project_id: string | null
+          project_name: string | null
+          total_hours: number | null
+          total_labor_cost: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       assign_supplier_default_projects: {
         Args: { p_company_id: string }
+        Returns: number
+      }
+      calculate_hourly_cost: {
+        Args: { p_base_salary: number; p_monthly_hours?: number }
         Returns: number
       }
       get_filtered_nav_invoices: {
@@ -2121,7 +2530,20 @@ export type Database = {
           has_settings: boolean
         }[]
       }
+      get_transaction_filter_options: {
+        Args: { p_company_id: string }
+        Returns: {
+          currencies: string[]
+          types: string[]
+        }[]
+      }
+      get_user_role: { Args: { p_company_id: string }; Returns: string }
       increment_invoice_usage: { Args: { user_uuid: string }; Returns: boolean }
+      is_company_admin: { Args: { p_company_id: string }; Returns: boolean }
+      is_company_member_or_above: {
+        Args: { p_company_id: string }
+        Returns: boolean
+      }
       reset_monthly_usage: { Args: never; Returns: number }
       save_nav_credentials: {
         Args: {
@@ -2137,6 +2559,7 @@ export type Database = {
         }
         Returns: Json
       }
+      sync_sandbox_from_taxology: { Args: never; Returns: undefined }
       user_has_company_access: {
         Args: { p_company_id: string }
         Returns: boolean
