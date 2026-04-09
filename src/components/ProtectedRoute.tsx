@@ -5,9 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
+<<<<<<< ours
 
 /** Routes that employee-role users are allowed to visit */
 const EMPLOYEE_ALLOWED_ROUTES = ['/working-time'];
+=======
+>>>>>>> theirs
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
