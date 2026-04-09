@@ -25,7 +25,7 @@ export function useUserRole(): {
 
   const companyId = selectedCompany?.id;
 
-  const { data: role = null, isLoading } = useQuery({
+  const { data: role = null, isPending } = useQuery({
     queryKey: ['user-role', user?.id, companyId],
     queryFn: async (): Promise<UserRole> => {
       const { data, error } = await supabase
@@ -49,7 +49,7 @@ export function useUserRole(): {
 
   return {
     role: resolvedRole,
-    isLoading: isLoading && !!companyId,
+    isLoading: isPending && !!companyId,
     isAdmin: resolvedRole === 'owner' || resolvedRole === 'admin' || !companyId,
     isEmployee: !!companyId && resolvedRole === 'employee',
   };
