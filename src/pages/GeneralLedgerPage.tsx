@@ -1,19 +1,100 @@
 import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useCompany } from '@/contexts/CompanyContext';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, UploadCloud, Database } from 'lucide-react';
 import GeneralLedgerTable from '@/components/general-ledger/GeneralLedgerTable';
+import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
+import { ManagePresetsModal } from '@/components/general-ledger/ManagePresetsModal';
+import { Settings2 } from 'lucide-react';
 
 export default function GeneralLedgerPage() {
+  const { selectedCompany } = useCompany();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const currentYear = new Date().getFullYear().toString();
   const [taxYear, setTaxYear] = useState(currentYear);
   const [dateFrom, setDateFrom] = useState(`${currentYear}-01-01`);
   const [dateTo, setDateTo] = useState(`${currentYear}-12-31`);
   const [partnerBreakdown, setPartnerBreakdown] = useState(false);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [manageModalOpen, setManageModalOpen] = useState(false);
+  const [activePresetId, setActivePresetId] = useState<string>('generic');
+
+  // Fetch configured presets for the company
+  const { data: presets } = useQuery({
+    queryKey: ['coaPresets', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      const { data, error } = await supabase
+        .from('chart_of_accounts_presets')
+        .select('*')
+        .or(`company_id.eq.${selectedCompany.id},type.eq.generic`);
+      
+      if (error) {
+        toast({ title: 'Hiba a betöltéskor', description: error.message, variant: 'destructive' });
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!selectedCompany?.id
+  });
+
+  // Calculate the currently active preset (prefer company specific active, fallback to generic)
+  React.useEffect(() => {
+    if (presets && presets.length > 0) {
+      const activeCustom = presets.find(p => p.company_id === selectedCompany?.id && p.is_active);
+      if (activeCustom) {
+        setActivePresetId(activeCustom.id);
+      } else {
+        const generic = presets.find(p => p.type === 'generic');
+        if (generic) setActivePresetId(generic.id);
+      }
+    }
+  }, [presets, selectedCompany]);
+
+  const toggleActivePresetMutation = useMutation({
+    mutationFn: async (presetId: string) => {
+      if (!selectedCompany?.id) throw new Error("Cég nincs kiválasztva.");
+      
+      const isGeneric = presets?.find(p => p.id === presetId)?.type === 'generic';
+      
+      // Deactivate all custom presets for this company
+      await supabase
+        .from('chart_of_accounts_presets')
+        .update({ is_active: false })
+        .eq('company_id', selectedCompany.id)
+        .eq('type', 'custom');
+
+      if (!isGeneric) {
+        // Activate the selected custom one
+        const { error } = await supabase
+          .from('chart_of_accounts_presets')
+          .update({ is_active: true })
+          .eq('id', presetId);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['coaPresets'] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Hiba", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleSelectPreset = (val: string) => {
+    setActivePresetId(val);
+    toggleActivePresetMutation.mutate(val);
+  };
 
   const handlePrint = () => {
     window.print();
@@ -37,58 +118,96 @@ export default function GeneralLedgerPage() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground/90">Főkönyv</h1>
           <p className="text-sm text-muted-foreground mt-1">Hierarchikus főkönyvi kivonat és kategóriák</p>
         </div>
-        
-        <div className="flex items-center gap-3 bg-card p-3 rounded-xl border border-border shadow-sm">
-          <div className="flex items-center gap-4">
+
+        <div className="flex flex-col gap-3">
+          {/* Preset Selector & Action */}
+          <div className="flex items-center justify-end gap-3 bg-card p-3 rounded-xl border border-border shadow-sm">
             <div className="flex items-center gap-2">
-              <Label htmlFor="tax-year" className="whitespace-nowrap font-medium text-xs text-muted-foreground">Adóév</Label>
-              <Select value={taxYear} onValueChange={setTaxYear}>
-                <SelectTrigger id="tax-year" className="w-[100px] h-9 text-sm relative">
-                  <SelectValue placeholder="Év" />
+              <Database className="w-4 h-4 text-primary" />
+              <Label className="whitespace-nowrap font-medium text-xs">Aktív Számlatükör:</Label>
+              <Select value={activePresetId} onValueChange={handleSelectPreset} disabled={toggleActivePresetMutation.isPending}>
+                <SelectTrigger className="w-[200px] h-9 text-sm">
+                  <SelectValue placeholder="Sablon kiválasztása" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from({ length: 10 }, (_, i) => {
-                    const year = (parseInt(currentYear) - 5 + i).toString();
-                    return <SelectItem key={year} value={year}>{year}</SelectItem>;
-                  })}
+                  {presets?.map(preset => (
+                    <SelectItem key={preset.id} value={preset.id}>
+                      {preset.name} {preset.type === 'generic' ? '(Beépített)' : ''}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="date-from" className="whitespace-nowrap font-medium text-xs text-muted-foreground">Dátumtól</Label>
-              <Input 
-                id="date-from" 
-                type="date" 
-                value={dateFrom} 
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="h-9 text-sm"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="date-to" className="whitespace-nowrap font-medium text-xs text-muted-foreground">Dátumig</Label>
-              <Input 
-                id="date-to" 
-                type="date" 
-                value={dateTo} 
-                onChange={(e) => setDateTo(e.target.value)}
-                className="h-9 text-sm"
-              />
-            </div>
-            <div className="flex items-center gap-2 border-l pl-4 border-border/60">
-              <Checkbox 
-                id="partner-breakdown" 
-                checked={partnerBreakdown}
-                onCheckedChange={(checked) => setPartnerBreakdown(checked as boolean)}
-              />
-              <Label htmlFor="partner-breakdown" className="whitespace-nowrap font-medium text-xs cursor-pointer select-none">
-                Partner bontásban
-              </Label>
-            </div>
-            <div className="border-l pl-4 border-border/60">
-              <Button variant="outline" size="sm" className="h-9 gap-2" onClick={handlePrint}>
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">PDF Export</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-9 gap-2 text-muted-foreground font-medium"
+                onClick={() => setManageModalOpen(true)}
+              >
+                <Settings2 className="w-4 h-4" />
+                <span>Sablonok kezelése</span>
               </Button>
+            </div>
+            <div className="border-l pl-3 border-border/60">
+              <Button onClick={() => setUploadModalOpen(true)} size="sm" className="h-9 gap-2">
+                <UploadCloud className="w-4 h-4" />
+                <span>Új feltöltése</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="flex items-center gap-3 bg-card p-3 rounded-xl border border-border shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="tax-year" className="whitespace-nowrap font-medium text-xs text-muted-foreground">Adóév</Label>
+                <Select value={taxYear} onValueChange={setTaxYear}>
+                  <SelectTrigger id="tax-year" className="w-[100px] h-9 text-sm relative">
+                    <SelectValue placeholder="Év" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 10 }, (_, i) => {
+                      const year = (parseInt(currentYear) - 5 + i).toString();
+                      return <SelectItem key={year} value={year}>{year}</SelectItem>;
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="date-from" className="whitespace-nowrap font-medium text-xs text-muted-foreground">Dátumtól</Label>
+                <Input 
+                  id="date-from" 
+                  type="date" 
+                  value={dateFrom} 
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="date-to" className="whitespace-nowrap font-medium text-xs text-muted-foreground">Dátumig</Label>
+                <Input 
+                  id="date-to" 
+                  type="date" 
+                  value={dateTo} 
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div className="flex items-center gap-2 border-l pl-4 border-border/60">
+                <Checkbox 
+                  id="partner-breakdown" 
+                  checked={partnerBreakdown}
+                  onCheckedChange={(checked) => setPartnerBreakdown(checked as boolean)}
+                />
+                <Label htmlFor="partner-breakdown" className="whitespace-nowrap font-medium text-xs cursor-pointer select-none">
+                  Partner bontásban
+                </Label>
+              </div>
+              <div className="border-l pl-4 border-border/60">
+                <Button variant="outline" size="sm" className="h-9 gap-2" onClick={handlePrint}>
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">PDF Export</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -111,9 +230,25 @@ export default function GeneralLedgerPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <GeneralLedgerTable />
+          <GeneralLedgerTable presetId={activePresetId} />
         </CardContent>
       </Card>
+
+      <UploadChartOfAccountsModal 
+        open={uploadModalOpen} 
+        onOpenChange={setUploadModalOpen} 
+        onSuccess={(id) => {
+          queryClient.invalidateQueries({ queryKey: ['coaPresets'] });
+          setActivePresetId(id);
+        }}
+      />
+
+      <ManagePresetsModal
+        open={manageModalOpen}
+        onOpenChange={setManageModalOpen}
+        presets={presets || []}
+        companyId={selectedCompany?.id}
+      />
     </div>
   );
 }
