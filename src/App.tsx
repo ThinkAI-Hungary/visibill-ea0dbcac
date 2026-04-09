@@ -33,6 +33,7 @@ const PartnersPage = lazy(() => import("./pages/PartnersPage"));
 const TransactionsPage = lazy(() => import("./pages/TransactionsPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const KintlevoPage = lazy(() => import("./pages/KintlevoPage"));
+const EmployeeRegister = lazy(() => import("./pages/EmployeeRegister"));
 const PettyCashPage = lazy(() => import("./pages/PettyCashPage"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const GeneralLedgerPage = lazy(() => import("./pages/GeneralLedgerPage"));
@@ -67,6 +68,18 @@ function ProtectedPage({ children }: { children: React.ReactNode }) {
 
 function AuthGuardPage({ children }: { children: React.ReactNode }) {
   return <AuthGuard>{children}</AuthGuard>;
+}
+
+/** Removes the static HTML loader when a non-protected route mounts */
+function RemoveInitialLoader() {
+  useEffect(() => {
+    const loader = document.getElementById('initial-loader');
+    if (loader) {
+      loader.classList.add('fade-out');
+      setTimeout(() => loader.remove(), 220);
+    }
+  }, []);
+  return null;
 }
 
 function PasswordRecoveryRedirect() {
@@ -116,8 +129,9 @@ const App = () => (
                     <PasswordRecoveryRedirect />
                     <Routes>
                     {/* Auth routes – no sidebar, own Suspense for lazy chunks */}
-                    <Route path="/auth" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><Auth /></Suspense>} />
-                    <Route path="/reset-password" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ResetPassword /></Suspense>} />
+                    <Route path="/auth" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RemoveInitialLoader /><Auth /></Suspense>} />
+                    <Route path="/reset-password" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RemoveInitialLoader /><ResetPassword /></Suspense>} />
+                    <Route path="/register/:token" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RemoveInitialLoader /><EmployeeRegister /></Suspense>} />
 
                     {/* All protected routes with ProtectedLayout (sidebar is persistent).
                          AppLayout has its own <Suspense> around just the content area,

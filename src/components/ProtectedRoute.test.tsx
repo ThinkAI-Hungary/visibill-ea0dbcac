@@ -14,6 +14,12 @@ vi.mock("@/contexts/AuthContext", () => ({
   useAuth: vi.fn(),
 }));
 
+vi.mock("@/contexts/CompanyContext", () => ({
+  useCompany: vi.fn().mockReturnValue({
+    selectedCompany: { id: "company-123", name: "Test Co" },
+  }),
+}));
+
 vi.mock("@tanstack/react-query", () => ({
   useQuery: vi.fn().mockReturnValue({
     data: "complete",

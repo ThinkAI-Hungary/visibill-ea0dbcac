@@ -1,8 +1,9 @@
-import React, { useState } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import React from "react";
+import { useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import {
   Sidebar,
   SidebarContent,
@@ -20,7 +21,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { 
@@ -29,8 +29,6 @@ import {
   Upload, 
   Settings, 
   LogOut, 
-  User,
-  BarChart3,
   FolderKanban,
   Plug,
   CreditCard,
@@ -48,120 +46,63 @@ import {
 } from "lucide-react";
 import CompanySelector from "./CompanySelector";
 
-const navigationItems = [
-  {
-    title: "Irányítópult",
-    url: "/",
-    icon: LayoutDashboard,
-    tourId: "dashboard",
-  },
-  {
-    title: "Kategóriák",
-    url: "/onboarding",
-    icon: Tags,
-    tourId: "categories",
-  },
-  {
-    title: "Projektek",
-    url: "/projects",
-    icon: FolderKanban,
-    tourId: "projects",
-  },
-  {
-    title: "Partnertörzs",
-    url: "/partners",
-    icon: Users,
-    tourId: "partners",
-  },
-  {
-    title: "Számlák",
-    url: "/invoices", 
-    icon: FileText,
-    tourId: "invoices",
-  },
-  {
-    title: "Kintlévőség",
-    url: "/kintlevo",
-    icon: ReceiptText,
-    tourId: "kintlevo",
-  },
-  {
-    title: "Tranzakciók",
-    url: "/transactions",
-    icon: Landmark,
-    tourId: "transactions",
-  },
-  {
-    title: "Főkönyv",
-    url: "/general-ledger",
-    icon: BookOpen,
-    tourId: "general-ledger",
-  },
-  {
-    title: "Feltöltés",
-    url: "/upload",
-    icon: Upload,
-    tourId: "upload",
-  },
-  {
-    title: "Bérek/járulékok",
-    url: "/salaries",
-    icon: Wallet,
-    tourId: "salaries",
-  },
-  {
-    title: "Munkaidő",
-    url: "/working-time",
-    icon: Clock,
-    tourId: "working-time",
-  },
-  {
-    title: "Házipénztár",
-    url: "/petty-cash",
-    icon: Banknote,
-    tourId: "petty-cash",
-  },
-  {
-    title: "Integrációk",
-    url: "/integrations",
-    icon: Plug,
-    tourId: "integrations",
-  },
-  {
-    title: "Árfolyamok",
-    url: "/exchange-rates",
-    icon: TrendingUp,
-    tourId: "exchange-rates",
-  },
-  {
-    title: "Előfizetés",
-    url: "/pricing",
-    icon: CreditCard,
-    tourId: "subscription",
-  },
+interface NavItem {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tourId: string;
+  employeeVisible?: boolean;
+}
+
+const navigationItems: NavItem[] = [
+  { title: "Irányítópult", url: "/", icon: LayoutDashboard, tourId: "dashboard" },
+  { title: "Kategóriák", url: "/onboarding", icon: Tags, tourId: "categories" },
+  { title: "Projektek", url: "/projects", icon: FolderKanban, tourId: "projects" },
+  { title: "Partnertörzs", url: "/partners", icon: Users, tourId: "partners" },
+  { title: "Számlák", url: "/invoices", icon: FileText, tourId: "invoices" },
+  { title: "Kintlévőség", url: "/kintlevo", icon: ReceiptText, tourId: "kintlevo" },
+  { title: "Tranzakciók", url: "/transactions", icon: Landmark, tourId: "transactions" },
+  { title: "Főkönyv", url: "/general-ledger", icon: BookOpen, tourId: "general-ledger" },
+  { title: "Feltöltés", url: "/upload", icon: Upload, tourId: "upload" },
+  { title: "Bérek/járulékok", url: "/salaries", icon: Wallet, tourId: "salaries" },
+  { title: "Munkaidő", url: "/working-time", icon: Clock, tourId: "working-time", employeeVisible: true },
+  { title: "Házipénztár", url: "/petty-cash", icon: Banknote, tourId: "petty-cash" },
+  { title: "Integrációk", url: "/integrations", icon: Plug, tourId: "integrations" },
+  { title: "Árfolyamok", url: "/exchange-rates", icon: TrendingUp, tourId: "exchange-rates" },
+  { title: "Előfizetés", url: "/pricing", icon: CreditCard, tourId: "subscription" },
 ];
 
+/**
+ * AppSidebar — Static Shell.
+ *
+ * This component is ONLY rendered after useAppReady() returns true,
+ * meaning auth, company, and role are ALL resolved.
+ *
+ * No skeleton logic needed. No conditional rendering.
+ * The nav items are immediately correct on first render.
+ */
 export const AppSidebar = React.memo(function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
-  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { selectedCompany } = useCompany();
   const { theme, setTheme } = useTheme();
+  const { isEmployee } = useUserRole();
   const currentPath = location.pathname;
 
   const isCollapsed = state === "collapsed";
   const hasNoCompany = !selectedCompany;
   const isDark = theme === "dark";
 
-  const toggleTheme = () => {
-    setTheme(isDark ? "light" : "dark");
-  };
+  // Role is already resolved — direct filter, no loading state
+  const visibleNavItems = isEmployee
+    ? navigationItems.filter((item) => item.employeeVisible)
+    : navigationItems;
+
+  const toggleTheme = () => setTheme(isDark ? "light" : "dark");
 
   const isActive = (path: string) => {
-    if (path === "/") {
-      return currentPath === "/";
-    }
+    if (path === "/") return currentPath === "/";
     return currentPath.startsWith(path);
   };
 
@@ -169,7 +110,6 @@ export const AppSidebar = React.memo(function AppSidebar() {
     await signOut();
   };
 
-  // Get user initials for avatar
   const getUserInitials = () => {
     if (user?.user_metadata?.name) {
       return user.user_metadata.name
@@ -201,8 +141,8 @@ export const AppSidebar = React.memo(function AppSidebar() {
           )}
         </div>
 
-        {/* Company Selector */}
-        {!isCollapsed && (
+        {/* Company Selector — hidden for employees */}
+        {!isCollapsed && !isEmployee && (
           <div className="p-3 border-b border-primary/30" data-tour="company-selector">
             <CompanySelector />
           </div>
@@ -213,7 +153,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
           {!isCollapsed && <SidebarGroupLabel>Navigáció</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu className="select-none">
-              {navigationItems.map((item) => {
+              {visibleNavItems.map((item) => {
                 const isDisabled = hasNoCompany;
                 const active = isActive(item.url);
                 
@@ -251,17 +191,13 @@ export const AppSidebar = React.memo(function AppSidebar() {
               <div className="flex items-center gap-3">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user?.user_metadata?.avatar_url} />
-                  <AvatarFallback className="text-xs">
-                    {getUserInitials()}
-                  </AvatarFallback>
+                  <AvatarFallback className="text-xs">{getUserInitials()}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
                     {user?.user_metadata?.name || 'Felhasználó'}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {user?.email}
-                  </p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                 </div>
                 <Button
                   variant="ghost"
@@ -275,28 +211,22 @@ export const AppSidebar = React.memo(function AppSidebar() {
                   </div>
                 </Button>
               </div>
-              <div className="grid grid-cols-2 gap-2 w-full">
+              <div className={`grid ${isEmployee ? 'grid-cols-1' : 'grid-cols-2'} gap-2 w-full`}>
+                {!isEmployee && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" asChild className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
+                        <Link to="/settings">
+                          <Settings className="h-5 w-5" />
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Beállítások</TooltipContent>
+                  </Tooltip>
+                )}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      asChild
-                      className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30"
-                    >
-                      <Link to="/settings">
-                        <Settings className="h-5 w-5" />
-                      </Link>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Beállítások</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      onClick={handleSignOut}
-                      className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30"
-                    >
+                    <Button variant="outline" onClick={handleSignOut} className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
                       <LogOut className="h-5 w-5" />
                     </Button>
                   </TooltipTrigger>
@@ -308,18 +238,11 @@ export const AppSidebar = React.memo(function AppSidebar() {
             <div className="p-2 space-y-2 flex flex-col items-center">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={user?.user_metadata?.avatar_url} />
-                <AvatarFallback className="text-xs">
-                  {getUserInitials()}
-                </AvatarFallback>
+                <AvatarFallback className="text-xs">{getUserInitials()}</AvatarFallback>
               </Avatar>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={toggleTheme}
-                    className="w-8 h-8 hover:bg-primary/10 hover:text-primary"
-                  >
+                  <Button variant="ghost" size="icon" onClick={toggleTheme} className="w-8 h-8 hover:bg-primary/10 hover:text-primary">
                     <div className="relative h-4 w-4">
                       <Sun className={`h-4 w-4 absolute transition-all ${isDark ? 'animate-rotate-out' : 'animate-rotate-in'}`} />
                       <Moon className={`h-4 w-4 absolute transition-all ${isDark ? 'animate-rotate-in' : 'animate-rotate-out'}`} />
@@ -328,28 +251,21 @@ export const AppSidebar = React.memo(function AppSidebar() {
                 </TooltipTrigger>
                 <TooltipContent side="right">{isDark ? 'Világos mód' : 'Sötét mód'}</TooltipContent>
               </Tooltip>
+              {!isEmployee && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" asChild className="w-8 h-8 p-0 hover:bg-primary/10 hover:text-primary hover:border-primary/30">
+                      <Link to="/settings">
+                        <Settings className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Beállítások</TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    asChild
-                    className="w-8 h-8 p-0 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
-                  >
-                    <Link to="/settings">
-                      <Settings className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">Beállítások</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="icon"
-                    onClick={handleSignOut}
-                    className="w-8 h-8 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
-                  >
+                  <Button variant="outline" size="icon" onClick={handleSignOut} className="w-8 h-8 hover:bg-primary/10 hover:text-primary hover:border-primary/30">
                     <LogOut className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>

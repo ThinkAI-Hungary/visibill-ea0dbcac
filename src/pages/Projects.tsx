@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus, Hash } from 'lucide-react';
+import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus, Hash, Users } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -22,6 +22,7 @@ import { formatCurrency } from '@/lib/utils';
 import { PartnerCombobox } from '@/components/PartnerCombobox';
 import { SupplierInvoiceAssignment } from '@/components/SupplierInvoiceAssignment';
 import { CopyableCell } from '@/components/ui/copyable-cell';
+import { useProjectLaborCosts } from '@/hooks/useProjectLaborCosts';
 
 interface Project {
   id?: string;
@@ -119,6 +120,7 @@ const Projects = () => {
 
   const projects = queryData?.projects || [];
   const projectFinancials = queryData?.financials || [];
+  const { getLaborCost } = useProjectLaborCosts();
 
   const getProjectFinancials = (projectId: string): ProjectFinancials | undefined => {
     return projectFinancials.find(f => f.projectId === projectId);
@@ -569,6 +571,25 @@ const Projects = () => {
                           {formatCurrency(financials?.inboundTotal || 0, 'HUF')}
                         </span>
                       </div>
+                      {/* Labor Cost row */}
+                      {(() => {
+                        const labor = getLaborCost(project.id!);
+                        if (!labor || labor.total_labor_cost === 0) return null;
+                        return (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground flex items-center gap-1">
+                              <Users className="h-3 w-3 text-purple-500" />
+                              Bérköltség
+                            </span>
+                            <span className="font-medium text-purple-600">
+                              {formatCurrency(labor.total_labor_cost, 'HUF')}
+                              <span className="text-xs text-muted-foreground ml-1">
+                                ({labor.total_hours}h)
+                              </span>
+                            </span>
+                          </div>
+                        );
+                      })()}
                       <div className="border-t pt-2 flex items-center justify-between text-sm">
                         <span className="text-muted-foreground flex items-center gap-1">
                           {(financials?.profit || 0) > 0 ? (

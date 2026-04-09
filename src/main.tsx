@@ -4,11 +4,6 @@ import "./index.css";
 
 createRoot(document.getElementById("root")!).render(<App />);
 
-// Fallback: remove static loader if React renders a route that doesn't use LoadingSpinner
-requestAnimationFrame(() => {
-  const loader = document.getElementById("initial-loader");
-  if (loader) {
-    loader.classList.add("fade-out");
-    setTimeout(() => loader.remove(), 220);
-  }
-});
+// NOTE: The initial-loader is now removed by ProtectedLayout
+// after auth state is resolved, NOT here.
+// This prevents the flash between the HTML loader and React render.
