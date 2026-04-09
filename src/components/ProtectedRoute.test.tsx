@@ -83,6 +83,7 @@ describe("ProtectedRoute", () => {
       loading: false,
       session: {} as any,
       isPasswordRecovery: false,
+      isSigningOut: false,
       clearPasswordRecovery: vi.fn(),
       sessionGuard: {} as any,
       signUp: vi.fn(),

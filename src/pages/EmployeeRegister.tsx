@@ -73,6 +73,7 @@ export default function EmployeeRegister() {
 
         setTokenData({
           ...data,
+          employee_type: data.employee_type as TokenData['employee_type'],
           company_name: company?.name || 'Ismeretlen cég',
         });
         setPageState('valid');
