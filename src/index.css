@@ -548,3 +548,29 @@ All colors MUST be HSL.
     overflow: visible !important;
   }
 }
+
+/* ── Skeleton Shimmer Animation ── */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  animation: shimmer 2s infinite ease-in-out;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--foreground) / 0.04) 40%,
+    hsl(var(--foreground) / 0.06) 50%,
+    hsl(var(--foreground) / 0.04) 60%,
+    transparent 100%
+  );
+}
