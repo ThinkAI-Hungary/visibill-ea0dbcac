@@ -43,7 +43,7 @@ export function useUserRole(): {
     gcTime: 10 * 60 * 1000,
   });
 
-  // While loading or no company selected, default to non-employee (safe: shows everything)
+  // Resolved role: null until query completes (isPending blocks rendering via ProtectedLayout)
   // This prevents blank pages during initial load
   const resolvedRole = !companyId ? null : role;
 

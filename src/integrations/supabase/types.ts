@@ -325,7 +325,15 @@ export type Database = {
           type?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_presets_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       companies: {
         Row: {
@@ -648,6 +656,7 @@ export type Database = {
       }
       gl_accounts: {
         Row: {
+          company_id: string | null
           created_at: string | null
           description: string | null
           gl_number: string
@@ -658,6 +667,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
           description?: string | null
           gl_number: string
@@ -668,6 +678,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string | null
           description?: string | null
           gl_number?: string
@@ -678,6 +689,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_gl_accounts_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "gl_accounts_parent_id_fkey"
             columns: ["parent_id"]
@@ -696,6 +714,7 @@ export type Database = {
       }
       gl_overrides_log: {
         Row: {
+          company_id: string | null
           created_at: string | null
           id: string
           new_gl_account_id: string
@@ -704,6 +723,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
           id?: string
           new_gl_account_id: string
@@ -712,6 +732,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string | null
           id?: string
           new_gl_account_id?: string
@@ -720,6 +741,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_overrides_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "gl_overrides_log_new_gl_account_id_fkey"
             columns: ["new_gl_account_id"]
@@ -2431,43 +2459,83 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_filtered_submitted_invoices: {
-        Args: {
-          p_amount_max?: number
-          p_amount_min?: number
-          p_category_id?: string
-          p_company_id: string
-          p_currency?: string
-          p_date_from: string
-          p_date_to: string
-          p_direction: string
-          p_page?: number
-          p_page_size?: number
-          p_project_id?: string
-          p_search?: string
-          p_sort_dir?: string
-          p_sort_field?: string
-        }
-        Returns: {
-          adoalap_osszesen: number
-          afa_osszeg_osszesen: number
-          bizonylatsorszam: string
-          brutto_vegosszeg: number
-          category_id: string
-          elado_nev: string
-          id: string
-          image_url: string
-          invoice_direction: string
-          kibocsatas_datuma: string
-          melleklet_url: string
-          penznem: string
-          project_id: string
-          reference_number: string
-          teljesites_datuma: string
-          total_count: number
-          vevo_nev: string
-        }[]
-      }
+      get_filtered_submitted_invoices:
+        | {
+            Args: {
+              p_amount_max?: number
+              p_amount_min?: number
+              p_category_id?: string
+              p_company_id: string
+              p_currency?: string
+              p_date_from: string
+              p_date_to: string
+              p_direction: string
+              p_page?: number
+              p_page_size?: number
+              p_project_id?: string
+              p_search?: string
+              p_sort_dir?: string
+              p_sort_field?: string
+            }
+            Returns: {
+              adoalap_osszesen: number
+              afa_osszeg_osszesen: number
+              bizonylatsorszam: string
+              brutto_vegosszeg: number
+              category_id: string
+              elado_nev: string
+              id: string
+              image_url: string
+              invoice_direction: string
+              kibocsatas_datuma: string
+              melleklet_url: string
+              penznem: string
+              project_id: string
+              reference_number: string
+              teljesites_datuma: string
+              total_count: number
+              vevo_nev: string
+            }[]
+          }
+        | {
+            Args: {
+              p_amount_max?: number
+              p_amount_min?: number
+              p_category_id?: string
+              p_company_id: string
+              p_currency?: string
+              p_date_from: string
+              p_date_to: string
+              p_direction: string
+              p_page?: number
+              p_page_size?: number
+              p_payment_method?: string
+              p_project_id?: string
+              p_search?: string
+              p_sort_dir?: string
+              p_sort_field?: string
+            }
+            Returns: {
+              adoalap_osszesen: number
+              afa_osszeg_osszesen: number
+              bizonylatsorszam: string
+              brutto_vegosszeg: number
+              category_id: string
+              elado_nev: string
+              fizetesi_mod: string
+              id: string
+              image_url: string
+              invoice_direction: string
+              kibocsatas_datuma: string
+              melleklet_url: string
+              penznem: string
+              project_id: string
+              reference_number: string
+              teljesites_datuma: string
+              total_count: number
+              vevo_nev: string
+            }[]
+          }
       get_invoice_aggregates: {
         Args: { p_company_id: string; p_date_from: string; p_date_to: string }
         Returns: {

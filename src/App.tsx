@@ -10,7 +10,7 @@ import { CompanyProvider } from "./contexts/CompanyContext";
 import { DateRangeProvider } from "./contexts/DateRangeContext";
 import { ProtectedLayout } from "./components/ProtectedLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
-import AuthGuard from "./components/AuthGuard";
+
 import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { IdleWarningModal } from "./components/IdleWarningModal";
 import { Toaster } from "./components/ui/toaster";
@@ -66,9 +66,7 @@ function ProtectedPage({ children }: { children: React.ReactNode }) {
   );
 }
 
-function AuthGuardPage({ children }: { children: React.ReactNode }) {
-  return <AuthGuard>{children}</AuthGuard>;
-}
+
 
 /** Removes the static HTML loader when a non-protected route mounts */
 function RemoveInitialLoader() {
@@ -138,7 +136,7 @@ const App = () => (
                          so lazy pages only replace the content — the sidebar stays mounted. */}
                     <Route element={<ProtectedLayout />}>
                       <Route path="/onboarding" element={
-                        <AuthGuardPage><Onboarding /></AuthGuardPage>
+                        <ProtectedPage><Onboarding /></ProtectedPage>
                       } />
                       <Route path="/upload" element={
                         <ProtectedPage><ManualUpload /></ProtectedPage>

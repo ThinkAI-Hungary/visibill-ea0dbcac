@@ -979,7 +979,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
         >
           {/* Logout icon - top left */}
           <button
-            onClick={signOut}
+            onClick={() => signOut()}
             className="absolute left-4 top-4 z-10 p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors group"
             aria-label="Kijelentkezés"
           >
