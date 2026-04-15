@@ -264,8 +264,12 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         description: 'NAV számlák letöltése az elmúlt 30 napra, minden tétellel együtt...',
       });
 
-      // Sync OUTBOUND invoices (30 days fits in one request, no chunking needed)
-      await supabase.functions.invoke('nav-query-outbound-invoices', {
+      let totalOutbound = 0;
+      let totalInbound = 0;
+      let hasError = false;
+
+      // Sync OUTBOUND invoices
+      const { data: outboundData, error: outboundError } = await supabase.functions.invoke('nav-query-outbound-invoices', {
         body: {
           dateFrom: dateFromStr,
           dateTo: dateToStr,
@@ -276,9 +280,17 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
           Authorization: `Bearer ${accessToken}`
         }
       });
+
+      if (outboundError || outboundData?.error) {
+        console.error('[NavCredentialsForm] OUTBOUND sync failed:', outboundError || outboundData?.error);
+        hasError = true;
+      } else {
+        totalOutbound = outboundData?.totalInvoices || 0;
+        console.log('[NavCredentialsForm] OUTBOUND sync complete:', totalOutbound, 'invoices');
+      }
       
       // Sync INBOUND invoices
-      await supabase.functions.invoke('nav-query-outbound-invoices', {
+      const { data: inboundData, error: inboundError } = await supabase.functions.invoke('nav-query-outbound-invoices', {
         body: {
           dateFrom: dateFromStr,
           dateTo: dateToStr,
@@ -289,9 +301,17 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
           Authorization: `Bearer ${accessToken}`
         }
       });
-      
-      // Trigger categorization webhook for initial sync
-      if (companyId) {
+
+      if (inboundError || inboundData?.error) {
+        console.error('[NavCredentialsForm] INBOUND sync failed:', inboundError || inboundData?.error);
+        hasError = true;
+      } else {
+        totalInbound = inboundData?.totalInvoices || 0;
+        console.log('[NavCredentialsForm] INBOUND sync complete:', totalInbound, 'invoices');
+      }
+
+      // Trigger categorization webhook only if we got invoices
+      if (!hasError && (totalOutbound > 0 || totalInbound > 0) && companyId) {
         try {
           console.log('[NavCredentialsForm] Triggering categorization webhook for initial sync');
           await supabase.functions.invoke('trigger-nav-categorization', {
@@ -309,10 +329,24 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         }
       }
       
-      toast({
-        title: 'Szinkronizálás kész',
-        description: 'Az elmúlt 30 nap NAV számlái és tételei sikeresen letöltve.',
-      });
+      // Show appropriate toast based on actual results
+      if (hasError) {
+        toast({
+          title: 'Szinkronizálási hiba',
+          description: 'Az adatok letöltése részlegesen sikertelen. Próbálja újra később.',
+          variant: 'destructive'
+        });
+      } else if (totalOutbound === 0 && totalInbound === 0) {
+        toast({
+          title: 'Nincs új adat',
+          description: 'Az elmúlt 30 napban nem találhatók NAV számlák.',
+        });
+      } else {
+        toast({
+          title: 'Szinkronizálás kész',
+          description: `Az elmúlt 30 nap NAV számlái sikeresen letöltve: ${totalOutbound} kimenő, ${totalInbound} bejövő számla.`,
+        });
+      }
       
     } catch (error: any) {
       console.error('[NavCredentialsForm] Initial sync error:', error);
