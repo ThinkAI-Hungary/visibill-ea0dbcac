@@ -75,9 +75,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {
-    // Auto-trim string inputs
-    const processedValue = typeof value === 'string' ? value.trim() : value;
-    setFormData(prev => ({ ...prev, [field]: processedValue }));
+    setFormData(prev => ({ ...prev, [field]: value }));
     setValidationStatus('pending');
   };
 

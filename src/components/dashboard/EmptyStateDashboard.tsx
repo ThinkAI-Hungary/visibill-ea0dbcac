@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle, Users } from 'lucide-react';
+import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle, Users, LogOut } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface OnboardingProject {
   name: string;
@@ -77,7 +78,7 @@ interface EmptyStateDashboardProps {
 }
 
 const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps) => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { refreshCompanies, setSelectedCompany } = useCompany();
   
   // Onboarding state
@@ -352,6 +353,14 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
           (async () => {
             let successCount = 0;
             for (const chunk of dateChunks) {
+              // Refresh session before each chunk to prevent JWT expiration
+              const { data: { session: freshSession } } = await supabase.auth.getSession();
+              if (!freshSession) {
+                console.warn('[Onboarding] Session expired during background sync, aborting remaining chunks');
+                break;
+              }
+              const currentToken = freshSession.access_token;
+
               const [outbound, inbound] = await Promise.allSettled([
                 supabase.functions.invoke('nav-query-outbound-invoices', {
                   body: {
@@ -361,7 +370,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                     companyId: companyData.id
                   },
                   headers: {
-                    Authorization: `Bearer ${session.access_token}`,
+                    Authorization: `Bearer ${currentToken}`,
                   },
                 }),
                 supabase.functions.invoke('nav-query-outbound-invoices', {
@@ -372,7 +381,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                     companyId: companyData.id
                   },
                   headers: {
-                    Authorization: `Bearer ${session.access_token}`,
+                    Authorization: `Bearer ${currentToken}`,
                   },
                 })
               ]);
@@ -848,9 +857,9 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
   };
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen bg-background">
       {/* Grayed out teaser dashboard */}
-      <div className="container mx-auto px-4 py-8 space-y-8 grayscale opacity-30 pointer-events-none select-none">
+      <div className="container mx-auto px-4 py-8 space-y-8 grayscale opacity-20 pointer-events-none select-none">
         {/* Welcome Section Placeholder */}
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
@@ -960,75 +969,95 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
         </Card>
       </div>
 
-      {/* CTA Overlay */}
-      <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-        {!isOnboarding ? (
-          // Welcome screen
-          <Card className="w-full max-w-md mx-4 border-primary/20 shadow-xl">
-            <CardHeader className="text-center pb-2">
-              <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Building2 className="h-8 w-8 text-primary" />
+      {/* Onboarding Modal */}
+      <Dialog open modal>
+        <DialogContent
+          className="max-w-lg max-h-[90vh] overflow-y-auto p-0 gap-0"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+          hideCloseButton
+        >
+          {/* Logout icon - top left */}
+          <button
+            onClick={signOut}
+            className="absolute left-4 top-4 z-10 p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors group"
+            aria-label="Kijelentkezés"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md bg-popover border border-border text-xs font-medium text-popover-foreground whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-md">
+              Kijelentkezés
+            </span>
+          </button>
+
+          {!isOnboarding ? (
+            /* Welcome screen */
+            <div className="p-6">
+              <div className="text-center">
+                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <Building2 className="h-8 w-8 text-primary" />
+                </div>
+                <DialogHeader className="items-center">
+                  <DialogTitle className="text-2xl">Üdvözöljük a Visibillben!</DialogTitle>
+                  <DialogDescription className="text-base mt-2">
+                    Kezdjük el a vállalkozásod pénzügyi áttekintését néhány egyszerű lépésben.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="pt-6">
+                  <Button 
+                    onClick={() => setIsOnboarding(true)} 
+                    className="w-full" 
+                    size="lg"
+                  >
+                    Első lépések
+                    <ArrowRight className="h-5 w-5 ml-2" />
+                  </Button>
+                </div>
               </div>
-              <CardTitle className="text-2xl">Üdvözöljük a Visibillben!</CardTitle>
-              <CardDescription className="text-base mt-2">
-                Kezdjük el a vállalkozásod pénzügyi áttekintését néhány egyszerű lépésben.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <Button 
-                onClick={() => setIsOnboarding(true)} 
-                className="w-full" 
-                size="lg"
-              >
-                Első lépések
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          // Onboarding stepper
-          <Card className="w-full max-w-lg mx-4 border-primary/20 shadow-xl max-h-[90vh] overflow-y-auto">
-            <CardHeader className="pb-2">
+            </div>
+          ) : (
+            /* Onboarding stepper */
+            <div className="p-6">
               <StepIndicator currentStep={currentStep} />
-            </CardHeader>
-            <CardContent className="pt-0">
-              {currentStep === 1 && renderStep1()}
-              {currentStep === 2 && renderStep2()}
-              {currentStep === 3 && renderStep3()}
-              {currentStep === 4 && renderStep4()}
+              <div className="mt-2">
+                {currentStep === 1 && renderStep1()}
+                {currentStep === 2 && renderStep2()}
+                {currentStep === 3 && renderStep3()}
+                {currentStep === 4 && renderStep4()}
 
-              {/* Navigation buttons */}
-              <div className="flex justify-between mt-6 pt-4 border-t border-border">
-                <Button
-                  variant="outline"
-                  onClick={() => currentStep === 1 ? setIsOnboarding(false) : setCurrentStep(currentStep - 1)}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  {currentStep === 1 ? 'Vissza' : 'Előző'}
-                </Button>
+                {/* Navigation buttons */}
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
+                  <Button
+                    variant="outline"
+                    onClick={() => currentStep === 1 ? setIsOnboarding(false) : setCurrentStep(currentStep - 1)}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    {currentStep === 1 ? 'Vissza' : 'Előző'}
+                  </Button>
 
-                {currentStep < 4 ? (
-                  <Button
-                    onClick={() => setCurrentStep(currentStep + 1)}
-                    disabled={isNextDisabled()}
-                  >
-                    {getNextButtonText()}
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleFinishOnboarding}
-                    disabled={isCreating || !isStep4Valid}
-                  >
-                    {isCreating ? 'Mentés...' : 'Befejezés'}
-                    <Check className="h-4 w-4 ml-2" />
-                  </Button>
-                )}
+
+                  {currentStep < 4 ? (
+                    <Button
+                      onClick={() => setCurrentStep(currentStep + 1)}
+                      disabled={isNextDisabled()}
+                    >
+                      {getNextButtonText()}
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleFinishOnboarding}
+                      disabled={isCreating || !isStep4Valid}
+                    >
+                      {isCreating ? 'Mentés...' : 'Befejezés'}
+                      <Check className="h-4 w-4 ml-2" />
+                    </Button>
+                  )}
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

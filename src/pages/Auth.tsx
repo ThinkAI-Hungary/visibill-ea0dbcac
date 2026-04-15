@@ -486,6 +486,14 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !email.includes('@')) {
+      toast({ title: 'Kérlek add meg az email címed', variant: 'destructive' });
+      return;
+    }
+    if (!password) {
+      toast({ title: 'Kérlek add meg a jelszavad', variant: 'destructive' });
+      return;
+    }
     setLoading(true);
 
     const { error } = await signIn(email, password);
@@ -594,7 +602,7 @@ const Auth = () => {
           <div className="mb-8">
             <div className="inline-flex rounded-lg bg-slate-100/80 dark:bg-secondary/50 border border-slate-200/60 dark:border-transparent p-1">
               <button
-                onClick={() => setActiveTab('signin')}
+                onClick={() => { setActiveTab('signin'); setEmail(''); setPassword(''); setConfirmPassword(''); setName(''); }}
                 className={cn(
                   "px-6 py-2 text-sm font-medium rounded-md transition-all duration-200",
                   activeTab === 'signin'
@@ -605,7 +613,7 @@ const Auth = () => {
                 Bejelentkezés
               </button>
               <button
-                onClick={() => setActiveTab('signup')}
+                onClick={() => { setActiveTab('signup'); setEmail(''); setPassword(''); setConfirmPassword(''); setName(''); }}
                 className={cn(
                   "px-6 py-2 text-sm font-medium rounded-md transition-all duration-200",
                   activeTab === 'signup'
@@ -620,7 +628,7 @@ const Auth = () => {
 
           {/* Form */}
           {activeTab === 'signin' ? (
-            <form onSubmit={handleSignIn} className="space-y-5">
+            <form onSubmit={handleSignIn} noValidate className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="signin-email" className="text-sm font-medium text-foreground">
                   Email cím
@@ -676,7 +684,7 @@ const Auth = () => {
               </Button>
             </form>
           ) : (
-            <form onSubmit={handleSignUp} className="space-y-5">
+            <form onSubmit={handleSignUp} noValidate className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="signup-name" className="text-sm font-medium text-foreground">
                   Teljes név
@@ -720,18 +728,81 @@ const Auth = () => {
                   <Input
                     id="signup-password"
                     type="password"
-                    placeholder="Legalább 6 karakter"
+                    placeholder="Erős jelszó"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 bg-white dark:bg-secondary/30 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                    className={cn(
+                      "pl-10 bg-white dark:bg-secondary/30 border focus:ring-2 focus:ring-primary/20 transition-colors",
+                      password.length > 0 && !(/[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[._?@>]/.test(password))
+                        ? "border-amber-400 dark:border-amber-500"
+                        : "border-slate-200 dark:border-slate-800 focus:border-primary"
+                    )}
                     required
                   />
                 </div>
+                {/* Password strength indicators */}
+                {password.length > 0 && (
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-1">
+                    {[
+                      { label: 'Nagybetű (A-Z)', valid: /[A-Z]/.test(password) },
+                      { label: 'Kisbetű (a-z)', valid: /[a-z]/.test(password) },
+                      { label: 'Szám (0-9)', valid: /\d/.test(password) },
+                      { label: 'Speciális (._?@>)', valid: /[._?@>]/.test(password) },
+                    ].map((rule) => (
+                      <div key={rule.label} className="flex items-center gap-1.5">
+                        <div className={cn(
+                          "h-1.5 w-1.5 rounded-full transition-colors",
+                          rule.valid ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"
+                        )} />
+                        <span className={cn(
+                          "text-[11px] transition-colors",
+                          rule.valid ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
+                        )}>
+                          {rule.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signup-confirm-password" className="text-sm font-medium text-foreground">
+                  Jelszó mégegyszer
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="signup-confirm-password"
+                    type="password"
+                    placeholder="Jelszó újra"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={cn(
+                      "pl-10 bg-white dark:bg-secondary/30 border focus:ring-2 focus:ring-primary/20 transition-colors",
+                      confirmPassword.length > 0 && password !== confirmPassword
+                        ? "border-rose-400 dark:border-rose-500"
+                        : "border-slate-200 dark:border-slate-800 focus:border-primary"
+                    )}
+                    required
+                  />
+                </div>
+                {confirmPassword.length > 0 && password !== confirmPassword && (
+                  <p className="text-xs text-rose-500">A két jelszó nem egyezik</p>
+                )}
               </div>
               <Button
                 type="submit"
                 className="w-full h-11 font-medium"
-                disabled={loading || !(name.trim().length > 0 && email.includes('@') && password.length > 0 && password === confirmPassword)}
+                disabled={loading || !(
+                  name.trim().length > 0 &&
+                  email.includes('@') &&
+                  password.length >= 6 &&
+                  /[A-Z]/.test(password) &&
+                  /[a-z]/.test(password) &&
+                  /\d/.test(password) &&
+                  /[._?@>]/.test(password) &&
+                  password === confirmPassword
+                )}
               >
                 {loading ? 'Fiók létrehozása...' : 'Regisztráció'}
               </Button>
@@ -792,7 +863,7 @@ const Auth = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   Add meg az email címedet és küldünk egy jelszó visszaállító linket.
                 </p>
-                <form onSubmit={handleForgotPassword} className="space-y-4">
+                <form onSubmit={handleForgotPassword} noValidate className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="forgot-email">Email cím</Label>
                     <div className="relative">
