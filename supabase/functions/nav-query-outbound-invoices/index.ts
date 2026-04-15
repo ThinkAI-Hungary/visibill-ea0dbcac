@@ -607,12 +607,22 @@ function buildAddressString(xml: string, addressTag: string): string {
   const streetName = extractTag(addressBlock, 'streetName');
   const publicPlaceCategory = extractTag(addressBlock, 'publicPlaceCategory');
   const number = extractTag(addressBlock, 'number');
+  const additionalAddressDetail = extractTag(addressBlock, 'additionalAddressDetail');
   if (postalCode && city) {
     let address = `${postalCode} ${city}`;
-    if (streetName) { address += `, ${streetName}`; if (publicPlaceCategory) address += ` ${publicPlaceCategory}`; if (number) address += ` ${number}`; }
+    if (streetName) {
+      address += `, ${streetName}`;
+      if (publicPlaceCategory) address += ` ${publicPlaceCategory}`;
+      if (number) address += ` ${number}`;
+    } else if (additionalAddressDetail) {
+      // simpleAddress format: no streetName, but additionalAddressDetail contains the street info
+      address += `, ${additionalAddressDetail}`;
+    }
     return address;
   }
-  const simpleAddress = extractTag(addressBlock, 'simpleAddress') || extractTag(addressBlock, 'additionalAddressDetail');
+  // Fallback for completely unstructured addresses
+  if (additionalAddressDetail) return additionalAddressDetail;
+  const simpleAddress = extractTag(addressBlock, 'simpleAddress');
   if (simpleAddress) return simpleAddress;
   return '';
 }
@@ -818,21 +828,48 @@ async function updatePartnerAddresses(supabase: any, companyId: string) {
       .eq('company_id', companyId)
       .or('supplier_address.not.is.null,customer_address.not.is.null');
     if (fetchError || !invoicesWithAddresses) return;
+    // Collect the longest (most complete) address for each tax number
     const supplierAddresses = new Map<string, string>();
     const customerAddresses = new Map<string, string>();
     for (const inv of invoicesWithAddresses) {
-      if (inv.supplier_tax_number && inv.supplier_address)
-        supplierAddresses.set(inv.supplier_tax_number, inv.supplier_address);
-      if (inv.customer_tax_number && inv.customer_address)
-        customerAddresses.set(inv.customer_tax_number, inv.customer_address);
+      if (inv.supplier_tax_number && inv.supplier_address) {
+        const existing = supplierAddresses.get(inv.supplier_tax_number);
+        if (!existing || inv.supplier_address.length > existing.length)
+          supplierAddresses.set(inv.supplier_tax_number, inv.supplier_address);
+      }
+      if (inv.customer_tax_number && inv.customer_address) {
+        const existing = customerAddresses.get(inv.customer_tax_number);
+        if (!existing || inv.customer_address.length > existing.length)
+          customerAddresses.set(inv.customer_tax_number, inv.customer_address);
+      }
     }
-    for (const [taxNumber, address] of supplierAddresses) {
-      await supabase.from('partners').update({ address })
-        .eq('company_id', companyId).eq('tax_number', taxNumber).is('address', null);
+    // Fetch current partner addresses to compare
+    const allTaxNumbers = [...new Set([...supplierAddresses.keys(), ...customerAddresses.keys()])];
+    if (allTaxNumbers.length === 0) return;
+    const { data: currentPartners } = await supabase.from('partners')
+      .select('tax_number, address')
+      .eq('company_id', companyId)
+      .in('tax_number', allTaxNumbers);
+    const currentAddressMap = new Map<string, string | null>();
+    if (currentPartners) {
+      for (const p of currentPartners) currentAddressMap.set(p.tax_number, p.address);
     }
-    for (const [taxNumber, address] of customerAddresses) {
-      await supabase.from('partners').update({ address })
-        .eq('company_id', companyId).eq('tax_number', taxNumber).is('address', null);
+    // Update only if the new address is longer (more complete) than the current one
+    const allAddresses = new Map<string, string>();
+    for (const [taxNum, addr] of supplierAddresses) {
+      const existing = allAddresses.get(taxNum);
+      if (!existing || addr.length > existing.length) allAddresses.set(taxNum, addr);
+    }
+    for (const [taxNum, addr] of customerAddresses) {
+      const existing = allAddresses.get(taxNum);
+      if (!existing || addr.length > existing.length) allAddresses.set(taxNum, addr);
+    }
+    for (const [taxNumber, address] of allAddresses) {
+      const currentAddress = currentAddressMap.get(taxNumber);
+      if (!currentAddress || address.length > currentAddress.length) {
+        await supabase.from('partners').update({ address })
+          .eq('company_id', companyId).eq('tax_number', taxNumber);
+      }
     }
   } catch (error) {
     console.error('[NAV-QUERY-OUTBOUND] Error updating partner addresses:', error);

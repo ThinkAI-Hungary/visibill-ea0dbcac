@@ -64,6 +64,8 @@ export const queryKeys = {
   // ── Partners ──
   partners: (companyId: string) =>
     ['partners', companyId] as const,
+  partnersFull: (companyId: string) =>
+    ['partnersFull', companyId] as const,
 
   // ── Projects ──
   projects: (companyId: string) =>

@@ -28,6 +28,7 @@ export interface SubmittedFilters {
   currency: string;
   category: string;
   project: string;
+  paymentMethod: string;
 }
 
 const defaultNavFilters: NavFilters = {
@@ -53,6 +54,7 @@ const defaultSubmittedFilters: SubmittedFilters = {
   currency: 'all',
   category: 'all',
   project: 'all',
+  paymentMethod: 'all',
 };
 
 export function useInvoiceFilters(
@@ -129,7 +131,7 @@ export function useInvoiceFilters(
     queryKey: [
       'filteredSubmittedInvoices', companyId, dateFromFormatted, dateToFormatted,
       submittedDirection, deferredSubmittedSearch, submittedFilters.currency,
-      submittedFilters.category, submittedFilters.project,
+      submittedFilters.category, submittedFilters.project, submittedFilters.paymentMethod,
       submittedFilters.amountMin, submittedFilters.amountMax,
       sortField, sortDirection, submittedCurrentPage, submittedPageSize,
     ],
@@ -143,6 +145,7 @@ export function useInvoiceFilters(
         p_currency: submittedFilters.currency === 'all' ? null : submittedFilters.currency,
         p_category_id: submittedFilters.category === 'all' ? null : submittedFilters.category,
         p_project_id: submittedFilters.project === 'all' ? null : submittedFilters.project,
+        p_payment_method: submittedFilters.paymentMethod === 'all' ? null : submittedFilters.paymentMethod,
         p_amount_min: submittedFilters.amountMin ? parseFloat(submittedFilters.amountMin) : null,
         p_amount_max: submittedFilters.amountMax ? parseFloat(submittedFilters.amountMax) : null,
         p_sort_field: sortField,

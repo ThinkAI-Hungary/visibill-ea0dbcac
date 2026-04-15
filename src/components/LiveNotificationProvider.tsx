@@ -235,7 +235,7 @@ export function LiveNotificationProvider() {
         (payload) => {
           if (!isMyCompany(payload)) return;
           console.log('[RealtimeSync] partners', payload.eventType);
-          invalidate('partners', 'kintlevo-nav', 'kintlevo-manual');
+          invalidate('partners', 'partnersFull', 'kintlevo-nav', 'kintlevo-manual');
         }
       )
 
@@ -340,7 +340,7 @@ export function LiveNotificationProvider() {
           'transactions', 'dashboardData', 'dashboardAnalytics',
           'kintlevo-nav', 'kintlevo-manual', 'uploadHistory',
           'analyticsRaw', 'analyticsVat', 'recentInvoices',
-          'partners', 'projects', 'projectsList',
+          'partners', 'partnersFull', 'projects', 'projectsList',
           'pettyCashEntries', 'dashboardPettyCash',
           'categories', 'dunning-sends', 'syncLogs',
           'navInvoiceItems',

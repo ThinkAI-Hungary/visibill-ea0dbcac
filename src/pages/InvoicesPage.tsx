@@ -705,6 +705,20 @@ const InvoicesPage = () => {
                         ))}
                       </SelectContent>
                     </Select>
+
+                    <Select value={submittedFilters.paymentMethod} onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, paymentMethod: value }))}>
+                      <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Fiz. mód" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Minden fiz. mód</SelectItem>
+                        <SelectItem value="none">Nem megadott</SelectItem>
+                        <SelectItem value="Átutalás">Átutalás</SelectItem>
+                        <SelectItem value="Készpénz">Készpénz</SelectItem>
+                        <SelectItem value="Bankkártya">Bankkártya</SelectItem>
+                        <SelectItem value="Utalvány">Utalvány</SelectItem>
+                        <SelectItem value="Egyéb">Egyéb</SelectItem>
+                      </SelectContent>
+                    </Select>
+
                     <Button variant="outline" size="sm" onClick={clearSubmittedFilters} className="h-9 text-red-500 dark:text-red-400 border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600">
                       <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
                       Szűrők törlése
@@ -753,14 +767,15 @@ const InvoicesPage = () => {
                           <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[100px]" onClick={() => handleSort('afa_osszeg_osszesen')}>
                             <div className="flex items-center justify-end gap-2"><ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />ÁFA</div>
                           </TableHead>
+                          <TableHead className="font-semibold w-[110px] text-center">Fiz. mód</TableHead>
                           <TableHead className="text-center font-semibold w-[80px]">Műveletek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {loading ? (
-                          <TableSkeleton rows={10} columns={9} />
+                          <TableSkeleton rows={10} columns={10} />
                         ) : paginatedSubmittedInvoices.length === 0 ? (
-                          <TableEmptyState colSpan={9} title="Nincs megjeleníthető számla" description="Próbáld módosítani a szűrőket vagy keresési feltételeket." />
+                          <TableEmptyState colSpan={10} title="Nincs megjeleníthető számla" description="Próbáld módosítani a szűrőket vagy keresési feltételeket." />
                         ) : (
                           paginatedSubmittedInvoices.map((invoice) => (
                             <React.Fragment key={invoice.id}>
@@ -807,6 +822,9 @@ const InvoicesPage = () => {
                                   <CopyableCell value={(invoice.afa_osszeg_osszesen || 0).toString()} displayValue={formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || 'HUF')} className="justify-end" align="right" ariaLabel="ÁFA összeg másolása" />
                                 </TableCell>
                                 <TableCell className="text-center">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground">{invoice.fizetesi_mod || 'Nem megadott'}</span>
+                                </TableCell>
+                                <TableCell className="text-center">
                                   <div className="flex items-center justify-center gap-1">
                                     {(invoice.image_url || invoice.melleklet_url) && (
                                       <HoverCard openDelay={200} closeDelay={100}>
@@ -832,7 +850,7 @@ const InvoicesPage = () => {
                                 const matches = getSubmittedInvoiceMatches(invoice);
                                 return (
                                   <ExpandedInvoiceRow
-                                    colSpan={9}
+                                    colSpan={10}
                                     matchedSubmittedInvoices={[]}
                                     matchedNavInvoices={matches.matchedNav}
                                     matchedTransactions={matches.matchedTransactions}
@@ -846,7 +864,7 @@ const InvoicesPage = () => {
                             </React.Fragment>
                           ))
                         )}
-                        <TablePlaceholderRows currentCount={paginatedSubmittedInvoices.length} pageSize={submittedPageSize} columns={9} />
+                        <TablePlaceholderRows currentCount={paginatedSubmittedInvoices.length} pageSize={submittedPageSize} columns={10} />
                       </TableBody>
                     </Table>
                   </div>

@@ -93,7 +93,7 @@ export default function PartnersPage() {
 
   // Fetch partners - company scoped (required)
   const { data: partners, isLoading } = useQuery({
-    queryKey: queryKeys.partners(selectedCompany?.id || ''),
+    queryKey: queryKeys.partnersFull(selectedCompany?.id || ''),
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
 
@@ -139,6 +139,7 @@ export default function PartnersPage() {
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.partnersFull(selectedCompany?.id || '') });
       queryClient.invalidateQueries({ queryKey: queryKeys.partners(selectedCompany?.id || '') });
       toast({
         title: editingPartner ? "Partner frissítve" : "Partner létrehozva",
@@ -165,6 +166,7 @@ export default function PartnersPage() {
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.partnersFull(selectedCompany?.id || '') });
       queryClient.invalidateQueries({ queryKey: queryKeys.partners(selectedCompany?.id || '') });
       toast({
         title: "Partner törölve",
@@ -430,8 +432,6 @@ export default function PartnersPage() {
                           {decodedAddress ? (
                             <CopyableCell
                               value={decodedAddress}
-                              truncate
-                              maxWidth="180px"
                               className="text-xs text-muted-foreground"
                               ariaLabel="Cím másolása"
                             />

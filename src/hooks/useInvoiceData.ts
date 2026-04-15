@@ -63,6 +63,7 @@ export interface SubmittedInvoice {
   melleklet_url: string | null;
   invoice_direction: string | null;
   reference_number: string | null;
+  fizetesi_mod: string | null;
 }
 
 export interface Partner {
@@ -96,7 +97,7 @@ export function useInvoiceData(
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number')
+        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number, fizetesi_mod')
         .eq('company_id', companyId)
         .gte('kibocsatas_datuma', dateFromFormatted)
         .lte('kibocsatas_datuma', dateToFormatted)
