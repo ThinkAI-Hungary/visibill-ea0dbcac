@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Download, UploadCloud, Database } from 'lucide-react';
+import { Download, UploadCloud, Database, Bot, Loader2 } from 'lucide-react';
 import GeneralLedgerTable from '@/components/general-ledger/GeneralLedgerTable';
 import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
 import { ManagePresetsModal } from '@/components/general-ledger/ManagePresetsModal';
@@ -28,6 +28,7 @@ export default function GeneralLedgerPage() {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [activePresetId, setActivePresetId] = useState<string>('generic');
+  const [isAIRunning, setIsAIRunning] = useState(false);
 
   // Fetch configured presets for the company
   const { data: presets } = useQuery({
@@ -100,6 +101,26 @@ export default function GeneralLedgerPage() {
     window.print();
   };
 
+  const handleRunAI = async () => {
+    if (!selectedCompany?.id) return;
+    setIsAIRunning(true);
+    try {
+      const response = await fetch('https://n8n.thinkaikontir.hu/webhook-test/gl', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ company_id: selectedCompany.id }),
+      });
+      if (!response.ok) throw new Error('A webhook hívás sikertelen volt.');
+      toast({ title: 'Sikeres indítás', description: 'Az AI besorolás elindult a paramétereknek megfelelően.' });
+    } catch (error: any) {
+      toast({ title: 'Hiba történt', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsAIRunning(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
       {/* Print-only beautifully formatted header */}
@@ -147,10 +168,20 @@ export default function GeneralLedgerPage() {
                 <span>Sablonok kezelése</span>
               </Button>
             </div>
-            <div className="border-l pl-3 border-border/60">
+            <div className="border-l pl-3 border-border/60 flex items-center gap-2">
               <Button onClick={() => setUploadModalOpen(true)} size="sm" className="h-9 gap-2">
                 <UploadCloud className="w-4 h-4" />
                 <span>Új feltöltése</span>
+              </Button>
+              <Button 
+                onClick={handleRunAI} 
+                disabled={isAIRunning}
+                size="sm" 
+                variant="secondary"
+                className="h-9 gap-2"
+              >
+                {isAIRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
+                <span>AI Besorolás</span>
               </Button>
             </div>
           </div>
