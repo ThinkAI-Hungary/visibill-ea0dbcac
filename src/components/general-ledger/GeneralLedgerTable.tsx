@@ -1,8 +1,23 @@
-import React, { useState, useMemo, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useMemo, forwardRef, useImperativeHandle, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { useAuth } from '@/contexts/AuthContext';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -18,6 +33,12 @@ interface LedgerItem {
   name: string; // Megnevezés
   balance: number; // Összesített Egyenleg
   hasChildren?: boolean;
+  cid: string;
+  isItem?: boolean;
+  itemType?: string;
+  partner?: string | null;
+  date?: string | null;
+  sourceTable?: string;
 }
 
 const formatCurrency = (value: number) => {
@@ -36,16 +57,40 @@ interface GeneralLedgerTableProps {
   presetId?: string;
 }
 
-const GeneralLedgerTable = forwardRef<GeneralLedgerTableRef, GeneralLedgerTableProps>((props, ref) => {
+function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.ForwardedRef<GeneralLedgerTableRef>) {
   const { presetId } = props;
   const { selectedCompany } = useCompany();
+  const { session } = useAuth();
+
+  // Dialog states for editing GL classification
+  const [editingItem, setEditingItem] = useState<LedgerItem | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedNewGL, setSelectedNewGL] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAiReclassifying, setIsAiReclassifying] = useState(false);
+  const [dismissedBannerForPreset, setDismissedBannerForPreset] = useState<string | null>(null);
+  
+  // Track if the user explicitly switched presets during this session
+  const previousPresetIdRef = useRef<string | undefined>(presetId);
+  const [hasSwitchedPreset, setHasSwitchedPreset] = useState(false);
+
+  useEffect(() => {
+    // Determine if an actual switch happened (not just initial data load)
+    if (previousPresetIdRef.current && presetId && presetId !== previousPresetIdRef.current) {
+      setHasSwitchedPreset(true);
+      setDismissedBannerForPreset(null); // Reset dismissal on switch
+    }
+    if (presetId) {
+      previousPresetIdRef.current = presetId;
+    }
+  }, [presetId]);
 
   // By default, expanded top-level items (length 1) to show some data, 
   // but users can expand/collapse freely. Let's expand '1' to show the tree.
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set(['1', '13', '14']));
 
   // Fetch real data for the preset and company using the new RPC
-  const { data: dbData, isLoading, isFetching, refetch } = useQuery({
+  const { data: dbData, isLoading, isFetching, refetch: refetchBalances } = useQuery({
     queryKey: ['glBalances', presetId, selectedCompany?.id],
     queryFn: async () => {
       if (!presetId || !selectedCompany?.id) return [];
@@ -66,9 +111,87 @@ const GeneralLedgerTable = forwardRef<GeneralLedgerTableRef, GeneralLedgerTableP
     enabled: !!presetId && !!selectedCompany?.id
   });
 
+  // Fetch detailed items categorized to this company
+  const { data: dbItems, isLoading: isLoadingItems, refetch: refetchItems } = useQuery({
+    queryKey: ['glItems', selectedCompany?.id, presetId],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      const { data, error } = await supabase.rpc('get_gl_categorized_items', {
+        p_company_id: selectedCompany.id,
+        p_preset_id: presetId
+      });
+      if (error) {
+        console.error("Error fetching GL items:", error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!selectedCompany?.id
+  });
+
+  const handleRefetchAll = () => {
+    refetchBalances();
+    refetchItems();
+  };
+
+  useEffect(() => {
+    if (!selectedCompany?.id) return;
+
+    // Listen to real-time database changes to apply AI classifications instantly
+    const channel = supabase.channel('gl-realtime-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `company_id=eq.${selectedCompany.id}` }, () => {
+        handleRefetchAll();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices', filter: `company_id=eq.${selectedCompany.id}` }, () => {
+        handleRefetchAll();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'nav_invoices', filter: `company_id=eq.${selectedCompany.id}` }, () => {
+        handleRefetchAll();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedCompany?.id]);
+
+
+  const cleanIdVal = (id: any) => id ? String(id).replace(/\./g, '') : '';
+
+  const handleSaveOverride = async () => {
+    if (!editingItem || !selectedNewGL || !selectedCompany?.id || !session?.user.id) return;
+    
+    setIsSubmitting(true);
+    
+    const itemId = editingItem.id.replace('item_', '');
+    
+    const newGlItem = dbData?.find(gl => gl.id === selectedNewGL);
+    const newGlNumber = newGlItem?.gl_number || '';
+
+    const { error } = await supabase.rpc('override_gl_classification', {
+       p_item_id: itemId,
+       p_source_table: editingItem.sourceTable || '',
+       p_new_gl_account_id: selectedNewGL,
+       p_original_gl_account_id: editingItem.originalGlId || null,
+       p_company_id: selectedCompany.id,
+       p_user_id: session.user.id,
+       p_preset_id: presetId as string,
+       p_new_gl_number: newGlNumber
+    });
+    
+    setIsSubmitting(false);
+    
+    if (error) {
+       console.error("Hiba módosításkor:", error);
+    } else {
+       setIsEditOpen(false);
+       handleRefetchAll();
+    }
+  };
+
   // Calculate actual table data
   const tableData = useMemo(() => {
-    const cleanId = (id: any) => id ? String(id).replace(/\./g, '') : '';
+    const cleanId = cleanIdVal;
     
     if (dbData && dbData.length > 0) {
       // Step 1: Pre-calculate hasChildren and clean IDs
@@ -89,21 +212,127 @@ const GeneralLedgerTable = forwardRef<GeneralLedgerTableRef, GeneralLedgerTableP
       });
 
       // Now roll up sums for all parent (non-leaf) nodes
-      return rawData.map(item => {
+      let rolledUpData = rawData.map(item => {
         if (!item.hasChildren) return item;
 
-        // Find all leaf descendants ignoring dots
-        const leaves = rawData.filter(d => !d.hasChildren && d.cid.startsWith(item.cid));
-        const childBalance = leaves.reduce((acc, d) => acc + d.balance, 0);
+        // Find ALL descendants in rawData (both leaves and non-leaves)
+        const descendants = rawData.filter(d => d.cid.startsWith(item.cid) && d.cid !== item.cid);
+        // We sum the RAW balances of all descendants
+        const descendantsRawSum = descendants.reduce((acc, d) => acc + d.balance, 0);
         
-        // Sum includes parent's own balance just in case transactions were booked to parent!
-        const totalBalance = childBalance + item.balance;
+        // Parent's total is its own raw balance + the sum of all descendants' raw balances
+        const totalBalance = descendantsRawSum + item.balance;
 
         return { ...item, balance: totalBalance };
       });
+
+      if (dbItems && dbItems.length > 0) {
+        // Tag GL accounts that have matching items as having children
+        rolledUpData = rolledUpData.map(item => {
+           const dbRecord = dbData.find(db => cleanId(db.gl_number) === item.cid);
+           if (!dbRecord) return item;
+           const hasItemChildren = dbItems.some(i => i.gl_account_id === dbRecord.gl_account_id);
+           return {
+              ...item,
+              hasChildren: item.hasChildren || hasItemChildren
+           };
+        });
+
+        // Group items by their parent account's CID
+        const itemsByGL = new Map<string, LedgerItem[]>();
+
+        dbItems.forEach(item => {
+           const parentDbItem = dbData.find(db => db.gl_account_id === item.gl_account_id);
+           if (!parentDbItem) return;
+           const parentCid = cleanId(parentDbItem.gl_number);
+           const pseudoCid = `${parentCid}_${item.item_id}`;
+
+           // Create a descriptive name
+           let displayDesc = item.description || item.partner || 'Névtelen tétel';
+           if (item.partner && item.description && item.partner !== item.description) {
+             displayDesc = `${item.partner} - ${item.description}`;
+           }
+
+           if (!itemsByGL.has(parentCid)) {
+               itemsByGL.set(parentCid, []);
+           }
+
+           itemsByGL.get(parentCid)!.push({
+             id: `item_${item.item_id}`,
+             name: displayDesc,
+             balance: Number(item.amount) || 0,
+             hasChildren: false,
+             cid: pseudoCid,
+             isItem: true,
+             itemType: item.item_type,
+             partner: item.partner,
+             date: item.item_date,
+             sourceTable: item.source_table,
+             originalGlId: item.gl_account_id
+           });
+        });
+
+        // Interleave the arrays: parent node followed immediately by its direct items
+        const combinedData: LedgerItem[] = [];
+        rolledUpData.forEach(parent => {
+            combinedData.push(parent);
+            if (itemsByGL.has(parent.cid)) {
+                // Optionally sort items by date within the category
+                const parentItems = itemsByGL.get(parent.cid)!;
+                parentItems.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+                combinedData.push(...parentItems);
+            }
+        });
+
+        return combinedData;
+      }
+
+      return rolledUpData;
     }
     return [];
-  }, [dbData]);
+  }, [dbData, dbItems]);
+
+  const hasOrphans = tableData.some(d => d.id === 'ORPHAN');
+  // Banner ONLY shows if: there are orphans AND the user actually switched templates AND they haven't dismissed it
+  const isBannerVisible = hasOrphans && hasSwitchedPreset && dismissedBannerForPreset !== presetId;
+
+  const handleAiReclassification = async () => {
+    if (!presetId || !selectedCompany?.id) return;
+    setIsAiReclassifying(true);
+    
+    try {
+      const orphanedItems = dbItems?.filter(i => i.gl_account_id === '00000000-0000-0000-0000-000000000000').map(i => ({
+         id: i.item_id,
+         source_table: i.source_table,
+         amount: i.amount,
+         description: i.description
+      })) || [];
+
+      if (orphanedItems.length === 0) return;
+
+      const payload = {
+        company_id: selectedCompany.id,
+        target_preset_id: presetId,
+        items: orphanedItems
+      };
+
+      const res = await fetch("https://n8n.thinkaikontir.hu/webhook-test/gl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      
+      if (res.ok) {
+        handleRefetchAll();
+      } else {
+        console.error("AI átsorolás sikertelen: HTTP", res.status);
+      }
+    } catch (e) {
+      console.error("Hiba az AI átsorolás közben:", e);
+    } finally {
+      setIsAiReclassifying(false);
+    }
+  };
 
   useImperativeHandle(ref, () => ({
     expandAllAndPrint: () => {
@@ -152,18 +381,16 @@ const GeneralLedgerTable = forwardRef<GeneralLedgerTableRef, GeneralLedgerTableP
 
   // Determine if a row should be visible based on expanded state of its ancestors
   const processedRows = useMemo(() => {
-    const cleanId = (id: any) => id ? String(id).replace(/\./g, '') : '';
-    
     return tableData.map(item => {
-      const itemCid = cleanId(item.id);
-      // Find all ancestors (any node whose cleaned id is a prefix of this node's cleaned id)
+      // Find all ancestors (any node whose cid is a prefix of this node's cid)
+      // Items cannot be ancestors.
       const ancestors = tableData.filter(d => {
-        const dCid = cleanId(d.id);
-        return itemCid.startsWith(dCid) && dCid !== itemCid;
+        if (d.isItem) return false;
+        return item.cid.startsWith(d.cid) && d.cid !== item.cid;
       });
       
-      // The item is a root if it has no ancestors
-      const isRoot = ancestors.length === 0;
+      // The item is a root if it has no ancestors (except itself)
+      const isRoot = ancestors.length === 0 && !item.isItem;
       
       // The item is visible ONLY if ALL its ancestors are currently expanded
       const isVisibleOnScreen = isRoot || ancestors.every(a => expandedRowIds.has(a.id));
@@ -177,24 +404,26 @@ const GeneralLedgerTable = forwardRef<GeneralLedgerTableRef, GeneralLedgerTableP
 
   // Calculate generic footer totals by summing root level items
   const footerTotals = useMemo(() => {
-    const cleanId = (id: any) => id ? String(id).replace(/\./g, '') : '';
-    
     return tableData.reduce((acc, current) => {
-      // Find if this item has any ancestors
+      // Ignore leaf item rows since their balances are already natively rolled up inside their parents
+      if (current.isItem) return acc;
+
+      // Find if this item has any regular GL ancestors
       const isRoot = !tableData.some(d => 
-        cleanId(current.id).startsWith(cleanId(d.id)) && 
-        cleanId(d.id) !== cleanId(current.id)
+        !d.isItem &&
+        current.cid.startsWith(d.cid) && 
+        d.cid !== current.cid
       );
       
       // we sum only root elements because they already include all children sums
       if (isRoot) {
-        acc += current.balance;
+         return acc + current.balance;
       }
       return acc;
     }, 0);
   }, [tableData]);
 
-  if (isLoading) {
+  if (isLoading || isLoadingItems) {
     return (
       <div className="flex justify-center items-center h-[500px] text-muted-foreground w-full">
         <Loader2 className="w-8 h-8 animate-spin" />
@@ -204,11 +433,33 @@ const GeneralLedgerTable = forwardRef<GeneralLedgerTableRef, GeneralLedgerTableP
   }
 
   return (
-    <ContextMenu>
+    <>
+      <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className="w-full flex flex-col print:block h-[65vh] max-h-[800px] bg-card overflow-hidden rounded-md border border-border">
-          <div className="flex-1 overflow-auto w-full relative print:overflow-visible">
-            <div className="w-full flex flex-col min-h-full pb-8">
+        <div className="w-full flex flex-col print:block h-[65vh] print:h-auto max-h-[800px] print:max-h-none bg-card overflow-hidden print:overflow-visible rounded-md border border-border print:border-none">
+          {isBannerVisible && (
+            <div className="px-5 py-3.5 bg-indigo-500/10 border-b border-indigo-500/20 flex flex-col sm:flex-row items-center justify-between gap-4 relative">
+              <div className="text-sm text-indigo-700 dark:text-indigo-400 font-medium pr-6">
+                Új számlatükröt választottál. Szeretnéd, hogy az AI automatikusan besorolja a "Besorolatlan" tételeidet ebbe az új struktúrába is?
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button onClick={handleAiReclassification} disabled={isAiReclassifying} size="sm" className="whitespace-nowrap">
+                  {isAiReclassifying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  {isAiReclassifying ? "AI átsorolás folyamatban..." : "Igen, besorolom"}
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-500/20"
+                  onClick={() => setDismissedBannerForPreset(presetId)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+          <div className="flex-1 overflow-auto print:overflow-visible w-full relative">
+            <div className="w-full flex flex-col min-h-full pb-8 print:pb-0">
               
               {/* Header */}
               <div className="bg-muted/80 backdrop-blur-md border-b border-border text-sm font-semibold sticky top-0 z-20 hidden md:block select-none shadow-sm">
@@ -241,21 +492,51 @@ const GeneralLedgerTable = forwardRef<GeneralLedgerTableRef, GeneralLedgerTableP
                       onClick={() => toggleRow(row.id, row.hasChildren)}
                     >
                       <div className="col-span-2 p-3 text-sm flex items-center justify-center font-mono text-muted-foreground border-r border-border/20">
-                        {row.id}
+                        {row.isItem ? (
+                           <span className="text-xs">{row.date ? row.date.substring(0, 10).replace(/-/g, '.') : ''}</span>
+                        ) : (
+                           row.id
+                        )}
                       </div>
                       <div className="col-span-7 py-3 pr-3 text-sm flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
-                        <div className="w-4 h-4 shrink-0 flex items-center justify-center">
+                        <div className="w-4 h-4 shrink-0 flex items-center justify-center print:hidden">
                           {row.hasChildren && (
                             <div className="text-muted-foreground/70 hover:text-foreground hover:bg-muted p-0.5 rounded-sm transition-colors">
                                {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                             </div>
                           )}
                         </div>
-                        <span className={cn("truncate", isRoot ? "uppercase" : "")} title={row.name}>{row.name}</span>
+                        <span className={cn("truncate", isRoot ? "uppercase" : "", row.isItem ? "text-muted-foreground italic" : "")} title={row.name}>
+                          {row.name}
+                        </span>
+                        {row.isItem && row.itemType && (
+                          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-muted whitespace-nowrap text-muted-foreground hidden lg:inline-block">
+                            {row.itemType}
+                          </span>
+                        )}
                       </div>
                       
-                      <div className={cn("col-span-3 p-3 text-right text-sm tabular-nums font-medium", isNegative ? "text-destructive" : "")}>
-                        {row.balance !== 0 ? formatCurrency(row.balance) : ""}
+                      <div className={cn("col-span-3 p-3 flex justify-end items-center gap-4 text-sm tabular-nums font-medium", isNegative ? "text-destructive" : "")}>
+                        <span>{row.balance !== 0 ? formatCurrency(row.balance) : ""}</span>
+                        {row.isItem ? (
+                          <Button
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 rounded-md opacity-0 group-hover:opacity-100 transition-opacity print:hidden shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingItem(row);
+                              // We use originalGlId to pre-fill the form
+                              setSelectedNewGL(row.originalGlId || '');
+                              setIsEditOpen(true);
+                            }}
+                          >
+                            <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
+                          </Button>
+                        ) : (
+                          // Placeholder to keep spacing identical even when there's no edit button
+                          <div className="w-6 h-6 shrink-0 print:hidden" />
+                        )}
                       </div>
                     </div>
                   );
@@ -270,7 +551,7 @@ const GeneralLedgerTable = forwardRef<GeneralLedgerTableRef, GeneralLedgerTableP
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      onClick={() => refetch()} 
+                      onClick={handleRefetchAll} 
                       disabled={isFetching}
                       className="h-6 w-6 rounded-full"
                       title="Frissítés"
@@ -295,13 +576,56 @@ const GeneralLedgerTable = forwardRef<GeneralLedgerTableRef, GeneralLedgerTableP
           <span>Minden összecsukása</span>
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={() => refetch()} disabled={isFetching} className="gap-2 cursor-pointer">
+        <ContextMenuItem onClick={handleRefetchAll} disabled={isFetching} className="gap-2 cursor-pointer">
           <RefreshCw className={cn("h-4 w-4", isFetching ? "animate-spin text-muted-foreground" : "")} />
           <span>{isFetching ? 'Frissítés folyamatban...' : 'Adatok frissítése'}</span>
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
+
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Kategória módosítása</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+             <Select value={selectedNewGL} onValueChange={setSelectedNewGL}>
+               <SelectTrigger>
+                 <SelectValue placeholder="Válassz új kategóriát..." />
+               </SelectTrigger>
+               <SelectContent className="max-h-[300px]">
+                 {dbData
+                   ?.slice() // Copy array before sorting
+                   .sort((a,b) => cleanIdVal(a.gl_number).localeCompare(cleanIdVal(b.gl_number)))
+                   .map(gl => {
+                     // Check if it's a leaf node. We only allow picking leaf nodes.
+                     const isLeaf = !dbData.some(sub => cleanIdVal(sub.gl_number).startsWith(cleanIdVal(gl.gl_number)) && sub.id !== gl.id);
+                     if (!isLeaf) return null;
+                     
+                     return (
+                       <SelectItem key={gl.id} value={gl.id}>
+                         {gl.gl_number} {gl.short_name}
+                       </SelectItem>
+                     );
+                 })}
+               </SelectContent>
+             </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={isSubmitting}>Mégse</Button>
+            <Button onClick={handleSaveOverride} disabled={!selectedNewGL || isSubmitting || selectedNewGL === editingItem?.originalGlId}>
+              {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Mentés
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
-});
+}
+
+const GeneralLedgerTable = forwardRef(GeneralLedgerTableBase);
+
+GeneralLedgerTable.displayName = 'GeneralLedgerTable';
 
 export default GeneralLedgerTable;

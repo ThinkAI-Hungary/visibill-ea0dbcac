@@ -719,7 +719,7 @@ export type Database = {
           id: string
           new_gl_account_id: string
           original_gl_account_id: string | null
-          transaction_id: string
+          item_id: string
           user_id: string
         }
         Insert: {
@@ -728,7 +728,7 @@ export type Database = {
           id?: string
           new_gl_account_id: string
           original_gl_account_id?: string | null
-          transaction_id: string
+          item_id: string
           user_id: string
         }
         Update: {
@@ -737,7 +737,7 @@ export type Database = {
           id?: string
           new_gl_account_id?: string
           original_gl_account_id?: string | null
-          transaction_id?: string
+          item_id?: string
           user_id?: string
         }
         Relationships: [
@@ -2497,6 +2497,35 @@ export type Database = {
               vevo_nev: string
             }[]
           }
+      get_gl_categorized_items: {
+        Args: {
+          p_company_id: string
+          p_preset_id: string
+        }
+        Returns: {
+          item_id: string
+          gl_account_id: string
+          source_table: string
+          item_type: string
+          partner: string | null
+          description: string | null
+          amount: number
+          item_date: string | null
+        }[]
+      }
+      override_gl_classification: {
+        Args: {
+          p_item_id: string
+          p_source_table: string
+          p_new_gl_account_id: string
+          p_original_gl_account_id: string | null
+          p_company_id: string
+          p_user_id: string
+          p_preset_id: string
+          p_new_gl_number: string
+        }
+        Returns: boolean
+      }
         | {
             Args: {
               p_amount_max?: number

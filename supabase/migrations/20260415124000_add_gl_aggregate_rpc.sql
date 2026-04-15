@@ -57,8 +57,8 @@ BEGIN
   )
   SELECT
     g.id AS gl_account_id,
-    g.gl_number,
-    g.short_name,
+    g.gl_number::text,
+    g.short_name::text,
     COALESCE(a.total_balance, 0)::numeric AS total_balance
   FROM public.gl_accounts g
   LEFT JOIN aggregated a ON g.id = a.gl_account_id

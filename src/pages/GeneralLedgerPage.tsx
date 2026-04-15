@@ -110,7 +110,10 @@ export default function GeneralLedgerPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ company_id: selectedCompany.id }),
+        body: JSON.stringify({ 
+          company_id: selectedCompany.id,
+          target_preset_id: activePresetId 
+        }),
       });
       if (!response.ok) throw new Error('A webhook hívás sikertelen volt.');
       toast({ title: 'Sikeres indítás', description: 'Az AI besorolás elindult a paramétereknek megfelelően.' });
