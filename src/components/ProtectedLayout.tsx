@@ -3,6 +3,9 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/AppLayout';
 import { useAppReady } from '@/hooks/useAppReady';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
+import { Suspense } from 'react';
+import { ContentSkeleton } from '@/components/ui/content-skeleton';
 
 /**
  * ProtectedLayout — Full-Stop Loading Guard + Sign-Out Overlay.
@@ -10,12 +13,16 @@ import { useAuth } from '@/contexts/AuthContext';
  * Renders NOTHING until auth + company + role are all resolved.
  * The index.html #initial-loader stays visible during this time.
  *
+ * If the user has no companies (fresh onboarding), the sidebar is
+ * skipped entirely to avoid a flash before the onboarding modal.
+ *
  * When signing out, a full-screen overlay covers the layout
  * so the user sees a clean "Kijelentkezés..." screen.
  */
 export function ProtectedLayout() {
   const { isReady, user } = useAppReady();
   const { isSigningOut } = useAuth();
+  const { companies, isInitialLoading: companyLoading } = useCompany();
   const navigate = useNavigate();
   const loaderRemovedRef = useRef(false);
 
@@ -52,11 +59,24 @@ export function ProtectedLayout() {
     return null;
   }
 
+  // Fresh user with no companies: skip sidebar entirely to avoid
+  // the visual flash (sidebar → darken → onboarding modal).
+  // Render the Outlet directly so EmptyStateDashboard goes full-screen.
+  const hasNoCompanies = !companyLoading && companies.length === 0;
+
   return (
     <>
-      <AppLayout>
-        <Outlet />
-      </AppLayout>
+      {hasNoCompanies ? (
+        <div className="h-screen w-full overflow-auto bg-background">
+          <Suspense fallback={<ContentSkeleton />}>
+            <Outlet />
+          </Suspense>
+        </div>
+      ) : (
+        <AppLayout>
+          <Outlet />
+        </AppLayout>
+      )}
 
       {/* Sign-Out Overlay */}
       {isSigningOut && (
@@ -72,3 +92,4 @@ export function ProtectedLayout() {
     </>
   );
 }
+
