@@ -2468,6 +2468,15 @@ export type Database = {
           vevo_nev: string
         }[]
       }
+      get_gl_balances: {
+        Args: { p_company_id: string; p_preset_id: string }
+        Returns: {
+          gl_account_id: string
+          gl_number: string
+          short_name: string
+          total_balance: number
+        }[]
+      }
       get_invoice_aggregates: {
         Args: { p_company_id: string; p_date_from: string; p_date_to: string }
         Returns: {
