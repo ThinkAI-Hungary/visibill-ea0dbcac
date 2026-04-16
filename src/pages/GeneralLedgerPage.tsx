@@ -14,6 +14,7 @@ import GeneralLedgerTable from '@/components/general-ledger/GeneralLedgerTable';
 import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
 import { ManagePresetsModal } from '@/components/general-ledger/ManagePresetsModal';
 import { Settings2 } from 'lucide-react';
+import { useActivePreset } from '@/hooks/useActivePreset';
 
 export default function GeneralLedgerPage() {
   const { selectedCompany } = useCompany();
@@ -27,40 +28,9 @@ export default function GeneralLedgerPage() {
   const [partnerBreakdown, setPartnerBreakdown] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [manageModalOpen, setManageModalOpen] = useState(false);
-  const [activePresetId, setActivePresetId] = useState<string>('generic');
   const [isAIRunning, setIsAIRunning] = useState(false);
 
-  // Fetch configured presets for the company
-  const { data: presets } = useQuery({
-    queryKey: ['coaPresets', selectedCompany?.id],
-    queryFn: async () => {
-      if (!selectedCompany?.id) return [];
-      const { data, error } = await supabase
-        .from('chart_of_accounts_presets')
-        .select('*')
-        .or(`company_id.eq.${selectedCompany.id},type.eq.generic`);
-      
-      if (error) {
-        toast({ title: 'Hiba a betöltéskor', description: error.message, variant: 'destructive' });
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!selectedCompany?.id
-  });
-
-  // Calculate the currently active preset (prefer company specific active, fallback to generic)
-  React.useEffect(() => {
-    if (presets && presets.length > 0) {
-      const activeCustom = presets.find(p => p.company_id === selectedCompany?.id && p.is_active);
-      if (activeCustom) {
-        setActivePresetId(activeCustom.id);
-      } else {
-        const generic = presets.find(p => p.type === 'generic');
-        if (generic) setActivePresetId(generic.id);
-      }
-    }
-  }, [presets, selectedCompany]);
+  const { activePresetId, setActivePresetId, presets } = useActivePreset(selectedCompany?.id);
 
   const toggleActivePresetMutation = useMutation({
     mutationFn: async (presetId: string) => {

@@ -148,6 +148,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       .on('postgres_changes', { event: '*', schema: 'public', table: 'nav_invoices', filter: `company_id=eq.${selectedCompany.id}` }, () => {
         handleRefetchAll();
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'nav_invoice_items' }, () => {
+        handleRefetchAll();
+      })
       .subscribe();
 
     return () => {

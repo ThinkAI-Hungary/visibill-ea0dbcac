@@ -18,6 +18,8 @@ import {
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency } from '@/lib/utils';
 import { Package } from 'lucide-react';
+import { useCompany } from '@/contexts/CompanyContext';
+import { useActivePreset } from '@/hooks/useActivePreset';
 
 interface InvoiceLineItem {
   id: string;
@@ -31,6 +33,7 @@ interface InvoiceLineItem {
   vat_amount: number | null;
   gross_amount: number | null;
   product_code: string | null;
+  gl_classifications: any | null;
 }
 
 interface InvoiceItemsDialogProps {
@@ -48,12 +51,15 @@ export function InvoiceItemsDialog({
   invoiceNumber,
   currency,
 }: InvoiceItemsDialogProps) {
+  const { selectedCompany } = useCompany();
+  const { activePresetId } = useActivePreset(selectedCompany?.id);
+
   const { data: items = [], isLoading: loading } = useQuery({
     queryKey: ['navInvoiceItems', invoiceId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('nav_invoice_items')
-        .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount')
+        .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications')
         .eq('nav_invoice_id', invoiceId)
         .order('line_number', { ascending: true });
       if (error) throw error;
@@ -131,6 +137,7 @@ export function InvoiceItemsDialog({
                     <TableHead className="text-center font-semibold">ÁFA</TableHead>
                     <TableHead className="text-right font-semibold">ÁFA összeg</TableHead>
                     <TableHead className="text-right font-semibold">Bruttó</TableHead>
+                    <TableHead className="text-center font-semibold">Főkönyv</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -171,6 +178,17 @@ export function InvoiceItemsDialog({
                       </TableCell>
                       <TableCell className="text-right font-mono font-medium">
                         {formatAmount(getGrossAmount(item))}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {item.gl_classifications?.[activePresetId]?.gl_number ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                            {item.gl_classifications[activePresetId].gl_number}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground" title="Nincs besorolva">
+                            -
+                          </span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
