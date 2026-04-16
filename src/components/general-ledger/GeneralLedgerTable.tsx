@@ -1,8 +1,11 @@
 import React, { useState, useMemo, forwardRef, useImperativeHandle, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -55,16 +58,21 @@ export interface GeneralLedgerTableRef {
 
 interface GeneralLedgerTableProps {
   presetId?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.ForwardedRef<GeneralLedgerTableRef>) {
-  const { presetId } = props;
+  const { presetId, dateFrom, dateTo } = props;
   const { selectedCompany } = useCompany();
   const { session } = useAuth();
+  const { toast } = useToast();
 
   // Dialog states for editing GL classification
   const [editingItem, setEditingItem] = useState<LedgerItem | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [comboboxOpen, setComboboxOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedNewGL, setSelectedNewGL] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAiReclassifying, setIsAiReclassifying] = useState(false);
@@ -91,14 +99,16 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   // Fetch real data for the preset and company using the new RPC
   const { data: dbData, isLoading, isFetching, refetch: refetchBalances } = useQuery({
-    queryKey: ['glBalances', presetId, selectedCompany?.id],
+    queryKey: ['glBalances', presetId, selectedCompany?.id, dateFrom, dateTo],
     queryFn: async () => {
       if (!presetId || !selectedCompany?.id) return [];
       
       // Hit the RPC we created
       const { data, error } = await supabase.rpc('get_gl_balances', {
         p_company_id: selectedCompany.id,
-        p_preset_id: presetId
+        p_preset_id: presetId,
+        p_date_from: dateFrom || null,
+        p_date_to: dateTo || null
       });
       
       if (error) {
@@ -113,12 +123,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   // Fetch detailed items categorized to this company
   const { data: dbItems, isLoading: isLoadingItems, refetch: refetchItems } = useQuery({
-    queryKey: ['glItems', selectedCompany?.id, presetId],
+    queryKey: ['glItems', selectedCompany?.id, presetId, dateFrom, dateTo],
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
       const { data, error } = await supabase.rpc('get_gl_categorized_items', {
         p_company_id: selectedCompany.id,
-        p_preset_id: presetId
+        p_preset_id: presetId,
+        p_date_from: dateFrom || null,
+        p_date_to: dateTo || null
       });
       if (error) {
         console.error("Error fetching GL items:", error);
@@ -168,10 +180,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     
     const itemId = editingItem.id.replace('item_', '');
     
-    const newGlItem = dbData?.find(gl => gl.id === selectedNewGL);
+    const newGlItem = dbData?.find(gl => gl.gl_account_id === selectedNewGL);
     const newGlNumber = newGlItem?.gl_number || '';
 
-    const { error } = await supabase.rpc('override_gl_classification', {
+    const { data, error } = await supabase.rpc('override_gl_classification', {
        p_item_id: itemId,
        p_source_table: editingItem.sourceTable || '',
        p_new_gl_account_id: selectedNewGL,
@@ -184,9 +196,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     
     setIsSubmitting(false);
     
-    if (error) {
-       console.error("Hiba módosításkor:", error);
+    if (error || data === false) {
+       const errMsg = error?.message || "SQL Exception (csendben elfojtva). Ellenőrizd a függvényt.";
+       console.error("Hiba módosításkor:", error || "SQL Exception caught inside RPC. Check logs.");
+       toast({ title: 'Hiba a mentés során', description: errMsg, variant: 'destructive' });
     } else {
+       toast({ title: 'Sikeres módosítás', description: 'A besorolás sikeresen felülírva.', className: 'bg-green-50 text-green-900 border-green-200' });
        setIsEditOpen(false);
        handleRefetchAll();
     }
@@ -487,7 +502,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                     <div 
                       key={row.id} 
                       className={cn(
-                        "grid-cols-12 divide-x divide-border/10 transition-colors hover:bg-muted/40",
+                        "group grid-cols-12 divide-x divide-border/10 transition-colors hover:bg-muted/40",
                         !row.isVisibleOnScreen ? "hidden print:grid" : "grid",
                         isRoot && "border-t border-border/50 bg-muted/10 font-medium",
                         row.hasChildren ? "cursor-pointer" : ""
@@ -531,6 +546,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                               setEditingItem(row);
                               // We use originalGlId to pre-fill the form
                               setSelectedNewGL(row.originalGlId || '');
+                              setSearchQuery('');
                               setIsEditOpen(true);
                             }}
                           >
@@ -587,32 +603,63 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     </ContextMenu>
 
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Kategória módosítása</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-             <Select value={selectedNewGL} onValueChange={setSelectedNewGL}>
-               <SelectTrigger>
-                 <SelectValue placeholder="Válassz új kategóriát..." />
-               </SelectTrigger>
-               <SelectContent className="max-h-[300px]">
-                 {dbData
-                   ?.slice() // Copy array before sorting
-                   .sort((a,b) => cleanIdVal(a.gl_number).localeCompare(cleanIdVal(b.gl_number)))
-                   .map(gl => {
-                     // Check if it's a leaf node. We only allow picking leaf nodes.
-                     const isLeaf = !dbData.some(sub => cleanIdVal(sub.gl_number).startsWith(cleanIdVal(gl.gl_number)) && sub.id !== gl.id);
-                     if (!isLeaf) return null;
-                     
-                     return (
-                       <SelectItem key={gl.id} value={gl.id}>
-                         {gl.gl_number} {gl.short_name}
-                       </SelectItem>
-                     );
-                 })}
-               </SelectContent>
-             </Select>
+          <div className="py-2 flex flex-col gap-4 w-full overflow-hidden">
+            <div className="bg-muted p-3 rounded-md border text-sm flex items-center justify-between w-full overflow-hidden gap-2">
+              <span className="font-medium text-muted-foreground whitespace-nowrap">Új kategória:</span>
+              <span className="font-bold text-foreground bg-background px-3 py-1.5 rounded border border-border shadow-sm truncate max-w-full">
+                {selectedNewGL && dbData
+                  ? (() => {
+                      const gl = dbData.find(g => g.gl_account_id === selectedNewGL);
+                      return gl ? `${gl.gl_number} ${gl.short_name}` : "Válassz a listából...";
+                    })()
+                  : "Válassz a listából..."}
+              </span>
+            </div>
+
+            <Command className="rounded-lg border shadow-sm w-full overflow-hidden h-[350px]" shouldFilter={false}>
+              <CommandInput 
+                placeholder="Keresés főkönyvi szám vagy név alapján..." 
+                value={searchQuery}
+                onValueChange={setSearchQuery}
+                className="w-full"
+              />
+              <CommandList className="h-[300px] max-h-[300px] overflow-y-auto w-full overflow-x-hidden">
+                <CommandEmpty>Nincs találat.</CommandEmpty>
+                <CommandGroup>
+                  {dbData
+                    ?.filter(gl => !searchQuery || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(searchQuery.toLowerCase()))
+                    .slice()
+                    .sort((a,b) => cleanIdVal(a.gl_number).localeCompare(cleanIdVal(b.gl_number)))
+                    .map(gl => {
+                      const isLeaf = !dbData.some(sub => cleanIdVal(sub.gl_number).startsWith(cleanIdVal(gl.gl_number)) && sub.gl_account_id !== gl.gl_account_id);
+                      if (!isLeaf) return null;
+                      
+                      return (
+                        <CommandItem
+                          key={gl.gl_account_id}
+                          value={`${gl.gl_number} ${gl.short_name}`}
+                          onSelect={() => setSelectedNewGL(gl.gl_account_id)}
+                          className="cursor-pointer py-2 w-full overflow-hidden flex items-center"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4 text-primary shrink-0",
+                              selectedNewGL === gl.gl_account_id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <span className={cn("truncate block w-full", selectedNewGL === gl.gl_account_id ? "font-bold text-foreground" : "")}>
+                            {gl.gl_number} {gl.short_name}
+                          </span>
+                        </CommandItem>
+                      );
+                  })}
+                </CommandGroup>
+              </CommandList>
+            </Command>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={isSubmitting}>Mégse</Button>

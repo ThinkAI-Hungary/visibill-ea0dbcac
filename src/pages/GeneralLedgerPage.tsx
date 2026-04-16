@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -15,22 +15,47 @@ import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadCh
 import { ManagePresetsModal } from '@/components/general-ledger/ManagePresetsModal';
 import { Settings2 } from 'lucide-react';
 import { useActivePreset } from '@/hooks/useActivePreset';
+import { useDateRange } from '@/contexts/DateRangeContext';
 
 export default function GeneralLedgerPage() {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const currentYear = new Date().getFullYear().toString();
-  const [taxYear, setTaxYear] = useState(currentYear);
-  const [dateFrom, setDateFrom] = useState(`${currentYear}-01-01`);
-  const [dateTo, setDateTo] = useState(`${currentYear}-12-31`);
+  const { dateFromFormatted: dateFrom, dateToFormatted: dateTo } = useDateRange();
+  const taxYear = dateFrom ? dateFrom.substring(0, 4) : new Date().getFullYear().toString();
+  
   const [partnerBreakdown, setPartnerBreakdown] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [isAIRunning, setIsAIRunning] = useState(false);
 
   const { activePresetId, setActivePresetId, presets } = useActivePreset(selectedCompany?.id);
+
+  useEffect(() => {
+    if (!selectedCompany?.id) return;
+
+    const channel = supabase.channel('ai_notifications')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'gl_upload_notifications',
+        filter: `company_id=eq.${selectedCompany.id}`
+      }, (payload) => {
+        setIsAIRunning(false);
+        const addedMsg = payload.new as { message: string };
+        toast({ 
+          title: 'Kész!', 
+          description: addedMsg.message || 'Az AI feldolgozás sikeresen befejeződött.',
+          className: "bg-green-50 text-green-900 border-green-200"
+        });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedCompany?.id, toast]);
 
   const toggleActivePresetMutation = useMutation({
     mutationFn: async (presetId: string) => {
@@ -75,7 +100,7 @@ export default function GeneralLedgerPage() {
     if (!selectedCompany?.id) return;
     setIsAIRunning(true);
     try {
-      const response = await fetch('https://n8n.thinkaikontir.hu/webhook-test/gl', {
+      const response = await fetch('https://n8n.thinkaikontir.hu/webhook/gl', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -156,57 +181,7 @@ export default function GeneralLedgerPage() {
                 {isAIRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
                 <span>AI Besorolás</span>
               </Button>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="flex items-center gap-3 bg-card p-3 rounded-xl border border-border shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="tax-year" className="whitespace-nowrap font-medium text-xs text-muted-foreground">Adóév</Label>
-                <Select value={taxYear} onValueChange={setTaxYear}>
-                  <SelectTrigger id="tax-year" className="w-[100px] h-9 text-sm relative">
-                    <SelectValue placeholder="Év" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 10 }, (_, i) => {
-                      const year = (parseInt(currentYear) - 5 + i).toString();
-                      return <SelectItem key={year} value={year}>{year}</SelectItem>;
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="date-from" className="whitespace-nowrap font-medium text-xs text-muted-foreground">Dátumtól</Label>
-                <Input 
-                  id="date-from" 
-                  type="date" 
-                  value={dateFrom} 
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="h-9 text-sm"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="date-to" className="whitespace-nowrap font-medium text-xs text-muted-foreground">Dátumig</Label>
-                <Input 
-                  id="date-to" 
-                  type="date" 
-                  value={dateTo} 
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="h-9 text-sm"
-                />
-              </div>
-              <div className="flex items-center gap-2 border-l pl-4 border-border/60">
-                <Checkbox 
-                  id="partner-breakdown" 
-                  checked={partnerBreakdown}
-                  onCheckedChange={(checked) => setPartnerBreakdown(checked as boolean)}
-                />
-                <Label htmlFor="partner-breakdown" className="whitespace-nowrap font-medium text-xs cursor-pointer select-none">
-                  Partner bontásban
-                </Label>
-              </div>
-              <div className="border-l pl-4 border-border/60">
+              <div className="border-l pl-3 border-border/60 ml-1">
                 <Button variant="outline" size="sm" className="h-9 gap-2" onClick={handlePrint}>
                   <Download className="w-4 h-4" />
                   <span className="hidden sm:inline">PDF Export</span>
@@ -234,7 +209,7 @@ export default function GeneralLedgerPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <GeneralLedgerTable presetId={activePresetId} />
+          <GeneralLedgerTable presetId={activePresetId} dateFrom={dateFrom} dateTo={dateTo} />
         </CardContent>
       </Card>
 
