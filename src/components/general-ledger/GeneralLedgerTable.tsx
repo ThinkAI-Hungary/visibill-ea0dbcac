@@ -180,13 +180,13 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     
     const itemId = editingItem.id.replace('item_', '');
     
-    const newGlItem = dbData?.find(gl => gl.gl_account_id === selectedNewGL);
+    const newGlItem = selectedNewGL === 'UNCLASSIFIED' ? null : dbData?.find(gl => gl.gl_account_id === selectedNewGL);
     const newGlNumber = newGlItem?.gl_number || '';
 
     const { data, error } = await supabase.rpc('override_gl_classification', {
        p_item_id: itemId,
        p_source_table: editingItem.sourceTable || '',
-       p_new_gl_account_id: selectedNewGL,
+       p_new_gl_account_id: selectedNewGL === 'UNCLASSIFIED' ? null : selectedNewGL,
        p_original_gl_account_id: editingItem.originalGlId || null,
        p_company_id: selectedCompany.id,
        p_user_id: session.user.id,
@@ -544,8 +544,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                             onClick={(e) => {
                               e.stopPropagation();
                               setEditingItem(row);
-                              // We use originalGlId to pre-fill the form
-                              setSelectedNewGL(row.originalGlId || '');
+                              // We use originalGlId to pre-fill the form, or UNCLASSIFIED if not mapped
+                              setSelectedNewGL(row.originalGlId || 'UNCLASSIFIED');
                               setSearchQuery('');
                               setIsEditOpen(true);
                             }}
@@ -611,12 +611,13 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
             <div className="bg-muted p-3 rounded-md border text-sm flex items-center justify-between w-full overflow-hidden gap-2">
               <span className="font-medium text-muted-foreground whitespace-nowrap">Új kategória:</span>
               <span className="font-bold text-foreground bg-background px-3 py-1.5 rounded border border-border shadow-sm truncate max-w-full">
-                {selectedNewGL && dbData
+                {selectedNewGL === 'UNCLASSIFIED' ? <span className="text-muted-foreground italic">Besorolatlan tétel (Kategória eltávolítva)</span> :
+                  (selectedNewGL && dbData
                   ? (() => {
                       const gl = dbData.find(g => g.gl_account_id === selectedNewGL);
                       return gl ? `${gl.gl_number} ${gl.short_name}` : "Válassz a listából...";
                     })()
-                  : "Válassz a listából..."}
+                  : "Válassz a listából...")}
               </span>
             </div>
 
@@ -630,6 +631,22 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
               <CommandList className="h-[300px] max-h-[300px] overflow-y-auto w-full overflow-x-hidden">
                 <CommandEmpty>Nincs találat.</CommandEmpty>
                 <CommandGroup>
+                  <CommandItem
+                    key="unclassified"
+                    value="besorolatlan uncategorized eltavolitas nincs"
+                    onSelect={() => setSelectedNewGL('UNCLASSIFIED')}
+                    className="cursor-pointer py-2 w-full overflow-hidden flex items-center mb-1 text-muted-foreground bg-muted/30"
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4 shrink-0",
+                        selectedNewGL === 'UNCLASSIFIED' ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <span className={cn("truncate block w-full", selectedNewGL === 'UNCLASSIFIED' ? "font-bold text-foreground" : "font-medium")}>
+                      Besorolatlan (Kategória eltávolítása)
+                    </span>
+                  </CommandItem>
                   {dbData
                     ?.filter(gl => !searchQuery || `${gl.gl_number} ${gl.short_name}`.toLowerCase().includes(searchQuery.toLowerCase()))
                     .slice()
@@ -663,7 +680,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={isSubmitting}>Mégse</Button>
-            <Button onClick={handleSaveOverride} disabled={!selectedNewGL || isSubmitting || selectedNewGL === editingItem?.originalGlId}>
+            <Button onClick={handleSaveOverride} disabled={!selectedNewGL || isSubmitting || selectedNewGL === (editingItem?.originalGlId || 'UNCLASSIFIED')}>
               {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Mentés
             </Button>
