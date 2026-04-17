@@ -50,8 +50,10 @@ const InvoicesPage = () => {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [itemsDialogOpen, setItemsDialogOpen] = useState(false);
+  const [submittedItemsDialogOpen, setSubmittedItemsDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<SubmittedInvoice | null>(null);
   const [selectedNavInvoice, setSelectedNavInvoice] = useState<NavInvoice | null>(null);
+  const [selectedSubmittedForItems, setSelectedSubmittedForItems] = useState<SubmittedInvoice | null>(null);
 
   // Row selection state
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
@@ -768,14 +770,15 @@ const InvoicesPage = () => {
                             <div className="flex items-center justify-end gap-2"><ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />ÁFA</div>
                           </TableHead>
                           <TableHead className="font-semibold w-[110px] text-center">Fiz. mód</TableHead>
+                          <TableHead className="font-semibold w-[60px] text-center">Tételek</TableHead>
                           <TableHead className="text-center font-semibold w-[80px]">Műveletek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {loading ? (
-                          <TableSkeleton rows={10} columns={10} />
+                          <TableSkeleton rows={10} columns={11} />
                         ) : paginatedSubmittedInvoices.length === 0 ? (
-                          <TableEmptyState colSpan={10} title="Nincs megjeleníthető számla" description="Próbáld módosítani a szűrőket vagy keresési feltételeket." />
+                          <TableEmptyState colSpan={11} title="Nincs megjeleníthető számla" description="Próbáld módosítani a szűrőket vagy keresési feltételeket." />
                         ) : (
                           paginatedSubmittedInvoices.map((invoice) => (
                             <React.Fragment key={invoice.id}>
@@ -825,6 +828,13 @@ const InvoicesPage = () => {
                                   <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground">{invoice.fizetesi_mod || 'Nem megadott'}</span>
                                 </TableCell>
                                 <TableCell className="text-center">
+                                  <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 opacity-70 group-hover:opacity-100" onClick={() => { setSelectedSubmittedForItems(invoice); setSubmittedItemsDialogOpen(true); }}>
+                                      <Package className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger><TooltipContent><p>Számlatételek megtekintése</p></TooltipContent></Tooltip></TooltipProvider>
+                                </TableCell>
+                                <TableCell className="text-center">
                                   <div className="flex items-center justify-center gap-1">
                                     {(invoice.image_url || invoice.melleklet_url) && (
                                       <HoverCard openDelay={200} closeDelay={100}>
@@ -850,7 +860,7 @@ const InvoicesPage = () => {
                                 const matches = getSubmittedInvoiceMatches(invoice);
                                 return (
                                   <ExpandedInvoiceRow
-                                    colSpan={10}
+                                    colSpan={11}
                                     matchedSubmittedInvoices={[]}
                                     matchedNavInvoices={matches.matchedNav}
                                     matchedTransactions={matches.matchedTransactions}
@@ -864,7 +874,7 @@ const InvoicesPage = () => {
                             </React.Fragment>
                           ))
                         )}
-                        <TablePlaceholderRows currentCount={paginatedSubmittedInvoices.length} pageSize={submittedPageSize} columns={10} />
+                        <TablePlaceholderRows currentCount={paginatedSubmittedInvoices.length} pageSize={submittedPageSize} columns={11} />
                       </TableBody>
                     </Table>
                   </div>
@@ -922,6 +932,16 @@ const InvoicesPage = () => {
         invoiceId={selectedNavInvoice?.id || ''}
         invoiceNumber={selectedNavInvoice?.invoice_number || ''}
         currency={selectedNavInvoice?.currency || 'HUF'}
+        source="nav"
+      />
+
+      <InvoiceItemsDialog
+        open={submittedItemsDialogOpen}
+        onOpenChange={(open) => { setSubmittedItemsDialogOpen(open); if (!open) setSelectedSubmittedForItems(null); }}
+        invoiceId={selectedSubmittedForItems?.id || ''}
+        invoiceNumber={selectedSubmittedForItems?.bizonylatsorszam || ''}
+        currency={selectedSubmittedForItems?.penznem || 'HUF'}
+        source="submitted"
       />
     </div>
   );

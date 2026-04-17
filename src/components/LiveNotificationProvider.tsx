@@ -304,7 +304,17 @@ export function LiveNotificationProvider() {
         { event: '*', schema: 'public', table: 'nav_invoice_items' },
         (payload) => {
           console.log('[RealtimeSync] nav_invoice_items', payload.eventType);
-          invalidate('navInvoiceItems', 'filteredNavInvoices', 'analyticsVat');
+          invalidate('invoiceItems', 'filteredNavInvoices', 'analyticsVat');
+        }
+      )
+
+      // ━━ INVOICE_ITEMS table (submitted/manual invoices) ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'invoice_items' },
+        (payload) => {
+          console.log('[RealtimeSync] invoice_items', payload.eventType);
+          invalidate('invoiceItems', 'filteredSubmittedInvoices', 'analyticsVat');
         }
       )
 
@@ -343,7 +353,7 @@ export function LiveNotificationProvider() {
           'partners', 'partnersFull', 'projects', 'projectsList',
           'pettyCashEntries', 'dashboardPettyCash',
           'categories', 'dunning-sends', 'syncLogs',
-          'navInvoiceItems',
+          'invoiceItems',
         );
       }
     };

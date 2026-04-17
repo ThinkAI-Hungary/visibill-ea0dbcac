@@ -42,6 +42,8 @@ interface InvoiceItemsDialogProps {
   invoiceId: string;
   invoiceNumber: string;
   currency: string;
+  /** Which table to query: 'nav' → nav_invoice_items, 'submitted' → invoice_items */
+  source?: 'nav' | 'submitted';
 }
 
 export function InvoiceItemsDialog({
@@ -50,13 +52,24 @@ export function InvoiceItemsDialog({
   invoiceId,
   invoiceNumber,
   currency,
+  source = 'nav',
 }: InvoiceItemsDialogProps) {
   const { selectedCompany } = useCompany();
   const { activePresetId } = useActivePreset(selectedCompany?.id);
 
   const { data: items = [], isLoading: loading } = useQuery({
-    queryKey: ['navInvoiceItems', invoiceId],
+    queryKey: ['invoiceItems', source, invoiceId],
     queryFn: async () => {
+      if (source === 'submitted') {
+        const { data, error } = await supabase
+          .from('invoice_items')
+          .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications')
+          .eq('invoice_id', invoiceId)
+          .order('line_number', { ascending: true });
+        if (error) throw error;
+        return (data || []) as InvoiceLineItem[];
+      }
+      // Default: NAV source
       const { data, error } = await supabase
         .from('nav_invoice_items')
         .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications')
@@ -77,6 +90,18 @@ export function InvoiceItemsDialog({
     if (qty === null || qty === undefined) return '-';
     const formatted = qty.toLocaleString('hu-HU', { maximumFractionDigits: 2 });
     return unit ? `${formatted} ${unit}` : formatted;
+  };
+
+  const formatVatRate = (rate: string | null) => {
+    if (!rate) return '-';
+    const num = parseFloat(rate);
+    // NAV format: 0.27 → 27%
+    if (!isNaN(num) && num > 0 && num < 1) return `${Math.round(num * 100)}%`;
+    // NAV format: 0 or 0.00 → 0%
+    if (!isNaN(num) && num === 0) return '0%';
+    // OCR format already has %: "27%", "5%" → keep as-is
+    // Special codes: "AAM", "TAM", "KBAET" → keep as-is
+    return rate;
   };
 
   const getGrossAmount = (item: InvoiceLineItem) => {
@@ -170,7 +195,7 @@ export function InvoiceItemsDialog({
                       </TableCell>
                       <TableCell className="text-center">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-                          {item.vat_rate || '-'}
+                          {formatVatRate(item.vat_rate)}
                         </span>
                       </TableCell>
                       <TableCell className="text-right font-mono">

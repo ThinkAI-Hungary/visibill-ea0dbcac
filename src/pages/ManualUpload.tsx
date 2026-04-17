@@ -1,4 +1,4 @@
-﻿import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { formatFileSize, extractStoragePath } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,16 @@ import { Upload, FileText, X, Building2, CreditCard, Wallet, Info, Landmark } fr
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -27,6 +37,12 @@ const ManualUpload = () => {
   const { selectedCompany } = useCompany();
   const { canProcessInvoice, incrementUsage, remainingInvoices } = useSubscription();
   const queryClient = useQueryClient();
+
+  // Duplicate re-upload confirmation state
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [duplicateFileNames, setDuplicateFileNames] = useState<string[]>([]);
+  const [duplicateUploadType, setDuplicateUploadType] = useState<'invoice' | 'transaction'>('invoice');
+  const pendingUploadRef = useRef<(() => void) | null>(null);
 
   const delayedUploadHistoryInvalidation = useCallback(() => {
     setTimeout(() => {
@@ -234,7 +250,7 @@ const ManualUpload = () => {
       return;
     }
 
-    // Check for duplicate files
+    // Check for duplicate files — warn but allow re-upload
     const duplicates: string[] = [];
     for (const file of selectedInvoiceFiles) {
       const isDuplicate = await checkDuplicateFile(file.name, 'invoice_uploads');
@@ -244,14 +260,18 @@ const ManualUpload = () => {
     }
 
     if (duplicates.length > 0) {
-      toast({
-        variant: "destructive",
-        title: "Korábban már feltöltött fájl(ok)",
-        description: `A következő fájl(ok) már sikeresen fel lettek töltve és feldolgozva: ${duplicates.join(', ')}`
-      });
+      // Show confirmation dialog instead of blocking
+      setDuplicateFileNames(duplicates);
+      setDuplicateUploadType('invoice');
+      pendingUploadRef.current = () => proceedWithInvoiceUpload();
+      setDuplicateDialogOpen(true);
       return;
     }
 
+    proceedWithInvoiceUpload();
+  };
+
+  const proceedWithInvoiceUpload = async () => {
     // Check if user can process invoices
     if (!canProcessInvoice()) {
       toast({
@@ -772,7 +792,7 @@ const ManualUpload = () => {
       return;
     }
 
-    // Check for duplicate files
+    // Check for duplicate files — warn but allow re-upload
     const duplicates: string[] = [];
     for (const file of selectedTransactionFiles) {
       const isDuplicate = await checkDuplicateFile(file.name, 'transaction_uploads');
@@ -782,14 +802,18 @@ const ManualUpload = () => {
     }
 
     if (duplicates.length > 0) {
-      toast({
-        variant: "destructive",
-        title: "Korábban már feltöltött fájl(ok)",
-        description: `A következő fájl(ok) már sikeresen fel lettek töltve és feldolgozva: ${duplicates.join(', ')}`
-      });
+      // Show confirmation dialog instead of blocking
+      setDuplicateFileNames(duplicates);
+      setDuplicateUploadType('transaction');
+      pendingUploadRef.current = () => proceedWithTransactionUpload();
+      setDuplicateDialogOpen(true);
       return;
     }
 
+    proceedWithTransactionUpload();
+  };
+
+  const proceedWithTransactionUpload = async () => {
     setUploading(true);
 
     // Show processing toast
@@ -1399,6 +1423,44 @@ const ManualUpload = () => {
       </div>
 
       <UploadHistory activeTab={activeTab} />
+
+      {/* Duplicate re-upload confirmation dialog */}
+      <AlertDialog open={duplicateDialogOpen} onOpenChange={setDuplicateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Korábban már feltöltött fájl(ok)</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  A következő fájl(ok) már sikeresen fel lettek töltve és feldolgozva:
+                </p>
+                <ul className="list-disc pl-5 space-y-1">
+                  {duplicateFileNames.map((name, i) => (
+                    <li key={i} className="font-medium text-foreground">{name}</li>
+                  ))}
+                </ul>
+                <p>
+                  Szeretnéd újra feltölteni? A korábbi adatok frissülni fognak az új feldolgozás eredményével.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Mégsem</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setDuplicateDialogOpen(false);
+                if (pendingUploadRef.current) {
+                  pendingUploadRef.current();
+                  pendingUploadRef.current = null;
+                }
+              }}
+            >
+              Igen, újra feltöltöm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

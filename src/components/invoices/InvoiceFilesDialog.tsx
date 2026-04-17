@@ -38,7 +38,7 @@ export function InvoiceFilesDialog() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UploadWithInvoices | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [uploaderFilter, setUploaderFilter] = useState('all');
@@ -139,41 +139,86 @@ export function InvoiceFilesDialog() {
     });
   }, [uploads, searchQuery, uploaderFilter]);
 
-  const handleDelete = async (id: string) => {
+  // Option A: Delete ONLY the uploaded file (keep invoice data)
+  const handleDeleteFileOnly = async (upload: UploadWithInvoices) => {
     setDeleting(true);
     try {
-      // BUG #6 FIX: Fetch file URL before deleting so we can clean up Storage
+      // Fetch file URL for storage cleanup
       const { data: uploadData } = await supabase
         .from('invoice_uploads')
         .select('file_url')
-        .eq('id', id)
+        .eq('id', upload.id)
         .single();
 
+      // Unlink invoices from this upload (set invoice_uploads_id to null)
+      await supabase
+        .from('invoices')
+        .update({ invoice_uploads_id: null })
+        .eq('invoice_uploads_id', upload.id);
+
+      // Delete the upload record
       const { error } = await supabase
         .from('invoice_uploads')
         .delete()
-        .eq('id', id);
+        .eq('id', upload.id);
       if (error) throw error;
 
-      // BUG #6 FIX: Remove file from Storage bucket
+      // Remove file from Storage
       if (uploadData?.file_url) {
         const storagePath = extractStoragePath(uploadData.file_url, 'invoice-uploads');
         if (storagePath) {
           await supabase.storage.from('invoice-uploads').remove([storagePath]);
-          console.log('Deleted Storage file:', storagePath);
+        }
+      }
+
+      toast({ title: 'Sikeres törlés', description: 'A fájl törölve lett. A számla adatok megmaradtak.', duration: 3000 });
+      queryClient.invalidateQueries({ queryKey: ['invoice_uploads_with_invoices', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
+    } catch (err: any) {
+      toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
+  };
+
+  // Option B: Delete file AND associated invoice data
+  const handleDeleteFileAndInvoice = async (upload: UploadWithInvoices) => {
+    setDeleting(true);
+    try {
+      // Fetch file URL for storage cleanup
+      const { data: uploadData } = await supabase
+        .from('invoice_uploads')
+        .select('file_url')
+        .eq('id', upload.id)
+        .single();
+
+      // Delete the upload record (CASCADE will delete linked invoices + invoice_items)
+      const { error } = await supabase
+        .from('invoice_uploads')
+        .delete()
+        .eq('id', upload.id);
+      if (error) throw error;
+
+      // Remove file from Storage
+      if (uploadData?.file_url) {
+        const storagePath = extractStoragePath(uploadData.file_url, 'invoice-uploads');
+        if (storagePath) {
+          await supabase.storage.from('invoice-uploads').remove([storagePath]);
         }
       }
 
       toast({ title: 'Sikeres törlés', description: 'A dokumentum és a hozzá tartozó számlák törölve lettek.', duration: 3000 });
       queryClient.invalidateQueries({ queryKey: ['invoice_uploads_with_invoices', companyId] });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['nav_invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
       queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     } catch (err: any) {
       toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
     } finally {
       setDeleting(false);
-      setDeleteId(null);
+      setDeleteTarget(null);
     }
   };
 
@@ -266,7 +311,7 @@ export function InvoiceFilesDialog() {
                           variant="ghost"
                           size="sm"
                           className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                          onClick={() => setDeleteId(upload.id)}
+                          onClick={() => setDeleteTarget(upload)}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -280,25 +325,75 @@ export function InvoiceFilesDialog() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
-        <AlertDialogContent>
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Dokumentum törlése</AlertDialogTitle>
-            <AlertDialogDescription>
-              Biztosan törlöd ezt a dokumentumot? Minden belőle származó számla adat is törlődni fog.
-              Ez a művelet nem vonható vissza.
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>Válaszd ki a törlés módját:</p>
+                <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Mégse</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 text-white"
+
+          <div className="space-y-2 py-1">
+            {/* Option A: File only */}
+            <button
               disabled={deleting}
-              onClick={() => { if (deleteId) handleDelete(deleteId); }}
+              onClick={() => { if (deleteTarget) handleDeleteFileOnly(deleteTarget); }}
+              className="w-full text-left p-3 rounded-lg border border-border/60 hover:border-primary/50 hover:bg-primary/5 dark:hover:bg-primary/10 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
-              Törlés
-            </AlertDialogAction>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <span className="text-xs font-bold text-amber-600 dark:text-amber-400">A</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Csak a fájl törlése
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    A <span className="font-medium text-foreground">{deleteTarget?.file_name}</span> fájl törlődik, de a feldolgozott számla adatok megmaradnak.
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            {/* Option B: File + Invoice data */}
+            <button
+              disabled={deleting}
+              onClick={() => { if (deleteTarget) handleDeleteFileAndInvoice(deleteTarget); }}
+              className="w-full text-left p-3 rounded-lg border border-red-200 dark:border-red-900/40 hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <span className="text-xs font-bold text-red-600 dark:text-red-400">B</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-red-600 dark:text-red-400">
+                    Fájl és számla adatok törlése
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    A <span className="font-medium text-foreground">{deleteTarget?.file_name}</span> fájl és a hozzátartozó{' '}
+                    <span className="font-medium text-foreground">
+                      {deleteTarget?.invoiceNumbers.join(', ')}
+                    </span>{' '}
+                    számla(ák) is véglegesen törlődnek.
+                  </p>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          {deleting && (
+            <div className="flex items-center justify-center py-2">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Törlés folyamatban...</span>
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Mégsem</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

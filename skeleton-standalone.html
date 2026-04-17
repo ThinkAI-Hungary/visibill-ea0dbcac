@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skeleton Background</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #09090b;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Background glowing orbs */
+    .orb1 {
+      position: absolute;
+      top: 25%;
+      right: 25%;
+      width: 384px;
+      height: 384px;
+      background: rgba(20, 220, 170, 0.20);
+      border-radius: 50%;
+      filter: blur(48px);
+    }
+    .orb2 {
+      position: absolute;
+      bottom: 25%;
+      left: 33%;
+      width: 288px;
+      height: 288px;
+      background: rgba(20, 220, 170, 0.10);
+      border-radius: 50%;
+      filter: blur(48px);
+    }
+
+    /* Isometric dashboard */
+    .isometric {
+      position: absolute;
+      right: -80px;
+      top: 40px;
+      width: 150%;
+      height: 150%;
+      filter: blur(2px);
+      opacity: 0.30;
+      transform: rotate(-12deg) skewY(12deg) scale(1.1);
+    }
+    .isometric .inner {
+      width: 100%;
+      height: 100%;
+      padding: 32px;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 64px;
+      background: rgba(255,255,255,0.05);
+      border-right: 1px solid rgba(255,255,255,0.05);
+    }
+    .sidebar-icons {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding-top: 32px;
+    }
+    .sidebar-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.10);
+    }
+
+    /* Header */
+    .header {
+      position: absolute;
+      left: 64px;
+      top: 0;
+      right: 0;
+      height: 56px;
+      background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+    }
+    .header-logo {
+      width: 128px;
+      height: 24px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.10);
+    }
+    .header-spacer { flex: 1; }
+    .header-nav {
+      width: 96px;
+      height: 24px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.10);
+    }
+    .header-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.10);
+    }
+
+    /* Main Content */
+    .main {
+      position: absolute;
+      left: 80px;
+      top: 80px;
+      right: 32px;
+      bottom: 32px;
+      padding: 24px;
+    }
+
+    /* Stat cards */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      height: 96px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.05);
+      padding: 16px;
+    }
+    .stat-label {
+      width: 64px;
+      height: 12px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.10);
+      margin-bottom: 12px;
+    }
+    .stat-value {
+      width: 96px;
+      height: 24px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.10);
+      margin-bottom: 8px;
+    }
+    .stat-delta {
+      width: 48px;
+      height: 12px;
+      border-radius: 4px;
+      background: rgba(20, 220, 170, 0.20);
+    }
+
+    /* Chart card */
+    .chart-card {
+      height: 256px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.05);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .chart-title {
+      width: 128px;
+      height: 16px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.10);
+    }
+    .chart-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    .chart-btn {
+      width: 64px;
+      height: 24px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.10);
+    }
+    .chart-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      height: 160px;
+      padding-top: 16px;
+    }
+    .chart-bar {
+      flex: 1;
+      border-radius: 4px 4px 0 0;
+      background: rgba(20, 220, 170, 0.20);
+    }
+
+    /* Bottom cards */
+    .bottom-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    .bottom-card {
+      height: 160px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.05);
+      padding: 16px;
+    }
+    .bottom-title {
+      width: 96px;
+      height: 16px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.10);
+      margin-bottom: 16px;
+    }
+    .bottom-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .bottom-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .bottom-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(20, 220, 170, 0.30);
+    }
+    .bottom-line {
+      flex: 1;
+      height: 12px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.10);
+    }
+    .bottom-amount {
+      width: 48px;
+      height: 12px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.10);
+    }
+  </style>
+</head>
+<body>
+  <!-- Glowing orbs -->
+  <div class="orb1"></div>
+  <div class="orb2"></div>
+
+  <!-- Isometric Dashboard -->
+  <div class="isometric">
+    <div class="inner">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-icons">
+          <div class="sidebar-icon"></div>
+          <div class="sidebar-icon"></div>
+          <div class="sidebar-icon"></div>
+          <div class="sidebar-icon"></div>
+          <div class="sidebar-icon"></div>
+          <div class="sidebar-icon"></div>
+        </div>
+      </div>
+
+      <!-- Header -->
+      <div class="header">
+        <div class="header-logo"></div>
+        <div class="header-spacer"></div>
+        <div class="header-nav"></div>
+        <div class="header-avatar"></div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main">
+        <!-- Stats Row -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label"></div>
+            <div class="stat-value"></div>
+            <div class="stat-delta"></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"></div>
+            <div class="stat-value"></div>
+            <div class="stat-delta"></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"></div>
+            <div class="stat-value"></div>
+            <div class="stat-delta"></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"></div>
+            <div class="stat-value"></div>
+            <div class="stat-delta"></div>
+          </div>
+        </div>
+
+        <!-- Chart Card -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title"></div>
+            <div class="chart-buttons">
+              <div class="chart-btn"></div>
+              <div class="chart-btn"></div>
+            </div>
+          </div>
+          <div class="chart-bars">
+            <div class="chart-bar" style="height: 40%"></div>
+            <div class="chart-bar" style="height: 65%"></div>
+            <div class="chart-bar" style="height: 45%"></div>
+            <div class="chart-bar" style="height: 80%"></div>
+            <div class="chart-bar" style="height: 55%"></div>
+            <div class="chart-bar" style="height: 90%"></div>
+            <div class="chart-bar" style="height: 70%"></div>
+            <div class="chart-bar" style="height: 85%"></div>
+            <div class="chart-bar" style="height: 60%"></div>
+            <div class="chart-bar" style="height: 75%"></div>
+            <div class="chart-bar" style="height: 95%"></div>
+            <div class="chart-bar" style="height: 80%"></div>
+          </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="bottom-row">
+          <div class="bottom-card">
+            <div class="bottom-title"></div>
+            <div class="bottom-rows">
+              <div class="bottom-item">
+                <div class="bottom-dot"></div>
+                <div class="bottom-line"></div>
+                <div class="bottom-amount"></div>
+              </div>
+              <div class="bottom-item">
+                <div class="bottom-dot"></div>
+                <div class="bottom-line"></div>
+                <div class="bottom-amount"></div>
+              </div>
+              <div class="bottom-item">
+                <div class="bottom-dot"></div>
+                <div class="bottom-line"></div>
+                <div class="bottom-amount"></div>
+              </div>
+              <div class="bottom-item">
+                <div class="bottom-dot"></div>
+                <div class="bottom-line"></div>
+                <div class="bottom-amount"></div>
+              </div>
+            </div>
+          </div>
+          <div class="bottom-card">
+            <div class="bottom-title"></div>
+            <div class="bottom-rows">
+              <div class="bottom-item">
+                <div class="bottom-dot"></div>
+                <div class="bottom-line"></div>
+                <div class="bottom-amount"></div>
+              </div>
+              <div class="bottom-item">
+                <div class="bottom-dot"></div>
+                <div class="bottom-line"></div>
+                <div class="bottom-amount"></div>
+              </div>
+              <div class="bottom-item">
+                <div class="bottom-dot"></div>
+                <div class="bottom-line"></div>
+                <div class="bottom-amount"></div>
+              </div>
+              <div class="bottom-item">
+                <div class="bottom-dot"></div>
+                <div class="bottom-line"></div>
+                <div class="bottom-amount"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

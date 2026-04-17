@@ -858,6 +858,65 @@ export type Database = {
           },
         ]
       }
+      invoice_items: {
+        Row: {
+          created_at: string | null
+          gl_classifications: Json | null
+          gross_amount: number | null
+          id: string
+          invoice_id: string
+          line_description: string | null
+          line_number: number
+          net_amount: number | null
+          product_code: string | null
+          quantity: number | null
+          unit_of_measure: string | null
+          unit_price: number | null
+          vat_amount: number | null
+          vat_rate: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          gl_classifications?: Json | null
+          gross_amount?: number | null
+          id?: string
+          invoice_id: string
+          line_description?: string | null
+          line_number: number
+          net_amount?: number | null
+          product_code?: string | null
+          quantity?: number | null
+          unit_of_measure?: string | null
+          unit_price?: number | null
+          vat_amount?: number | null
+          vat_rate?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          gl_classifications?: Json | null
+          gross_amount?: number | null
+          id?: string
+          invoice_id?: string
+          line_description?: string | null
+          line_number?: number
+          net_amount?: number | null
+          product_code?: string | null
+          quantity?: number | null
+          unit_of_measure?: string | null
+          unit_price?: number | null
+          vat_amount?: number | null
+          vat_rate?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           adoalap_osszesen: number
@@ -1116,6 +1175,7 @@ export type Database = {
       nav_invoice_items: {
         Row: {
           created_at: string | null
+          gl_classifications: Json | null
           gross_amount: number | null
           id: string
           line_description: string | null
@@ -1131,6 +1191,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          gl_classifications?: Json | null
           gross_amount?: number | null
           id?: string
           line_description?: string | null
@@ -1146,6 +1207,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          gl_classifications?: Json | null
           gross_amount?: number | null
           id?: string
           line_description?: string | null
