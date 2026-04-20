@@ -35,12 +35,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
         )}
         <main className="flex-1 overflow-y-auto bg-background p-6 print:p-0 print:overflow-visible">
-          {/* Atomic content boundary keyed by companyId */}
-          <div key={selectedCompany?.id ?? 'no-company'} className="h-full">
-            <Suspense fallback={<ContentSkeleton />}>
-              {children || <Outlet />}
-            </Suspense>
-          </div>
+          <Suspense fallback={<ContentSkeleton />}>
+            {children || <Outlet />}
+          </Suspense>
         </main>
       </div>
     </SidebarProvider>
