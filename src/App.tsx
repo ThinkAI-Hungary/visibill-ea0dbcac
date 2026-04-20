@@ -39,9 +39,7 @@ const PettyCashPage = lazy(() => import("./pages/PettyCashPage"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const GeneralLedgerPage = lazy(() => import("./pages/GeneralLedgerPage"));
 const WorkingTimePage = lazy(() => import("./pages/WorkingTimePage"));
-// TENY — eagerly preload so React.lazy's promise is resolved before user navigates
-const fixedAssetsImport = import("./pages/FixedAssetsPage");
-const FixedAssetsPage = lazy(() => fixedAssetsImport);
+const FixedAssetsPage = lazy(() => import("./pages/FixedAssetsPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {

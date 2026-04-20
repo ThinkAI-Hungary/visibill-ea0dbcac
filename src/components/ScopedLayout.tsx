@@ -83,12 +83,13 @@ export function ScopedLayout() {
     // Only update if the URL doesn't already match
     if (!location.pathname.startsWith(expectedPrefix)) {
       const page = extractPageSegment(location.pathname);
-      const newPath = generateScopedPath(
-        selectedCompany.id,
-        dateFromFormatted,
-        dateToFormatted,
-        page === '/' ? '' : page.slice(1),
-      );
+      const newPath =
+        generateScopedPath(
+          selectedCompany.id,
+          dateFromFormatted,
+          dateToFormatted,
+          page === '/' ? '' : page.slice(1),
+        ) + location.search + location.hash;
       navigate(newPath, { replace: true });
     }
   }, [selectedCompany?.id, dateFromFormatted, dateToFormatted]); // eslint-disable-line react-hooks/exhaustive-deps
