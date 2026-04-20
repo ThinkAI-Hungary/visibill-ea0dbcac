@@ -21,7 +21,6 @@ interface AppLayoutProps {
  */
 export function AppLayout({ children }: AppLayoutProps) {
   const { isEmployee } = useUserRole();
-  const { selectedCompany } = useCompany();
 
   return (
     <SidebarProvider className="h-screen w-full overflow-hidden flex !min-h-0 print:h-auto print:overflow-visible">
