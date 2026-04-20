@@ -74,7 +74,7 @@ export default function FixedAssetsPage() {
     if (actionFromUrl === 'inventory' && !inventoryCheckOpen) setInventoryCheckOpen(true);
   }, [actionFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!selectedCompany) return <ContentSkeleton />;
+  if (!selectedCompany) return null;
 
   const activeCount = assets.filter(a => a.status === 'active').length;
 
