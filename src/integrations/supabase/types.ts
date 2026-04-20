@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      asset_events: {
+        Row: {
+          asset_id: string
+          company_id: string
+          created_at: string | null
+          description: string | null
+          event_date: string
+          event_type: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          user_id: string
+        }
+        Insert: {
+          asset_id: string
+          company_id: string
+          created_at?: string | null
+          description?: string | null
+          event_date?: string
+          event_type: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          user_id: string
+        }
+        Update: {
+          asset_id?: string
+          company_id?: string
+          created_at?: string | null
+          description?: string | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_events_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: Database["public"]["Enums"]["audit_action_type"]
@@ -371,6 +425,47 @@ export type Database = {
         }
         Relationships: []
       }
+      company_locations: {
+        Row: {
+          address: string
+          company_id: string
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          location_type: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          address: string
+          company_id: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          location_type?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          location_type?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_locations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_members: {
         Row: {
           company_id: string
@@ -654,6 +749,131 @@ export type Database = {
           },
         ]
       }
+      fixed_assets: {
+        Row: {
+          acquisition_value: number
+          activated_by_name: string | null
+          activated_by_user_id: string | null
+          activation_date: string
+          company_id: string
+          created_at: string | null
+          currency: string | null
+          depreciation_method: string | null
+          description: string | null
+          disposal_date: string | null
+          documents: Json | null
+          gl_account_id: string | null
+          id: string
+          inventory_number: string
+          location_id: string | null
+          name: string
+          purchase_date: string
+          residual_value: number | null
+          source_invoice_id: string | null
+          source_invoice_number: string | null
+          source_invoice_type: string | null
+          status: string
+          supplier_name: string | null
+          tao_rate_override: number | null
+          tao_template_id: string | null
+          updated_at: string | null
+          useful_life_months: number
+          user_id: string
+          vtsz_teszor: string | null
+        }
+        Insert: {
+          acquisition_value: number
+          activated_by_name?: string | null
+          activated_by_user_id?: string | null
+          activation_date: string
+          company_id: string
+          created_at?: string | null
+          currency?: string | null
+          depreciation_method?: string | null
+          description?: string | null
+          disposal_date?: string | null
+          documents?: Json | null
+          gl_account_id?: string | null
+          id?: string
+          inventory_number: string
+          location_id?: string | null
+          name: string
+          purchase_date: string
+          residual_value?: number | null
+          source_invoice_id?: string | null
+          source_invoice_number?: string | null
+          source_invoice_type?: string | null
+          status?: string
+          supplier_name?: string | null
+          tao_rate_override?: number | null
+          tao_template_id?: string | null
+          updated_at?: string | null
+          useful_life_months: number
+          user_id: string
+          vtsz_teszor?: string | null
+        }
+        Update: {
+          acquisition_value?: number
+          activated_by_name?: string | null
+          activated_by_user_id?: string | null
+          activation_date?: string
+          company_id?: string
+          created_at?: string | null
+          currency?: string | null
+          depreciation_method?: string | null
+          description?: string | null
+          disposal_date?: string | null
+          documents?: Json | null
+          gl_account_id?: string | null
+          id?: string
+          inventory_number?: string
+          location_id?: string | null
+          name?: string
+          purchase_date?: string
+          residual_value?: number | null
+          source_invoice_id?: string | null
+          source_invoice_number?: string | null
+          source_invoice_type?: string | null
+          status?: string
+          supplier_name?: string | null
+          tao_rate_override?: number | null
+          tao_template_id?: string | null
+          updated_at?: string | null
+          useful_life_months?: number
+          user_id?: string
+          vtsz_teszor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixed_assets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixed_assets_gl_account_id_fkey"
+            columns: ["gl_account_id"]
+            isOneToOne: false
+            referencedRelation: "gl_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixed_assets_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "company_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixed_assets_tao_template_id_fkey"
+            columns: ["tao_template_id"]
+            isOneToOne: false
+            referencedRelation: "tao_depreciation_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gl_accounts: {
         Row: {
           company_id: string | null
@@ -717,27 +937,30 @@ export type Database = {
           company_id: string | null
           created_at: string | null
           id: string
+          item_id: string
           new_gl_account_id: string
           original_gl_account_id: string | null
-          item_id: string
+          source_table: string | null
           user_id: string
         }
         Insert: {
           company_id?: string | null
           created_at?: string | null
           id?: string
+          item_id: string
           new_gl_account_id: string
           original_gl_account_id?: string | null
-          item_id: string
+          source_table?: string | null
           user_id: string
         }
         Update: {
           company_id?: string | null
           created_at?: string | null
           id?: string
+          item_id?: string
           new_gl_account_id?: string
           original_gl_account_id?: string | null
-          item_id?: string
+          source_table?: string | null
           user_id?: string
         }
         Relationships: [
@@ -748,21 +971,28 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "gl_overrides_log_new_gl_account_id_fkey"
-            columns: ["new_gl_account_id"]
-            isOneToOne: false
-            referencedRelation: "gl_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "gl_overrides_log_original_gl_account_id_fkey"
-            columns: ["original_gl_account_id"]
-            isOneToOne: false
-            referencedRelation: "gl_accounts"
-            referencedColumns: ["id"]
-          },
         ]
+      }
+      gl_upload_notifications: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          message: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          message: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          message?: string
+        }
+        Relationships: []
       }
       hp_settings: {
         Row: {
@@ -797,62 +1027,6 @@ export type Database = {
             foreignKeyName: "hp_settings_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: true
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      invoice_uploads: {
-        Row: {
-          company_id: string | null
-          created_at: string
-          error_message: string | null
-          file_name: string
-          file_size: number
-          file_type: string
-          file_url: string
-          id: string
-          metadata: Json | null
-          processing_status: string
-          updated_at: string
-          upload_status: string
-          user_id: string
-        }
-        Insert: {
-          company_id?: string | null
-          created_at?: string
-          error_message?: string | null
-          file_name: string
-          file_size: number
-          file_type: string
-          file_url: string
-          id?: string
-          metadata?: Json | null
-          processing_status?: string
-          updated_at?: string
-          upload_status?: string
-          user_id: string
-        }
-        Update: {
-          company_id?: string | null
-          created_at?: string
-          error_message?: string | null
-          file_name?: string
-          file_size?: number
-          file_type?: string
-          file_url?: string
-          id?: string
-          metadata?: Json | null
-          processing_status?: string
-          updated_at?: string
-          upload_status?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "invoice_uploads_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
@@ -917,6 +1091,62 @@ export type Database = {
           },
         ]
       }
+      invoice_uploads: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          error_message: string | null
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id: string
+          metadata: Json | null
+          processing_status: string
+          updated_at: string
+          upload_status: string
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id?: string
+          metadata?: Json | null
+          processing_status?: string
+          updated_at?: string
+          upload_status?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          file_url?: string
+          id?: string
+          metadata?: Json | null
+          processing_status?: string
+          updated_at?: string
+          upload_status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_uploads_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           adoalap_osszesen: number
@@ -945,6 +1175,7 @@ export type Database = {
           frissitve: string
           gl_account_id: string | null
           gl_ai_confidence_score: number | null
+          gl_classifications: Json | null
           gl_is_manually_overridden: boolean | null
           gl_reasoning: string | null
           id: string
@@ -996,6 +1227,7 @@ export type Database = {
           frissitve?: string
           gl_account_id?: string | null
           gl_ai_confidence_score?: number | null
+          gl_classifications?: Json | null
           gl_is_manually_overridden?: boolean | null
           gl_reasoning?: string | null
           id?: string
@@ -1047,6 +1279,7 @@ export type Database = {
           frissitve?: string
           gl_account_id?: string | null
           gl_ai_confidence_score?: number | null
+          gl_classifications?: Json | null
           gl_is_manually_overridden?: boolean | null
           gl_reasoning?: string | null
           id?: string
@@ -1245,6 +1478,7 @@ export type Database = {
           fetched_at: string | null
           gl_account_id: string | null
           gl_ai_confidence_score: number | null
+          gl_classifications: Json | null
           gl_is_manually_overridden: boolean | null
           gl_reasoning: string | null
           id: string
@@ -1281,6 +1515,7 @@ export type Database = {
           fetched_at?: string | null
           gl_account_id?: string | null
           gl_ai_confidence_score?: number | null
+          gl_classifications?: Json | null
           gl_is_manually_overridden?: boolean | null
           gl_reasoning?: string | null
           id?: string
@@ -1317,6 +1552,7 @@ export type Database = {
           fetched_at?: string | null
           gl_account_id?: string | null
           gl_ai_confidence_score?: number | null
+          gl_classifications?: Json | null
           gl_is_manually_overridden?: boolean | null
           gl_reasoning?: string | null
           id?: string
@@ -1968,6 +2204,30 @@ export type Database = {
         }
         Relationships: []
       }
+      tao_depreciation_templates: {
+        Row: {
+          category_code: string | null
+          created_at: string | null
+          id: string
+          name: string
+          tao_rate_percent: number
+        }
+        Insert: {
+          category_code?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          tao_rate_percent: number
+        }
+        Update: {
+          category_code?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          tao_rate_percent?: number
+        }
+        Relationships: []
+      }
       tax: {
         Row: {
           adonem: string
@@ -2124,6 +2384,7 @@ export type Database = {
           description: string | null
           gl_account_id: string | null
           gl_ai_confidence_score: number | null
+          gl_classifications: Json | null
           gl_is_manually_overridden: boolean | null
           gl_reasoning: string | null
           id: string
@@ -2144,6 +2405,7 @@ export type Database = {
           description?: string | null
           gl_account_id?: string | null
           gl_ai_confidence_score?: number | null
+          gl_classifications?: Json | null
           gl_is_manually_overridden?: boolean | null
           gl_reasoning?: string | null
           id?: string
@@ -2164,6 +2426,7 @@ export type Database = {
           description?: string | null
           gl_account_id?: string | null
           gl_ai_confidence_score?: number | null
+          gl_classifications?: Json | null
           gl_is_manually_overridden?: boolean | null
           gl_reasoning?: string | null
           id?: string
@@ -2568,35 +2831,6 @@ export type Database = {
               vevo_nev: string
             }[]
           }
-      get_gl_categorized_items: {
-        Args: {
-          p_company_id: string
-          p_preset_id: string
-        }
-        Returns: {
-          item_id: string
-          gl_account_id: string
-          source_table: string
-          item_type: string
-          partner: string | null
-          description: string | null
-          amount: number
-          item_date: string | null
-        }[]
-      }
-      override_gl_classification: {
-        Args: {
-          p_item_id: string
-          p_source_table: string
-          p_new_gl_account_id: string
-          p_original_gl_account_id: string | null
-          p_company_id: string
-          p_user_id: string
-          p_preset_id: string
-          p_new_gl_number: string
-        }
-        Returns: boolean
-      }
         | {
             Args: {
               p_amount_max?: number
@@ -2637,7 +2871,12 @@ export type Database = {
             }[]
           }
       get_gl_balances: {
-        Args: { p_company_id: string; p_preset_id: string }
+        Args: {
+          p_company_id: string
+          p_date_from?: string
+          p_date_to?: string
+          p_preset_id: string
+        }
         Returns: {
           gl_account_id: string
           gl_number: string
@@ -2645,6 +2884,38 @@ export type Database = {
           total_balance: number
         }[]
       }
+      get_gl_categorized_items:
+        | {
+            Args: { p_company_id: string }
+            Returns: {
+              amount: number
+              description: string
+              gl_account_id: string
+              item_date: string
+              item_id: string
+              item_type: string
+              partner: string
+              source_table: string
+            }[]
+          }
+        | {
+            Args: {
+              p_company_id: string
+              p_date_from?: string
+              p_date_to?: string
+              p_preset_id: string
+            }
+            Returns: {
+              amount: number
+              description: string
+              gl_account_id: string
+              item_date: string
+              item_id: string
+              item_type: string
+              partner: string
+              source_table: string
+            }[]
+          }
       get_invoice_aggregates: {
         Args: { p_company_id: string; p_date_from: string; p_date_to: string }
         Returns: {
@@ -2721,6 +2992,31 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: boolean
       }
+      override_gl_classification:
+        | {
+            Args: {
+              p_company_id: string
+              p_item_id: string
+              p_new_gl_account_id: string
+              p_original_gl_account_id: string
+              p_source_table: string
+              p_user_id: string
+            }
+            Returns: boolean
+          }
+        | {
+            Args: {
+              p_company_id: string
+              p_item_id: string
+              p_new_gl_account_id: string
+              p_new_gl_number: string
+              p_original_gl_account_id: string
+              p_preset_id: string
+              p_source_table: string
+              p_user_id: string
+            }
+            Returns: boolean
+          }
       reset_monthly_usage: { Args: never; Returns: number }
       save_nav_credentials: {
         Args: {
@@ -2753,12 +3049,14 @@ export type Database = {
         | "törlés"
         | "feltöltés"
         | "párosítás"
+        | "aktiválás"
       audit_entity_type:
         | "számla"
         | "bérjegyzék"
         | "tranzakció"
         | "kategória"
         | "dokumentum"
+        | "tárgyi_eszköz"
       salary_item_type: "bér" | "ÁFA" | "adó" | "járulék"
       salary_payment_method: "banki tranzakció" | "készpénz"
       salary_status_type: "Függő" | "Kifizetve"
@@ -2895,6 +3193,7 @@ export const Constants = {
         "törlés",
         "feltöltés",
         "párosítás",
+        "aktiválás",
       ],
       audit_entity_type: [
         "számla",
@@ -2902,6 +3201,7 @@ export const Constants = {
         "tranzakció",
         "kategória",
         "dokumentum",
+        "tárgyi_eszköz",
       ],
       salary_item_type: ["bér", "ÁFA", "adó", "járulék"],
       salary_payment_method: ["banki tranzakció", "készpénz"],

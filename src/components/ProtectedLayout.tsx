@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AppLayout } from '@/components/AppLayout';
 import { useAppReady } from '@/hooks/useAppReady';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,22 +9,19 @@ import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { LiveNotificationProvider } from '@/components/LiveNotificationProvider';
 
 /**
- * ProtectedLayout — Full-Stop Loading Guard + Sign-Out Overlay.
+ * ProtectedLayout — Single root gate for all protected routes.
  *
- * Renders NOTHING until auth + company + role are all resolved.
+ * Renders NOTHING until auth + company + role + profile are all resolved.
  * The index.html #initial-loader stays visible during this time.
  *
- * If the user has no companies (fresh onboarding), the sidebar is
- * skipped entirely to avoid a flash before the onboarding modal.
- *
- * When signing out, a full-screen overlay covers the layout
- * so the user sees a clean "Kijelentkezés..." screen.
+ * All redirects (auth, onboarding) happen synchronously here via <Navigate/>
+ * — no useEffect-based redirects, so no flash of forbidden content.
  */
 export function ProtectedLayout() {
-  const { isReady, user } = useAppReady();
+  const { isReady, user, redirectTarget } = useAppReady();
   const { isSigningOut } = useAuth();
   const { companies, isInitialLoading: companyLoading } = useCompany();
-  const navigate = useNavigate();
+  const location = useLocation();
   const loaderRemovedRef = useRef(false);
 
   // Remove the HTML initial-loader once we're ready and rendering
@@ -41,31 +38,33 @@ export function ProtectedLayout() {
     }
   }, [isReady]);
 
-  // Redirect to /auth if not logged in — use replace to clear history
-  useEffect(() => {
-    if (isReady && !user && !isSigningOut) {
-      const loader = document.getElementById('initial-loader');
-      if (loader) loader.remove();
-      // Save current URL as returnTo so we can redirect back after login
-      const returnTo = window.location.pathname + window.location.search;
-      const authUrl = returnTo && returnTo !== '/' ? `/auth?returnTo=${encodeURIComponent(returnTo)}` : '/auth';
-      navigate(authUrl, { replace: true });
-    }
-  }, [isReady, user, isSigningOut, navigate]);
-
   // Full-Stop: render NOTHING until ready
   if (!isReady) {
     return null;
   }
 
-  // Not logged in — redirect is happening
+  // Synchronous redirects — happen before any lazy chunk is mounted.
+  if (redirectTarget === 'auth' && !isSigningOut) {
+    const returnTo = location.pathname + location.search;
+    const authUrl =
+      returnTo && returnTo !== '/' ? `/auth?returnTo=${encodeURIComponent(returnTo)}` : '/auth';
+    // Clean up loader if still present
+    const loader = document.getElementById('initial-loader');
+    if (loader) loader.remove();
+    return <Navigate to={authUrl} replace />;
+  }
+
+  if (redirectTarget === 'onboarding' && location.pathname !== '/categories') {
+    return <Navigate to="/categories" replace />;
+  }
+
+  // Sign-out in progress — keep DOM mounted with overlay
   if (!user && !isSigningOut) {
     return null;
   }
 
   // Fresh user with no companies: skip sidebar entirely to avoid
   // the visual flash (sidebar → darken → onboarding modal).
-  // Render the Outlet directly so EmptyStateDashboard goes full-screen.
   const hasNoCompanies = !companyLoading && companies.length === 0;
 
   return (
