@@ -1,53 +1,102 @@
 
 
-## Audit: Employee role menu flash problem
+## CRP & Auth Guard Audit — Findings
 
-### Root cause identified
-
-There is a **one-frame race condition** in `useUserRole` that causes the full menu to flash before the role resolves.
-
-Here is the sequence:
+### Current pipeline (verified)
 
 ```text
-Frame 1:  companyLoading=true  → useAppReady blocks → nothing rendered ✓
-Frame 2:  companyLoading=false, company resolved
-          useUserRole query just got enabled (enabled: true)
-          BUT TanStack Query v5: isPending=true, isFetching=false → isLoading=false
-          roleLoading = false (isLoading && !!companyId = false)
-          → useAppReady says isReady=true
-          → AppSidebar renders with role=null → isEmployee=false → FULL MENU SHOWN
-Frame 3:  Query starts fetching → isLoading=true → but too late, UI already painted
-Frame 4:  Query resolves → role='employee' → isEmployee=true → menu filters
+1. index.html paints #initial-loader (full-screen, z-9999, var(--initial-bg))
+2. main.tsx → React mounts <App/>
+3. App tree: QueryClient → Theme → Auth → Company → DateRange → Subscription → BrowserRouter → Routes
+4. <ProtectedLayout/> wraps all protected routes (single mount, persists across nav)
+5. ProtectedLayout calls useAppReady() → returns null until auth+company+role resolved
+6. Once ready: removes #initial-loader, mounts <AppLayout/> (Sidebar + Outlet)
+7. <ProtectedPage/> wraps each page → ProtectedRoute does a SECOND profile/role check
+8. Page lazy chunk loads inside <Suspense fallback={ContentSkeleton}/>
 ```
 
-The bug is in `useUserRole` line 52: `isLoading: isLoading && !!companyId`. TanStack Query v5's `isLoading` equals `isPending && isFetching`. When a query transitions from `enabled:false` to `enabled:true`, there is one render where `isFetching` is still `false`, so `isLoading` is `false` -- but data hasn't been fetched yet.
+### Strengths already in place
 
-### Additional issues found
+- **Persistent shell**: `<ProtectedLayout/>` is a parent route, not duplicated per page → Sidebar does NOT remount on navigation. ✓
+- **Blocking shell**: `useAppReady()` returns `isReady=false` until auth+company+role are all resolved; `ProtectedLayout` returns `null` so the HTML loader stays visible. ✓
+- **Sidebar role gate**: After the previous fix, `useUserRole` uses `isPending` and `isEmployee` is correctly resolved before first render. ✓
+- **Loader fade-out**: only triggers after `isReady` flips true (rAF + 220ms fade). ✓
 
-1. **`useUserRole` defaults to non-employee while loading** (line 46-48 comment: "default to non-employee (safe: shows everything)") -- this is the opposite of safe for employee accounts. It means during the gap frame, `isEmployee=false` and the full menu renders.
+### Real issues found
 
-2. **Duplicate role queries**: `ProtectedRoute` fetches the role separately with query key `['user-role-guard', ...]` while `useUserRole` uses `['user-role', ...]`. These are two independent queries hitting the same table. Should be unified.
+**Issue 1 — Double role/profile gate causes a second skeleton flash on every navigation.**
+`ProtectedPage` wraps every route in `<ProtectedRoute>`, which:
+- Re-runs a `profile-check` query (already cached, but on first nav still shows `<ContentSkeleton/>` if `cachedProfile` undefined for a frame).
+- Re-runs `roleLoading` check (already resolved by `useAppReady`, but re-evaluated → can flash skeleton on cache transitions).
+- Has a second `useEffect` employee-redirect that fires AFTER mount. Because `ProtectedPage` content renders before the redirect, an employee can briefly see another page's lazy chunk loading.
 
-3. **`ProtectedRoute` employee redirect is async**: The employee route guard uses `useEffect` + `navigate`, which means for one render the forbidden page content is visible before the redirect fires.
+Result: on every route change a skeleton can pop in for 1 frame even though the shell is stable.
 
-### Fix plan (3 files)
+**Issue 2 — Employee leak window via lazy chunks.**
+`<ProtectedPage><InvoicesPage/></ProtectedPage>` is what the route element resolves to. React Router mounts the element first, then `ProtectedRoute` runs the employee-redirect effect. The `<Suspense>` fallback for the lazy import paints before the redirect → employee sees an "Invoices loading skeleton" for ~1 frame.
 
-**1. `src/hooks/useUserRole.ts`** -- Fix the loading gap
+**Issue 3 — Sidebar disabled-state flash on `/auth → /`.**
+After login, `selectedCompany` is briefly `null` while the Companies query refetches. `AppSidebar` reads `hasNoCompany = !selectedCompany` and renders the entire menu in `grayscale opacity-50 cursor-not-allowed`. This is a real flash because `useAppReady` only waits for `isInitialLoading` (first ever load), not for the post-login refetch. Only happens on first login where `companies` cache is empty.
 
-- Change `isLoading` to use `isPending` instead of `isLoading` when enabled. `isPending` is true whenever there's no data yet, regardless of whether fetching has started.
-- Return value: `isLoading: isPending && !!companyId` (true until first successful fetch)
-- This ensures `useAppReady` blocks rendering until role data actually arrives.
+**Issue 4 — `RootRedirect` and `LegacyRedirect` return `null` instead of a skeleton while `selectedCompany` is null.**
+Inside `ProtectedLayout` they should never see null (gate already passed), but on signOut→signIn transitions there is one render where `selectedCompany` is briefly null inside an already-mounted layout. Returning `null` makes the main content area go blank for a frame.
 
-**2. `src/components/AppSidebar.tsx`** -- No changes needed
+**Issue 5 — Real-time race on company switch.**
+`AppSidebar` and the page content read different contexts. When `setSelectedCompany` fires:
+- Sidebar re-renders immediately with new company name (synchronous context update)
+- Main content's data queries (`useDashboardData`, `useInvoiceData`) start refetching with the new `companyId`
+- During refetch, `keepPreviousData` shows OLD company data under the NEW company name in sidebar → 200–500ms of mismatch.
 
-The sidebar logic is correct -- it reads `isEmployee` from `useUserRole`. Once the loading gap is fixed, it will never render with stale defaults.
+Currently mitigated by `multi-tenancy-reactivity` invalidation but not by a Suspense boundary.
 
-**3. `src/components/ProtectedRoute.tsx`** -- Unify role query and block render
+### What "Pro" means here
 
-- Remove the duplicate `user-role-guard` query. Use `useUserRole()` hook instead (same data, single cache entry).
-- Instead of `useEffect` redirect for employees, block rendering: if role is still loading, show `ContentSkeleton`; if role is `employee` and route is not allowed, return `null` (redirect via `useEffect` stays but content is hidden immediately).
+A "Pro" architecture has:
+- **One** auth/role gate, not two.
+- Route-level Suspense boundaries that **never flash** between same-shell navigations.
+- A `<key={companyId}>` boundary so company switches re-mount the content tree atomically (no half-old/half-new state).
+- Redirect guards that **block render** before the lazy chunk is even requested, not after.
 
-### Summary
+---
 
-The core fix is a one-line change in `useUserRole.ts`: use `isPending` instead of `isLoading` from TanStack Query. This closes the gap frame completely. The `useAppReady` guard then correctly blocks all rendering (sidebar included) until the role is definitively known.
+## Fix Plan (4 files, surgical)
+
+### 1. `src/components/ProtectedRoute.tsx` — collapse the double gate
+
+- Remove `profile-check` query duplication (move it into `useAppReady` so it's part of the single root gate).
+- Replace `useEffect`-based employee redirect with **synchronous render block**: if `isEmployee && !isAllowed`, return `<Navigate to="working-time" replace/>` immediately. This prevents the lazy chunk from loading at all.
+- Drop the second `roleLoading` skeleton (already handled by `useAppReady`).
+
+### 2. `src/hooks/useAppReady.ts` — make it the single source of truth
+
+- Add `profile-check` query into the readiness chain (uses `useQuery` with same key as ProtectedRoute used).
+- Return `isReady=true` only when auth + company + role + profile are all resolved.
+- Add a `redirectTarget` field: `"auth" | "onboarding" | "working-time" | null` so `ProtectedLayout` can do all redirects in one place.
+
+### 3. `src/components/ProtectedLayout.tsx` — route the redirects
+
+- Read `redirectTarget` from `useAppReady` and `<Navigate>` synchronously before mounting `<AppLayout/>`. This removes all per-route `useEffect` redirects → zero flash.
+- Wait for `companies.length > 0 || hasNoCompanies` to be settled before showing AppLayout (fixes the disabled-sidebar flash on first login).
+- Keep the existing sign-out overlay.
+
+### 4. `src/components/AppLayout.tsx` — atomic company switch
+
+- Wrap `<Outlet/>` in `<div key={selectedCompany?.id}>` so when company changes, the entire content subtree unmounts + remounts. Combined with TanStack's existing invalidation, this guarantees no half-old/half-new render. Sidebar stays mounted (it's outside the key boundary), so no shell flash.
+- Wrap the keyed Outlet in a dedicated `<Suspense fallback={<ContentSkeleton/>}/>` (already there) — now it serves as the "content boundary" while sidebar is the "shell boundary".
+
+### Out of scope (won't touch)
+
+- `AppSidebar` is already correct and `React.memo`'d — no changes.
+- `index.html` loader is correct — no changes.
+- React 18 `<Suspense>` for data is not enabled in this project (TanStack v5 in non-suspense mode); we keep the existing skeleton-fallback pattern, which achieves the same UX without rewriting every hook.
+
+### Result after fix
+
+```text
+Cold load:    HTML loader → (auth+company+role+profile resolved) → Sidebar+Page paint TOGETHER. No flash.
+Navigation:   Sidebar untouched. Only Outlet swaps. Suspense fallback only on first visit per chunk.
+Employee:     Forbidden routes never mount their lazy chunk. <Navigate/> fires synchronously.
+Company swap: Sidebar updates instantly; Outlet remounts with new key → content is atomic, never mixed.
+Login:        Loader stays until companies query AND profile-check both resolve.
+```
 
