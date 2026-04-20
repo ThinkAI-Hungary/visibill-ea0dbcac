@@ -337,7 +337,9 @@ export function AssetActivationDialog({
                       <SelectContent>
                         {locations.map(l => (
                           <SelectItem key={l.id} value={l.id}>
-                            {l.name}{l.location_type === 'headquarters' ? ' (Székhely)' : ''}
+                            {l.location_type === 'headquarters'
+                              ? `${l.address} (Székhely)`
+                              : l.address}
                           </SelectItem>
                         ))}
                       </SelectContent>
