@@ -42,6 +42,7 @@ interface LedgerItem {
   partner?: string | null;
   date?: string | null;
   sourceTable?: string;
+  originalGlId?: string | null;
 }
 
 const formatCurrency = (value: number) => {
@@ -230,7 +231,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       });
 
       // Now roll up sums for all parent (non-leaf) nodes
-      let rolledUpData = rawData.map(item => {
+      let rolledUpData: LedgerItem[] = rawData.map(item => {
         if (!item.hasChildren) return item;
 
         // Find ALL descendants in rawData (both leaves and non-leaves)
