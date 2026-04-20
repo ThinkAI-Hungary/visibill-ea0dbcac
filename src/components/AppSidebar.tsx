@@ -198,10 +198,10 @@ export const AppSidebar = React.memo(function AppSidebar() {
               {visibleNavItems.map((item) => {
                 const isDisabled = hasNoCompany;
                 const active = isActive(item.url);
-                
+
                 return (
                   <SidebarMenuItem key={item.title} data-tour={item.tourId}>
-                    <SidebarMenuButton 
+                    <SidebarMenuButton
                       asChild={!isDisabled}
                       isActive={active}
                       tooltip={item.title}
@@ -213,7 +213,13 @@ export const AppSidebar = React.memo(function AppSidebar() {
                           <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                         </div>
                       ) : (
-                        <Link to={item.url === '/' ? basePath : `${basePath}${item.url}`} className="flex items-center gap-2 w-full">
+                        <Link
+                          to={item.to}
+                          onMouseEnter={() => handlePrefetch(item.url)}
+                          onFocus={() => handlePrefetch(item.url)}
+                          onTouchStart={() => handlePrefetch(item.url)}
+                          className="flex items-center gap-2 w-full"
+                        >
                           <item.icon className="h-4 w-4 shrink-0" />
                           <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                         </Link>
