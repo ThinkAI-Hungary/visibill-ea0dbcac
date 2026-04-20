@@ -31,7 +31,7 @@ const TopBar = memo(function TopBar() {
 const ContentArea = memo(function ContentArea({ children }: { children?: React.ReactNode }) {
   return (
     <main className="flex-1 overflow-y-auto bg-background p-6 print:p-0 print:overflow-visible">
-      <Suspense fallback={<ContentSkeleton />}>
+      <Suspense fallback={null}>
         {children || <Outlet />}
       </Suspense>
     </main>
