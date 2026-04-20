@@ -84,7 +84,7 @@ const TransactionsPage = () => {
     let cancelled = false;
     (async () => {
       const { data } = await supabase
-        .from('bank_transactions')
+        .from('transactions')
         .select('*')
         .eq('id', txIdFromUrl)
         .maybeSingle();
