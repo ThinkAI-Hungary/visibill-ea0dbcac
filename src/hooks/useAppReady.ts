@@ -61,6 +61,13 @@ export function useAppReady() {
     return { isReady: true, user, redirectTarget: 'onboarding' as RedirectTarget };
   }
 
+  // User has companies → wait until a concrete selected company exists.
+  // This prevents the shell from rendering one frame in a "no company"
+  // state before CompanyContext restores/syncs the active company.
+  if (companies.length > 0 && !selectedCompany) {
+    return { isReady: false, user, redirectTarget: null as RedirectTarget };
+  }
+
   // User has companies → wait for role to resolve too.
   if (companies.length > 0 && roleLoading) {
     return { isReady: false, user, redirectTarget: null as RedirectTarget };

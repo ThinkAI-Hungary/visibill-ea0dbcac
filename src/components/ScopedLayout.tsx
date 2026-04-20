@@ -29,6 +29,7 @@ export function ScopedLayout() {
 
   const { selectedCompany, companies, setSelectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted, setDateFrom, setDateTo } = useDateRange();
+  const parsedUrlDateRange = urlDateRange ? parseDateRange(urlDateRange) : null;
 
   // ── Guard: prevent infinite sync loops ──
   const syncingFromUrl = useRef(false);
@@ -120,6 +121,13 @@ export function ScopedLayout() {
         </div>
       </div>
     );
+  }
+
+  const isCompanySynced = !urlCompanyId || selectedCompany?.id === urlCompanyId;
+  const isDateSynced = !parsedUrlDateRange || `${dateFromFormatted}_${dateToFormatted}` === urlDateRange;
+
+  if (!isCompanySynced || !isDateSynced) {
+    return null;
   }
 
   return <Outlet />;
