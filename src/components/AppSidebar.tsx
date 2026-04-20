@@ -76,6 +76,30 @@ const navigationItems: NavItem[] = [
 ];
 
 /**
+ * Hover/focus prefetch map — kicks off the lazy chunk import when the
+ * user merely hovers (or keyboard-focuses) a sidebar item, so by the
+ * time they click the chunk is already in cache.
+ */
+const prefetchMap: Record<string, () => Promise<unknown>> = {
+  "/": () => import("@/pages/Index"),
+  "/categories": () => import("@/pages/Onboarding"),
+  "/projects": () => import("@/pages/Projects"),
+  "/partners": () => import("@/pages/PartnersPage"),
+  "/invoices": () => import("@/pages/InvoicesPage"),
+  "/kintlevo": () => import("@/pages/KintlevoPage"),
+  "/transactions": () => import("@/pages/TransactionsPage"),
+  "/general-ledger": () => import("@/pages/GeneralLedgerPage"),
+  "/upload": () => import("@/pages/ManualUpload"),
+  "/salaries": () => import("@/pages/SalariesPage"),
+  "/working-time": () => import("@/pages/WorkingTimePage"),
+  "/petty-cash": () => import("@/pages/PettyCashPage"),
+  "/teny": () => import("@/pages/FixedAssetsPage"),
+  "/integrations": () => import("@/pages/Integrations"),
+  "/exchange-rates": () => import("@/pages/ExchangeRates"),
+  "/pricing": () => import("@/pages/Pricing"),
+};
+
+/**
  * AppSidebar — Static Shell.
  *
  * This component is ONLY rendered after useAppReady() returns true,
