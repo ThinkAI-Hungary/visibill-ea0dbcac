@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useCallback } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -76,6 +76,30 @@ const navigationItems: NavItem[] = [
 ];
 
 /**
+ * Hover/focus prefetch map — kicks off the lazy chunk import when the
+ * user merely hovers (or keyboard-focuses) a sidebar item, so by the
+ * time they click the chunk is already in cache.
+ */
+const prefetchMap: Record<string, () => Promise<unknown>> = {
+  "/": () => import("@/pages/Index"),
+  "/categories": () => import("@/pages/Onboarding"),
+  "/projects": () => import("@/pages/Projects"),
+  "/partners": () => import("@/pages/PartnersPage"),
+  "/invoices": () => import("@/pages/InvoicesPage"),
+  "/kintlevo": () => import("@/pages/KintlevoPage"),
+  "/transactions": () => import("@/pages/TransactionsPage"),
+  "/general-ledger": () => import("@/pages/GeneralLedgerPage"),
+  "/upload": () => import("@/pages/ManualUpload"),
+  "/salaries": () => import("@/pages/SalariesPage"),
+  "/working-time": () => import("@/pages/WorkingTimePage"),
+  "/petty-cash": () => import("@/pages/PettyCashPage"),
+  "/teny": () => import("@/pages/FixedAssetsPage"),
+  "/integrations": () => import("@/pages/Integrations"),
+  "/exchange-rates": () => import("@/pages/ExchangeRates"),
+  "/pricing": () => import("@/pages/Pricing"),
+};
+
+/**
  * AppSidebar — Static Shell.
  *
  * This component is ONLY rendered after useAppReady() returns true,
@@ -100,10 +124,22 @@ export const AppSidebar = React.memo(function AppSidebar() {
   const hasNoCompany = !selectedCompany;
   const isDark = theme === "dark";
 
-  // Role is already resolved — direct filter, no loading state
-  const visibleNavItems = isEmployee
-    ? navigationItems.filter((item) => item.employeeVisible)
-    : navigationItems;
+  // Role is already resolved — direct filter, no loading state.
+  // Memoized with resolved `to` paths so <Link> props stay referentially stable.
+  const visibleNavItems = useMemo(() => {
+    const items = isEmployee
+      ? navigationItems.filter((item) => item.employeeVisible)
+      : navigationItems;
+    return items.map((item) => ({
+      ...item,
+      to: item.url === "/" ? basePath : `${basePath}${item.url}`,
+    }));
+  }, [isEmployee, basePath]);
+
+  const handlePrefetch = useCallback((url: string) => {
+    const loader = prefetchMap[url];
+    if (loader) void loader();
+  }, []);
 
   const toggleTheme = () => setTheme(isDark ? "light" : "dark");
 
@@ -162,10 +198,10 @@ export const AppSidebar = React.memo(function AppSidebar() {
               {visibleNavItems.map((item) => {
                 const isDisabled = hasNoCompany;
                 const active = isActive(item.url);
-                
+
                 return (
                   <SidebarMenuItem key={item.title} data-tour={item.tourId}>
-                    <SidebarMenuButton 
+                    <SidebarMenuButton
                       asChild={!isDisabled}
                       isActive={active}
                       tooltip={item.title}
@@ -177,7 +213,13 @@ export const AppSidebar = React.memo(function AppSidebar() {
                           <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                         </div>
                       ) : (
-                        <Link to={item.url === '/' ? basePath : `${basePath}${item.url}`} className="flex items-center gap-2 w-full">
+                        <Link
+                          to={item.to}
+                          onMouseEnter={() => handlePrefetch(item.url)}
+                          onFocus={() => handlePrefetch(item.url)}
+                          onTouchStart={() => handlePrefetch(item.url)}
+                          className="flex items-center gap-2 w-full"
+                        >
                           <item.icon className="h-4 w-4 shrink-0" />
                           <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                         </Link>
