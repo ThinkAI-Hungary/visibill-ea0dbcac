@@ -177,6 +177,18 @@ const Auth = () => {
   const [authSearchParams] = useSearchParams();
   const returnTo = authSearchParams.get('returnTo') || '/';
 
+  // Show "signed out" toast queued by AuthContext.signOut() — only fires
+  // once the Auth page is actually mounted, so the toast never flashes
+  // on top of the still-mounted protected layout.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('visibill_pending_signout_toast') === '1') {
+        sessionStorage.removeItem('visibill_pending_signout_toast');
+        toast({ title: 'Kijelentkezve', description: 'Sikeresen kijelentkeztél.' });
+      }
+    } catch {}
+  }, []);
+
   // Handle expired/invalid recovery links that redirect to root with error hash
   useEffect(() => {
     const hash = window.location.hash;

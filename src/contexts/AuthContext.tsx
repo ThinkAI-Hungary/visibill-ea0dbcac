@@ -236,9 +236,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setSession(null);
 
-      // Only show toast for explicit user-initiated sign-outs
+      // Only flag the toast for explicit user-initiated sign-outs.
+      // The Auth page will pick this up on mount and display it AFTER
+      // the redirect completes — so the user never sees the toast
+      // flash on top of the still-mounted protected layout.
       if (!options?.silent) {
-        toast({ title: 'Kijelentkezve', description: 'Sikeresen kijelentkeztél.' });
+        try {
+          sessionStorage.setItem('visibill_pending_signout_toast', '1');
+        } catch {}
       }
 
       // Brief delay so the overlay stays visible during transition
