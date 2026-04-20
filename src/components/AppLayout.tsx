@@ -5,7 +5,6 @@ import { Suspense } from "react";
 import { ContentSkeleton } from "@/components/ui/content-skeleton";
 import { GlobalDatePicker } from "@/components/GlobalDatePicker";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useCompany } from "@/contexts/CompanyContext";
 
 interface AppLayoutProps {
   children?: React.ReactNode;
