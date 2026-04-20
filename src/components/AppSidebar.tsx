@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useScopedBasePath, extractPageSegment } from "@/lib/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -42,7 +43,8 @@ import {
   Banknote,
   ReceiptText,
   BookOpen,
-  Clock
+  Clock,
+  Package2
 } from "lucide-react";
 import CompanySelector from "./CompanySelector";
 
@@ -56,7 +58,7 @@ interface NavItem {
 
 const navigationItems: NavItem[] = [
   { title: "Irányítópult", url: "/", icon: LayoutDashboard, tourId: "dashboard" },
-  { title: "Kategóriák", url: "/onboarding", icon: Tags, tourId: "categories" },
+  { title: "Kategóriák", url: "/categories", icon: Tags, tourId: "categories" },
   { title: "Projektek", url: "/projects", icon: FolderKanban, tourId: "projects" },
   { title: "Partnertörzs", url: "/partners", icon: Users, tourId: "partners" },
   { title: "Számlák", url: "/invoices", icon: FileText, tourId: "invoices" },
@@ -67,6 +69,7 @@ const navigationItems: NavItem[] = [
   { title: "Bérek/járulékok", url: "/salaries", icon: Wallet, tourId: "salaries" },
   { title: "Munkaidő", url: "/working-time", icon: Clock, tourId: "working-time", employeeVisible: true },
   { title: "Házipénztár", url: "/petty-cash", icon: Banknote, tourId: "petty-cash" },
+  { title: "TENY", url: "/teny", icon: Package2, tourId: "teny" },
   { title: "Integrációk", url: "/integrations", icon: Plug, tourId: "integrations" },
   { title: "Árfolyamok", url: "/exchange-rates", icon: TrendingUp, tourId: "exchange-rates" },
   { title: "Előfizetés", url: "/pricing", icon: CreditCard, tourId: "subscription" },
@@ -89,6 +92,9 @@ export const AppSidebar = React.memo(function AppSidebar() {
   const { theme, setTheme } = useTheme();
   const { isEmployee } = useUserRole();
   const currentPath = location.pathname;
+  const basePath = useScopedBasePath();
+  // Extract just the page segment for active state matching
+  const pageSegment = extractPageSegment(currentPath);
 
   const isCollapsed = state === "collapsed";
   const hasNoCompany = !selectedCompany;
@@ -102,8 +108,8 @@ export const AppSidebar = React.memo(function AppSidebar() {
   const toggleTheme = () => setTheme(isDark ? "light" : "dark");
 
   const isActive = (path: string) => {
-    if (path === "/") return currentPath === "/";
-    return currentPath.startsWith(path);
+    if (path === "/") return pageSegment === "/";
+    return pageSegment === path || pageSegment.startsWith(path + '/');
   };
 
   const handleSignOut = async () => {
@@ -171,7 +177,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                           <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                         </div>
                       ) : (
-                        <Link to={item.url} className="flex items-center gap-2 w-full">
+                        <Link to={item.url === '/' ? basePath : `${basePath}${item.url}`} className="flex items-center gap-2 w-full">
                           <item.icon className="h-4 w-4 shrink-0" />
                           <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                         </Link>

@@ -33,11 +33,18 @@ interface CompanyMember {
   name: string | null;
 }
 
-export function InvoiceFilesDialog() {
+interface InvoiceFilesDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalOnOpenChange }: InvoiceFilesDialogProps = {}) {
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setIsOpen = externalOnOpenChange || setInternalOpen;
   const [deleteTarget, setDeleteTarget] = useState<UploadWithInvoices | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -225,12 +232,14 @@ export function InvoiceFilesDialog() {
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm">
-            <FileText className="h-4 w-4 mr-2" />
-            Feltöltött fájlok
-          </Button>
-        </DialogTrigger>
+        {externalOpen === undefined && (
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm">
+              <FileText className="h-4 w-4 mr-2" />
+              Feltöltött fájlok
+            </Button>
+          </DialogTrigger>
+        )}
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Feltöltött számla dokumentumok</DialogTitle>

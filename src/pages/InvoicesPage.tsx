@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,15 +38,36 @@ import type { NavInvoice, SubmittedInvoice, TransactionRecord } from '@/hooks/us
 import { useInvoiceFilters } from '@/hooks/useInvoiceFilters';
 import type { InvoiceTab } from '@/hooks/useInvoiceFilters';
 import { useInvoiceMutations } from '@/hooks/useInvoiceMutations';
+import { useUrlTab } from '@/lib/navigation';
+
+// ── Tab slug ↔ InvoiceTab mapping ──
+const TAB_SLUGS = ['outbound_nav', 'inbound_nav', 'submitted_inbound', 'submitted_outbound'] as const;
+type TabSlug = typeof TAB_SLUGS[number];
+const SLUG_TO_TAB: Record<TabSlug, InvoiceTab> = {
+  outbound_nav: 'OUTBOUND',
+  inbound_nav: 'INBOUND',
+  submitted_inbound: 'SUBMITTED_INBOUND',
+  submitted_outbound: 'SUBMITTED_OUTBOUND',
+};
+const TAB_TO_SLUG: Record<InvoiceTab, TabSlug> = {
+  OUTBOUND: 'outbound_nav',
+  INBOUND: 'inbound_nav',
+  SUBMITTED_INBOUND: 'submitted_inbound',
+  SUBMITTED_OUTBOUND: 'submitted_outbound',
+};
 
 const InvoicesPage = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
-  
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<InvoiceTab>('OUTBOUND');
+
+  // Tab state synced to URL (e.g., /invoices/outbound_nav)
+  const [tabSlug, setTabSlug] = useUrlTab('invoices', 'outbound_nav' as TabSlug, TAB_SLUGS);
+  const activeTab: InvoiceTab = SLUG_TO_TAB[tabSlug as TabSlug] || 'OUTBOUND';
+  const setActiveTab = useCallback((tab: InvoiceTab) => setTabSlug(TAB_TO_SLUG[tab]), [setTabSlug]);
 
   // Dialog states
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -54,6 +77,7 @@ const InvoicesPage = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<SubmittedInvoice | null>(null);
   const [selectedNavInvoice, setSelectedNavInvoice] = useState<NavInvoice | null>(null);
   const [selectedSubmittedForItems, setSelectedSubmittedForItems] = useState<SubmittedInvoice | null>(null);
+  const [filesDialogOpen, setFilesDialogOpen] = useState(false);
 
   // Row selection state
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
@@ -62,6 +86,26 @@ const InvoicesPage = () => {
   const companyId = selectedCompany?.id || '';
   const enabled = !!user && !!selectedCompany && !!dateFromFormatted && !!dateToFormatted;
   const isSubmittedTab = activeTab === 'SUBMITTED_INBOUND' || activeTab === 'SUBMITTED_OUTBOUND';
+
+  // ── URL-based invoice deep-linking ──
+  // ?invoice=<id>&action=items|view|edit  OR  ?action=files
+  type InvoiceAction = 'items' | 'view' | 'edit' | 'files';
+  const setInvoiceParam = useCallback((invoiceId: string | null, action: InvoiceAction = 'items') => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (invoiceId) {
+        next.set('invoice', invoiceId);
+        next.set('action', action);
+      } else {
+        // Dialog closed → keep invoice param only if the row is currently expanded
+        const currentInvoiceId = next.get('invoice');
+        const rowIsExpanded = currentInvoiceId ? expandedRowIds.has(currentInvoiceId) : false;
+        next.delete('action');
+        if (!rowIsExpanded) next.delete('invoice');
+      }
+      return next;
+    }, { replace: true });
+  }, [setSearchParams, expandedRowIds]);
 
   // ── Data hook ──
   const {
@@ -121,6 +165,111 @@ const InvoicesPage = () => {
     setSelectedSubmittedIds(new Set());
     setExpandedRowIds(new Set());
   }, [activeTab]);
+
+  // ── Auto-open invoice dialog from URL (?invoice=<id>&action=items|view|edit) ──
+  // If ?invoice=<id> without action → just expand the row (no dialog).
+  const invoiceIdFromUrl = searchParams.get('invoice');
+  const actionFromUrl = searchParams.get('action') || null;
+  useEffect(() => {
+    if (!invoiceIdFromUrl || !enabled) return;
+    // Skip if action is 'files' — that opens a different dialog
+    if (actionFromUrl === 'files') return;
+
+    // No action → just expand the row
+    if (!actionFromUrl) {
+      setExpandedRowIds(prev => {
+        if (prev.has(invoiceIdFromUrl)) return prev;
+        const next = new Set(prev);
+        next.add(invoiceIdFromUrl);
+        return next;
+      });
+      return;
+    }
+
+    const openDialog = (invoice: SubmittedInvoice | NavInvoice, source: 'nav' | 'submitted') => {
+      if (source === 'nav') {
+        // NAV invoices only support items view
+        setSelectedNavInvoice(invoice as NavInvoice);
+        setItemsDialogOpen(true);
+        return;
+      }
+      const sub = invoice as SubmittedInvoice;
+      switch (actionFromUrl) {
+        case 'view':
+          setSelectedInvoice(sub);
+          setImageDialogOpen(true);
+          break;
+        case 'edit':
+          setSelectedInvoice(sub);
+          setEditDialogOpen(true);
+          break;
+        case 'items':
+        default:
+          setSelectedSubmittedForItems(sub);
+          setSubmittedItemsDialogOpen(true);
+          break;
+      }
+    };
+
+    // Try to find in currently loaded NAV invoices
+    const navMatch = filteredAndSortedNavInvoices.find(inv => inv.id === invoiceIdFromUrl);
+    if (navMatch) { openDialog(navMatch, 'nav'); return; }
+
+    // Try to find in loaded submitted invoices
+    const subMatch = submittedInvoices.find(inv => inv.id === invoiceIdFromUrl);
+    if (subMatch) { openDialog(subMatch, 'submitted'); return; }
+
+    // Fallback: fetch from Supabase (for shared links)
+    let cancelled = false;
+    (async () => {
+      // Try nav_invoices first
+      const { data: navData } = await supabase
+        .from('nav_invoices')
+        .select('id, invoice_number, currency, invoice_issue_date, supplier_name')
+        .eq('id', invoiceIdFromUrl)
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (navData) { openDialog(navData as NavInvoice, 'nav'); return; }
+
+      // Try invoices table (fetch all fields needed for view/edit)
+      const { data: subData } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('id', invoiceIdFromUrl)
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (subData) { openDialog(subData as unknown as SubmittedInvoice, 'submitted'); }
+    })();
+
+    return () => { cancelled = true; };
+  }, [invoiceIdFromUrl, actionFromUrl, enabled]);
+
+  // ── Files dialog URL handling ──
+  useEffect(() => {
+    if (actionFromUrl === 'files' && !filesDialogOpen) setFilesDialogOpen(true);
+  }, [actionFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleOpenFiles = useCallback(() => {
+    setFilesDialogOpen(true);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('action', 'files');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const handleCloseFiles = useCallback((open: boolean) => {
+    setFilesDialogOpen(open);
+    if (!open) {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.delete('action');
+        return next;
+      }, { replace: true });
+    }
+  }, [setSearchParams]);
 
   // ── Row selection helpers ──
   const handleRowSelect = (invoiceId: string, checked: boolean) => {
@@ -291,8 +440,21 @@ const InvoicesPage = () => {
     if (target.closest('button, input, select, [role="checkbox"], [role="combobox"], [data-radix-collection-item]')) return;
     setExpandedRowIds(prev => {
       const next = new Set(prev);
-      if (next.has(invoiceId)) next.delete(invoiceId);
-      else next.add(invoiceId);
+      const isExpanding = !next.has(invoiceId);
+      if (isExpanding) next.add(invoiceId);
+      else next.delete(invoiceId);
+      // Sync to URL: expanded row → ?invoice=<id>, collapsed → clear
+      setSearchParams(sp => {
+        const p = new URLSearchParams(sp);
+        if (isExpanding) {
+          p.set('invoice', invoiceId);
+          p.delete('action'); // no action = just expanded
+        } else {
+          p.delete('invoice');
+          p.delete('action');
+        }
+        return p;
+      }, { replace: true });
       return next;
     });
   };
@@ -300,11 +462,13 @@ const InvoicesPage = () => {
   const openImageDialog = (invoice: SubmittedInvoice) => {
     setSelectedInvoice(invoice);
     setImageDialogOpen(true);
+    setInvoiceParam(invoice.id, 'view');
   };
 
   const openEditDialog = (invoice: SubmittedInvoice) => {
     setSelectedInvoice(invoice);
     setEditDialogOpen(true);
+    setInvoiceParam(invoice.id, 'edit');
   };
 
   const handleEditSave = () => {
@@ -366,7 +530,11 @@ const InvoicesPage = () => {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <InvoiceFilesDialog />
+                <Button variant="outline" size="sm" onClick={handleOpenFiles}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Feltöltött fájlok
+                </Button>
+                <InvoiceFilesDialog open={filesDialogOpen} onOpenChange={handleCloseFiles} />
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -640,7 +808,7 @@ const InvoicesPage = () => {
                                   </TableCell>
                                   <TableCell className="text-center">
                                     <TooltipProvider><Tooltip><TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-8 w-8 opacity-70 group-hover:opacity-100" onClick={() => { setSelectedNavInvoice(invoice); setItemsDialogOpen(true); }}>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 opacity-70 group-hover:opacity-100" onClick={() => { setSelectedNavInvoice(invoice); setItemsDialogOpen(true); setInvoiceParam(invoice.id); }}>
                                         <Package className="h-4 w-4" />
                                       </Button>
                                     </TooltipTrigger><TooltipContent><p>Számlatételek megtekintése</p></TooltipContent></Tooltip></TooltipProvider>
@@ -829,7 +997,7 @@ const InvoicesPage = () => {
                                 </TableCell>
                                 <TableCell className="text-center">
                                   <TooltipProvider><Tooltip><TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 opacity-70 group-hover:opacity-100" onClick={() => { setSelectedSubmittedForItems(invoice); setSubmittedItemsDialogOpen(true); }}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 opacity-70 group-hover:opacity-100" onClick={() => { setSelectedSubmittedForItems(invoice); setSubmittedItemsDialogOpen(true); setInvoiceParam(invoice.id); }}>
                                       <Package className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger><TooltipContent><p>Számlatételek megtekintése</p></TooltipContent></Tooltip></TooltipProvider>
@@ -914,7 +1082,7 @@ const InvoicesPage = () => {
           vevo_nev: selectedInvoice.vevo_nev,
         } : null}
         open={imageDialogOpen}
-        onClose={() => { setImageDialogOpen(false); setSelectedInvoice(null); }}
+        onClose={() => { setImageDialogOpen(false); setSelectedInvoice(null); setInvoiceParam(null); }}
       />
 
       <InvoiceFullEditDialog
@@ -922,26 +1090,30 @@ const InvoicesPage = () => {
         categories={categories}
         projects={projects}
         open={editDialogOpen}
-        onClose={() => { setEditDialogOpen(false); setSelectedInvoice(null); }}
+        onClose={() => { setEditDialogOpen(false); setSelectedInvoice(null); setInvoiceParam(null); }}
         onSave={handleEditSave}
       />
 
       <InvoiceItemsDialog
         open={itemsDialogOpen}
-        onOpenChange={(open) => { setItemsDialogOpen(open); if (!open) setSelectedNavInvoice(null); }}
+        onOpenChange={(open) => { setItemsDialogOpen(open); if (!open) { setSelectedNavInvoice(null); setInvoiceParam(null); } }}
         invoiceId={selectedNavInvoice?.id || ''}
         invoiceNumber={selectedNavInvoice?.invoice_number || ''}
         currency={selectedNavInvoice?.currency || 'HUF'}
         source="nav"
+        invoiceDate={selectedNavInvoice?.invoice_issue_date || undefined}
+        supplierName={selectedNavInvoice?.supplier_name || undefined}
       />
 
       <InvoiceItemsDialog
         open={submittedItemsDialogOpen}
-        onOpenChange={(open) => { setSubmittedItemsDialogOpen(open); if (!open) setSelectedSubmittedForItems(null); }}
+        onOpenChange={(open) => { setSubmittedItemsDialogOpen(open); if (!open) { setSelectedSubmittedForItems(null); setInvoiceParam(null); } }}
         invoiceId={selectedSubmittedForItems?.id || ''}
         invoiceNumber={selectedSubmittedForItems?.bizonylatsorszam || ''}
         currency={selectedSubmittedForItems?.penznem || 'HUF'}
         source="submitted"
+        invoiceDate={selectedSubmittedForItems?.kibocsatas_datuma || undefined}
+        supplierName={selectedSubmittedForItems?.elado_nev || undefined}
       />
     </div>
   );

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Calendar, Zap } from 'lucide-react';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { useNavigate } from 'react-router-dom';
+import { useScopedNavigate } from '@/lib/navigation';
 
 const SubscriptionUsage: React.FC = () => {
   const { 
@@ -17,7 +17,7 @@ const SubscriptionUsage: React.FC = () => {
     subscribed,
     openCustomerPortal 
   } = useSubscription();
-  const navigate = useNavigate();
+  const scopedNavigate = useScopedNavigate();
 
   const isUnlimited = tier === 'teszt' || invoiceLimit >= 999999;
   const usagePercentage = isUnlimited ? 0 : (invoicesUsed / invoiceLimit) * 100;
@@ -47,7 +47,7 @@ const SubscriptionUsage: React.FC = () => {
         console.error('Error opening customer portal:', error);
       }
     } else {
-      navigate('/pricing');
+      scopedNavigate('pricing');
     }
   };
 

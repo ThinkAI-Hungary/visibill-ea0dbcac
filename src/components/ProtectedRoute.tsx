@@ -1,13 +1,14 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
+import { useScopedNavigate, extractPageSegment } from '@/lib/navigation';
 
-/** Routes that employee-role users are allowed to visit */
-const EMPLOYEE_ALLOWED_ROUTES = ['/working-time'];
+/** Page segments that employee-role users are allowed to visit */
+const EMPLOYEE_ALLOWED_PAGES = ['/working-time'];
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -18,6 +19,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { role, isLoading: roleLoading, isEmployee } = useUserRole();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
+  const scopedNavigate = useScopedNavigate();
+
+  // Check cache synchronously to avoid 1-frame flash on route transitions.
+  // When React Router mounts a new ProtectedRoute, useQuery's observer
+  // briefly returns isLoading:true even if the cache has data.
+  const profileQueryKey = ['profile-check', user?.id];
+  const cachedProfile = queryClient.getQueryData(profileQueryKey);
 
   const { data: profileStatus, isLoading: profileLoading } = useQuery({
     queryKey: ['profile-check', user?.id],
@@ -46,27 +55,28 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   useEffect(() => {
     if (profileStatus === 'no-profile' || profileStatus === 'incomplete') {
-      navigate('/onboarding');
+      navigate('/categories');
     }
   }, [profileStatus, navigate]);
 
-  // Employee guard: redirect to /working-time if on a forbidden page
+  // Employee guard: redirect to working-time if on a forbidden page
   useEffect(() => {
     if (isEmployee) {
-      const isAllowed = EMPLOYEE_ALLOWED_ROUTES.some(
-        (route) => location.pathname === route || location.pathname.startsWith(route + '/')
+      const currentPage = extractPageSegment(location.pathname);
+      const isAllowed = EMPLOYEE_ALLOWED_PAGES.some(
+        (page) => currentPage === page || currentPage.startsWith(page + '/')
       );
       if (!isAllowed) {
-        navigate('/working-time', { replace: true });
+        scopedNavigate('working-time', { replace: true });
       }
     }
-  }, [isEmployee, location.pathname, navigate]);
+  }, [isEmployee, location.pathname, scopedNavigate]);
 
   if (loading) {
     return <ContentSkeleton />;
   }
 
-  if (profileLoading && !profileStatus) {
+  if (profileLoading && !profileStatus && !cachedProfile) {
     return <ContentSkeleton />;
   }
 
@@ -77,16 +87,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   // Block render while role is loading
   if (roleLoading) {
     return <ContentSkeleton />;
-  }
-
-  // Block forbidden content for employees (redirect fires via useEffect above)
-  if (isEmployee) {
-    const isAllowed = EMPLOYEE_ALLOWED_ROUTES.some(
-      (route) => location.pathname === route || location.pathname.startsWith(route + '/')
-    );
-    if (!isAllowed) {
-      return null;
-    }
   }
 
   return <>{children}</>;

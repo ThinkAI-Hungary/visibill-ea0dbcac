@@ -32,11 +32,18 @@ interface CompanyMember {
   name: string | null;
 }
 
-export function SalaryFilesDialog() {
+interface SalaryFilesDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function SalaryFilesDialog({ open: externalOpen, onOpenChange: externalOnOpenChange }: SalaryFilesDialogProps = {}) {
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setIsOpen = externalOnOpenChange || setInternalOpen;
   const [deleteIds, setDeleteIds] = useState<string[] | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -164,12 +171,14 @@ export function SalaryFilesDialog() {
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline">
-            <FileText className="mr-2 h-4 w-4" />
-            Feltöltött fájlok
-          </Button>
-        </DialogTrigger>
+        {externalOpen === undefined && (
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <FileText className="mr-2 h-4 w-4" />
+              Feltöltött fájlok
+            </Button>
+          </DialogTrigger>
+        )}
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Feltöltött bérjegyzékek és összesítők</DialogTitle>

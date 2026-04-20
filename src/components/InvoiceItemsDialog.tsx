@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -15,11 +15,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency } from '@/lib/utils';
-import { Package } from 'lucide-react';
+import { Package, Package2 } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
+import { AssetActivationDialog } from '@/components/AssetActivationDialog';
 
 interface InvoiceLineItem {
   id: string;
@@ -44,6 +47,10 @@ interface InvoiceItemsDialogProps {
   currency: string;
   /** Which table to query: 'nav' → nav_invoice_items, 'submitted' → invoice_items */
   source?: 'nav' | 'submitted';
+  /** Invoice date (for asset activation) */
+  invoiceDate?: string;
+  /** Supplier / partner name (for asset activation) */
+  supplierName?: string;
 }
 
 export function InvoiceItemsDialog({
@@ -53,9 +60,15 @@ export function InvoiceItemsDialog({
   invoiceNumber,
   currency,
   source = 'nav',
+  invoiceDate,
+  supplierName,
 }: InvoiceItemsDialogProps) {
   const { selectedCompany } = useCompany();
   const { activePresetId } = useActivePreset(selectedCompany?.id);
+
+  // Selection state for activation
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [activationDialogOpen, setActivationDialogOpen] = useState(false);
 
   const { data: items = [], isLoading: loading } = useQuery({
     queryKey: ['invoiceItems', source, invoiceId],
@@ -80,6 +93,12 @@ export function InvoiceItemsDialog({
     },
     enabled: open && !!invoiceId,
   });
+
+  // Reset selection when dialog opens/closes
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    if (!newOpen) setSelectedIds(new Set());
+    onOpenChange(newOpen);
+  }, [onOpenChange]);
 
   const formatAmount = (amount: number | null) => {
     if (amount === null || amount === undefined) return '-';
@@ -119,136 +138,221 @@ export function InvoiceItemsDialog({
     gross: items.reduce((sum, item) => sum + (getGrossAmount(item) || 0), 0),
   }), [items]);
 
+  // Selection helpers
+  const allSelected = items.length > 0 && selectedIds.size === items.length;
+  const someSelected = selectedIds.size > 0;
+
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(items.map(i => i.id)));
+    }
+  };
+
+  const toggleItem = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Build selected items for activation dialog
+  const selectedItemsForActivation = useMemo(() => {
+    return items
+      .filter(item => selectedIds.has(item.id))
+      .map(item => ({
+        id: item.id,
+        name: item.line_description || 'Ismeretlen tétel',
+        netAmount: item.net_amount || 0,
+        grossAmount: getGrossAmount(item) || 0,
+        currency: currency || 'HUF',
+      }));
+  }, [items, selectedIds, currency]);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader className="pb-4 border-b border-border/50">
-          <DialogTitle className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Package className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <span className="text-muted-foreground text-sm font-normal">Számlatételek</span>
-              <p className="font-mono text-xl font-bold tracking-tight">{invoiceNumber}</p>
-            </div>
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="flex-1 overflow-auto mt-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <LoadingSpinner />
-            </div>
-          ) : items.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
-                <Package className="h-8 w-8 opacity-50" />
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="pb-4 border-b border-border/50">
+            <DialogTitle className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Package className="h-5 w-5 text-primary" />
               </div>
-              <p className="font-medium">Nincsenek elérhető tételek</p>
-              <p className="text-sm mt-1 opacity-75">
-                A tételek automatikusan lekérésre kerülnek a következő szinkronizáláskor.
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-border/50 overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead className="w-12 font-semibold">#</TableHead>
-                    <TableHead className="font-semibold">Megnevezés</TableHead>
-                    <TableHead className="text-right font-semibold">Mennyiség</TableHead>
-                    <TableHead className="text-right font-semibold">Egységár</TableHead>
-                    <TableHead className="text-right font-semibold">Nettó</TableHead>
-                    <TableHead className="text-center font-semibold">ÁFA</TableHead>
-                    <TableHead className="text-right font-semibold">ÁFA összeg</TableHead>
-                    <TableHead className="text-right font-semibold">Bruttó</TableHead>
-                    <TableHead className="text-center font-semibold">Főkönyv</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {items.map((item, index) => (
-                    <TableRow 
-                      key={item.id}
-                      className={index % 2 === 0 ? 'bg-transparent' : 'bg-muted/10'}
-                    >
-                      <TableCell className="font-mono text-muted-foreground">
-                        {item.line_number}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{item.line_description || '-'}</p>
-                          {item.product_code && (
-                            <p className="text-xs text-muted-foreground font-mono">
-                              {item.product_code}
-                            </p>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {formatQuantity(item.quantity, item.unit_of_measure)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {formatAmount(item.unit_price)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {formatAmount(item.net_amount)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-                          {formatVatRate(item.vat_rate)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {formatAmount(item.vat_amount)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono font-medium">
-                        {formatAmount(getGrossAmount(item))}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {item.gl_classifications?.[activePresetId]?.gl_number ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                            {item.gl_classifications[activePresetId].gl_number}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground" title="Nincs besorolva">
-                            -
-                          </span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </div>
+              <div>
+                <span className="text-muted-foreground text-sm font-normal">Számlatételek</span>
+                <p className="font-mono text-xl font-bold tracking-tight">{invoiceNumber}</p>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
 
-        {items.length > 0 && (
-          <div className="border-t border-border/50 pt-5 mt-4">
-            <div className="flex justify-end">
-              <div className="bg-muted/30 rounded-lg p-4 min-w-[320px]">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Összesen nettó:</span>
-                    <span className="font-mono font-medium">{formatAmount(totals.net)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Összesen ÁFA:</span>
-                    <span className="font-mono font-medium">{formatAmount(totals.vat)}</span>
-                  </div>
-                  <div className="h-px bg-border/50 my-3" />
-                  <div className="flex justify-between items-center">
-                    <span className="text-foreground font-medium">Összesen bruttó:</span>
-                    <span className="font-mono text-xl font-bold text-primary">
-                      {formatAmount(totals.gross)}
-                    </span>
+          <div className="flex-1 overflow-auto mt-4">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <LoadingSpinner />
+              </div>
+            ) : items.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
+                  <Package className="h-8 w-8 opacity-50" />
+                </div>
+                <p className="font-medium">Nincsenek elérhető tételek</p>
+                <p className="text-sm mt-1 opacity-75">
+                  A tételek automatikusan lekérésre kerülnek a következő szinkronizáláskor.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-border/50 overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/30 hover:bg-muted/30">
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={allSelected}
+                          onCheckedChange={toggleAll}
+                          aria-label="Összes kijelölése"
+                        />
+                      </TableHead>
+                      <TableHead className="w-12 font-semibold">#</TableHead>
+                      <TableHead className="font-semibold">Megnevezés</TableHead>
+                      <TableHead className="text-right font-semibold">Mennyiség</TableHead>
+                      <TableHead className="text-right font-semibold">Egységár</TableHead>
+                      <TableHead className="text-right font-semibold">Nettó</TableHead>
+                      <TableHead className="text-center font-semibold">ÁFA</TableHead>
+                      <TableHead className="text-right font-semibold">ÁFA összeg</TableHead>
+                      <TableHead className="text-right font-semibold">Bruttó</TableHead>
+                      <TableHead className="text-center font-semibold">Főkönyv</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {items.map((item, index) => (
+                      <TableRow 
+                        key={item.id}
+                        className={
+                          selectedIds.has(item.id)
+                            ? 'bg-primary/5'
+                            : index % 2 === 0 ? 'bg-transparent' : 'bg-muted/10'
+                        }
+                      >
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedIds.has(item.id)}
+                            onCheckedChange={() => toggleItem(item.id)}
+                            aria-label={`Kijelölés: ${item.line_description || ''}`}
+                          />
+                        </TableCell>
+                        <TableCell className="font-mono text-muted-foreground">
+                          {item.line_number}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{item.line_description || '-'}</p>
+                            {item.product_code && (
+                              <p className="text-xs text-muted-foreground font-mono">
+                                {item.product_code}
+                              </p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatQuantity(item.quantity, item.unit_of_measure)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatAmount(item.unit_price)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatAmount(item.net_amount)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                            {formatVatRate(item.vat_rate)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatAmount(item.vat_amount)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-medium">
+                          {formatAmount(getGrossAmount(item))}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {item.gl_classifications?.[activePresetId]?.gl_number ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                              {item.gl_classifications[activePresetId].gl_number}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground" title="Nincs besorolva">
+                              -
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+
+          {items.length > 0 && (
+            <div className="border-t border-border/50 pt-5 mt-4">
+              <div className="flex justify-between items-end">
+                {/* Activation button */}
+                <div>
+                  {someSelected && (
+                    <Button
+                      className="gap-2"
+                      onClick={() => setActivationDialogOpen(true)}
+                    >
+                      <Package2 className="h-4 w-4" />
+                      Aktiválás ({selectedIds.size} tétel)
+                    </Button>
+                  )}
+                </div>
+
+                {/* Totals */}
+                <div className="bg-muted/30 rounded-lg p-4 min-w-[320px]">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Összesen nettó:</span>
+                      <span className="font-mono font-medium">{formatAmount(totals.net)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Összesen ÁFA:</span>
+                      <span className="font-mono font-medium">{formatAmount(totals.vat)}</span>
+                    </div>
+                    <div className="h-px bg-border/50 my-3" />
+                    <div className="flex justify-between items-center">
+                      <span className="text-foreground font-medium">Összesen bruttó:</span>
+                      <span className="font-mono text-xl font-bold text-primary">
+                        {formatAmount(totals.gross)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Asset Activation Dialog */}
+      <AssetActivationDialog
+        open={activationDialogOpen}
+        onOpenChange={setActivationDialogOpen}
+        selectedItems={selectedItemsForActivation}
+        invoiceInfo={{
+          invoiceId,
+          invoiceType: source === 'submitted' ? 'submitted' : 'nav',
+          invoiceNumber,
+          invoiceDate: invoiceDate || new Date().toISOString().split('T')[0],
+          supplierName: supplierName || 'Ismeretlen',
+        }}
+        onSuccess={() => {
+          setSelectedIds(new Set());
+        }}
+      />
+    </>
   );
 }

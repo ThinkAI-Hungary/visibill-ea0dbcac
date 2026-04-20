@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -10,6 +11,7 @@ import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog'
 import TransactionFilters from '@/components/transactions/TransactionFilters';
 import TransactionTable from '@/components/transactions/TransactionTable';
 import { useTransactionData, type Transaction } from '@/hooks/useTransactionData';
+import { supabase } from '@/integrations/supabase/client';
 
 const TransactionsPage = () => {
   const {
@@ -35,14 +37,67 @@ const TransactionsPage = () => {
     queryClient,
   } = useTransactionData();
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   // Details dialog state
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
+  // ── URL-based transaction deep-linking ──
+  const setTransactionParam = useCallback((txId: string | null) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (txId) next.set('transaction', txId);
+      else next.delete('transaction');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
   const handleOpenDetails = useCallback((transaction: Transaction) => {
     setSelectedTransaction(transaction);
     setDetailsDialogOpen(true);
-  }, []);
+    setTransactionParam(transaction.id);
+  }, [setTransactionParam]);
+
+  const handleCloseDetails = useCallback((open: boolean) => {
+    setDetailsDialogOpen(open);
+    if (!open) {
+      setSelectedTransaction(null);
+      setTransactionParam(null);
+    }
+  }, [setTransactionParam]);
+
+  // ── Auto-open from URL (?transaction=<id>) ──
+  const txIdFromUrl = searchParams.get('transaction');
+  useEffect(() => {
+    if (!txIdFromUrl || !selectedCompany?.id) return;
+
+    // Try in loaded data
+    const match = filteredTransactions.find(tx => tx.id === txIdFromUrl);
+    if (match) {
+      setSelectedTransaction(match);
+      setDetailsDialogOpen(true);
+      return;
+    }
+
+    // Fallback: fetch from Supabase
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('bank_transactions')
+        .select('*')
+        .eq('id', txIdFromUrl)
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (data) {
+        setSelectedTransaction(data as unknown as Transaction);
+        setDetailsDialogOpen(true);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [txIdFromUrl, selectedCompany?.id]);
 
   if (!selectedCompany) {
     return (
@@ -151,7 +206,7 @@ const TransactionsPage = () => {
 
       <TransactionDetailsDialog
         open={detailsDialogOpen}
-        onOpenChange={setDetailsDialogOpen}
+        onOpenChange={handleCloseDetails}
         transaction={selectedTransaction}
         companyId={selectedCompany?.id || ''}
         onUpdate={() => {

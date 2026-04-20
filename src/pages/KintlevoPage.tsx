@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useKintlevoData } from '@/hooks/useKintlevoData';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -39,7 +40,34 @@ export default function KintlevoPage() {
     updatePartnerEmail,
   } = useKintlevoData();
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // ── URL param helpers ──
+  const setDunningParam = useCallback((open: boolean) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (open) next.set('action', 'dunning');
+      else next.delete('action');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const handleOpenDunning = useCallback(() => {
+    setDialogOpen(true);
+    setDunningParam(true);
+  }, [setDunningParam]);
+
+  const handleCloseDunning = useCallback((open: boolean) => {
+    setDialogOpen(open);
+    if (!open) setDunningParam(false);
+  }, [setDunningParam]);
+
+  // Auto-open from URL
+  const actionFromUrl = searchParams.get('action');
+  useEffect(() => {
+    if (actionFromUrl === 'dunning' && !dialogOpen) setDialogOpen(true);
+  }, [actionFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) return <KintlevoSkeleton />;
 
@@ -54,7 +82,7 @@ export default function KintlevoPage() {
               Kifizetetlen kimenő számlák cégenként csoportosítva
             </p>
           </div>
-          <Button size="lg" className="gap-2 shrink-0" onClick={() => setDialogOpen(true)}>
+          <Button size="lg" className="gap-2 shrink-0" onClick={handleOpenDunning}>
             <Mail className="h-4 w-4" />
             Felszólítás küldése
           </Button>
@@ -90,7 +118,7 @@ export default function KintlevoPage() {
       {/* Dunning Dialog */}
       <DunningDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={handleCloseDunning}
         companyGroups={companyGroups}
         selectedCompanyId={selectedCompany?.id || ''}
         selectedCompanyName={selectedCompany?.name || ''}

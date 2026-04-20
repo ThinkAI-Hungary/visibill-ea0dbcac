@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
@@ -174,6 +174,8 @@ const Auth = () => {
   const { signIn, signUp, user } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const [authSearchParams] = useSearchParams();
+  const returnTo = authSearchParams.get('returnTo') || '/';
 
   // Handle expired/invalid recovery links that redirect to root with error hash
   useEffect(() => {
@@ -246,7 +248,7 @@ const Auth = () => {
   selectedDimsRef.current = selectedDims; // keep in sync on every render
 
   useEffect(() => {
-    if (user) { navigate('/'); }
+    if (user) { navigate(returnTo); }
   }, [user, navigate]);
 
   // Non-passive wheel listener — adds to scroll velocity for smooth momentum
@@ -499,7 +501,7 @@ const Auth = () => {
     const { error } = await signIn(email, password);
 
     if (!error) {
-      navigate('/');
+      navigate(returnTo);
     }
 
     setLoading(false);
@@ -522,7 +524,7 @@ const Auth = () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: `${window.location.origin}${returnTo}`,
       },
     });
 

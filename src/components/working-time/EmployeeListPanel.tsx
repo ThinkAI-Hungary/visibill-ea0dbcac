@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -56,6 +56,8 @@ interface EmployeeListPanelProps {
     phone?: string | null;
   }) => void;
   isEditing?: boolean;
+  autoEditEmployeeId?: string | null;
+  onEditOpenChange?: (employeeId: string | null) => void;
 }
 
 /** Shared grid for header + rows */
@@ -67,6 +69,8 @@ function EmployeeCard({
   isDeleting,
   onEdit,
   isEditing,
+  autoEditId,
+  onEditOpenChange,
 }: {
   employee: EmployeeRate;
   onDelete: (id: string) => void;
@@ -78,6 +82,8 @@ function EmployeeCard({
     phone?: string | null;
   }) => void;
   isEditing?: boolean;
+  autoEditId?: string | null;
+  onEditOpenChange?: (employeeId: string | null) => void;
 }) {
   const { copy } = useCopyToClipboard();
   const [expanded, setExpanded] = useState(false);
@@ -118,7 +124,15 @@ function EmployeeCard({
     setEditPhone(employee.phone || '');
     setEditType(employee.employee_type);
     setEditOpen(true);
+    onEditOpenChange?.(employee.id);
   };
+
+  // Auto-open from URL
+  useEffect(() => {
+    if (autoEditId === employee.id && !editOpen) {
+      handleOpenEdit();
+    }
+  }, [autoEditId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSaveEdit = () => {
     if (!onEdit || !editName.trim()) return;
@@ -129,6 +143,7 @@ function EmployeeCard({
       phone: editPhone.trim() || null,
     });
     setEditOpen(false);
+    onEditOpenChange?.(null);
   };
 
   return (
@@ -301,7 +316,7 @@ function EmployeeCard({
       </div>
 
       {/* Edit dialog */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) onEditOpenChange?.(null); }}>
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle>Dolgozó szerkesztése</DialogTitle>
@@ -377,6 +392,8 @@ export function EmployeeListPanel({
   isDeleting,
   onEdit,
   isEditing,
+  autoEditEmployeeId,
+  onEditOpenChange,
 }: EmployeeListPanelProps) {
   const employees = employeeRates.filter((r) => r.employee_type === 'employee');
   const contractors = employeeRates.filter((r) => r.employee_type === 'contractor');
@@ -415,7 +432,7 @@ export function EmployeeListPanel({
               <>
                 <EmployeeListHeader />
                 {employees.map((emp) => (
-                  <EmployeeCard key={emp.id} employee={emp} onDelete={onDelete} isDeleting={isDeleting} onEdit={onEdit} isEditing={isEditing} />
+                  <EmployeeCard key={emp.id} employee={emp} onDelete={onDelete} isDeleting={isDeleting} onEdit={onEdit} isEditing={isEditing} autoEditId={autoEditEmployeeId} onEditOpenChange={onEditOpenChange} />
                 ))}
               </>
             )}
@@ -434,7 +451,7 @@ export function EmployeeListPanel({
               <>
                 <EmployeeListHeader />
                 {contractors.map((emp) => (
-                  <EmployeeCard key={emp.id} employee={emp} onDelete={onDelete} isDeleting={isDeleting} onEdit={onEdit} isEditing={isEditing} />
+                  <EmployeeCard key={emp.id} employee={emp} onDelete={onDelete} isDeleting={isDeleting} onEdit={onEdit} isEditing={isEditing} autoEditId={autoEditEmployeeId} onEditOpenChange={onEditOpenChange} />
                 ))}
               </>
             )}

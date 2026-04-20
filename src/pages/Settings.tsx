@@ -18,6 +18,7 @@ import { ProfileSection } from '@/components/settings/ProfileSection';
 import { BusinessSection } from '@/components/settings/BusinessSection';
 import { SystemSection } from '@/components/settings/SystemSection';
 import { SecuritySection } from '@/components/settings/SecuritySection';
+import { useUrlTab } from '@/lib/navigation';
 
 // ── Inline sub-components (CompanyAccessCard, CompanyMembersCard) kept here for simplicity ──
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -115,7 +116,7 @@ function CompanyMembersCard({ companyId, ownerId, isOwner, toast }: { companyId:
   const { data: members = [], isLoading: loading } = useQuery({
     queryKey: queryKeys.settingsMembers(companyId),
     queryFn: async () => {
-      const { data } = await supabase.from('company_members').select('id, user_id, created_at').eq('company_id', companyId);
+      const { data } = await supabase.from('company_members').select('id, user_id, role, created_at').eq('company_id', companyId);
       if (data && data.length > 0) {
         const userIds = data.map(m => m.user_id);
         const { data: profiles } = await supabase.from('profiles').select('user_id, name').in('user_id', userIds);
@@ -148,8 +149,13 @@ function CompanyMembersCard({ companyId, ownerId, isOwner, toast }: { companyId:
                 <div>
                   <p className="font-medium">
                     {member.profile?.name || 'Névtelen felhasználó'}
-                    {member.user_id === ownerId ? <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Tulajdonos</span>
-                      : <span className="ml-2 text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Admin</span>}
+                    {member.user_id === ownerId
+                      ? <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Tulajdonos</span>
+                      : member.role === 'admin'
+                        ? <span className="ml-2 text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Admin</span>
+                        : member.role === 'employee'
+                          ? <span className="ml-2 text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full">Munkavállaló</span>
+                          : <span className="ml-2 text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Tag</span>}
                   </p>
                   <p className="text-sm text-muted-foreground">Csatlakozott: {new Date(member.created_at).toLocaleDateString('hu-HU')}</p>
                 </div>
@@ -181,6 +187,10 @@ export default function Settings() {
   const [exportLoading, setExportLoading] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+
+  // Sync settings tab to URL
+  const SETTINGS_TABS = ['profile', 'business', 'notifications', 'system', 'security'] as const;
+  const [activeSettingsTab, setActiveSettingsTab] = useUrlTab('settings', 'profile', SETTINGS_TABS);
 
   const [profile, setProfile] = useState<Profile>({ name: '', company: '', position: '', avatar_url: '' });
   const [companyName, setCompanyName] = useState('');
@@ -318,7 +328,7 @@ export default function Settings() {
         <p className="text-muted-foreground mt-2">Rendszer és üzleti beállítások kezelése</p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-6">
+      <Tabs value={activeSettingsTab} onValueChange={(v) => setActiveSettingsTab(v as typeof SETTINGS_TABS[number])} className="space-y-6">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile" className="flex items-center gap-2"><User className="h-4 w-4" />Profil</TabsTrigger>
           <TabsTrigger value="business" className="flex items-center gap-2"><Building2 className="h-4 w-4" />Cég</TabsTrigger>

@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Building2, AlertCircle, Info } from 'lucide-react';
+import { Building2, AlertCircle, Info, MapPin, Plus, X } from 'lucide-react';
+import { useCompanyLocations } from '@/hooks/useCompanyLocations';
+import { useToast } from '@/hooks/use-toast';
 
 interface Company {
   id: string;
@@ -37,6 +40,46 @@ export function BusinessSection({
   savingCompany, onSave, companies, setSelectedCompany, children,
 }: Props) {
   const isOwner = selectedCompany?.owner_id === userId;
+  const { toast } = useToast();
+  const { locations, isLoading: locationsLoading, addLocation, deleteLocation } = useCompanyLocations(selectedCompany?.id);
+
+  // New location form state
+  const [showNewLocation, setShowNewLocation] = useState(false);
+  const [newLocationName, setNewLocationName] = useState('');
+  const [newLocationAddress, setNewLocationAddress] = useState('');
+  const [addingLocation, setAddingLocation] = useState(false);
+
+  const handleAddLocation = async () => {
+    if (!newLocationName.trim() || !newLocationAddress.trim()) return;
+    setAddingLocation(true);
+    try {
+      await addLocation.mutateAsync({
+        name: newLocationName.trim(),
+        address: newLocationAddress.trim(),
+        location_type: 'branch',
+      });
+      toast({ title: 'Siker', description: 'Telephely sikeresen hozzáadva.' });
+      setNewLocationName('');
+      setNewLocationAddress('');
+      setShowNewLocation(false);
+    } catch {
+      toast({ title: 'Hiba', description: 'Nem sikerült a telephely hozzáadása.', variant: 'destructive' });
+    } finally {
+      setAddingLocation(false);
+    }
+  };
+
+  const handleDeleteLocation = async (locationId: string) => {
+    try {
+      await deleteLocation.mutateAsync(locationId);
+      toast({ title: 'Siker', description: 'Telephely eltávolítva.' });
+    } catch {
+      toast({ title: 'Hiba', description: 'Nem sikerült a telephely törlése.', variant: 'destructive' });
+    }
+  };
+
+  // Filter locations for display (branches only — headquarters shown as the main address)
+  const branchLocations = locations.filter(l => l.location_type === 'branch');
 
   return (
     <div className="space-y-6">
@@ -77,7 +120,7 @@ export function BusinessSection({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="company_address">Cím</Label>
+                <Label htmlFor="company_address">Székhely</Label>
                 <Textarea id="company_address" value={companyAddress} onChange={e => setCompanyAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." rows={3} disabled={!isOwner} />
               </div>
               <div className="flex items-center gap-4 pt-2">
@@ -94,6 +137,124 @@ export function BusinessSection({
           )}
         </CardContent>
       </Card>
+
+      {/* Telephelyek szekció */}
+      {selectedCompany && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Telephelyek
+                </CardTitle>
+                <CardDescription>A céghez tartozó telephelyek és fióktelepek kezelése</CardDescription>
+              </div>
+              {isOwner && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setShowNewLocation(!showNewLocation)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Új telephely
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* New location form */}
+            {showNewLocation && isOwner && (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                <p className="text-sm font-semibold">Új telephely hozzáadása</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="new_location_name" className="text-sm">Telephely neve *</Label>
+                    <Input
+                      id="new_location_name"
+                      value={newLocationName}
+                      onChange={e => setNewLocationName(e.target.value)}
+                      placeholder="Pl. Debreceni Raktár"
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="new_location_address" className="text-sm">Cím *</Label>
+                    <Input
+                      id="new_location_address"
+                      value={newLocationAddress}
+                      onChange={e => setNewLocationAddress(e.target.value)}
+                      placeholder="Pl. 4032 Debrecen, Ipari utca 5."
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    disabled={!newLocationName.trim() || !newLocationAddress.trim() || addingLocation}
+                    onClick={handleAddLocation}
+                  >
+                    {addingLocation ? 'Hozzáadás...' : 'Hozzáadás'}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowNewLocation(false); setNewLocationName(''); setNewLocationAddress(''); }}>
+                    Mégse
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Existing locations list */}
+            {locationsLoading ? (
+              <p className="text-sm text-muted-foreground">Betöltés...</p>
+            ) : locations.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nincsenek telephelyek hozzáadva.</p>
+            ) : (
+              <div className="space-y-2">
+                {locations.map(location => (
+                  <div
+                    key={location.id}
+                    className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/20 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        location.location_type === 'headquarters'
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-muted text-muted-foreground'
+                      }`}>
+                        <MapPin className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">
+                          {location.name}
+                          {location.location_type === 'headquarters' && (
+                            <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                              Székhely
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{location.address}</p>
+                      </div>
+                    </div>
+                    {isOwner && location.location_type !== 'headquarters' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive opacity-50 hover:opacity-100"
+                        onClick={() => handleDeleteLocation(location.id)}
+                        title="Telephely törlése"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {children}
 

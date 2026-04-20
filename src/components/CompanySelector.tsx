@@ -297,7 +297,7 @@ const CompanySelector = () => {
                 <Input id="newTaxNumber" value={newCompanyTaxNumber} onChange={(e) => setNewCompanyTaxNumber(e.target.value)} placeholder="Pl. 12345678-2-42" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="newAddress">Cím</Label>
+                <Label htmlFor="newAddress">Székhely</Label>
                 <Input id="newAddress" value={newCompanyAddress} onChange={(e) => setNewCompanyAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." />
               </div>
               <Button onClick={handleCreateCompany} disabled={!newCompanyName.trim() || !newCompanyTaxNumber.trim() || isCreating} className="w-full">
@@ -335,7 +335,7 @@ const CompanySelector = () => {
               <Input id="editTaxNumber" value={editTaxNumber} onChange={(e) => setEditTaxNumber(e.target.value)} placeholder="Pl. 12345678-2-42" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editAddress">Cím</Label>
+              <Label htmlFor="editAddress">Székhely</Label>
               <Input id="editAddress" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} placeholder="Pl. 1234 Budapest, Példa utca 1." />
             </div>
             <Button onClick={handleUpdateCompany} disabled={!editName.trim() || !editTaxNumber.trim() || isUpdating} className="w-full">

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -29,6 +30,29 @@ export default function GeneralLedgerPage() {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [isAIRunning, setIsAIRunning] = useState(false);
+
+  // ── URL deep-linking for modals ──
+  const [searchParams, setSearchParams] = useSearchParams();
+  const setActionParam = useCallback((action: string | null) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (action) next.set('action', action);
+      else next.delete('action');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const handleOpenUpload = useCallback(() => { setUploadModalOpen(true); setActionParam('upload'); }, [setActionParam]);
+  const handleOpenManage = useCallback(() => { setManageModalOpen(true); setActionParam('manage'); }, [setActionParam]);
+  const handleCloseUpload = useCallback((v: boolean) => { setUploadModalOpen(v); if (!v) setActionParam(null); }, [setActionParam]);
+  const handleCloseManage = useCallback((v: boolean) => { setManageModalOpen(v); if (!v) setActionParam(null); }, [setActionParam]);
+
+  // Auto-open from URL
+  const actionFromUrl = searchParams.get('action');
+  useEffect(() => {
+    if (actionFromUrl === 'upload' && !uploadModalOpen) setUploadModalOpen(true);
+    if (actionFromUrl === 'manage' && !manageModalOpen) setManageModalOpen(true);
+  }, [actionFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { activePresetId, setActivePresetId, presets } = useActivePreset(selectedCompany?.id);
 
@@ -144,7 +168,7 @@ export default function GeneralLedgerPage() {
             <div className="flex items-center gap-2">
               <Database className="w-4 h-4 text-primary" />
               <Label className="whitespace-nowrap font-medium text-xs">Aktív Számlatükör:</Label>
-              <Select value={activePresetId} onValueChange={handleSelectPreset} disabled={toggleActivePresetMutation.isPending}>
+              <Select value={activePresetId || ''} onValueChange={handleSelectPreset} disabled={toggleActivePresetMutation.isPending}>
                 <SelectTrigger className="w-[200px] h-9 text-sm">
                   <SelectValue placeholder="Sablon kiválasztása" />
                 </SelectTrigger>
@@ -160,14 +184,14 @@ export default function GeneralLedgerPage() {
                 variant="outline" 
                 size="sm" 
                 className="h-9 gap-2 text-muted-foreground font-medium"
-                onClick={() => setManageModalOpen(true)}
+                onClick={handleOpenManage}
               >
                 <Settings2 className="w-4 h-4" />
                 <span>Sablonok kezelése</span>
               </Button>
             </div>
             <div className="border-l pl-3 border-border/60 flex items-center gap-2">
-              <Button onClick={() => setUploadModalOpen(true)} size="sm" className="h-9 gap-2">
+              <Button onClick={handleOpenUpload} size="sm" className="h-9 gap-2">
                 <UploadCloud className="w-4 h-4" />
                 <span>Új feltöltése</span>
               </Button>
@@ -215,7 +239,7 @@ export default function GeneralLedgerPage() {
 
       <UploadChartOfAccountsModal 
         open={uploadModalOpen} 
-        onOpenChange={setUploadModalOpen} 
+        onOpenChange={handleCloseUpload} 
         onSuccess={(id) => {
           queryClient.invalidateQueries({ queryKey: ['coaPresets'] });
           setActivePresetId(id);
@@ -224,7 +248,7 @@ export default function GeneralLedgerPage() {
 
       <ManagePresetsModal
         open={manageModalOpen}
-        onOpenChange={setManageModalOpen}
+        onOpenChange={handleCloseManage}
         presets={presets || []}
         companyId={selectedCompany?.id}
       />

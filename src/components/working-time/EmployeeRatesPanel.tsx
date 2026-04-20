@@ -22,6 +22,8 @@ interface EmployeeRatesPanelProps {
     hourly_rate: number;
   }) => void;
   isSaving: boolean;
+  autoEditRateId?: string | null;
+  onRateEditOpenChange?: (employeeId: string | null) => void;
 }
 
 /** Shared grid class for header + rows alignment */
@@ -33,6 +35,8 @@ export function EmployeeRatesPanel({
   monthlyWorkingHours,
   onSave,
   isSaving,
+  autoEditRateId,
+  onRateEditOpenChange,
 }: EmployeeRatesPanelProps) {
   // Merge: salary employees + employee_rates entries that don't have salary data
   const salaryEmployeeNames = new Set(employeeGroups.map(g => g.employeeName));
@@ -115,6 +119,8 @@ export function EmployeeRatesPanel({
               monthlyWorkingHours={monthlyWorkingHours}
               onSave={onSave}
               isSaving={isSaving}
+              autoEditId={autoEditRateId}
+              onEditOpenChange={onRateEditOpenChange}
             />
           );
         })}

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useActivePreset(companyId: string | undefined) {
-  const [activePresetId, setActivePresetId] = useState<string>('generic');
+  const [activePresetId, setActivePresetId] = useState<string | undefined>(undefined);
 
   const { data: presets, isLoading } = useQuery({
     queryKey: ['coaPresets', companyId],

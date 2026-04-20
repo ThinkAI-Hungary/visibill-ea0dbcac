@@ -1,11 +1,11 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart3, Upload, PieChart } from 'lucide-react';
+import { useScopedNavigate } from '@/lib/navigation';
 
 const QuickActions = React.memo(function QuickActions() {
-  const navigate = useNavigate();
+  const scopedNavigate = useScopedNavigate();
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
@@ -15,7 +15,7 @@ const QuickActions = React.memo(function QuickActions() {
         <p className="text-sm text-muted-foreground mb-4 flex-1">
           Részletes számla lista szűrési lehetőségekkel
         </p>
-        <Button variant="default" className="w-full mt-auto" onClick={() => navigate('/invoices')}>
+        <Button variant="default" className="w-full mt-auto" onClick={() => scopedNavigate('invoices')}>
           Számlák megtekintése
         </Button>
       </Card>
@@ -25,7 +25,7 @@ const QuickActions = React.memo(function QuickActions() {
         <p className="text-sm text-muted-foreground mb-4 flex-1">
           Új számlák kézi feltöltése
         </p>
-        <Button variant="default" className="w-full mt-auto" onClick={() => navigate('/upload')}>
+        <Button variant="default" className="w-full mt-auto" onClick={() => scopedNavigate('upload')}>
           Fájlok feltöltése
         </Button>
       </Card>
@@ -35,7 +35,7 @@ const QuickActions = React.memo(function QuickActions() {
         <p className="text-sm text-muted-foreground mb-4 flex-1">
           Projektek szerkesztése és rendszerezése
         </p>
-        <Button variant="outline" className="w-full mt-auto" onClick={() => navigate('/projects')}>
+        <Button variant="outline" className="w-full mt-auto" onClick={() => scopedNavigate('projects')}>
           Projektek kezelése
         </Button>
       </Card>

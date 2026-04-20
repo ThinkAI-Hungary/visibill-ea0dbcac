@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Suspense } from 'react';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
+import { LiveNotificationProvider } from '@/components/LiveNotificationProvider';
 
 /**
  * ProtectedLayout — Full-Stop Loading Guard + Sign-Out Overlay.
@@ -45,7 +46,10 @@ export function ProtectedLayout() {
     if (isReady && !user && !isSigningOut) {
       const loader = document.getElementById('initial-loader');
       if (loader) loader.remove();
-      navigate('/auth', { replace: true });
+      // Save current URL as returnTo so we can redirect back after login
+      const returnTo = window.location.pathname + window.location.search;
+      const authUrl = returnTo && returnTo !== '/' ? `/auth?returnTo=${encodeURIComponent(returnTo)}` : '/auth';
+      navigate(authUrl, { replace: true });
     }
   }, [isReady, user, isSigningOut, navigate]);
 
@@ -66,6 +70,7 @@ export function ProtectedLayout() {
 
   return (
     <>
+      <LiveNotificationProvider />
       {hasNoCompanies ? (
         <div className="h-screen w-full overflow-auto bg-background">
           <Suspense fallback={<ContentSkeleton />}>
@@ -92,4 +97,3 @@ export function ProtectedLayout() {
     </>
   );
 }
-

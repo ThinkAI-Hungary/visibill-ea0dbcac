@@ -509,7 +509,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="address">Cím</Label>
+            <Label htmlFor="address">Székhely</Label>
             <Input
               id="address"
               value={companyAddress}

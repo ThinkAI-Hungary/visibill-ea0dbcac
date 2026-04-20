@@ -21,7 +21,7 @@ import {
 import { cn, formatCurrency } from '@/lib/utils';
 import { formatHourlyRate, calculateHourlyCost } from '@/lib/payrollUtils';
 import type { EmployeeRate, SalaryCostItem } from '@/lib/payrollUtils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { RATES_GRID } from './EmployeeRatesPanel';
 
 interface SalaryLinkCardProps {
@@ -35,6 +35,8 @@ interface SalaryLinkCardProps {
     hourly_rate: number;
   }) => void;
   isSaving: boolean;
+  autoEditId?: string | null;
+  onEditOpenChange?: (employeeId: string | null) => void;
 }
 
 export function SalaryLinkCard({
@@ -44,6 +46,8 @@ export function SalaryLinkCard({
   monthlyWorkingHours,
   onSave,
   isSaving,
+  autoEditId,
+  onEditOpenChange,
 }: SalaryLinkCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -74,7 +78,16 @@ export function SalaryLinkCard({
   const handleOpenEdit = () => {
     setEditCost(String(effectiveCost || totalSalaryCost || ''));
     setEditOpen(true);
+    onEditOpenChange?.(existingRate?.id || employeeName);
   };
+
+  // Auto-open from URL
+  useEffect(() => {
+    const idMatch = existingRate?.id || employeeName;
+    if (autoEditId === idMatch && !editOpen) {
+      handleOpenEdit();
+    }
+  }, [autoEditId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSaveEdit = () => {
     const cost = parseFloat(editCost);
@@ -85,6 +98,7 @@ export function SalaryLinkCard({
       hourly_rate: calculateHourlyCost(cost, monthlyWorkingHours),
     });
     setEditOpen(false);
+    onEditOpenChange?.(null);
   };
 
   const handleSaveFromRow = () => {
@@ -209,7 +223,7 @@ export function SalaryLinkCard({
       </div>
 
       {/* Edit dialog */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) onEditOpenChange?.(null); }}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Óradíj szerkesztése — {employeeName}</DialogTitle>

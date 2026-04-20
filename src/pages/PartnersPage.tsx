@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 
@@ -90,6 +91,17 @@ export default function PartnersPage() {
     partner_type: "both",
   });
   const [emailError, setEmailError] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ── URL param helpers ──
+  const setPartnerParam = useCallback((partnerId: string | null) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (partnerId) next.set('partner', partnerId);
+      else next.delete('partner');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   // Fetch partners - company scoped (required)
   const { data: partners, isLoading } = useQuery({
@@ -253,6 +265,7 @@ export default function PartnersPage() {
     }
     setEmailError("");
     setIsDialogOpen(true);
+    setPartnerParam(partner?.id || null);
   };
 
   const handleCloseDialog = () => {
@@ -266,7 +279,16 @@ export default function PartnersPage() {
       email: "",
       partner_type: "both",
     });
+    setPartnerParam(null);
   };
+
+  // Auto-open from URL (?partner=<id>)
+  const partnerIdFromUrl = searchParams.get('partner');
+  useEffect(() => {
+    if (!partnerIdFromUrl || !partners || isDialogOpen) return;
+    const match = partners.find(p => p.id === partnerIdFromUrl);
+    if (match) handleOpenDialog(match);
+  }, [partnerIdFromUrl, partners]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const validateEmail = (email: string): boolean => {
     if (!email.trim()) return true; // optional

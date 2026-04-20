@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useScopedNavigate } from '@/lib/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -66,7 +66,7 @@ const fetchAllInboundInvoices = async (companyId: string, mode: 'payable' | 'mis
 };
 
 const InvoiceStatusTables = () => {
-  const navigate = useNavigate();
+  const scopedNavigate = useScopedNavigate();
   const { selectedCompany } = useCompany();
   const [activeTab, setActiveTab] = useState<'payable' | 'missing'>('payable');
   const [visibleCount, setVisibleCount] = useState(20);
@@ -223,7 +223,7 @@ const InvoiceStatusTables = () => {
                 <Button 
                   size="sm" 
                   variant="outline"
-                  onClick={() => navigate('/manual-upload')}
+                  onClick={() => scopedNavigate('upload')}
                   className="h-7 gap-1.5 text-xs border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40"
                 >
                   <Upload className="h-3.5 w-3.5" />

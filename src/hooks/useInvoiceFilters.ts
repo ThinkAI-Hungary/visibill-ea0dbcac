@@ -120,7 +120,6 @@ export function useInvoiceFilters(
       return (data || []) as (NavInvoice & { total_count: number })[];
     },
     enabled: enabled && isNavTab,
-    placeholderData: (prev) => prev,
   });
 
   // ── Server-side submitted invoices query ──
@@ -157,7 +156,6 @@ export function useInvoiceFilters(
       return (data || []) as (SubmittedInvoice & { total_count: number })[];
     },
     enabled: enabled && isSubmittedTab,
-    placeholderData: (prev) => prev,
   });
 
   // Extract paginated data and total counts

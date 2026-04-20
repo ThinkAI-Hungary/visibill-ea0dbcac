@@ -138,7 +138,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       }
       return data || [];
     },
-    enabled: !!selectedCompany?.id
+    enabled: !!selectedCompany?.id && !!presetId
   });
 
   const handleRefetchAll = () => {

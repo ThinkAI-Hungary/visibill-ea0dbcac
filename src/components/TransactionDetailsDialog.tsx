@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { computeMatchStatus, getPaymentStatusBadge } from '@/hooks/useComputedStatus';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { Search, Check, AlertTriangle, FileText, CheckCircle2, HelpCircle, Link2
 import { formatCurrency, cn } from '@/lib/utils';
 import { format, subDays, addDays } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useScopedNavigate } from '@/lib/navigation';
 import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
 
 interface Transaction {
@@ -98,7 +98,7 @@ export const TransactionDetailsDialog = ({
   companyId,
   onUpdate
 }: TransactionDetailsDialogProps) => {
-  const navigate = useNavigate();
+  const scopedNavigate = useScopedNavigate();
   const [matchedInvoice, setMatchedInvoice] = useState<MatchedInvoice | null>(null);
   const [matchedNavInvoice, setMatchedNavInvoice] = useState<MatchedNavInvoice | null>(null);
   const [matchedSalary, setMatchedSalary] = useState<MatchedSalary | null>(null);
@@ -427,7 +427,7 @@ export const TransactionDetailsDialog = ({
                   setInvoiceDetailOpen(true);
                 } else if (matchedSalary) {
                   onOpenChange(false);
-                  navigate('/salaries');
+                  scopedNavigate('salaries');
                 }
               }}
             >

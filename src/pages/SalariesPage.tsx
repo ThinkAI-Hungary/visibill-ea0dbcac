@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useSalaryData } from '@/hooks/useSalaryData';
@@ -6,7 +7,7 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import SalaryPageSkeleton from '@/components/salaries/SalaryPageSkeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Users } from 'lucide-react';
+import { Plus, Users, FileText } from 'lucide-react';
 import { SalaryKpiCards } from '@/components/salaries/SalaryKpiCards';
 import { EmployeeAccordion } from '@/components/salaries/EmployeeAccordion';
 import { NavSummaryTable } from '@/components/salaries/NavSummaryTable';
@@ -21,6 +22,7 @@ export default function SalariesPage() {
   } = useSalaryData();
 
   const { dateFrom, dateTo } = useDateRange();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isSingleMonth = dateFrom.getFullYear() === dateTo.getFullYear()
     && dateFrom.getMonth() === dateTo.getMonth();
   const periodLabel = isSingleMonth
@@ -29,12 +31,66 @@ export default function SalariesPage() {
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [filesDialogOpen, setFilesDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<SalaryItem | null>(null);
 
-  const openEditModal = (item: SalaryItem) => {
+  // ── URL param helpers ──
+  const setSalaryParam = useCallback((params: { action?: string; salary?: string } | null) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.delete('action'); next.delete('salary');
+      if (params?.action) next.set('action', params.action);
+      if (params?.salary) next.set('salary', params.salary);
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const openAddDialog = useCallback(() => {
+    setAddDialogOpen(true);
+    setSalaryParam({ action: 'add' });
+  }, [setSalaryParam]);
+
+  const openFilesDialog = useCallback(() => {
+    setFilesDialogOpen(true);
+    setSalaryParam({ action: 'files' });
+  }, [setSalaryParam]);
+
+  const openEditModal = useCallback((item: SalaryItem) => {
     setEditingRecord(item);
     setEditDialogOpen(true);
-  };
+    setSalaryParam({ salary: item.id });
+  }, [setSalaryParam]);
+
+  const handleCloseAdd = useCallback((open: boolean) => {
+    setAddDialogOpen(open);
+    if (!open) setSalaryParam(null);
+  }, [setSalaryParam]);
+
+  const handleCloseEdit = useCallback((open: boolean) => {
+    setEditDialogOpen(open);
+    if (!open) { setEditingRecord(null); setSalaryParam(null); }
+  }, [setSalaryParam]);
+
+  const handleCloseFiles = useCallback((open: boolean) => {
+    setFilesDialogOpen(open);
+    if (!open) setSalaryParam(null);
+  }, [setSalaryParam]);
+
+  // ── Auto-open from URL ──
+  const actionFromUrl = searchParams.get('action');
+  const salaryIdFromUrl = searchParams.get('salary');
+  useEffect(() => {
+    if (actionFromUrl === 'add' && !addDialogOpen) {
+      setAddDialogOpen(true);
+    }
+    if (actionFromUrl === 'files' && !filesDialogOpen) {
+      setFilesDialogOpen(true);
+    }
+    if (salaryIdFromUrl && !editDialogOpen) {
+      const match = salaryItems.find(s => s.id === salaryIdFromUrl);
+      if (match) { setEditingRecord(match); setEditDialogOpen(true); }
+    }
+  }, [actionFromUrl, salaryIdFromUrl, salaryItems]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading && salaryItems.length === 0) return <SalaryPageSkeleton />;
 
@@ -47,8 +103,12 @@ export default function SalariesPage() {
           <p className="text-muted-foreground">Alkalmazottak bérének és járulékainak kezelése</p>
         </div>
         <div className="flex items-center gap-2">
-          <SalaryFilesDialog />
-          <Button onClick={() => setAddDialogOpen(true)}>
+          <Button variant="outline" onClick={openFilesDialog}>
+            <FileText className="mr-2 h-4 w-4" />
+            Feltöltött fájlok
+          </Button>
+          <SalaryFilesDialog open={filesDialogOpen} onOpenChange={handleCloseFiles} />
+          <Button onClick={openAddDialog}>
             <Plus className="mr-2 h-4 w-4" />
             KP kifizetés
           </Button>
@@ -90,12 +150,12 @@ export default function SalariesPage() {
       {/* Dialogs */}
       <SalaryAddDialog
         open={addDialogOpen}
-        onOpenChange={setAddDialogOpen}
+        onOpenChange={handleCloseAdd}
         onSubmit={(form) => addMutation.mutate(form)}
       />
       <SalaryEditDialog
         open={editDialogOpen}
-        onOpenChange={(v) => { setEditDialogOpen(v); if (!v) setEditingRecord(null); }}
+        onOpenChange={handleCloseEdit}
         record={editingRecord}
         onSubmit={(id, form) => editMutation.mutate({ id, form })}
       />

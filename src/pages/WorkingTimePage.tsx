@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -46,6 +47,77 @@ export default function WorkingTimePage() {
   const { selectedCompany } = useCompany();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ── URL param helpers ──
+  const setActionParam = useCallback((action: string | null) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (action) next.set('action', action);
+      else next.delete('action');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const handleOpenSettings = useCallback(() => {
+    setSettingsOpen(true);
+    setActionParam('settings');
+  }, [setActionParam]);
+
+  const handleOpenAddEmployee = useCallback(() => {
+    setAddEmployeeOpen(true);
+    setActionParam('add-employee');
+  }, [setActionParam]);
+
+  const handleCloseSettings = useCallback((v: boolean) => {
+    setSettingsOpen(v);
+    if (!v) setActionParam(null);
+  }, [setActionParam]);
+
+  const handleCloseAddEmployee = useCallback((v: boolean) => {
+    setAddEmployeeOpen(v);
+    if (!v) setActionParam(null);
+  }, [setActionParam]);
+
+  // Auto-open from URL
+  const actionFromUrl = searchParams.get('action');
+  const employeeIdFromUrl = searchParams.get('employee');
+  useEffect(() => {
+    if (actionFromUrl === 'settings' && !settingsOpen) setSettingsOpen(true);
+    if (actionFromUrl === 'add-employee' && !addEmployeeOpen) setAddEmployeeOpen(true);
+  }, [actionFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Employee/Rate editing params
+  const handleEmployeeEditOpen = useCallback((employeeId: string | null) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (employeeId) {
+        next.set('action', 'edit-employee');
+        next.set('employee', employeeId);
+      } else {
+        next.delete('action');
+        next.delete('employee');
+      }
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const handleRateEditOpen = useCallback((employeeId: string | null) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (employeeId) {
+        next.set('action', 'edit-rate');
+        next.set('employee', employeeId);
+      } else {
+        next.delete('action');
+        next.delete('employee');
+      }
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const autoEditEmployeeId = actionFromUrl === 'edit-employee' ? employeeIdFromUrl : null;
+  const autoEditRateId = actionFromUrl === 'edit-rate' ? employeeIdFromUrl : null;
 
   // Month navigation
   const [monthDate, setMonthDate] = useState(new Date());
@@ -268,12 +340,12 @@ export default function WorkingTimePage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setSettingsOpen(true)}
+              onClick={handleOpenSettings}
             >
               <Settings2 className="h-4 w-4 mr-2" />
               Beállítások
             </Button>
-            <Button size="sm" onClick={() => setAddEmployeeOpen(true)}>
+            <Button size="sm" onClick={handleOpenAddEmployee}>
               <UserPlus className="h-4 w-4 mr-2" />
               Dolgozó hozzáadása
             </Button>
@@ -457,6 +529,8 @@ export default function WorkingTimePage() {
             isDeleting={deleteRateMutation.isPending}
             onEdit={(data) => upsertMutation.mutate(data)}
             isEditing={upsertMutation.isPending}
+            autoEditEmployeeId={autoEditEmployeeId}
+            onEditOpenChange={handleEmployeeEditOpen}
           />
         </TabsContent>
 
@@ -471,6 +545,8 @@ export default function WorkingTimePage() {
             monthlyWorkingHours={effectiveSettings.monthly_working_hours}
             onSave={handleSaveRate}
             isSaving={upsertMutation.isPending}
+            autoEditRateId={autoEditRateId}
+            onRateEditOpenChange={handleRateEditOpen}
           />
         </TabsContent>
       </Tabs>
@@ -478,7 +554,7 @@ export default function WorkingTimePage() {
       {/* Dialogs */}
       <WorkSettingsDialog
         open={settingsOpen}
-        onOpenChange={setSettingsOpen}
+        onOpenChange={handleCloseSettings}
         currentSettings={effectiveSettings}
         onSave={handleSaveSettings}
         isSaving={settingsSaveMutation.isPending}
@@ -486,7 +562,7 @@ export default function WorkingTimePage() {
 
       <AddEmployeeDialog
         open={addEmployeeOpen}
-        onOpenChange={setAddEmployeeOpen}
+        onOpenChange={handleCloseAddEmployee}
         onSubmit={handleAddEmployee}
         isSaving={upsertMutation.isPending}
       />

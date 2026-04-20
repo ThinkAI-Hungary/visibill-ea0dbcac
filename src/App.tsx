@@ -2,19 +2,20 @@ import { Suspense, lazy, useEffect } from "react";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { CompanyProvider } from "./contexts/CompanyContext";
-import { DateRangeProvider } from "./contexts/DateRangeContext";
+import { CompanyProvider, useCompany } from "./contexts/CompanyContext";
+import { DateRangeProvider, useDateRange } from "./contexts/DateRangeContext";
 import { ProtectedLayout } from "./components/ProtectedLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { ScopedLayout } from "./components/ScopedLayout";
+import { generateScopedPath, extractPageSegment } from "./lib/navigation";
 
 import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { IdleWarningModal } from "./components/IdleWarningModal";
 import { Toaster } from "./components/ui/toaster";
-import { LiveNotificationProvider } from "./components/LiveNotificationProvider";
 
 // Route-level code splitting – each page loads as a separate chunk
 const Index = lazy(() => import("./pages/Index"));
@@ -38,6 +39,9 @@ const PettyCashPage = lazy(() => import("./pages/PettyCashPage"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const GeneralLedgerPage = lazy(() => import("./pages/GeneralLedgerPage"));
 const WorkingTimePage = lazy(() => import("./pages/WorkingTimePage"));
+// TENY — eagerly preload so React.lazy's promise is resolved before user navigates
+const fixedAssetsImport = import("./pages/FixedAssetsPage");
+const FixedAssetsPage = lazy(() => fixedAssetsImport);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,7 +70,31 @@ function ProtectedPage({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * RootRedirect — sends `/` to `/:companyId/:dateRange/` (scoped dashboard).
+ * Uses the currently selected company and date range from context.
+ */
+function RootRedirect() {
+  const { selectedCompany } = useCompany();
+  const { dateFromFormatted, dateToFormatted } = useDateRange();
 
+  if (!selectedCompany) return null; // ProtectedLayout/ProtectedRoute handles loading
+  const target = generateScopedPath(selectedCompany.id, dateFromFormatted, dateToFormatted, '');
+  return <Navigate to={target} replace />;
+}
+
+/**
+ * LegacyRedirect — redirects old flat paths (e.g. `/invoices`)
+ * to scoped equivalents (`/:companyId/:dateRange/invoices`).
+ */
+function LegacyRedirect({ page }: { page: string }) {
+  const { selectedCompany } = useCompany();
+  const { dateFromFormatted, dateToFormatted } = useDateRange();
+
+  if (!selectedCompany) return null;
+  const target = generateScopedPath(selectedCompany.id, dateFromFormatted, dateToFormatted, page);
+  return <Navigate to={target} replace />;
+}
 
 /** Removes the static HTML loader when a non-protected route mounts */
 function RemoveInitialLoader() {
@@ -122,8 +150,7 @@ const App = () => (
               <TooltipProvider>
 
                 <Toaster />
-                <LiveNotificationProvider />
-                <BrowserRouter>
+                <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                     <PasswordRecoveryRedirect />
                     <Routes>
                     {/* Auth routes – no sidebar, own Suspense for lazy chunks */}
@@ -131,62 +158,56 @@ const App = () => (
                     <Route path="/reset-password" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RemoveInitialLoader /><ResetPassword /></Suspense>} />
                     <Route path="/register/:token" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RemoveInitialLoader /><EmployeeRegister /></Suspense>} />
 
-                    {/* All protected routes with ProtectedLayout (sidebar is persistent).
-                         AppLayout has its own <Suspense> around just the content area,
-                         so lazy pages only replace the content — the sidebar stays mounted. */}
+                    {/* Protected routes with persistent sidebar */}
                     <Route element={<ProtectedLayout />}>
-                      <Route path="/onboarding" element={
+                      {/* Categories — unscoped fallback (ProtectedRoute redirect for new users) */}
+                      <Route path="/categories" element={
                         <ProtectedPage><Onboarding /></ProtectedPage>
                       } />
-                      <Route path="/upload" element={
-                        <ProtectedPage><ManualUpload /></ProtectedPage>
-                      } />
-                      <Route path="/invoices" element={
-                        <ProtectedPage><InvoicesPage /></ProtectedPage>
-                      } />
-                      <Route path="/integrations" element={
-                        <ProtectedPage><Integrations /></ProtectedPage>
-                      } />
-                      <Route path="/settings" element={
-                        <ProtectedPage><Settings /></ProtectedPage>
-                      } />
-                      <Route path="/projects" element={
-                        <ProtectedPage><Projects /></ProtectedPage>
-                      } />
-                      <Route path="/partners" element={
-                        <ProtectedPage><PartnersPage /></ProtectedPage>
-                      } />
-                      <Route path="/transactions" element={
-                        <ProtectedPage><TransactionsPage /></ProtectedPage>
-                      } />
-                      <Route path="/general-ledger" element={
-                        <ProtectedPage><GeneralLedgerPage /></ProtectedPage>
-                      } />
-                      <Route path="/kintlevo" element={
 
-                        <ProtectedPage><KintlevoPage /></ProtectedPage>
-                      } />
-                      <Route path="/petty-cash" element={
-                        <ProtectedPage><PettyCashPage /></ProtectedPage>
-                      } />
-                      <Route path="/pricing" element={
-                        <ProtectedPage><Pricing /></ProtectedPage>
-                      } />
-                      <Route path="/exchange-rates" element={
-                        <ProtectedPage><ExchangeRates /></ProtectedPage>
-                      } />
-                      <Route path="/salaries" element={
-                        <ProtectedPage><SalariesPage /></ProtectedPage>
-                      } />
-                      <Route path="/working-time" element={
-                        <ProtectedPage><WorkingTimePage /></ProtectedPage>
-                      } />
-                      <Route path="/analytics" element={
-                        <ProtectedPage><Analytics /></ProtectedPage>
-                      } />
-                      <Route path="/" element={
-                        <ProtectedPage><Index /></ProtectedPage>
-                      } />
+                      {/* ═══ Scoped Routes — /:companyId/:dateRange/* ═══ */}
+                      <Route path="/:companyId/:dateRange" element={<ScopedLayout />}>
+                        <Route index element={<ProtectedPage><Index /></ProtectedPage>} />
+                        <Route path="categories" element={<ProtectedPage><Onboarding /></ProtectedPage>} />
+                        <Route path="invoices/:tab?" element={<ProtectedPage><InvoicesPage /></ProtectedPage>} />
+                        <Route path="upload/:tab?" element={<ProtectedPage><ManualUpload /></ProtectedPage>} />
+                        <Route path="integrations" element={<ProtectedPage><Integrations /></ProtectedPage>} />
+                        <Route path="settings/:tab?" element={<ProtectedPage><Settings /></ProtectedPage>} />
+                        <Route path="projects" element={<ProtectedPage><Projects /></ProtectedPage>} />
+                        <Route path="partners" element={<ProtectedPage><PartnersPage /></ProtectedPage>} />
+                        <Route path="transactions/:tab?" element={<ProtectedPage><TransactionsPage /></ProtectedPage>} />
+                        <Route path="general-ledger/:tab?" element={<ProtectedPage><GeneralLedgerPage /></ProtectedPage>} />
+                        <Route path="kintlevo/:tab?" element={<ProtectedPage><KintlevoPage /></ProtectedPage>} />
+                        <Route path="petty-cash/:tab?" element={<ProtectedPage><PettyCashPage /></ProtectedPage>} />
+                        <Route path="teny/:tab?" element={<ProtectedPage><FixedAssetsPage /></ProtectedPage>} />
+                        <Route path="pricing" element={<ProtectedPage><Pricing /></ProtectedPage>} />
+                        <Route path="exchange-rates" element={<ProtectedPage><ExchangeRates /></ProtectedPage>} />
+                        <Route path="salaries/:tab?" element={<ProtectedPage><SalariesPage /></ProtectedPage>} />
+                        <Route path="working-time/:tab?" element={<ProtectedPage><WorkingTimePage /></ProtectedPage>} />
+                        <Route path="analytics/:tab?" element={<ProtectedPage><Analytics /></ProtectedPage>} />
+                      </Route>
+
+                      {/* ═══ Legacy Redirects — old flat paths → scoped ═══ */}
+                      <Route path="/invoices" element={<LegacyRedirect page="invoices" />} />
+                      <Route path="/upload" element={<LegacyRedirect page="upload" />} />
+                      <Route path="/integrations" element={<LegacyRedirect page="integrations" />} />
+                      <Route path="/settings" element={<LegacyRedirect page="settings" />} />
+                      <Route path="/projects" element={<LegacyRedirect page="projects" />} />
+                      <Route path="/partners" element={<LegacyRedirect page="partners" />} />
+                      <Route path="/transactions" element={<LegacyRedirect page="transactions" />} />
+                      <Route path="/general-ledger" element={<LegacyRedirect page="general-ledger" />} />
+                      <Route path="/kintlevo" element={<LegacyRedirect page="kintlevo" />} />
+                      <Route path="/petty-cash" element={<LegacyRedirect page="petty-cash" />} />
+                      <Route path="/teny" element={<LegacyRedirect page="teny" />} />
+                      <Route path="/pricing" element={<LegacyRedirect page="pricing" />} />
+                      <Route path="/exchange-rates" element={<LegacyRedirect page="exchange-rates" />} />
+                      <Route path="/salaries" element={<LegacyRedirect page="salaries" />} />
+                      <Route path="/working-time" element={<LegacyRedirect page="working-time" />} />
+                      <Route path="/analytics" element={<LegacyRedirect page="analytics" />} />
+                      <Route path="/onboarding" element={<LegacyRedirect page="categories" />} />
+
+                      {/* Root → scoped dashboard */}
+                      <Route path="/" element={<RootRedirect />} />
                     </Route>
 
                     <Route path="*" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NotFound /></Suspense>} />
