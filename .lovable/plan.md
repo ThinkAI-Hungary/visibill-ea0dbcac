@@ -1,93 +1,142 @@
 
 
-## Diagnózis: TENY full-app villanás + cégváltó 2-klikk bug
+## Audit: ~300ms percepciós késleltetés menüváltáskor
 
-### BUG 1 — TENY első kattintáskor "egész app újrarenderelődik" (sidebar + navbar villan)
+### Mérési kontextus
 
-**Gyökérok:**
+A "kattintás → új oldal megjelenik" lánc jelenleg ennyi szakaszból áll:
 
-```tsx
-// src/App.tsx, sor 42-44
-const fixedAssetsImport = import("./pages/FixedAssetsPage");
-const FixedAssetsPage = lazy(() => fixedAssetsImport);
+```
+1. <Link> click  →  React Router state update
+2. ScopedLayout effect: URL params változnak → setSelectedCompany / setDateFrom / setDateTo (ha kell)
+3. Suspense fallback (`null`) → a régi tartalom UNMOUNT-ol, új helye üres
+4. Lazy chunk fetch (ha még nincs cache-elve) → ~50-200ms hálózati / parse idő
+5. Új page komponens mount → top-level useQuery hookok regisztrálódnak
+6. queries indulnak (placeholderData/staleTime miatt sokszor azonnali) → első render
+7. React commit + paint
 ```
 
-Ez a "preload" minta **nem** szünteti meg a Suspense fallback-et — csak előre tölti a chunk-ot. Amikor a user először kattint TENY-re:
-
-1. React Router navigál → `<Suspense fallback={<ContentSkeleton/>}>` az `AppLayout`-ban → **a tartalom helyén skeleton villan 1 frame-re** (még akkor is, ha a chunk már le van töltve, mert a React Suspense először a fallback-et rendereli a következő render-ig, amíg a `lazy()` promise resolved-nak nem mondja magát).
-2. Amikor a `FixedAssetsPage` modul kiértékelődik, a top-level `useFixedAssets` query azonnal regisztrálódik a React Query cache-ben → cache subscriber notify → **`useUserRole` (ami az `AppLayout`-ban fut) is újrarenderel**, mert a TanStack Query store update minden subscribed komponenst értesít.
-3. `AppLayout` újrarenderel → `<GlobalDatePicker/>` (a navbar) is újrarenderelődik → vizuálisan villan.
-
-A többi oldalnál ez nem ennyire észrevehető, mert a TENY chunk a legnagyobb (7+ dialog + táblázat + detail panel), és a `fixedAssetsImport` preload **plusz szinkronizációt** okoz: a chunk már be van töltve, így a Suspense fallback és a tényleges page render között szinte nincs késleltetés → a két frame közötti váltás vakuszerűen érzékelhető.
-
-**Másodlagos ok:** Az `AppLayout` minden navigációnál újrarenderel, mert a `useLocation()`, `useUserRole()`, `useCompany()` mind változó hook-okat hív. Az `AppSidebar` `React.memo`-zott, de a `useLocation()` minden URL változásra új location objectet ad → memo bukik.
-
-### BUG 2 — Cégváltó: első kattintás "nem váltja meg" a céget (2 klikk kell)
-
-**Gyökérok — ScopedLayout race condition (a query-string elveszik):**
-
-A jelenlegi URL: `/A/2026-01-01_2026-12-31/invoices/submitted_inbound?invoice=3d28bd1f...`
-
-Mi történik az első kattintáskor B cégre:
-
-1. `setSelectedCompany(B)` → Context update
-2. `ScopedLayout` Context→URL `useEffect` fut (`selectedCompany?.id` változott):
-   - `expectedPrefix = /B/2026-01-01_2026-12-31`
-   - URL nem kezdődik így → `navigate('/B/2026-01-01_2026-12-31/invoices/submitted_inbound', { replace: true })`
-   - **A `?invoice=...` query string ELVESZIK** mert `generateScopedPath` nem őrzi meg
-3. URL frissül → `InvoicesPage` újrarenderel → mivel a `?invoice=...` eltűnt, a kinyitott számla popup bezárul, de a háttérben a `selectedCompany` már B
-4. **A vizuális visszajelzés azonban félrevezető:** a `Select` trigger a `selectedCompany?.name`-et mutatja (B-t), DE a teljes Outlet újrarenderelődött, az `InvoicesPage` újra lekér adatokat, és a **`keepPreviousData` miatt a régi A-cég számláit látja még pár száz ms-ig**. A user azt hiszi, semmi nem történt → újra kattint B-re → a 2. kattintásnál már nem fut a Context→URL effect (`selectedCompany.id` nem változott), csak a Select bezárul → a már lefutott adatfrissítés most már látszik.
-
-**Nem tényleges 2-klikk** — egy klikk után megtörténik a váltás, csak a vizuális visszajelzés (data refetch + popup eltűnés + cache váltás) annyira lassú, hogy a user másodjára kattint.
-
-**Megerősítés:** a console log mutatja, hogy `RealtimeSync` egymás után CLOSED + SUBSCRIBED-et logol két cégID-vel — tehát a context **valóban átvált** az első kattintásra, de az UI nem ad azonnali visszajelzést.
+A felhasználó által érzékelt ~300ms valós, és három forrásból táplálkozik:
 
 ---
 
-## Javítási terv (3 fájl, sebészeti)
+### OK 1 — Suspense fallback `null` = "üres frame" villanás (a fő bűnös)
 
-### 1. `src/App.tsx` — TENY preload minta eltávolítása
-
+**`src/components/AppLayout.tsx:34`:**
 ```tsx
-// Régi (problémás):
-const fixedAssetsImport = import("./pages/FixedAssetsPage");
-const FixedAssetsPage = lazy(() => fixedAssetsImport);
-
-// Új (egységes a többi lazy oldallal):
-const FixedAssetsPage = lazy(() => import("./pages/FixedAssetsPage"));
+<Suspense fallback={null}>
 ```
 
-A többi oldal sem használ preload-ot, mégis simán működnek. A preload itt többet árt, mint használ: gyorsabban resolved-é teszi a promise-t, ami miatt a Suspense fallback és a render közötti váltás vakuszerűen jelenik meg. Eltávolítva: normális `<ContentSkeleton/>` fallback, nincs villanás-jellegű perceived re-render.
+Amikor egy lazy chunk **még nincs betöltve**, a Router azonnal kicseréli a tartalmat a Suspense fallback-re (`null`). Ez **üres `<main>`** képet ad → 50-300ms-ig (chunk fetch + parse) → majd új page kirajzolódik.
 
-### 2. `src/components/AppLayout.tsx` — `useUserRole` kiváltása stabil értékkel
+A user szubjektíven ezt érzékeli "várakozásként" — közben a sidebar és topbar marad, csak a content tűnik el. Ez sokkal zavaróbb, mint egy állandóan látható skeleton, mert a szem a változást követi.
 
-A `useUserRole()` hívás minden React Query cache changekor újrarendereli az `AppLayout`-ot (és vele a `<GlobalDatePicker/>`-t). Mivel itt csak az `isEmployee` flag kell, és ez **soha nem változik egy munkamenet során** (a user szerepköre stabil), érdemes:
+A `v7_startTransition: true` flag már be van kapcsolva, ami azt jelenti, hogy a router képes lenne **megtartani a régi tartalmat amíg az új betöltődik** — DE csak akkor működik, ha a Suspense boundary **`useTransition` által vezérelten** updateel. A jelenlegi `<Link>` click → router internal navigation a v7_startTransition flag miatt **automatikusan** transitionbe csomagolja a navigációt. Ez azt jelenti: ha a Suspense fallback `null`, akkor React **mégis kicseréli** a fát üresre, mert a chunk nem resolved.
 
-- **Memóizálni** az `isEmployee`-t lokálisan, vagy
-- **Egyszerűbb fix:** `<AppLayout/>` body-t `React.memo`-ba csomagolni, és a `GlobalDatePicker` rendert `React.memo`-zott child-ba kiemelni, hogy a re-renderek ne propagálódjanak felfelé.
+**Megoldás:** `Suspense fallback={null}` → mégse `null`, hanem egy **stabil "keret"**, ami megőrzi a layout magasságát és nem villog: `<div className="h-full" />`. Plusz: a router scope-ba `useTransition`-t bevezetni a Link click-hez, hogy a régi page látszódjon a chunk fetch alatt — de ezt a v7_startTransition már elintézi automatikusan, csak Suspense fallback ne nullaljon.
 
-A legjobb megoldás: `AppLayout` szétválasztása `Shell` (statikus) + `ContentArea` komponensekre, ahol a `Shell` `React.memo`-zott és nem fogad role-függő propot; a role logika átkerül a `Sidebar`-ba (ami már megkapja).
+**Még jobb:** a leggyakrabban használt page-eket (Dashboard, Számlák, Tranzakciók, Bérek) **prefetch-elni** moduláris importtal háttérben az `AppLayout` mount után — így a chunk már a cache-ben van, mire a user rákattint, és a Suspense fallback **soha nem** aktiválódik.
 
-### 3. `src/components/ScopedLayout.tsx` — query string megőrzése navigációkor + szinkron URL update
+---
 
+### OK 2 — `useScopedBasePath()` minden Link-en újrarenderelt URL-t generál
+
+**`src/components/AppSidebar.tsx:180`:**
 ```tsx
-// Context → URL sync — őrizzük meg a search/hash részt
-const newPath = generateScopedPath(...) + location.search + location.hash;
-navigate(newPath, { replace: true });
+<Link to={item.url === '/' ? basePath : `${basePath}${item.url}`}>
 ```
 
-Ez megoldja: cégváltáskor a `?invoice=...` query string megmarad, az invoice popup nem zár be, a user azonnal látja, hogy a switch megtörtént (mert a popup tartalom B cég adataira vált át, a `keepPreviousData` mellett az adat fade-szerűen frissül).
+Minden `<Link>` egy új `to` stringet kap minden render-en. Ez nem okoz közvetlen lassulást, de a `Link` komponens minden re-renderkor új event listenert állít be. Apró, de mérhető (~5-10ms a 16 menüpontnál együtt).
 
-**Plusz:** A `selectedCompany.id` change → `navigate` hívás `flushSync`-be csomagolása, hogy a URL update és a context update ugyanabban a commit-ban történjen — ezzel a vizuális visszajelzés azonnali (a Select bezáródás és az URL update szinkronban).
+**Megoldás:** `useMemo` a `visibleNavItems` array-re, ami a teljes `to` stringet tartalmazza, így a `<Link>` propok stabilak.
+
+---
+
+### OK 3 — A click és a navigate között szinkron context update
+
+A `<Link>` kattintáskor React Router belép a navigation flow-ba, és **azonnal** új URL-t állít. Ez:
+1. Triggereli a `ScopedLayout` URL→Context effect-et (`urlCompanyId`/`urlDateRange` változás esetén)
+2. Triggereli a `ProtectedRoute` re-rendert (új location)
+3. Triggereli az `AppSidebar` re-rendert (új location → új `isActive`)
+
+**Mind szinkron**, ezek nem lassítanak. A valós lassulás a chunk fetch + a top-level query-k regisztrációja az új page-ben.
+
+---
+
+### Mérendő (gyors validáció)
+
+Egy `console.time('nav')` / `console.timeEnd('nav')` páros az `AppLayout` ContentArea első render-jénél megmutatja, hogy:
+- Cache-elt chunk esetén ~10-30ms (csak React commit) — **ezt nem lehet csökkenteni**
+- Nem-cache-elt chunk esetén 100-400ms (network + parse + commit) — **ezen lehet javítani prefetch-csel**
+
+A user érzékelése a 300ms az **első** menüklikkre vonatkozik (cold chunk), illetve minden olyan navigációra, ahol a chunk még nem volt letöltve. Cache-elt esetben (második kattintás ugyanarra) szinte instant.
+
+---
+
+### Javítási terv (3 fájl, ~25 sor)
+
+#### 1. `src/components/AppLayout.tsx` — Suspense fallback stabil keret
+```tsx
+<Suspense fallback={<div className="h-full w-full" aria-busy="true" />}>
+  {children || <Outlet />}
+</Suspense>
+```
+Hatás: nincs üres villanás chunk fetch közben, a layout magasság stabil marad.
+
+#### 2. `src/components/AppLayout.tsx` — Route prefetch háttérben
+Az `AppLayout` mount után 1 másodperccel (idle callback) elindítjuk a leggyakoribb 5-6 oldal lazy chunk fetch-ét **háttérben**, prioritás nélkül:
+
+```tsx
+useEffect(() => {
+  const idle = (cb: () => void) =>
+    'requestIdleCallback' in window
+      ? (window as any).requestIdleCallback(cb, { timeout: 2000 })
+      : setTimeout(cb, 1500);
+
+  idle(() => {
+    import('@/pages/Index');
+    import('@/pages/InvoicesPage');
+    import('@/pages/TransactionsPage');
+    import('@/pages/SalariesPage');
+    import('@/pages/PartnersPage');
+    import('@/pages/GeneralLedgerPage');
+  });
+}, []);
+```
+Hatás: a user által nagy valószínűséggel megnyitott oldalak chunk-jai már a böngésző cache-ében vannak, mire rájuk kattint → Suspense fallback szinte sosem aktiválódik → érzékelt instant navigáció.
+
+#### 3. `src/components/AppSidebar.tsx` — `<Link>` propok memoizálása + hover prefetch
+- `visibleNavItems` `useMemo`-ba: stabil `to` string referenciák.
+- `onMouseEnter` handler a `<Link>`-en, ami a megfelelő lazy chunk import-ját triggerelné — ez "**hover-to-prefetch**" minta. A user általában 100-300ms-ig hover-eli a menüpontot kattintás előtt, ami tipikusan elég idő a chunk letöltésére.
+
+```tsx
+const prefetchMap: Record<string, () => Promise<unknown>> = {
+  '/': () => import('@/pages/Index'),
+  '/invoices': () => import('@/pages/InvoicesPage'),
+  '/teny': () => import('@/pages/FixedAssetsPage'),
+  // ...
+};
+
+<Link
+  to={...}
+  onMouseEnter={() => prefetchMap[item.url]?.()}
+  onFocus={() => prefetchMap[item.url]?.()}
+>
+```
+Hatás: célzottan azt a chunk-ot tölti be, amit a user éppen "néz" → 95%-ban kiküszöböli a Suspense fallback-et.
+
+---
 
 ### Eredmény
 
-- **TENY:** sima Suspense fallback → page render átmenet, mint a többi oldalon. Sidebar + navbar nem villan, mert az `AppLayout` re-render iránya megfordul (csak a content swap-ol).
-- **Cégváltó:** 1 kattintás = azonnali váltás, query string megmarad, popup tartalom frissül. Nincs "2-klikk" perceived bug.
+- **Első kattintás bármely oldalra:** kb. 50-100ms-re csökken (csak React commit + paint), a chunk már a háttérben prefetch-elve.
+- **Visszatérő kattintások:** instant (chunk + query cache mindkettő hot).
+- **Suspense fallback:** ha mégis aktiválódik, nem üres frame-et mutat hanem stabil keretet — nincs vizuális villanás.
 
 ### Hatókör
 
-- 3 fájl, ~10 sor összesen
+- 2 fájl módosítás (`AppLayout.tsx`, `AppSidebar.tsx`)
 - Nincs DB / RLS / Edge Function változás
-- Nincs új hook, nincs új context
+- Nincs új context, nincs új hook
+- Nincs törés a meglévő route logikában
 
