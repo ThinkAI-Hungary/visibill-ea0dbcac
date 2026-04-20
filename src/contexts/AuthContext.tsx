@@ -246,6 +246,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch {}
       }
 
+      // Always flag the post-signout redirect so ProtectedLayout drops the
+      // scoped returnTo path and sends the user to the bare /auth page.
+      // On next login they'll land on the root (dashboard) instead of being
+      // taken back to whatever URL they were on before signing out.
+      try {
+        sessionStorage.setItem('visibill_post_signout_redirect', '1');
+      } catch {}
+
       // Brief delay so the overlay stays visible during transition
       await new Promise((r) => setTimeout(r, 300));
       setIsSigningOut(false);

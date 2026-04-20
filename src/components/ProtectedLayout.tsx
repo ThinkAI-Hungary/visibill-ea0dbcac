@@ -45,9 +45,20 @@ export function ProtectedLayout() {
 
   // Synchronous redirects — happen before any lazy chunk is mounted.
   if (redirectTarget === 'auth' && !isSigningOut) {
+    // After an explicit sign-out we want the user to land on the bare /auth
+    // page — never restore the previously-scoped URL. The flag is set by
+    // AuthContext.signOut() and consumed once on the redirect.
+    let postSignout = false;
+    try {
+      postSignout = sessionStorage.getItem('visibill_post_signout_redirect') === '1';
+      if (postSignout) sessionStorage.removeItem('visibill_post_signout_redirect');
+    } catch {}
+
     const returnTo = location.pathname + location.search;
     const authUrl =
-      returnTo && returnTo !== '/' ? `/auth?returnTo=${encodeURIComponent(returnTo)}` : '/auth';
+      !postSignout && returnTo && returnTo !== '/'
+        ? `/auth?returnTo=${encodeURIComponent(returnTo)}`
+        : '/auth';
     // Clean up loader if still present
     const loader = document.getElementById('initial-loader');
     if (loader) loader.remove();
