@@ -1,43 +1,74 @@
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useUserRole } from '@/hooks/useUserRole';
+import { supabase } from '@/integrations/supabase/client';
+
+export type RedirectTarget = 'auth' | 'onboarding' | 'working-time' | null;
 
 /**
- * useAppReady — Full-Stop Loading Guard.
+ * useAppReady — Single source of truth for app readiness.
  *
- * Combines auth, company, and role loading into a single boolean.
- * Until `isReady === true`, React should render NOTHING —
+ * Combines auth, company, role, AND profile resolution into one gate.
+ * Until `isReady === true`, the ProtectedLayout renders NOTHING —
  * the index.html CSS loader covers everything.
  *
- * The sequence is:
- *   1. Auth: Supabase session restore
- *   2. Company: fetch user's companies + restore selectedCompany
- *   3. Role: fetch user's role in selectedCompany
- *
- * Only when ALL three are done does `isReady` become true.
- * If the user is not logged in, `isReady` becomes true immediately
- * (so we can redirect to /auth without delay).
+ * Also exposes `redirectTarget` so ProtectedLayout can synchronously
+ * <Navigate/> instead of mounting routes that will then redirect.
  */
 export function useAppReady() {
   const { user, loading: authLoading } = useAuth();
-  const { isInitialLoading: companyLoading } = useCompany();
-  const { isLoading: roleLoading } = useUserRole();
+  const { selectedCompany, companies, isInitialLoading: companyLoading } = useCompany();
+  const { role, isLoading: roleLoading, isEmployee } = useUserRole();
 
-  // Auth is still loading → not ready
+  // Profile check — owned by useAppReady (single root gate, no duplication in ProtectedRoute).
+  const { data: profileStatus, isPending: profilePending } = useQuery({
+    queryKey: ['profile-check', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('user_id', user!.id)
+        .single();
+
+      if (error && (error as any).code === 'PGRST116') return 'no-profile' as const;
+      if (error) throw error;
+      if (!data?.name) return 'incomplete' as const;
+      return 'complete' as const;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  // Auth still loading → not ready.
   if (authLoading) {
-    return { isReady: false, user: null, selectedCompany: null };
+    return { isReady: false, user: null, redirectTarget: null as RedirectTarget };
   }
 
-  // User is not logged in → ready (so ProtectedLayout can redirect)
+  // Not logged in → ready (so ProtectedLayout can redirect to /auth).
   if (!user) {
-    return { isReady: true, user: null, selectedCompany: null };
+    return { isReady: true, user: null, redirectTarget: 'auth' as RedirectTarget };
   }
 
-  // User exists but company initial load or role still loading → not ready
-  if (companyLoading || roleLoading) {
-    return { isReady: false, user, selectedCompany: null };
+  // Wait for company AND profile resolution.
+  if (companyLoading || profilePending) {
+    return { isReady: false, user, redirectTarget: null as RedirectTarget };
   }
 
-  // Everything resolved
-  return { isReady: true, user, selectedCompany: null };
+  // Profile incomplete → onboarding.
+  if (profileStatus === 'no-profile' || profileStatus === 'incomplete') {
+    return { isReady: true, user, redirectTarget: 'onboarding' as RedirectTarget };
+  }
+
+  // User has companies → wait for role to resolve too.
+  if (companies.length > 0 && roleLoading) {
+    return { isReady: false, user, redirectTarget: null as RedirectTarget };
+  }
+
+  // Employee role + has company → only working-time is allowed.
+  // Redirect responsibility stays at ProtectedRoute level (per-route check).
+  // We expose the role here only for awareness; routing decision is per-page.
+
+  return { isReady: true, user, redirectTarget: null as RedirectTarget };
 }
