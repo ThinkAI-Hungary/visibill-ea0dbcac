@@ -124,10 +124,22 @@ export const AppSidebar = React.memo(function AppSidebar() {
   const hasNoCompany = !selectedCompany;
   const isDark = theme === "dark";
 
-  // Role is already resolved — direct filter, no loading state
-  const visibleNavItems = isEmployee
-    ? navigationItems.filter((item) => item.employeeVisible)
-    : navigationItems;
+  // Role is already resolved — direct filter, no loading state.
+  // Memoized with resolved `to` paths so <Link> props stay referentially stable.
+  const visibleNavItems = useMemo(() => {
+    const items = isEmployee
+      ? navigationItems.filter((item) => item.employeeVisible)
+      : navigationItems;
+    return items.map((item) => ({
+      ...item,
+      to: item.url === "/" ? basePath : `${basePath}${item.url}`,
+    }));
+  }, [isEmployee, basePath]);
+
+  const handlePrefetch = useCallback((url: string) => {
+    const loader = prefetchMap[url];
+    if (loader) void loader();
+  }, []);
 
   const toggleTheme = () => setTheme(isDark ? "light" : "dark");
 
