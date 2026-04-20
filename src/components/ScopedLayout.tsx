@@ -35,7 +35,16 @@ export function ScopedLayout() {
   const syncingFromUrl = useRef(false);
 
   // ── Access denied state ──
+  // Ref provides a synchronous signal so the Context→URL effect below
+  // can read the latest value without waiting for a React re-render.
+  const accessDeniedRef = useRef(false);
   const [accessDenied, setAccessDenied] = useState(false);
+
+  /** Set both ref (sync) and state (triggers re-render). */
+  const markAccessDenied = (denied: boolean) => {
+    accessDeniedRef.current = denied;
+    setAccessDenied(denied);
+  };
 
   // ── 1. URL → Context sync (on mount / URL change) ──
   useEffect(() => {
@@ -46,16 +55,16 @@ export function ScopedLayout() {
     if (selectedCompany?.id !== urlCompanyId) {
       const target = companies.find((c) => c.id === urlCompanyId);
       if (target) {
-        setAccessDenied(false);
+        markAccessDenied(false);
         setSelectedCompany(target);
       } else if (companies.length > 0) {
         // URL companyId doesn't belong to this user → show access denied
-        setAccessDenied(true);
+        markAccessDenied(true);
         syncingFromUrl.current = false;
         return;
       }
     } else {
-      setAccessDenied(false);
+      markAccessDenied(false);
     }
 
     // Sync date range
@@ -76,6 +85,7 @@ export function ScopedLayout() {
   // ── 2. Context → URL sync (date or company changed via UI) ──
   useEffect(() => {
     if (syncingFromUrl.current) return;
+    if (accessDeniedRef.current) return; // Don't redirect away from access-denied screen
     if (!selectedCompany) return;
 
     const currentDateRange = `${dateFromFormatted}_${dateToFormatted}`;
@@ -113,7 +123,10 @@ export function ScopedLayout() {
           </div>
           <Button
             variant="outline"
-            onClick={() => navigate('/', { replace: true })}
+            onClick={() => {
+              markAccessDenied(false);
+              navigate('/', { replace: true });
+            }}
             className="px-6"
           >
             Vissza a főoldalra
