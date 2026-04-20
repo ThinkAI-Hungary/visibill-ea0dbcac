@@ -5,7 +5,6 @@ import { Suspense } from "react";
 import { ContentSkeleton } from "@/components/ui/content-skeleton";
 import { GlobalDatePicker } from "@/components/GlobalDatePicker";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useCompany } from "@/contexts/CompanyContext";
 
 interface AppLayoutProps {
   children?: React.ReactNode;
@@ -22,7 +21,6 @@ interface AppLayoutProps {
  */
 export function AppLayout({ children }: AppLayoutProps) {
   const { isEmployee } = useUserRole();
-  const { selectedCompany } = useCompany();
 
   return (
     <SidebarProvider className="h-screen w-full overflow-hidden flex !min-h-0 print:h-auto print:overflow-visible">
@@ -35,12 +33,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
         )}
         <main className="flex-1 overflow-y-auto bg-background p-6 print:p-0 print:overflow-visible">
-          {/* Atomic content boundary keyed by companyId */}
-          <div key={selectedCompany?.id ?? 'no-company'} className="h-full">
-            <Suspense fallback={<ContentSkeleton />}>
-              {children || <Outlet />}
-            </Suspense>
-          </div>
+          <Suspense fallback={<ContentSkeleton />}>
+            {children || <Outlet />}
+          </Suspense>
         </main>
       </div>
     </SidebarProvider>
