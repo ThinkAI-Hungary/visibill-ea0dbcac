@@ -1,8 +1,10 @@
 import { useCompany, Company } from '@/contexts/CompanyContext';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,10 +13,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { extractPageSegment, generateScopedPath } from '@/lib/navigation';
 
 const CompanySelector = () => {
   const { companies, selectedCompany, setSelectedCompany, refreshCompanies, loading } = useCompany();
+  const { dateFromFormatted, dateToFormatted } = useDateRange();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   
   // Create dialog state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -42,9 +48,19 @@ const CompanySelector = () => {
 
   const handleCompanyChange = (companyId: string) => {
     const company = companies.find(c => c.id === companyId);
-    if (company) {
-      setSelectedCompany(company);
-    }
+    if (!company || company.id === selectedCompany?.id) return;
+
+    const page = extractPageSegment(location.pathname);
+    const newPath =
+      generateScopedPath(
+        company.id,
+        dateFromFormatted,
+        dateToFormatted,
+        page === '/' ? '' : page.slice(1),
+      ) + location.search + location.hash;
+
+    setSelectedCompany(company);
+    navigate(newPath, { replace: true });
   };
 
   const handleCreateCompany = async () => {
