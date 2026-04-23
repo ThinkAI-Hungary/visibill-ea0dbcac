@@ -11,14 +11,18 @@ export function useActivePreset(companyId: string | undefined) {
       if (!companyId) return [];
       const { data, error } = await supabase
         .from('chart_of_accounts_presets')
-        .select('*')
-        .or(`company_id.eq.${companyId},type.eq.generic`);
-      
+        .select('*');
+        
       if (error) {
         console.error('Error loading presets:', error);
         return [];
       }
-      return data || [];
+      
+      const filteredData = (data || []).filter(
+        p => p.company_id === companyId || p.type === 'generic'
+      );
+      
+      return filteredData;
     },
     enabled: !!companyId
   });
