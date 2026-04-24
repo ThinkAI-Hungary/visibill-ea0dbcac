@@ -1,4 +1,5 @@
-import { useState, useEffect, useLayoutEffect, useRef, type ReactNode } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, type ReactNode } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -9,6 +10,7 @@ import { Sun, Moon, Mail, Lock, User, TrendingUp, PieChart, BarChart3, ArrowUpRi
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
 
 /* Tape showcase animations */
 const carouselStyle = document.createElement('style');
@@ -171,10 +173,58 @@ const Auth = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [isFirstVisit, setIsFirstVisit] = useState(false);
+  const [signUpSuccess, setSignUpSuccess] = useState(false);
+  const [signedUpEmail, setSignedUpEmail] = useState('');
   const { signIn, signUp, user } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
-  const [authSearchParams] = useSearchParams();
+  const [authSearchParams, setAuthSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
+
+  // Check if redirected here because email is not verified
+  const isUnverified = authSearchParams.get('unverified') === 'true';
+  const isJustVerified = authSearchParams.get('verified') === 'true';
+
+  // Handle ?verified=true — user clicked the email link and was redirected back
+  useEffect(() => {
+    if (isJustVerified) {
+      toast({ title: 'Email sikeresen megerősítve! 🎉', description: 'Most már bejelentkezhetsz.' });
+      // Invalidate profile cache so useAppReady picks up the new email_verified = true
+      queryClient.invalidateQueries({ queryKey: ['profile-check'] });
+      // Clean up URL param
+      setAuthSearchParams({}, { replace: true });
+      setActiveTab('signin');
+    }
+  }, [isJustVerified]);
+
+  // Resend verification email
+  const [resending, setResending] = useState(false);
+  const handleResendVerification = useCallback(async () => {
+    if (!user) return;
+    setResending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error('No session');
+
+      const { error } = await supabase.functions.invoke('send-welcome-email', {
+        body: {
+          userId: user.id,
+          email: user.email,
+          name: user.user_metadata?.name || user.email?.split('@')[0]
+        },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (error) throw error;
+      toast({ title: 'Megerősítő email újraküldve!', description: 'Ellenőrizd a postaládádat.' });
+    } catch (err: any) {
+      console.error('Resend verification error:', err);
+      toast({ title: 'Hiba az email küldésekor', description: err.message, variant: 'destructive' });
+    } finally {
+      setResending(false);
+    }
+  }, [user]);
   const returnTo = authSearchParams.get('returnTo') || '/';
 
   // Show "signed out" toast queued by AuthContext.signOut() — only fires
@@ -260,8 +310,12 @@ const Auth = () => {
   selectedDimsRef.current = selectedDims; // keep in sync on every render
 
   useEffect(() => {
+    // Don't auto-navigate after signup — user should see the email confirmation screen
+    if (signUpSuccess) return;
+    // Don't auto-navigate when email is not verified — user is locked
+    if (isUnverified) return;
     if (user) { navigate(returnTo); }
-  }, [user, navigate]);
+  }, [user, navigate, signUpSuccess, isUnverified]);
 
   // Non-passive wheel listener — adds to scroll velocity for smooth momentum
   useEffect(() => {
@@ -529,6 +583,11 @@ const Auth = () => {
 
     const { error } = await signUp(email, password, name);
 
+    if (!error) {
+      setSignedUpEmail(email);
+      setSignUpSuccess(true);
+    }
+
     setLoading(false);
   };
 
@@ -575,9 +634,9 @@ const Auth = () => {
   const currentTheme = theme;
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden auth-root">
       {/* Left Side - Form Area */}
-      <div className="relative flex w-full flex-col items-center justify-start px-8 py-12 lg:w-[45%] lg:px-16 xl:px-24 bg-background min-h-screen pt-[15vh]">
+      <div className="relative flex w-full flex-col items-center lg:w-[45%] bg-background h-screen overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
         {/* Theme Toggle - Top Left */}
         <button
           onClick={toggleTheme}
@@ -591,21 +650,89 @@ const Auth = () => {
           )}
         </button>
 
-        {/* Centered Content Wrapper */}
-        <div className="w-full max-w-sm">
+        {/* Centered Content Wrapper — vertically centered with enough min-height for the larger signup form */}
+        <div className="w-full max-w-sm px-8 lg:px-0 py-4 my-auto">
+
+          {/* ── Email Confirmation Screen (after successful signup OR unverified redirect) ── */}
+          {(signUpSuccess || isUnverified) ? (
+            <div className="flex flex-col items-center text-center">
+              {/* Animated envelope icon */}
+              <div className="relative mb-6">
+                <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Mail className="h-10 w-10 text-primary" />
+                </div>
+                {/* Subtle pulse ring */}
+                <div className="absolute inset-0 rounded-2xl bg-primary/5 animate-ping" style={{ animationDuration: '2s' }} />
+              </div>
+
+              <h1 className="text-2xl font-bold text-foreground mb-2">
+                {isUnverified ? 'Email megerősítés szükséges' : 'Ellenőrizd az email-ed!'}
+              </h1>
+              <p className="text-sm text-muted-foreground mb-2">
+                {isUnverified
+                  ? 'A fiókod még nincs megerősítve. Kattints az emailben kapott linkre.'
+                  : 'Küldtünk egy megerősítő linket a következő címre:'}
+              </p>
+              {signedUpEmail && (
+                <p className="text-sm font-semibold text-foreground mb-4 bg-primary/5 px-4 py-2 rounded-lg">
+                  {signedUpEmail}
+                </p>
+              )}
+              {isUnverified && user?.email && (
+                <p className="text-sm font-semibold text-foreground mb-4 bg-primary/5 px-4 py-2 rounded-lg">
+                  {user.email}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mb-6 max-w-xs">
+                Kattints az emailben kapott linkre a fiókod aktiválásához. Ha nem találod, nézd meg a spam mappát is.
+              </p>
+
+              {/* Resend verification email */}
+              <Button
+                variant="default"
+                className="w-full h-10 font-medium mb-3"
+                onClick={handleResendVerification}
+                disabled={resending}
+              >
+                {resending ? 'Küldés...' : 'Megerősítő email újraküldése'}
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full h-10 font-medium"
+                onClick={async () => {
+                  setSignUpSuccess(false);
+                  setSignedUpEmail('');
+                  setActiveTab('signin');
+                  setEmail('');
+                  setPassword('');
+                  setConfirmPassword('');
+                  setName('');
+                  if (isUnverified) {
+                    // Sign out the unverified user so they land on the login form
+                    await supabase.auth.signOut();
+                    setAuthSearchParams({}, { replace: true });
+                  }
+                }}
+              >
+                {isUnverified ? 'Kijelentkezés' : 'Vissza a bejelentkezéshez'}
+              </Button>
+            </div>
+          ) : (
+          <>
           {/* Logo */}
-          <div className="mb-12">
-            <span className="text-4xl font-black bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight">
+          <div className="mb-4">
+            <span className="text-3xl font-black bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight">
               Visibill
             </span>
           </div>
 
           {/* Welcome Text – min-h reserves space for 2-line subtitle, preventing layout shifts */}
-          <div className="mb-8 min-h-[6.5rem]">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
+          <div className="mb-4 min-h-[4.5rem]">
+            <h1 className="text-2xl font-bold text-foreground mb-1">
               {activeTab === 'signin' ? (isFirstVisit ? 'Üdv!' : 'Üdv újra!') : 'Kezdjük el!'}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {activeTab === 'signin'
                 ? 'Jelentkezz be a fiókodba a folytatáshoz'
                 : 'Hozd létre a fiókodat néhány egyszerű lépésben'}
@@ -613,7 +740,7 @@ const Auth = () => {
           </div>
 
           {/* Segmented Control Tabs */}
-          <div className="mb-8">
+          <div className="mb-6">
             <div className="inline-flex rounded-lg bg-slate-100/80 dark:bg-secondary/50 border border-slate-200/60 dark:border-transparent p-1">
               <button
                 onClick={() => { setActiveTab('signin'); setEmail(''); setPassword(''); setConfirmPassword(''); setName(''); }}
@@ -640,10 +767,19 @@ const Auth = () => {
             </div>
           </div>
 
-          {/* Form */}
+          {/* Form — animated tab switch */}
+          <div className="relative">
+          <AnimatePresence mode="wait" initial={false}>
           {activeTab === 'signin' ? (
-            <form onSubmit={handleSignIn} noValidate className="space-y-5">
-              <div className="space-y-2">
+            <motion.div
+              key="signin"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+            >
+            <form onSubmit={handleSignIn} noValidate className="space-y-4">
+              <div className="space-y-1.5">
                 <Label htmlFor="signin-email" className="text-sm font-medium text-foreground">
                   Email cím
                 </Label>
@@ -660,7 +796,7 @@ const Auth = () => {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="signin-password" className="text-sm font-medium text-foreground">
                     Jelszó
@@ -691,15 +827,23 @@ const Auth = () => {
               </div>
               <Button
                 type="submit"
-                className="w-full h-11 font-medium"
+                className="w-full h-10 font-medium"
                 disabled={loading}
               >
                 {loading ? 'Bejelentkezés...' : 'Bejelentkezés'}
               </Button>
             </form>
+            </motion.div>
           ) : (
-            <form onSubmit={handleSignUp} noValidate className="space-y-5">
-              <div className="space-y-2">
+            <motion.div
+              key="signup"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+            >
+            <form onSubmit={handleSignUp} noValidate className="space-y-4">
+              <div className="space-y-1.5">
                 <Label htmlFor="signup-name" className="text-sm font-medium text-foreground">
                   Teljes név
                 </Label>
@@ -716,7 +860,7 @@ const Auth = () => {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="signup-email" className="text-sm font-medium text-foreground">
                   Email cím
                 </Label>
@@ -733,7 +877,7 @@ const Auth = () => {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="signup-password" className="text-sm font-medium text-foreground">
                   Jelszó
                 </Label>
@@ -779,7 +923,7 @@ const Auth = () => {
                   </div>
                 )}
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="signup-confirm-password" className="text-sm font-medium text-foreground">
                   Jelszó mégegyszer
                 </Label>
@@ -806,7 +950,7 @@ const Auth = () => {
               </div>
               <Button
                 type="submit"
-                className="w-full h-11 font-medium"
+                className="w-full h-10 font-medium"
                 disabled={loading || !(
                   name.trim().length > 0 &&
                   email.includes('@') &&
@@ -821,10 +965,13 @@ const Auth = () => {
                 {loading ? 'Fiók létrehozása...' : 'Regisztráció'}
               </Button>
             </form>
+            </motion.div>
           )}
+          </AnimatePresence>
+          </div>
 
           {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
             </div>
@@ -837,7 +984,7 @@ const Auth = () => {
           <Button
             type="button"
             variant="outline"
-            className="w-full h-11 font-medium"
+            className="w-full h-10 font-medium"
             onClick={handleGoogleSignIn}
           >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -862,12 +1009,14 @@ const Auth = () => {
           </Button>
 
           {/* Privacy Policy Link */}
-          <p className="mt-6 text-center text-xs text-muted-foreground">
+          <p className="mt-3 text-center text-xs text-muted-foreground">
             A folytatással elfogadod az{' '}
             <a href="#" className="text-primary hover:underline">Adatvédelmi irányelveket</a>
             {' '}és a{' '}
             <a href="#" className="text-primary hover:underline">Felhasználási feltételeket</a>.
           </p>
+          </>
+          )}
 
           {/* Forgot Password Overlay */}
           {showForgotPassword && (
@@ -914,8 +1063,8 @@ const Auth = () => {
         </div>
       </div>
 
-      {/* Right Side - Visual Showcase (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-[55%] bg-gradient-to-br from-primary/5 via-background to-background relative overflow-hidden">
+      {/* Right Side - Visual Showcase (hidden on mobile) — pinned h-screen so it never shifts */}
+      <div className="hidden lg:flex lg:w-[55%] h-screen bg-gradient-to-br from-primary/5 via-background to-background relative overflow-hidden">
         {/* Edge Gradient - Smooth transition from left panel */}
         <div className="absolute left-0 top-0 bottom-0 w-64 bg-gradient-to-r from-background via-background/80 to-transparent z-20 pointer-events-none" />
 

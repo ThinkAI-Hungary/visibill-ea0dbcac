@@ -73,10 +73,20 @@ function ProtectedPage({ children }: { children: React.ReactNode }) {
  * Uses the currently selected company and date range from context.
  */
 function RootRedirect() {
-  const { selectedCompany } = useCompany();
+  const { selectedCompany, companies, isInitialLoading } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
 
-  if (!selectedCompany) return null; // ProtectedLayout/ProtectedRoute handles loading
+  // Still loading companies — render nothing (initial-loader covers this)
+  if (isInitialLoading) return null;
+
+  // No companies at all — render Index directly (shows EmptyStateDashboard onboarding wizard)
+  if (!isInitialLoading && companies.length === 0) {
+    return <Suspense fallback={<LoadingSpinner message="Betöltés..." />}><Index /></Suspense>;
+  }
+
+  // Has companies but selectedCompany not yet resolved — wait
+  if (!selectedCompany) return null;
+
   const target = generateScopedPath(selectedCompany.id, dateFromFormatted, dateToFormatted, '');
   return <Navigate to={target} replace />;
 }

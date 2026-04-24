@@ -536,6 +536,21 @@ All colors MUST be HSL.
   transform: scale(1.05);
 }
 
+/* ── Auth page: scale down on short viewports (laptops < 900px) ── */
+@media (max-height: 900px) {
+  .auth-root {
+    transform: scale(0.9);
+    transform-origin: top left;
+    width: 111.111%; /* 100/0.9 to compensate for the scale */
+    height: 111.111vh;
+  }
+}
+
+/* Hide scrollbar on auth left panel (Webkit) — Firefox handled via scrollbarWidth:'none' inline */
+.auth-root > div:first-child::-webkit-scrollbar {
+  display: none;
+}
+
 @media print {
   @page {
     size: landscape;

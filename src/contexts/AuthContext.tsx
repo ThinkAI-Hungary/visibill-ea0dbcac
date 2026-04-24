@@ -143,26 +143,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: error.message
       });
     } else {
-      toast({
-        title: "Ellenőrizd az email-ed",
-        description: "Elküldtünk egy megerősítő linket."
-      });
+      // No toast here — Auth.tsx shows a dedicated confirmation screen
 
-      supabase.functions.invoke('send-welcome-email', {
-        body: {
-          userId: data.user?.id,
-          email: email,
-          name: name || email.split('@')[0]
+      // Send welcome email via Resend — wait briefly for the autoconfirm session,
+      // then call with explicit JWT to avoid silent auth failures.
+      (async () => {
+        try {
+          // Small delay to let autoconfirm session propagate
+          await new Promise(r => setTimeout(r, 500));
+          const { data: { session } } = await supabase.auth.getSession();
+          const token = session?.access_token || data.session?.access_token;
+
+          if (!token) {
+            console.warn('[signUp] No JWT available, skipping welcome email');
+            return;
+          }
+
+          const response = await supabase.functions.invoke('send-welcome-email', {
+            body: {
+              userId: data.user?.id,
+              email: email,
+              name: name || email.split('@')[0]
+            },
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (response.error) {
+            console.error('Failed to send welcome email:', response.error);
+          } else {
+            console.log('Welcome email sent successfully');
+          }
+        } catch (err) {
+          console.error('Error calling welcome email function:', err);
         }
-      }).then(response => {
-        if (response.error) {
-          console.error('Failed to send welcome email:', response.error);
-        } else {
-          console.log('Welcome email sent successfully');
-        }
-      }).catch(err => {
-        console.error('Error calling welcome email function:', err);
-      });
+      })();
     }
     
     return { error };

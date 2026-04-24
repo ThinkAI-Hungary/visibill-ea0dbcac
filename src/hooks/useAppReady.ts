@@ -4,7 +4,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 
-export type RedirectTarget = 'auth' | 'onboarding' | 'working-time' | null;
+export type RedirectTarget = 'auth' | 'unverified' | 'onboarding' | 'working-time' | null;
 
 /**
  * useAppReady — Single source of truth for app readiness.
@@ -27,13 +27,14 @@ export function useAppReady() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('name')
+        .select('name, email_verified')
         .eq('user_id', user!.id)
         .single();
 
       if (error && (error as any).code === 'PGRST116') return 'no-profile' as const;
       if (error) throw error;
       if (!data?.name) return 'incomplete' as const;
+      if (data?.email_verified === false) return 'unverified' as const;
       return 'complete' as const;
     },
     enabled: !!user,
@@ -54,6 +55,11 @@ export function useAppReady() {
   // Wait for company AND profile resolution.
   if (companyLoading || profilePending) {
     return { isReady: false, user, redirectTarget: null as RedirectTarget };
+  }
+
+  // Email not verified → redirect to auth (shows confirmation screen).
+  if (profileStatus === 'unverified') {
+    return { isReady: true, user, redirectTarget: 'unverified' as RedirectTarget };
   }
 
   // Profile incomplete → onboarding.

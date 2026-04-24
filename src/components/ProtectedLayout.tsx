@@ -65,6 +65,13 @@ export function ProtectedLayout() {
     return <Navigate to={authUrl} replace />;
   }
 
+  if (redirectTarget === 'unverified') {
+    // Email not verified — send back to auth page with the confirmation screen
+    const loader = document.getElementById('initial-loader');
+    if (loader) loader.remove();
+    return <Navigate to="/auth?unverified=true" replace />;
+  }
+
   if (redirectTarget === 'onboarding' && location.pathname !== '/categories') {
     return <Navigate to="/categories" replace />;
   }
