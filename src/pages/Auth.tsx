@@ -184,16 +184,51 @@ const Auth = () => {
   // Check if redirected here because email is not verified
   const isUnverified = authSearchParams.get('unverified') === 'true';
   const isJustVerified = authSearchParams.get('verified') === 'true';
+  const verifyTokenParam = authSearchParams.get('verify_token');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
 
-  // Handle ?verified=true — user clicked the email link and was redirected back
+  // Handle ?verify_token=XXX — user clicked verification link in email
+  // The frontend calls the verify-email edge function so the email URL stays clean (app.visibill.hu)
+  useEffect(() => {
+    if (!verifyTokenParam) return;
+
+
+    const doVerify = async () => {
+      setIsVerifying(true);
+      try {
+        // Raw fetch since verify-email reads token from URL query params (no JWT needed)
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL || 'https://vxxgvdlqvvchtlmqnrqf.supabase.co'}/functions/v1/verify-email?token=${verifyTokenParam}`
+        );
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          queryClient.invalidateQueries({ queryKey: ['profile-check'] });
+          setVerificationSuccess(true);
+        } else {
+          console.error('Verification failed:', data);
+          toast({ title: 'Megerősítés sikertelen', description: 'Érvénytelen vagy lejárt link.', variant: 'destructive' });
+        }
+      } catch (err: any) {
+        console.error('Verification error:', err);
+        toast({ title: 'Hiba a megerősítéskor', description: err.message, variant: 'destructive' });
+      } finally {
+        setIsVerifying(false);
+        // Clean up URL
+        setAuthSearchParams({}, { replace: true });
+      }
+    };
+
+    doVerify();
+  }, [verifyTokenParam]);
+
+  // Handle ?verified=true — legacy redirect from edge function
   useEffect(() => {
     if (isJustVerified) {
-      toast({ title: 'Email sikeresen megerősítve! 🎉', description: 'Most már bejelentkezhetsz.' });
-      // Invalidate profile cache so useAppReady picks up the new email_verified = true
       queryClient.invalidateQueries({ queryKey: ['profile-check'] });
-      // Clean up URL param
       setAuthSearchParams({}, { replace: true });
-      setActiveTab('signin');
+      setVerificationSuccess(true);
     }
   }, [isJustVerified]);
 
@@ -203,20 +238,26 @@ const Auth = () => {
     if (!user) return;
     setResending(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) throw new Error('No session');
-
-      const { error } = await supabase.functions.invoke('send-welcome-email', {
-        body: {
+      const SUPABASE_URL = 'https://vxxgvdlqvvchtlmqnrqf.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4eGd2ZGxxdnZjaHRsbXFucnFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5NzAwNTAsImV4cCI6MjA3MzU0NjA1MH0.Ec9KFcjt89cY6FF9Nq9GnW1hzlnDUhQCCJ_LhWm2evY';
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/send-welcome-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
           userId: user.id,
           email: user.email,
           name: user.user_metadata?.name || user.email?.split('@')[0]
-        },
-        headers: { Authorization: `Bearer ${token}` },
+        }),
       });
 
-      if (error) throw error;
+      if (!res.ok) {
+        const errBody = await res.text();
+        throw new Error(errBody);
+      }
       toast({ title: 'Megerősítő email újraküldve!', description: 'Ellenőrizd a postaládádat.' });
     } catch (err: any) {
       console.error('Resend verification error:', err);
@@ -654,7 +695,39 @@ const Auth = () => {
         <div className="w-full max-w-sm px-8 lg:px-0 py-4 my-auto">
 
           {/* ── Email Confirmation Screen (after successful signup OR unverified redirect) ── */}
-          {(signUpSuccess || isUnverified) ? (
+          {/* ── Verification Success Screen ── */}
+          {verificationSuccess ? (
+            <div className="flex flex-col items-center text-center">
+              {/* Green check icon */}
+              <div className="relative mb-6">
+                <div className="w-20 h-20 rounded-2xl bg-green-500/10 flex items-center justify-center">
+                  <svg className="h-10 w-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                {/* Subtle pulse ring */}
+                <div className="absolute inset-0 rounded-2xl bg-green-500/5 animate-ping" style={{ animationDuration: '2s' }} />
+              </div>
+
+              <h1 className="text-2xl font-bold text-foreground mb-2">
+                Email sikeresen megerősítve! 🎉
+              </h1>
+              <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+                Köszönjük, hogy megerősítetted az email címedet. Mostantól beléphetsz a Visibill fiókodba.
+              </p>
+
+              <Button
+                variant="default"
+                className="w-full h-10 font-medium"
+                onClick={() => {
+                  setVerificationSuccess(false);
+                  setActiveTab('signin');
+                }}
+              >
+                Bejelentkezés
+              </Button>
+            </div>
+          ) : (signUpSuccess || isUnverified) ? (
             <div className="flex flex-col items-center text-center">
               {/* Animated envelope icon */}
               <div className="relative mb-6">
@@ -701,6 +774,9 @@ const Auth = () => {
                 variant="outline"
                 className="w-full h-10 font-medium"
                 onClick={async () => {
+                  // Always sign out locally to prevent redirect loop
+                  // (unverified user stays logged in → useAppReady redirects back here)
+                  await supabase.auth.signOut({ scope: 'local' });
                   setSignUpSuccess(false);
                   setSignedUpEmail('');
                   setActiveTab('signin');
@@ -708,14 +784,10 @@ const Auth = () => {
                   setPassword('');
                   setConfirmPassword('');
                   setName('');
-                  if (isUnverified) {
-                    // Sign out the unverified user so they land on the login form
-                    await supabase.auth.signOut();
-                    setAuthSearchParams({}, { replace: true });
-                  }
+                  setAuthSearchParams({}, { replace: true });
                 }}
               >
-                {isUnverified ? 'Kijelentkezés' : 'Vissza a bejelentkezéshez'}
+                Vissza a bejelentkezéshez
               </Button>
             </div>
           ) : (
