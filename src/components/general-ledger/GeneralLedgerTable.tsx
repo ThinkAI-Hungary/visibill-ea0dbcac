@@ -1,4 +1,4 @@
-import React, { useState, useMemo, forwardRef, useImperativeHandle, useEffect, useRef } from 'react';
+import React, { useState, useMemo, forwardRef, useImperativeHandle, useEffect, useRef, useDeferredValue } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,8 +11,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Select, 
   SelectContent, 
@@ -30,6 +32,7 @@ import {
 } from "@/components/ui/context-menu";
 import { Button } from "@/components/ui/button";
 import { useCompany } from '@/contexts/CompanyContext';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 
 interface LedgerItem {
   id: string; // Fők.szám
@@ -43,6 +46,8 @@ interface LedgerItem {
   date?: string | null;
   sourceTable?: string;
   originalGlId?: string | null;
+  originalAmount?: number;
+  originalCurrency?: string;
 }
 
 const formatCurrency = (value: number) => {
@@ -61,10 +66,11 @@ interface GeneralLedgerTableProps {
   presetId?: string;
   dateFrom?: string;
   dateTo?: string;
+  globalSearch?: string;
 }
 
 function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.ForwardedRef<GeneralLedgerTableRef>) {
-  const { presetId, dateFrom, dateTo } = props;
+  const { presetId, dateFrom, dateTo, globalSearch } = props;
   const { selectedCompany } = useCompany();
   const { session } = useAuth();
   const { toast } = useToast();
@@ -82,6 +88,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   // Track if the user explicitly switched presets during this session
   const previousPresetIdRef = useRef<string | undefined>(presetId);
   const [hasSwitchedPreset, setHasSwitchedPreset] = useState(false);
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     // Determine if an actual switch happened (not just initial data load)
@@ -98,6 +105,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   // but users can expand/collapse freely. Let's expand '1' to show the tree.
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set(['1', '13', '14']));
 
+  const { data: exchangeRates } = useExchangeRates();
+
   // Fetch real data for the preset and company using the new RPC
   const { data: dbData, isLoading, isFetching, refetch: refetchBalances } = useQuery({
     queryKey: ['glBalances', presetId, selectedCompany?.id, dateFrom, dateTo],
@@ -109,7 +118,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         p_company_id: selectedCompany.id,
         p_preset_id: presetId,
         p_date_from: dateFrom || null,
-        p_date_to: dateTo || null
+        p_date_to: dateTo || null,
+        p_exchange_rates: exchangeRates || {}
       });
       
       if (error) {
@@ -119,7 +129,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       
       return data || [];
     },
-    enabled: !!presetId && !!selectedCompany?.id
+    enabled: !!presetId && !!selectedCompany?.id && !!exchangeRates
   });
 
   // Fetch detailed items categorized to this company
@@ -131,7 +141,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         p_company_id: selectedCompany.id,
         p_preset_id: presetId,
         p_date_from: dateFrom || null,
-        p_date_to: dateTo || null
+        p_date_to: dateTo || null,
+        p_exchange_rates: exchangeRates || {}
       });
       if (error) {
         console.error("Error fetching GL items:", error);
@@ -139,7 +150,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       }
       return data || [];
     },
-    enabled: !!selectedCompany?.id && !!presetId
+    enabled: !!selectedCompany?.id && !!presetId && !!exchangeRates
   });
 
   const handleRefetchAll = () => {
@@ -155,7 +166,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `company_id=eq.${selectedCompany.id}` }, () => {
         handleRefetchAll();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices', filter: `company_id=eq.${selectedCompany.id}` }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoice_items' }, () => {
         handleRefetchAll();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'nav_invoices', filter: `company_id=eq.${selectedCompany.id}` }, () => {
@@ -175,20 +186,23 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   const cleanIdVal = (id: any) => id ? String(id).replace(/\./g, '') : '';
 
   const handleSaveOverride = async () => {
-    if (!editingItem || !selectedNewGL || !selectedCompany?.id || !session?.user.id) return;
+    const itemsToUpdate = editingItem ? [editingItem] : tableData.filter(d => selectedItemIds.has(d.id));
+    if (itemsToUpdate.length === 0 || !selectedNewGL || !selectedCompany?.id || !session?.user.id) return;
     
     setIsSubmitting(true);
-    
-    const itemId = editingItem.id.replace('item_', '');
     
     const newGlItem = selectedNewGL === 'UNCLASSIFIED' ? null : dbData?.find(gl => gl.gl_account_id === selectedNewGL);
     const newGlNumber = newGlItem?.gl_number || '';
 
-    const { data, error } = await supabase.rpc('override_gl_classification', {
-       p_item_id: itemId,
-       p_source_table: editingItem.sourceTable || '',
+    const payloadItems = itemsToUpdate.map(item => ({
+       item_id: item.id.replace('item_', ''),
+       source_table: item.sourceTable || '',
+       original_gl_account_id: item.originalGlId || null
+    }));
+
+    const { data, error } = await supabase.rpc('override_gl_classifications_batch', {
+       p_items: payloadItems,
        p_new_gl_account_id: selectedNewGL === 'UNCLASSIFIED' ? null : selectedNewGL,
-       p_original_gl_account_id: editingItem.originalGlId || null,
        p_company_id: selectedCompany.id,
        p_user_id: session.user.id,
        p_preset_id: presetId as string,
@@ -202,10 +216,20 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
        console.error("Hiba módosításkor:", error || "SQL Exception caught inside RPC. Check logs.");
        toast({ title: 'Hiba a mentés során', description: errMsg, variant: 'destructive' });
     } else {
-       toast({ title: 'Sikeres módosítás', description: 'A besorolás sikeresen felülírva.', className: 'bg-green-50 text-green-900 border-green-200' });
+       toast({ title: 'Sikeres módosítás', description: `${itemsToUpdate.length} tétel sikeresen felülírva.`, className: 'bg-green-50 text-green-900 border-green-200' });
        setIsEditOpen(false);
+       setSelectedItemIds(new Set());
        handleRefetchAll();
     }
+  };
+
+  const toggleItemSelection = (id: string) => {
+    setSelectedItemIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   // Calculate actual table data
@@ -287,7 +311,11 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
              partner: item.partner,
              date: item.item_date,
              sourceTable: item.source_table,
-             originalGlId: item.gl_account_id
+             originalGlId: item.gl_account_id,
+             // @ts-ignore
+             originalAmount: Number(item.original_amount) || 0,
+             // @ts-ignore
+             originalCurrency: item.original_currency
            });
         });
 
@@ -398,28 +426,62 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     });
   };
 
+  const deferredSearch = useDeferredValue(globalSearch);
+
   // Determine if a row should be visible based on expanded state of its ancestors
   const processedRows = useMemo(() => {
-    return tableData.map(item => {
-      // Find all ancestors (any node whose cid is a prefix of this node's cid)
-      // Items cannot be ancestors.
-      const ancestors = tableData.filter(d => {
-        if (d.isItem) return false;
-        return item.cid.startsWith(d.cid) && d.cid !== item.cid;
+    const lowerQuery = deferredSearch?.toLowerCase().trim() || '';
+    const directMatchIds = new Set<string>();
+    const matchCids = new Set<string>();
+    
+    const nonItemNodes = tableData.filter(d => !d.isItem);
+    
+    if (lowerQuery) {
+      tableData.forEach(item => {
+        if (
+          item.name.toLowerCase().includes(lowerQuery) || 
+          (item.partner && item.partner.toLowerCase().includes(lowerQuery)) ||
+          item.id.toLowerCase().includes(lowerQuery)
+        ) {
+          directMatchIds.add(item.id);
+          matchCids.add(item.cid);
+        }
       });
-      
-      // The item is a root if it has no ancestors (except itself)
-      const isRoot = ancestors.length === 0 && !item.isItem;
-      
-      // The item is visible ONLY if ALL its ancestors are currently expanded
-      const isVisibleOnScreen = isRoot || ancestors.every(a => expandedRowIds.has(a.id));
+    }
 
-      // Calculate depth based on the number of ancestors for visual indentation
+    const prefixesOfMatches = new Set<string>();
+    if (lowerQuery) {
+      matchCids.forEach(cid => {
+        nonItemNodes.forEach(node => {
+          if (cid.startsWith(node.cid) && cid !== node.cid) {
+            prefixesOfMatches.add(node.cid);
+          }
+        });
+      });
+    }
+
+    return tableData.map(item => {
+      // Find all ancestors (only searching through the ~100 category nodes, not all 10,000 items)
+      const ancestors = nonItemNodes.filter(a => item.cid.startsWith(a.cid) && a.cid !== item.cid);
+      
+      const isRoot = ancestors.length === 0 && !item.isItem;
       const depth = ancestors.length;
+      
+      let isVisibleOnScreen = false;
+
+      if (!lowerQuery) {
+        isVisibleOnScreen = isRoot || ancestors.every(a => expandedRowIds.has(a.id));
+      } else {
+        const isDirectMatch = directMatchIds.has(item.id);
+        const ancestorMatches = ancestors.some(a => directMatchIds.has(a.id));
+        const descendantMatches = prefixesOfMatches.has(item.cid);
+
+        isVisibleOnScreen = isDirectMatch || ancestorMatches || descendantMatches;
+      }
       
       return { ...item, isVisibleOnScreen, isRoot, depth };
     });
-  }, [expandedRowIds, tableData]);
+  }, [expandedRowIds, tableData, deferredSearch]);
 
   // Calculate generic footer totals by summing root level items
   const footerTotals = useMemo(() => {
@@ -477,6 +539,26 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
               </div>
             </div>
           )}
+          {selectedItemIds.size > 0 && (
+            <div className="px-5 py-3.5 bg-primary/10 border-b border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10 animate-in slide-in-from-top-2 print:hidden">
+              <div className="text-sm font-medium text-foreground">
+                <span className="font-bold text-primary">{selectedItemIds.size}</span> tétel kijelölve
+              </div>
+              <div className="flex items-center gap-2">
+                <Button onClick={() => {
+                  setEditingItem(null);
+                  setSelectedNewGL('UNCLASSIFIED'); // Default fallback
+                  setSearchQuery('');
+                  setIsEditOpen(true);
+                }} size="sm">
+                  Kijelöltek átsorolása
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedItemIds(new Set())}>
+                  Mégse
+                </Button>
+              </div>
+            </div>
+          )}
           <div className="flex-1 overflow-auto print:overflow-visible w-full relative">
             <div className="w-full flex flex-col min-h-full pb-8 print:pb-0">
               
@@ -493,7 +575,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
               <div className="flex-1 divide-y divide-border/30">
                 {processedRows.length === 0 ? (
                    <div className="p-8 text-center text-muted-foreground">Nem találhatók adatok ehhez a könyvelési sablonhoz.</div>
-                ) : processedRows.map((row) => {
+                ) : processedRows.filter(r => r.isVisibleOnScreen).map((row) => {
                   const isRoot = row.isRoot;
                   const isExpanded = expandedRowIds.has(row.id);
                   const isNegative = row.balance < 0;
@@ -503,16 +585,23 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                     <div 
                       key={row.id} 
                       className={cn(
-                        "group grid-cols-12 divide-x divide-border/10 transition-colors hover:bg-muted/40",
-                        !row.isVisibleOnScreen ? "hidden print:grid" : "grid",
+                        "group grid grid-cols-12 divide-x divide-border/10 transition-colors hover:bg-muted/40",
                         isRoot && "border-t border-border/50 bg-muted/10 font-medium",
                         row.hasChildren ? "cursor-pointer" : ""
                       )}
                       onClick={() => toggleRow(row.id, row.hasChildren)}
                     >
-                      <div className="col-span-2 p-3 text-sm flex items-center justify-center font-mono text-muted-foreground border-r border-border/20">
+                      <div className="col-span-2 p-3 text-sm flex items-center justify-center font-mono text-muted-foreground border-r border-border/20 gap-3">
                         {row.isItem ? (
-                           <span className="text-xs">{row.date ? row.date.substring(0, 10).replace(/-/g, '.') : ''}</span>
+                           <>
+                             <div className="print:hidden h-full flex items-center" onClick={e => e.stopPropagation()}>
+                               <Checkbox 
+                                 checked={selectedItemIds.has(row.id)} 
+                                 onCheckedChange={() => toggleItemSelection(row.id)}
+                               />
+                             </div>
+                             <span className="text-xs truncate">{row.date ? row.date.substring(0, 10).replace(/-/g, '.') : ''}</span>
+                           </>
                         ) : (
                            row.id
                         )}
@@ -536,7 +625,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                       </div>
                       
                       <div className={cn("col-span-3 p-3 flex justify-end items-center gap-4 text-sm tabular-nums font-medium", isNegative ? "text-destructive" : "")}>
-                        <span>{row.balance !== 0 ? formatCurrency(row.balance) : ""}</span>
+                        <div className="flex flex-col items-end">
+                          <span>{row.balance !== 0 ? formatCurrency(row.balance) : ""}</span>
+                          {row.originalCurrency && row.originalCurrency !== 'HUF' && (
+                            <span className="text-[10px] text-muted-foreground font-normal leading-tight">
+                              ({formatCurrency(row.originalAmount || 0).replace(',00', '')} {row.originalCurrency})
+                            </span>
+                          )}
+                        </div>
                         {row.isItem ? (
                           <Button
                             variant="ghost" 
@@ -607,6 +703,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Kategória módosítása</DialogTitle>
+            <DialogDescription>
+              {editingItem ? 'Egy tétel módosítása' : `${selectedItemIds.size} tétel csoportos módosítása`}
+            </DialogDescription>
           </DialogHeader>
           <div className="py-2 flex flex-col gap-4 w-full overflow-hidden">
             <div className="bg-muted p-3 rounded-md border text-sm flex items-center justify-between w-full overflow-hidden gap-2">
@@ -681,7 +780,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={isSubmitting}>Mégse</Button>
-            <Button onClick={handleSaveOverride} disabled={!selectedNewGL || isSubmitting || selectedNewGL === (editingItem?.originalGlId || 'UNCLASSIFIED')}>
+            <Button onClick={handleSaveOverride} disabled={!selectedNewGL || isSubmitting || (editingItem && selectedNewGL === (editingItem.originalGlId || 'UNCLASSIFIED'))}>
               {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Mentés
             </Button>
@@ -692,7 +791,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   );
 }
 
-const GeneralLedgerTable = forwardRef(GeneralLedgerTableBase);
+const GeneralLedgerTable = React.memo(forwardRef(GeneralLedgerTableBase));
 
 GeneralLedgerTable.displayName = 'GeneralLedgerTable';
 
