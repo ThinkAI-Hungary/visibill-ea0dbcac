@@ -695,8 +695,25 @@ const Auth = () => {
         <div className="w-full max-w-sm px-8 lg:px-0 py-4 my-auto">
 
           {/* ── Email Confirmation Screen (after successful signup OR unverified redirect) ── */}
-          {/* ── Verification Success Screen ── */}
-          {verificationSuccess ? (
+          {/* ── Verification In Progress (loading) ── */}
+          {(isVerifying || verifyTokenParam) ? (
+            <div className="flex flex-col items-center text-center">
+              <div className="relative mb-6">
+                <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <svg className="h-10 w-10 text-primary animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                </div>
+              </div>
+              <h1 className="text-2xl font-bold text-foreground mb-2">
+                Email megerősítése...
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Kérjük várj, amíg ellenőrizzük a linket.
+              </p>
+            </div>
+          ) : verificationSuccess ? (
             <div className="flex flex-col items-center text-center">
               {/* Green check icon */}
               <div className="relative mb-6">
