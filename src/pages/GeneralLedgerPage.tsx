@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Download, UploadCloud, Database, Bot, Loader2, Search } from 'lucide-react';
-import GeneralLedgerTable from '@/components/general-ledger/GeneralLedgerTable';
+import GeneralLedgerTable, { GeneralLedgerTableRef } from '@/components/general-ledger/GeneralLedgerTable';
 import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
 import { ManagePresetsModal } from '@/components/general-ledger/ManagePresetsModal';
 import { Settings2 } from 'lucide-react';
@@ -31,6 +31,7 @@ export default function GeneralLedgerPage() {
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [isAIRunning, setIsAIRunning] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
+  const tableRef = useRef<GeneralLedgerTableRef>(null);
 
   // ── URL deep-linking for modals ──
   const [searchParams, setSearchParams] = useSearchParams();
@@ -118,7 +119,11 @@ export default function GeneralLedgerPage() {
   };
 
   const handlePrint = () => {
-    window.print();
+    if (tableRef.current) {
+      tableRef.current.expandAllAndPrint();
+    } else {
+      window.print();
+    }
   };
 
   const handleRunAI = async () => {
@@ -243,7 +248,7 @@ export default function GeneralLedgerPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <GeneralLedgerTable presetId={activePresetId} dateFrom={dateFrom} dateTo={dateTo} globalSearch={globalSearch} />
+          <GeneralLedgerTable ref={tableRef} presetId={activePresetId} dateFrom={dateFrom} dateTo={dateTo} globalSearch={globalSearch} />
         </CardContent>
       </Card>
 

@@ -104,6 +104,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   // By default, expanded top-level items (length 1) to show some data, 
   // but users can expand/collapse freely. Let's expand '1' to show the tree.
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set(['1', '13', '14']));
+  
+  const [hideBannerNextTime, setHideBannerNextTime] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   const { data: exchangeRates } = useExchangeRates();
 
@@ -339,9 +342,33 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     return [];
   }, [dbData, dbItems]);
 
+  const orphanCount = dbItems?.filter(i => i.gl_account_id === '00000000-0000-0000-0000-000000000000').length || 0;
+  
+  // Parse localStorage to check if banner was dismissed for this preset
+  const localBannerState = useMemo(() => {
+    if (!presetId) return null;
+    try {
+      const stored = localStorage.getItem(`visibill_hide_ai_banner_${presetId}`);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return null;
+  }, [presetId]);
+
+  const isPermanentlyHidden = localBannerState?.hidden && localBannerState?.orphanCount >= orphanCount;
+
   const hasOrphans = tableData.some(d => d.id === 'ORPHAN');
   // Banner ONLY shows if: there are orphans AND the user actually switched templates AND they haven't dismissed it
-  const isBannerVisible = hasOrphans && hasSwitchedPreset && dismissedBannerForPreset !== presetId;
+  const isBannerVisible = hasOrphans && hasSwitchedPreset && dismissedBannerForPreset !== presetId && !isPermanentlyHidden;
+
+  const handleDismissBanner = () => {
+    if (hideBannerNextTime && presetId) {
+      localStorage.setItem(`visibill_hide_ai_banner_${presetId}`, JSON.stringify({
+        hidden: true,
+        orphanCount: orphanCount
+      }));
+    }
+    setDismissedBannerForPreset(presetId);
+  };
 
   const handleAiReclassification = async () => {
     if (!presetId || !selectedCompany?.id) return;
@@ -383,23 +410,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
 
   useImperativeHandle(ref, () => ({
     expandAllAndPrint: () => {
-      // Save previous state to restore after print
-      const previousState = new Set(expandedRowIds);
-      
-      // Expand all items that have children
-      const allWithChildren = tableData.filter(d => d.hasChildren).map(d => d.id);
-      setExpandedRowIds(new Set(allWithChildren));
+      setIsPrinting(true);
 
-      // Wait for DOM update then print
+      // Wait for DOM to render the hidden print nodes
       setTimeout(() => {
         window.print();
-        
-        // Restore state after print dialog closes
-        const afterPrintHandler = () => {
-          setExpandedRowIds(previousState);
-          window.removeEventListener('afterprint', afterPrintHandler);
-        };
-        window.addEventListener('afterprint', afterPrintHandler);
+        setIsPrinting(false);
       }, 300);
     }
   }));
@@ -427,6 +443,22 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   };
 
   const deferredSearch = useDeferredValue(globalSearch);
+
+  // Pre-calculate which categories contain items so we know what to expand during print
+  const categoriesWithItems = useMemo(() => {
+    const result = new Set<string>();
+    const itemNodes = tableData.filter(d => d.isItem);
+    const nonItemNodes = tableData.filter(d => !d.isItem);
+    
+    itemNodes.forEach(item => {
+      nonItemNodes.forEach(node => {
+        if (item.cid.startsWith(node.cid) && item.cid !== node.cid) {
+          result.add(node.id);
+        }
+      });
+    });
+    return result;
+  }, [tableData]);
 
   // Determine if a row should be visible based on expanded state of its ancestors
   const processedRows = useMemo(() => {
@@ -468,20 +500,23 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       const depth = ancestors.length;
       
       let isVisibleOnScreen = false;
+      let isVisibleDuringPrint = false;
 
       if (!lowerQuery) {
         isVisibleOnScreen = isRoot || ancestors.every(a => expandedRowIds.has(a.id));
+        isVisibleDuringPrint = isRoot || ancestors.every(a => categoriesWithItems.has(a.id));
       } else {
         const isDirectMatch = directMatchIds.has(item.id);
         const ancestorMatches = ancestors.some(a => directMatchIds.has(a.id));
         const descendantMatches = prefixesOfMatches.has(item.cid);
 
         isVisibleOnScreen = isDirectMatch || ancestorMatches || descendantMatches;
+        isVisibleDuringPrint = isVisibleOnScreen;
       }
       
-      return { ...item, isVisibleOnScreen, isRoot, depth };
+      return { ...item, isVisibleOnScreen, isVisibleDuringPrint, isRoot, depth };
     });
-  }, [expandedRowIds, tableData, deferredSearch]);
+  }, [expandedRowIds, tableData, deferredSearch, categoriesWithItems]);
 
   // Calculate generic footer totals by summing root level items
   const footerTotals = useMemo(() => {
@@ -520,22 +555,32 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         <div className="w-full flex flex-col print:block h-[65vh] print:h-auto max-h-[800px] print:max-h-none bg-card overflow-hidden print:overflow-visible rounded-md border border-border print:border-none">
           {isBannerVisible && (
             <div className="px-5 py-3.5 bg-indigo-500/10 border-b border-indigo-500/20 flex flex-col sm:flex-row items-center justify-between gap-4 relative">
-              <div className="text-sm text-indigo-700 dark:text-indigo-400 font-medium pr-6">
+              <div className="text-sm text-indigo-700 dark:text-indigo-400 font-medium pr-6 flex-1">
                 Új számlatükröt választottál. Szeretnéd, hogy az AI automatikusan besorolja a "Besorolatlan" tételeidet ebbe az új struktúrába is?
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Button onClick={handleAiReclassification} disabled={isAiReclassifying} size="sm" className="whitespace-nowrap">
-                  {isAiReclassifying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                  {isAiReclassifying ? "AI átsorolás folyamatban..." : "Igen, besorolom"}
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-500/20"
-                  onClick={() => setDismissedBannerForPreset(presetId)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+              <div className="flex items-center gap-4 shrink-0 flex-wrap sm:flex-nowrap justify-end w-full sm:w-auto">
+                <label className="flex items-center gap-2 text-xs text-indigo-600/80 cursor-pointer print:hidden">
+                  <Checkbox 
+                    checked={hideBannerNextTime} 
+                    onCheckedChange={(checked) => setHideBannerNextTime(!!checked)} 
+                    className="w-3.5 h-3.5 border-indigo-400 data-[state=checked]:bg-indigo-500 data-[state=checked]:text-white"
+                  />
+                  Ne mutasd újra amíg nincs új tétel
+                </label>
+                <div className="flex items-center gap-2">
+                  <Button onClick={handleAiReclassification} disabled={isAiReclassifying} size="sm" className="whitespace-nowrap">
+                    {isAiReclassifying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                    {isAiReclassifying ? "AI átsorolás folyamatban..." : "Igen, besorolom"}
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-500/20"
+                    onClick={handleDismissBanner}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           )}
@@ -575,17 +620,23 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
               <div className="flex-1 divide-y divide-border/30">
                 {processedRows.length === 0 ? (
                    <div className="p-8 text-center text-muted-foreground">Nem találhatók adatok ehhez a könyvelési sablonhoz.</div>
-                ) : processedRows.filter(r => r.isVisibleOnScreen).map((row) => {
+                ) : processedRows.map((row) => {
+                  const shouldRender = isPrinting ? (row as any).isVisibleDuringPrint : row.isVisibleOnScreen;
+                  if (!shouldRender) return null;
+
                   const isRoot = row.isRoot;
                   const isExpanded = expandedRowIds.has(row.id);
                   const isNegative = row.balance < 0;
                   const indentPadding = `${0.75 + (row.depth * 1.5)}rem`;
+                  
+                  const hiddenClass = !row.isVisibleOnScreen && isPrinting ? "hidden print:grid" : "grid";
 
                   return (
                     <div 
                       key={row.id} 
                       className={cn(
-                        "group grid grid-cols-12 divide-x divide-border/10 transition-colors hover:bg-muted/40",
+                        "group grid-cols-12 divide-x divide-border/10 transition-colors hover:bg-muted/40",
+                        hiddenClass,
                         isRoot && "border-t border-border/50 bg-muted/10 font-medium",
                         row.hasChildren ? "cursor-pointer" : ""
                       )}

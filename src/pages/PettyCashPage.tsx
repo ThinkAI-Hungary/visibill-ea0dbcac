@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 
@@ -139,7 +139,7 @@ const PettyCashPage = () => {
         allEntries.push({
           date: inv.invoice_issue_date || '',
           description: `Készpénzes értékesítés - ${inv.customer_name || 'Ismeretlen'}`,
-          amount: Math.abs(inv.invoice_gross_amount || 0),
+          amount: inv.invoice_gross_amount || 0,
           source: 'cash_sale',
         });
       });
@@ -150,7 +150,7 @@ const PettyCashPage = () => {
         allEntries.push({
           date: inv.kibocsatas_datuma,
           description: `Készpénzes kiadás - ${inv.elado_nev}`,
-          amount: -(Math.abs(inv.brutto_vegosszeg || 0)),
+          amount: -(inv.brutto_vegosszeg || 0),
           source: 'cash_expense',
         });
       });
@@ -160,7 +160,7 @@ const PettyCashPage = () => {
         allEntries.push({
           date: inv.invoice_issue_date || '',
           description: `Készpénzes kiadás (NAV) - ${inv.supplier_name || 'Ismeretlen'}`,
-          amount: -(Math.abs(inv.invoice_gross_amount || 0)),
+          amount: -(inv.invoice_gross_amount || 0),
           source: 'cash_expense',
         });
       });
