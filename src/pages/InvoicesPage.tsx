@@ -846,10 +846,10 @@ const InvoicesPage = () => {
                                       <CopyableCell value={partnerName} truncate maxWidth="100%" className="font-medium text-xs" ariaLabel={`${partnerName} másolása`} />
                                     </div>
                                   </TableCell>
-                                  <TableCell className="text-center text-muted-foreground tabular-nums">
+                                  <TableCell className="text-center text-muted-foreground tabular-nums whitespace-nowrap">
                                     {invoice.invoice_issue_date ? format(new Date(invoice.invoice_issue_date), 'yyyy. MM. dd.', { locale: hu }) : '-'}
                                   </TableCell>
-                                  <TableCell className="text-center text-muted-foreground tabular-nums">
+                                  <TableCell className="text-center text-muted-foreground tabular-nums whitespace-nowrap">
                                     {invoice.invoice_delivery_date ? format(new Date(invoice.invoice_delivery_date), 'yyyy. MM. dd.', { locale: hu }) : '-'}
                                   </TableCell>
                                   <TableCell className="font-medium font-mono">
@@ -1141,10 +1141,10 @@ const InvoicesPage = () => {
                                     );
                                   })()}
                                 </TableCell>
-                                <TableCell className="text-center text-muted-foreground tabular-nums">
+                                <TableCell className="text-center text-muted-foreground tabular-nums whitespace-nowrap">
                                   {invoice.kibocsatas_datuma ? format(new Date(invoice.kibocsatas_datuma), 'yyyy. MM. dd.', { locale: hu }) : '-'}
                                 </TableCell>
-                                <TableCell className="text-center text-muted-foreground tabular-nums">
+                                <TableCell className="text-center text-muted-foreground tabular-nums whitespace-nowrap">
                                   {invoice.teljesites_datuma ? format(new Date(invoice.teljesites_datuma), 'yyyy. MM. dd.', { locale: hu }) : '-'}
                                 </TableCell>
                                 <TableCell className="font-medium font-mono">
