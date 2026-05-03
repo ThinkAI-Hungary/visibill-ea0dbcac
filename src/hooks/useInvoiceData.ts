@@ -99,9 +99,9 @@ export function useInvoiceData(
         .from('invoices')
         .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number, fizetesi_mod')
         .eq('company_id', companyId)
-        .gte('kibocsatas_datuma', dateFromFormatted)
-        .lte('kibocsatas_datuma', dateToFormatted)
-        .order('kibocsatas_datuma', { ascending: false });
+        .gte('teljesites_datuma', dateFromFormatted)
+        .lte('teljesites_datuma', dateToFormatted)
+        .order('teljesites_datuma', { ascending: false });
       if (error) throw error;
       return (data || []) as SubmittedInvoice[];
     },
@@ -189,6 +189,38 @@ export function useInvoiceData(
     enabled,
   });
 
+  // Lightweight NAV lookup for cross-tab matching (submitted ↔ NAV by bizonylatsorszam)
+  // Paginated fetch to bypass Supabase max_rows limit (default 1000)
+  const { data: navInvoicesLookup = [] } = useQuery({
+    queryKey: ['navInvoicesLookup', companyId],
+    queryFn: async () => {
+      const PAGE_SIZE = 1000;
+      let allData: NavInvoice[] = [];
+      let page = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+        const { data, error } = await supabase
+          .from('nav_invoices')
+          .select('id, invoice_number, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, transaction_id, submitted')
+          .eq('company_id', companyId)
+          .range(from, to);
+        if (error) throw error;
+        if (data && data.length > 0) {
+          allData = allData.concat(data as NavInvoice[]);
+          hasMore = data.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+        page++;
+      }
+      return allData;
+    },
+    enabled,
+    placeholderData: keepPreviousData,
+  });
+
   const matchedInvoiceIds = useMemo(
     () => new Set(allTransactions.map(t => t.matched_invoice_id).filter(Boolean)),
     [allTransactions]
@@ -201,16 +233,18 @@ export function useInvoiceData(
     queryFn: async () => {
       const { data, error } = await supabase
         .from('user_nav_credentials')
-        .select('id')
+        .select('id, validation_status')
         .eq('company_id', selectedCompanyId!)
         .maybeSingle();
-      return !error && !!data;
+      // Only allow sync when credentials exist AND validation_status is 'valid'
+      return !error && !!data && data.validation_status === 'valid';
     },
     enabled: !!selectedCompanyId,
   });
 
   const invalidateInvoiceData = () => {
     queryClient.invalidateQueries({ queryKey: ['navInvoices', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['navInvoicesLookup', companyId] });
     queryClient.invalidateQueries({ queryKey: ['submittedInvoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['linkedInvoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['partners', companyId] });
@@ -229,6 +263,7 @@ export function useInvoiceData(
     categories,
     projects,
     allTransactions,
+    navInvoicesLookup,
     matchedInvoiceIds,
     loading,
     credentialsExist,

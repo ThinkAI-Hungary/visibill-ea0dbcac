@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,9 +43,33 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
     is_test_environment: false
   });
 
+  // Track whether component is mounted for cleanup
+  const isMountedRef = useRef(true);
+
   useEffect(() => {
     loadCredentialInfo();
   }, [companyId]);
+
+  // Reset form state when component unmounts (user navigates away)
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      // Reset to default state on unmount
+      setFormData({
+        nav_username: '',
+        nav_password: '',
+        nav_tax_number: '',
+        nav_sign_key: '',
+        nav_exchange_key: '',
+        software_dev_name: '',
+        software_dev_contact: '',
+        is_test_environment: false
+      });
+      setValidationStatus('pending');
+      setDebugInfo(null);
+    };
+  }, []);
 
   const loadCredentialInfo = async () => {
     setInitialLoading(true);
@@ -106,6 +130,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
     }
 
     setLoading(true);
+    setValidating(true);
     
     // Prepare sanitized payload for debug
     const payload = {
@@ -123,7 +148,55 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       // Get session and explicitly pass Authorization header
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
-      
+
+      // Step 1: Validate credentials INLINE first (without saving to DB)
+      toast({
+        title: 'Kapcsolat tesztelése...',
+        description: 'NAV API kapcsolat ellenőrzése a mentés előtt...',
+      });
+
+      const { data: validationData, error: validationError } = await supabase.functions.invoke('nav-token', {
+        body: {
+          action: 'validate_credentials_inline',
+          credentials: {
+            nav_username: formData.nav_username,
+            nav_password: formData.nav_password,
+            nav_tax_number: formData.nav_tax_number,
+            nav_sign_key: formData.nav_sign_key,
+            nav_exchange_key: formData.nav_exchange_key,
+          }
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      // Store debug info from validation
+      setDebugInfo({
+        timestamp: new Date().toISOString(),
+        payload,
+        response: {
+          status: validationError ? 'error' : (validationData?.success ? 'success' : 'error'),
+          error: validationError?.message || validationData?.error,
+          data: validationData ? { ...validationData } : null
+        }
+      });
+
+      if (validationError) throw new Error(validationError.message);
+      if (validationData?.error) throw new Error(validationData.error);
+
+      // If validation failed, do NOT save credentials
+      if (!validationData?.success || validationData?.status !== 'valid') {
+        setValidationStatus('invalid');
+        toast({
+          title: 'Sikertelen NAV kapcsolat',
+          description: validationData?.message || 'A megadott hitelesítő adatok érvénytelenek. A kapcsolat nem kerül mentésre.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Step 2: Validation succeeded → now save credentials to DB
       const { data, error } = await supabase.functions.invoke('save-credentials', {
         body: {
           navUsername: formData.nav_username,
@@ -141,22 +214,9 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         }
       });
 
-      // Store debug info
-      setDebugInfo({
-        timestamp: new Date().toISOString(),
-        payload,
-        response: {
-          status: error ? 'error' : 'success',
-          error: error?.message,
-          data: data ? { ...data, password: undefined, signKey: undefined, exchangeKey: undefined } : null
-        }
-      });
-
-      // Check for errors in the response
+      // Check for errors in the save response
       if (error) {
-        // Try to extract structured error from context
         const errorData = (error as any).context || {};
-        const errorCode = errorData.code || data?.code || 'UNKNOWN_ERROR';
         const errorMsg = errorData.error || data?.error || error.message;
         const debugId = errorData.debugId || data?.debugId;
         const hint = errorData.hint || data?.hint;
@@ -174,13 +234,14 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         );
       }
 
+      // Step 3: Run handleValidate to update DB validation_status and trigger initial sync
+      await handleValidate();
+      
       toast({
         title: 'Sikeres mentés',
-        description: 'NAV hitelesítő adatok sikeresen mentve. Kapcsolat tesztelése...',
+        description: 'NAV hitelesítő adatok sikeresen mentve és validálva.',
       });
 
-      // Automatically validate after successful save
-      await handleValidate();
       onCredentialsSaved?.();
 
     } catch (error: any) {
@@ -192,6 +253,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       });
     } finally {
       setLoading(false);
+      setValidating(false);
     }
   };
 
@@ -682,7 +744,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
             disabled={loading || validating}
             className="flex-1"
           >
-            {loading ? 'Mentés...' : validating ? 'Tesztelés...' : 'Mentés és Tesztelés'}
+            {loading && !validating ? 'Mentés...' : validating ? 'Kapcsolat tesztelése...' : 'Tesztelés és Mentés'}
           </Button>
         </div>
 

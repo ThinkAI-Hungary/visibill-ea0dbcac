@@ -7,6 +7,24 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfYear, endOfYear, parseISO } from 'date-fns';
 
+// Paginated fetch helper for tables that may exceed the Supabase default 1000 row limit
+async function fetchAllRows<T>(query: () => ReturnType<ReturnType<typeof supabase.from>['select']>): Promise<T[]> {
+  const PAGE_SIZE = 1000;
+  const all: T[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await (query() as any).range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = (data || []) as T[];
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return all;
+}
+
 // ── Types ──
 
 export interface Profile {
@@ -300,12 +318,15 @@ export function useDashboardData() {
   const { data: analyticsRaw, isLoading: analyticsLoading } = useQuery({
     queryKey: queryKeys.analyticsRaw(companyId, chartYearFromStr, chartYearToStr),
     queryFn: async () => {
-      const [navRes, salRes, invRes] = await Promise.all([
-        supabase.from("nav_invoices")
-          .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, transaction_id, currency, invoice_number")
-          .eq("company_id", companyId)
-          .gte("invoice_issue_date", chartYearFromStr)
-          .lte("invoice_issue_date", chartYearToStr),
+      const [navInvoices, salRes, invRes] = await Promise.all([
+        // Paginated fetch for nav_invoices (may exceed 1000 rows for larger companies)
+        fetchAllRows<RawInvoice & { invoice_number?: string | null }>(
+          () => supabase.from("nav_invoices")
+            .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, transaction_id, currency, invoice_number")
+            .eq("company_id", companyId)
+            .gte("invoice_issue_date", chartYearFromStr)
+            .lte("invoice_issue_date", chartYearToStr)
+        ),
         supabase.from("salary")
           .select("dátum, összeg, statusz, transaction_id, fizetesi_mod")
           .eq("company_id", companyId)
@@ -320,7 +341,6 @@ export function useDashboardData() {
           .lte("kibocsatas_datuma", chartYearToStr)
       ]);
 
-      const navInvoices = (navRes.data || []) as (RawInvoice & { invoice_number?: string | null })[];
       const rawInvoices: RawInvoice[] = [...navInvoices];
 
       const navInvoiceNumbers = new Set(
@@ -356,7 +376,7 @@ export function useDashboardData() {
   const { data: vatBreakdown } = useQuery({
     queryKey: queryKeys.analyticsVat(companyId, dateFromFormatted, dateToFormatted),
     queryFn: async () => {
-      const [itemsRes, headersRes] = await Promise.all([
+      const [itemsRes, headersRes, unmatchedInvRes] = await Promise.all([
         supabase
           .from("nav_invoice_items")
           .select(`vat_rate, net_amount, vat_amount, nav_invoices!inner (id, invoice_direction, invoice_issue_date, company_id)`)
@@ -365,17 +385,43 @@ export function useDashboardData() {
           .lte("nav_invoices.invoice_issue_date", dateToFormatted),
         supabase
           .from("nav_invoices")
-          .select("id, invoice_direction, invoice_vat_amount, invoice_net_amount")
+          .select("id, invoice_direction, invoice_vat_amount, invoice_net_amount, invoice_number")
           .eq("company_id", companyId)
           .gte("invoice_issue_date", dateFromFormatted)
           .lte("invoice_issue_date", dateToFormatted),
+        // Also fetch submitted INBOUND invoices to find unmatched ones
+        supabase
+          .from("invoices")
+          .select("bizonylatsorszam, afa_osszeg_osszesen, adoalap_osszesen, invoice_direction")
+          .eq("company_id", companyId)
+          .eq("invoice_direction", "INBOUND")
+          .gte("kibocsatas_datuma", dateFromFormatted)
+          .lte("kibocsatas_datuma", dateToFormatted),
       ]);
 
       const vatItems = itemsRes.data || [];
-      const allInvoices = headersRes.data || [];
+      const allNavInvoices = headersRes.data || [];
+
+      // Build set of NAV invoice numbers for matching
+      const navInvoiceNumbers = new Set(
+        allNavInvoices.map(n => (n as any).invoice_number?.replace(/\s+/g, '')).filter(Boolean)
+      );
+
+      // Find unmatched INBOUND invoices (foreign invoices not in NAV)
+      const unmatchedInvoices = (unmatchedInvRes.data || []).filter((inv: any) => {
+        const clean = inv.bizonylatsorszam?.replace(/\s+/g, '');
+        return clean && !navInvoiceNumbers.has(clean);
+      });
+
+      // Sum unmatched invoices VAT and net for the inbound side
+      let unmatchedInVat = 0, unmatchedInNet = 0;
+      unmatchedInvoices.forEach((inv: any) => {
+        unmatchedInVat += inv.afa_osszeg_osszesen || 0;
+        unmatchedInNet += inv.adoalap_osszesen || 0;
+      });
 
       let headerOutVat = 0, headerInVat = 0, headerOutNet = 0, headerInNet = 0;
-      allInvoices.forEach(inv => {
+      allNavInvoices.forEach(inv => {
         if (inv.invoice_direction === 'OUTBOUND') {
           headerOutVat += inv.invoice_vat_amount || 0;
           headerOutNet += inv.invoice_net_amount || 0;
@@ -385,7 +431,11 @@ export function useDashboardData() {
         }
       });
 
-      if (vatItems.length > 0) {
+      // Add unmatched invoices to inbound totals
+      headerInVat += unmatchedInVat;
+      headerInNet += unmatchedInNet;
+
+      if (vatItems.length > 0 || unmatchedInvoices.length > 0) {
         const outboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
         const inboundByRate: Record<string, { netAmount: number; vatAmount: number }> = {};
         const itemsVatByInvoice: Record<string, { vatSum: number; netSum: number; direction: string }> = {};
@@ -418,7 +468,7 @@ export function useDashboardData() {
         });
 
         let gapOutVat = 0, gapOutNet = 0, gapInVat = 0, gapInNet = 0;
-        allInvoices.forEach(inv => {
+        allNavInvoices.forEach(inv => {
           const headerVat = inv.invoice_vat_amount || 0;
           const headerNet = inv.invoice_net_amount || 0;
           const itemData = itemsVatByInvoice[inv.id];
@@ -436,6 +486,10 @@ export function useDashboardData() {
             }
           }
         });
+
+        // Add unmatched invoices VAT as a gap (they have no nav_invoice_items)
+        gapInVat += unmatchedInVat;
+        gapInNet += unmatchedInNet;
 
         if (Math.abs(gapOutVat) > 0.01 || Math.abs(gapOutNet) > 0.01) {
           if (!outboundByRate['Nem részletezett']) outboundByRate['Nem részletezett'] = { netAmount: 0, vatAmount: 0 };

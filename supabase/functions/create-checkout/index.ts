@@ -52,7 +52,7 @@ serve(async (req) => {
       logStep("Creating new customer", { email: user.email });
     }
 
-    const origin = req.headers.get("origin") || "https://vxxgvdlqvvchtlmqnrqf.supabase.co";
+    const origin = req.headers.get("origin") || "https://app.visibill.hu";
     
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

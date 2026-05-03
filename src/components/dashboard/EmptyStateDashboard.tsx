@@ -292,9 +292,9 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
         }
       }
 
-      // 4. Save NAV credentials with company_id (first and only save)
+      // 4. Save NAV credentials with company_id (only if validation was successful)
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      if (session && navValidationStatus === 'valid') {
         const { data: navData, error: navError } = await supabase.functions.invoke('save-credentials', {
           body: {
             navUsername: navCredentials.nav_username,

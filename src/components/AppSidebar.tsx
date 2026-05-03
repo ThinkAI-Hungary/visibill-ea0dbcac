@@ -115,6 +115,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
   const { selectedCompany } = useCompany();
   const { theme, setTheme } = useTheme();
   const { isEmployee } = useUserRole();
+
   const currentPath = location.pathname;
   const basePath = useScopedBasePath();
   // Extract just the page segment for active state matching
@@ -299,6 +300,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                 </TooltipTrigger>
                 <TooltipContent side="right">{isDark ? 'Világos mód' : 'Sötét mód'}</TooltipContent>
               </Tooltip>
+
               {!isEmployee && (
                 <Tooltip>
                   <TooltipTrigger asChild>

@@ -14,7 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn, formatCurrency } from '@/lib/utils';
-import { Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Pencil, Package, RotateCcw } from 'lucide-react';
+import { Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Pencil, Package, RotateCcw, CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { RefreshCw } from 'lucide-react';
 import { InvoiceFilesDialog } from '@/components/invoices/InvoiceFilesDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -79,6 +81,12 @@ const InvoicesPage = () => {
   const [selectedSubmittedForItems, setSelectedSubmittedForItems] = useState<SubmittedInvoice | null>(null);
   const [filesDialogOpen, setFilesDialogOpen] = useState(false);
 
+  // Issue date popover states
+  const [navIssueDateFromOpen, setNavIssueDateFromOpen] = useState(false);
+  const [navIssueDateToOpen, setNavIssueDateToOpen] = useState(false);
+  const [subIssueDateFromOpen, setSubIssueDateFromOpen] = useState(false);
+  const [subIssueDateToOpen, setSubIssueDateToOpen] = useState(false);
+
   // Row selection state
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<Set<string>>(new Set());
   const [selectedSubmittedIds, setSelectedSubmittedIds] = useState<Set<string>>(new Set());
@@ -110,7 +118,7 @@ const InvoicesPage = () => {
   // ── Data hook ──
   const {
     submittedInvoices, linkedInvoicesPool, linkedInvoicesLoading,
-    partners, categories, projects, allTransactions,
+    partners, categories, projects, allTransactions, navInvoicesLookup,
     matchedInvoiceIds, loading: dataLoading, credentialsExist, invalidateInvoiceData,
   } = useInvoiceData(companyId, enabled, dateFromFormatted, dateToFormatted, selectedCompany?.id);
 
@@ -337,13 +345,13 @@ const InvoicesPage = () => {
 
   const submittedToNavMap = useMemo(() => {
     const map = new Map<string, NavInvoice[]>();
-    paginatedNavInvoices.forEach(inv => {
+    navInvoicesLookup.forEach(inv => {
       const existing = map.get(inv.invoice_number) || [];
       existing.push(inv);
       map.set(inv.invoice_number, existing);
     });
     return map;
-  }, [paginatedNavInvoices]);
+  }, [navInvoicesLookup]);
 
   const submittedIdToTransactionsMap = useMemo(() => {
     const map = new Map<string, TransactionRecord[]>();
@@ -582,19 +590,92 @@ const InvoicesPage = () => {
               {(activeTab === 'OUTBOUND' || activeTab === 'INBOUND') && (
                 <TabsContent value={activeTab} className="space-y-4 mt-4">
                   {/* NAV Filters */}
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 p-4 bg-white dark:bg-muted/20 rounded-lg border border-slate-200 dark:border-border/30 shadow-sm">
-                    <div className="relative col-span-2 md:col-span-1">
+                  <div className="flex flex-wrap items-center gap-2 p-4 bg-white dark:bg-muted/20 rounded-lg border border-slate-200 dark:border-border/30 shadow-sm">
+                    <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-muted-foreground h-4 w-4" />
                       <Input
                         placeholder="Keresés..."
                         value={navFilters.search}
                         onChange={(e) => setNavFilters(prev => ({ ...prev, search: e.target.value }))}
-                        className="pl-9 h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary"
+                        className="pl-9 h-9 w-48 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary"
                       />
                     </div>
 
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Kibocsátás:</span>
+                      <Popover open={navIssueDateFromOpen} onOpenChange={setNavIssueDateFromOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "h-9 text-xs px-2.5 justify-start font-normal min-w-[130px]",
+                              navFilters.issueDateFrom && "bg-primary/10 border-primary/50 text-primary dark:bg-primary/10 dark:border-primary dark:text-primary"
+                            )}
+                          >
+                            <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                            {navFilters.issueDateFrom ? format(new Date(navFilters.issueDateFrom), 'yyyy. MMM dd.', { locale: hu }) : 'Dátum -tól'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={navFilters.issueDateFrom ? new Date(navFilters.issueDateFrom) : undefined}
+                            onSelect={(date) => {
+                              const dateStr = date ? format(date, 'yyyy-MM-dd') : '';
+                              setNavFilters(prev => ({
+                                ...prev,
+                                issueDateFrom: dateStr,
+                                issueDateTo: dateStr && !prev.issueDateTo ? format(new Date(), 'yyyy-MM-dd') : prev.issueDateTo,
+                              }));
+                              setNavIssueDateFromOpen(false);
+                            }}
+                            disabled={navFilters.issueDateTo ? { after: new Date(navFilters.issueDateTo) } : undefined}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <span className="text-xs text-muted-foreground">–</span>
+                      <Popover open={navIssueDateToOpen} onOpenChange={setNavIssueDateToOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "h-9 text-xs px-2.5 justify-start font-normal min-w-[130px]",
+                              navFilters.issueDateTo && "bg-primary/10 border-primary/50 text-primary dark:bg-primary/10 dark:border-primary dark:text-primary"
+                            )}
+                          >
+                            <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                            {navFilters.issueDateTo ? format(new Date(navFilters.issueDateTo), 'yyyy. MMM dd.', { locale: hu }) : 'Dátum -ig'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={navFilters.issueDateTo ? new Date(navFilters.issueDateTo) : undefined}
+                            onSelect={(date) => {
+                              setNavFilters(prev => ({ ...prev, issueDateTo: date ? format(date, 'yyyy-MM-dd') : '' }));
+                              setNavIssueDateToOpen(false);
+                            }}
+                            disabled={navFilters.issueDateFrom ? { before: new Date(navFilters.issueDateFrom) } : undefined}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {(navFilters.issueDateFrom || navFilters.issueDateTo) && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setNavFilters(prev => ({ ...prev, issueDateFrom: '', issueDateTo: '' }))}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+
                     <Select value={navFilters.currency} onValueChange={(value) => setNavFilters(prev => ({ ...prev, currency: value }))}>
-                      <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Pénznem" /></SelectTrigger>
+                      <SelectTrigger className="h-9 w-40 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                        <span className="truncate">{navFilters.currency === 'all' ? 'Pénznem' : navFilters.currency}</span>
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Minden pénznem</SelectItem>
                         {['HUF', 'EUR', 'USD', 'GBP', 'CHF', 'CZK', 'PLN', 'RON'].map((currency) => (
@@ -604,9 +685,11 @@ const InvoicesPage = () => {
                     </Select>
 
                     <Select value={navFilters.paid} onValueChange={(value) => setNavFilters(prev => ({ ...prev, paid: value }))}>
-                      <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Fizetve" /></SelectTrigger>
+                      <SelectTrigger className="h-9 w-32 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                        <span className="truncate">{navFilters.paid === 'all' ? 'Állapot' : navFilters.paid === 'yes' ? 'Kifizetve' : 'Nyitott'}</span>
+                      </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Mind</SelectItem>
+                        <SelectItem value="all">Mindkettő</SelectItem>
                         <SelectItem value="yes">Kifizetve</SelectItem>
                         <SelectItem value="no">Nyitott</SelectItem>
                       </SelectContent>
@@ -614,9 +697,11 @@ const InvoicesPage = () => {
 
                     {activeTab === 'INBOUND' && (
                       <Select value={navFilters.submitted} onValueChange={(value) => setNavFilters(prev => ({ ...prev, submitted: value }))}>
-                        <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Beküldve" /></SelectTrigger>
+                        <SelectTrigger className="h-9 w-32 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                          <span className="truncate">{navFilters.submitted === 'all' ? 'Beküldve' : navFilters.submitted === 'yes' ? 'Igen' : 'Nem'}</span>
+                        </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">Mind</SelectItem>
+                          <SelectItem value="all">Beküldve (mind)</SelectItem>
                           <SelectItem value="yes">Igen</SelectItem>
                           <SelectItem value="no">Nem</SelectItem>
                         </SelectContent>
@@ -625,7 +710,9 @@ const InvoicesPage = () => {
 
                     {activeTab === 'INBOUND' && (
                       <Select value={navFilters.category} onValueChange={(value) => setNavFilters(prev => ({ ...prev, category: value }))}>
-                        <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Kategória" /></SelectTrigger>
+                        <SelectTrigger className="h-9 w-44 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                          <span className="truncate">{navFilters.category === 'all' ? 'Kategória' : navFilters.category === 'none' ? 'Nincs kategória' : (categories.find(c => c.id === navFilters.category)?.name || 'Kategória')}</span>
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Minden kategória</SelectItem>
                           <SelectItem value="none">Nincs kategória</SelectItem>
@@ -637,7 +724,9 @@ const InvoicesPage = () => {
                     )}
 
                     <Select value={navFilters.project} onValueChange={(value) => setNavFilters(prev => ({ ...prev, project: value }))}>
-                      <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Projekt" /></SelectTrigger>
+                      <SelectTrigger className="h-9 w-40 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                        <span className="truncate">{navFilters.project === 'all' ? 'Projekt' : navFilters.project === 'none' ? 'Nincs projekt' : (projects.find(p => p.id === navFilters.project)?.name || 'Projekt')}</span>
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Minden projekt</SelectItem>
                         <SelectItem value="none">Nincs projekt</SelectItem>
@@ -648,7 +737,9 @@ const InvoicesPage = () => {
                     </Select>
 
                     <Select value={navFilters.paymentMethod} onValueChange={(value) => setNavFilters(prev => ({ ...prev, paymentMethod: value }))}>
-                      <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Fiz. mód" /></SelectTrigger>
+                      <SelectTrigger className="h-9 w-40 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                        <span className="truncate">{navFilters.paymentMethod === 'all' ? 'Fiz. mód' : navFilters.paymentMethod === 'none' ? 'Nem megadott' : getPaymentMethodLabel(navFilters.paymentMethod)}</span>
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Minden fiz. mód</SelectItem>
                         <SelectItem value="none">Nem megadott</SelectItem>
@@ -861,13 +952,87 @@ const InvoicesPage = () => {
               {/* Submitted Invoices Tabs */}
               {isSubmittedTab && (
                 <TabsContent value={activeTab} className="space-y-4 mt-4">
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-white dark:bg-muted/20 rounded-lg border border-slate-200 dark:border-border/30 shadow-sm">
-                    <div className="relative col-span-2 md:col-span-1">
+                  <div className="flex flex-wrap items-center gap-2 p-4 bg-white dark:bg-muted/20 rounded-lg border border-slate-200 dark:border-border/30 shadow-sm">
+                    <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-muted-foreground h-4 w-4" />
-                      <Input placeholder="Keresés..." value={submittedFilters.search} onChange={(e) => setSubmittedFilters(prev => ({ ...prev, search: e.target.value }))} className="pl-9 h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary" />
+                      <Input placeholder="Keresés..." value={submittedFilters.search} onChange={(e) => setSubmittedFilters(prev => ({ ...prev, search: e.target.value }))} className="pl-9 h-9 w-48 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary" />
                     </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Kibocsátás:</span>
+                      <Popover open={subIssueDateFromOpen} onOpenChange={setSubIssueDateFromOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "h-9 text-xs px-2.5 justify-start font-normal min-w-[130px]",
+                              submittedFilters.issueDateFrom && "bg-primary/10 border-primary/50 text-primary dark:bg-primary/10 dark:border-primary dark:text-primary"
+                            )}
+                          >
+                            <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                            {submittedFilters.issueDateFrom ? format(new Date(submittedFilters.issueDateFrom), 'yyyy. MMM dd.', { locale: hu }) : 'Dátum -tól'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={submittedFilters.issueDateFrom ? new Date(submittedFilters.issueDateFrom) : undefined}
+                            onSelect={(date) => {
+                              const dateStr = date ? format(date, 'yyyy-MM-dd') : '';
+                              setSubmittedFilters(prev => ({
+                                ...prev,
+                                issueDateFrom: dateStr,
+                                issueDateTo: dateStr && !prev.issueDateTo ? format(new Date(), 'yyyy-MM-dd') : prev.issueDateTo,
+                              }));
+                              setSubIssueDateFromOpen(false);
+                            }}
+                            disabled={submittedFilters.issueDateTo ? { after: new Date(submittedFilters.issueDateTo) } : undefined}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <span className="text-xs text-muted-foreground">–</span>
+                      <Popover open={subIssueDateToOpen} onOpenChange={setSubIssueDateToOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "h-9 text-xs px-2.5 justify-start font-normal min-w-[130px]",
+                              submittedFilters.issueDateTo && "bg-primary/10 border-primary/50 text-primary dark:bg-primary/10 dark:border-primary dark:text-primary"
+                            )}
+                          >
+                            <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                            {submittedFilters.issueDateTo ? format(new Date(submittedFilters.issueDateTo), 'yyyy. MMM dd.', { locale: hu }) : 'Dátum -ig'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={submittedFilters.issueDateTo ? new Date(submittedFilters.issueDateTo) : undefined}
+                            onSelect={(date) => {
+                              setSubmittedFilters(prev => ({ ...prev, issueDateTo: date ? format(date, 'yyyy-MM-dd') : '' }));
+                              setSubIssueDateToOpen(false);
+                            }}
+                            disabled={submittedFilters.issueDateFrom ? { before: new Date(submittedFilters.issueDateFrom) } : undefined}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {(submittedFilters.issueDateFrom || submittedFilters.issueDateTo) && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSubmittedFilters(prev => ({ ...prev, issueDateFrom: '', issueDateTo: '' }))}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+
                     <Select value={submittedFilters.currency} onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, currency: value }))}>
-                      <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Pénznem" /></SelectTrigger>
+                      <SelectTrigger className="h-9 w-40 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                        <span className="truncate">{submittedFilters.currency === 'all' ? 'Pénznem' : submittedFilters.currency}</span>
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Minden pénznem</SelectItem>
                         {Array.from(new Set(submittedInvoices.map(inv => inv.penznem).filter(Boolean))).sort().map((currency) => (
@@ -877,7 +1042,9 @@ const InvoicesPage = () => {
                     </Select>
 
                     <Select value={submittedFilters.paymentMethod} onValueChange={(value) => setSubmittedFilters(prev => ({ ...prev, paymentMethod: value }))}>
-                      <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10"><SelectValue placeholder="Fiz. mód" /></SelectTrigger>
+                      <SelectTrigger className="h-9 w-40 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                        <span className="truncate">{submittedFilters.paymentMethod === 'all' ? 'Fiz. mód' : submittedFilters.paymentMethod === 'none' ? 'Nem megadott' : submittedFilters.paymentMethod}</span>
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Minden fiz. mód</SelectItem>
                         <SelectItem value="none">Nem megadott</SelectItem>

@@ -20,6 +20,7 @@ import { Toaster } from "./components/ui/toaster";
 // Route-level code splitting – each page loads as a separate chunk
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const ManualUpload = lazy(() => import("./pages/ManualUpload"));
 const InvoicesPage = lazy(() => import("./pages/InvoicesPage"));
@@ -163,6 +164,7 @@ const App = () => (
                     <Routes>
                     {/* Auth routes – no sidebar, own Suspense for lazy chunks */}
                     <Route path="/auth" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RemoveInitialLoader /><Auth /></Suspense>} />
+                    <Route path="/auth/callback" element={<Suspense fallback={<LoadingSpinner message="Bejelentkezés..." />}><RemoveInitialLoader /><AuthCallback /></Suspense>} />
                     <Route path="/reset-password" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RemoveInitialLoader /><ResetPassword /></Suspense>} />
                     <Route path="/register/:token" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RemoveInitialLoader /><EmployeeRegister /></Suspense>} />
 

@@ -83,13 +83,26 @@ export default function Analytics() {
       const yearStart = `${selectedYear}-01-01`;
       const yearEnd = `${selectedYear}-12-31`;
 
-      const [navResult, salaryResult] = await Promise.all([
-        supabase
+      // Paginated fetch for nav_invoices (may exceed 1000 rows for larger companies)
+      const PAGE_SIZE = 1000;
+      const allNavInvoices: (RawInvoice & { invoice_number?: string | null })[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
           .from("nav_invoices")
-          .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount")
+          .select("invoice_issue_date, invoice_direction, invoice_gross_amount, invoice_net_amount, invoice_number")
           .eq("company_id", selectedCompany!.id)
           .gte("invoice_issue_date", yearStart)
-          .lte("invoice_issue_date", yearEnd),
+          .lte("invoice_issue_date", yearEnd)
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        const page = (data || []) as (RawInvoice & { invoice_number?: string | null })[];
+        allNavInvoices.push(...page);
+        if (page.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+
+      const [salaryResult, invResult] = await Promise.all([
         supabase
           .from("salary")
           .select("dátum, összeg, transaction_id")
@@ -97,10 +110,36 @@ export default function Analytics() {
           .not("transaction_id", "is", null)
           .gte("dátum", yearStart)
           .lte("dátum", yearEnd),
+        // Also fetch submitted INBOUND invoices for unmatched foreign invoices
+        supabase
+          .from("invoices")
+          .select("kibocsatas_datuma, invoice_direction, brutto_vegosszeg, adoalap_osszesen, penznem, bizonylatsorszam")
+          .eq("company_id", selectedCompany!.id)
+          .eq("invoice_direction", "INBOUND")
+          .gte("kibocsatas_datuma", yearStart)
+          .lte("kibocsatas_datuma", yearEnd),
       ]);
 
+      // Merge unmatched invoices into the invoice list
+      const rawInvoices: RawInvoice[] = [...allNavInvoices];
+      const navInvoiceNumbers = new Set(
+        allNavInvoices.map(n => n.invoice_number?.replace(/\s+/g, '')).filter(Boolean)
+      );
+
+      (invResult.data || []).forEach((inv: any) => {
+        const clean = inv.bizonylatsorszam?.replace(/\s+/g, '');
+        if (clean && !navInvoiceNumbers.has(clean)) {
+          rawInvoices.push({
+            invoice_issue_date: inv.kibocsatas_datuma,
+            invoice_direction: inv.invoice_direction,
+            invoice_gross_amount: inv.brutto_vegosszeg,
+            invoice_net_amount: inv.adoalap_osszesen,
+          });
+        }
+      });
+
       return {
-        invoices: (navResult.data || []) as RawInvoice[],
+        invoices: rawInvoices,
         salaries: (salaryResult.data || []).map((s: any) => ({ dátum: s.dátum, összeg: s.összeg, transaction_id: s.transaction_id })) as RawSalary[],
       };
     },
@@ -122,23 +161,76 @@ export default function Analytics() {
   const { data: vatData, isLoading: vatLoading } = useQuery({
     queryKey: queryKeys.analyticsVat(selectedCompany?.id || '', `${currentMonthStart}-${compMonthStart}`, `${currentMonthEnd}-${compMonthEnd}`),
     queryFn: async () => {
-      const [currentResult, compResult] = await Promise.all([
+      const [currentResult, compResult, currentInvResult, compInvResult] = await Promise.all([
         supabase
           .from("nav_invoices")
-          .select("invoice_direction, invoice_vat_amount, invoice_net_amount")
+          .select("invoice_direction, invoice_vat_amount, invoice_net_amount, invoice_number")
           .eq("company_id", selectedCompany!.id)
           .gte("invoice_issue_date", currentMonthStart)
           .lte("invoice_issue_date", currentMonthEnd),
         supabase
           .from("nav_invoices")
-          .select("invoice_direction, invoice_vat_amount, invoice_net_amount")
+          .select("invoice_direction, invoice_vat_amount, invoice_net_amount, invoice_number")
           .eq("company_id", selectedCompany!.id)
           .gte("invoice_issue_date", compMonthStart)
           .lte("invoice_issue_date", compMonthEnd),
+        // Fetch submitted INBOUND invoices for current month
+        supabase
+          .from("invoices")
+          .select("bizonylatsorszam, afa_osszeg_osszesen, adoalap_osszesen, invoice_direction")
+          .eq("company_id", selectedCompany!.id)
+          .eq("invoice_direction", "INBOUND")
+          .gte("kibocsatas_datuma", currentMonthStart)
+          .lte("kibocsatas_datuma", currentMonthEnd),
+        // Fetch submitted INBOUND invoices for comparison month
+        supabase
+          .from("invoices")
+          .select("bizonylatsorszam, afa_osszeg_osszesen, adoalap_osszesen, invoice_direction")
+          .eq("company_id", selectedCompany!.id)
+          .eq("invoice_direction", "INBOUND")
+          .gte("kibocsatas_datuma", compMonthStart)
+          .lte("kibocsatas_datuma", compMonthEnd),
       ]);
+
+      // Merge unmatched invoices into current month data
+      const currentNavData = currentResult.data || [];
+      const currentNavNumbers = new Set(
+        currentNavData.map((n: any) => n.invoice_number?.replace(/\s+/g, '')).filter(Boolean)
+      );
+      const currentUnmatched = (currentInvResult.data || []).filter((inv: any) => {
+        const clean = inv.bizonylatsorszam?.replace(/\s+/g, '');
+        return clean && !currentNavNumbers.has(clean);
+      });
+      const currentMerged = [
+        ...currentNavData,
+        ...currentUnmatched.map((inv: any) => ({
+          invoice_direction: 'INBOUND',
+          invoice_vat_amount: inv.afa_osszeg_osszesen || 0,
+          invoice_net_amount: inv.adoalap_osszesen || 0,
+        })),
+      ];
+
+      // Merge unmatched invoices into comparison month data
+      const compNavData = compResult.data || [];
+      const compNavNumbers = new Set(
+        compNavData.map((n: any) => n.invoice_number?.replace(/\s+/g, '')).filter(Boolean)
+      );
+      const compUnmatched = (compInvResult.data || []).filter((inv: any) => {
+        const clean = inv.bizonylatsorszam?.replace(/\s+/g, '');
+        return clean && !compNavNumbers.has(clean);
+      });
+      const compMerged = [
+        ...compNavData,
+        ...compUnmatched.map((inv: any) => ({
+          invoice_direction: 'INBOUND',
+          invoice_vat_amount: inv.afa_osszeg_osszesen || 0,
+          invoice_net_amount: inv.adoalap_osszesen || 0,
+        })),
+      ];
+
       return {
-        currentInvoices: currentResult.data || [],
-        compInvoices: compResult.data || [],
+        currentInvoices: currentMerged,
+        compInvoices: compMerged,
       };
     },
     enabled: !!user && !!selectedCompany?.id,

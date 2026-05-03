@@ -7,6 +7,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { Suspense } from 'react';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
 import { LiveNotificationProvider } from '@/components/LiveNotificationProvider';
+import { FeedbackFab } from '@/components/FeedbackFab';
 
 /**
  * ProtectedLayout — Single root gate for all protected routes.
@@ -99,6 +100,9 @@ export function ProtectedLayout() {
           <Outlet />
         </AppLayout>
       )}
+
+      {/* Floating Feedback Button — always visible on all protected pages */}
+      <FeedbackFab />
 
       {/* Sign-Out Overlay */}
       {isSigningOut && (

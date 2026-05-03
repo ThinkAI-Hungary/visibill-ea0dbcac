@@ -1,4 +1,4 @@
-import { Webhook } from 'https://esm.sh/standardwebhooks@1.0.0'
+﻿import { Webhook } from 'https://esm.sh/standardwebhooks@1.0.0'
 import { Resend } from 'https://esm.sh/resend@4.0.0'
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string)
@@ -43,22 +43,22 @@ function buildRecoveryHtml(
 <html><head><meta charset="utf-8"></head>
 <body style="background-color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu',sans-serif;">
 <div style="max-width:600px;margin:0 auto;padding:0 12px;">
-  <h1 style="color:#333;font-size:24px;font-weight:bold;margin:40px 0;">Jelszó visszaállítás</h1>
+  <h1 style="color:#333;font-size:24px;font-weight:bold;margin:40px 0;">Jelsz\u00f3 vissza\u00e1ll\u00edt\u00e1s</h1>
   <p style="color:#333;font-size:14px;line-height:1.5;margin:24px 0;">
-    Jelszó visszaállítást kértél. Kattints az alábbi gombra új jelszó beállításához:
+    Jelsz\u00f3 vissza\u00e1ll\u00edt\u00e1st k\u00e9rt\u00e9l. Kattints az al\u00e1bbi gombra \u00faj jelsz\u00f3 be\u00e1ll\u00edt\u00e1s\u00e1hoz:
   </p>
   <a href="${verifyUrl}" target="_blank" style="display:inline-block;padding:12px 24px;background-color:#0070f3;color:#ffffff;text-decoration:none;border-radius:5px;font-size:14px;margin-bottom:16px;">
-    Új jelszó beállítása
+    \u00daj jelsz\u00f3 be\u00e1ll\u00edt\u00e1sa
   </a>
   <p style="color:#333;font-size:14px;line-height:1.5;margin-top:24px;margin-bottom:14px;">
-    Vagy másold be ezt az egyszer használatos kódot:
+    Vagy m\u00e1sold be ezt az egyszer haszn\u00e1latos k\u00f3dot:
   </p>
   <code style="display:inline-block;padding:16px 4.5%;width:90.5%;background-color:#f4f4f4;border-radius:5px;border:1px solid #eee;color:#333;font-size:16px;font-weight:bold;letter-spacing:2px;text-align:center;">${token}</code>
   <p style="color:#ababab;font-size:14px;line-height:1.5;margin-top:14px;margin-bottom:16px;">
-    Ha nem te kérted a jelszó visszaállítást, nyugodtan figyelmen kívül hagyhatod ezt az emailt.
+    Ha nem te k\u00e9rted a jelsz\u00f3 vissza\u00e1ll\u00edt\u00e1st, nyugodtan figyelmen k\u00edv\u00fcl hagyhatod ezt az emailt.
   </p>
   <p style="color:#898989;font-size:12px;line-height:22px;margin-top:12px;margin-bottom:24px;">
-    <a href="https://visibill.hu" target="_blank" style="color:#898989;font-size:14px;text-decoration:underline;">Visibill</a> – Számlakezelés egyszerűen
+    <a href="https://app.visibill.hu" target="_blank" style="color:#898989;font-size:14px;text-decoration:underline;">Visibill</a> \u2013 Sz\u00e1mlakezel\u00e9s egyszer\u0171en
   </p>
 </div>
 </body></html>`
@@ -77,22 +77,22 @@ function buildConfirmationHtml(
 <html><head><meta charset="utf-8"></head>
 <body style="background-color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu',sans-serif;">
 <div style="max-width:600px;margin:0 auto;padding:0 12px;">
-  <h1 style="color:#333;font-size:24px;font-weight:bold;margin:40px 0;">Email cím megerősítése</h1>
+  <h1 style="color:#333;font-size:24px;font-weight:bold;margin:40px 0;">Email c\u00edm meger\u0151s\u00edt\u00e9se</h1>
   <p style="color:#333;font-size:14px;line-height:1.5;margin:24px 0;">
-    Köszönjük a regisztrációt! Kérjük, erősítsd meg az email címedet az alábbi gombra kattintva:
+    K\u00f6sz\u00f6nj\u00fck a regisztr\u00e1ci\u00f3t! K\u00e9rj\u00fck, er\u0151s\u00edtsd meg az email c\u00edmedet az al\u00e1bbi gombra kattintva:
   </p>
   <a href="${verifyUrl}" target="_blank" style="display:inline-block;padding:12px 24px;background-color:#0070f3;color:#ffffff;text-decoration:none;border-radius:5px;font-size:14px;margin-bottom:16px;">
-    Email cím megerősítése
+    Email c\u00edm meger\u0151s\u00edt\u00e9se
   </a>
   <p style="color:#333;font-size:14px;line-height:1.5;margin-top:24px;margin-bottom:14px;">
-    Vagy másold be ezt az egyszer használatos kódot:
+    Vagy m\u00e1sold be ezt az egyszer haszn\u00e1latos k\u00f3dot:
   </p>
   <code style="display:inline-block;padding:16px 4.5%;width:90.5%;background-color:#f4f4f4;border-radius:5px;border:1px solid #eee;color:#333;font-size:16px;font-weight:bold;letter-spacing:2px;text-align:center;">${token}</code>
   <p style="color:#ababab;font-size:14px;line-height:1.5;margin-top:14px;margin-bottom:16px;">
-    Ha nem te regisztráltál, nyugodtan figyelmen kívül hagyhatod ezt az emailt.
+    Ha nem te regisztr\u00e1lt\u00e1l, nyugodtan figyelmen k\u00edv\u00fcl hagyhatod ezt az emailt.
   </p>
   <p style="color:#898989;font-size:12px;line-height:22px;margin-top:12px;margin-bottom:24px;">
-    <a href="https://visibill.hu" target="_blank" style="color:#898989;font-size:14px;text-decoration:underline;">Visibill</a> – Számlakezelés egyszerűen
+    <a href="https://app.visibill.hu" target="_blank" style="color:#898989;font-size:14px;text-decoration:underline;">Visibill</a> \u2013 Sz\u00e1mlakezel\u00e9s egyszer\u0171en
   </p>
 </div>
 </body></html>`
@@ -176,12 +176,12 @@ Deno.serve(async (req) => {
     let subject: string
 
     if (email_action_type === 'signup') {
-      subject = 'Erősítsd meg az email címed - Visibill'
+      subject = 'Er\u0151s\u00edtsd meg az email c\u00edmed - Visibill'
       html = buildConfirmationHtml(supabaseUrl, token_hash, email_action_type, redirect_to, token)
     } else if (email_action_type === 'recovery' || email_action_type === 'magiclink') {
       subject = email_action_type === 'recovery'
-        ? 'Jelszó visszaállítás - Visibill'
-        : 'Bejelentkezési link - Visibill'
+        ? 'Jelsz\u00f3 vissza\u00e1ll\u00edt\u00e1s - Visibill'
+        : 'Bejelentkez\u00e9si link - Visibill'
       html = buildRecoveryHtml(supabaseUrl, token_hash, email_action_type, redirect_to, token)
     } else {
       console.error('[SEND-EMAIL] Unsupported type:', email_action_type)
