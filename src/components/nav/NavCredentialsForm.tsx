@@ -234,8 +234,14 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         );
       }
 
-      // Step 3: Run handleValidate to update DB validation_status and trigger initial sync
+      // Step 3: Run handleValidate to update DB validation_status
       await handleValidate();
+
+      // Step 4: Trigger initial data sync only on credential save
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (currentSession) {
+        await triggerInitialSync(currentSession.access_token);
+      }
       
       toast({
         title: 'Sikeres mentés',
@@ -287,9 +293,6 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
             title: 'Sikeres validálás',
             description: result.message,
           });
-          
-          // Trigger 1 year data sync after successful validation
-          await triggerInitialSync(session.access_token);
         }
       } else {
         setValidationStatus('error');

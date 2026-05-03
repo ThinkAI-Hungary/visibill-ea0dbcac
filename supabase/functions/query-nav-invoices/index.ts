@@ -1,4 +1,4 @@
-﻿import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4'
 import { sha3_512 as noble_sha3_512 } from "https://esm.sh/@noble/hashes@1.3.0/sha3";
 
 Deno.serve(async (req) => {
@@ -70,8 +70,15 @@ Deno.serve(async (req) => {
         fetched_at: new Date().toISOString()
       }))
 
-      await supabaseClient.from('nav_invoices').upsert(invoicesToInsert, {
-        onConflict: 'user_id,invoice_number',
+      // Deduplicate by invoice_number to prevent upsert conflict errors
+      const seen = new Map<string, (typeof invoicesToInsert)[0]>();
+      for (const inv of invoicesToInsert) {
+        seen.set(inv.invoice_number, inv);
+      }
+      const dedupedInvoices = Array.from(seen.values());
+
+      await supabaseClient.from('nav_invoices').upsert(dedupedInvoices, {
+        onConflict: 'company_id,invoice_number',
         ignoreDuplicates: false
       })
     }

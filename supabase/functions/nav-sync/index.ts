@@ -1,4 +1,4 @@
-﻿import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4'
 import { sha3_512 } from 'https://esm.sh/@noble/hashes@1.3.0/sha3'
 
 const corsHeaders = {
@@ -92,15 +92,23 @@ Deno.serve(async (req) => {
 
       // Store invoices in database
       if (invoices.length > 0) {
-        const { error: insertError } = await supabaseClient
-          .from('nav_invoices')
-          .upsert(
-            invoices.map(invoice => ({
+        // Deduplicate by invoice_number to prevent
+        // "ON CONFLICT DO UPDATE command cannot affect row a second time" error
+        const invoicesRaw = invoices.map(invoice => ({
               ...invoice,
               user_id: user.id,
               fetched_at: new Date().toISOString()
-            })),
-            { onConflict: 'user_id,invoice_number' }
+            }));
+        const seen = new Map<string, (typeof invoicesRaw)[0]>();
+        for (const inv of invoicesRaw) {
+          seen.set(inv.invoice_number, inv);
+        }
+        const dedupedInvoices = Array.from(seen.values());
+
+        const { error: insertError } = await supabaseClient
+          .from('nav_invoices')
+          .upsert(dedupedInvoices,
+            { onConflict: 'company_id,invoice_number' }
           );
 
         if (insertError) {

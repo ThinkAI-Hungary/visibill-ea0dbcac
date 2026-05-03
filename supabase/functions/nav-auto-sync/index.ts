@@ -1,4 +1,4 @@
-﻿import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { sha3_512 } from 'https://esm.sh/@noble/hashes@1.3.0/sha3';
 
 const corsHeaders = {
@@ -388,7 +388,7 @@ async function syncInvoices(
 
     // Upsert invoices to database (details_fetched defaults to false for new records)
     if (allInvoices.length > 0) {
-      const invoicesToInsert = allInvoices.map(inv => ({
+      const invoicesToInsertRaw = allInvoices.map(inv => ({
         user_id: userId,
         company_id: companyId,
         invoice_number: inv.invoiceNumber,
@@ -408,6 +408,19 @@ async function syncInvoices(
         supplier_name: inv.supplierName || null,
         customer_name: inv.customerName || null
       }));
+
+      // Deduplicate by invoice_number to prevent
+      // "ON CONFLICT DO UPDATE command cannot affect row a second time" error.
+      // NAV API can return the same invoice in overlapping date chunks or pages.
+      const seenNumbers = new Map<string, typeof invoicesToInsertRaw[0]>();
+      for (const inv of invoicesToInsertRaw) {
+        seenNumbers.set(inv.invoice_number, inv); // last occurrence wins
+      }
+      const invoicesToInsert = Array.from(seenNumbers.values());
+
+      if (invoicesToInsertRaw.length !== invoicesToInsert.length) {
+        console.log(`⚠️ Deduplicated ${invoicesToInsertRaw.length - invoicesToInsert.length} duplicate invoice numbers`);
+      }
 
       const { error: upsertError } = await supabase
         .from('nav_invoices')

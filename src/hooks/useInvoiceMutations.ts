@@ -34,7 +34,7 @@ export function useInvoiceMutations({
   isSubmittedTab,
 }: UseInvoiceMutationsParams) {
   const [syncing, setSyncing] = useState(false);
-  const SYNC_COOLDOWN_SECONDS = 10;
+  const SYNC_COOLDOWN_SECONDS = 60;
 
   // Server-side cooldown state
   const [serverLastSyncTime, setServerLastSyncTime] = useState<Date | null>(null);
