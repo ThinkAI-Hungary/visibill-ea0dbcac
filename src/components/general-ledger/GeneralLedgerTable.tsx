@@ -1,4 +1,4 @@
-import React, { useState, useMemo, forwardRef, useImperativeHandle, useRef, useDeferredValue } from 'react';
+import React, { useState, useMemo, forwardRef, useImperativeHandle, useEffect, useRef, useDeferredValue } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
