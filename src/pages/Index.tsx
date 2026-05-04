@@ -16,6 +16,7 @@ import ProjectBreakdown from '@/components/dashboard/ProjectBreakdown';
 import SubscriptionUsage from '@/components/SubscriptionUsage';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import InvoiceStatusTables from '@/components/dashboard/InvoiceStatusTables';
+import UnmatchedSection from '@/components/dashboard/UnmatchedItemsModal';
 import ProfileSummary from '@/components/dashboard/ProfileSummary';
 import QuickActions from '@/components/dashboard/QuickActions';
 import { formatCurrency } from '@/lib/utils';
@@ -137,6 +138,8 @@ const Index = () => {
           vatSectionOpen={prefs.vatSectionOpen}
           onVatSectionOpenChange={prefs.setVatSectionOpen}
         />
+
+        <UnmatchedSection />
 
         <InvoiceStatusTables />
 

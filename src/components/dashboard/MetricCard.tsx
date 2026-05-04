@@ -12,6 +12,7 @@ interface MetricCardProps {
     isPositive: boolean;
   };
   variant?: 'default' | 'success' | 'warning' | 'destructive';
+  onClick?: () => void;
 }
 
 const MetricCard = ({ 
@@ -20,7 +21,8 @@ const MetricCard = ({
   description, 
   icon: Icon, 
   trend, 
-  variant = 'default' 
+  variant = 'default',
+  onClick,
 }: MetricCardProps) => {
   const variantStyles = {
     default: 'border-border',
@@ -37,7 +39,7 @@ const MetricCard = ({
   };
 
   return (
-    <Card className={cn('relative overflow-hidden h-[180px] flex flex-col justify-center', variantStyles[variant])}>
+    <Card className={cn('relative overflow-hidden h-[180px] flex flex-col justify-center', variantStyles[variant], onClick && 'cursor-pointer hover:scale-[1.02] hover:shadow-lg transition-all duration-200')} onClick={onClick}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-0">
         <CardTitle className="text-sm font-medium leading-tight pr-2">{title}</CardTitle>
         <Icon className={cn('h-4 w-4 shrink-0', iconStyles[variant])} />
