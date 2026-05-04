@@ -749,6 +749,62 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          company_id: string | null
+          company_name: string | null
+          created_at: string
+          id: string
+          message: string
+          slack_sent: boolean
+          slack_sent_at: string | null
+          status: string
+          type: string
+          updated_at: string
+          user_email: string | null
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          slack_sent?: boolean
+          slack_sent_at?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+          user_email?: string | null
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          slack_sent?: boolean
+          slack_sent_at?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+          user_email?: string | null
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fixed_assets: {
         Row: {
           acquisition_value: number
@@ -1778,6 +1834,8 @@ export type Database = {
           avatar_url: string | null
           company: string | null
           created_at: string
+          email_verified: boolean
+          email_verify_token: string | null
           has_completed_tour: boolean | null
           id: string
           name: string | null
@@ -1789,6 +1847,8 @@ export type Database = {
           avatar_url?: string | null
           company?: string | null
           created_at?: string
+          email_verified?: boolean
+          email_verify_token?: string | null
           has_completed_tour?: boolean | null
           id?: string
           name?: string | null
@@ -1800,6 +1860,8 @@ export type Database = {
           avatar_url?: string | null
           company?: string | null
           created_at?: string
+          email_verified?: boolean
+          email_verify_token?: string | null
           has_completed_tour?: boolean | null
           id?: string
           name?: string | null
@@ -2741,6 +2803,30 @@ export type Database = {
         Args: { p_base_salary: number; p_monthly_hours?: number }
         Returns: number
       }
+      claim_invoice_jobs: {
+        Args: { p_batch_size?: number }
+        Returns: {
+          company_id: string | null
+          created_at: string
+          error_message: string | null
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id: string
+          metadata: Json | null
+          processing_status: string
+          updated_at: string
+          upload_status: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "invoice_uploads"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_filtered_nav_invoices: {
         Args: {
           p_amount_max?: number
@@ -2751,6 +2837,8 @@ export type Database = {
           p_date_from: string
           p_date_to: string
           p_direction: string
+          p_issue_date_from?: string
+          p_issue_date_to?: string
           p_page?: number
           p_page_size?: number
           p_paid?: string
@@ -2793,88 +2881,53 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_filtered_submitted_invoices:
-        | {
-            Args: {
-              p_amount_max?: number
-              p_amount_min?: number
-              p_category_id?: string
-              p_company_id: string
-              p_currency?: string
-              p_date_from: string
-              p_date_to: string
-              p_direction: string
-              p_page?: number
-              p_page_size?: number
-              p_project_id?: string
-              p_search?: string
-              p_sort_dir?: string
-              p_sort_field?: string
-            }
-            Returns: {
-              adoalap_osszesen: number
-              afa_osszeg_osszesen: number
-              bizonylatsorszam: string
-              brutto_vegosszeg: number
-              category_id: string
-              elado_nev: string
-              id: string
-              image_url: string
-              invoice_direction: string
-              kibocsatas_datuma: string
-              melleklet_url: string
-              penznem: string
-              project_id: string
-              reference_number: string
-              teljesites_datuma: string
-              total_count: number
-              vevo_nev: string
-            }[]
-          }
-        | {
-            Args: {
-              p_amount_max?: number
-              p_amount_min?: number
-              p_category_id?: string
-              p_company_id: string
-              p_currency?: string
-              p_date_from: string
-              p_date_to: string
-              p_direction: string
-              p_page?: number
-              p_page_size?: number
-              p_payment_method?: string
-              p_project_id?: string
-              p_search?: string
-              p_sort_dir?: string
-              p_sort_field?: string
-            }
-            Returns: {
-              adoalap_osszesen: number
-              afa_osszeg_osszesen: number
-              bizonylatsorszam: string
-              brutto_vegosszeg: number
-              category_id: string
-              elado_nev: string
-              fizetesi_mod: string
-              id: string
-              image_url: string
-              invoice_direction: string
-              kibocsatas_datuma: string
-              melleklet_url: string
-              penznem: string
-              project_id: string
-              reference_number: string
-              teljesites_datuma: string
-              total_count: number
-              vevo_nev: string
-            }[]
-          }
+      get_filtered_submitted_invoices: {
+        Args: {
+          p_amount_max?: number
+          p_amount_min?: number
+          p_category_id?: string
+          p_company_id: string
+          p_currency?: string
+          p_date_from: string
+          p_date_to: string
+          p_direction: string
+          p_issue_date_from?: string
+          p_issue_date_to?: string
+          p_page?: number
+          p_page_size?: number
+          p_payment_method?: string
+          p_project_id?: string
+          p_search?: string
+          p_sort_dir?: string
+          p_sort_field?: string
+        }
+        Returns: {
+          adoalap_osszesen: number
+          afa_osszeg_osszesen: number
+          bizonylatsorszam: string
+          brutto_vegosszeg: number
+          category_id: string
+          elado_nev: string
+          fizetesi_mod: string
+          id: string
+          image_url: string
+          invoice_direction: string
+          kibocsatas_datuma: string
+          melleklet_url: string
+          penznem: string
+          project_id: string
+          reference_number: string
+          teljesites_datuma: string
+          total_count: number
+          vevo_nev: string
+        }[]
+      }
       get_gl_balances: {
         Args: {
           p_company_id: string
           p_date_from?: string
           p_date_to?: string
+          p_exchange_rates?: Json
           p_preset_id: string
         }
         Returns: {
@@ -2884,38 +2937,27 @@ export type Database = {
           total_balance: number
         }[]
       }
-      get_gl_categorized_items:
-        | {
-            Args: { p_company_id: string }
-            Returns: {
-              amount: number
-              description: string
-              gl_account_id: string
-              item_date: string
-              item_id: string
-              item_type: string
-              partner: string
-              source_table: string
-            }[]
-          }
-        | {
-            Args: {
-              p_company_id: string
-              p_date_from?: string
-              p_date_to?: string
-              p_preset_id: string
-            }
-            Returns: {
-              amount: number
-              description: string
-              gl_account_id: string
-              item_date: string
-              item_id: string
-              item_type: string
-              partner: string
-              source_table: string
-            }[]
-          }
+      get_gl_categorized_items: {
+        Args: {
+          p_company_id: string
+          p_date_from?: string
+          p_date_to?: string
+          p_exchange_rates?: Json
+          p_preset_id: string
+        }
+        Returns: {
+          amount: number
+          description: string
+          gl_account_id: string
+          item_date: string
+          item_id: string
+          item_type: string
+          original_amount: number
+          original_currency: string
+          partner: string
+          source_table: string
+        }[]
+      }
       get_invoice_aggregates: {
         Args: { p_company_id: string; p_date_from: string; p_date_to: string }
         Returns: {
@@ -2992,31 +3034,30 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: boolean
       }
-      override_gl_classification:
-        | {
-            Args: {
-              p_company_id: string
-              p_item_id: string
-              p_new_gl_account_id: string
-              p_original_gl_account_id: string
-              p_source_table: string
-              p_user_id: string
-            }
-            Returns: boolean
-          }
-        | {
-            Args: {
-              p_company_id: string
-              p_item_id: string
-              p_new_gl_account_id: string
-              p_new_gl_number: string
-              p_original_gl_account_id: string
-              p_preset_id: string
-              p_source_table: string
-              p_user_id: string
-            }
-            Returns: boolean
-          }
+      override_gl_classification: {
+        Args: {
+          p_company_id: string
+          p_item_id: string
+          p_new_gl_account_id: string
+          p_new_gl_number: string
+          p_original_gl_account_id: string
+          p_preset_id: string
+          p_source_table: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
+      override_gl_classifications_batch: {
+        Args: {
+          p_company_id: string
+          p_items: Json
+          p_new_gl_account_id: string
+          p_new_gl_number: string
+          p_preset_id: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       reset_monthly_usage: { Args: never; Returns: number }
       save_nav_credentials: {
         Args: {
