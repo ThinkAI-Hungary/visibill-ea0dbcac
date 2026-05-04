@@ -850,13 +850,14 @@ const InvoicesPage = () => {
                           paginatedNavInvoices.map((invoice) => {
                             const partnerTaxNumber = getPartnerTaxNumber(invoice);
                             const partnerName = getInvoicePartnerName(invoice);
+                            const isPaid = invoice.paid === true || !!invoice.transaction_id;
                             return (
                               <React.Fragment key={invoice.id}>
                                 <TableRow className={cn(
                                   "group cursor-pointer",
                                   selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
-                                  !selectedInvoiceIds.has(invoice.id) && invoice.transaction_id && "bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40",
-                                  !selectedInvoiceIds.has(invoice.id) && !invoice.transaction_id && "bg-[hsl(var(--error-row-bg))] text-[hsl(var(--error-row-text))] border-l-4 border-l-destructive border-b border-border/40",
+                                  !selectedInvoiceIds.has(invoice.id) && isPaid && "bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40",
+                                  !selectedInvoiceIds.has(invoice.id) && !isPaid && "bg-[hsl(var(--error-row-bg))] text-[hsl(var(--error-row-text))] border-l-4 border-l-destructive border-b border-border/40",
                                   expandedRowIds.has(invoice.id) && "border-b-0"
                                 )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                   <TableCell className="pl-6">
@@ -890,8 +891,8 @@ const InvoicesPage = () => {
                                     <CopyableCell value={(invoice.invoice_vat_amount || 0).toString()} displayValue={formatCurrency(invoice.invoice_vat_amount || 0, invoice.currency || 'HUF')} className="justify-end" align="right" ariaLabel="ÁFA összeg másolása" />
                                   </TableCell>
                                   <TableCell className="text-center">
-                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${invoice.transaction_id ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
-                                      {invoice.transaction_id ? 'Kifizetve' : 'Nyitott'}
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${isPaid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                                      {isPaid ? 'Kifizetve' : 'Nyitott'}
                                     </span>
                                   </TableCell>
                                   {activeTab === 'INBOUND' && (
