@@ -328,13 +328,18 @@ const InvoicesPage = () => {
   }, [paginatedSubmittedInvoices, selectedSubmittedIds]);
 
   // ── Lookup maps ──
+  // Normalize invoice numbers by stripping spaces so that
+  // NAV's "HP / 2026-002072" matches submitted's "HP/2026-002072"
+  const normalizeInvNum = (s: string) => s.replace(/\s+/g, '').toUpperCase();
+
   const navToSubmittedMap = useMemo(() => {
     const map = new Map<string, typeof submittedInvoices>();
     submittedInvoices.forEach(inv => {
       if (inv.bizonylatsorszam) {
-        const existing = map.get(inv.bizonylatsorszam) || [];
+        const key = normalizeInvNum(inv.bizonylatsorszam);
+        const existing = map.get(key) || [];
         existing.push(inv);
-        map.set(inv.bizonylatsorszam, existing);
+        map.set(key, existing);
       }
     });
     return map;
@@ -343,9 +348,10 @@ const InvoicesPage = () => {
   const submittedToNavMap = useMemo(() => {
     const map = new Map<string, NavInvoice[]>();
     navInvoicesLookup.forEach(inv => {
-      const existing = map.get(inv.invoice_number) || [];
+      const key = normalizeInvNum(inv.invoice_number);
+      const existing = map.get(key) || [];
       existing.push(inv);
-      map.set(inv.invoice_number, existing);
+      map.set(key, existing);
     });
     return map;
   }, [navInvoicesLookup]);
@@ -368,13 +374,13 @@ const InvoicesPage = () => {
     const byReference = new Map<string, SubmittedInvoice[]>();
     allInvoices.forEach(inv => {
       if (inv.bizonylatsorszam) {
-        const key = inv.bizonylatsorszam.toUpperCase();
+        const key = normalizeInvNum(inv.bizonylatsorszam);
         const arr = byBizonylat.get(key) || [];
         arr.push(inv);
         byBizonylat.set(key, arr);
       }
       if (inv.reference_number) {
-        const key = inv.reference_number.toUpperCase();
+        const key = normalizeInvNum(inv.reference_number);
         const arr = byReference.get(key) || [];
         arr.push(inv);
         byReference.set(key, arr);
@@ -389,7 +395,7 @@ const InvoicesPage = () => {
 
     let currentRef = invoice.reference_number;
     while (currentRef) {
-      const parents = linkedInvoicesMap.byBizonylat.get(currentRef.toUpperCase()) || [];
+      const parents = linkedInvoicesMap.byBizonylat.get(normalizeInvNum(currentRef)) || [];
       const parent = parents.find(p => !visited.has(p.id));
       if (!parent) break;
       visited.add(parent.id);
@@ -401,7 +407,7 @@ const InvoicesPage = () => {
     while (queue.length > 0) {
       const bizSorszam = queue.shift();
       if (!bizSorszam) continue;
-      const children = linkedInvoicesMap.byReference.get(bizSorszam.toUpperCase()) || [];
+      const children = linkedInvoicesMap.byReference.get(normalizeInvNum(bizSorszam)) || [];
       for (const child of children) {
         if (visited.has(child.id)) continue;
         visited.add(child.id);
@@ -414,7 +420,7 @@ const InvoicesPage = () => {
   };
 
   const getNavInvoiceMatches = (navInvoice: NavInvoice) => {
-    const matchedSubmitted = navToSubmittedMap.get(navInvoice.invoice_number) || [];
+    const matchedSubmitted = navToSubmittedMap.get(normalizeInvNum(navInvoice.invoice_number)) || [];
     const matchedTx: TransactionRecord[] = [];
     matchedSubmitted.forEach(sub => {
       const txs = submittedIdToTransactionsMap.get(sub.id) || [];
@@ -434,8 +440,16 @@ const InvoicesPage = () => {
   };
 
   const getSubmittedInvoiceMatches = (submitted: SubmittedInvoice) => {
-    const matchedNav = submitted.bizonylatsorszam ? (submittedToNavMap.get(submitted.bizonylatsorszam) || []) : [];
-    const matchedTx = submittedIdToTransactionsMap.get(submitted.id) || [];
+    const matchedNav = submitted.bizonylatsorszam ? (submittedToNavMap.get(normalizeInvNum(submitted.bizonylatsorszam)) || []) : [];
+    // Direct transactions for this submitted invoice
+    const matchedTx: TransactionRecord[] = [...(submittedIdToTransactionsMap.get(submitted.id) || [])];
+    // Also include transactions from matched NAV invoices
+    matchedNav.forEach(nav => {
+      const navTxs = submittedIdToTransactionsMap.get(nav.id) || [];
+      navTxs.forEach(tx => {
+        if (!matchedTx.some(t => t.id === tx.id)) matchedTx.push(tx);
+      });
+    });
     const linkedInvs = getLinkedInvoices(submitted);
     return { matchedSubmitted: [] as SubmittedInvoice[], matchedTransactions: matchedTx, matchedNav, linkedInvoices: linkedInvs };
   };
@@ -484,6 +498,20 @@ const InvoicesPage = () => {
     if (isSubmittedTab) return submittedTotalCount;
     return navTotalCount;
   };
+
+  // Extend matchedInvoiceIds: also mark submitted invoices as "matched" (green)
+  // when their NAV counterpart has a transaction match (i.e. paid)
+  const extendedMatchedIds = useMemo(() => {
+    const ids = new Set(matchedInvoiceIds);
+    submittedInvoices.forEach(inv => {
+      if (ids.has(inv.id)) return; // already matched directly
+      if (!inv.bizonylatsorszam) return;
+      const navMatches = submittedToNavMap.get(normalizeInvNum(inv.bizonylatsorszam)) || [];
+      const hasPaidNav = navMatches.some(nav => submittedIdToTransactionsMap.has(nav.id));
+      if (hasPaidNav) ids.add(inv.id);
+    });
+    return ids;
+  }, [matchedInvoiceIds, submittedInvoices, submittedToNavMap, submittedIdToTransactionsMap]);
 
   return (
     <div className="h-full bg-background">
@@ -868,7 +896,7 @@ const InvoicesPage = () => {
                                   </TableCell>
                                   {activeTab === 'INBOUND' && (
                                     <TableCell className="text-center">
-                                      <Checkbox checked={invoice.submitted === true} disabled className="cursor-default opacity-70" />
+                                      <Checkbox checked={invoice.submitted === true || (navToSubmittedMap.get(normalizeInvNum(invoice.invoice_number))?.length ?? 0) > 0} disabled className="cursor-default opacity-70" />
                                     </TableCell>
                                   )}
                                   {activeTab === 'INBOUND' && (
@@ -1117,8 +1145,8 @@ const InvoicesPage = () => {
                               <TableRow className={cn(
                                 "group cursor-pointer",
                                 selectedSubmittedIds.has(invoice.id) && "bg-primary/5",
-                                !selectedSubmittedIds.has(invoice.id) && matchedInvoiceIds.has(invoice.id) && "bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40",
-                                !selectedSubmittedIds.has(invoice.id) && !matchedInvoiceIds.has(invoice.id) && "bg-[hsl(var(--error-row-bg))] text-[hsl(var(--error-row-text))] border-l-4 border-l-destructive border-b border-border/40",
+                                !selectedSubmittedIds.has(invoice.id) && extendedMatchedIds.has(invoice.id) && "bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40",
+                                !selectedSubmittedIds.has(invoice.id) && !extendedMatchedIds.has(invoice.id) && "bg-[hsl(var(--error-row-bg))] text-[hsl(var(--error-row-text))] border-l-4 border-l-destructive border-b border-border/40",
                                 expandedRowIds.has(invoice.id) && "border-b-0"
                               )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                 <TableCell className="pl-6">
