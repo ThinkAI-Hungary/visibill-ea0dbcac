@@ -9,11 +9,12 @@ export function formatCurrency(amount: number, currency: string = 'HUF', compact
   if (compact && Math.abs(amount) >= 1000000) {
     return `${(amount / 1000000).toFixed(2).replace('.', ',')} M Ft`;
   }
+  const isHUF = currency.toUpperCase() === 'HUF';
   return new Intl.NumberFormat('hu-HU', {
     style: 'currency',
     currency: currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: isHUF ? 0 : 2,
+    maximumFractionDigits: isHUF ? 0 : 2,
   }).format(amount);
 }
 

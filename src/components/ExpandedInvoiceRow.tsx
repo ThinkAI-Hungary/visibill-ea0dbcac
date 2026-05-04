@@ -144,16 +144,16 @@ const ExpandedInvoiceRow = ({
                       <CardContent className="p-3 flex items-center gap-2">
                         <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
                         <div className="text-xs">
-                          <span className="font-medium text-amber-500">Megszakadt láncolat</span>
+                          <span className="font-medium text-amber-500">Hiányzó bizonylat(ok)</span>
                           <span className="text-muted-foreground ml-1.5">
-                            — hivatkozott bizonylat: <code className="font-mono text-[11px] bg-muted px-1 rounded">{invoiceReferenceNumber}</code>
+                            — A következő hivatkozott bizonylat(ok) hiányoznak vagy törölték őket: <code className="font-mono text-[11px] bg-muted px-1 rounded">{invoiceReferenceNumber}</code>
                           </span>
                         </div>
                       </CardContent>
                     </Card>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-xs">
-                    <p className="text-xs">A rendszer nem találja a(z) <strong>{invoiceReferenceNumber}</strong> sorszámú bizonylatot. Lehet, hogy törölték, vagy hibás a hivatkozás.</p>
+                    <p className="text-xs">A(z) <strong>{invoiceReferenceNumber}</strong> sorszámú bizonylat nem található a rendszerben. Lehetséges, hogy még nem töltötték fel, törölték, vagy hibás a hivatkozás.</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
