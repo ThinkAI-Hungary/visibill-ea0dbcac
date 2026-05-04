@@ -7,8 +7,10 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfYear, endOfYear, parseISO } from 'date-fns';
 
-// Paginated fetch helper for tables that may exceed the Supabase default 1000 row limit
-async function fetchAllRows<T>(query: () => ReturnType<ReturnType<typeof supabase.from>['select']>): Promise<T[]> {
+// Paginated fetch helper for tables that may exceed the Supabase default 1000 row limit.
+// Keep the query type intentionally loose: Supabase's generated table union can become
+// excessively deep when threaded through a reusable generic helper.
+async function fetchAllRows<T>(query: () => any): Promise<T[]> {
   const PAGE_SIZE = 1000;
   const all: T[] = [];
   let from = 0;
