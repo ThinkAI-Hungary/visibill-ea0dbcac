@@ -5,40 +5,23 @@ import type { NavInvoice, SubmittedInvoice, Partner, Category, Project } from '.
 
 export type InvoiceTab = 'OUTBOUND' | 'INBOUND' | 'SUBMITTED_INBOUND' | 'SUBMITTED_OUTBOUND';
 
-export interface NavFilters {
+// ── Unified filter interface shared across ALL tabs ──
+export interface InvoiceFilters {
   search: string;
-  dateFrom: Date | undefined;
-  dateTo: Date | undefined;
   issueDateFrom: string;
   issueDateTo: string;
   amountMin: string;
   amountMax: string;
   currency: string;
-  paid: string;
-  submitted: string;
+  paid: string;       // NAV-only but persisted across tab switches
+  submitted: string;  // NAV-only but persisted across tab switches
   project: string;
   category: string;
   paymentMethod: string;
 }
 
-export interface SubmittedFilters {
-  search: string;
-  dateFrom: Date | undefined;
-  dateTo: Date | undefined;
-  issueDateFrom: string;
-  issueDateTo: string;
-  amountMin: string;
-  amountMax: string;
-  currency: string;
-  category: string;
-  project: string;
-  paymentMethod: string;
-}
-
-const defaultNavFilters: NavFilters = {
+const defaultFilters: InvoiceFilters = {
   search: '',
-  dateFrom: undefined,
-  dateTo: undefined,
   issueDateFrom: '',
   issueDateTo: '',
   amountMin: '',
@@ -48,20 +31,6 @@ const defaultNavFilters: NavFilters = {
   submitted: 'all',
   project: 'all',
   category: 'all',
-  paymentMethod: 'all',
-};
-
-const defaultSubmittedFilters: SubmittedFilters = {
-  search: '',
-  dateFrom: undefined,
-  dateTo: undefined,
-  issueDateFrom: '',
-  issueDateTo: '',
-  amountMin: '',
-  amountMax: '',
-  currency: 'all',
-  category: 'all',
-  project: 'all',
   paymentMethod: 'all',
 };
 
@@ -75,8 +44,8 @@ export function useInvoiceFilters(
   projects: Project[],
   activeTab: InvoiceTab
 ) {
-  const [navFilters, setNavFilters] = useState<NavFilters>(defaultNavFilters);
-  const [submittedFilters, setSubmittedFilters] = useState<SubmittedFilters>(defaultSubmittedFilters);
+  // Single shared filter state across all tabs
+  const [filters, setFilters] = useState<InvoiceFilters>(defaultFilters);
   const [sortField, setSortField] = useState<string>('invoice_issue_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [navPageSize, setNavPageSize] = useState(50);
@@ -84,31 +53,28 @@ export function useInvoiceFilters(
   const [navCurrentPage, setNavCurrentPage] = useState(1);
   const [submittedCurrentPage, setSubmittedCurrentPage] = useState(1);
 
-  // Debounce search with useDeferredValue
-  const deferredNavSearch = useDeferredValue(navFilters.search);
-  const deferredSubmittedSearch = useDeferredValue(submittedFilters.search);
+  // Debounce search with useDeferredValue (single search)
+  const deferredSearch = useDeferredValue(filters.search);
 
-  // Reset page when filters change
-  useEffect(() => { setNavCurrentPage(1); }, [navFilters, activeTab]);
-  useEffect(() => { setSubmittedCurrentPage(1); }, [submittedFilters]);
+  // Reset page when filters or tab change
+  useEffect(() => { setNavCurrentPage(1); }, [filters, activeTab]);
+  useEffect(() => { setSubmittedCurrentPage(1); }, [filters]);
 
   // ── Server-side NAV invoices query ──
   const isNavTab = activeTab === 'OUTBOUND' || activeTab === 'INBOUND';
   const navDirection = activeTab === 'OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
 
-  // Main date range (from global header) now filters by delivery date.
-  // Issue date filter is sent as a separate parameter.
-  const navIssueDateFrom = navFilters.issueDateFrom || null;
-  const navIssueDateTo = navFilters.issueDateTo || null;
+  const issueDateFrom = filters.issueDateFrom || null;
+  const issueDateTo = filters.issueDateTo || null;
 
   const { data: navResult = [], isLoading: navLoading } = useQuery({
     queryKey: [
       'filteredNavInvoices', companyId, dateFromFormatted, dateToFormatted,
-      navDirection, deferredNavSearch, navFilters.currency, navFilters.paid,
-      navFilters.submitted, navFilters.project, navFilters.category,
-      navFilters.paymentMethod, navFilters.amountMin, navFilters.amountMax,
+      navDirection, deferredSearch, filters.currency, filters.paid,
+      filters.submitted, filters.project, filters.category,
+      filters.paymentMethod, filters.amountMin, filters.amountMax,
       sortField, sortDirection, navCurrentPage, navPageSize,
-      navIssueDateFrom, navIssueDateTo,
+      issueDateFrom, issueDateTo,
     ],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
@@ -116,21 +82,21 @@ export function useInvoiceFilters(
         p_date_from: dateFromFormatted,
         p_date_to: dateToFormatted,
         p_direction: navDirection,
-        p_search: deferredNavSearch || null,
-        p_currency: navFilters.currency === 'all' ? null : navFilters.currency,
-        p_paid: navFilters.paid === 'all' ? null : navFilters.paid,
-        p_submitted: navFilters.submitted === 'all' ? null : navFilters.submitted,
-        p_project_id: navFilters.project === 'all' ? null : navFilters.project,
-        p_category_id: navFilters.category === 'all' ? null : navFilters.category,
-        p_payment_method: navFilters.paymentMethod === 'all' ? null : navFilters.paymentMethod,
-        p_amount_min: navFilters.amountMin ? parseFloat(navFilters.amountMin) : null,
-        p_amount_max: navFilters.amountMax ? parseFloat(navFilters.amountMax) : null,
+        p_search: deferredSearch || null,
+        p_currency: filters.currency === 'all' ? null : filters.currency,
+        p_paid: filters.paid === 'all' ? null : filters.paid,
+        p_submitted: filters.submitted === 'all' ? null : filters.submitted,
+        p_project_id: filters.project === 'all' ? null : filters.project,
+        p_category_id: filters.category === 'all' ? null : filters.category,
+        p_payment_method: filters.paymentMethod === 'all' ? null : filters.paymentMethod,
+        p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : null,
+        p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : null,
         p_sort_field: sortField,
         p_sort_dir: sortDirection,
         p_page: navCurrentPage,
         p_page_size: navPageSize,
-        p_issue_date_from: navIssueDateFrom,
-        p_issue_date_to: navIssueDateTo,
+        p_issue_date_from: issueDateFrom,
+        p_issue_date_to: issueDateTo,
       });
       if (error) throw error;
       return (data || []) as (NavInvoice & { total_count: number })[];
@@ -142,18 +108,14 @@ export function useInvoiceFilters(
   const isSubmittedTab = activeTab === 'SUBMITTED_INBOUND' || activeTab === 'SUBMITTED_OUTBOUND';
   const submittedDirection = activeTab === 'SUBMITTED_OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
 
-  // Issue date filter for submitted invoices
-  const subIssueDateFrom = submittedFilters.issueDateFrom || null;
-  const subIssueDateTo = submittedFilters.issueDateTo || null;
-
   const { data: submittedResult = [], isLoading: submittedFilterLoading } = useQuery({
     queryKey: [
       'filteredSubmittedInvoices', companyId, dateFromFormatted, dateToFormatted,
-      submittedDirection, deferredSubmittedSearch, submittedFilters.currency,
-      submittedFilters.category, submittedFilters.project, submittedFilters.paymentMethod,
-      submittedFilters.amountMin, submittedFilters.amountMax,
+      submittedDirection, deferredSearch, filters.currency,
+      filters.category, filters.project, filters.paymentMethod,
+      filters.amountMin, filters.amountMax,
       sortField, sortDirection, submittedCurrentPage, submittedPageSize,
-      subIssueDateFrom, subIssueDateTo,
+      issueDateFrom, issueDateTo,
     ],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_filtered_submitted_invoices', {
@@ -161,19 +123,19 @@ export function useInvoiceFilters(
         p_date_from: dateFromFormatted,
         p_date_to: dateToFormatted,
         p_direction: submittedDirection,
-        p_search: deferredSubmittedSearch || null,
-        p_currency: submittedFilters.currency === 'all' ? null : submittedFilters.currency,
-        p_category_id: submittedFilters.category === 'all' ? null : submittedFilters.category,
-        p_project_id: submittedFilters.project === 'all' ? null : submittedFilters.project,
-        p_payment_method: submittedFilters.paymentMethod === 'all' ? null : submittedFilters.paymentMethod,
-        p_amount_min: submittedFilters.amountMin ? parseFloat(submittedFilters.amountMin) : null,
-        p_amount_max: submittedFilters.amountMax ? parseFloat(submittedFilters.amountMax) : null,
+        p_search: deferredSearch || null,
+        p_currency: filters.currency === 'all' ? null : filters.currency,
+        p_category_id: filters.category === 'all' ? null : filters.category,
+        p_project_id: filters.project === 'all' ? null : filters.project,
+        p_payment_method: filters.paymentMethod === 'all' ? null : filters.paymentMethod,
+        p_amount_min: filters.amountMin ? parseFloat(filters.amountMin) : null,
+        p_amount_max: filters.amountMax ? parseFloat(filters.amountMax) : null,
         p_sort_field: sortField,
         p_sort_dir: sortDirection,
         p_page: submittedCurrentPage,
         p_page_size: submittedPageSize,
-        p_issue_date_from: subIssueDateFrom,
-        p_issue_date_to: subIssueDateTo,
+        p_issue_date_from: issueDateFrom,
+        p_issue_date_to: issueDateTo,
       });
       if (error) throw error;
       return (data || []) as (SubmittedInvoice & { total_count: number })[];
@@ -246,17 +208,13 @@ export function useInvoiceFilters(
 
   // ── Clear filters ──
 
-  const clearNavFilters = () => setNavFilters(defaultNavFilters);
-  const clearSubmittedFilters = () => setSubmittedFilters(defaultSubmittedFilters);
+  const clearFilters = () => setFilters(defaultFilters);
 
   return {
-    // Filters
-    navFilters,
-    setNavFilters,
-    submittedFilters,
-    setSubmittedFilters,
-    clearNavFilters,
-    clearSubmittedFilters,
+    // Unified filters
+    filters,
+    setFilters,
+    clearFilters,
     // Sorting
     sortField,
     sortDirection,
