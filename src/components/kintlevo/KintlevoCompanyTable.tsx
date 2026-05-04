@@ -56,10 +56,19 @@ export function KintlevoCompanyTable({ filteredGroups, expanded, setExpanded }: 
                     <span className="text-xs text-muted-foreground hidden sm:inline shrink-0">{group.taxNumber}</span>
                   )}
                 </div>
-                <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                  <span>{group.invoices.length} számla</span>
-                  <span>·</span>
-                  <span className={c.text}>{c.label}</span>
+                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                  {(['green', 'yellow', 'red', 'purple'] as const).map(cat => {
+                    const count = group.invoices.filter(inv => inv.category === cat).length;
+                    if (count === 0) return null;
+                    const catStyle = CAT[cat];
+                    return (
+                      <span key={cat} className={cn('inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-md font-medium', catStyle.badge)}>
+                        {count}
+                        <span className="hidden sm:inline">×</span>
+                        <span className="hidden sm:inline">{catStyle.label}</span>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
               <div className="shrink-0 flex items-center gap-3">
