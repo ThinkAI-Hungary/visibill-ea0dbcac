@@ -1,4 +1,4 @@
-import React, { useState, useMemo, forwardRef, useImperativeHandle, useEffect, useRef, useDeferredValue } from 'react';
+import React, { useState, useMemo, forwardRef, useImperativeHandle, useRef, useDeferredValue } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -161,29 +161,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     refetchItems();
   };
 
-  useEffect(() => {
-    if (!selectedCompany?.id) return;
-
-    // Listen to real-time database changes to apply AI classifications instantly
-    const channel = supabase.channel('gl-realtime-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `company_id=eq.${selectedCompany.id}` }, () => {
-        handleRefetchAll();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoice_items' }, () => {
-        handleRefetchAll();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'nav_invoices', filter: `company_id=eq.${selectedCompany.id}` }, () => {
-        handleRefetchAll();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'nav_invoice_items' }, () => {
-        handleRefetchAll();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [selectedCompany?.id]);
+  // NOTE: Realtime subscription for GL tables (transactions, invoice_items,
+  // nav_invoices, nav_invoice_items) is handled globally by LiveNotificationProvider.
+  // No duplicate channel needed here — it already invalidates the relevant query caches.
 
 
   const cleanIdVal = (id: any) => id ? String(id).replace(/\./g, '') : '';
