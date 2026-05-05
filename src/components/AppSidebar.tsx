@@ -44,7 +44,8 @@ import {
   ReceiptText,
   BookOpen,
   Clock,
-  Package2
+  Package2,
+  BarChart3
 } from "lucide-react";
 import CompanySelector from "./CompanySelector";
 
@@ -65,6 +66,7 @@ const navigationItems: NavItem[] = [
   { title: "Kintlévőség", url: "/kintlevo", icon: ReceiptText, tourId: "kintlevo" },
   { title: "Tranzakciók", url: "/transactions", icon: Landmark, tourId: "transactions" },
   { title: "Főkönyv", url: "/general-ledger", icon: BookOpen, tourId: "general-ledger" },
+  { title: "Eredménykimutatás", url: "/profit-and-loss", icon: BarChart3, tourId: "profit-and-loss" },
   { title: "Feltöltés", url: "/upload", icon: Upload, tourId: "upload" },
   { title: "Bérek/járulékok", url: "/salaries", icon: Wallet, tourId: "salaries" },
   { title: "Munkaidő", url: "/working-time", icon: Clock, tourId: "working-time", employeeVisible: true },
@@ -89,6 +91,7 @@ const prefetchMap: Record<string, () => Promise<unknown>> = {
   "/kintlevo": () => import("@/pages/KintlevoPage"),
   "/transactions": () => import("@/pages/TransactionsPage"),
   "/general-ledger": () => import("@/pages/GeneralLedgerPage"),
+  "/profit-and-loss": () => import("@/pages/ProfitAndLoss"),
   "/upload": () => import("@/pages/ManualUpload"),
   "/salaries": () => import("@/pages/SalariesPage"),
   "/working-time": () => import("@/pages/WorkingTimePage"),
