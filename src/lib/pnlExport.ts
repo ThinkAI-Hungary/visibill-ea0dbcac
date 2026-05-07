@@ -11,7 +11,13 @@ export const exportPnlExcel = async (
   workbook.created = new Date();
 
   const worksheet = workbook.addWorksheet('Eredménykimutatás', {
-    views: [{ showGridLines: false }]
+    views: [{ showGridLines: false }],
+    properties: {
+      outlineProperties: {
+        summaryBelow: false,
+        summaryRight: false,
+      }
+    }
   });
 
   // Set Columns
@@ -86,6 +92,7 @@ export const exportPnlExcel = async (
         
         glRow.font = { italic: true, color: { argb: 'FF4B5563' } };
         glRow.getCell('targy').numFmt = numberFormat;
+        glRow.outlineLevel = 1;
 
         // Process specific transactions
         const items = dbItems?.filter(i => i.gl_account_id === gl.gl_account_id) || [];
@@ -103,6 +110,8 @@ export const exportPnlExcel = async (
 
           txRow.font = { size: 10, color: { argb: 'FF6B7280' } };
           txRow.getCell('targy').numFmt = numberFormat;
+          txRow.outlineLevel = 2;
+          
           // Subtly color transaction rows
           txRow.fill = {
             type: 'pattern',

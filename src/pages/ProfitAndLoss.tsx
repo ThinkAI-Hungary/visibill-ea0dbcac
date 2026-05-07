@@ -9,13 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { exportPnlExcel } from '@/lib/pnlExport';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { startOfMonth, endOfMonth, startOfYear, endOfYear, startOfQuarter, endOfQuarter, isSameDay } from 'date-fns';
 
 function PnlMappingTab({ presetId }: { presetId?: string }) {
   const { selectedCompany } = useCompany();
@@ -369,9 +371,13 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
     }
   };
 
+  const handlePrintPdf = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center mb-6 bg-muted/30 p-4 rounded-xl border border-border/50">
+      <div className="flex justify-between items-center mb-6 bg-muted/30 p-4 rounded-xl border border-border/50 print:hidden">
         <div className="flex items-center gap-4">
           <div className="flex items-center space-x-2">
             <Switch id="view-mode" checked={inThousands} onCheckedChange={setInThousands} />
@@ -380,10 +386,16 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
             </Label>
           </div>
         </div>
-        <Button variant="outline" className="gap-2 h-9" onClick={handleExport}>
-          <Download className="w-4 h-4" />
-          Exportálás
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" className="gap-2 h-9 bg-card hover:bg-accent transition-all shadow-sm" onClick={handlePrintPdf}>
+            <FileText className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+            <span className="font-medium">Letöltés PDF-ként</span>
+          </Button>
+          <Button variant="outline" className="gap-2 h-9 bg-card hover:bg-accent transition-all shadow-sm" onClick={handleExport}>
+            <Download className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+            <span className="font-medium">Letöltés Excelként</span>
+          </Button>
+        </div>
       </div>
 
       <div className="border rounded-md shadow-sm overflow-hidden bg-card">
@@ -440,8 +452,8 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                   </div>
 
                   {/* Level 1: GL Accounts */}
-                  {isExpanded && isRoman && (
-                    <div className="bg-muted/10 border-b border-border/50 pb-2 shadow-inner">
+                  {isRoman && (
+                    <div className={cn("bg-muted/10 border-b border-border/50 pb-2 shadow-inner", !isExpanded && "hidden print:block")}>
                       {glAccounts.map((gl: any) => {
                         const isGlExpanded = expandedGl.has(gl.gl_account_id);
                         const items = dbItems?.filter(i => i.gl_account_id === gl.gl_account_id) || [];
@@ -475,17 +487,30 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                             </div>
 
                             {/* Level 2: Transactions */}
-                            {isGlExpanded && hasItems && (
-                              <div className="bg-background/50 py-1 shadow-inner pl-12 pr-4 border-y border-border/20">
+                            {hasItems && (
+                              <div className={cn("bg-background/50 py-1 shadow-inner pl-12 pr-4 border-y border-border/20", !isGlExpanded && "hidden print:block")}>
                                 {items.map((item: any) => (
                                   <div key={item.item_id} className="grid grid-cols-12 gap-4 py-1.5 items-center text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 px-2 rounded-md transition-colors">
                                     <div className="col-span-2 flex items-center gap-2">
                                       <ReceiptText className="w-3 h-3 opacity-50" />
                                       {item.item_date?.substring(0, 10).replace(/-/g, '.')}
                                     </div>
-                                    <div className="col-span-6 truncate" title={item.description || item.partner}>
+                                    <div className="col-span-6 flex items-center gap-2 truncate" title={item.description || item.partner}>
                                       {item.partner && <span className="font-medium text-foreground/80 mr-2">{item.partner}</span>}
-                                      {item.description}
+                                      <span className="truncate">{item.description}</span>
+                                      {item.document_url && (
+                                        <a 
+                                          href={item.document_url} 
+                                          target="_blank" 
+                                          rel="noreferrer" 
+                                          onClick={(e) => e.stopPropagation()} 
+                                          className="ml-auto flex shrink-0 items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors text-[10px] font-medium"
+                                          title="Eredeti bizonylat megtekintése"
+                                        >
+                                          <FileText className="w-3 h-3" />
+                                          PDF
+                                        </a>
+                                      )}
                                     </div>
                                     <div className="col-span-2 text-right opacity-70">
                                       {item.item_type}
@@ -528,6 +553,28 @@ export default function ProfitAndLoss() {
   };
 
   const { activePresetId, setActivePresetId, presets } = useActivePreset(selectedCompany?.id);
+  const { dateFrom, dateTo, setDateFrom, setDateTo } = useDateRange();
+  
+  const isThisMonth = isSameDay(dateFrom, startOfMonth(new Date())) && isSameDay(dateTo, endOfMonth(new Date()));
+  const isThisQuarter = isSameDay(dateFrom, startOfQuarter(new Date())) && isSameDay(dateTo, endOfQuarter(new Date()));
+  const isThisYear = isSameDay(dateFrom, startOfYear(new Date())) && isSameDay(dateTo, endOfYear(new Date()));
+  
+  const activeDatePreset = isThisYear ? 'year' : isThisQuarter ? 'quarter' : isThisMonth ? 'month' : 'custom';
+
+  const handleDatePresetChange = (val: string) => {
+    if (!val || val === 'custom') return;
+    const now = new Date();
+    if (val === 'year') {
+      setDateFrom(startOfYear(now));
+      setDateTo(endOfYear(now));
+    } else if (val === 'quarter') {
+      setDateFrom(startOfQuarter(now));
+      setDateTo(endOfQuarter(now));
+    } else if (val === 'month') {
+      setDateFrom(startOfMonth(now));
+      setDateTo(endOfMonth(now));
+    }
+  };
 
   const toggleActivePresetMutation = useMutation({
     mutationFn: async (presetId: string) => {
@@ -568,6 +615,15 @@ export default function ProfitAndLoss() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground/90">Eredménykimutatás</h1>
           <p className="text-sm text-muted-foreground mt-1">Sztv. "A" változat szerinti eredménykimutatás és beállítások</p>
+        </div>
+        <div className="flex items-center gap-3 bg-muted/30 p-1.5 rounded-lg border border-border/50">
+          <span className="text-sm font-medium text-muted-foreground ml-2">Időszak:</span>
+          <ToggleGroup type="single" value={activeDatePreset} onValueChange={handleDatePresetChange} className="bg-background border rounded-md p-0.5 shadow-sm">
+            <ToggleGroupItem value="year" className="h-8 px-4 text-xs font-medium">Év</ToggleGroupItem>
+            <ToggleGroupItem value="quarter" className="h-8 px-4 text-xs font-medium">Negyedév</ToggleGroupItem>
+            <ToggleGroupItem value="month" className="h-8 px-4 text-xs font-medium">Hónap</ToggleGroupItem>
+            <ToggleGroupItem value="custom" className="h-8 px-4 text-xs font-medium" disabled>Egyedi</ToggleGroupItem>
+          </ToggleGroup>
         </div>
       </div>
 
