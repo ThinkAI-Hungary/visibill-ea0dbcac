@@ -277,15 +277,24 @@ export function InvoiceItemsDialog({
                           {formatAmount(getGrossAmount(item))}
                         </TableCell>
                         <TableCell className="text-center">
-                          {item.gl_classifications?.[activePresetId]?.gl_number ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                              {item.gl_classifications[activePresetId].gl_number}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground" title="Nincs besorolva">
-                              -
-                            </span>
-                          )}
+                          {(() => {
+                            // Try the active preset first, otherwise fallback to the first available classification key
+                            const classification = (activePresetId && item.gl_classifications?.[activePresetId])
+                              ? item.gl_classifications[activePresetId]
+                              : (item.gl_classifications && Object.keys(item.gl_classifications).length > 0 
+                                  ? Object.values(item.gl_classifications)[0] 
+                                  : null);
+                            
+                            return classification?.gl_number ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                {classification.gl_number}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground" title="Nincs besorolva">
+                                -
+                              </span>
+                            );
+                          })()}
                         </TableCell>
                       </TableRow>
                     ))}
