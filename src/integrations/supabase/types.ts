@@ -1033,20 +1033,38 @@ export type Database = {
         Row: {
           company_id: string
           created_at: string | null
+          error_message: string | null
           id: string
+          items_processed: number | null
+          items_total: number | null
           message: string
+          processed_at: string | null
+          processing_status: string
+          target_preset_id: string | null
         }
         Insert: {
           company_id: string
           created_at?: string | null
+          error_message?: string | null
           id?: string
+          items_processed?: number | null
+          items_total?: number | null
           message: string
+          processed_at?: string | null
+          processing_status?: string
+          target_preset_id?: string | null
         }
         Update: {
           company_id?: string
           created_at?: string | null
+          error_message?: string | null
           id?: string
+          items_processed?: number | null
+          items_total?: number | null
           message?: string
+          processed_at?: string | null
+          processing_status?: string
+          target_preset_id?: string | null
         }
         Relationships: []
       }
@@ -1151,6 +1169,7 @@ export type Database = {
         Row: {
           company_id: string | null
           created_at: string
+          document_category: string
           error_message: string | null
           file_name: string
           file_size: number
@@ -1166,6 +1185,7 @@ export type Database = {
         Insert: {
           company_id?: string | null
           created_at?: string
+          document_category?: string
           error_message?: string | null
           file_name: string
           file_size: number
@@ -1181,6 +1201,7 @@ export type Database = {
         Update: {
           company_id?: string | null
           created_at?: string
+          document_category?: string
           error_message?: string | null
           file_name?: string
           file_size?: number
@@ -1460,6 +1481,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      llm_koltsegek: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          estimated_cost_usd: number | null
+          file_name: string
+          id: string
+          input_tokens: number
+          llm_calls: number
+          model_name: string
+          output_tokens: number
+          pipeline: string
+          processing_duration_ms: number | null
+          total_tokens: number | null
+          upload_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          estimated_cost_usd?: number | null
+          file_name: string
+          id?: string
+          input_tokens?: number
+          llm_calls?: number
+          model_name: string
+          output_tokens?: number
+          pipeline: string
+          processing_duration_ms?: number | null
+          total_tokens?: number | null
+          upload_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          estimated_cost_usd?: number | null
+          file_name?: string
+          id?: string
+          input_tokens?: number
+          llm_calls?: number
+          model_name?: string
+          output_tokens?: number
+          pipeline?: string
+          processing_duration_ms?: number | null
+          total_tokens?: number | null
+          upload_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       nav_invoice_items: {
         Row: {
@@ -1825,6 +1897,109 @@ export type Database = {
             columns: ["default_project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pnl_mapping: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          gl_account_id: string
+          id: string
+          pnl_structure_id: string
+          preset_id: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          gl_account_id: string
+          id?: string
+          pnl_structure_id: string
+          preset_id: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          gl_account_id?: string
+          id?: string
+          pnl_structure_id?: string
+          preset_id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pnl_mapping_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pnl_mapping_gl_account_id_fkey"
+            columns: ["gl_account_id"]
+            isOneToOne: false
+            referencedRelation: "gl_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pnl_mapping_pnl_structure_id_fkey"
+            columns: ["pnl_structure_id"]
+            isOneToOne: false
+            referencedRelation: "pnl_structure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pnl_mapping_preset_id_fkey"
+            columns: ["preset_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts_presets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pnl_structure: {
+        Row: {
+          created_at: string | null
+          id: string
+          multiplier: number
+          name: string
+          order_num: number
+          parent_id: string | null
+          row_code: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          multiplier?: number
+          name: string
+          order_num: number
+          parent_id?: string | null
+          row_code: string
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          multiplier?: number
+          name?: string
+          order_num?: number
+          parent_id?: string | null
+          row_code?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pnl_structure_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "pnl_structure"
             referencedColumns: ["id"]
           },
         ]
@@ -2803,11 +2978,33 @@ export type Database = {
         Args: { p_base_salary: number; p_monthly_hours?: number }
         Returns: number
       }
+      claim_gl_jobs: {
+        Args: { p_batch_size?: number }
+        Returns: {
+          company_id: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          items_processed: number | null
+          items_total: number | null
+          message: string
+          processed_at: string | null
+          processing_status: string
+          target_preset_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "gl_upload_notifications"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       claim_invoice_jobs: {
         Args: { p_batch_size?: number }
         Returns: {
           company_id: string | null
           created_at: string
+          document_category: string
           error_message: string | null
           file_name: string
           file_size: number
@@ -2823,6 +3020,30 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "invoice_uploads"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      claim_transaction_jobs: {
+        Args: { p_batch_size?: number }
+        Returns: {
+          company_id: string
+          created_at: string | null
+          error_message: string | null
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          metadata: Json | null
+          processing_status: string | null
+          updated_at: string | null
+          upload_status: string | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "transaction_uploads"
           isOneToOne: false
           isSetofReturn: true
         }
@@ -2948,6 +3169,7 @@ export type Database = {
         Returns: {
           amount: number
           description: string
+          document_url: string
           gl_account_id: string
           item_date: string
           item_id: string
@@ -3020,6 +3242,24 @@ export type Database = {
           has_settings: boolean
         }[]
       }
+      get_pnl_report: {
+        Args: {
+          p_company_id: string
+          p_date_from?: string
+          p_date_to?: string
+          p_preset_id: string
+        }
+        Returns: {
+          balance: number
+          gl_accounts: Json
+          multiplier: number
+          name: string
+          order_num: number
+          pnl_structure_id: string
+          row_code: string
+          type: string
+        }[]
+      }
       get_transaction_filter_options: {
         Args: { p_company_id: string }
         Returns: {
@@ -3058,6 +3298,25 @@ export type Database = {
         }
         Returns: boolean
       }
+      pgmq_archive: {
+        Args: { msg_id: number; queue_name: string }
+        Returns: boolean
+      }
+      pgmq_delete: {
+        Args: { msg_id: number; queue_name: string }
+        Returns: boolean
+      }
+      pgmq_metrics: { Args: { queue_name: string }; Returns: Json[] }
+      pgmq_read: {
+        Args: {
+          max_poll_seconds?: number
+          poll_interval_ms?: number
+          qty?: number
+          queue_name: string
+          vt: number
+        }
+        Returns: Json[]
+      }
       reset_monthly_usage: { Args: never; Returns: number }
       save_nav_credentials: {
         Args: {
@@ -3072,6 +3331,10 @@ export type Database = {
           p_software_dev_name?: string
         }
         Returns: Json
+      }
+      save_pnl_mappings: {
+        Args: { p_company_id: string; p_mappings: Json; p_preset_id: string }
+        Returns: undefined
       }
       sync_sandbox_from_taxology: { Args: never; Returns: undefined }
       user_has_company_access: {
