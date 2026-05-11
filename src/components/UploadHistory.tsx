@@ -32,6 +32,7 @@ interface UploadHistoryProps {
 
 const errorStatuses = new Set(['webhook_failed', 'failed', 'error']);
 const processingStatuses = new Set(['processing', 'webhook_sent']);
+const pendingStatuses = new Set(['pending', 'uploaded']);
 
 // formatFileSize is now imported from @/lib/utils
 
@@ -177,6 +178,15 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
       return { records, processedIds, userNames };
     },
     enabled: !!user && !!companyId && isValidTab,
+    // Auto-refetch every 3s while any record is still being processed,
+    // so users see the 'Feldolgozás alatt' → 'Feldolgozva' transition live.
+    refetchInterval: (query) => {
+      const recs = query.state.data?.records || [];
+      const hasActiveJobs = recs.some(
+        (r: UploadRecord) => processingStatuses.has(r.processing_status) || pendingStatuses.has(r.processing_status)
+      );
+      return hasActiveJobs ? 3000 : false;
+    },
   });
 
   const records = data?.records || [];
