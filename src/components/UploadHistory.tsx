@@ -12,6 +12,8 @@ import { History, FileText, Landmark, Banknote, CreditCard, Loader2 } from 'luci
 import { format, subDays } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
+import { useRef, useEffect } from 'react';
+import { toast } from '@/hooks/use-toast';
 
 interface UploadRecord {
   id: string;
@@ -33,6 +35,7 @@ interface UploadHistoryProps {
 const errorStatuses = new Set(['webhook_failed', 'failed', 'error']);
 const processingStatuses = new Set(['processing', 'webhook_sent']);
 const pendingStatuses = new Set(['pending', 'uploaded']);
+const activeStatuses = new Set([...processingStatuses, ...pendingStatuses]);
 
 // formatFileSize is now imported from @/lib/utils
 
@@ -57,6 +60,9 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
+
+  // Track previous processing_status per upload ID to detect transitions
+  const prevStatusMap = useRef<Map<string, string>>(new Map());
 
   const companyId = selectedCompany?.id || '';
 
@@ -195,6 +201,34 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
   const records = data?.records || [];
   const processedUrls = data?.processedIds || new Set<string>();
   const userNames = data?.userNames || {};
+
+  // ── Detect status transitions: pending/processing → completed ──
+  // When polling picks up that a file just finished processing,
+  // show a toast and refresh the Transactions page cache.
+  useEffect(() => {
+    if (!records.length) return;
+
+    for (const rec of records) {
+      const prevStatus = prevStatusMap.current.get(rec.id);
+      const curStatus = rec.processing_status;
+
+      // Transition detected: was active (pending/processing) → now completed
+      if (prevStatus && activeStatuses.has(prevStatus) && curStatus === 'completed') {
+        toast({
+          title: 'Tranzakciók feldolgozva!',
+          description: `${rec.file_name} sikeresen fel lett dolgozva.`,
+          variant: 'default',
+          duration: 5000,
+        });
+        // Force-refresh the Transactions page data
+        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
+      }
+
+      // Update tracked state
+      prevStatusMap.current.set(rec.id, curStatus);
+    }
+  }, [records, queryClient]);
 
   if (!isValidTab) {
     return null;
