@@ -1,70 +1,34 @@
-# Probléma — mit jelez a console
+# Mit látsz a console-ban
 
 ```
-Warning: Cannot update a component (`BrowserRouter`) while rendering
-a different component (`InvoicesPage`).
+[RealtimeSync] Channel: CLOSED
+  at LiveNotificationProvider.tsx:333
+[RealtimeSync] ✅ Connected
+[RealtimeSync] Channel: CLOSED
 ```
 
-A stack utolsó lépései:
+## Miért történik
 
-```
-replace2 (react-router-dom: history.replace)
-  ← startTransition
-  ← dispatchSetState  (BrowserRouter belső state-je)
-  ← ... InvoicesPage render
-```
+A `LiveNotificationProvider` `useEffect`-je a `companyId`-tól függ (sor 381). Cégváltáskor:
 
-Ez nem fatal hiba — React fejlesztői figyelmeztetés. Akkor lép fel, ha render közben (nem `useEffect`-ben, nem callback-ben) történik egy `navigate(..., { replace: true })` vagy `setSearchParams(..., { replace: true })` hívás, amit a BrowserRouter saját state-jének frissítése követ. Mivel a router komponensfája MAGASABBAN van mint az InvoicesPage, React panaszkodik, hogy másik komponens renderje közben próbálunk parent-t frissíteni.
+1. Régi effect cleanup → `supabase.removeChannel(channelRef.current)` (sor 377).
+2. A bezárt csatorna `subscribe` callback-je tüzel **`CLOSED` státusszal** (sor 329-335) — ez normál Supabase Realtime viselkedés.
+3. Új effect lefut → új csatorna nyit → `SUBSCRIBED` → `✅ Connected`.
+4. Esetenként még egy `CLOSED` érkezik a régi csatorna véglegesítéséről (network race).
 
-## Honnan jöhet az InvoicesPage-ben
+A `CLOSED` státusz **`console.warn`**-ként logolódik (sor 333), ezért látszik narancs figyelmeztetésnek — pedig csak egy várt teardown esemény.
 
-A renderben hívott navigate/setSearchParams gyanúsítottak (mind `{ replace: true }`-szal):
-
-1. **`useUrlTab` (src/lib/navigation.ts:140)** — a `setTab` callback `navigate(..., { replace: true })`. Önmagában render közben nem fut, DE:
-   - Ha a `Tabs` (Radix) controlled value-ja (`activeTab`) nem egyezik egyik `TabsTrigger`-rel sem (pl. URL slug eltérés miatt rövid ideig), Radix bizonyos verziói render fázisban hívják az `onValueChange`-t.
-   - Az `onValueChange={(v) => setActiveTab(v as InvoiceTab)}` (InvoicesPage.tsx:606) ekkor render közben hívná a `navigate`-et.
-
-2. **`setInvoiceParam` / `setSearchParams(..., { replace: true })`** (InvoicesPage.tsx:99, 261, 271, 466) — mind callback-ben futnak, render fázisban nem. Valószínűleg nem ezek.
-
-3. **`ScopedLayout` Context→URL effect** (ScopedLayout.tsx:86-106) — `useEffect`-ben fut, de ha egy gyermek (InvoicesPage) render közben módosítja a context-et (CompanyContext / DateRangeContext), az re-rendert vált ki, ami az effect következő commit-ban navigate-et hív, és a stack visszamutathat az aktuális render-re.
-
-A legvalószínűbb gyökér tehát: az **`useUrlTab` által visszaadott `setTab`/`setTabSlug` render közben fut le** (Radix Tabs sync `onValueChange` egy edge-case-ben), vagy a `Tabs` komponens nem szinkronizált value-ja triggereli.
+**Funkcionálisan minden rendben**: a `✅ Connected` sor mutatja, hogy az új cég csatornája él. Csak a log zajos.
 
 ## Javítási terv
 
-### 1. lépés — Bizonyíték gyűjtése
-- Beteszek egy `console.trace('[invoice-page] navigate during render?')` hívást a `useUrlTab` `setTab` callback-jébe + a `setInvoiceParam`-ba, hogy lássuk pontosan melyik fut a render fázisban.
-- A user megnyitja az `/invoices` route-ot → console-ból kiderül az igazi forrás.
+A `subscribe` callback-ben különítsük el a várt teardown-t (`CLOSED` cleanup után) a tényleges hibáktól:
 
-### 2. lépés — Védőháló (független a forrástól)
-A `useUrlTab.setTab` belsejében késleltetjük a router írást egy mikrotaszkba, így soha nem futhat render fázisban:
+1. Vezessünk be egy `cancelledRef` / lokális `cancelled` flag-et (már létezik a sor 87-en) és a callback-be juttassuk be — ha a cleanup már lefutott, a `CLOSED` ne logoljon, vagy csak `console.debug`-gal.
+2. A `CLOSED` státuszt általánosan kezeljük `console.debug` szinten (várt esemény minden teardown-nál), és csak a `CHANNEL_ERROR` / `TIMED_OUT` maradjon `console.warn`.
+3. Opcionálisan: a `removeChannel` előtt explicit `channel.unsubscribe()`, hogy a `CLOSED` callback determinisztikusan a cleanup ágához rendelhető legyen.
 
-```ts
-// src/lib/navigation.ts (useUrlTab)
-const setTab = useCallback((newTab: T) => {
-  queueMicrotask(() => {
-    navigate(
-      { pathname: `${basePath}/${pagePath}/${newTab}`, search: location.search },
-      { replace: true },
-    );
-  });
-}, [navigate, basePath, pagePath, location.search]);
-```
+## Érintett fájl
+- `src/components/LiveNotificationProvider.tsx` (sor 329-335 + cleanup sor 376-379)
 
-Ugyanezt a pattern-t alkalmazzuk a `setInvoiceParam`, `handleOpenFiles`, `handleCloseFiles`, `handleRowClick` URL-író ágaiban is, ha az 1. lépésben kiderül, hogy bármelyikük render alatt fut.
-
-### 3. lépés — Tab slug normalizálás
-Ha a probléma a `Tabs` value mismatch (URL slug ↔ TabsTrigger value), egységesítjük: a `TabsTrigger`-ek `value`-ját átírjuk a slug-okra (`outbound_nav`, `inbound_nav`, …) — így `activeTab` és `value` mindig 1:1, nincs mapping, nincs render-time onValueChange tűz.
-
-### 4. lépés — Verifikáció
-- Reload `/invoices` — warning eltűnik.
-- Tab váltás — URL helyesen frissül, nincs warning.
-- `?invoice=…` deep link továbbra is működik (dialog megnyílik).
-- Browser back/forward — tab státusz konzisztens.
-
-## Technikai részletek (érintett fájlok)
-- `src/lib/navigation.ts` — `useUrlTab` setter mikrotaszkba tétele.
-- `src/pages/InvoicesPage.tsx` — opcionálisan `TabsTrigger` value-k slug-ra cserélése; `setInvoiceParam` & társai szükség esetén `queueMicrotask`-be.
-- Egyéb fájlt nem érint.
-
-A fix kifejezetten kicsi (két fájl, ~10 sor), és csak a navigációs réteget érinti — üzleti logikához nem nyúl.
+Ez egy ~5 soros, kockázatmentes log-tisztítás. Sem a Realtime-, sem a notifikációs logikát nem érinti.
