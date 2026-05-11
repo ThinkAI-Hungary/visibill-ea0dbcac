@@ -3,14 +3,13 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
-import { useDateRange } from '@/contexts/DateRangeContext';
 import { formatFileSize } from '@/lib/utils';
 
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { supabase } from '@/integrations/supabase/client';
 import { History, FileText, Landmark, Banknote, CreditCard, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -53,10 +52,14 @@ function getStatus(record: UploadRecord, processedIds: Set<string>): { label: st
 export default function UploadHistory({ activeTab }: UploadHistoryProps) {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
-  const { dateFromFormatted, dateToFormatted } = useDateRange();
   const queryClient = useQueryClient();
 
   const companyId = selectedCompany?.id || '';
+
+  // Upload history always shows the last 90 days regardless of the global date range.
+  // The global date range controls accounting views, not upload recency.
+  const uploadDateFrom = format(subDays(new Date(), 90), 'yyyy-MM-dd');
+  const uploadDateTo = format(new Date(), 'yyyy-MM-dd');
   // BUG #3 FIX: Added bank-statements tab support
   const tableName = activeTab === 'invoices' ? 'invoice_uploads'
     : activeTab === 'salaries' ? 'salary_files'
@@ -75,7 +78,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
 
   // ── Main data query (records + processed IDs + user names) ──
   const { data, isLoading: loading } = useQuery({
-    queryKey: queryKeys.uploadHistory(companyId, activeTab, dateFromFormatted, dateToFormatted),
+    queryKey: queryKeys.uploadHistory(companyId, activeTab, uploadDateFrom, uploadDateTo),
     queryFn: async () => {
       let records: UploadRecord[] = [];
 
@@ -85,8 +88,8 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           .from('salary_files')
           .select('id, file_name, file_size, file_url, user_id, status, created_at')
           .eq('company_id', companyId)
-          .gte('created_at', dateFromFormatted)
-          .lte('created_at', dateToFormatted + 'T23:59:59')
+          .gte('created_at', uploadDateFrom)
+          .lte('created_at', uploadDateTo + 'T23:59:59')
           .order('created_at', { ascending: false })
           .limit(50);
 
@@ -105,8 +108,8 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
         let query = supabase
           .from(tableName)
           .select('id, file_name, file_size, file_type, file_url, user_id, upload_status, processing_status, created_at, error_message')
-          .gte('created_at', dateFromFormatted)
-          .lte('created_at', dateToFormatted + 'T23:59:59')
+          .gte('created_at', uploadDateFrom)
+          .lte('created_at', uploadDateTo + 'T23:59:59')
           .order('created_at', { ascending: false })
           .limit(50);
 

@@ -1,4 +1,4 @@
-﻿import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 
 // Helper function to verify Mailgun webhook signature using Web Crypto API
@@ -262,31 +262,9 @@ serve(async (req) => {
           console.error('Error creating invoice upload record:', recordError);
         } else {
           console.log('Invoice upload record created:', uploadRecord.id);
-          
-          // Trigger invoice processing to both N8N webhooks
-          const webhookUrls = [
-            'https://n8n.thinkaikontir.hu/webhook-test/bd504dd3-8af8-45d6-90f6-cfc635a22da6',
-            'https://n8n.thinkaikontir.hu/webhook/bd504dd3-8af8-45d6-90f6-cfc635a22da6'
-          ];
-
-          for (const webhookUrl of webhookUrls) {
-            console.log(`Triggering invoice processing: ${webhookUrl}`);
-            const { error: processError } = await supabase.functions.invoke(
-              'trigger-invoice-processing',
-              {
-                body: {
-                  uploadId: uploadRecord.id,
-                  webhookUrl,
-                },
-              }
-            );
-
-            if (processError) {
-              console.error(`Error triggering processing to ${webhookUrl}:`, processError);
-            } else {
-              console.log(`Successfully triggered processing for ${webhookUrl}`);
-            }
-          }
+          // Processing is handled automatically by the DB trigger (trg_enqueue_invoice)
+          // which enqueues the job to the PGMQ invoice_jobs queue on INSERT.
+          console.log('Job enqueued via DB trigger for PGMQ worker processing.');
         }
       }
     } else {

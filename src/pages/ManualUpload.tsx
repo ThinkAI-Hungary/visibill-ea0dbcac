@@ -352,33 +352,9 @@ const ManualUpload = () => {
             throw new Error(`Adatbázis hiba: ${uploadError.message}`);
           }
 
-          // Trigger N8N webhook processing (production only)
-          try {
-            const { error: webhookError } = await supabase.functions.invoke('trigger-invoice-processing', {
-              body: {
-                uploadId: uploadRecord.id,
-                webhookUrl: 'https://n8n.thinkaikontir.hu/webhook/bd504dd3-8af8-45d6-90f6-cfc635a22da6'
-              }
-            });
-
-            if (webhookError) {
-              console.error('Webhook trigger error:', webhookError);
-              // BUG #4 FIX: Show toast on webhook failure
-              toast({
-                variant: 'destructive',
-                title: 'Feldolgozási hiba',
-                description: `A "${file.name}" fájl feltöltve, de a feldolgozás indítása sikertelen. Kérlek próbáld újra.`,
-              });
-            }
-          } catch (webhookError) {
-            console.error('Failed to trigger processing webhook:', webhookError);
-            // BUG #4 FIX: Show toast on webhook failure
-            toast({
-              variant: 'destructive',
-              title: 'Feldolgozási hiba',
-              description: `A "${file.name}" fájl feltöltve, de a feldolgozás indítása sikertelen.`,
-            });
-          }
+          // PGMQ: No webhook needed — database trigger automatically enqueues
+          // the job to the invoice_jobs queue upon INSERT with processing_status='pending'.
+          console.log(`[PGMQ] Invoice upload ${uploadRecord.id} enqueued via DB trigger`);
 
           addToUploadHistoryCache({
             id: uploadRecord.id,
@@ -407,45 +383,6 @@ const ManualUpload = () => {
           duration: 3000,
         });
 
-        // Polling fallback for each invoice upload (5s interval, max 90s)
-        for (const { id: uploadId, fileName } of uploadedIds) {
-          const runInvoicePoll = async () => {
-            const maxAttempts = 54;
-            const intervalMs = 5000;
-            console.log(`[InvoicePoll] Starting polling for invoice_uploads_id=${uploadId}`);
-            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-              await new Promise(res => setTimeout(res, intervalMs));
-              try {
-                const { data: invoiceRows } = await supabase
-                  .from('invoices')
-                  .select('id')
-                  .eq('invoice_uploads_id', uploadId)
-                  .limit(1);
-                console.log(`[InvoicePoll] Attempt ${attempt}/${maxAttempts}: found ${invoiceRows?.length ?? 0} rows`);
-                if (invoiceRows && invoiceRows.length > 0) {
-                  toast({ title: '✅ Gratulálunk!',
-                    description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
-                    duration: 5000,
-                  });
-                  queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
-                  queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
-                  queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
-                  return;
-                }
-              } catch (err) {
-                console.error(`[InvoicePoll] Attempt ${attempt} error:`, err);
-              }
-            }
-            console.log(`[InvoicePoll] ⚠️ Polling timed out for ${uploadId}`);
-            // BUG #1 FIX: Show timeout toast to user
-            // (dynamic sonner import removed - using static import)
-            toast({ title: 'Feldolgozás időtúllépés',
-              description: `A "${fileName}" fájl feldolgozása a vártnál tovább tart. Kérlek ellenőrizd később.`,
-              duration: 10000,
-            });
-          };
-          runInvoicePoll();
-        }
 
         setSelectedInvoiceFiles([]);
         delayedUploadHistoryInvalidation();
@@ -522,33 +459,9 @@ const ManualUpload = () => {
           throw dbError;
         }
 
-        // Trigger processing webhook (production only)
-        try {
-          const { error: webhookError } = await supabase.functions.invoke('trigger-bank-statement-processing', {
-            body: {
-              uploadId: uploadRecord.id,
-              webhookUrl: 'https://n8n.thinkaikontir.hu/webhook/a6f3dbf0-9eab-4e1c-98cf-c8ff56a498f6'
-            }
-          });
-
-          if (webhookError) {
-            console.error('Webhook error:', webhookError);
-            // BUG #4 FIX: Show toast on webhook failure
-            toast({
-              variant: 'destructive',
-              title: 'Feldolgozási hiba',
-              description: `A "${file.name}" bankkivonat feltöltve, de a feldolgozás indítása sikertelen.`,
-            });
-          }
-        } catch (webhookError) {
-          console.error('Webhook trigger error:', webhookError);
-          // BUG #4 FIX: Show toast on webhook failure
-          toast({
-            variant: 'destructive',
-            title: 'Feldolgozási hiba',
-            description: `A "${file.name}" bankkivonat feltöltve, de a feldolgozás indítása sikertelen.`,
-          });
-        }
+        // PGMQ: No webhook needed — database trigger automatically enqueues
+        // the job upon INSERT with processing_status='pending'.
+        console.log(`[PGMQ] Bank statement upload ${uploadRecord.id} enqueued via DB trigger`);
       }
 
       // Optimistic update for each uploaded bank file
@@ -609,149 +522,80 @@ const ManualUpload = () => {
     setUploading(true);
 
     try {
+      let successfulUploads = 0;
+      const uploadedIds: { id: string; fileName: string }[] = [];
+
       for (const file of selectedSalaryFiles) {
-        // Upload file to storage
-        const uploadData = await uploadFileToStorage(file, 'salaries', user.id);
+        try {
+          // Upload file to invoice-uploads storage (shared bucket)
+          const fileUrl = await uploadFileToInvoiceStorage(file, user.id);
 
-        // Get the public URL
-        const { data: urlData } = supabase.storage
-          .from('salaries')
-          .getPublicUrl(uploadData.path);
+          // Create upload record in invoice_uploads with document_category = 'payroll'
+          // The autonomous worker will pick this up and route it to the payroll pipeline
+          const { data: uploadRecord, error: uploadError } = await supabase
+            .from('invoice_uploads')
+            .insert({
+              user_id: user.id,
+              company_id: selectedCompany?.id || null,
+              file_name: file.name,
+              file_size: file.size,
+              file_type: file.type,
+              file_url: fileUrl,
+              upload_status: 'uploaded',
+              processing_status: 'pending',
+              document_category: 'payroll'
+            } as any)
+            .select()
+            .single();
 
-        // Insert preliminary record into salary_files table
-        const { data: uploadRecord, error: dbError } = await supabase
-          .from('salary_files' as any)
-          .insert({
-            user_id: user.id,
-            company_id: selectedCompany?.id || null,
-            payment_type: 'other',
-            recipient_name: 'Feldolgozás alatt',
-            description: `${file.name} - Feldolgozás alatt...`,
-            amount_to_transfer: 0,
-            status: 'pending',
-            file_url: urlData.publicUrl,
+          if (uploadError) {
+            console.error('Database insert error:', uploadError);
+            // Rollback — remove orphaned Storage file
+            const storagePath = extractStoragePath(fileUrl, 'invoice-uploads');
+            if (storagePath) {
+              await supabase.storage.from('invoice-uploads').remove([storagePath]);
+              console.log('Rolled back Storage file:', storagePath);
+            }
+            throw new Error(`Adatbázis hiba: ${uploadError.message}`);
+          }
+
+          addToUploadHistoryCache({
+            id: uploadRecord.id,
             file_name: file.name,
             file_size: file.size,
-            source: 'automated'
-          })
-          .select()
-          .single() as { data: { id: string } | null; error: any };
-
-        if (dbError) {
-          console.error('Database insert error:', dbError);
-          // BUG #5 FIX: Rollback — remove orphaned Storage file
-          await supabase.storage.from('salaries').remove([uploadData.path]);
-          console.log('Rolled back Storage file:', uploadData.path);
-          continue;
+            file_type: file.type,
+            file_url: fileUrl,
+            user_id: user.id,
+            upload_status: 'uploaded',
+            processing_status: 'pending',
+            created_at: new Date().toISOString(),
+            error_message: null,
+          });
+          uploadedIds.push({ id: uploadRecord.id, fileName: file.name });
+          successfulUploads++;
+        } catch (fileError) {
+          console.error(`Error processing salary file ${file.name}:`, fileError);
+          // Continue with next file
         }
-
-        // Trigger processing via edge function (production webhook only)
-        try {
-          const { error: triggerError } = await supabase.functions.invoke('trigger-salary-processing', {
-            body: {
-              uploadId: uploadRecord.id,
-              webhookUrl: 'https://n8n.thinkaikontir.hu/webhook/jarulek'
-            }
-          });
-
-          if (triggerError) {
-            console.error('Edge function error:', triggerError);
-            // BUG #4 FIX: Show toast on webhook failure
-            toast({
-              variant: 'destructive',
-              title: 'Feldolgozási hiba',
-              description: `A "${file.name}" fájl feltöltve, de a feldolgozás indítása sikertelen.`,
-            });
-          }
-        } catch (webhookError) {
-          console.error('Webhook trigger error:', webhookError);
-          // BUG #4 FIX: Show toast on webhook failure
-          toast({
-            variant: 'destructive',
-            title: 'Feldolgozási hiba',
-            description: `A "${file.name}" fájl feltöltve, de a feldolgozás indítása sikertelen.`,
-          });
-        }
-
-        // Polling fallback: bounded retry loop (5s interval, max 90s)
-        // Realtime from service_role INSERTs is unreliable, and processing takes ~20-30s
-        const salaryFileId = uploadRecord.id;
-        const runPollingLoop = async () => {
-          const maxAttempts = 54; // 54 * 5s = 270s
-          const intervalMs = 5000;
-          console.log(`[SalaryPoll] Starting polling for salary_file_id=${salaryFileId}, max ${maxAttempts} attempts`);
-          
-          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-            await new Promise(res => setTimeout(res, intervalMs));
-            try {
-              // Check for salary rows first (primary success signal)
-              const { data: salaryRows } = await supabase
-                .from('salary')
-                .select('id')
-                .eq('salary_file_id', salaryFileId)
-                .limit(1);
-              
-              console.log(`[SalaryPoll] Attempt ${attempt}/${maxAttempts}: found ${salaryRows?.length ?? 0} salary rows`);
-              
-              if (salaryRows && salaryRows.length > 0) {
-                // Fetch file name for toast
-                const { data: sfData } = await supabase
-                  .from('salary_files' as any)
-                  .select('file_name')
-                  .eq('id', salaryFileId)
-                  .single() as { data: { file_name: string } | null; error: any };
-                const fileName = sfData?.file_name || file.name;
-                toast({ title: '✅ Gratulálunk!',
-                  description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
-                  duration: 5000,
-                });
-                console.log(`[SalaryPoll] ✅ Toast shown for ${salaryFileId}`);
-                // Invalidate caches
-                queryClient.invalidateQueries({ queryKey: ['salaries'] });
-                queryClient.invalidateQueries({ queryKey: ['salary_files'] });
-                queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
-                return; // Done!
-              }
-            } catch (err) {
-              console.error(`[SalaryPoll] Attempt ${attempt} error:`, err);
-            }
-          }
-          console.log(`[SalaryPoll] ⚠️ Polling timed out for ${salaryFileId} after ${maxAttempts} attempts`);
-          // BUG #1 FIX: Show timeout toast to user
-          // (dynamic sonner import removed - using static import)
-          toast({ title: 'Feldolgozás időtúllépés',
-            description: `A "${file.name}" fájl feldolgozása a vártnál tovább tart. Kérlek ellenőrizd később.`,
-            duration: 10000,
-          });
-        };
-        // Fire and forget - runs in background
-        runPollingLoop();
       }
 
-      // Optimistic update for each uploaded salary file
-      for (const file of selectedSalaryFiles) {
-        addToUploadHistoryCache({
-          id: crypto.randomUUID(),
-          file_name: file.name,
-          file_size: file.size,
-          file_type: '',
-          file_url: '',
-          user_id: user.id,
-          upload_status: 'pending',
-          processing_status: 'pending',
-          created_at: new Date().toISOString(),
-          error_message: null,
+      if (successfulUploads > 0) {
+        toast({
+          title: "Feltöltés sikeres!",
+          description: "A bér/járulék fájlok feldolgozása automatikusan elindul. Az eredmény pár percen belül látható lesz.",
+          duration: 3000,
+        });
+
+
+        setSelectedSalaryFiles([]);
+        delayedUploadHistoryInvalidation();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Feltöltés sikertelen",
+          description: "Nem sikerült egyetlen fájlt sem feltölteni."
         });
       }
-
-      toast({
-        title: "Feltöltés sikeres!",
-        description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.",
-        duration: 3000,
-      });
-
-      setSelectedSalaryFiles([]);
-      delayedUploadHistoryInvalidation();
     } catch (error) {
       console.error('Salary upload error:', error);
       toast({
@@ -878,29 +722,11 @@ const ManualUpload = () => {
         successfulUploads++;
       }
 
-      // Step 2: Send a single batch webhook with all uploads
+      // PGMQ: No webhook needed — each INSERT into transaction_uploads with
+      // processing_status='pending' automatically triggers the DB trigger
+      // that enqueues the job to the transaction_jobs PGMQ queue.
       if (batchUploads.length > 0) {
-        const webhookUrl = 'https://n8n.thinkaikontir.hu/webhook/supabase-transaction_storage-trigger';
-
-        try {
-          console.log('Triggering batch transaction processing via edge function:', { count: batchUploads.length });
-
-          const { data: triggerData, error: triggerError } = await supabase.functions.invoke('trigger-transaction-processing', {
-            body: {
-              uploads: batchUploads,
-              webhookUrl,
-              companyId: selectedCompany.id
-            }
-          });
-
-          if (triggerError) {
-            console.error('Edge function error:', triggerError);
-          } else if (!triggerData?.success) {
-            console.error('Webhook failed via edge function:', triggerData);
-          }
-        } catch (webhookError) {
-          console.error('Webhook trigger error:', webhookError);
-        }
+        console.log(`[PGMQ] ${batchUploads.length} transaction uploads enqueued via DB trigger`);
       }
 
       // Dismiss processing toast
@@ -913,44 +739,6 @@ const ManualUpload = () => {
           duration: 3000,
         });
 
-        // Polling fallback for each transaction upload (5s interval, max 90s)
-        for (const { id: uploadId, fileName } of txUploadedIds) {
-          const runTxPoll = async () => {
-            const maxAttempts = 54;
-            const intervalMs = 5000;
-            console.log(`[TxPoll] Starting polling for upload_id=${uploadId}`);
-            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-              await new Promise(res => setTimeout(res, intervalMs));
-              try {
-                const { data: txRows } = await supabase
-                  .from('transactions')
-                  .select('id')
-                  .eq('upload_id', uploadId)
-                  .limit(1);
-                console.log(`[TxPoll] Attempt ${attempt}/${maxAttempts}: found ${txRows?.length ?? 0} rows`);
-                if (txRows && txRows.length > 0) {
-                  toast({ title: '✅ Gratulálunk!',
-                    description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
-                    duration: 5000,
-                  });
-                  queryClient.invalidateQueries({ queryKey: ['transactions'] });
-                  queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
-                  return;
-                }
-              } catch (err) {
-                console.error(`[TxPoll] Attempt ${attempt} error:`, err);
-              }
-            }
-            console.log(`[TxPoll] ⚠️ Polling timed out for ${uploadId}`);
-            // BUG #1 FIX: Show timeout toast to user
-            // (dynamic sonner import removed - using static import)
-            toast({ title: 'Feldolgozás időtúllépés',
-              description: `A "${fileName}" fájl feldolgozása a vártnál tovább tart. Kérlek ellenőrizd később.`,
-              duration: 10000,
-            });
-          };
-          runTxPoll();
-        }
 
         setSelectedTransactionFiles([]);
         delayedUploadHistoryInvalidation();

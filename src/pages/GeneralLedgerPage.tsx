@@ -130,21 +130,21 @@ export default function GeneralLedgerPage() {
     if (!selectedCompany?.id) return;
     setIsAIRunning(true);
     try {
-      const response = await fetch('https://n8n.thinkaikontir.hu/webhook/gl', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
+      // PGMQ: INSERT into gl_upload_notifications triggers the DB trigger
+      // which enqueues the job to the gl_classification_jobs PGMQ queue.
+      const { error } = await supabase
+        .from('gl_upload_notifications')
+        .insert({
           company_id: selectedCompany.id,
-          target_preset_id: activePresetId 
-        }),
-      });
-      if (!response.ok) throw new Error('A webhook hívás sikertelen volt.');
+          target_preset_id: activePresetId,
+          status: 'pending',
+          message: 'AI besorolás indítva a felhasználó által'
+        } as any);
+
+      if (error) throw new Error(error.message);
       toast({ title: 'Sikeres indítás', description: 'Az AI besorolás elindult a paramétereknek megfelelően.' });
     } catch (error: any) {
       toast({ title: 'Hiba történt', description: error.message, variant: 'destructive' });
-    } finally {
       setIsAIRunning(false);
     }
   };

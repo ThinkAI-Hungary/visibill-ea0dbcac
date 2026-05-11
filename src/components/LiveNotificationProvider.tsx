@@ -23,6 +23,7 @@ export function LiveNotificationProvider() {
   const companyIdRef = useRef(companyId);
   companyIdRef.current = companyId;
   const queryClientRef = useRef(queryClient);
+  const visibilityHandlerRef = useRef<(() => void) | null>(null);
   queryClientRef.current = queryClient;
 
   /** Check if the event belongs to the current company. */
@@ -83,16 +84,24 @@ export function LiveNotificationProvider() {
   useEffect(() => {
     if (!companyId) return;
 
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-    notifiedUploads.current.clear();
+    let cancelled = false;
 
-    console.log('[RealtimeSync] Subscribing (no server filter) for company:', companyId);
+    // Ensure the Realtime connection uses the authenticated JWT
+    const initChannel = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || cancelled) return;
 
-    const channel = supabase
-      .channel(`realtime-sync-${companyId}`)
+      // Force the realtime connection to use the authenticated token
+      supabase.realtime.setAuth(session.access_token);
+
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      notifiedUploads.current.clear();
+
+      const channel = supabase
+        .channel(`realtime-sync-${companyId}`)
 
       // ━━ SALARY table ━━
       .on(
@@ -100,7 +109,6 @@ export function LiveNotificationProvider() {
         { event: '*', schema: 'public', table: 'salary' },
         (payload) => {
           if (!isMyCompany(payload)) return;
-          console.log('[RealtimeSync] salary', payload.eventType);
           invalidate(
             'salaries', 'salary_files',
             'dashboardData', 'dashboardAnalytics',
@@ -122,7 +130,6 @@ export function LiveNotificationProvider() {
         { event: '*', schema: 'public', table: 'salary_files' },
         (payload) => {
           if (!isMyCompany(payload)) return;
-          console.log('[RealtimeSync] salary_files', payload.eventType);
           invalidate('salary_files', 'salaries', 'uploadHistory');
           // Show notification when salary_files status changes to 'completed' or 'webhook_sent'
           if (payload.eventType === 'UPDATE') {
@@ -142,7 +149,6 @@ export function LiveNotificationProvider() {
         { event: '*', schema: 'public', table: 'invoices' },
         (payload) => {
           if (!isMyCompany(payload)) return;
-          console.log('[RealtimeSync] invoices', payload.eventType);
           invalidate(
             'submittedInvoices', 'linkedInvoices', 'invoiceTransactions',
             'filteredNavInvoices', 'filteredSubmittedInvoices',
@@ -168,14 +174,14 @@ export function LiveNotificationProvider() {
         { event: '*', schema: 'public', table: 'invoice_uploads' },
         (payload) => {
           if (!isMyCompany(payload)) return;
-          console.log('[RealtimeSync] invoice_uploads', payload.eventType);
           invalidate('uploadHistory', 'submittedInvoices', 'filteredSubmittedInvoices');
           // Show notification when processing_status changes to 'completed'
           if (payload.eventType === 'UPDATE') {
             const row = payload.new as any;
             const oldRow = payload.old as any;
-            if (row.id && row.processing_status === 'completed' && oldRow?.processing_status !== 'completed') {
-              console.log('[RealtimeSync] 🔔 invoice_uploads status → completed:', row.id);
+            const doneStatuses = ['completed', 'processed'];
+            if (row.id && doneStatuses.includes(row.processing_status) && !doneStatuses.includes(oldRow?.processing_status)) {
+              console.log('[RealtimeSync] 🔔 invoice_uploads status → done:', row.id);
               showNotification(row.id, 'invoice_uploads');
             }
           }
@@ -188,7 +194,6 @@ export function LiveNotificationProvider() {
         { event: '*', schema: 'public', table: 'nav_invoices' },
         (payload) => {
           if (!isMyCompany(payload)) return;
-          console.log('[RealtimeSync] nav_invoices', payload.eventType);
           invalidate(
             'navInvoices', 'filteredNavInvoices', 'kintlevo-nav',
             'dashboardData', 'dashboardAnalytics',
@@ -206,7 +211,6 @@ export function LiveNotificationProvider() {
         { event: '*', schema: 'public', table: 'transactions' },
         (payload) => {
           if (!isMyCompany(payload)) return;
-          console.log('[RealtimeSync] transactions', payload.eventType);
           invalidate(
             'transactions', 'salaries', 'submittedInvoices',
             'filteredNavInvoices', 'filteredSubmittedInvoices',
@@ -234,7 +238,6 @@ export function LiveNotificationProvider() {
         { event: '*', schema: 'public', table: 'partners' },
         (payload) => {
           if (!isMyCompany(payload)) return;
-          console.log('[RealtimeSync] partners', payload.eventType);
           invalidate('partners', 'partnersFull', 'kintlevo-nav', 'kintlevo-manual');
         }
       )
@@ -245,7 +248,6 @@ export function LiveNotificationProvider() {
         { event: '*', schema: 'public', table: 'transaction_uploads' },
         (payload) => {
           if (!isMyCompany(payload)) return;
-          console.log('[RealtimeSync] transaction_uploads', payload.eventType);
           invalidate('uploadHistory', 'transactions');
           // Show notification when processing_status changes to 'completed'
           if (payload.eventType === 'UPDATE') {
@@ -265,7 +267,6 @@ export function LiveNotificationProvider() {
         { event: '*', schema: 'public', table: 'categories' },
         (payload) => {
           if (!isMyCompany(payload)) return;
-          console.log('[RealtimeSync] categories', payload.eventType);
           invalidate(
             'categories', 'filteredNavInvoices', 'filteredSubmittedInvoices',
             'navInvoices', 'submittedInvoices',
@@ -279,7 +280,6 @@ export function LiveNotificationProvider() {
         { event: '*', schema: 'public', table: 'projects' },
         (payload) => {
           if (!isMyCompany(payload)) return;
-          console.log('[RealtimeSync] projects', payload.eventType);
           invalidate(
             'projects', 'projectsList',
             'filteredNavInvoices', 'filteredSubmittedInvoices',
@@ -303,7 +303,6 @@ export function LiveNotificationProvider() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'nav_invoice_items' },
         (payload) => {
-          console.log('[RealtimeSync] nav_invoice_items', payload.eventType);
           invalidate('invoiceItems', 'filteredNavInvoices', 'analyticsVat');
         }
       )
@@ -313,7 +312,6 @@ export function LiveNotificationProvider() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'invoice_items' },
         (payload) => {
-          console.log('[RealtimeSync] invoice_items', payload.eventType);
           invalidate('invoiceItems', 'filteredSubmittedInvoices', 'analyticsVat');
         }
       )
@@ -324,13 +322,16 @@ export function LiveNotificationProvider() {
         { event: '*', schema: 'public', table: 'nav_sync_logs' },
         (payload) => {
           if (!isMyCompany(payload)) return;
-          console.log('[RealtimeSync] nav_sync_logs', payload.eventType);
           invalidate('syncLogs', 'navInvoices', 'filteredNavInvoices');
         }
       )
 
       .subscribe((status, err) => {
-        console.log('[RealtimeSync] Status:', status, err || '');
+        if (status === 'SUBSCRIBED') {
+          console.log('[RealtimeSync] ✅ Connected');
+        } else {
+          console.warn('[RealtimeSync] Channel:', status, err || '');
+        }
       });
 
     channelRef.current = channel;
@@ -359,8 +360,17 @@ export function LiveNotificationProvider() {
     };
     document.addEventListener('visibilitychange', handleVisibility);
 
+    // Store the visibility handler ref for cleanup
+    visibilityHandlerRef.current = handleVisibility;
+    }; // end initChannel
+
+    initChannel();
+
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
+      cancelled = true;
+      if (visibilityHandlerRef.current) {
+        document.removeEventListener('visibilitychange', visibilityHandlerRef.current);
+      }
       debounceTimers.current.forEach(timer => clearTimeout(timer));
       debounceTimers.current.clear();
       if (channelRef.current) {

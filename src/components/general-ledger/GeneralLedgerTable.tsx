@@ -355,31 +355,24 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     setIsAiReclassifying(true);
     
     try {
-      const orphanedItems = dbItems?.filter(i => i.gl_account_id === '00000000-0000-0000-0000-000000000000').map(i => ({
-         id: i.item_id,
-         source_table: i.source_table,
-         amount: i.amount,
-         description: i.description
-      })) || [];
+      const orphanCount = dbItems?.filter(i => i.gl_account_id === '00000000-0000-0000-0000-000000000000').length || 0;
+      if (orphanCount === 0) return;
 
-      if (orphanedItems.length === 0) return;
+      // PGMQ: INSERT into gl_upload_notifications triggers the DB trigger
+      // which enqueues the job to the gl_classification_jobs PGMQ queue.
+      const { error } = await supabase
+        .from('gl_upload_notifications')
+        .insert({
+          company_id: selectedCompany.id,
+          target_preset_id: presetId,
+          status: 'pending',
+          message: `AI átsorolás indítva (${orphanCount} besorolatlan tétel)`
+        } as any);
 
-      const payload = {
-        company_id: selectedCompany.id,
-        target_preset_id: presetId,
-        items: orphanedItems
-      };
-
-      const res = await fetch("https://n8n.thinkaikontir.hu/webhook-test/gl", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      
-      if (res.ok) {
-        handleRefetchAll();
+      if (error) {
+        console.error("GL queue insert hiba:", error);
       } else {
-        console.error("AI átsorolás sikertelen: HTTP", res.status);
+        handleRefetchAll();
       }
     } catch (e) {
       console.error("Hiba az AI átsorolás közben:", e);

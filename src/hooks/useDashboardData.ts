@@ -339,6 +339,7 @@ export function useDashboardData() {
           .select("kibocsatas_datuma, invoice_direction, brutto_vegosszeg, adoalap_osszesen, fizetve, transaction_id, penznem, bizonylatsorszam")
           .eq("company_id", companyId)
           .eq("invoice_direction", "INBOUND")
+          .neq("invoice_type", "garanciajegy")
           .gte("kibocsatas_datuma", chartYearFromStr)
           .lte("kibocsatas_datuma", chartYearToStr)
       ]);
@@ -397,6 +398,7 @@ export function useDashboardData() {
           .select("bizonylatsorszam, afa_osszeg_osszesen, adoalap_osszesen, invoice_direction")
           .eq("company_id", companyId)
           .eq("invoice_direction", "INBOUND")
+          .neq("invoice_type", "garanciajegy")
           .gte("kibocsatas_datuma", dateFromFormatted)
           .lte("kibocsatas_datuma", dateToFormatted),
       ]);
