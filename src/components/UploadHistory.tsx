@@ -36,6 +36,8 @@ const errorStatuses = new Set(['webhook_failed', 'failed', 'error']);
 const processingStatuses = new Set(['processing', 'webhook_sent']);
 const pendingStatuses = new Set(['pending', 'uploaded']);
 const activeStatuses = new Set([...processingStatuses, ...pendingStatuses]);
+// Invoice/payroll worker uses 'processed', transaction worker uses 'completed'
+const doneStatuses = new Set(['completed', 'processed']);
 
 // formatFileSize is now imported from @/lib/utils
 
@@ -50,7 +52,7 @@ function getStatus(record: UploadRecord, processedIds: Set<string>): { label: st
   if (processingStatuses.has(record.processing_status)) {
     return { label: 'Feldolgozás alatt', variant: 'outline' };
   }
-  if (record.processing_status === 'completed' || processedIds.has(record.id)) {
+  if (doneStatuses.has(record.processing_status) || processedIds.has(record.id)) {
     return { label: 'Feldolgozva', variant: 'default' };
   }
   return { label: 'Feltöltve', variant: 'secondary' };
@@ -204,7 +206,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
 
   // ── Detect status transitions: pending/processing → completed ──
   // When polling picks up that a file just finished processing,
-  // show a toast and refresh the Transactions page cache.
+  // show a toast and refresh the relevant page cache.
   useEffect(() => {
     if (!records.length) return;
 
@@ -213,22 +215,43 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
       const curStatus = rec.processing_status;
 
       // Transition detected: was active (pending/processing) → now completed
-      if (prevStatus && activeStatuses.has(prevStatus) && curStatus === 'completed') {
+      if (prevStatus && activeStatuses.has(prevStatus) && doneStatuses.has(curStatus)) {
+        // Tab-aware toast title
+        const toastTitle = activeTab === 'invoices' ? 'Számlák feldolgozva!'
+          : activeTab === 'salaries' ? 'Bér/járulékok feldolgozva!'
+          : activeTab === 'bank-statements' ? 'Bankkivonat feldolgozva!'
+          : 'Tranzakciók feldolgozva!';
+
         toast({
-          title: 'Tranzakciók feldolgozva!',
+          title: toastTitle,
           description: `${rec.file_name} sikeresen fel lett dolgozva.`,
           variant: 'default',
           duration: 5000,
         });
-        // Force-refresh the Transactions page data
-        queryClient.invalidateQueries({ queryKey: ['transactions'] });
+
+        // Tab-aware cache invalidation
+        if (activeTab === 'invoices') {
+          queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
+          queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
+          queryClient.invalidateQueries({ queryKey: ['recentInvoices'] });
+        } else if (activeTab === 'salaries') {
+          queryClient.invalidateQueries({ queryKey: ['salaries'] });
+          queryClient.invalidateQueries({ queryKey: ['salary_files'] });
+        } else if (activeTab === 'bank-statements') {
+          queryClient.invalidateQueries({ queryKey: ['bankStatements'] });
+        } else {
+          queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        }
+        // Always refresh dashboard + upload history
+        queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboardAnalytics'] });
         queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
       }
 
       // Update tracked state
       prevStatusMap.current.set(rec.id, curStatus);
     }
-  }, [records, queryClient]);
+  }, [records, queryClient, activeTab]);
 
   if (!isValidTab) {
     return null;
