@@ -153,13 +153,18 @@ export function useUrlTab<T extends string>(
 
   const setTab = useCallback(
     (newTab: T) => {
-      navigate(
-        {
-          pathname: `${basePath}/${pagePath}/${newTab}`,
-          search: location.search, // preserve ?invoice= etc.
-        },
-        { replace: true },
-      );
+      // Defer to microtask so this never runs during a render phase
+      // (e.g. Radix Tabs may invoke onValueChange synchronously in some
+      // edge cases, which would trigger a BrowserRouter setState mid-render).
+      queueMicrotask(() => {
+        navigate(
+          {
+            pathname: `${basePath}/${pagePath}/${newTab}`,
+            search: location.search, // preserve ?invoice= etc.
+          },
+          { replace: true },
+        );
+      });
     },
     [navigate, basePath, pagePath, location.search],
   );
