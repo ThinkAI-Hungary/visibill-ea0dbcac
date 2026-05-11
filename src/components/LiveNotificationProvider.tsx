@@ -249,13 +249,28 @@ export function LiveNotificationProvider() {
         (payload) => {
           if (!isMyCompany(payload)) return;
           invalidate('uploadHistory', 'transactions');
-          // Show notification when processing_status changes to 'completed'
+          // Show notification + refresh transactions when processing completes
           if (payload.eventType === 'UPDATE') {
             const row = payload.new as any;
-            const oldRow = payload.old as any;
-            if (row.id && row.processing_status === 'completed' && oldRow?.processing_status !== 'completed') {
-              console.log('[RealtimeSync] 🔔 transaction_uploads status → completed:', row.id);
-              showNotification(row.id, 'transaction_uploads');
+            if (row.id && row.processing_status === 'completed') {
+              // Use a dedicated key to avoid conflicts with the transactions INSERT listener
+              const completionKey = `completion_${row.id}`;
+              if (!notifiedUploads.current.has(completionKey)) {
+                notifiedUploads.current.add(completionKey);
+                console.log('[RealtimeSync] 🔔 transaction_uploads status → completed:', row.id);
+                // Fetch file name for the toast
+                supabase.from('transaction_uploads').select('file_name').eq('id', row.id).single().then(({ data }) => {
+                  const fileName = data?.file_name || 'Ismeretlen fájl';
+                  toast({
+                    title: 'Tranzakciók feldolgozva!',
+                    description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
+                    variant: 'default',
+                    duration: 5000,
+                  });
+                });
+              }
+              // Force immediate invalidation of transactions (no debounce)
+              queryClientRef.current.invalidateQueries({ queryKey: ['transactions'] });
             }
           }
         }
