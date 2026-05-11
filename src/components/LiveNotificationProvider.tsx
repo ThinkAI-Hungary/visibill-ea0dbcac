@@ -329,6 +329,9 @@ export function LiveNotificationProvider() {
       .subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
           console.log('[RealtimeSync] ✅ Connected');
+        } else if (status === 'CLOSED') {
+          // Expected on company switch / unmount — log at debug level only
+          console.debug('[RealtimeSync] Channel closed');
         } else {
           console.warn('[RealtimeSync] Channel:', status, err || '');
         }
