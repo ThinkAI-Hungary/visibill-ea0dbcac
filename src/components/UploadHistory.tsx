@@ -40,12 +40,15 @@ function getStatus(record: UploadRecord, processedIds: Set<string>): { label: st
   if (errorStatuses.has(record.processing_status)) {
     return { label: 'A feltöltés sikertelen', variant: 'destructive' };
   }
-  if (processedIds.has(record.id)) {
-    return { label: 'Feldolgozva', variant: 'default' };
-  }
-  // BUG #2 FIX: Show processing/webhook_sent as 'Feldolgozás alatt'
+  // Check processing_status FIRST — worker sets this to 'processing' while
+  // actively working on the file (extraction, categorization, matching).
+  // Transactions may already be inserted in DB before matching completes,
+  // so processedIds check must come AFTER this.
   if (processingStatuses.has(record.processing_status)) {
     return { label: 'Feldolgozás alatt', variant: 'outline' };
+  }
+  if (record.processing_status === 'completed' || processedIds.has(record.id)) {
+    return { label: 'Feldolgozva', variant: 'default' };
   }
   return { label: 'Feltöltve', variant: 'secondary' };
 }
