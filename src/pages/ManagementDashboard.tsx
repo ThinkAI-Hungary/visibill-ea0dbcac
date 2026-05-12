@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import {
   Users, Building2, FileText, Clock,
   ChevronRight, ChevronLeft, Search, LogOut, ArrowLeft, Shield,
   Bot, Coins, ArrowUpDown, ArrowUp, ArrowDown,
-  Trophy, Zap, Calendar, X, Crown
+  Trophy, Zap, Calendar, X, Crown, Sun, Moon
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────
@@ -93,7 +94,7 @@ async function fetchManagementData(action: string, params?: Record<string, strin
 // ─── Role badge (semantic color tokens) ───────────────
 function roleBadge(role: string) {
   const map: Record<string, string> = {
-    CEO: 'bg-amber-400/20 text-black border-amber-400/30 hover:text-black',
+    CEO: 'bg-amber-400/20 text-amber-900 dark:text-amber-300 border-amber-400/30',
     ADMIN: 'bg-info/15 text-info border-info/25',
   };
   const cls = map[role] || 'bg-muted text-muted-foreground border-border';
@@ -402,6 +403,7 @@ function LlmCostTable({ companyId }: { companyId: string }) {
 // ═══════════════════════════════════════════════════════
 export default function ManagementDashboard() {
   const { user, loading: authLoading, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Derive view state from URL
@@ -520,10 +522,19 @@ export default function ManagementDashboard() {
               <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => signOut()} aria-label="Kijelentkezés"
-            className="text-muted-foreground hover:text-destructive gap-2 transition-colors duration-150 shrink-0">
-            <LogOut className="h-4 w-4" aria-hidden="true" /> <span className="hidden sm:inline">Kijelentkezés</span>
-          </Button>
+          <div className="flex items-center gap-1 shrink-0">
+            <Button variant="ghost" size="icon" aria-label="Téma váltás"
+              className="text-muted-foreground hover:text-foreground transition-colors duration-150"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+              {theme === 'dark'
+                ? <Sun className="h-4 w-4" aria-hidden="true" />
+                : <Moon className="h-4 w-4" aria-hidden="true" />}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => signOut()} aria-label="Kijelentkezés"
+              className="text-muted-foreground hover:text-destructive gap-2 transition-colors duration-150">
+              <LogOut className="h-4 w-4" aria-hidden="true" /> <span className="hidden sm:inline">Kijelentkezés</span>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -718,13 +729,13 @@ export default function ManagementDashboard() {
                               const visible = c.members.slice(0, MAX_VISIBLE);
                               const overflow = c.members.length - MAX_VISIBLE;
                               const roleColors: Record<string, string> = {
-                                CEO: 'bg-amber-400/20 text-black border-amber-400/30',
-                                ADMIN: 'bg-info/15 text-black border-info/25',
+                                CEO: 'bg-amber-400/20 text-amber-900 dark:text-amber-300 border-amber-400/30',
+                                ADMIN: 'bg-info/15 text-info border-info/25',
                               };
                               return (
                                 <div className="flex flex-wrap gap-1.5">
                                   {visible.map((m, i) => {
-                                    const cls = roleColors[m.role] || 'bg-muted text-black border-border';
+                                    const cls = roleColors[m.role] || 'bg-muted text-muted-foreground border-border';
                                     return (
                                       <span key={i} className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full border ${cls}`}
                                         title={`${m.name} — ${m.role}`}>
@@ -812,8 +823,8 @@ export default function ManagementDashboard() {
                             </tr>
                           ) : filteredUsers.map(u => {
                             const roleColors: Record<string, string> = {
-                              CEO: 'bg-amber-400/20 text-black border-amber-400/30',
-                              ADMIN: 'bg-info/15 text-black border-info/25',
+                              CEO: 'bg-amber-400/20 text-amber-900 dark:text-amber-300 border-amber-400/30',
+                              ADMIN: 'bg-info/15 text-info border-info/25',
                             };
                             return (
                               <tr
@@ -1010,8 +1021,8 @@ export default function ManagementDashboard() {
                           const visible = c.members.slice(0, MAX_VISIBLE);
                           const overflow = c.members.length - MAX_VISIBLE;
                           const roleColors: Record<string, string> = {
-                            CEO: 'bg-amber-400/20 text-black border-amber-400/30',
-                            ADMIN: 'bg-info/15 text-black border-info/25',
+                            CEO: 'bg-amber-400/20 text-amber-900 dark:text-amber-300 border-amber-400/30',
+                            ADMIN: 'bg-info/15 text-info border-info/25',
                           };
                           return (
                             <tr
