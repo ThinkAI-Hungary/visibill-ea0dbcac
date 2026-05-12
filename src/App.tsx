@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect } from "react";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
@@ -16,6 +16,7 @@ import { generateScopedPath, extractPageSegment } from "./lib/navigation";
 import { LoadingSpinner } from "./components/ui/loading-spinner";
 import { IdleWarningModal } from "./components/IdleWarningModal";
 import { Toaster } from "./components/ui/toaster";
+import { supabase } from "./integrations/supabase/client";
 
 // Route-level code splitting – each page loads as a separate chunk
 const Index = lazy(() => import("./pages/Index"));
@@ -42,6 +43,7 @@ const GeneralLedgerPage = lazy(() => import("./pages/GeneralLedgerPage"));
 const WorkingTimePage = lazy(() => import("./pages/WorkingTimePage"));
 const FixedAssetsPage = lazy(() => import("./pages/FixedAssetsPage"));
 const ProfitAndLoss = lazy(() => import("./pages/ProfitAndLoss"));
+const ManagementDashboard = lazy(() => import("./pages/ManagementDashboard"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -77,6 +79,27 @@ function ProtectedPage({ children }: { children: React.ReactNode }) {
 function RootRedirect() {
   const { selectedCompany, companies, isInitialLoading } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
+  const { user } = useAuth();
+
+  // Check if management user → redirect to /management
+  const { data: profileRole, isLoading: roleLoading } = useQuery({
+    queryKey: ['profile-role-check', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', user!.id)
+        .single();
+      return data?.role || 'user';
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  if (roleLoading) return null;
+  if (profileRole === 'management') {
+    return <Navigate to="/management" replace />;
+  }
 
   // Still loading companies — render nothing (initial-loader covers this)
   if (isInitialLoading) return null;
@@ -168,6 +191,14 @@ const App = () => (
                     <Route path="/auth/callback" element={<Suspense fallback={<LoadingSpinner message="Bejelentkezés..." />}><RemoveInitialLoader /><AuthCallback /></Suspense>} />
                     <Route path="/reset-password" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RemoveInitialLoader /><ResetPassword /></Suspense>} />
                     <Route path="/register/:token" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RemoveInitialLoader /><EmployeeRegister /></Suspense>} />
+
+                    {/* Management dashboard – standalone, no sidebar/company context needed */}
+                    <Route path="/management" element={
+                      <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+                        <RemoveInitialLoader />
+                        <ManagementDashboard />
+                      </Suspense>
+                    } />
 
                     {/* Protected routes with persistent sidebar */}
                     <Route element={<ProtectedLayout />}>

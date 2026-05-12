@@ -427,6 +427,17 @@ All colors MUST be HSL.
   .dark input[type="date"]::-webkit-calendar-picker-indicator:hover {
     filter: invert(0.9) sepia(1) saturate(4) hue-rotate(130deg);
   }
+
+  /* Reduce gap between date text and calendar icon */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    margin-left: -2px;
+    padding-left: 0;
+    padding-right: 8px;
+  }
+
+  input[type="date"] {
+    overscroll-behavior: contain;
+  }
 }
 
 /* Custom Scrollbar Styling - Global */
