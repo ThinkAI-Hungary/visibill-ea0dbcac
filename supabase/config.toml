@@ -74,3 +74,6 @@ verify_jwt = true
 
 [functions.trigger-transaction-processing]
 verify_jwt = true
+
+[functions.management-stats]
+verify_jwt = false
