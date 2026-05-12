@@ -46,6 +46,12 @@ const emptyUserDetail = {
   companies: [],
 };
 
+function emptyForAction(action: string) {
+  if (action === "company-detail") return emptyCompanyDetail;
+  if (action === "user-detail") return emptyUserDetail;
+  return emptyOverview;
+}
+
 type CompanyMemberRow = {
   company_id: string;
   user_id: string;
@@ -103,18 +109,21 @@ serve(async (req) => {
       return json({ error: "Method not allowed" });
     }
 
+    const url = new URL(req.url);
+    const action = url.searchParams.get("action") || "overview";
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
     if (!supabaseUrl || !anonKey || !serviceRoleKey) {
       console.error("[MANAGEMENT-STATS] Missing Supabase environment variables");
-      return json(emptyOverview);
+      return json(emptyForAction(action));
     }
 
     const authHeader = req.headers.get("Authorization") ?? "";
     if (!authHeader.startsWith("Bearer ")) {
-      return json({ error: "Unauthorized", ...emptyOverview });
+      return json({ error: "Unauthorized", ...emptyForAction(action) });
     }
 
     const token = authHeader.replace(/^Bearer\s+/i, "");
@@ -127,7 +136,7 @@ serve(async (req) => {
 
     if (userError || !userId) {
       console.warn("[MANAGEMENT-STATS] JWT validation failed", userError?.message);
-      return json({ error: "Unauthorized", ...emptyOverview });
+      return json({ error: "Unauthorized", ...emptyForAction(action) });
     }
 
     const { data: requesterProfile, error: profileError } = await admin
@@ -142,11 +151,8 @@ serve(async (req) => {
         role: requesterProfile?.role ?? null,
         error: profileError?.message,
       });
-      return json({ error: "Unauthorized", ...emptyOverview });
+      return json({ error: "Unauthorized", ...emptyForAction(action) });
     }
-
-    const url = new URL(req.url);
-    const action = url.searchParams.get("action") || "overview";
 
     if (action === "overview") {
       return json(await buildOverview(admin));
@@ -167,7 +173,8 @@ serve(async (req) => {
     return json({ error: "Unknown action", ...emptyOverview });
   } catch (error) {
     console.error("[MANAGEMENT-STATS] Unexpected error", error);
-    return json(emptyOverview);
+    const action = new URL(req.url).searchParams.get("action") || "overview";
+    return json(emptyForAction(action));
   }
 });
 
