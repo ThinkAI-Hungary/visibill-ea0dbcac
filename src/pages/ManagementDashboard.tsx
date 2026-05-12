@@ -137,8 +137,8 @@ function StatCard({ icon: Icon, label, value, sub, loading }: {
 
   return (
     <Card className="transition-colors duration-200">
-      <CardContent className="flex items-center gap-4 p-5">
-        <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-primary/10 border border-primary/20 shrink-0">
+      <CardContent className="flex items-start gap-4 p-5">
+        <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-primary/10 border border-primary/20 shrink-0 mt-0.5">
           <Icon className="h-6 w-6 text-primary" aria-hidden="true" />
         </div>
         <div className="min-w-0">
