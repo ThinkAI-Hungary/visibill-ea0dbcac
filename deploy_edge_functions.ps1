@@ -42,6 +42,7 @@ $functionConfigs = @{
     "check-missing-invoices" = $false
     "send-monthly-summary" = $false
     "verify-email" = $false
+    "management-stats" = $false
 }
 
 $successCount = 0
