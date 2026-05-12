@@ -2015,6 +2015,7 @@ export type Database = {
           id: string
           name: string | null
           position: string | null
+          role: string
           updated_at: string
           user_id: string
         }
@@ -2028,6 +2029,7 @@ export type Database = {
           id?: string
           name?: string | null
           position?: string | null
+          role?: string
           updated_at?: string
           user_id: string
         }
@@ -2041,6 +2043,7 @@ export type Database = {
           id?: string
           name?: string | null
           position?: string | null
+          role?: string
           updated_at?: string
           user_id?: string
         }
@@ -3265,6 +3268,13 @@ export type Database = {
         Returns: {
           currencies: string[]
           types: string[]
+        }[]
+      }
+      get_user_emails_for_management: {
+        Args: { user_ids: string[] }
+        Returns: {
+          email: string
+          id: string
         }[]
       }
       get_user_role: { Args: { p_company_id: string }; Returns: string }
