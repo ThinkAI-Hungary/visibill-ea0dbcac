@@ -118,19 +118,15 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace(/^Bearer\s+/i, "");
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { persistSession: false },
-    });
     const admin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false },
     });
 
-    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
-    const userId = claimsData?.claims?.sub;
+    const { data: userData, error: userError } = await admin.auth.getUser(token);
+    const userId = userData.user?.id;
 
-    if (claimsError || !userId) {
-      console.warn("[MANAGEMENT-STATS] JWT validation failed", claimsError?.message);
+    if (userError || !userId) {
+      console.warn("[MANAGEMENT-STATS] JWT validation failed", userError?.message);
       return json({ error: "Unauthorized", ...emptyOverview });
     }
 
