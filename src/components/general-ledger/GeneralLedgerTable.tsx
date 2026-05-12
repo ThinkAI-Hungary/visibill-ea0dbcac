@@ -132,7 +132,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       
       return data || [];
     },
-    enabled: !!presetId && !!selectedCompany?.id && !!exchangeRates
+    enabled: !!presetId && !!selectedCompany?.id && !!exchangeRates,
+    refetchInterval: 5000,
   });
 
   // Fetch detailed items categorized to this company
@@ -153,7 +154,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       }
       return data || [];
     },
-    enabled: !!selectedCompany?.id && !!presetId && !!exchangeRates
+    enabled: !!selectedCompany?.id && !!presetId && !!exchangeRates,
+    refetchInterval: 5000,
   });
 
   const handleRefetchAll = () => {
