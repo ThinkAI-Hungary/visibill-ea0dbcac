@@ -853,7 +853,7 @@ export default function ManagementDashboard() {
                                   {u.companies.length > 0 ? (
                                     <div className="flex flex-wrap gap-1.5">
                                       {u.companies.map((c, i) => {
-                                        const cls = roleColors[c.role] || 'bg-muted text-black border-border';
+                                        const cls = roleColors[c.role] || 'bg-muted text-muted-foreground border-border';
                                         return (
                                           <span key={i} className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border ${cls}`}
                                             title={`${c.name} — ${c.role}`}>
@@ -1053,7 +1053,7 @@ export default function ManagementDashboard() {
                               <td className="py-3 px-4">
                                 <div className="flex flex-wrap gap-1.5">
                                   {visible.map((m, i) => {
-                                    const cls = roleColors[m.role] || 'bg-muted text-black border-border';
+                                    const cls = roleColors[m.role] || 'bg-muted text-muted-foreground border-border';
                                     return (
                                       <span key={i} className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full border ${cls}`}
                                         title={`${m.name} — ${m.role}`}>
