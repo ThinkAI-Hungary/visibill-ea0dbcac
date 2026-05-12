@@ -402,7 +402,7 @@ export const TransactionDetailsDialog = ({
               {transaction.reason && (
                 <div className="col-span-2">
                   <span className="text-muted-foreground">AI indoklás:</span>
-                  <p className="mt-1 text-[10px] bg-background/50 p-1.5 rounded border border-border/30 line-clamp-2">
+                  <p className="mt-1 text-[10px] bg-background/50 p-1.5 rounded border border-border/30 max-h-[80px] overflow-y-auto">
                     {transaction.reason}
                   </p>
                 </div>
