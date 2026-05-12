@@ -508,7 +508,7 @@ export default function ManagementDashboard() {
     <div className="h-screen flex flex-col bg-background text-foreground">
       {/* ── Header (sticky, backdrop-blur, border-b) ── */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4 relative">
           <div className="flex items-center gap-3">
             {view !== 'overview' && (
               <Button variant="ghost" size="icon" onClick={goBack} aria-label="Vissza"
@@ -522,6 +522,10 @@ export default function ManagementDashboard() {
               <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
             </div>
           </div>
+          <span className="absolute left-1/2 -translate-x-1/2 text-xl font-bold tracking-[0.25em] uppercase
+                           bg-gradient-to-r from-primary/80 to-primary bg-clip-text text-transparent
+                           select-none pointer-events-none hidden md:block"
+            aria-hidden="true">VISIBILL</span>
           <div className="flex items-center gap-1 shrink-0">
             <Button variant="ghost" size="icon" aria-label="Téma váltás"
               className="text-muted-foreground hover:text-foreground transition-colors duration-150"
