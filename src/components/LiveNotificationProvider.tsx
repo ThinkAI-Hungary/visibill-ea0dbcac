@@ -222,8 +222,9 @@ export function LiveNotificationProvider() {
             'analyticsRaw', 'analyticsVat',
             'projects', 'projectsList',
             'dashboardPettyCash',
-            'glBalances', 'glItems',
           );
+          queryClientRef.current.invalidateQueries({ queryKey: ['glBalances'] });
+          queryClientRef.current.invalidateQueries({ queryKey: ['glItems'] });
           if (payload.eventType === 'INSERT') {
             const row = payload.new as any;
             if (row.upload_id) {
@@ -319,7 +320,10 @@ export function LiveNotificationProvider() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'nav_invoice_items' },
         (payload) => {
-          invalidate('invoiceItems', 'filteredNavInvoices', 'analyticsVat', 'glBalances', 'glItems');
+          invalidate('invoiceItems', 'filteredNavInvoices', 'analyticsVat');
+          // GL queries have presetId (not companyId) in position 2, so invalidate directly
+          queryClientRef.current.invalidateQueries({ queryKey: ['glBalances'] });
+          queryClientRef.current.invalidateQueries({ queryKey: ['glItems'] });
         }
       )
 
@@ -328,7 +332,9 @@ export function LiveNotificationProvider() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'invoice_items' },
         (payload) => {
-          invalidate('invoiceItems', 'filteredSubmittedInvoices', 'analyticsVat', 'glBalances', 'glItems');
+          invalidate('invoiceItems', 'filteredSubmittedInvoices', 'analyticsVat');
+          queryClientRef.current.invalidateQueries({ queryKey: ['glBalances'] });
+          queryClientRef.current.invalidateQueries({ queryKey: ['glItems'] });
         }
       )
 
