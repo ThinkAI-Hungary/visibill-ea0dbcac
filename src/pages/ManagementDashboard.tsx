@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -275,7 +275,7 @@ function LlmCostTable({ companyId }: { companyId: string }) {
       dateTo,
     }),
     staleTime: 15_000,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
   const rows = data?.llmCosts?.details || [];
@@ -422,23 +422,27 @@ export default function ManagementDashboard() {
   const { data: overview, isLoading: overviewLoading } = useQuery<OverviewData>({
     queryKey: ['management-overview'],
     queryFn: () => fetchManagementData('overview'),
+    enabled: !!user,
     staleTime: 30_000,
     refetchInterval: 60_000,
+    retry: false,
   });
 
   const { data: companyDetail, isLoading: companyLoading } = useQuery<CompanyDetail>({
     queryKey: ['management-company', selectedCompanyId],
     queryFn: () => fetchManagementData('company-detail', { companyId: selectedCompanyId! }),
-    enabled: !!selectedCompanyId && view === 'company',
+    enabled: !!user && !!selectedCompanyId && view === 'company',
     staleTime: 15_000,
     refetchInterval: 30_000,
+    retry: false,
   });
 
   const { data: userDetail, isLoading: userLoading } = useQuery<UserDetail>({
     queryKey: ['management-user', selectedUserId],
     queryFn: () => fetchManagementData('user-detail', { userId: selectedUserId! }),
-    enabled: !!selectedUserId && view === 'user',
+    enabled: !!user && !!selectedUserId && view === 'user',
     staleTime: 15_000,
+    retry: false,
   });
 
   // ── Filtered + sorted companies (memoised) ─────────
