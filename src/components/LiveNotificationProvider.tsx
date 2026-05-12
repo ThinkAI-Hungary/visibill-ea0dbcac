@@ -222,6 +222,7 @@ export function LiveNotificationProvider() {
             'analyticsRaw', 'analyticsVat',
             'projects', 'projectsList',
             'dashboardPettyCash',
+            'glBalances', 'glItems',
           );
           if (payload.eventType === 'INSERT') {
             const row = payload.new as any;
@@ -318,7 +319,7 @@ export function LiveNotificationProvider() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'nav_invoice_items' },
         (payload) => {
-          invalidate('invoiceItems', 'filteredNavInvoices', 'analyticsVat');
+          invalidate('invoiceItems', 'filteredNavInvoices', 'analyticsVat', 'glBalances', 'glItems');
         }
       )
 
@@ -327,7 +328,7 @@ export function LiveNotificationProvider() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'invoice_items' },
         (payload) => {
-          invalidate('invoiceItems', 'filteredSubmittedInvoices', 'analyticsVat');
+          invalidate('invoiceItems', 'filteredSubmittedInvoices', 'analyticsVat', 'glBalances', 'glItems');
         }
       )
 

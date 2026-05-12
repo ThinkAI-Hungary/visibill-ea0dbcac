@@ -63,18 +63,27 @@ export default function GeneralLedgerPage() {
 
     const channel = supabase.channel('ai_notifications')
       .on('postgres_changes', { 
-        event: 'INSERT', 
+        event: 'UPDATE', 
         schema: 'public', 
         table: 'gl_upload_notifications',
         filter: `company_id=eq.${selectedCompany.id}`
       }, (payload) => {
+        const row = payload.new as { processing_status: string; message: string };
+        if (row.processing_status !== 'completed' && row.processing_status !== 'error') return;
+        
         setIsAIRunning(false);
-        const addedMsg = payload.new as { message: string };
-        toast({ 
-          title: 'Kész!', 
-          description: addedMsg.message || 'Az AI feldolgozás sikeresen befejeződött.',
-          className: "bg-green-50 text-green-900 border-green-200"
-        });
+        queryClient.invalidateQueries({ queryKey: ['glBalances'] });
+        queryClient.invalidateQueries({ queryKey: ['glItems'] });
+        
+        if (row.processing_status === 'error') {
+          toast({ title: 'Hiba történt', description: row.message || 'Az AI feldolgozás sikertelen.', variant: 'destructive' });
+        } else {
+          toast({ 
+            title: 'Kész!', 
+            description: row.message || 'Az AI feldolgozás sikeresen befejeződött.',
+            className: "bg-green-50 text-green-900 border-green-200"
+          });
+        }
       })
       .subscribe();
 
