@@ -134,6 +134,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     },
     enabled: !!presetId && !!selectedCompany?.id && !!exchangeRates,
     refetchInterval: 3000,
+    placeholderData: (prev: any) => prev,
   });
 
   // Fetch detailed items categorized to this company
@@ -156,6 +157,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     },
     enabled: !!selectedCompany?.id && !!presetId && !!exchangeRates,
     refetchInterval: 3000,
+    placeholderData: (prev: any) => prev,
   });
 
   const handleRefetchAll = () => {
