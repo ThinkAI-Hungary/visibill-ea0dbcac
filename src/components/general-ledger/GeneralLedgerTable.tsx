@@ -365,7 +365,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         .insert({
           company_id: selectedCompany.id,
           target_preset_id: presetId,
-          status: 'pending',
+          processing_status: 'pending',
           message: `AI átsorolás indítva (${orphanCount} besorolatlan tétel)`
         } as any);
 

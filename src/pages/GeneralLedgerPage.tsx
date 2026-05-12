@@ -137,7 +137,7 @@ export default function GeneralLedgerPage() {
         .insert({
           company_id: selectedCompany.id,
           target_preset_id: activePresetId,
-          status: 'pending',
+          processing_status: 'pending',
           message: 'AI besorolás indítva a felhasználó által'
         } as any);
 
