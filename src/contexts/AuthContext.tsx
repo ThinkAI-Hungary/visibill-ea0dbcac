@@ -91,7 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (expired) {
       // Session is stale — force sign out silently, don't restore anything
-      supabase.auth.signOut().catch(() => {});
+      supabase.auth.signOut({ scope: 'local' }).catch(() => {});
       try {
         SIGNOUT_DELETE_KEYS.forEach(key => localStorage.removeItem(key));
         localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVE);
