@@ -231,7 +231,8 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
     return counts;
   };
 
-  const invoiceCounts = countByCompany([...(invoicesRes.data || []), ...(navInvoicesRes.data || [])]);
+  const invoiceCounts = countByCompany(invoicesRes.data || []);
+  const navInvoiceCounts = countByCompany(navInvoicesRes.data || []);
   const txCounts = countByCompany(txRes.data || []);
   const salaryCounts = countByCompany(salaryRes.data || []);
 
@@ -266,6 +267,7 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
       })),
       monthlyCostUsd: llm.cost,
       invoiceCount: invoiceCounts.get(company.id) || 0,
+      navInvoiceCount: navInvoiceCounts.get(company.id) || 0,
       transactionCount: txCounts.get(company.id) || 0,
       payrollCount: salaryCounts.get(company.id) || 0,
     };

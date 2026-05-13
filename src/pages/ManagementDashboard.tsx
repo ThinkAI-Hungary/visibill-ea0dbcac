@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -6,7 +6,6 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
@@ -16,7 +15,7 @@ import {
   Trophy, Zap, Calendar, X, Crown, Sun, Moon
 } from 'lucide-react';
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Types ────────────────────────────────────────────
 interface OverviewData {
   usersCount: number;
   companiesCount: number;
@@ -25,6 +24,7 @@ interface OverviewData {
     members: Array<{ name: string; role: string }>;
     monthlyCostUsd: number;
     invoiceCount: number;
+    navInvoiceCount: number;
     transactionCount: number;
     payrollCount: number;
   }>;
@@ -65,7 +65,7 @@ interface UserDetail {
   companies: Array<{ id: string; name: string; role: string }>;
 }
 
-// â”€â”€â”€ API helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── API helpers ──────────────────────────────────────
 async function fetchManagementData(action: string, params?: Record<string, string>) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.access_token) throw new Error('Not authenticated');
@@ -91,7 +91,7 @@ async function fetchManagementData(action: string, params?: Record<string, strin
   return res.json();
 }
 
-// â”€â”€â”€ Role badge (semantic color tokens) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Role badge (semantic color tokens) ───────────────
 function roleBadge(role: string) {
   const map: Record<string, string> = {
     CEO: 'bg-amber-400/20 text-amber-900 dark:text-amber-300 border-amber-400/30',
@@ -106,18 +106,18 @@ function roleBadge(role: string) {
   );
 }
 
-// â”€â”€â”€ Skeleton shimmer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Skeleton shimmer ─────────────────────────────────
 function Skeleton({ className = '' }: { className?: string }) {
   return (
     <div
       className={`relative overflow-hidden rounded-lg bg-muted/60 animate-shimmer ${className}`}
       role="status"
-      aria-label="BetĂ¶ltĂ©sâ€¦"
+      aria-label="Betöltés…"
     />
   );
 }
 
-// â”€â”€â”€ Stat Card (8dp spacing, semantic tokens, shimmer) â”€
+// ─── Stat Card (8dp spacing, semantic tokens, shimmer) ─
 function StatCard({ icon: Icon, label, value, sub, loading }: {
   icon: React.ElementType; label: string; value: string | number; sub?: string; loading?: boolean;
 }) {
@@ -151,7 +151,7 @@ function StatCard({ icon: Icon, label, value, sub, loading }: {
   );
 }
 
-// â”€â”€â”€ List row (44px min touch target, hover highlight) â”€
+// ─── List row (44px min touch target, hover highlight) ─
 function ListRow({ primary, secondary, onClick, ariaLabel }: {
   primary: string; secondary: string; onClick: () => void; ariaLabel: string;
 }) {
@@ -177,7 +177,7 @@ function ListRow({ primary, secondary, onClick, ariaLabel }: {
   );
 }
 
-// â”€â”€â”€ Skeleton list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Skeleton list ────────────────────────────────────
 function SkeletonList({ rows = 5 }: { rows?: number }) {
   return (
     <div className="divide-y divide-border">
@@ -194,7 +194,7 @@ function SkeletonList({ rows = 5 }: { rows?: number }) {
   );
 }
 
-// â”€â”€â”€ Section header with search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Section header with search ───────────────────────
 function SectionHeader({ icon: Icon, title, searchValue, onSearch, placeholder }: {
   icon: React.ElementType; title: string;
   searchValue: string; onSearch: (v: string) => void; placeholder: string;
@@ -220,9 +220,9 @@ function SectionHeader({ icon: Icon, title, searchValue, onSearch, placeholder }
   );
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ LLM Cost Table (search, sort, pagination, date) â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════
+// ─── LLM Cost Table (search, sort, pagination, date) ─
+// ═══════════════════════════════════════════════════════
 type LlmSortCol = 'created_at' | 'input_tokens' | 'output_tokens' | 'estimated_cost_usd';
 
 interface LlmPageResult {
@@ -304,7 +304,7 @@ function LlmCostTable({ companyId }: { companyId: string }) {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <Bot className="h-4 w-4 text-primary" aria-hidden="true" /> LLM kĂ¶ltsĂ©gek rĂ©szletezĂ©se
+          <Bot className="h-4 w-4 text-primary" aria-hidden="true" /> LLM költségek részletezése
           <span className="text-xs font-normal text-muted-foreground ml-auto">
             {isLoading ? '...' : `${totalRows} rekord`}
           </span>
@@ -313,21 +313,21 @@ function LlmCostTable({ companyId }: { companyId: string }) {
         <div className="flex flex-wrap items-center gap-3 mt-3">
           <div className="relative flex-1 min-w-[180px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-            <Input placeholder="KeresĂ©s nĂ©v, fĂˇjl, modell..." value={search} onChange={e => { setSearch(e.target.value); setPage(0); }}
-              className="pl-9 h-8 text-xs" aria-label="KeresĂ©s" />
+            <Input placeholder="Keresés név, fájl, modell..." value={search} onChange={e => { setSearch(e.target.value); setPage(0); }}
+              className="pl-9 h-8 text-xs" aria-label="Keresés" />
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs text-muted-foreground">TĂłl:</span>
+            <span className="text-xs text-muted-foreground">Tól:</span>
             <Input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(0); }}
-              className="h-8 text-xs w-[140px] pr-1" aria-label="DĂˇtum-tĂłl" />
+              className="h-8 text-xs w-[140px] pr-1" aria-label="Dátum-tól" />
             <span className="text-xs text-muted-foreground">Ig:</span>
             <Input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(0); }}
-              className="h-8 text-xs w-[140px] pr-1" aria-label="DĂˇtum-ig" />
+              className="h-8 text-xs w-[140px] pr-1" aria-label="Dátum-ig" />
             <button
               onClick={() => { setDateFrom(''); setDateTo(''); setPage(0); }}
               disabled={!dateFrom && !dateTo}
               className={`h-6 w-6 flex items-center justify-center rounded-md transition-colors duration-150 ${dateFrom || dateTo ? 'text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer' : 'text-muted-foreground/30 cursor-default'}`}
-              aria-label="DĂˇtumszĹ±rĹ‘ tĂ¶rlĂ©se"
+              aria-label="Dátumszűrő törlése"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -339,21 +339,21 @@ function LlmCostTable({ companyId }: { companyId: string }) {
           <table className="w-full text-xs" role="table">
             <thead>
               <tr className="text-muted-foreground border-b border-border">
-                <SortTh col="created_at" label="DĂˇtum" align="left" />
-                <th className="text-left py-2 px-4 font-medium">NĂ©v</th>
-                <th className="text-left py-2 px-4 font-medium">FĂˇjl</th>
+                <SortTh col="created_at" label="Dátum" align="left" />
+                <th className="text-left py-2 px-4 font-medium">Név</th>
+                <th className="text-left py-2 px-4 font-medium">Fájl</th>
                 <th className="text-left py-2 px-4 font-medium">Model</th>
                 <SortTh col="input_tokens" label="Input" />
                 <SortTh col="output_tokens" label="Output" />
-                <SortTh col="estimated_cost_usd" label="KĂ¶ltsĂ©g" />
+                <SortTh col="estimated_cost_usd" label="Költség" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
               {rows.map((d, i) => (
                 <tr key={`${d.created_at}-${i}`} className="text-foreground/80 hover:bg-accent/30 transition-colors duration-150">
                   <td className="py-2 px-4 tabular-nums">{new Date(d.created_at).toLocaleDateString('hu-HU')}</td>
-                  <td className="py-2 px-4 text-foreground/70 truncate max-w-[120px]">{d.user_name || 'â€”'}</td>
-                  <td className="py-2 px-4 text-foreground/70 truncate max-w-[160px]" title={d.file_name || ''}>{d.file_name || 'â€”'}</td>
+                  <td className="py-2 px-4 text-foreground/70 truncate max-w-[120px]">{d.user_name || '—'}</td>
+                  <td className="py-2 px-4 text-foreground/70 truncate max-w-[160px]" title={d.file_name || ''}>{d.file_name || '—'}</td>
                   <td className="py-2 px-4"><Badge variant="outline" className="text-[10px]">{d.model_name}</Badge></td>
                   <td className="text-right py-2 px-4 tabular-nums">{d.input_tokens.toLocaleString()}</td>
                   <td className="text-right py-2 px-4 tabular-nums">{d.output_tokens.toLocaleString()}</td>
@@ -378,16 +378,16 @@ function LlmCostTable({ companyId }: { companyId: string }) {
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-5 py-3 border-t border-border">
             <span className="text-xs text-muted-foreground tabular-nums">
-              {totalRows === 0 ? '0' : `${page * PAGE_SIZE + 1}â€“${Math.min((page + 1) * PAGE_SIZE, totalRows)} / ${totalRows}`}
+              {totalRows === 0 ? '0' : `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalRows)} / ${totalRows}`}
             </span>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 0}
-                onClick={() => setPage(p => p - 1)} aria-label="ElĹ‘zĹ‘ oldal">
+                onClick={() => setPage(p => p - 1)} aria-label="Előző oldal">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <span className="text-xs text-muted-foreground tabular-nums px-2">{page + 1}/{totalPages}</span>
               <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page >= totalPages - 1}
-                onClick={() => setPage(p => p + 1)} aria-label="KĂ¶vetkezĹ‘ oldal">
+                onClick={() => setPage(p => p + 1)} aria-label="Következő oldal">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -398,9 +398,9 @@ function LlmCostTable({ companyId }: { companyId: string }) {
   );
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════
+// ─── Main Component ──────────────────────────────────
+// ═══════════════════════════════════════════════════════
 export default function ManagementDashboard() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -416,7 +416,7 @@ export default function ManagementDashboard() {
   const [searchUser, setSearchUser] = useState('');
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
-  // â”€â”€ Queries (auto-refresh: overview 60s, details 30s) â”€
+  // ── Queries (auto-refresh: overview 60s, details 30s) ─
   const { data: overview, isLoading: overviewLoading } = useQuery<OverviewData>({
     queryKey: ['management-overview'],
     queryFn: () => fetchManagementData('overview'),
@@ -443,10 +443,10 @@ export default function ManagementDashboard() {
     retry: false,
   });
 
-  // â”€â”€ Company cost lookup (for expandable user rows) â”€â”€
+  // ── Company cost lookup (for expandable user rows) ──
   const companyCostMap = useMemo(() => {
-    const m = new Map<string, { monthlyCostUsd: number; invoiceCount: number; transactionCount: number; payrollCount: number }>();
-    for (const c of overview?.companies || []) m.set(c.id, { monthlyCostUsd: c.monthlyCostUsd, invoiceCount: c.invoiceCount, transactionCount: c.transactionCount, payrollCount: c.payrollCount });
+    const m = new Map<string, { monthlyCostUsd: number; invoiceCount: number; navInvoiceCount: number; transactionCount: number; payrollCount: number }>();
+    for (const c of overview?.companies || []) m.set(c.id, { monthlyCostUsd: c.monthlyCostUsd, invoiceCount: c.invoiceCount, navInvoiceCount: c.navInvoiceCount, transactionCount: c.transactionCount, payrollCount: c.payrollCount });
     return m;
   }, [overview?.companies]);
 
@@ -462,30 +462,30 @@ export default function ManagementDashboard() {
   const selectedCompanyName = overview?.companies.find(c => c.id === selectedCompanyId)?.name;
   const selectedUserObj = overview?.users.find(u => u.user_id === selectedUserId);
 
-  // â”€â”€ Navigation (stable refs) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Navigation (stable refs) ────────────────────
   const openCompany = useCallback((id: string) => { setSearchParams({ view: 'company', id }); }, [setSearchParams]);
   const openUser = useCallback((userId: string) => { setSearchParams({ view: 'user', id: userId }); }, [setSearchParams]);
   const goBack = useCallback(() => { setSearchParams({}); }, [setSearchParams]);
 
-  // Auth guard â€” MUST be after all hooks to satisfy Rules of Hooks
+  // Auth guard — MUST be after all hooks to satisfy Rules of Hooks
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
-  // â”€â”€ Title / subtitle derivation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Title / subtitle derivation ─────────────────────
   const title = view === 'overview'
     ? 'Management Dashboard'
     : view === 'company'
-      ? (selectedCompanyName || 'CĂ©g rĂ©szletek')
-      : (selectedUserObj?.name || 'FelhasznĂˇlĂł rĂ©szletek');
+      ? (selectedCompanyName || 'Cég részletek')
+      : (selectedUserObj?.name || 'Felhasználó részletek');
 
   const subtitle = view === 'overview'
-    ? 'Visibill platform ĂˇttekintĂ©s'
+    ? 'Visibill platform áttekintés'
     : view === 'company'
-      ? 'CĂ©g rĂ©szletes adatai'
+      ? 'Cég részletes adatai'
       : (selectedUserObj?.email || '');
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground">
-      {/* â”€â”€ Header (sticky, backdrop-blur, border-b) â”€â”€ */}
+      {/* ── Header (sticky, backdrop-blur, border-b) ── */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4 relative">
           <div className="flex items-center gap-3">
@@ -506,16 +506,16 @@ export default function ManagementDashboard() {
                            select-none pointer-events-none hidden md:block"
             aria-hidden="true">VISIBILL</span>
           <div className="flex items-center gap-1 shrink-0">
-            <Button variant="ghost" size="icon" aria-label="TĂ©ma vĂˇltĂˇs"
+            <Button variant="ghost" size="icon" aria-label="Téma váltás"
               className="text-muted-foreground hover:text-foreground transition-colors duration-150"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
               {theme === 'dark'
                 ? <Sun className="h-4 w-4" aria-hidden="true" />
                 : <Moon className="h-4 w-4" aria-hidden="true" />}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => signOut()} aria-label="KijelentkezĂ©s"
+            <Button variant="ghost" size="sm" onClick={() => signOut()} aria-label="Kijelentkezés"
               className="text-muted-foreground hover:text-destructive gap-2 transition-colors duration-150">
-              <LogOut className="h-4 w-4" aria-hidden="true" /> <span className="hidden sm:inline">KijelentkezĂ©s</span>
+              <LogOut className="h-4 w-4" aria-hidden="true" /> <span className="hidden sm:inline">Kijelentkezés</span>
             </Button>
           </div>
         </div>
@@ -523,21 +523,21 @@ export default function ManagementDashboard() {
 
       <div className="flex-1 overflow-y-auto">
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* â•â•â• OVERVIEW â•â•â• */}
+        {/* ═══ OVERVIEW ═══ */}
         {view === 'overview' && (
           <div className="space-y-8 animate-in fade-in duration-300">
             {/* Stat cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon={Users} label="FelhasznĂˇlĂłk"
+              <StatCard icon={Users} label="Felhasználók"
                 value={overview?.usersCount ?? 0} loading={overviewLoading} />
-              <StatCard icon={Building2} label="RegisztrĂˇlt cĂ©gek"
+              <StatCard icon={Building2} label="Regisztrált cégek"
                 value={overview?.companiesCount ?? 0} loading={overviewLoading} />
-              <StatCard icon={Coins} label="Havi Ă¶sszkĂ¶ltsĂ©g"
+              <StatCard icon={Coins} label="Havi összköltség"
                 value={overview ? `$${overview.llmOverview.totalMonthlyCostUsd.toFixed(4)}` : '$0'}
                 loading={overviewLoading}
-                sub={overview ? `In: ${(overview.llmOverview.totalMonthlyInputTokens / 1000).toFixed(1)}k Â· Out: ${(overview.llmOverview.totalMonthlyOutputTokens / 1000).toFixed(1)}k token` : undefined} />
+                sub={overview ? `In: ${(overview.llmOverview.totalMonthlyInputTokens / 1000).toFixed(1)}k · Out: ${(overview.llmOverview.totalMonthlyOutputTokens / 1000).toFixed(1)}k token` : undefined} />
               {overviewLoading ? (
-                <StatCard icon={Trophy} label="LegdrĂˇgĂˇbb cĂ©g" value="..." loading />
+                <StatCard icon={Trophy} label="Legdrágább cég" value="..." loading />
               ) : overview?.llmOverview.mostExpensiveCompany ? (
                 <Card
                   className="cursor-pointer hover:bg-accent/30 transition-colors duration-150"
@@ -551,29 +551,29 @@ export default function ManagementDashboard() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-foreground truncate">{overview.llmOverview.mostExpensiveCompany.name}</p>
-                      <p className="text-xs text-muted-foreground">LegdrĂˇgĂˇbb cĂ©g</p>
+                      <p className="text-xs text-muted-foreground">Legdrágább cég</p>
                       <p className="text-[11px] text-muted-foreground/60 mt-0.5 tabular-nums">
-                        Ă–ssz: ${overview.llmOverview.mostExpensiveCompany.totalCostUsd.toFixed(4)} Â· Havi: ${overview.llmOverview.mostExpensiveCompany.monthlyCostUsd.toFixed(4)}
+                        Össz: ${overview.llmOverview.mostExpensiveCompany.totalCostUsd.toFixed(4)} · Havi: ${overview.llmOverview.mostExpensiveCompany.monthlyCostUsd.toFixed(4)}
                       </p>
                     </div>
                   </CardContent>
                 </Card>
               ) : (
-                <StatCard icon={Trophy} label="LegdrĂˇgĂˇbb cĂ©g" value="â€”" sub="Nincs LLM kĂ¶ltsĂ©g" />
+                <StatCard icon={Trophy} label="Legdrágább cég" value="—" sub="Nincs LLM költség" />
               )}
             </div>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Users className="h-4 w-4 text-primary" aria-hidden="true" /> FelhasznĂˇlĂłk
+                  <Users className="h-4 w-4 text-primary" aria-hidden="true" /> Felhasználók
                 </CardTitle>
                 <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
                     value={searchUser}
                     onChange={e => setSearchUser(e.target.value)}
-                    placeholder="KeresĂ©s nĂ©v vagy email..."
+                    placeholder="Keresés név vagy email..."
                     className="pl-8 h-8 text-xs w-56 bg-background"
                   />
                 </div>
@@ -584,8 +584,8 @@ export default function ManagementDashboard() {
                     <thead>
                       <tr className="border-b border-border text-muted-foreground text-xs bg-muted/30">
                         <th className="text-left py-3 px-5 font-medium w-8"></th>
-                        <th className="text-left py-3 px-2 font-medium">NĂ©v</th>
-                        <th className="text-center py-3 px-4 font-medium">CĂ©gek</th>
+                        <th className="text-left py-3 px-2 font-medium">Név</th>
+                        <th className="text-center py-3 px-4 font-medium">Cégek</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -599,21 +599,20 @@ export default function ManagementDashboard() {
                         ))
                       ) : filteredUsers.length === 0 ? (
                         <tr>
-                          <td colSpan={3} className="text-center py-8 text-muted-foreground text-sm">Nincs talĂˇlat</td>
+                          <td colSpan={3} className="text-center py-8 text-muted-foreground text-sm">Nincs találat</td>
                         </tr>
                       ) : filteredUsers.map(u => {
                         const isExpanded = expandedUserId === u.user_id;
                         return (
-                          <>
+                          <React.Fragment key={u.user_id}>
                             <tr
-                              key={u.user_id}
                               onClick={() => setExpandedUserId(isExpanded ? null : u.user_id)}
                               className="cursor-pointer hover:bg-accent/50 active:bg-accent/70
                                          transition-colors duration-150 group"
                               role="button"
                               tabIndex={0}
                               aria-expanded={isExpanded}
-                              aria-label={`${u.name || u.email} kibontĂˇsa`}
+                              aria-label={`${u.name || u.email} kibontása`}
                               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedUserId(isExpanded ? null : u.user_id); } }}
                             >
                               <td className="py-3 px-5 w-8">
@@ -640,18 +639,19 @@ export default function ManagementDashboard() {
                               </td>
                             </tr>
                             {isExpanded && u.companies.length > 0 && (
-                              <tr key={`${u.user_id}-expand`}>
+                              <tr>
                                 <td colSpan={3} className="p-0">
                                   <div className="bg-muted/20 border-t border-border animate-in slide-in-from-top-1 duration-200">
                                     <table className="w-full text-xs">
                                       <thead>
                                         <tr className="text-muted-foreground border-b border-border/50">
-                                          <th className="text-left py-2 px-6 font-medium">CĂ©g</th>
+                                          <th className="text-left py-2 px-6 font-medium">Cég</th>
                                           <th className="text-left py-2 px-3 font-medium">Rang</th>
-                                          <th className="text-center py-2 px-3 font-medium">SzĂˇmlĂˇk</th>
-                                          <th className="text-center py-2 px-3 font-medium">TranzakciĂłk</th>
-                                          <th className="text-center py-2 px-3 font-medium">BĂ©r/jĂˇrulĂ©k</th>
-                                          <th className="text-right py-2 px-6 font-medium">Havi kĂ¶ltsĂ©g</th>
+                                          <th className="text-center py-2 px-3 font-medium">Számlák</th>
+                                          <th className="text-center py-2 px-3 font-medium">NAV</th>
+                                          <th className="text-center py-2 px-3 font-medium">Tranzakciók</th>
+                                          <th className="text-center py-2 px-3 font-medium">Bér/járulék</th>
+                                          <th className="text-right py-2 px-6 font-medium">Havi költség</th>
                                         </tr>
                                       </thead>
                                       <tbody className="divide-y divide-border/30">
@@ -673,9 +673,10 @@ export default function ManagementDashboard() {
                                                 </span>
                                               </td>
                                               <td className="py-2.5 px-3">{roleBadge(c.role)}</td>
-                                              <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.invoiceCount ?? 'â€”'}</td>
-                                              <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.transactionCount ?? 'â€”'}</td>
-                                              <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.payrollCount ?? 'â€”'}</td>
+                                              <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.invoiceCount ?? '—'}</td>
+                                              <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.navInvoiceCount ?? '—'}</td>
+                                              <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.transactionCount ?? '—'}</td>
+                                              <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.payrollCount ?? '—'}</td>
                                               <td className="py-2.5 px-6 text-right tabular-nums font-medium text-foreground">
                                                 ${(stats?.monthlyCostUsd ?? 0).toFixed(4)}
                                               </td>
@@ -688,7 +689,7 @@ export default function ManagementDashboard() {
                                 </td>
                               </tr>
                             )}
-                          </>
+                          </React.Fragment>
                         );
                       })}
                     </tbody>
@@ -696,27 +697,28 @@ export default function ManagementDashboard() {
                 </div>
               </CardContent>
             </Card>
+
           </div>
         )}
 
-        {/* â•â•â• COMPANY DETAIL â•â•â• */}
+        {/* ═══ COMPANY DETAIL ═══ */}
         {view === 'company' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             {/* Stats row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon={FileText} label="SzĂˇmlĂˇk Ă¶sszesen"
+              <StatCard icon={FileText} label="Számlák összesen"
                 value={companyDetail?.invoiceCount ?? 0} loading={companyLoading}
-                sub={companyDetail ? `${companyDetail.submittedInvoiceCount} feltĂ¶ltĂ¶tt Â· ${companyDetail.navInvoiceCount} NAV` : undefined} />
+                sub={companyDetail ? `${companyDetail.submittedInvoiceCount} feltöltött · ${companyDetail.navInvoiceCount} NAV` : undefined} />
               <StatCard icon={Users} label="Tagok"
                 value={companyDetail?.members.length ?? 0} loading={companyLoading} />
-              <StatCard icon={Coins} label="LLM kĂ¶ltsĂ©g (USD)"
+              <StatCard icon={Coins} label="LLM költség (USD)"
                 value={companyDetail ? `$${companyDetail.llmCosts.totalCostUsd.toFixed(4)}` : '$0'}
                 loading={companyLoading}
-                sub={companyDetail ? `${companyDetail.llmCosts.callCount} hĂ­vĂˇs Â· ${(companyDetail.llmCosts.totalTokens / 1000).toFixed(1)}k token` : undefined} />
-              <StatCard icon={Clock} label="UtolsĂł aktivitĂˇs"
+                sub={companyDetail ? `${companyDetail.llmCosts.callCount} hívás · ${(companyDetail.llmCosts.totalTokens / 1000).toFixed(1)}k token` : undefined} />
+              <StatCard icon={Clock} label="Utolsó aktivitás"
                 loading={companyLoading}
-                value={companyDetail?.lastActivity ? new Date(companyDetail.lastActivity.created_at).toLocaleDateString('hu-HU') : 'â€”'}
-                sub={companyDetail?.lastActivity ? `${companyDetail.lastActivity.user_name} Â· ${companyDetail.lastActivity.action}` : 'Nincs aktivitĂˇs'} />
+                value={companyDetail?.lastActivity ? new Date(companyDetail.lastActivity.created_at).toLocaleDateString('hu-HU') : '—'}
+                sub={companyDetail?.lastActivity ? `${companyDetail.lastActivity.user_name} · ${companyDetail.lastActivity.action}` : 'Nincs aktivitás'} />
             </div>
 
             {/* Last activity */}
@@ -724,16 +726,16 @@ export default function ManagementDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-primary" aria-hidden="true" /> UtolsĂł mĹ±velet rĂ©szletei
+                    <Clock className="h-4 w-4 text-primary" aria-hidden="true" /> Utolsó művelet részletei
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
                     {[
-                      { label: 'MĹ±velet', value: companyDetail.lastActivity.action, bold: true },
-                      { label: 'FĂˇjl', value: companyDetail.lastActivity.entity_name || companyDetail.lastActivity.entity },
-                      { label: 'FelhasznĂˇlĂł', value: companyDetail.lastActivity.user_name },
-                      { label: 'IdĹ‘pont', value: new Date(companyDetail.lastActivity.created_at).toLocaleString('hu-HU') },
+                      { label: 'Művelet', value: companyDetail.lastActivity.action, bold: true },
+                      { label: 'Fájl', value: companyDetail.lastActivity.entity_name || companyDetail.lastActivity.entity },
+                      { label: 'Felhasználó', value: companyDetail.lastActivity.user_name },
+                      { label: 'Időpont', value: new Date(companyDetail.lastActivity.created_at).toLocaleString('hu-HU') },
                     ].map(item => (
                       <div key={item.label}>
                         <p className="text-muted-foreground text-xs mb-1">{item.label}</p>
@@ -753,7 +755,7 @@ export default function ManagementDashboard() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base font-semibold flex items-center gap-2">
-                      <Users className="h-4 w-4 text-primary" aria-hidden="true" /> HozzĂˇrendelt felhasznĂˇlĂłk
+                      <Users className="h-4 w-4 text-primary" aria-hidden="true" /> Hozzárendelt felhasználók
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
@@ -764,9 +766,9 @@ export default function ManagementDashboard() {
                         <table className="w-full text-sm" role="table">
                           <thead>
                             <tr className="border-b border-border text-muted-foreground text-xs">
-                              <th className="text-left py-3 px-5 font-medium">NĂ©v</th>
+                              <th className="text-left py-3 px-5 font-medium">Név</th>
                               <th className="text-left py-3 px-4 font-medium">Rang</th>
-                              <th className="text-right py-3 px-5 font-medium">CsatlakozĂˇs dĂˇtuma</th>
+                              <th className="text-right py-3 px-5 font-medium">Csatlakozás dátuma</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border">
@@ -798,7 +800,7 @@ export default function ManagementDashboard() {
           </div>
         )}
 
-        {/* â•â•â• USER DETAIL â•â•â• */}
+        {/* ═══ USER DETAIL ═══ */}
         {view === 'user' && (() => {
           // Filter overview companies to only those this user belongs to
           const userCompanyIds = new Set((userDetail?.companies || []).map(c => c.id));
@@ -806,7 +808,7 @@ export default function ManagementDashboard() {
 
           return (
           <div className="space-y-6 animate-in fade-in duration-300">
-            <StatCard icon={Building2} label="CĂ©gekhez hozzĂˇrendelve"
+            <StatCard icon={Building2} label="Cégekhez hozzárendelve"
               value={userDetail?.companyCount ?? 0} loading={userLoading} />
 
             {userLoading ? (
@@ -815,7 +817,7 @@ export default function ManagementDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-primary" aria-hidden="true" /> CĂ©gek
+                    <Building2 className="h-4 w-4 text-primary" aria-hidden="true" /> Cégek
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -823,20 +825,20 @@ export default function ManagementDashboard() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-border bg-muted/50 text-muted-foreground">
-                          <th className="text-left py-3 px-5 font-medium">CĂ©g</th>
-                          <th className="text-left py-3 px-4 font-medium">AdĂłszĂˇm</th>
+                          <th className="text-left py-3 px-5 font-medium">Cég</th>
+                          <th className="text-left py-3 px-4 font-medium">Adószám</th>
                           <th className="text-left py-3 px-4 font-medium">Rang</th>
                           <th className="text-left py-3 px-4 font-medium">Tagok</th>
-                          <th className="text-center py-3 px-4 font-medium">SzĂˇmla</th>
-                          <th className="text-center py-3 px-4 font-medium">TranzakciĂłk</th>
-                          <th className="text-center py-3 px-4 font-medium">BĂ©r/jĂˇrulĂ©k</th>
-                          <th className="text-right py-3 px-5 font-medium">Havi kĂ¶ltsĂ©g</th>
+                          <th className="text-center py-3 px-4 font-medium">Számla</th>
+                          <th className="text-center py-3 px-4 font-medium">Tranzakciók</th>
+                          <th className="text-center py-3 px-4 font-medium">Bér/járulék</th>
+                          <th className="text-right py-3 px-5 font-medium">Havi költség</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
                         {userCompanies.length === 0 ? (
                           <tr>
-                            <td colSpan={8} className="text-center py-8 text-muted-foreground text-sm">Nincs cĂ©g hozzĂˇrendelve</td>
+                            <td colSpan={8} className="text-center py-8 text-muted-foreground text-sm">Nincs cég hozzárendelve</td>
                           </tr>
                         ) : userCompanies.map(c => {
                           const userRole = userDetail?.companies.find(uc => uc.id === c.id)?.role || '';
@@ -855,7 +857,7 @@ export default function ManagementDashboard() {
                                          transition-colors duration-150 group"
                               role="button"
                               tabIndex={0}
-                              aria-label={`${c.name} megnyitĂˇsa`}
+                              aria-label={`${c.name} megnyitása`}
                               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCompany(c.id); } }}
                             >
                               <td className="py-3 px-5">
@@ -864,7 +866,7 @@ export default function ManagementDashboard() {
                                 </span>
                               </td>
                               <td className="py-3 px-4 text-muted-foreground tabular-nums text-xs">
-                                {c.tax_number || 'â€”'}
+                                {c.tax_number || '—'}
                               </td>
                               <td className="py-3 px-4">
                                 {roleBadge(userRole)}
@@ -875,7 +877,7 @@ export default function ManagementDashboard() {
                                     const cls = roleColors[m.role] || 'bg-muted text-muted-foreground border-border';
                                     return (
                                       <span key={i} className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full border ${cls}`}
-                                        title={`${m.name} â€” ${m.role}`}>
+                                        title={`${m.name} — ${m.role}`}>
                                         {m.name}
                                       </span>
                                     );
