@@ -215,7 +215,7 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
 
   const profileByUserId = new Map(profiles.map((profile) => [profile.user_id, profile]));
   const membersByCompany = new Map<string, CompanyMemberRow[]>();
-  const companiesByUser = new Map<string, Array<{ name: string; role: string }>>();
+  const companiesByUser = new Map<string, Array<{ id: string; name: string; role: string }>>();
 
   for (const member of members) {
     if (!membersByCompany.has(member.company_id)) membersByCompany.set(member.company_id, []);
@@ -250,7 +250,7 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
 
     for (const member of companyMembers) {
       if (!companiesByUser.has(member.user_id)) companiesByUser.set(member.user_id, []);
-      companiesByUser.get(member.user_id)!.push({ name: company.name, role: roleLabel(member.role) });
+      companiesByUser.get(member.user_id)!.push({ id: company.id, name: company.name, role: roleLabel(member.role) });
     }
 
     const llm = monthlyCostsByCompany.get(company.id) || { cost: 0, input: 0, output: 0 };

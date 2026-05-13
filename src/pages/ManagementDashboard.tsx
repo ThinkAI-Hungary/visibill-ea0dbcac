@@ -6,17 +6,17 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
   Users, Building2, FileText, Clock,
-  ChevronRight, ChevronLeft, Search, LogOut, ArrowLeft, Shield,
+  ChevronRight, ChevronLeft, ChevronDown, Search, LogOut, ArrowLeft, Shield,
   Bot, Coins, ArrowUpDown, ArrowUp, ArrowDown,
   Trophy, Zap, Calendar, X, Crown, Sun, Moon
 } from 'lucide-react';
 
-// ─── Types ────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 interface OverviewData {
   usersCount: number;
   companiesCount: number;
@@ -28,7 +28,7 @@ interface OverviewData {
     transactionCount: number;
     payrollCount: number;
   }>;
-  users: Array<{ id: string; user_id: string; name: string; email: string; created_at: string; companies: Array<{ name: string; role: string }> }>;
+  users: Array<{ id: string; user_id: string; name: string; email: string; created_at: string; companies: Array<{ id: string; name: string; role: string }> }>;
   llmOverview: {
     totalMonthlyCostUsd: number;
     totalMonthlyInputTokens: number;
@@ -65,7 +65,7 @@ interface UserDetail {
   companies: Array<{ id: string; name: string; role: string }>;
 }
 
-// ─── API helpers ──────────────────────────────────────
+// â”€â”€â”€ API helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function fetchManagementData(action: string, params?: Record<string, string>) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.access_token) throw new Error('Not authenticated');
@@ -91,7 +91,7 @@ async function fetchManagementData(action: string, params?: Record<string, strin
   return res.json();
 }
 
-// ─── Role badge (semantic color tokens) ───────────────
+// â”€â”€â”€ Role badge (semantic color tokens) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function roleBadge(role: string) {
   const map: Record<string, string> = {
     CEO: 'bg-amber-400/20 text-amber-900 dark:text-amber-300 border-amber-400/30',
@@ -106,18 +106,18 @@ function roleBadge(role: string) {
   );
 }
 
-// ─── Skeleton shimmer ─────────────────────────────────
+// â”€â”€â”€ Skeleton shimmer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Skeleton({ className = '' }: { className?: string }) {
   return (
     <div
       className={`relative overflow-hidden rounded-lg bg-muted/60 animate-shimmer ${className}`}
       role="status"
-      aria-label="Betöltés…"
+      aria-label="BetĂ¶ltĂ©sâ€¦"
     />
   );
 }
 
-// ─── Stat Card (8dp spacing, semantic tokens, shimmer) ─
+// â”€â”€â”€ Stat Card (8dp spacing, semantic tokens, shimmer) â”€
 function StatCard({ icon: Icon, label, value, sub, loading }: {
   icon: React.ElementType; label: string; value: string | number; sub?: string; loading?: boolean;
 }) {
@@ -151,7 +151,7 @@ function StatCard({ icon: Icon, label, value, sub, loading }: {
   );
 }
 
-// ─── List row (44px min touch target, hover highlight) ─
+// â”€â”€â”€ List row (44px min touch target, hover highlight) â”€
 function ListRow({ primary, secondary, onClick, ariaLabel }: {
   primary: string; secondary: string; onClick: () => void; ariaLabel: string;
 }) {
@@ -177,7 +177,7 @@ function ListRow({ primary, secondary, onClick, ariaLabel }: {
   );
 }
 
-// ─── Skeleton list ────────────────────────────────────
+// â”€â”€â”€ Skeleton list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function SkeletonList({ rows = 5 }: { rows?: number }) {
   return (
     <div className="divide-y divide-border">
@@ -194,7 +194,7 @@ function SkeletonList({ rows = 5 }: { rows?: number }) {
   );
 }
 
-// ─── Section header with search ───────────────────────
+// â”€â”€â”€ Section header with search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function SectionHeader({ icon: Icon, title, searchValue, onSearch, placeholder }: {
   icon: React.ElementType; title: string;
   searchValue: string; onSearch: (v: string) => void; placeholder: string;
@@ -220,9 +220,9 @@ function SectionHeader({ icon: Icon, title, searchValue, onSearch, placeholder }
   );
 }
 
-// ═══════════════════════════════════════════════════════
-// ─── LLM Cost Table (search, sort, pagination, date) ─
-// ═══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// â”€â”€â”€ LLM Cost Table (search, sort, pagination, date) â”€
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 type LlmSortCol = 'created_at' | 'input_tokens' | 'output_tokens' | 'estimated_cost_usd';
 
 interface LlmPageResult {
@@ -304,7 +304,7 @@ function LlmCostTable({ companyId }: { companyId: string }) {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <Bot className="h-4 w-4 text-primary" aria-hidden="true" /> LLM költségek részletezése
+          <Bot className="h-4 w-4 text-primary" aria-hidden="true" /> LLM kĂ¶ltsĂ©gek rĂ©szletezĂ©se
           <span className="text-xs font-normal text-muted-foreground ml-auto">
             {isLoading ? '...' : `${totalRows} rekord`}
           </span>
@@ -313,21 +313,21 @@ function LlmCostTable({ companyId }: { companyId: string }) {
         <div className="flex flex-wrap items-center gap-3 mt-3">
           <div className="relative flex-1 min-w-[180px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-            <Input placeholder="Keresés név, fájl, modell..." value={search} onChange={e => { setSearch(e.target.value); setPage(0); }}
-              className="pl-9 h-8 text-xs" aria-label="Keresés" />
+            <Input placeholder="KeresĂ©s nĂ©v, fĂˇjl, modell..." value={search} onChange={e => { setSearch(e.target.value); setPage(0); }}
+              className="pl-9 h-8 text-xs" aria-label="KeresĂ©s" />
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs text-muted-foreground">Tól:</span>
+            <span className="text-xs text-muted-foreground">TĂłl:</span>
             <Input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(0); }}
-              className="h-8 text-xs w-[140px] pr-1" aria-label="Dátum-tól" />
+              className="h-8 text-xs w-[140px] pr-1" aria-label="DĂˇtum-tĂłl" />
             <span className="text-xs text-muted-foreground">Ig:</span>
             <Input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(0); }}
-              className="h-8 text-xs w-[140px] pr-1" aria-label="Dátum-ig" />
+              className="h-8 text-xs w-[140px] pr-1" aria-label="DĂˇtum-ig" />
             <button
               onClick={() => { setDateFrom(''); setDateTo(''); setPage(0); }}
               disabled={!dateFrom && !dateTo}
               className={`h-6 w-6 flex items-center justify-center rounded-md transition-colors duration-150 ${dateFrom || dateTo ? 'text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer' : 'text-muted-foreground/30 cursor-default'}`}
-              aria-label="Dátumszűrő törlése"
+              aria-label="DĂˇtumszĹ±rĹ‘ tĂ¶rlĂ©se"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -339,21 +339,21 @@ function LlmCostTable({ companyId }: { companyId: string }) {
           <table className="w-full text-xs" role="table">
             <thead>
               <tr className="text-muted-foreground border-b border-border">
-                <SortTh col="created_at" label="Dátum" align="left" />
-                <th className="text-left py-2 px-4 font-medium">Név</th>
-                <th className="text-left py-2 px-4 font-medium">Fájl</th>
+                <SortTh col="created_at" label="DĂˇtum" align="left" />
+                <th className="text-left py-2 px-4 font-medium">NĂ©v</th>
+                <th className="text-left py-2 px-4 font-medium">FĂˇjl</th>
                 <th className="text-left py-2 px-4 font-medium">Model</th>
                 <SortTh col="input_tokens" label="Input" />
                 <SortTh col="output_tokens" label="Output" />
-                <SortTh col="estimated_cost_usd" label="Költség" />
+                <SortTh col="estimated_cost_usd" label="KĂ¶ltsĂ©g" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
               {rows.map((d, i) => (
                 <tr key={`${d.created_at}-${i}`} className="text-foreground/80 hover:bg-accent/30 transition-colors duration-150">
                   <td className="py-2 px-4 tabular-nums">{new Date(d.created_at).toLocaleDateString('hu-HU')}</td>
-                  <td className="py-2 px-4 text-foreground/70 truncate max-w-[120px]">{d.user_name || '—'}</td>
-                  <td className="py-2 px-4 text-foreground/70 truncate max-w-[160px]" title={d.file_name || ''}>{d.file_name || '—'}</td>
+                  <td className="py-2 px-4 text-foreground/70 truncate max-w-[120px]">{d.user_name || 'â€”'}</td>
+                  <td className="py-2 px-4 text-foreground/70 truncate max-w-[160px]" title={d.file_name || ''}>{d.file_name || 'â€”'}</td>
                   <td className="py-2 px-4"><Badge variant="outline" className="text-[10px]">{d.model_name}</Badge></td>
                   <td className="text-right py-2 px-4 tabular-nums">{d.input_tokens.toLocaleString()}</td>
                   <td className="text-right py-2 px-4 tabular-nums">{d.output_tokens.toLocaleString()}</td>
@@ -378,16 +378,16 @@ function LlmCostTable({ companyId }: { companyId: string }) {
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-5 py-3 border-t border-border">
             <span className="text-xs text-muted-foreground tabular-nums">
-              {totalRows === 0 ? '0' : `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalRows)} / ${totalRows}`}
+              {totalRows === 0 ? '0' : `${page * PAGE_SIZE + 1}â€“${Math.min((page + 1) * PAGE_SIZE, totalRows)} / ${totalRows}`}
             </span>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 0}
-                onClick={() => setPage(p => p - 1)} aria-label="Előző oldal">
+                onClick={() => setPage(p => p - 1)} aria-label="ElĹ‘zĹ‘ oldal">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <span className="text-xs text-muted-foreground tabular-nums px-2">{page + 1}/{totalPages}</span>
               <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page >= totalPages - 1}
-                onClick={() => setPage(p => p + 1)} aria-label="Következő oldal">
+                onClick={() => setPage(p => p + 1)} aria-label="KĂ¶vetkezĹ‘ oldal">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -398,9 +398,9 @@ function LlmCostTable({ companyId }: { companyId: string }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════
-// ─── Main Component ──────────────────────────────────
-// ═══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export default function ManagementDashboard() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -413,12 +413,10 @@ export default function ManagementDashboard() {
   const selectedCompanyId = view === 'company' ? urlId : null;
   const selectedUserId = view === 'user' ? urlId : null;
 
-  const [searchCompany, setSearchCompany] = useState('');
   const [searchUser, setSearchUser] = useState('');
-  const [sortColumn, setSortColumn] = useState<'name' | 'monthlyCostUsd' | 'invoiceCount' | 'transactionCount' | 'payrollCount' | null>(null);
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
-  // ── Queries (auto-refresh: overview 60s, details 30s) ─
+  // â”€â”€ Queries (auto-refresh: overview 60s, details 30s) â”€
   const { data: overview, isLoading: overviewLoading } = useQuery<OverviewData>({
     queryKey: ['management-overview'],
     queryFn: () => fetchManagementData('overview'),
@@ -445,35 +443,12 @@ export default function ManagementDashboard() {
     retry: false,
   });
 
-  // ── Filtered + sorted companies (memoised) ─────────
-  const filteredCompanies = useMemo(() => {
-    if (!overview?.companies) return [];
-    let list = overview.companies;
-    if (searchCompany.trim()) {
-      const q = searchCompany.toLowerCase();
-      list = list.filter(c =>
-        c.name.toLowerCase().includes(q) || (c.tax_number || '').includes(q)
-      );
-    }
-    if (sortColumn) {
-      list = [...list].sort((a, b) => {
-        let cmp = 0;
-        if (sortColumn === 'name') {
-          cmp = a.name.localeCompare(b.name, 'hu');
-        } else if (sortColumn === 'monthlyCostUsd') {
-          cmp = a.monthlyCostUsd - b.monthlyCostUsd;
-        } else if (sortColumn === 'invoiceCount') {
-          cmp = a.invoiceCount - b.invoiceCount;
-        } else if (sortColumn === 'transactionCount') {
-          cmp = a.transactionCount - b.transactionCount;
-        } else if (sortColumn === 'payrollCount') {
-          cmp = a.payrollCount - b.payrollCount;
-        }
-        return sortDir === 'desc' ? -cmp : cmp;
-      });
-    }
-    return list;
-  }, [overview?.companies, searchCompany, sortColumn, sortDir]);
+  // â”€â”€ Company cost lookup (for expandable user rows) â”€â”€
+  const companyCostMap = useMemo(() => {
+    const m = new Map<string, { monthlyCostUsd: number; invoiceCount: number; transactionCount: number; payrollCount: number }>();
+    for (const c of overview?.companies || []) m.set(c.id, { monthlyCostUsd: c.monthlyCostUsd, invoiceCount: c.invoiceCount, transactionCount: c.transactionCount, payrollCount: c.payrollCount });
+    return m;
+  }, [overview?.companies]);
 
   const filteredUsers = useMemo(() => {
     if (!overview?.users) return [];
@@ -487,30 +462,30 @@ export default function ManagementDashboard() {
   const selectedCompanyName = overview?.companies.find(c => c.id === selectedCompanyId)?.name;
   const selectedUserObj = overview?.users.find(u => u.user_id === selectedUserId);
 
-  // ── Navigation (stable refs) ────────────────────
+  // â”€â”€ Navigation (stable refs) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const openCompany = useCallback((id: string) => { setSearchParams({ view: 'company', id }); }, [setSearchParams]);
   const openUser = useCallback((userId: string) => { setSearchParams({ view: 'user', id: userId }); }, [setSearchParams]);
   const goBack = useCallback(() => { setSearchParams({}); }, [setSearchParams]);
 
-  // Auth guard — MUST be after all hooks to satisfy Rules of Hooks
+  // Auth guard â€” MUST be after all hooks to satisfy Rules of Hooks
   if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
-  // ── Title / subtitle derivation ─────────────────────
+  // â”€â”€ Title / subtitle derivation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const title = view === 'overview'
     ? 'Management Dashboard'
     : view === 'company'
-      ? (selectedCompanyName || 'Cég részletek')
-      : (selectedUserObj?.name || 'Felhasználó részletek');
+      ? (selectedCompanyName || 'CĂ©g rĂ©szletek')
+      : (selectedUserObj?.name || 'FelhasznĂˇlĂł rĂ©szletek');
 
   const subtitle = view === 'overview'
-    ? 'Visibill platform áttekintés'
+    ? 'Visibill platform ĂˇttekintĂ©s'
     : view === 'company'
-      ? 'Cég részletes adatai'
+      ? 'CĂ©g rĂ©szletes adatai'
       : (selectedUserObj?.email || '');
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground">
-      {/* ── Header (sticky, backdrop-blur, border-b) ── */}
+      {/* â”€â”€ Header (sticky, backdrop-blur, border-b) â”€â”€ */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4 relative">
           <div className="flex items-center gap-3">
@@ -531,16 +506,16 @@ export default function ManagementDashboard() {
                            select-none pointer-events-none hidden md:block"
             aria-hidden="true">VISIBILL</span>
           <div className="flex items-center gap-1 shrink-0">
-            <Button variant="ghost" size="icon" aria-label="Téma váltás"
+            <Button variant="ghost" size="icon" aria-label="TĂ©ma vĂˇltĂˇs"
               className="text-muted-foreground hover:text-foreground transition-colors duration-150"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
               {theme === 'dark'
                 ? <Sun className="h-4 w-4" aria-hidden="true" />
                 : <Moon className="h-4 w-4" aria-hidden="true" />}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => signOut()} aria-label="Kijelentkezés"
+            <Button variant="ghost" size="sm" onClick={() => signOut()} aria-label="KijelentkezĂ©s"
               className="text-muted-foreground hover:text-destructive gap-2 transition-colors duration-150">
-              <LogOut className="h-4 w-4" aria-hidden="true" /> <span className="hidden sm:inline">Kijelentkezés</span>
+              <LogOut className="h-4 w-4" aria-hidden="true" /> <span className="hidden sm:inline">KijelentkezĂ©s</span>
             </Button>
           </div>
         </div>
@@ -548,21 +523,21 @@ export default function ManagementDashboard() {
 
       <div className="flex-1 overflow-y-auto">
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* ═══ OVERVIEW ═══ */}
+        {/* â•â•â• OVERVIEW â•â•â• */}
         {view === 'overview' && (
           <div className="space-y-8 animate-in fade-in duration-300">
             {/* Stat cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon={Users} label="Felhasználók"
+              <StatCard icon={Users} label="FelhasznĂˇlĂłk"
                 value={overview?.usersCount ?? 0} loading={overviewLoading} />
-              <StatCard icon={Building2} label="Regisztrált cégek"
+              <StatCard icon={Building2} label="RegisztrĂˇlt cĂ©gek"
                 value={overview?.companiesCount ?? 0} loading={overviewLoading} />
-              <StatCard icon={Coins} label="Havi összköltség"
+              <StatCard icon={Coins} label="Havi Ă¶sszkĂ¶ltsĂ©g"
                 value={overview ? `$${overview.llmOverview.totalMonthlyCostUsd.toFixed(4)}` : '$0'}
                 loading={overviewLoading}
-                sub={overview ? `In: ${(overview.llmOverview.totalMonthlyInputTokens / 1000).toFixed(1)}k · Out: ${(overview.llmOverview.totalMonthlyOutputTokens / 1000).toFixed(1)}k token` : undefined} />
+                sub={overview ? `In: ${(overview.llmOverview.totalMonthlyInputTokens / 1000).toFixed(1)}k Â· Out: ${(overview.llmOverview.totalMonthlyOutputTokens / 1000).toFixed(1)}k token` : undefined} />
               {overviewLoading ? (
-                <StatCard icon={Trophy} label="Legdrágább cég" value="..." loading />
+                <StatCard icon={Trophy} label="LegdrĂˇgĂˇbb cĂ©g" value="..." loading />
               ) : overview?.llmOverview.mostExpensiveCompany ? (
                 <Card
                   className="cursor-pointer hover:bg-accent/30 transition-colors duration-150"
@@ -576,332 +551,172 @@ export default function ManagementDashboard() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-foreground truncate">{overview.llmOverview.mostExpensiveCompany.name}</p>
-                      <p className="text-xs text-muted-foreground">Legdrágább cég</p>
+                      <p className="text-xs text-muted-foreground">LegdrĂˇgĂˇbb cĂ©g</p>
                       <p className="text-[11px] text-muted-foreground/60 mt-0.5 tabular-nums">
-                        Össz: ${overview.llmOverview.mostExpensiveCompany.totalCostUsd.toFixed(4)} · Havi: ${overview.llmOverview.mostExpensiveCompany.monthlyCostUsd.toFixed(4)}
+                        Ă–ssz: ${overview.llmOverview.mostExpensiveCompany.totalCostUsd.toFixed(4)} Â· Havi: ${overview.llmOverview.mostExpensiveCompany.monthlyCostUsd.toFixed(4)}
                       </p>
                     </div>
                   </CardContent>
                 </Card>
               ) : (
-                <StatCard icon={Trophy} label="Legdrágább cég" value="—" sub="Nincs LLM költség" />
+                <StatCard icon={Trophy} label="LegdrĂˇgĂˇbb cĂ©g" value="â€”" sub="Nincs LLM kĂ¶ltsĂ©g" />
               )}
             </div>
 
             <Card>
-              <Tabs defaultValue="companies">
-                <div className="flex items-center justify-between border-b border-border px-5 pt-3 pb-0">
-                  <TabsList className="bg-transparent p-0 h-auto gap-0">
-                    <TabsTrigger value="companies" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 pb-3 pt-1 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground transition-colors duration-150">
-                      <Building2 className="h-4 w-4 mr-2" />Cégek
-                    </TabsTrigger>
-                    <TabsTrigger value="users" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 pb-3 pt-1 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground transition-colors duration-150">
-                      <Users className="h-4 w-4 mr-2" />Felhasználók
-                    </TabsTrigger>
-                  </TabsList>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" aria-hidden="true" /> FelhasznĂˇlĂłk
+                </CardTitle>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    value={searchUser}
+                    onChange={e => setSearchUser(e.target.value)}
+                    placeholder="KeresĂ©s nĂ©v vagy email..."
+                    className="pl-8 h-8 text-xs w-56 bg-background"
+                  />
                 </div>
-
-                {/* ── Cégek tab ── */}
-                <TabsContent value="companies" className="mt-0">
-                  <div className="flex items-center gap-4 px-5 py-2 border-b border-border bg-muted/30 text-[11px] text-muted-foreground">
-                    <span className="font-medium uppercase tracking-wider">Jelmagyarázat:</span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-400/50" />CEO
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-blue-400 border border-blue-400/50" />Admin
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-gray-400 border border-gray-400/50" />Employee
-                    </span>
-                    <div className="ml-auto">
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                        <Input
-                          value={searchCompany}
-                          onChange={e => setSearchCompany(e.target.value)}
-                          placeholder="Keresés név vagy adószám..."
-                          className="pl-8 h-7 text-xs w-52 bg-background"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
                   <table className="w-full text-sm" role="table">
                     <thead>
-                      <tr className="border-b border-border text-muted-foreground text-xs">
-                        <th
-                          className="text-left py-3 px-5 font-medium cursor-pointer select-none hover:text-foreground transition-colors duration-150"
-                          onClick={() => { if (sortColumn === 'name') { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); } else { setSortColumn('name'); setSortDir('asc'); } }}
-                          aria-sort={sortColumn === 'name' ? sortDir === 'asc' ? 'ascending' : 'descending' : 'none'}
-                        >
-                          <span className="inline-flex items-center gap-1">
-                            Cég
-                            {sortColumn === 'name'
-                              ? sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                              : <ArrowUpDown className="h-3 w-3 opacity-40" />}
-                          </span>
-                        </th>
-                        <th className="text-left py-3 px-4 font-medium">Adószám</th>
-                        <th className="text-left py-3 px-4 font-medium">Tagok</th>
-                        <th
-                          className="text-center py-3 px-4 font-medium cursor-pointer select-none hover:text-foreground transition-colors duration-150"
-                          onClick={() => { if (sortColumn === 'invoiceCount') { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); } else { setSortColumn('invoiceCount'); setSortDir('desc'); } }}
-                          aria-sort={sortColumn === 'invoiceCount' ? sortDir === 'asc' ? 'ascending' : 'descending' : 'none'}
-                        >
-                          <span className="inline-flex items-center justify-center gap-1">
-                            Számla
-                            {sortColumn === 'invoiceCount'
-                              ? sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                              : <ArrowUpDown className="h-3 w-3 opacity-40" />}
-                          </span>
-                        </th>
-                        <th
-                          className="text-center py-3 px-4 font-medium cursor-pointer select-none hover:text-foreground transition-colors duration-150"
-                          onClick={() => { if (sortColumn === 'transactionCount') { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); } else { setSortColumn('transactionCount'); setSortDir('desc'); } }}
-                          aria-sort={sortColumn === 'transactionCount' ? sortDir === 'asc' ? 'ascending' : 'descending' : 'none'}
-                        >
-                          <span className="inline-flex items-center justify-center gap-1">
-                            Tranzakciók
-                            {sortColumn === 'transactionCount'
-                              ? sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                              : <ArrowUpDown className="h-3 w-3 opacity-40" />}
-                          </span>
-                        </th>
-                        <th
-                          className="text-center py-3 px-4 font-medium cursor-pointer select-none hover:text-foreground transition-colors duration-150"
-                          onClick={() => { if (sortColumn === 'payrollCount') { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); } else { setSortColumn('payrollCount'); setSortDir('desc'); } }}
-                          aria-sort={sortColumn === 'payrollCount' ? sortDir === 'asc' ? 'ascending' : 'descending' : 'none'}
-                        >
-                          <span className="inline-flex items-center justify-center gap-1">
-                            Bér/járulék
-                            {sortColumn === 'payrollCount'
-                              ? sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                              : <ArrowUpDown className="h-3 w-3 opacity-40" />}
-                          </span>
-                        </th>
-                        <th
-                          className="text-right py-3 px-5 font-medium cursor-pointer select-none hover:text-foreground transition-colors duration-150"
-                          onClick={() => { if (sortColumn === 'monthlyCostUsd') { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); } else { setSortColumn('monthlyCostUsd'); setSortDir('desc'); } }}
-                          aria-sort={sortColumn === 'monthlyCostUsd' ? sortDir === 'asc' ? 'ascending' : 'descending' : 'none'}
-                        >
-                          <span className="inline-flex items-center justify-end gap-1">
-                            Havi költség
-                            {sortColumn === 'monthlyCostUsd'
-                              ? sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                              : <ArrowUpDown className="h-3 w-3 opacity-40" />}
-                          </span>
-                        </th>
+                      <tr className="border-b border-border text-muted-foreground text-xs bg-muted/30">
+                        <th className="text-left py-3 px-5 font-medium w-8"></th>
+                        <th className="text-left py-3 px-2 font-medium">NĂ©v</th>
+                        <th className="text-center py-3 px-4 font-medium">CĂ©gek</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {overviewLoading ? (
                         Array.from({ length: 5 }).map((_, i) => (
                           <tr key={i}>
-                            <td className="py-3 px-5"><Skeleton className="h-4 w-32" /></td>
-                            <td className="py-3 px-4"><Skeleton className="h-4 w-28" /></td>
-                            <td className="py-3 px-4"><Skeleton className="h-4 w-48" /></td>
-                            <td className="py-3 px-4 text-center"><Skeleton className="h-4 w-10 mx-auto" /></td>
-                            <td className="py-3 px-4 text-center"><Skeleton className="h-4 w-10 mx-auto" /></td>
-                            <td className="py-3 px-4 text-center"><Skeleton className="h-4 w-10 mx-auto" /></td>
-                            <td className="py-3 px-5 text-right"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                            <td className="py-3 px-5"><Skeleton className="h-4 w-4" /></td>
+                            <td className="py-3 px-2"><Skeleton className="h-4 w-40" /></td>
+                            <td className="py-3 px-4 text-center"><Skeleton className="h-5 w-8 mx-auto rounded-full" /></td>
                           </tr>
                         ))
-                      ) : filteredCompanies.length === 0 ? (
+                      ) : filteredUsers.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="text-center py-8 text-muted-foreground text-sm">Nincs találat</td>
+                          <td colSpan={3} className="text-center py-8 text-muted-foreground text-sm">Nincs talĂˇlat</td>
                         </tr>
-                      ) : filteredCompanies.map(c => (
-                        <tr
-                          key={c.id}
-                          onClick={() => openCompany(c.id)}
-                          className="cursor-pointer hover:bg-accent/50 active:bg-accent/70
-                                     transition-colors duration-150 group"
-                          role="button"
-                          tabIndex={0}
-                          aria-label={`${c.name} megnyitása`}
-                          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCompany(c.id); } }}
-                        >
-                          <td className="py-3 px-5">
-                            <span className="font-medium text-foreground group-hover:text-primary transition-colors duration-150">
-                              {c.name}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-muted-foreground tabular-nums text-xs">
-                            {c.tax_number || '—'}
-                          </td>
-                          <td className="py-3 px-4">
-                            {c.members.length > 0 ? (() => {
-                              const MAX_VISIBLE = 4;
-                              const visible = c.members.slice(0, MAX_VISIBLE);
-                              const overflow = c.members.length - MAX_VISIBLE;
-                              const roleColors: Record<string, string> = {
-                                CEO: 'bg-amber-400/20 text-amber-900 dark:text-amber-300 border-amber-400/30',
-                                ADMIN: 'bg-info/15 text-info border-info/25',
-                              };
-                              return (
-                                <div className="flex flex-wrap gap-1.5">
-                                  {visible.map((m, i) => {
-                                    const cls = roleColors[m.role] || 'bg-muted text-muted-foreground border-border';
-                                    return (
-                                      <span key={i} className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full border ${cls}`}
-                                        title={`${m.name} — ${m.role}`}>
-                                        {m.name}
-                                      </span>
-                                    );
-                                  })}
-                                  {overflow > 0 && (
-                                    <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full border border-border bg-muted/50 text-muted-foreground"
-                                      title={c.members.slice(MAX_VISIBLE).map(m => m.name).join(', ')}>
-                                      +{overflow}
-                                    </span>
-                                  )}
+                      ) : filteredUsers.map(u => {
+                        const isExpanded = expandedUserId === u.user_id;
+                        return (
+                          <>
+                            <tr
+                              key={u.user_id}
+                              onClick={() => setExpandedUserId(isExpanded ? null : u.user_id)}
+                              className="cursor-pointer hover:bg-accent/50 active:bg-accent/70
+                                         transition-colors duration-150 group"
+                              role="button"
+                              tabIndex={0}
+                              aria-expanded={isExpanded}
+                              aria-label={`${u.name || u.email} kibontĂˇsa`}
+                              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedUserId(isExpanded ? null : u.user_id); } }}
+                            >
+                              <td className="py-3 px-5 w-8">
+                                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                              </td>
+                              <td className="py-3 px-2">
+                                <div>
+                                  <span className="font-medium text-foreground group-hover:text-primary transition-colors duration-150">
+                                    {u.name || 'N/A'}
+                                  </span>
+                                  <p className="text-xs text-muted-foreground">{u.email}</p>
                                 </div>
-                              );
-                            })() : (
-                              <span className="text-muted-foreground italic text-xs">Nincs tag</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-center tabular-nums text-muted-foreground">
-                            {c.invoiceCount}
-                          </td>
-                          <td className="py-3 px-4 text-center tabular-nums text-muted-foreground">
-                            {c.transactionCount}
-                          </td>
-                          <td className="py-3 px-4 text-center tabular-nums text-muted-foreground">
-                            {c.payrollCount}
-                          </td>
-                          <td className="py-3 px-5 text-right tabular-nums font-medium text-foreground">
-                            ${c.monthlyCostUsd.toFixed(4)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  </div>
-                  </CardContent>
-                </TabsContent>
-
-                {/* ── Felhasználók tab ── */}
-                <TabsContent value="users" className="mt-0">
-                  <div className="flex items-center gap-4 px-5 py-2 border-b border-border bg-muted/30 text-[11px] text-muted-foreground">
-                    <span className="font-medium uppercase tracking-wider">Jelmagyarázat:</span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-400/50" />CEO
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-blue-400 border border-blue-400/50" />Admin
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-gray-400 border border-gray-400/50" />Employee
-                    </span>
-                    <div className="ml-auto">
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                        <Input
-                          value={searchUser}
-                          onChange={e => setSearchUser(e.target.value)}
-                          placeholder="Keresés név vagy email..."
-                          className="pl-8 h-7 text-xs w-52 bg-background"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-border bg-muted/50 text-muted-foreground">
-                            <th className="text-left py-3 px-5 font-medium">Név</th>
-                            <th className="text-left py-3 px-4 font-medium">Cég</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border">
-                          {overviewLoading ? (
-                            Array.from({ length: 5 }).map((_, i) => (
-                              <tr key={i}>
-                                <td className="py-3 px-5"><Skeleton className="h-4 w-32" /></td>
-                                <td className="py-3 px-4"><Skeleton className="h-4 w-48" /></td>
-                              </tr>
-                            ))
-                          ) : filteredUsers.length === 0 ? (
-                            <tr>
-                              <td colSpan={2} className="text-center py-8 text-muted-foreground text-sm">Nincs találat</td>
+                              </td>
+                              <td className="py-3 px-4 text-center">
+                                {u.companies.length > 0 ? (
+                                  <span className="inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-full
+                                    bg-primary/10 text-primary text-xs font-semibold border border-primary/20"
+                                    title={u.companies.map(c => c.name).join(', ')}>
+                                    {u.companies.length}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground italic text-xs">0</span>
+                                )}
+                              </td>
                             </tr>
-                          ) : filteredUsers.map(u => {
-                            const roleColors: Record<string, string> = {
-                              CEO: 'bg-amber-400/20 text-amber-900 dark:text-amber-300 border-amber-400/30',
-                              ADMIN: 'bg-info/15 text-info border-info/25',
-                            };
-                            return (
-                              <tr
-                                key={u.user_id}
-                                onClick={() => openUser(u.user_id)}
-                                className="cursor-pointer hover:bg-accent/50 active:bg-accent/70
-                                           transition-colors duration-150 group"
-                                role="button"
-                                tabIndex={0}
-                                aria-label={`${u.name || u.email} megnyitása`}
-                                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openUser(u.user_id); } }}
-                              >
-                                <td className="py-3 px-5">
-                                  <div>
-                                    <span className="font-medium text-foreground group-hover:text-primary transition-colors duration-150">
-                                      {u.name || 'N/A'}
-                                    </span>
-                                    <p className="text-xs text-muted-foreground">{u.email}</p>
+                            {isExpanded && u.companies.length > 0 && (
+                              <tr key={`${u.user_id}-expand`}>
+                                <td colSpan={3} className="p-0">
+                                  <div className="bg-muted/20 border-t border-border animate-in slide-in-from-top-1 duration-200">
+                                    <table className="w-full text-xs">
+                                      <thead>
+                                        <tr className="text-muted-foreground border-b border-border/50">
+                                          <th className="text-left py-2 px-6 font-medium">CĂ©g</th>
+                                          <th className="text-left py-2 px-3 font-medium">Rang</th>
+                                          <th className="text-center py-2 px-3 font-medium">SzĂˇmlĂˇk</th>
+                                          <th className="text-center py-2 px-3 font-medium">TranzakciĂłk</th>
+                                          <th className="text-center py-2 px-3 font-medium">BĂ©r/jĂˇrulĂ©k</th>
+                                          <th className="text-right py-2 px-6 font-medium">Havi kĂ¶ltsĂ©g</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-border/30">
+                                        {u.companies.map(c => {
+                                          const stats = companyCostMap.get(c.id);
+                                          return (
+                                            <tr
+                                              key={c.id}
+                                              onClick={(e) => { e.stopPropagation(); openCompany(c.id); }}
+                                              className="cursor-pointer hover:bg-accent/40 transition-colors duration-150 group/company"
+                                              role="button"
+                                              tabIndex={0}
+                                              onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); openCompany(c.id); } }}
+                                            >
+                                              <td className="py-2.5 px-6">
+                                                <span className="font-medium text-foreground group-hover/company:text-primary transition-colors duration-150 flex items-center gap-1.5">
+                                                  {c.name}
+                                                  <ChevronRight className="h-3 w-3 opacity-0 group-hover/company:opacity-100 transition-opacity" />
+                                                </span>
+                                              </td>
+                                              <td className="py-2.5 px-3">{roleBadge(c.role)}</td>
+                                              <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.invoiceCount ?? 'â€”'}</td>
+                                              <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.transactionCount ?? 'â€”'}</td>
+                                              <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{stats?.payrollCount ?? 'â€”'}</td>
+                                              <td className="py-2.5 px-6 text-right tabular-nums font-medium text-foreground">
+                                                ${(stats?.monthlyCostUsd ?? 0).toFixed(4)}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
                                   </div>
                                 </td>
-                                <td className="py-3 px-4">
-                                  {u.companies.length > 0 ? (
-                                    <div className="flex flex-wrap gap-1.5">
-                                      {u.companies.map((c, i) => {
-                                        const cls = roleColors[c.role] || 'bg-muted text-muted-foreground border-border';
-                                        return (
-                                          <span key={i} className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border ${cls}`}
-                                            title={`${c.name} — ${c.role}`}>
-                                            {c.name}
-                                            {c.role === 'CEO' && <span className="text-amber-500">👑</span>}
-                                          </span>
-                                        );
-                                      })}
-                                    </div>
-                                  ) : (
-                                    <span className="text-muted-foreground italic text-xs">Nincs cég</span>
-                                  )}
-                                </td>
                               </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </CardContent>
-                </TabsContent>
-              </Tabs>
+                            )}
+                          </>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
             </Card>
           </div>
         )}
 
-        {/* ═══ COMPANY DETAIL ═══ */}
+        {/* â•â•â• COMPANY DETAIL â•â•â• */}
         {view === 'company' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             {/* Stats row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard icon={FileText} label="Számlák összesen"
+              <StatCard icon={FileText} label="SzĂˇmlĂˇk Ă¶sszesen"
                 value={companyDetail?.invoiceCount ?? 0} loading={companyLoading}
-                sub={companyDetail ? `${companyDetail.submittedInvoiceCount} feltöltött · ${companyDetail.navInvoiceCount} NAV` : undefined} />
+                sub={companyDetail ? `${companyDetail.submittedInvoiceCount} feltĂ¶ltĂ¶tt Â· ${companyDetail.navInvoiceCount} NAV` : undefined} />
               <StatCard icon={Users} label="Tagok"
                 value={companyDetail?.members.length ?? 0} loading={companyLoading} />
-              <StatCard icon={Coins} label="LLM költség (USD)"
+              <StatCard icon={Coins} label="LLM kĂ¶ltsĂ©g (USD)"
                 value={companyDetail ? `$${companyDetail.llmCosts.totalCostUsd.toFixed(4)}` : '$0'}
                 loading={companyLoading}
-                sub={companyDetail ? `${companyDetail.llmCosts.callCount} hívás · ${(companyDetail.llmCosts.totalTokens / 1000).toFixed(1)}k token` : undefined} />
-              <StatCard icon={Clock} label="Utolsó aktivitás"
+                sub={companyDetail ? `${companyDetail.llmCosts.callCount} hĂ­vĂˇs Â· ${(companyDetail.llmCosts.totalTokens / 1000).toFixed(1)}k token` : undefined} />
+              <StatCard icon={Clock} label="UtolsĂł aktivitĂˇs"
                 loading={companyLoading}
-                value={companyDetail?.lastActivity ? new Date(companyDetail.lastActivity.created_at).toLocaleDateString('hu-HU') : '—'}
-                sub={companyDetail?.lastActivity ? `${companyDetail.lastActivity.user_name} · ${companyDetail.lastActivity.action}` : 'Nincs aktivitás'} />
+                value={companyDetail?.lastActivity ? new Date(companyDetail.lastActivity.created_at).toLocaleDateString('hu-HU') : 'â€”'}
+                sub={companyDetail?.lastActivity ? `${companyDetail.lastActivity.user_name} Â· ${companyDetail.lastActivity.action}` : 'Nincs aktivitĂˇs'} />
             </div>
 
             {/* Last activity */}
@@ -909,16 +724,16 @@ export default function ManagementDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-primary" aria-hidden="true" /> Utolsó művelet részletei
+                    <Clock className="h-4 w-4 text-primary" aria-hidden="true" /> UtolsĂł mĹ±velet rĂ©szletei
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
                     {[
-                      { label: 'Művelet', value: companyDetail.lastActivity.action, bold: true },
-                      { label: 'Fájl', value: companyDetail.lastActivity.entity_name || companyDetail.lastActivity.entity },
-                      { label: 'Felhasználó', value: companyDetail.lastActivity.user_name },
-                      { label: 'Időpont', value: new Date(companyDetail.lastActivity.created_at).toLocaleString('hu-HU') },
+                      { label: 'MĹ±velet', value: companyDetail.lastActivity.action, bold: true },
+                      { label: 'FĂˇjl', value: companyDetail.lastActivity.entity_name || companyDetail.lastActivity.entity },
+                      { label: 'FelhasznĂˇlĂł', value: companyDetail.lastActivity.user_name },
+                      { label: 'IdĹ‘pont', value: new Date(companyDetail.lastActivity.created_at).toLocaleString('hu-HU') },
                     ].map(item => (
                       <div key={item.label}>
                         <p className="text-muted-foreground text-xs mb-1">{item.label}</p>
@@ -938,7 +753,7 @@ export default function ManagementDashboard() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base font-semibold flex items-center gap-2">
-                      <Users className="h-4 w-4 text-primary" aria-hidden="true" /> Hozzárendelt felhasználók
+                      <Users className="h-4 w-4 text-primary" aria-hidden="true" /> HozzĂˇrendelt felhasznĂˇlĂłk
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
@@ -949,9 +764,9 @@ export default function ManagementDashboard() {
                         <table className="w-full text-sm" role="table">
                           <thead>
                             <tr className="border-b border-border text-muted-foreground text-xs">
-                              <th className="text-left py-3 px-5 font-medium">Név</th>
+                              <th className="text-left py-3 px-5 font-medium">NĂ©v</th>
                               <th className="text-left py-3 px-4 font-medium">Rang</th>
-                              <th className="text-right py-3 px-5 font-medium">Csatlakozás dátuma</th>
+                              <th className="text-right py-3 px-5 font-medium">CsatlakozĂˇs dĂˇtuma</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border">
@@ -983,7 +798,7 @@ export default function ManagementDashboard() {
           </div>
         )}
 
-        {/* ═══ USER DETAIL ═══ */}
+        {/* â•â•â• USER DETAIL â•â•â• */}
         {view === 'user' && (() => {
           // Filter overview companies to only those this user belongs to
           const userCompanyIds = new Set((userDetail?.companies || []).map(c => c.id));
@@ -991,7 +806,7 @@ export default function ManagementDashboard() {
 
           return (
           <div className="space-y-6 animate-in fade-in duration-300">
-            <StatCard icon={Building2} label="Cégekhez hozzárendelve"
+            <StatCard icon={Building2} label="CĂ©gekhez hozzĂˇrendelve"
               value={userDetail?.companyCount ?? 0} loading={userLoading} />
 
             {userLoading ? (
@@ -1000,7 +815,7 @@ export default function ManagementDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-primary" aria-hidden="true" /> Cégek
+                    <Building2 className="h-4 w-4 text-primary" aria-hidden="true" /> CĂ©gek
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -1008,20 +823,20 @@ export default function ManagementDashboard() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-border bg-muted/50 text-muted-foreground">
-                          <th className="text-left py-3 px-5 font-medium">Cég</th>
-                          <th className="text-left py-3 px-4 font-medium">Adószám</th>
+                          <th className="text-left py-3 px-5 font-medium">CĂ©g</th>
+                          <th className="text-left py-3 px-4 font-medium">AdĂłszĂˇm</th>
                           <th className="text-left py-3 px-4 font-medium">Rang</th>
                           <th className="text-left py-3 px-4 font-medium">Tagok</th>
-                          <th className="text-center py-3 px-4 font-medium">Számla</th>
-                          <th className="text-center py-3 px-4 font-medium">Tranzakciók</th>
-                          <th className="text-center py-3 px-4 font-medium">Bér/járulék</th>
-                          <th className="text-right py-3 px-5 font-medium">Havi költség</th>
+                          <th className="text-center py-3 px-4 font-medium">SzĂˇmla</th>
+                          <th className="text-center py-3 px-4 font-medium">TranzakciĂłk</th>
+                          <th className="text-center py-3 px-4 font-medium">BĂ©r/jĂˇrulĂ©k</th>
+                          <th className="text-right py-3 px-5 font-medium">Havi kĂ¶ltsĂ©g</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
                         {userCompanies.length === 0 ? (
                           <tr>
-                            <td colSpan={8} className="text-center py-8 text-muted-foreground text-sm">Nincs cég hozzárendelve</td>
+                            <td colSpan={8} className="text-center py-8 text-muted-foreground text-sm">Nincs cĂ©g hozzĂˇrendelve</td>
                           </tr>
                         ) : userCompanies.map(c => {
                           const userRole = userDetail?.companies.find(uc => uc.id === c.id)?.role || '';
@@ -1040,7 +855,7 @@ export default function ManagementDashboard() {
                                          transition-colors duration-150 group"
                               role="button"
                               tabIndex={0}
-                              aria-label={`${c.name} megnyitása`}
+                              aria-label={`${c.name} megnyitĂˇsa`}
                               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCompany(c.id); } }}
                             >
                               <td className="py-3 px-5">
@@ -1049,7 +864,7 @@ export default function ManagementDashboard() {
                                 </span>
                               </td>
                               <td className="py-3 px-4 text-muted-foreground tabular-nums text-xs">
-                                {c.tax_number || '—'}
+                                {c.tax_number || 'â€”'}
                               </td>
                               <td className="py-3 px-4">
                                 {roleBadge(userRole)}
@@ -1060,7 +875,7 @@ export default function ManagementDashboard() {
                                     const cls = roleColors[m.role] || 'bg-muted text-muted-foreground border-border';
                                     return (
                                       <span key={i} className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full border ${cls}`}
-                                        title={`${m.name} — ${m.role}`}>
+                                        title={`${m.name} â€” ${m.role}`}>
                                         {m.name}
                                       </span>
                                     );
