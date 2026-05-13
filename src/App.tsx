@@ -194,10 +194,12 @@ const App = () => (
 
                     {/* Management dashboard – standalone, no sidebar/company context needed */}
                     <Route path="/management" element={
-                      <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
-                        <RemoveInitialLoader />
-                        <ManagementDashboard />
-                      </Suspense>
+                      <ProtectedPage>
+                        <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+                          <RemoveInitialLoader />
+                          <ManagementDashboard />
+                        </Suspense>
+                      </ProtectedPage>
                     } />
 
                     {/* Protected routes with persistent sidebar */}
