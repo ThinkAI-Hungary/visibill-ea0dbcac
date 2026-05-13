@@ -91,7 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (expired) {
       // Session is stale — force sign out silently, don't restore anything
-      supabase.auth.signOut().catch(() => {});
+      supabase.auth.signOut({ scope: 'local' }).catch(() => {});
       try {
         SIGNOUT_DELETE_KEYS.forEach(key => localStorage.removeItem(key));
         localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVE);
@@ -180,7 +180,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await new Promise((r) => setTimeout(r, 100));
 
     try {
-      const { error } = await supabase.auth.signOut();
+      // Use 'local' scope to avoid 403 when the server-side session is already
+      // invalid/expired (global scope tries to revoke all sessions and fails).
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
       if (error && !`${error.message}`.toLowerCase().includes('session')) {
         throw error;
       }
