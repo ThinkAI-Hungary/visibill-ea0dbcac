@@ -70,7 +70,7 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
         }
         description="Kifizetetlen kimenő számlák"
         icon={TrendingUp}
-        variant="warning"
+        variant="info"
       />
       <MetricCard
         title="Házipénztár"
@@ -90,7 +90,7 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
         }
         description="NAV INBOUND"
         icon={ArrowDownLeft}
-        variant="warning"
+        variant="destructive"
       />
       <MetricCard
         title="Fizetendő ÁFA"

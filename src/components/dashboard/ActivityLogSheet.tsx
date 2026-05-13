@@ -86,6 +86,12 @@ function isProcessingComplete(log: AuditLogRow): boolean {
   return d.is_system === true;
 }
 
+function isInvoiceProcessed(log: AuditLogRow): boolean {
+  if (!isProcessingComplete(log)) return false;
+  const d = log.details as Record<string, any>;
+  return d.processing_type === 'invoice_processed';
+}
+
 // ─── Component ─────────────────────────────────────────────────────────────────
 // ─── Custom Selects (Bypass Portals) ──────────────────────────────────────────
 const CURRENT_YEAR = new Date().getFullYear();
@@ -946,7 +952,7 @@ export function ActivityLogSheet() {
                     const isSystemAction = processed; // is_system from trigger details
 
                     return (
-                      <div key={log.id} className={`relative flex items-center gap-4 py-3 px-3 rounded-lg transition-colors ${index % 2 === 0 ? 'bg-secondary/30' : 'bg-transparent'}`}>
+                      <div key={log.id} className={`relative flex items-center gap-4 py-3 px-3 rounded-lg transition-colors border-b border-border/60 ${index % 2 === 0 ? 'bg-slate-100 dark:bg-secondary/30' : 'bg-white dark:bg-transparent'}`}>
                         {/* Icon dot */}
                         <div className="relative z-10 shrink-0">
                           <div className={`flex h-[42px] w-[42px] items-center justify-center rounded-full border border-border/50 ${actionCfg.color}`}>
@@ -990,7 +996,11 @@ export function ActivityLogSheet() {
                                   {userName}
                                 </button>
                                 {' '}
-                                <span className="text-muted-foreground">feltöltése feldolgozva</span>
+                                <span className="text-muted-foreground">
+                                  {isInvoiceProcessed(log)
+                                    ? 'által feltöltött számla feldolgozva'
+                                    : 'feltöltése feldolgozva'}
+                                </span>
                               </p>
                               {/* Row 2: filename */}
                               {getDisplayName(log) && (

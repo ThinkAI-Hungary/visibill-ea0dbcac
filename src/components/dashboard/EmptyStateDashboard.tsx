@@ -131,7 +131,8 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
     );
   }, [navCredentials]);
 
-  const isStep4Valid = navValidationStatus === 'valid';
+  // NAV is now optional — always valid (user can skip)
+  const isStep4Valid = true;
 
   const handleAddProject = () => {
     if (!newProjectName.trim() || !newProjectClient.trim()) {
@@ -292,110 +293,112 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
         }
       }
 
-      // 4. Save NAV credentials with company_id (only if validation was successful)
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session && navValidationStatus === 'valid') {
-        const { data: navData, error: navError } = await supabase.functions.invoke('save-credentials', {
-          body: {
-            navUsername: navCredentials.nav_username,
-            navPassword: navCredentials.nav_password,
-            navTaxNumber: navCredentials.nav_tax_number,
-            navSignKey: navCredentials.nav_sign_key,
-            navExchangeKey: navCredentials.nav_exchange_key,
-            companyId: companyData.id,
-          },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-
-        if (navError || navData?.error) {
-          const navMsg = navError?.message || navData?.error || 'Ismeretlen NAV hiba';
-          console.error('NAV credentials save error:', navMsg);
-          // Don't throw - company is created, but inform the user
-          toast({
-            title: 'NAV mentési figyelmeztetés',
-            description: `A cég létrejött, de a NAV adatok mentése sikertelen: ${navMsg}. Az Integrációk menüben újra megpróbálhatod.`,
-            variant: 'destructive',
+      // 4. Save NAV credentials with company_id (only if user filled them in)
+      if (navValidationStatus === 'valid' && isNavFormComplete) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data: navData, error: navError } = await supabase.functions.invoke('save-credentials', {
+            body: {
+              navUsername: navCredentials.nav_username,
+              navPassword: navCredentials.nav_password,
+              navTaxNumber: navCredentials.nav_tax_number,
+              navSignKey: navCredentials.nav_sign_key,
+              navExchangeKey: navCredentials.nav_exchange_key,
+              companyId: companyData.id,
+            },
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
           });
-        } else {
-          // Trigger initial NAV sync in background (last 90 days)
-          // Split into 35-day chunks due to NAV API limit
-          const splitDateRange = (startDate: Date, endDate: Date, maxDays: number = 35): Array<{from: string, to: string}> => {
-            const chunks: Array<{from: string, to: string}> = [];
-            let currentStart = new Date(startDate);
-            
-            while (currentStart < endDate) {
-              const chunkEnd = new Date(currentStart);
-              chunkEnd.setDate(chunkEnd.getDate() + maxDays - 1);
-              
-              const actualEnd = chunkEnd > endDate ? endDate : chunkEnd;
-              
-              chunks.push({
-                from: currentStart.toISOString().split('T')[0],
-                to: actualEnd.toISOString().split('T')[0]
-              });
-              
-              currentStart = new Date(actualEnd);
-              currentStart.setDate(currentStart.getDate() + 1);
-            }
-            
-            return chunks;
-          };
 
-          const endDate = new Date();
-          const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-          const dateChunks = splitDateRange(startDate, endDate);
-          
-          console.log('[Onboarding] NAV sync: splitting 90 days into', dateChunks.length, 'chunks');
-
-          // Process all chunks sequentially in background
-          (async () => {
-            let successCount = 0;
-            for (const chunk of dateChunks) {
-              // Refresh session before each chunk to prevent JWT expiration
-              const { data: { session: freshSession } } = await supabase.auth.getSession();
-              if (!freshSession) {
-                console.warn('[Onboarding] Session expired during background sync, aborting remaining chunks');
-                break;
+          if (navError || navData?.error) {
+            const navMsg = navError?.message || navData?.error || 'Ismeretlen NAV hiba';
+            console.error('NAV credentials save error:', navMsg);
+            // Don't throw - company is created, but inform the user
+            toast({
+              title: 'NAV mentési figyelmeztetés',
+              description: `A cég létrejött, de a NAV adatok mentése sikertelen: ${navMsg}. Az Integrációk menüben újra megpróbálhatod.`,
+              variant: 'destructive',
+            });
+          } else {
+            // Trigger initial NAV sync in background (last 90 days)
+            // Split into 35-day chunks due to NAV API limit
+            const splitDateRange = (startDate: Date, endDate: Date, maxDays: number = 35): Array<{from: string, to: string}> => {
+              const chunks: Array<{from: string, to: string}> = [];
+              let currentStart = new Date(startDate);
+              
+              while (currentStart < endDate) {
+                const chunkEnd = new Date(currentStart);
+                chunkEnd.setDate(chunkEnd.getDate() + maxDays - 1);
+                
+                const actualEnd = chunkEnd > endDate ? endDate : chunkEnd;
+                
+                chunks.push({
+                  from: currentStart.toISOString().split('T')[0],
+                  to: actualEnd.toISOString().split('T')[0]
+                });
+                
+                currentStart = new Date(actualEnd);
+                currentStart.setDate(currentStart.getDate() + 1);
               }
-              const currentToken = freshSession.access_token;
-
-              const [outbound, inbound] = await Promise.allSettled([
-                supabase.functions.invoke('nav-query-outbound-invoices', {
-                  body: {
-                    invoiceDirection: 'OUTBOUND',
-                    dateFrom: chunk.from,
-                    dateTo: chunk.to,
-                    companyId: companyData.id
-                  },
-                  headers: {
-                    Authorization: `Bearer ${currentToken}`,
-                  },
-                }),
-                supabase.functions.invoke('nav-query-outbound-invoices', {
-                  body: {
-                    invoiceDirection: 'INBOUND',
-                    dateFrom: chunk.from,
-                    dateTo: chunk.to,
-                    companyId: companyData.id
-                  },
-                  headers: {
-                    Authorization: `Bearer ${currentToken}`,
-                  },
-                })
-              ]);
               
-              if ((outbound.status === 'fulfilled' && !outbound.value.error) ||
-                  (inbound.status === 'fulfilled' && !inbound.value.error)) {
-                successCount++;
-              }
-            }
+              return chunks;
+            };
+
+            const endDate = new Date();
+            const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+            const dateChunks = splitDateRange(startDate, endDate);
             
-            if (successCount > 0) {
-              toast({ title: 'NAV számlák szinkronizálása elindult a háttérben' });
-            }
-          })();
+            console.log('[Onboarding] NAV sync: splitting 90 days into', dateChunks.length, 'chunks');
+
+            // Process all chunks sequentially in background
+            (async () => {
+              let successCount = 0;
+              for (const chunk of dateChunks) {
+                // Refresh session before each chunk to prevent JWT expiration
+                const { data: { session: freshSession } } = await supabase.auth.getSession();
+                if (!freshSession) {
+                  console.warn('[Onboarding] Session expired during background sync, aborting remaining chunks');
+                  break;
+                }
+                const currentToken = freshSession.access_token;
+
+                const [outbound, inbound] = await Promise.allSettled([
+                  supabase.functions.invoke('nav-query-outbound-invoices', {
+                    body: {
+                      invoiceDirection: 'OUTBOUND',
+                      dateFrom: chunk.from,
+                      dateTo: chunk.to,
+                      companyId: companyData.id
+                    },
+                    headers: {
+                      Authorization: `Bearer ${currentToken}`,
+                    },
+                  }),
+                  supabase.functions.invoke('nav-query-outbound-invoices', {
+                    body: {
+                      invoiceDirection: 'INBOUND',
+                      dateFrom: chunk.from,
+                      dateTo: chunk.to,
+                      companyId: companyData.id
+                    },
+                    headers: {
+                      Authorization: `Bearer ${currentToken}`,
+                    },
+                  })
+                ]);
+                
+                if ((outbound.status === 'fulfilled' && !outbound.value.error) ||
+                    (inbound.status === 'fulfilled' && !inbound.value.error)) {
+                  successCount++;
+                }
+              }
+              
+              if (successCount > 0) {
+                toast({ title: 'NAV számlák szinkronizálása elindult a háttérben' });
+              }
+            })();
+          }
         }
       }
 
@@ -728,9 +731,9 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
         <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
           <Shield className="h-7 w-7 text-primary" />
         </div>
-        <h3 className="text-xl font-semibold">NAV Integráció</h3>
+        <h3 className="text-xl font-semibold">NAV Integráció (opcionális)</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Kösd össze a NAV Online Számla rendszerrel
+          Kösd össze a NAV Online Számla rendszerrel, vagy hagyd ki ezt a lépést
         </p>
       </div>
 
@@ -847,6 +850,13 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
       return 'Kihagyás / Tovább';
     }
     return 'Tovább';
+  };
+
+  // Get finish button text based on NAV state
+  const getFinishButtonText = () => {
+    if (isCreating) return 'Mentés...';
+    if (navValidationStatus === 'valid') return 'Befejezés';
+    return 'Kihagyás / Befejezés';
   };
 
   // Check if next button should be disabled
@@ -1046,9 +1056,9 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                   ) : (
                     <Button
                       onClick={handleFinishOnboarding}
-                      disabled={isCreating || !isStep4Valid}
+                      disabled={isCreating}
                     >
-                      {isCreating ? 'Mentés...' : 'Befejezés'}
+                      {getFinishButtonText()}
                       <Check className="h-4 w-4 ml-2" />
                     </Button>
                   )}

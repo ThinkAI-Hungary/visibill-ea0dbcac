@@ -106,9 +106,8 @@ const Onboarding = () => {
   };
 
   const removeCategory = (index: number) => {
-    if (categories.length > 1) {
-      setCategories(categories.filter((_, i) => i !== index));
-    }
+    const updated = categories.filter((_, i) => i !== index);
+    setCategories(updated.length > 0 ? updated : []);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -183,15 +182,32 @@ const Onboarding = () => {
         }
       }
 
-      toast({
-        title: "Kategóriák mentve!",
-        description: "A változtatások sikeresen mentve."
-      });
+      if (hasUnsavedChanges) {
+        toast({
+          title: "Kategóriák mentve!",
+          description: "A változtatások sikeresen mentve."
+        });
+      }
 
       // Reset initial state to prevent unsaved changes warning
-      setInitialCategories(categories.map(c => ({ ...c })));
+      // Reload fresh data from DB so new IDs are reflected
+      const { data: freshData } = await supabase
+        .from('categories')
+        .select('id, name, description')
+        .eq('company_id', selectedCompany.id)
+        .order('created_at', { ascending: true });
 
-      navigate('/');
+      if (freshData && freshData.length > 0) {
+        const freshCategories = freshData.map(c => ({
+          id: c.id,
+          name: c.name,
+          description: c.description || ''
+        }));
+        setCategories(freshCategories);
+        setInitialCategories(freshCategories.map(c => ({ ...c })));
+      } else {
+        setInitialCategories(categories.map(c => ({ ...c })));
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -237,23 +253,29 @@ const Onboarding = () => {
                 Kezeld a kategóriáidat a számlák és kiadások rendszerezéséhez.
               </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {categories.map((category, index) => (
-                  <CategoryCard
-                    key={category.id || `new-${index}`}
-                    name={category.name}
-                    description={category.description}
-                    isNew={!category.id}
-                    onUpdate={(name, description) => {
-                      const updatedCategories = [...categories];
-                      updatedCategories[index] = { ...updatedCategories[index], name, description };
-                      setCategories(updatedCategories);
-                    }}
-                    onRemove={() => removeCategory(index)}
-                    canRemove={categories.length > 1}
-                  />
-                ))}
-              </div>
+              {categories.length === 0 ? (
+                <div className="col-span-full text-center py-8 text-muted-foreground border border-dashed border-border rounded-lg">
+                  <p className="text-sm">Nincsenek kategóriák. Kattints az „Új kategória" gombra a hozzáadáshoz.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {categories.map((category, index) => (
+                    <CategoryCard
+                      key={category.id || `new-${index}`}
+                      name={category.name}
+                      description={category.description}
+                      isNew={!category.id}
+                      onUpdate={(name, description) => {
+                        const updatedCategories = [...categories];
+                        updatedCategories[index] = { ...updatedCategories[index], name, description };
+                        setCategories(updatedCategories);
+                      }}
+                      onRemove={() => removeCategory(index)}
+                      canRemove={true}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>

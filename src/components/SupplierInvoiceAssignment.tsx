@@ -53,27 +53,42 @@ export function SupplierInvoiceAssignment({
 
     setLoading(true);
     try {
-      // Get all INBOUND invoices with project names via join
-      const { data, error } = await supabase
-        .from('nav_invoices')
-        .select(`
-          id, 
-          invoice_number, 
-          supplier_name, 
-          invoice_gross_amount, 
-          invoice_issue_date, 
-          project_id, 
-          currency,
-          projects:project_id (name)
-        `)
-        .eq('company_id', companyId)
-        .eq('invoice_direction', 'INBOUND')
-        .order('invoice_issue_date', { ascending: false });
+      // Paginated fetch — get ALL INBOUND invoices (bypasses Supabase 1000-row default limit)
+      const PAGE_SIZE = 1000;
+      let allData: any[] = [];
+      let from = 0;
+      let hasMore = true;
 
-      if (error) throw error;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('nav_invoices')
+          .select(`
+            id, 
+            invoice_number, 
+            supplier_name, 
+            invoice_gross_amount, 
+            invoice_issue_date, 
+            project_id, 
+            currency,
+            projects:project_id (name)
+          `)
+          .eq('company_id', companyId)
+          .eq('invoice_direction', 'INBOUND')
+          .order('invoice_issue_date', { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (error) throw error;
+        if (data && data.length > 0) {
+          allData = allData.concat(data);
+          hasMore = data.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+        from += PAGE_SIZE;
+      }
       
       // Transform to flatten project name
-      const transformedData = (data || []).map((inv: any) => ({
+      const transformedData = allData.map((inv: any) => ({
         id: inv.id,
         invoice_number: inv.invoice_number,
         supplier_name: inv.supplier_name,

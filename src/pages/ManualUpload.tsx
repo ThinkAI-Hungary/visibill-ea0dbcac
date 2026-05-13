@@ -1,13 +1,14 @@
 import { useState, useCallback, useRef } from 'react';
-import { formatFileSize, extractStoragePath } from '@/lib/utils';
+import { formatFileSize, extractStoragePath, cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, FileText, X, Building2, CreditCard, Wallet, Info, Landmark } from 'lucide-react';
+import { Upload, FileText, X, Building2, CreditCard, Wallet, Info, Landmark, Package } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,9 +21,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useCompany } from '@/contexts/CompanyContext';
-import SubscriptionUsage from '@/components/SubscriptionUsage';
 import UploadHistory from '@/components/UploadHistory';
 
 const ManualUpload = () => {
@@ -30,12 +29,15 @@ const ManualUpload = () => {
   const [selectedBankFiles, setSelectedBankFiles] = useState<File[]>([]);
   const [selectedSalaryFiles, setSelectedSalaryFiles] = useState<File[]>([]);
   const [selectedTransactionFiles, setSelectedTransactionFiles] = useState<File[]>([]);
+  const [selectedReportFiles, setSelectedReportFiles] = useState<{file: File; reportType: 'gls' | 'mpl' | 'mixpack'}[]>([]);
+  const [reportType, setReportType] = useState<'gls' | 'mpl' | 'mixpack'>('gls');
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('invoices');
+  const [dragOver, setDragOver] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
-  const { canProcessInvoice, incrementUsage, remainingInvoices } = useSubscription();
+
   const queryClient = useQueryClient();
 
   // Duplicate re-upload confirmation state
@@ -93,6 +95,7 @@ const ManualUpload = () => {
     });
 
     setSelectedInvoiceFiles(prev => [...prev, ...validFiles]);
+    event.target.value = '';
   };
 
   const handleBankStatementFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,6 +122,7 @@ const ManualUpload = () => {
     });
 
     setSelectedBankFiles(prev => [...prev, ...validFiles]);
+    event.target.value = '';
   };
 
   const removeInvoiceFile = (index: number) => {
@@ -153,6 +157,7 @@ const ManualUpload = () => {
     });
 
     setSelectedSalaryFiles(prev => [...prev, ...validFiles]);
+    event.target.value = '';
   };
 
   const removeSalaryFile = (index: number) => {
@@ -183,10 +188,38 @@ const ManualUpload = () => {
     });
 
     setSelectedTransactionFiles(prev => [...prev, ...validFiles]);
+    event.target.value = '';
   };
 
   const removeTransactionFile = (index: number) => {
     setSelectedTransactionFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleReportFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    const allowedTypes = [
+      'application/pdf',
+      'text/csv',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+    const validFiles = files.filter(file => {
+      if (allowedTypes.includes(file.type) || file.name.endsWith('.xls')) return true;
+      toast({
+        variant: "destructive",
+        title: "\u00c9rv\u00e9nytelen f\u00e1jlt\u00edpus",
+        description: `${file.name} nem t\u00e1mogatott. Riportokhoz t\u00f6lts fel XLS, XLSX, CSV, PDF vagy DOCX f\u00e1jlokat.`
+      });
+      return false;
+    });
+    setSelectedReportFiles(prev => [...prev, ...validFiles.map(f => ({ file: f, reportType }))]);
+    event.target.value = '';
+  };
+
+  const removeReportFile = (index: number) => {
+    setSelectedReportFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const uploadFileToStorage = async (file: File, bucket: string, folder: string) => {
@@ -272,55 +305,13 @@ const ManualUpload = () => {
   };
 
   const proceedWithInvoiceUpload = async () => {
-    // Check if user can process invoices
-    if (!canProcessInvoice()) {
-      toast({
-        variant: "destructive",
-        title: "Elérted a számlafeldolgozási limitet",
-        description: "Frissítsd csomagodat vagy várj a következő billing ciklusig további számlák feldolgozásához."
-      });
-      return;
-    }
-
-    // Check if trying to upload more invoices than remaining limit
-    if (selectedInvoiceFiles.length > remainingInvoices) {
-      toast({
-        variant: "destructive",
-        title: "Túl sok számla",
-        description: `Csak ${remainingInvoices} számlát tudsz még feldolgozni ebben a billing ciklusban.`
-      });
-      return;
-    }
-
     setUploading(true);
 
     try {
-      // Process each invoice and increment usage
       let successfulUploads = 0;
       const uploadedIds: { id: string; fileName: string }[] = [];
 
       for (const file of selectedInvoiceFiles) {
-        // Check if we can still process this invoice
-        if (!canProcessInvoice()) {
-          toast({
-            variant: "destructive",
-            title: "Elérted a limitet",
-            description: `${successfulUploads} számla sikeresen feltöltve, de elérted a havi limitet.`
-          });
-          break;
-        }
-
-        // Try to increment usage before processing
-        const canIncrement = await incrementUsage();
-        if (!canIncrement) {
-          toast({
-            variant: "destructive",
-            title: "Nem sikerült a feldolgozás",
-            description: `${successfulUploads} számla sikeresen feltöltve, de nem tudtunk több számlát feldolgozni.`
-          });
-          break;
-        }
-
         try {
           // Upload file to storage
           const fileUrl = await uploadFileToInvoiceStorage(file, user?.id!);
@@ -769,6 +760,72 @@ const ManualUpload = () => {
 
   // formatFileSize is now imported from @/lib/utils
 
+  const handleReportUpload = async () => {
+    if (selectedReportFiles.length === 0) {
+      toast({ variant: "destructive", title: "Nincs kiv\u00e1lasztott f\u00e1jl", description: "K\u00e9rlek v\u00e1lassz ki legal\u00e1bb egy riport f\u00e1jlt." });
+      return;
+    }
+    if (!user) {
+      toast({ variant: "destructive", title: "Nem vagy bejelentkezve", description: "A felt\u00f6lt\u00e9shez be kell jelentkezned." });
+      return;
+    }
+    if (!selectedCompany?.id) {
+      toast({ variant: "destructive", title: "Nincs kiv\u00e1lasztott c\u00e9g", description: "A felt\u00f6lt\u00e9shez v\u00e1lassz ki egy c\u00e9get." });
+      return;
+    }
+    setUploading(true);
+    try {
+      let successfulUploads = 0;
+      for (const entry of selectedReportFiles) {
+        const { file, reportType: fileReportType } = entry;
+        const uploadData = await uploadFileToStorage(file, 'report-uploads', user.id);
+        const { data: urlData } = supabase.storage.from('report-uploads').getPublicUrl(uploadData.path);
+        const { data: uploadRecord, error: dbError } = await supabase
+          .from('report_uploads')
+          .insert({
+            user_id: user.id,
+            company_id: selectedCompany.id,
+            file_name: file.name,
+            file_url: urlData.publicUrl,
+            file_size: file.size,
+            file_type: file.type,
+            report_type: fileReportType,
+            upload_status: 'uploaded',
+            processing_status: 'pending',
+          })
+          .select()
+          .single();
+        if (dbError) {
+          await supabase.storage.from('report-uploads').remove([uploadData.path]);
+          throw dbError;
+        }
+        addToUploadHistoryCache({
+          id: uploadRecord.id,
+          file_name: file.name,
+          file_size: file.size,
+          file_type: file.type,
+          file_url: urlData.publicUrl,
+          user_id: user.id,
+          upload_status: 'uploaded',
+          processing_status: 'pending',
+          created_at: new Date().toISOString(),
+          error_message: null,
+        });
+        successfulUploads++;
+      }
+      if (successfulUploads > 0) {
+        toast({ title: "Felt\u00f6lt\u00e9s sikeres!", description: `${successfulUploads} riport f\u00e1jl feldolgoz\u00e1sra k\u00fcldve.`, duration: 3000 });
+        setSelectedReportFiles([]);
+        delayedUploadHistoryInvalidation();
+      }
+    } catch (error) {
+      console.error('Report upload error:', error);
+      toast({ variant: "destructive", title: "Felt\u00f6lt\u00e9s sikertelen", description: "Hiba t\u00f6rt\u00e9nt a riport felt\u00f6lt\u00e9se sor\u00e1n." });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
@@ -790,10 +847,10 @@ const ManualUpload = () => {
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <div className="space-y-6">
+        <div>
           <Tabs defaultValue="invoices" className="space-y-6" onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="invoices" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 Számlák
@@ -805,6 +862,10 @@ const ManualUpload = () => {
               <TabsTrigger value="salaries" className="flex items-center gap-2">
                 <Wallet className="h-4 w-4" />
                 Bérek/Járulékok
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Riportok
               </TabsTrigger>
             </TabsList>
 
@@ -821,10 +882,27 @@ const ManualUpload = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                    <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                  <div
+                    className={cn(
+                      "flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200",
+                      dragOver === 'invoices'
+                        ? "border-primary bg-primary/5 scale-[1.01] shadow-sm"
+                        : "border-muted-foreground/25 hover:border-muted-foreground/40"
+                    )}
+                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver('invoices'); }}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }}
+                    onDrop={(e) => {
+                      e.preventDefault(); e.stopPropagation(); setDragOver(null);
+                      const files = Array.from(e.dataTransfer.files);
+                      const allowed = ['application/pdf','image/jpeg','image/jpg','image/png','image/webp'];
+                      const valid = files.filter(f => allowed.includes(f.type));
+                      if (valid.length > 0) setSelectedInvoiceFiles(prev => [...prev, ...valid]);
+                    }}
+                  >
+                    <FileText className={cn("h-12 w-12 mb-4 transition-colors", dragOver === 'invoices' ? "text-primary" : "text-muted-foreground")} />
                     <div className="space-y-2">
-                      <p className="text-sm font-medium">Válassz számlafájlokat a feltöltéshez</p>
+                      <p className="text-sm font-medium">{dragOver === 'invoices' ? 'Engedd el a fájlokat a feltöltéshez' : 'Húzd ide a fájlokat, vagy kattints a tallózáshoz'}</p>
                       <p className="text-xs text-muted-foreground">
                         Több fájlt is kiválaszthatsz egyszerre vagy egyenként is feltöltheted
                       </p>
@@ -832,10 +910,9 @@ const ManualUpload = () => {
                     <Button
                       className="mt-4"
                       onClick={() => document.getElementById('invoice-file-input')?.click()}
-                      disabled={!canProcessInvoice()}
                     >
                       <Upload className="h-4 w-4 mr-2" />
-                      {canProcessInvoice() ? 'Fájlok tallózása' : 'Elérted a limitet'}
+                      Fájlok tallózása
                     </Button>
                     <input
                       id="invoice-file-input"
@@ -844,7 +921,7 @@ const ManualUpload = () => {
                       accept=".pdf,.jpg,.jpeg,.png,.webp"
                       onChange={handleInvoiceFileSelect}
                       className="hidden"
-                      disabled={!canProcessInvoice()}
+
                     />
                   </div>
 
@@ -884,7 +961,7 @@ const ManualUpload = () => {
 
                       <Button
                         onClick={handleInvoiceUpload}
-                        disabled={uploading || !canProcessInvoice()}
+                        disabled={uploading}
                         className="w-full"
                       >
                         {uploading ? (
@@ -892,8 +969,6 @@ const ManualUpload = () => {
                             <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
                             Feldolgozás...
                           </>
-                        ) : !canProcessInvoice() ? (
-                          'Elérted a havi limitet'
                         ) : (
                           <>
                             <Upload className="h-4 w-4 mr-2" />
@@ -920,10 +995,27 @@ const ManualUpload = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                    <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
+                  <div
+                    className={cn(
+                      "flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200",
+                      dragOver === 'bank'
+                        ? "border-primary bg-primary/5 scale-[1.01] shadow-sm"
+                        : "border-muted-foreground/25 hover:border-muted-foreground/40"
+                    )}
+                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver('bank'); }}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }}
+                    onDrop={(e) => {
+                      e.preventDefault(); e.stopPropagation(); setDragOver(null);
+                      const files = Array.from(e.dataTransfer.files);
+                      const allowed = ['application/pdf','text/csv','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+                      const valid = files.filter(f => allowed.includes(f.type));
+                      if (valid.length > 0) setSelectedBankFiles(prev => [...prev, ...valid]);
+                    }}
+                  >
+                    <CreditCard className={cn("h-12 w-12 mb-4 transition-colors", dragOver === 'bank' ? "text-primary" : "text-muted-foreground")} />
                     <div className="space-y-2">
-                      <p className="text-sm font-medium">Válassz bankkivonat fájlokat</p>
+                      <p className="text-sm font-medium">{dragOver === 'bank' ? 'Engedd el a fájlokat' : 'Húzd ide a bankkivonatokat, vagy tallózz'}</p>
                       <p className="text-xs text-muted-foreground">
                         A rendszer automatikusan feldolgozza a tranzakciókat és kategorizálja őket
                       </p>
@@ -1018,10 +1110,27 @@ const ManualUpload = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                    <Landmark className="h-12 w-12 text-muted-foreground mb-4" />
+                  <div
+                    className={cn(
+                      "flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200",
+                      dragOver === 'transactions'
+                        ? "border-primary bg-primary/5 scale-[1.01] shadow-sm"
+                        : "border-muted-foreground/25 hover:border-muted-foreground/40"
+                    )}
+                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver('transactions'); }}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }}
+                    onDrop={(e) => {
+                      e.preventDefault(); e.stopPropagation(); setDragOver(null);
+                      const files = Array.from(e.dataTransfer.files);
+                      const allowed = ['application/pdf','text/csv','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+                      const valid = files.filter(f => allowed.includes(f.type));
+                      if (valid.length > 0) setSelectedTransactionFiles(prev => [...prev, ...valid]);
+                    }}
+                  >
+                    <Landmark className={cn("h-12 w-12 mb-4 transition-colors", dragOver === 'transactions' ? "text-primary" : "text-muted-foreground")} />
                     <div className="space-y-2">
-                      <p className="text-sm font-medium">Válassz tranzakciós fájlokat</p>
+                      <p className="text-sm font-medium">{dragOver === 'transactions' ? 'Engedd el a fájlokat' : 'Húzd ide a tranzakciós fájlokat, vagy tallózz'}</p>
                       <p className="text-xs text-muted-foreground">
                         A rendszer automatikusan feldolgozza és kategorizálja a tranzakciókat
                       </p>
@@ -1116,10 +1225,27 @@ const ManualUpload = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                    <Wallet className="h-12 w-12 text-muted-foreground mb-4" />
+                  <div
+                    className={cn(
+                      "flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200",
+                      dragOver === 'salaries'
+                        ? "border-primary bg-primary/5 scale-[1.01] shadow-sm"
+                        : "border-muted-foreground/25 hover:border-muted-foreground/40"
+                    )}
+                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver('salaries'); }}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }}
+                    onDrop={(e) => {
+                      e.preventDefault(); e.stopPropagation(); setDragOver(null);
+                      const files = Array.from(e.dataTransfer.files);
+                      const allowedExts = ['.pdf','.csv','.xls','.xlsx'];
+                      const valid = files.filter(f => allowedExts.some(ext => f.name.toLowerCase().endsWith(ext)));
+                      if (valid.length > 0) setSelectedSalaryFiles(prev => [...prev, ...valid]);
+                    }}
+                  >
+                    <Wallet className={cn("h-12 w-12 mb-4 transition-colors", dragOver === 'salaries' ? "text-primary" : "text-muted-foreground")} />
                     <div className="space-y-2">
-                      <p className="text-sm font-medium">Válassz bér/járulék fájlokat</p>
+                      <p className="text-sm font-medium">{dragOver === 'salaries' ? 'Engedd el a fájlokat a feltöltéshez' : 'Húzd ide a fájlokat, vagy kattints a tallózáshoz'}</p>
                       <p className="text-xs text-muted-foreground">
                         A rendszer automatikusan feldolgozza és kategorizálja a dokumentumokat
                       </p>
@@ -1200,14 +1326,141 @@ const ManualUpload = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Report Upload Tab */}
+            <TabsContent value="reports">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Riportok feltöltése (GLS/MPL-Posta/Mixpack)
+                  </CardTitle>
+                  <CardDescription>
+                    Tölts fel futárszolgálati riportokat feldolgozásra. A rendszer automatikusan feldolgozza és párosítja a tranzakciókkal és NAV számlákkal.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Report type selector */}
+                  <div className="flex items-center gap-4">
+                    <label className="text-sm font-medium">Riport típusa:</label>
+                    <Select value={reportType} onValueChange={(v: 'gls' | 'mpl' | 'mixpack') => setReportType(v)}>
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="gls">GLS</SelectItem>
+                        <SelectItem value="mpl">MPL / Posta</SelectItem>
+                        <SelectItem value="mixpack">Mixpack</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div
+                    className={cn(
+                      "flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200",
+                      dragOver === 'reports'
+                        ? "border-primary bg-primary/5 scale-[1.01] shadow-sm"
+                        : "border-muted-foreground/25 hover:border-muted-foreground/40"
+                    )}
+                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver('reports'); }}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }}
+                    onDrop={(e) => {
+                      e.preventDefault(); e.stopPropagation(); setDragOver(null);
+                      const files = Array.from(e.dataTransfer.files);
+                      const allowedExts = ['.xls','.xlsx','.csv','.pdf','.doc','.docx'];
+                      const valid = files.filter(f => allowedExts.some(ext => f.name.toLowerCase().endsWith(ext)));
+                      if (valid.length > 0) setSelectedReportFiles(prev => [...prev, ...valid.map(f => ({ file: f, reportType }))]);
+                    }}
+                  >
+                    <Package className={cn("h-12 w-12 mb-4 transition-colors", dragOver === 'reports' ? "text-primary" : "text-muted-foreground")} />
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">{dragOver === 'reports' ? 'Engedd el a fájlokat a feltöltéshez' : 'Húzd ide a fájlokat, vagy kattints a tallózáshoz'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Támogatott formátumok: XLS, XLSX, CSV, PDF, DOCX
+                      </p>
+                    </div>
+                    <Button
+                      className="mt-4"
+                      onClick={() => document.getElementById('report-file-input')?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Riport fájlok tallózása
+                    </Button>
+                    <input
+                      id="report-file-input"
+                      type="file"
+                      multiple
+                      accept=".xls,.xlsx,.csv,.pdf,.doc,.docx"
+                      onChange={handleReportFileSelect}
+                      className="hidden"
+                    />
+                  </div>
+
+                  {selectedReportFiles.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="font-medium">Kiválasztott fájlok ({selectedReportFiles.length})</h3>
+                      <div className="space-y-2">
+                        {selectedReportFiles.map((rawEntry, index) => {
+                          // Guard: normalize stale HMR state where entry may be a raw File
+                          const entry = (rawEntry as any).file ? rawEntry : { file: rawEntry as unknown as File, reportType };
+                          return (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 border rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Package className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium text-sm">{entry.file.name}</p>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {entry.reportType === 'gls' ? 'GLS' : entry.reportType === 'mpl' ? 'MPL' : 'MIXPACK'}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatFileSize(entry.file.size)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeReportFile(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          );
+                        })}
+                      </div>
+
+                      <Button
+                        onClick={handleReportUpload}
+                        disabled={uploading}
+                        className="w-full"
+                      >
+                        {uploading ? (
+                          <>
+                            <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent mr-2"></div>
+                            Feltöltés és feldolgozás...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            {selectedReportFiles.length} riport feltöltése
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
 
         </div>
 
-        {/* Subscription Usage Sidebar */}
-        <div className="lg:col-span-1">
-          <SubscriptionUsage />
-        </div>
       </div>
 
       <UploadHistory activeTab={activeTab} />

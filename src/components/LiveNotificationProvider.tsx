@@ -20,6 +20,7 @@ export function LiveNotificationProvider() {
   const companyId = selectedCompany?.id;
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const notifiedUploads = useRef<Set<string>>(new Set());
+  const lastCompanyIdRef = useRef<string | undefined>(undefined);
   const companyIdRef = useRef(companyId);
   companyIdRef.current = companyId;
   const queryClientRef = useRef(queryClient);
@@ -94,11 +95,16 @@ export function LiveNotificationProvider() {
       // Force the realtime connection to use the authenticated token
       supabase.realtime.setAuth(session.access_token);
 
+      // Only clear dedup set when company actually changes
+      if (lastCompanyIdRef.current !== companyId) {
+        notifiedUploads.current.clear();
+        lastCompanyIdRef.current = companyId;
+      }
+
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
-      notifiedUploads.current.clear();
 
       const channel = supabase
         .channel(`realtime-sync-${companyId}`)
@@ -338,6 +344,7 @@ export function LiveNotificationProvider() {
         }
       )
 
+
       // ━━ NAV_SYNC_LOGS table ━━
       .on(
         'postgres_changes',
@@ -345,6 +352,55 @@ export function LiveNotificationProvider() {
         (payload) => {
           if (!isMyCompany(payload)) return;
           invalidate('syncLogs', 'navInvoices', 'filteredNavInvoices');
+        }
+      )
+
+      // ━━ REPORT_UPLOADS table ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'report_uploads' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          invalidate('uploadHistory', 'courier-reports');
+          if (payload.eventType === 'UPDATE') {
+            const row = payload.new as any;
+            const doneStatuses = ['completed', 'processed'];
+            if (row.id && doneStatuses.includes(row.processing_status)) {
+              const completionKey = `report_${row.id}`;
+              if (!notifiedUploads.current.has(completionKey)) {
+                // Verify this is a genuine new completion by checking created_at
+                // If the report was completed more than 30s ago, it's a stale replay — skip
+                const createdAt = row.updated_at || row.created_at;
+                const ageMs = createdAt ? Date.now() - new Date(createdAt).getTime() : Infinity;
+                if (ageMs > 30_000) {
+                  notifiedUploads.current.add(completionKey); // Suppress future replays
+                  return;
+                }
+                notifiedUploads.current.add(completionKey);
+                console.log('[RealtimeSync] 🔔 report_uploads status → completed:', row.id);
+                supabase.from('report_uploads').select('file_name').eq('id', row.id).single().then(({ data }) => {
+                  const fileName = data?.file_name || 'Ismeretlen fájl';
+                  toast({
+                    title: 'Riport feldolgozva!',
+                    description: `A következő riport sikeresen fel lett dolgozva: ${fileName}`,
+                    variant: 'default',
+                    duration: 5000,
+                  });
+                });
+              }
+            }
+          }
+        }
+      )
+
+      // ━━ COURIER_REPORTS table ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'courier_reports' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          invalidate('courier-reports', 'uploadHistory');
+          // No per-row toast — the report_uploads completion toast is sufficient
         }
       )
 

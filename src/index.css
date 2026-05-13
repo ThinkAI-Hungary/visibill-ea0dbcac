@@ -258,18 +258,20 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
-  /* Global removal of focus rings (except keyboard focus-visible for accessibility) */
-  *:focus,
-  *:focus-within {
-    outline: none !important;
-    box-shadow: none !important;
-  }
-
-  /* Kill visual flash on mouse/touch clicks – keep keyboard focus-visible intact */
+  /* Remove mouse/JS focus rings — preserve keyboard focus-visible for a11y (§1 focus-states) */
   *:focus:not(:focus-visible) {
     outline: none !important;
+  }
+
+  /* Keyboard-only focus ring — brand teal, 2px offset for visibility */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  /* Kill visual flash on mouse/touch clicks */
+  *:focus:not(:focus-visible) {
     box-shadow: none !important;
-    transition: none !important;
   }
 
   /* Prevent border/color changes on programmatic or mouse focus (e.g. password manager autofill).
@@ -304,6 +306,7 @@ All colors MUST be HSL.
     -webkit-user-select: none;
     user-select: none;
     cursor: pointer;
+    touch-action: manipulation; /* §2 tap-delay: eliminate 300ms delay on mobile */
   }
 
   html {
@@ -427,17 +430,6 @@ All colors MUST be HSL.
   .dark input[type="date"]::-webkit-calendar-picker-indicator:hover {
     filter: invert(0.9) sepia(1) saturate(4) hue-rotate(130deg);
   }
-
-  /* Reduce gap between date text and calendar icon */
-  input[type="date"]::-webkit-calendar-picker-indicator {
-    margin-left: -2px;
-    padding-left: 0;
-    padding-right: 8px;
-  }
-
-  input[type="date"] {
-    overscroll-behavior: contain;
-  }
 }
 
 /* Custom Scrollbar Styling - Global */
@@ -519,10 +511,22 @@ All colors MUST be HSL.
   }
 }
 
-/* ── Global: ban all hover-based shadows & elevation ── */
+/* Global table row separators — ensures rows never merge visually */
+@layer base {
+  table tbody tr {
+    box-shadow: inset 0 -1px 0 0 hsl(var(--foreground) / 0.08);
+  }
+
+  .dark table tbody tr {
+    box-shadow: inset 0 -1px 0 0 hsl(var(--foreground) / 0.1);
+  }
+}
+
+/* ── Global: ban hover-based elevation shadows (but preserve functional box-shadow like row separators) ── */
 @layer base {
   *[class*="hover:shadow"]:hover {
-    box-shadow: none !important;
+    --tw-shadow: 0 0 #0000 !important;
+    --tw-shadow-colored: 0 0 #0000 !important;
     transform: none !important;
   }
 }
@@ -545,6 +549,22 @@ All colors MUST be HSL.
 
 .tape-slide:hover .tape-slide-inner {
   transform: scale(1.05);
+}
+
+/* §7 reduced-motion: respect OS accessibility setting */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .tape-slide:hover .tape-slide-inner {
+    transform: none;
+  }
 }
 
 /* ── Auth page: scale down on short viewports (laptops < 900px) ── */

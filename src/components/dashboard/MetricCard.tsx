@@ -11,7 +11,7 @@ interface MetricCardProps {
     value: number;
     isPositive: boolean;
   };
-  variant?: 'default' | 'success' | 'warning' | 'destructive';
+  variant?: 'default' | 'success' | 'warning' | 'destructive' | 'info';
   onClick?: () => void;
 }
 
@@ -28,14 +28,16 @@ const MetricCard = ({
     default: 'border-border',
     success: 'border-success/20 bg-success/5',
     warning: 'border-warning/20 bg-warning/5',
-    destructive: 'border-destructive/20 bg-destructive/5'
+    destructive: 'border-destructive/20 bg-destructive/5',
+    info: 'border-info/20 bg-info/5'
   };
 
   const iconStyles = {
     default: 'text-muted-foreground',
     success: 'text-success',
     warning: 'text-warning',
-    destructive: 'text-destructive'
+    destructive: 'text-destructive',
+    info: 'text-info'
   };
 
   return (

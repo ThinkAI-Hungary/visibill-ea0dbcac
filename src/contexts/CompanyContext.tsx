@@ -65,7 +65,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
   // When companies load (or change), restore the selected company
   useEffect(() => {
     if (companies.length === 0) {
-      if (!user) setSelectedCompanyState(null);
+      setSelectedCompanyState(null);
       return;
     }
 

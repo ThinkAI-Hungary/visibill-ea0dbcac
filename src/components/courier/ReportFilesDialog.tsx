@@ -7,11 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialog, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
@@ -20,12 +21,17 @@ import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
-interface UploadWithInvoices {
+interface ReportUploadWithRows {
   id: string;
   file_name: string;
   created_at: string;
   user_id: string | null;
-  invoiceNumbers: string[];
+  report_type: string;
+  upload_status: string;
+  processing_status: string;
+  metadata: any;
+  rowCount: number;
+  matchedCount: number;
 }
 
 interface CompanyMember {
@@ -33,71 +39,84 @@ interface CompanyMember {
   name: string | null;
 }
 
-interface InvoiceFilesDialogProps {
+interface ReportFilesDialogProps {
+  reportType?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
-export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalOnOpenChange }: InvoiceFilesDialogProps = {}) {
+export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange: externalOnOpenChange }: ReportFilesDialogProps) {
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
   const setIsOpen = externalOnOpenChange || setInternalOpen;
-  const [deleteTarget, setDeleteTarget] = useState<UploadWithInvoices | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ReportUploadWithRows | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [uploaderFilter, setUploaderFilter] = useState('all');
 
   const companyId = selectedCompany?.id;
 
-  // Fetch invoice_uploads with related invoice bizonylatsorszam
+  // Fetch report_uploads with courier_reports counts
   const { data: uploads = [], isLoading } = useQuery({
-    queryKey: ['invoice_uploads_with_invoices', companyId],
+    queryKey: ['report_uploads_with_rows', companyId, reportType],
     queryFn: async () => {
-      // Get uploads
-      const { data: uploadData, error: uploadError } = await supabase
-        .from('invoice_uploads')
-        .select('id, file_name, created_at, user_id')
+      let query = supabase
+        .from('report_uploads')
+        .select('id, file_name, created_at, user_id, report_type, upload_status, processing_status, metadata')
         .eq('company_id', companyId!)
         .order('created_at', { ascending: false });
+
+      if (reportType) {
+        query = query.eq('report_type', reportType);
+      }
+
+      const { data: uploadData, error: uploadError } = await query;
       if (uploadError) throw uploadError;
       if (!uploadData || uploadData.length === 0) return [];
 
-      // Get invoices linked to these uploads
+      // Get courier_reports counts per upload
       const uploadIds = uploadData.map(u => u.id);
-      const { data: invoiceData, error: invoiceError } = await supabase
-        .from('invoices')
-        .select('invoice_uploads_id, bizonylatsorszam')
-        .in('invoice_uploads_id', uploadIds);
-      if (invoiceError) throw invoiceError;
+      const { data: reportData, error: reportError } = await supabase
+        .from('courier_reports')
+        .select('upload_id, match_status')
+        .in('upload_id', uploadIds);
+      if (reportError) throw reportError;
 
-      // Group invoice numbers by upload id
-      const invoicesByUpload = new Map<string, string[]>();
-      (invoiceData || []).forEach((inv: any) => {
-        if (!inv.invoice_uploads_id) return;
-        if (!invoicesByUpload.has(inv.invoice_uploads_id)) {
-          invoicesByUpload.set(inv.invoice_uploads_id, []);
+      // Group counts by upload_id
+      const countsByUpload = new Map<string, { total: number; matched: number }>();
+      (reportData || []).forEach((r: any) => {
+        if (!r.upload_id) return;
+        if (!countsByUpload.has(r.upload_id)) {
+          countsByUpload.set(r.upload_id, { total: 0, matched: 0 });
         }
-        invoicesByUpload.get(inv.invoice_uploads_id)!.push(inv.bizonylatsorszam);
+        const entry = countsByUpload.get(r.upload_id)!;
+        entry.total++;
+        if (r.match_status === 'full' || r.match_status === 'partial_nav' || r.match_status === 'partial_trx') {
+          entry.matched++;
+        }
       });
 
-      return uploadData
-        .map(u => ({
-          id: u.id,
-          file_name: u.file_name,
-          created_at: u.created_at,
-          user_id: u.user_id,
-          invoiceNumbers: invoicesByUpload.get(u.id) || [],
-        }))
-        .filter(u => u.invoiceNumbers.length > 0) as UploadWithInvoices[];
+      return uploadData.map(u => ({
+        id: u.id,
+        file_name: u.file_name,
+        created_at: u.created_at,
+        user_id: u.user_id,
+        report_type: u.report_type,
+        upload_status: u.upload_status,
+        processing_status: u.processing_status,
+        metadata: typeof u.metadata === 'string' ? JSON.parse(u.metadata) : u.metadata,
+        rowCount: countsByUpload.get(u.id)?.total || 0,
+        matchedCount: countsByUpload.get(u.id)?.matched || 0,
+      })) as ReportUploadWithRows[];
     },
     enabled: !!companyId && isOpen,
     staleTime: 0,
   });
 
-  // Fetch company members with profile names
+  // Fetch company members
   const { data: companyMembers = [] } = useQuery({
     queryKey: ['company_members_profiles', companyId],
     queryFn: async () => {
@@ -134,52 +153,50 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
     return profileMap.get(userId) || 'Ismeretlen felhasználó';
   };
 
-  // Client-side filtering
   const filteredUploads = useMemo(() => {
     return uploads.filter(upload => {
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = !searchQuery
-        || upload.file_name.toLowerCase().includes(searchLower)
-        || upload.invoiceNumbers.some(n => n.toLowerCase().includes(searchLower));
+        || upload.file_name.toLowerCase().includes(searchLower);
       const matchesUploader = uploaderFilter === 'all' || upload.user_id === uploaderFilter;
       return matchesSearch && matchesUploader;
     });
   }, [uploads, searchQuery, uploaderFilter]);
 
-  // Option A: Delete ONLY the uploaded file (keep invoice data)
-  const handleDeleteFileOnly = async (upload: UploadWithInvoices) => {
+  // Delete file only (keep report data)
+  const handleDeleteFileOnly = async (upload: ReportUploadWithRows) => {
     setDeleting(true);
     try {
-      // Fetch file URL for storage cleanup
       const { data: uploadData } = await supabase
-        .from('invoice_uploads')
+        .from('report_uploads')
         .select('file_url')
         .eq('id', upload.id)
         .single();
 
-      // Unlink invoices from this upload (set invoice_uploads_id to null)
+      // Unlink courier_reports from this upload
       await supabase
-        .from('invoices')
-        .update({ invoice_uploads_id: null })
-        .eq('invoice_uploads_id', upload.id);
+        .from('courier_reports')
+        .update({ upload_id: null } as any)
+        .eq('upload_id', upload.id);
 
-      // Delete the upload record
+      // Delete upload record
       const { error } = await supabase
-        .from('invoice_uploads')
+        .from('report_uploads')
         .delete()
         .eq('id', upload.id);
       if (error) throw error;
 
-      // Remove file from Storage
+      // Remove from storage
       if (uploadData?.file_url) {
-        const storagePath = extractStoragePath(uploadData.file_url, 'invoice-uploads');
+        const storagePath = extractStoragePath(uploadData.file_url, 'report-uploads');
         if (storagePath) {
-          await supabase.storage.from('invoice-uploads').remove([storagePath]);
+          await supabase.storage.from('report-uploads').remove([storagePath]);
         }
       }
 
-      toast({ title: 'Sikeres törlés', description: 'A fájl törölve lett. A számla adatok megmaradtak.', duration: 3000 });
-      queryClient.invalidateQueries({ queryKey: ['invoice_uploads_with_invoices', companyId] });
+      toast({ title: 'Sikeres törlés', description: 'A fájl törölve lett. A riport adatok megmaradtak.', duration: 3000 });
+      queryClient.invalidateQueries({ queryKey: ['report_uploads_with_rows', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['courier-reports'] });
       queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     } catch (err: any) {
       toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
@@ -189,44 +206,41 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
     }
   };
 
-  // Option B: Delete file AND associated invoice data
-  const handleDeleteFileAndInvoice = async (upload: UploadWithInvoices) => {
+  // Delete file AND all associated report data
+  const handleDeleteFileAndData = async (upload: ReportUploadWithRows) => {
     setDeleting(true);
     try {
-      // Fetch file URL for storage cleanup
       const { data: uploadData } = await supabase
-        .from('invoice_uploads')
+        .from('report_uploads')
         .select('file_url')
         .eq('id', upload.id)
         .single();
 
-      // 1. Delete linked invoices first (invoice_items cascade automatically)
-      const { error: invoiceError } = await supabase
-        .from('invoices')
+      // 1. Delete linked courier_reports
+      const { error: reportError } = await supabase
+        .from('courier_reports')
         .delete()
-        .eq('invoice_uploads_id', upload.id);
-      if (invoiceError) throw invoiceError;
+        .eq('upload_id', upload.id);
+      if (reportError) throw reportError;
 
-      // 2. Delete the upload record
+      // 2. Delete upload record
       const { error } = await supabase
-        .from('invoice_uploads')
+        .from('report_uploads')
         .delete()
         .eq('id', upload.id);
       if (error) throw error;
 
-      // 3. Remove file from Storage
+      // 3. Remove from storage
       if (uploadData?.file_url) {
-        const storagePath = extractStoragePath(uploadData.file_url, 'invoice-uploads');
+        const storagePath = extractStoragePath(uploadData.file_url, 'report-uploads');
         if (storagePath) {
-          await supabase.storage.from('invoice-uploads').remove([storagePath]);
+          await supabase.storage.from('report-uploads').remove([storagePath]);
         }
       }
 
-      toast({ title: 'Sikeres törlés', description: 'A dokumentum és a hozzá tartozó számlák törölve lettek.', duration: 3000 });
-      queryClient.invalidateQueries({ queryKey: ['invoice_uploads_with_invoices', companyId] });
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
-      queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices'] });
+      toast({ title: 'Sikeres törlés', description: 'A dokumentum és a hozzá tartozó riport sorok törölve lettek.', duration: 3000 });
+      queryClient.invalidateQueries({ queryKey: ['report_uploads_with_rows', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['courier-reports'] });
       queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
     } catch (err: any) {
       toast({ title: 'Hiba', description: err.message || 'A törlés sikertelen.', variant: 'destructive' });
@@ -234,6 +248,14 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
       setDeleting(false);
       setDeleteTarget(null);
     }
+  };
+
+  const REPORT_TYPE_LABELS: Record<string, string> = {
+    gls: 'GLS',
+    dpd: 'DPD',
+    mpl: 'MPL',
+    foxpost: 'Foxpost',
+    sprinter: 'Sprinter',
   };
 
   return (
@@ -249,10 +271,10 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
         )}
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Feltöltött számla dokumentumok</DialogTitle>
+            <DialogTitle>Feltöltött riport dokumentumok</DialogTitle>
             <DialogDescription>
-              Itt tekintheti meg és törölheti a korábban feltöltött dokumentumokat.
-              A törlés eltávolítja a fájlból származó összes számla adatot is.
+              Itt tekintheti meg és törölheti a korábban feltöltött futárszolgálat riportokat.
+              A törlés eltávolítja a fájlból származó összes riport adatot is.
             </DialogDescription>
           </DialogHeader>
 
@@ -261,7 +283,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-muted-foreground" />
               <Input
-                placeholder="Keresés fájlnév vagy bizonylatszám alapján..."
+                placeholder="Keresés fájlnév alapján..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary"
@@ -289,7 +311,7 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
             </div>
           ) : filteredUploads.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {uploads.length === 0 ? 'Nincs feltöltött dokumentum.' : 'Nincs találat a megadott szűrőkkel.'}
+              {uploads.length === 0 ? 'Nincs feltöltött riport dokumentum.' : 'Nincs találat a megadott szűrőkkel.'}
             </div>
           ) : (
             <div className="rounded-lg border border-border/50 overflow-x-auto">
@@ -297,7 +319,8 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[30%]">Fájl neve</TableHead>
-                    <TableHead className="w-[25%]">Bizonylatszám</TableHead>
+                    <TableHead className="w-[10%]">Típus</TableHead>
+                    <TableHead className="w-[15%]">Sorok</TableHead>
                     <TableHead className="w-[18%]">Feltöltés dátuma</TableHead>
                     <TableHead className="w-[15%]">Feltöltötte</TableHead>
                     <TableHead className="w-[12%] text-right">Művelet</TableHead>
@@ -309,11 +332,14 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                       <TableCell className="font-medium text-sm truncate max-w-[250px]">
                         {upload.file_name}
                       </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {REPORT_TYPE_LABELS[upload.report_type] || upload.report_type}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {upload.invoiceNumbers.length > 0
-                          ? upload.invoiceNumbers.length <= 2
-                            ? upload.invoiceNumbers.join(', ')
-                            : `${upload.invoiceNumbers.slice(0, 2).join(', ')} +${upload.invoiceNumbers.length - 2}`
+                        {upload.rowCount > 0
+                          ? `${upload.matchedCount}/${upload.rowCount} párosítva`
                           : '—'}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
@@ -342,9 +368,9 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
       </Dialog>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
-        <AlertDialogContent className="max-w-md">
+        <AlertDialogContent className="max-w-md overflow-hidden">
           <AlertDialogHeader>
-            <AlertDialogTitle>Dokumentum törlése</AlertDialogTitle>
+            <AlertDialogTitle>Riport dokumentum törlése</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
                 <p>Válaszd ki a törlés módját:</p>
@@ -369,16 +395,16 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                     Csak a fájl törlése
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    A <span className="font-medium text-foreground">{deleteTarget?.file_name}</span> fájl törlődik, de a feldolgozott számla adatok megmaradnak.
+                    A <span className="font-medium text-foreground break-all">{deleteTarget?.file_name}</span> fájl törlődik, de a feldolgozott riport adatok megmaradnak.
                   </p>
                 </div>
               </div>
             </button>
 
-            {/* Option B: File + Invoice data */}
+            {/* Option B: File + Report data */}
             <button
               disabled={deleting}
-              onClick={() => { if (deleteTarget) handleDeleteFileAndInvoice(deleteTarget); }}
+              onClick={() => { if (deleteTarget) handleDeleteFileAndData(deleteTarget); }}
               className="w-full text-left p-3 rounded-lg border border-red-200 dark:border-red-900/40 hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex items-start gap-3">
@@ -387,14 +413,14 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
                 </div>
                 <div>
                   <p className="text-sm font-medium text-red-600 dark:text-red-400">
-                    Fájl és számla adatok törlése
+                    Fájl és riport adatok törlése
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    A <span className="font-medium text-foreground">{deleteTarget?.file_name}</span> fájl és a hozzátartozó{' '}
+                    A <span className="font-medium text-foreground break-all">{deleteTarget?.file_name}</span> fájl és a hozzátartozó{' '}
                     <span className="font-medium text-foreground">
-                      {deleteTarget?.invoiceNumbers.join(', ')}
+                      {deleteTarget?.rowCount} riport sor
                     </span>{' '}
-                    számla(ák) is véglegesen törlődnek.
+                    is véglegesen törlődik.
                   </p>
                 </div>
               </div>

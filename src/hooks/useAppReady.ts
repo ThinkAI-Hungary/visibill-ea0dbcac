@@ -34,7 +34,8 @@ export function useAppReady() {
       if (error && (error as any).code === 'PGRST116') return 'no-profile' as const;
       if (error) throw error;
       if (!data?.name) return 'incomplete' as const;
-      if (data?.email_verified === false) return 'unverified' as const;
+      // [DISABLED] Email verification check — kept for future re-enablement
+      // if (data?.email_verified === false) return 'unverified' as const;
       return 'complete' as const;
     },
     enabled: !!user,
@@ -57,10 +58,10 @@ export function useAppReady() {
     return { isReady: false, user, redirectTarget: null as RedirectTarget };
   }
 
-  // Email not verified → redirect to auth (shows confirmation screen).
-  if (profileStatus === 'unverified') {
-    return { isReady: true, user, redirectTarget: 'unverified' as RedirectTarget };
-  }
+  // [DISABLED] Email not verified redirect — kept for future re-enablement
+  // if (profileStatus === 'unverified') {
+  //   return { isReady: true, user, redirectTarget: 'unverified' as RedirectTarget };
+  // }
 
   // Profile incomplete → onboarding.
   if (profileStatus === 'no-profile' || profileStatus === 'incomplete') {

@@ -73,20 +73,29 @@ const UnmatchedSection = () => {
     enabled: !!companyId,
   });
 
-  // Fetch unmatched transactions
+  // Fetch unmatched transactions (paginated)
   const { data: unmatchedTx = [], isLoading: txLoading } = useQuery({
     queryKey: ['unmatchedTransactions', companyId, dateFromFormatted, dateToFormatted],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('id, transaction_date, amount, description, currency, type')
-        .eq('company_id', companyId)
-        .is('matched_invoice_id', null)
-        .gte('transaction_date', dateFromFormatted)
-        .lte('transaction_date', dateToFormatted)
-        .order('transaction_date', { ascending: false });
-      if (error) throw error;
-      return (data || []) as UnmatchedTransaction[];
+      const PAGE_SIZE = 1000;
+      const all: UnmatchedTransaction[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('id, transaction_date, amount, description, currency, type')
+          .eq('company_id', companyId)
+          .is('matched_invoice_id', null)
+          .gte('transaction_date', dateFromFormatted)
+          .lte('transaction_date', dateToFormatted)
+          .order('transaction_date', { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+        if (error) throw error;
+        all.push(...(data || []));
+        if (!data || data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+      return all;
     },
     enabled: !!companyId,
   });

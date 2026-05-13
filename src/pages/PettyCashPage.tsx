@@ -83,41 +83,50 @@ const PettyCashPage = () => {
   const { data: entries = [], isLoading: loading } = useQuery({
     queryKey: queryKeys.pettyCashEntries(selectedCompany?.id || ''),
     queryFn: async () => {
-      // Fetch all 5 sources in parallel
-      const [withdrawalsRes, cashDepositsRes, cashSalesRes, cashExpensesRes, navCashExpensesRes] = await Promise.all([
-        supabase
-          .from('transactions')
-          .select('transaction_date, description, amount')
-          .eq('company_id', selectedCompany!.id)
-          .in('type', ['atm készpénzfelvét', 'pénztári kp felvét']),
-        supabase
-          .from('transactions')
-          .select('transaction_date, description, amount')
-          .eq('company_id', selectedCompany!.id)
-          .in('type', ['pénztári kp befizetés', 'kp befizetés atm-en keresztül']),
-        supabase
-          .from('nav_invoices')
-          .select('invoice_issue_date, customer_name, invoice_gross_amount, payment_method')
-          .eq('company_id', selectedCompany!.id)
-          .eq('invoice_direction', 'OUTBOUND')
-          .in('payment_method', ['CASH', 'KÉSZPÉNZ']),
-        supabase
-          .from('invoices')
-          .select('kibocsatas_datuma, elado_nev, brutto_vegosszeg, fizetesi_mod, bizonylatsorszam')
-          .eq('company_id', selectedCompany!.id)
-          .ilike('fizetesi_mod', '%készpénz%')
-          .is('reference_number', null),
-        supabase
-          .from('nav_invoices')
-          .select('invoice_issue_date, supplier_name, invoice_gross_amount, invoice_number')
-          .eq('company_id', selectedCompany!.id)
-          .eq('invoice_direction', 'INBOUND')
-          .in('payment_method', ['CASH', 'KÉSZPÉNZ']),
+      // Helper: paginated fetch for any table query
+      const fetchAllPages = async <T = any>(
+        tableName: string,
+        selectStr: string,
+        buildQuery: (q: any) => any
+      ): Promise<T[]> => {
+        const PAGE_SIZE = 1000;
+        const all: T[] = [];
+        let from = 0;
+        while (true) {
+          let q = supabase.from(tableName).select(selectStr);
+          q = buildQuery(q);
+          q = q.range(from, from + PAGE_SIZE - 1);
+          const { data, error } = await q;
+          if (error) throw error;
+          all.push(...(data || []));
+          if (!data || data.length < PAGE_SIZE) break;
+          from += PAGE_SIZE;
+        }
+        return all;
+      };
+
+      // Fetch all 5 sources in parallel (each paginated)
+      const [withdrawals, cashDeposits, cashSales, cashExpenses, navCashExpenses] = await Promise.all([
+        fetchAllPages('transactions', 'transaction_date, description, amount', q =>
+          q.eq('company_id', selectedCompany!.id).in('type', ['atm készpénzfelvét', 'pénztári kp felvét'])
+        ),
+        fetchAllPages('transactions', 'transaction_date, description, amount', q =>
+          q.eq('company_id', selectedCompany!.id).in('type', ['pénztári kp befizetés', 'kp befizetés atm-en keresztül'])
+        ),
+        fetchAllPages('nav_invoices', 'invoice_issue_date, customer_name, invoice_gross_amount, payment_method', q =>
+          q.eq('company_id', selectedCompany!.id).eq('invoice_direction', 'OUTBOUND').in('payment_method', ['CASH', 'KÉSZPÉNZ'])
+        ),
+        fetchAllPages('invoices', 'kibocsatas_datuma, elado_nev, brutto_vegosszeg, fizetesi_mod, bizonylatsorszam', q =>
+          q.eq('company_id', selectedCompany!.id).ilike('fizetesi_mod', '%készpénz%').is('reference_number', null)
+        ),
+        fetchAllPages('nav_invoices', 'invoice_issue_date, supplier_name, invoice_gross_amount, invoice_number', q =>
+          q.eq('company_id', selectedCompany!.id).eq('invoice_direction', 'INBOUND').in('payment_method', ['CASH', 'KÉSZPÉNZ'])
+        ),
       ]);
 
       const allEntries: PettyCashEntry[] = [];
 
-      (withdrawalsRes.data || []).forEach(t => {
+      withdrawals.forEach(t => {
         allEntries.push({
           date: t.transaction_date,
           description: t.description || 'Készpénz felvétel',
@@ -126,7 +135,7 @@ const PettyCashPage = () => {
         });
       });
 
-      (cashDepositsRes.data || []).forEach(t => {
+      cashDeposits.forEach(t => {
         allEntries.push({
           date: t.transaction_date,
           description: t.description || 'Készpénz befizetés',
@@ -135,7 +144,7 @@ const PettyCashPage = () => {
         });
       });
 
-      (cashSalesRes.data || []).forEach(inv => {
+      cashSales.forEach(inv => {
         allEntries.push({
           date: inv.invoice_issue_date || '',
           description: `Készpénzes értékesítés - ${inv.customer_name || 'Ismeretlen'}`,
@@ -145,7 +154,7 @@ const PettyCashPage = () => {
       });
 
       const invoiceExpenseNumbers = new Set<string>();
-      (cashExpensesRes.data || []).forEach(inv => {
+      cashExpenses.forEach(inv => {
         if (inv.bizonylatsorszam) invoiceExpenseNumbers.add(inv.bizonylatsorszam);
         allEntries.push({
           date: inv.kibocsatas_datuma,
@@ -155,7 +164,7 @@ const PettyCashPage = () => {
         });
       });
 
-      (navCashExpensesRes.data || []).forEach(inv => {
+      navCashExpenses.forEach(inv => {
         if (inv.invoice_number && invoiceExpenseNumbers.has(inv.invoice_number)) return;
         allEntries.push({
           date: inv.invoice_issue_date || '',

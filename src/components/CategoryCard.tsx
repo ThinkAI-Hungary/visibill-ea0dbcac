@@ -76,7 +76,7 @@ export function CategoryCard({
             <h4 className="font-semibold text-foreground truncate flex-1">
               {name || 'Új kategória'}
             </h4>
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-1">
               <Button
                 type="button"
                 variant="ghost"

@@ -22,14 +22,31 @@ export function useKintlevoData() {
     queryKey: queryKeys.kintlevoNav(selectedCompany?.id || ''),
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
-      const { data, error } = await supabase
-        .from('nav_invoices')
-        .select('id,invoice_number,invoice_issue_date,payment_date,customer_name,customer_tax_number,invoice_gross_amount,currency,transaction_id')
-        .eq('company_id', selectedCompany.id)
-        .eq('invoice_direction', 'OUTBOUND')
-        .is('transaction_id', null);
-      if (error) throw error;
-      return data ?? [];
+      // Paginated fetch — bypasses Supabase 1000-row default limit
+      const PAGE_SIZE = 1000;
+      let allData: any[] = [];
+      let page = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+        const { data, error } = await supabase
+          .from('nav_invoices')
+          .select('id,invoice_number,invoice_issue_date,payment_date,customer_name,customer_tax_number,invoice_gross_amount,currency,transaction_id')
+          .eq('company_id', selectedCompany.id)
+          .eq('invoice_direction', 'OUTBOUND')
+          .is('transaction_id', null)
+          .range(from, to);
+        if (error) throw error;
+        if (data && data.length > 0) {
+          allData = allData.concat(data);
+          hasMore = data.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+        page++;
+      }
+      return allData;
     },
     enabled: !!user?.id && !!selectedCompany?.id,
     placeholderData: keepPreviousData,
@@ -39,14 +56,30 @@ export function useKintlevoData() {
     queryKey: queryKeys.kintlevoManual(selectedCompany?.id || ''),
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('id,bizonylatsorszam,kibocsatas_datuma,fizetesi_hatarido,vevo_nev,vevo_vat_id,brutto_vegosszeg,penznem,transaction_id,melleklet_url')
-        .eq('company_id', selectedCompany.id)
-        .eq('invoice_direction', 'OUTBOUND')
-        .is('transaction_id', null);
-      if (error) throw error;
-      return data ?? [];
+      const PAGE_SIZE = 1000;
+      let allData: any[] = [];
+      let page = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+        const { data, error } = await supabase
+          .from('invoices')
+          .select('id,bizonylatsorszam,kibocsatas_datuma,fizetesi_hatarido,vevo_nev,vevo_vat_id,brutto_vegosszeg,penznem,transaction_id,melleklet_url')
+          .eq('company_id', selectedCompany.id)
+          .eq('invoice_direction', 'OUTBOUND')
+          .is('transaction_id', null)
+          .range(from, to);
+        if (error) throw error;
+        if (data && data.length > 0) {
+          allData = allData.concat(data);
+          hasMore = data.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+        page++;
+      }
+      return allData;
     },
     enabled: !!user?.id && !!selectedCompany?.id,
     placeholderData: keepPreviousData,

@@ -218,14 +218,32 @@ const CompanySelector = () => {
 
       if (error) throw error;
 
-      await refreshCompanies();
-      if (selectedCompany?.id === deletingCompany.id) {
-        const remainingCompanies = companies.filter(c => c.id !== deletingCompany.id);
-        setSelectedCompany(remainingCompanies.length > 0 ? remainingCompanies[0] : null);
-      }
-      
       setIsDeleteDialogOpen(false);
       setDeletingCompany(null);
+
+      await refreshCompanies();
+      const remainingCompanies = companies.filter(c => c.id !== deletingCompany.id);
+
+      if (remainingCompanies.length > 0) {
+        // Switch to another company
+        if (selectedCompany?.id === deletingCompany.id) {
+          setSelectedCompany(remainingCompanies[0]);
+          const page = extractPageSegment(location.pathname);
+          const newPath = generateScopedPath(
+            remainingCompanies[0].id,
+            dateFromFormatted,
+            dateToFormatted,
+            page === '/' ? '' : page.slice(1),
+          );
+          navigate(newPath, { replace: true });
+        }
+      } else {
+        // No companies left — clear selection and go to root (onboarding)
+        setSelectedCompany(null);
+        localStorage.removeItem('visibill_selected_company_id');
+        navigate('/', { replace: true });
+      }
+
       toast({ title: 'Cég sikeresen törölve!' });
     } catch (error: any) {
       console.error('Error deleting company:', error);

@@ -155,7 +155,7 @@ export function useInvoiceFilters(
   // ── Helper functions ──
 
   const getPartnerName = (taxNumber: string | null): string => {
-    if (!taxNumber) return '-';
+    if (!taxNumber) return 'Ismeretlen partner';
     const partner = partners.find(p => p.tax_number === taxNumber);
     return partner?.name || taxNumber;
   };
@@ -175,13 +175,13 @@ export function useInvoiceFilters(
   };
 
   const getCategoryName = (categoryId: string | null): string => {
-    if (!categoryId) return '-';
-    return categories.find(c => c.id === categoryId)?.name || '-';
+    if (!categoryId) return 'Nincs kategória';
+    return categories.find(c => c.id === categoryId)?.name || 'Nincs kategória';
   };
 
   const getProjectName = (projectId: string | null): string => {
-    if (!projectId) return '-';
-    return projects.find(p => p.id === projectId)?.name || '-';
+    if (!projectId) return 'Nincs projekt';
+    return projects.find(p => p.id === projectId)?.name || 'Nincs projekt';
   };
 
   const getPaymentMethodLabel = (method: string | null) => {

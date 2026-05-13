@@ -81,14 +81,23 @@ const Projects = () => {
         project_type: p.project_type || 'one_time'
       })) as Project[];
 
-      // Fetch project financials from nav_invoices
-      const { data: invoiceData, error: invoiceError } = await supabase
-        .from('nav_invoices')
-        .select('project_id, invoice_direction, invoice_gross_amount')
-        .eq('company_id', selectedCompany!.id)
-        .not('project_id', 'is', null);
+      // Fetch project financials from nav_invoices (paginated — bypasses 1000-row limit)
+      const PAGE_SIZE = 1000;
+      let invoiceData: any[] = [];
+      let invFrom = 0;
+      while (true) {
+        const { data: batch, error: invoiceError } = await supabase
+          .from('nav_invoices')
+          .select('project_id, invoice_direction, invoice_gross_amount')
+          .eq('company_id', selectedCompany!.id)
+          .not('project_id', 'is', null)
+          .range(invFrom, invFrom + PAGE_SIZE - 1);
 
-      if (invoiceError) throw invoiceError;
+        if (invoiceError) throw invoiceError;
+        invoiceData = invoiceData.concat(batch || []);
+        if (!batch || batch.length < PAGE_SIZE) break;
+        invFrom += PAGE_SIZE;
+      }
 
       const financialsMap = new Map<string, { outbound: number; inbound: number }>();
       (invoiceData || []).forEach((inv: any) => {

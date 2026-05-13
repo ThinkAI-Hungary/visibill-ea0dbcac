@@ -8,7 +8,7 @@ import { formatFileSize } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { supabase } from '@/integrations/supabase/client';
-import { History, FileText, Landmark, Banknote, CreditCard, Loader2 } from 'lucide-react';
+import { History, FileText, Landmark, Banknote, CreditCard, Loader2, Package } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
@@ -76,17 +76,20 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
   const tableName = activeTab === 'invoices' ? 'invoice_uploads'
     : activeTab === 'salaries' ? 'salary_files'
     : activeTab === 'bank-statements' ? 'bank_statement_uploads'
+    : activeTab === 'reports' ? 'report_uploads'
     : 'transaction_uploads';
   const icon = activeTab === 'invoices' ? <FileText className="h-5 w-5" />
     : activeTab === 'salaries' ? <Banknote className="h-5 w-5" />
     : activeTab === 'bank-statements' ? <CreditCard className="h-5 w-5" />
+    : activeTab === 'reports' ? <Package className="h-5 w-5" />
     : <Landmark className="h-5 w-5" />;
   const title = activeTab === 'invoices' ? 'Számla feltöltési'
     : activeTab === 'salaries' ? 'Bér/járulék feltöltési'
     : activeTab === 'bank-statements' ? 'Bankkivonat feltöltési'
+    : activeTab === 'reports' ? 'Riport feltöltési'
     : 'Tranzakció feltöltési';
 
-  const isValidTab = activeTab === 'invoices' || activeTab === 'transactions' || activeTab === 'salaries' || activeTab === 'bank-statements';
+  const isValidTab = activeTab === 'invoices' || activeTab === 'transactions' || activeTab === 'salaries' || activeTab === 'bank-statements' || activeTab === 'reports';
 
   // ── Main data query (records + processed IDs + user names) ──
   const { data, isLoading: loading } = useQuery({
@@ -186,6 +189,18 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
         );
       }
 
+      // Reports: check courier_reports for processed upload IDs
+      if (activeTab === 'reports' && uploadIds.length > 0 && companyId) {
+        const { data: reportRows } = await supabase
+          .from('courier_reports')
+          .select('upload_id')
+          .eq('company_id', companyId)
+          .in('upload_id', uploadIds);
+        processedIds = new Set(
+          (reportRows || []).map((r: any) => r.upload_id).filter(Boolean) as string[]
+        );
+      }
+
       return { records, processedIds, userNames };
     },
     enabled: !!user && !!companyId && isValidTab,
@@ -207,6 +222,16 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
   // ── Detect status transitions: pending/processing → completed ──
   // When polling picks up that a file just finished processing,
   // show a toast and refresh the relevant page cache.
+  
+  // Clear previous status tracking on tab switch to avoid false transitions
+  const prevTabRef = useRef(activeTab);
+  useEffect(() => {
+    if (prevTabRef.current !== activeTab) {
+      prevStatusMap.current.clear();
+      prevTabRef.current = activeTab;
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     if (!records.length) return;
 
@@ -220,7 +245,9 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
         const toastTitle = activeTab === 'invoices' ? 'Számlák feldolgozva!'
           : activeTab === 'salaries' ? 'Bér/járulékok feldolgozva!'
           : activeTab === 'bank-statements' ? 'Bankkivonat feldolgozva!'
+          : activeTab === 'reports' ? 'Riport feldolgozva!'
           : 'Tranzakciók feldolgozva!';
+
 
         toast({
           title: toastTitle,
@@ -239,6 +266,8 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           queryClient.invalidateQueries({ queryKey: ['salary_files'] });
         } else if (activeTab === 'bank-statements') {
           queryClient.invalidateQueries({ queryKey: ['bankStatements'] });
+        } else if (activeTab === 'reports') {
+          queryClient.invalidateQueries({ queryKey: ['courierReports'] });
         } else {
           queryClient.invalidateQueries({ queryKey: ['transactions'] });
         }

@@ -100,7 +100,8 @@ export function useInvoiceData(
         .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number, fizetesi_mod')
         .eq('company_id', companyId)
         .or(`and(teljesites_datuma.gte.${dateFromFormatted},teljesites_datuma.lte.${dateToFormatted}),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFromFormatted},kibocsatas_datuma.lte.${dateToFormatted})`)
-        .order('kibocsatas_datuma', { ascending: false });
+        .order('kibocsatas_datuma', { ascending: false })
+        .order('id', { ascending: true });
       if (error) throw error;
       return (data || []) as SubmittedInvoice[];
     },
@@ -204,7 +205,9 @@ export function useInvoiceData(
           .from('nav_invoices')
           .select('id, invoice_number, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, transaction_id, submitted')
           .eq('company_id', companyId)
-          .range(from, to);
+          .range(from, to)
+          .order('invoice_issue_date', { ascending: false })
+          .order('id', { ascending: true });
         if (error) throw error;
         if (data && data.length > 0) {
           allData = allData.concat(data as NavInvoice[]);

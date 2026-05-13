@@ -62,6 +62,11 @@ export function ScopedLayout() {
         markAccessDenied(true);
         syncingFromUrl.current = false;
         return;
+      } else {
+        // No companies at all (last one was deleted) → redirect to onboarding
+        syncingFromUrl.current = false;
+        navigate('/', { replace: true });
+        return;
       }
     } else {
       markAccessDenied(false);

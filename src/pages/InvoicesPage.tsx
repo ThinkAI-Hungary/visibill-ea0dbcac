@@ -615,14 +615,14 @@ const InvoicesPage = () => {
               {(activeTab === 'OUTBOUND' || activeTab === 'INBOUND') && (
                 <TabsContent value={activeTab} className="space-y-4 mt-4">
                   {/* NAV Filters */}
-                  <div className="flex flex-wrap items-center gap-2 p-4 bg-white dark:bg-muted/20 rounded-lg border border-slate-200 dark:border-border/30 shadow-sm">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-muted-foreground h-4 w-4" />
                       <Input
-                        placeholder="Keresés..."
+                        placeholder="Keresés (partner, bizonylat, összeg...)"
                         value={filters.search}
                         onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                        className="pl-9 h-9 w-48 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary"
+                        className="pl-9"
                       />
                     </div>
 
@@ -698,7 +698,7 @@ const InvoicesPage = () => {
                     </div>
 
                     <Select value={filters.currency} onValueChange={(value) => setFilters(prev => ({ ...prev, currency: value }))}>
-                      <SelectTrigger className="h-9 w-40 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                      <SelectTrigger className="h-9 w-[180px]">
                         <span className="truncate">{filters.currency === 'all' ? 'Pénznem' : filters.currency}</span>
                       </SelectTrigger>
                       <SelectContent>
@@ -710,7 +710,7 @@ const InvoicesPage = () => {
                     </Select>
 
                     <Select value={filters.paid} onValueChange={(value) => setFilters(prev => ({ ...prev, paid: value }))}>
-                      <SelectTrigger className="h-9 w-32 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                      <SelectTrigger className="h-9 w-[140px]">
                         <span className="truncate">{filters.paid === 'all' ? 'Állapot' : filters.paid === 'yes' ? 'Kifizetve' : 'Nyitott'}</span>
                       </SelectTrigger>
                       <SelectContent>
@@ -722,7 +722,7 @@ const InvoicesPage = () => {
 
                     {activeTab === 'INBOUND' && (
                       <Select value={filters.submitted} onValueChange={(value) => setFilters(prev => ({ ...prev, submitted: value }))}>
-                        <SelectTrigger className="h-9 w-32 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                        <SelectTrigger className="h-9 w-[140px]">
                           <span className="truncate">{filters.submitted === 'all' ? 'Beküldve' : filters.submitted === 'yes' ? 'Igen' : 'Nem'}</span>
                         </SelectTrigger>
                         <SelectContent>
@@ -735,7 +735,7 @@ const InvoicesPage = () => {
 
                     {activeTab === 'INBOUND' && (
                       <Select value={filters.category} onValueChange={(value) => setFilters(prev => ({ ...prev, category: value }))}>
-                        <SelectTrigger className="h-9 w-44 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                        <SelectTrigger className="h-9 w-[180px]">
                           <span className="truncate">{filters.category === 'all' ? 'Kategória' : filters.category === 'none' ? 'Nincs kategória' : (categories.find(c => c.id === filters.category)?.name || 'Kategória')}</span>
                         </SelectTrigger>
                         <SelectContent>
@@ -749,7 +749,7 @@ const InvoicesPage = () => {
                     )}
 
                     <Select value={filters.project} onValueChange={(value) => setFilters(prev => ({ ...prev, project: value }))}>
-                      <SelectTrigger className="h-9 w-40 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                      <SelectTrigger className="h-9 w-[180px]">
                         <span className="truncate">{filters.project === 'all' ? 'Projekt' : filters.project === 'none' ? 'Nincs projekt' : (projects.find(p => p.id === filters.project)?.name || 'Projekt')}</span>
                       </SelectTrigger>
                       <SelectContent>
@@ -762,7 +762,7 @@ const InvoicesPage = () => {
                     </Select>
 
                     <Select value={filters.paymentMethod} onValueChange={(value) => setFilters(prev => ({ ...prev, paymentMethod: value }))}>
-                      <SelectTrigger className="h-9 w-40 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                      <SelectTrigger className="h-9 w-[180px]">
                         <span className="truncate">{filters.paymentMethod === 'all' ? 'Fiz. mód' : filters.paymentMethod === 'none' ? 'Nem megadott' : getPaymentMethodLabel(filters.paymentMethod)}</span>
                       </SelectTrigger>
                       <SelectContent>
@@ -776,8 +776,8 @@ const InvoicesPage = () => {
                       </SelectContent>
                     </Select>
 
-                    <Button variant="outline" size="sm" onClick={clearFilters} className="h-9 text-red-500 dark:text-red-400 border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600">
-                      <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                    <Button variant="ghost" size="sm" onClick={clearFilters}>
+                      <X className="h-4 w-4 mr-1" />
                       Szűrők törlése
                     </Button>
                   </div>
@@ -856,8 +856,8 @@ const InvoicesPage = () => {
                                 <TableRow className={cn(
                                   "group cursor-pointer",
                                   selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
-                                  !selectedInvoiceIds.has(invoice.id) && isPaid && "bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40",
-                                  !selectedInvoiceIds.has(invoice.id) && !isPaid && "bg-[hsl(var(--error-row-bg))] text-[hsl(var(--error-row-text))] border-l-4 border-l-destructive border-b border-border/40",
+                                  !selectedInvoiceIds.has(invoice.id) && isPaid && "bg-emerald-100/70 dark:bg-emerald-950/40 border-l-2 border-l-emerald-500/60 border-b border-border/40",
+                                  !selectedInvoiceIds.has(invoice.id) && !isPaid && "bg-rose-100/60 dark:bg-rose-950/30 border-l-2 border-l-rose-400/50 border-b border-border/40",
                                   expandedRowIds.has(invoice.id) && "border-b-0"
                                 )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                   <TableCell className="pl-6">
@@ -869,7 +869,11 @@ const InvoicesPage = () => {
                                   <TableCell>
                                     <div className="flex items-center gap-1.5 min-w-0">
                                       <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0", getAvatarColor(partnerName))}>{getInitials(partnerName)}</div>
-                                      <CopyableCell value={partnerName} truncate maxWidth="100%" className="font-medium text-xs" ariaLabel={`${partnerName} másolása`} />
+                                      {partnerName === 'Ismeretlen partner' ? (
+                                        <span className="text-xs text-muted-foreground italic">Ismeretlen partner</span>
+                                      ) : (
+                                        <CopyableCell value={partnerName} truncate maxWidth="100%" className="font-medium text-xs" ariaLabel={`${partnerName} másolása`} />
+                                      )}
                                     </div>
                                   </TableCell>
                                   <TableCell className="text-center text-muted-foreground tabular-nums whitespace-nowrap">
@@ -881,10 +885,10 @@ const InvoicesPage = () => {
                                   <TableCell className="font-medium font-mono">
                                     <CopyableCell value={invoice.invoice_number || '-'} ariaLabel={`${invoice.invoice_number} bizonylatsorszám másolása`} />
                                   </TableCell>
-                                  <TableCell className={cn("text-right font-mono tabular-nums", activeTab === 'INBOUND' ? "text-destructive" : "text-success")}>
+                                  <TableCell className={cn("text-right font-mono tabular-nums", !invoice.invoice_net_amount ? "text-muted-foreground" : activeTab === 'INBOUND' ? "text-destructive" : "text-success")}>
                                     <CopyableCell value={(invoice.invoice_net_amount || 0).toString()} displayValue={formatCurrency(invoice.invoice_net_amount || 0, invoice.currency || 'HUF')} className="justify-end" ariaLabel="Nettó összeg másolása" />
                                   </TableCell>
-                                  <TableCell className={cn("text-right font-mono tabular-nums font-medium", activeTab === 'INBOUND' ? "text-destructive" : "text-success")}>
+                                  <TableCell className={cn("text-right font-mono tabular-nums font-medium", !invoice.invoice_gross_amount ? "text-muted-foreground" : activeTab === 'INBOUND' ? "text-destructive" : "text-success")}>
                                     <CopyableCell value={(invoice.invoice_gross_amount || 0).toString()} displayValue={formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')} className="justify-end" ariaLabel="Bruttó összeg másolása" />
                                   </TableCell>
                                   <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
@@ -978,10 +982,10 @@ const InvoicesPage = () => {
               {/* Submitted Invoices Tabs */}
               {isSubmittedTab && (
                 <TabsContent value={activeTab} className="space-y-4 mt-4">
-                  <div className="flex flex-wrap items-center gap-2 p-4 bg-white dark:bg-muted/20 rounded-lg border border-slate-200 dark:border-border/30 shadow-sm">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-muted-foreground h-4 w-4" />
-                      <Input placeholder="Keresés..." value={filters.search} onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))} className="pl-9 h-9 w-48 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary" />
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative flex-1 min-w-[200px]">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input placeholder="Keresés (partner, bizonylat, összeg...)" value={filters.search} onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))} className="pl-9" />
                     </div>
 
                     <div className="flex items-center gap-1.5">
@@ -1056,7 +1060,7 @@ const InvoicesPage = () => {
                     </div>
 
                     <Select value={filters.currency} onValueChange={(value) => setFilters(prev => ({ ...prev, currency: value }))}>
-                      <SelectTrigger className="h-9 w-40 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                      <SelectTrigger className="h-9 w-[180px]">
                         <span className="truncate">{filters.currency === 'all' ? 'Pénznem' : filters.currency}</span>
                       </SelectTrigger>
                       <SelectContent>
@@ -1068,7 +1072,7 @@ const InvoicesPage = () => {
                     </Select>
 
                     <Select value={filters.paymentMethod} onValueChange={(value) => setFilters(prev => ({ ...prev, paymentMethod: value }))}>
-                      <SelectTrigger className="h-9 w-40 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+                      <SelectTrigger className="h-9 w-[180px]">
                         <span className="truncate">{filters.paymentMethod === 'all' ? 'Fiz. mód' : filters.paymentMethod === 'none' ? 'Nem megadott' : filters.paymentMethod}</span>
                       </SelectTrigger>
                       <SelectContent>
@@ -1082,8 +1086,8 @@ const InvoicesPage = () => {
                       </SelectContent>
                     </Select>
 
-                    <Button variant="outline" size="sm" onClick={clearFilters} className="h-9 text-red-500 dark:text-red-400 border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600">
-                      <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                    <Button variant="ghost" size="sm" onClick={clearFilters}>
+                      <X className="h-4 w-4 mr-1" />
                       Szűrők törlése
                     </Button>
                   </div>
@@ -1146,8 +1150,8 @@ const InvoicesPage = () => {
                               <TableRow className={cn(
                                 "group cursor-pointer",
                                 selectedSubmittedIds.has(invoice.id) && "bg-primary/5",
-                                !selectedSubmittedIds.has(invoice.id) && extendedMatchedIds.has(invoice.id) && "bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))] border-l-4 border-l-success border-b border-border/40",
-                                !selectedSubmittedIds.has(invoice.id) && !extendedMatchedIds.has(invoice.id) && "bg-[hsl(var(--error-row-bg))] text-[hsl(var(--error-row-text))] border-l-4 border-l-destructive border-b border-border/40",
+                                !selectedSubmittedIds.has(invoice.id) && extendedMatchedIds.has(invoice.id) && "bg-emerald-100/70 dark:bg-emerald-950/40 border-l-2 border-l-emerald-500/60 border-b border-border/40",
+                                !selectedSubmittedIds.has(invoice.id) && !extendedMatchedIds.has(invoice.id) && "bg-rose-100/60 dark:bg-rose-950/30 border-l-2 border-l-rose-400/50 border-b border-border/40",
                                 expandedRowIds.has(invoice.id) && "border-b-0"
                               )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                 <TableCell className="pl-6">
@@ -1162,7 +1166,11 @@ const InvoicesPage = () => {
                                     return (
                                       <div className="flex items-center gap-1.5 min-w-0">
                                         <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0", getAvatarColor(partnerName))}>{getInitials(partnerName)}</div>
-                                        <CopyableCell value={partnerName} truncate maxWidth="100%" className="font-medium text-xs" ariaLabel={`${partnerName} másolása`} />
+                                        {partnerName === '-' || partnerName === 'Ismeretlen partner' ? (
+                                          <span className="text-xs text-muted-foreground italic">Ismeretlen partner</span>
+                                        ) : (
+                                          <CopyableCell value={partnerName} truncate maxWidth="100%" className="font-medium text-xs" ariaLabel={`${partnerName} másolása`} />
+                                        )}
                                       </div>
                                     );
                                   })()}
@@ -1176,10 +1184,10 @@ const InvoicesPage = () => {
                                 <TableCell className="font-medium font-mono">
                                   <CopyableCell value={invoice.bizonylatsorszam || '-'} ariaLabel={`${invoice.bizonylatsorszam} bizonylatsorszám másolása`} />
                                 </TableCell>
-                                <TableCell className={cn("text-right font-mono tabular-nums", invoice.reference_number ? "text-muted-foreground italic" : activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
+                                <TableCell className={cn("text-right font-mono tabular-nums", invoice.reference_number ? "text-muted-foreground italic" : !invoice.adoalap_osszesen ? "text-muted-foreground" : activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
                                   <CopyableCell value={(invoice.adoalap_osszesen || 0).toString()} displayValue={formatCurrency(invoice.adoalap_osszesen || 0, invoice.penznem || 'HUF')} className="justify-end" ariaLabel="Nettó összeg másolása" />
                                 </TableCell>
-                                <TableCell className={cn("text-right font-mono tabular-nums font-medium", invoice.reference_number ? "text-muted-foreground italic" : activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
+                                <TableCell className={cn("text-right font-mono tabular-nums font-medium", invoice.reference_number ? "text-muted-foreground italic" : !invoice.brutto_vegosszeg ? "text-muted-foreground" : activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
                                   <CopyableCell value={(invoice.brutto_vegosszeg || 0).toString()} displayValue={formatCurrency(invoice.brutto_vegosszeg || 0, invoice.penznem || 'HUF')} className="justify-end" ariaLabel="Bruttó összeg másolása" />
                                 </TableCell>
                                 <TableCell className="text-right font-mono tabular-nums text-muted-foreground">

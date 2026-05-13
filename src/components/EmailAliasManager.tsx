@@ -5,7 +5,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Copy, CheckCircle, Loader2 } from 'lucide-react';
+import { Copy, CheckCircle, Loader2, Plus } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface EmailAlias {
@@ -26,18 +26,18 @@ const EmailAliasManager = () => {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
 
+  // Only fetch existing alias on mount — never auto-generate
   useEffect(() => {
     if (user && selectedCompany) {
-      fetchOrGenerateAlias();
+      fetchExistingAlias();
     }
   }, [user, selectedCompany]);
 
-  const fetchOrGenerateAlias = async () => {
+  const fetchExistingAlias = async () => {
     if (!selectedCompany) return;
     
     setLoading(true);
     try {
-      // First try to fetch existing alias for this company
       const { data, error } = await supabase
         .from('email_aliases')
         .select('id, alias_email, company_name, status, mailgun_route_id, verified_at, company_id, user_id, created_at, updated_at')
@@ -49,16 +49,11 @@ const EmailAliasManager = () => {
       if (data && data.alias_email && data.alias_email.trim() !== '') {
         setAlias(data);
       } else {
-        // No alias exists or alias_email is empty, generate one
-        await generateAlias();
+        setAlias(null);
       }
     } catch (error: any) {
-      console.error('Error fetching alias:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Hiba',
-        description: 'Nem sikerült betölteni az email aliast',
-      });
+      console.warn('[EmailAlias] Error fetching alias:', error.message);
+      setAlias(null);
     } finally {
       setLoading(false);
     }
@@ -80,6 +75,10 @@ const EmailAliasManager = () => {
 
       if (data?.alias) {
         setAlias(data.alias);
+        toast({
+          title: 'Email alias létrehozva',
+          description: 'Az email alias sikeresen generálva',
+        });
       } else {
         // Refetch to get the newly created alias
         const { data: newAlias, error: fetchError } = await supabase
@@ -89,7 +88,13 @@ const EmailAliasManager = () => {
           .maybeSingle();
 
         if (fetchError) throw fetchError;
-        setAlias(newAlias);
+        if (newAlias) {
+          setAlias(newAlias);
+          toast({
+            title: 'Email alias létrehozva',
+            description: 'Az email alias sikeresen generálva',
+          });
+        }
       }
     } catch (error: any) {
       console.error('Error generating alias:', error);
@@ -136,14 +141,12 @@ const EmailAliasManager = () => {
     }
   };
 
-  if (loading || generating) {
+  if (loading) {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">
-            {generating ? 'Email alias generálása...' : 'Betöltés...'}
-          </span>
+          <span className="text-sm text-muted-foreground">Betöltés...</span>
         </div>
         <Skeleton className="h-10 w-full rounded-md" />
       </div>
@@ -165,7 +168,7 @@ const EmailAliasManager = () => {
         Állítsa be minden mailfiókjában, hogy az e-mailjei ide is továbbításra kerüljenek, az alább megadott e-mail címre.
       </p>
 
-      {/* Read-only email alias input with copy button */}
+      {/* Read-only email alias input with copy button, or generate button */}
       {alias ? (
         <div className="flex items-center gap-2">
           <Input
@@ -188,13 +191,31 @@ const EmailAliasManager = () => {
           </Button>
         </div>
       ) : (
-        <div className="flex items-center gap-2">
+        <div className="space-y-3">
           <Input
             value="Nincs elérhető alias"
             readOnly
             disabled
             className="bg-muted text-muted-foreground cursor-default"
           />
+          <Button
+            onClick={generateAlias}
+            disabled={generating}
+            variant="outline"
+            className="w-full"
+          >
+            {generating ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Generálás...
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-2" />
+                Email alias generálása
+              </>
+            )}
+          </Button>
         </div>
       )}
     </div>

@@ -2,7 +2,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, RotateCcw } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import type { TransactionFilters as Filters } from '@/hooks/useTransactionData';
 
 interface TransactionFiltersProps {
@@ -23,15 +23,15 @@ const TransactionFilters = React.memo(function TransactionFilters({
   uniqueTypes,
 }: TransactionFiltersProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 p-4 bg-white dark:bg-muted/20 rounded-lg border border-slate-200 dark:border-border/30 shadow-sm">
+    <div className="flex flex-wrap items-center gap-3">
       {/* Search */}
-      <div className="relative col-span-2 md:col-span-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-muted-foreground" />
+      <div className="relative flex-1 min-w-[200px]">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Keresés..."
+          placeholder="Keresés (leírás, partner, összeg...)"
           value={filters.search}
           onChange={(e) => onFilterChange(prev => ({ ...prev, search: e.target.value }))}
-          className="pl-9 h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary"
+          className="pl-9"
         />
       </div>
 
@@ -40,7 +40,7 @@ const TransactionFilters = React.memo(function TransactionFilters({
         value={filters.currency}
         onValueChange={(value) => onFilterChange(prev => ({ ...prev, currency: value }))}
       >
-        <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+        <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Pénznem" />
         </SelectTrigger>
         <SelectContent>
@@ -56,11 +56,11 @@ const TransactionFilters = React.memo(function TransactionFilters({
         value={filters.matchStatus}
         onValueChange={(value) => onFilterChange(prev => ({ ...prev, matchStatus: value }))}
       >
-        <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+        <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Státusz" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Minden státusz</SelectItem>
+          <SelectItem value="all">Összes státusz</SelectItem>
           <SelectItem value="matched">Párosított</SelectItem>
           <SelectItem value="suggested">Javasolt</SelectItem>
           <SelectItem value="unmatched">Párosítatlan</SelectItem>
@@ -72,7 +72,7 @@ const TransactionFilters = React.memo(function TransactionFilters({
         value={filters.type}
         onValueChange={(value) => onFilterChange(prev => ({ ...prev, type: value }))}
       >
-        <SelectTrigger className="h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
+        <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Típus" />
         </SelectTrigger>
         <SelectContent>
@@ -85,14 +85,8 @@ const TransactionFilters = React.memo(function TransactionFilters({
 
       {/* Clear button */}
       {hasActiveFilters && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onClearFilters}
-          className="h-9 text-red-500 dark:text-red-400 border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600"
-        >
-          <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-          Szűrők törlése
+        <Button variant="ghost" size="sm" onClick={onClearFilters}>
+          <X className="h-4 w-4 mr-1" /> Szűrők törlése
         </Button>
       )}
     </div>
