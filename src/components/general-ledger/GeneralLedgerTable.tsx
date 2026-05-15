@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown } from 'lucide-react';
+import { exportGlExcel } from '@/lib/glExport';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
@@ -60,6 +61,7 @@ const formatCurrency = (value: number) => {
 
 export interface GeneralLedgerTableRef {
   expandAllAndPrint: () => void;
+  exportExcel: (companyName?: string) => Promise<void>;
 }
 
 interface GeneralLedgerTableProps {
@@ -394,6 +396,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         window.print();
         setIsPrinting(false);
       }, 300);
+    },
+    exportExcel: async (companyName?: string) => {
+      await exportGlExcel(processedRows, companyName, footerTotals);
     }
   }));
 

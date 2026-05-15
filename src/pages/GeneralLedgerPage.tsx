@@ -6,11 +6,12 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Download, UploadCloud, Database, Bot, Loader2, Search } from 'lucide-react';
+import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown } from 'lucide-react';
 import GeneralLedgerTable, { GeneralLedgerTableRef } from '@/components/general-ledger/GeneralLedgerTable';
 import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
 import { ManagePresetsModal } from '@/components/general-ledger/ManagePresetsModal';
@@ -221,10 +222,25 @@ export default function GeneralLedgerPage() {
                 <span>AI Besorolás</span>
               </Button>
               <div className="border-l pl-3 border-border/60 ml-1">
-                <Button variant="outline" size="sm" className="h-9 gap-2" onClick={handlePrint}>
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">PDF Export</span>
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9 gap-2">
+                      <Download className="h-4 w-4" />
+                      Export
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={handlePrint}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Export PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => tableRef.current?.exportExcel(selectedCompany?.name)}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Excel
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>

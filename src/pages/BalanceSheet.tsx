@@ -7,14 +7,16 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2 } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2, ReceiptText } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { exportBsExcel } from '@/lib/bsExport';
 
 // ─── Mapping Tab ───
 function BsMappingTab({ presetId }: { presetId?: string }) {
@@ -234,10 +236,12 @@ function BsMappingTab({ presetId }: { presetId?: string }) {
 // ─── View Tab ───
 function BsViewTab({ presetId }: { presetId?: string }) {
   const { selectedCompany } = useCompany();
+  const { toast } = useToast();
   const [inThousands, setInThousands] = useState(true);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [expandedGl, setExpandedGl] = useState<Set<string>>(new Set());
 
-  const { data: bsData, isLoading } = useQuery({
+  const { data: bsData, isLoading, isError, error: queryError } = useQuery({
     queryKey: ['bs_report', selectedCompany?.id, presetId],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
@@ -247,7 +251,28 @@ function BsViewTab({ presetId }: { presetId?: string }) {
         p_date_to: null,
         p_fiscal_year: null
       });
-      if (error) throw error;
+      if (error) {
+        console.error('[BS Report RPC Error]', error);
+        throw error;
+      }
+      return data;
+    },
+    enabled: !!selectedCompany?.id && !!presetId,
+    retry: false
+  });
+
+  // 2nd-level drill-down: transaction items per GL account
+  const { data: dbItems } = useQuery({
+    queryKey: ['glItems_bs', selectedCompany?.id, presetId],
+    queryFn: async () => {
+      if (!selectedCompany?.id || !presetId) return [];
+      const { data, error } = await supabase.rpc('get_gl_categorized_items', {
+        p_company_id: selectedCompany.id,
+        p_preset_id: presetId,
+        p_date_from: null,
+        p_date_to: null
+      });
+      if (error) return [];
       return data;
     },
     enabled: !!selectedCompany?.id && !!presetId
@@ -262,6 +287,24 @@ function BsViewTab({ presetId }: { presetId?: string }) {
   const toggleRow = (id: string) => {
     setExpandedRows(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   };
+
+  const toggleGl = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedGl(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  };
+
+  const expandAllView = () => {
+    if (!bsData) return;
+    // Expand all: letters, romans with children, and arabics with GL
+    const allExpandable = bsData.filter(r =>
+      r.type === 'letter' ||
+      (r.type === 'roman' && bsData.some(c => c.parent_id === r.bs_structure_id)) ||
+      (r.type === 'arabic' && ((r.gl_accounts as any[]) || []).length > 0)
+    );
+    setExpandedRows(new Set(allExpandable.map(r => r.bs_structure_id)));
+  };
+
+  const collapseAllView = () => setExpandedRows(new Set());
 
   // Hierarchical sum calculation
   const processedData = React.useMemo(() => {
@@ -309,40 +352,114 @@ function BsViewTab({ presetId }: { presetId?: string }) {
     };
   }, [bsData]);
 
+  // Determine which rows have expandable children
+  const hasChildrenMap = React.useMemo(() => {
+    const map: Record<string, boolean> = {};
+    if (!bsData) return map;
+    bsData.forEach(row => {
+      if (row.type === 'letter') {
+        map[row.bs_structure_id] = bsData.some(r => r.parent_id === row.bs_structure_id);
+      } else if (row.type === 'roman') {
+        map[row.bs_structure_id] = bsData.some(r => r.parent_id === row.bs_structure_id);
+      } else if (row.type === 'arabic') {
+        map[row.bs_structure_id] = ((row.gl_accounts as any[]) || []).length > 0;
+      }
+    });
+    return map;
+  }, [bsData]);
+
   if (isLoading) return <div className="p-12 flex justify-center"><Loader2 className="animate-spin w-8 h-8 text-primary" /></div>;
+  if (isError) return (
+    <div className="p-6 space-y-4">
+      <div className="flex items-center gap-3 p-4 rounded-xl border-2 bg-red-500/10 border-red-500/40 text-red-700 dark:text-red-400">
+        <AlertTriangle className="w-5 h-5 shrink-0" />
+        <div>
+          <p className="font-bold">Hiba a mérleg betöltésekor</p>
+          <p className="text-sm mt-1 opacity-80">{(queryError as any)?.message || 'Ismeretlen hiba. Ellenőrizd, hogy a get_bs_report RPC funkció le van-e futtatva a Supabase-ben.'}</p>
+        </div>
+      </div>
+    </div>
+  );
 
   const { assets, liabilities, totalAssets, totalLiabilities } = processedData;
   const isBalanced = Math.abs(totalAssets - totalLiabilities) < 0.01;
   const difference = totalAssets - totalLiabilities;
 
-  const renderRow = (row: any) => {
-    const isLetter = row.type === 'letter';
-    const isRoman = row.type === 'roman';
-    const isArabic = row.type === 'arabic';
-    const isTotal = row.type === 'total';
-    const glAccounts = (row.gl_accounts as any[]) || [];
-    const hasGl = glAccounts.length > 0;
-    const isExpanded = expandedRows.has(row.bs_structure_id);
 
+  const renderSection = (rows: any[]) => {
+    return rows.map(row => {
+      const isLetter = row.type === 'letter';
+      const isRoman = row.type === 'roman';
+      const isArabic = row.type === 'arabic';
+      const isTotal = row.type === 'total';
+      const glAccounts = (row.gl_accounts as any[]) || [];
+      const hasGl = glAccounts.length > 0;
+      const isExpanded = expandedRows.has(row.bs_structure_id);
+      const hasChildren = hasChildrenMap[row.bs_structure_id] || false;
+      const isClickable = hasChildren || (isArabic && hasGl);
+
+      // Visibility: roman is hidden if parent letter is collapsed
+      if (isRoman) {
+        const parentLetter = rows.find(r => r.bs_structure_id === row.parent_id);
+        if (parentLetter && !expandedRows.has(parentLetter.bs_structure_id)) {
+          return <React.Fragment key={row.bs_structure_id}>
+            <div className="hidden print:block">
+              {renderRowContent(row, isLetter, isRoman, isArabic, isTotal, glAccounts, hasGl, isExpanded, isClickable)}
+            </div>
+          </React.Fragment>;
+        }
+      }
+
+      // Visibility: arabic is hidden if parent roman is collapsed
+      if (isArabic) {
+        const parentRoman = rows.find(r => r.bs_structure_id === row.parent_id);
+        if (parentRoman) {
+          // Check roman is visible (its parent letter must be expanded)
+          const grandparentLetter = rows.find(r => r.bs_structure_id === parentRoman.parent_id);
+          if (grandparentLetter && !expandedRows.has(grandparentLetter.bs_structure_id)) {
+            return <React.Fragment key={row.bs_structure_id}>
+              <div className="hidden print:block">
+                {renderRowContent(row, isLetter, isRoman, isArabic, isTotal, glAccounts, hasGl, isExpanded, isClickable)}
+              </div>
+            </React.Fragment>;
+          }
+          // Check roman itself is expanded
+          if (!expandedRows.has(parentRoman.bs_structure_id)) {
+            return <React.Fragment key={row.bs_structure_id}>
+              <div className="hidden print:block">
+                {renderRowContent(row, isLetter, isRoman, isArabic, isTotal, glAccounts, hasGl, isExpanded, isClickable)}
+              </div>
+            </React.Fragment>;
+          }
+        }
+      }
+
+      return <React.Fragment key={row.bs_structure_id}>
+        {renderRowContent(row, isLetter, isRoman, isArabic, isTotal, glAccounts, hasGl, isExpanded, isClickable)}
+      </React.Fragment>;
+    });
+  };
+
+  const renderRowContent = (row: any, isLetter: boolean, isRoman: boolean, isArabic: boolean, isTotal: boolean, glAccounts: any[], hasGl: boolean, isExpanded: boolean, isClickable: boolean) => {
     const indent = isRoman ? 'pl-6' : isArabic ? 'pl-12' : '';
 
     return (
-      <React.Fragment key={row.bs_structure_id}>
+      <>
         <div
           className={cn(
             "grid grid-cols-12 gap-4 p-3 items-center transition-colors hover:bg-muted/30",
             isTotal ? "bg-primary/10 font-bold border-t-2 border-b-2 border-border/80 text-base" : "",
             isLetter ? "bg-primary/5 font-bold border-t border-border/60" : "",
             isRoman ? "font-semibold" : "",
-            isArabic && hasGl ? "cursor-pointer" : ""
+            isClickable ? "cursor-pointer" : ""
           )}
-          onClick={() => isArabic && hasGl && toggleRow(row.bs_structure_id)}
+          onClick={() => isClickable && toggleRow(row.bs_structure_id)}
         >
           <div className={cn("col-span-1 text-center font-bold text-muted-foreground text-sm", indent)}>
             {row.row_code}
           </div>
           <div className={cn("col-span-5 flex items-center gap-2", indent)}>
-            {isArabic && hasGl && (
+            {isClickable && (
               <div className="w-4 h-4 shrink-0 text-muted-foreground/70">
                 {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               </div>
@@ -363,24 +480,68 @@ function BsViewTab({ presetId }: { presetId?: string }) {
           </div>
         </div>
 
-        {/* GL Drill-down */}
-        {isArabic && isExpanded && (
-          <div className="bg-muted/10 border-b border-border/50 pb-2 shadow-inner">
-            {glAccounts.map((gl: any) => (
-              <div key={gl.gl_account_id} className="grid grid-cols-12 gap-4 py-2 px-3 items-center text-sm hover:bg-muted/40 border-l-4 border-l-transparent">
-                <div className="col-span-1"></div>
-                <div className="col-span-5 flex items-center gap-2 pl-16 text-muted-foreground">
-                  <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/70">{gl.gl_number}</span>
-                  <span className="truncate">{gl.short_name}</span>
-                </div>
-                <div className="col-span-2"></div>
-                <div className="col-span-2"></div>
-                <div className="col-span-2 text-right text-muted-foreground tabular-nums">{formatValue(gl.balance)}</div>
-              </div>
-            ))}
+        {/* GL Drill-down for arabic rows */}
+        {isArabic && hasGl && (
+          <div className={cn("bg-muted/10 border-b border-border/50 pb-2 shadow-inner", !isExpanded && "hidden print:block")}>
+            {glAccounts.map((gl: any) => {
+              if (!gl.gl_account_id) return null;
+              const isGlExpanded = expandedGl.has(gl.gl_account_id);
+              const items = dbItems?.filter((i: any) => i.gl_account_id === gl.gl_account_id) || [];
+              const hasItems = items.length > 0;
+
+              return (
+                <React.Fragment key={gl.gl_account_id}>
+                  <div
+                    className={cn(
+                      "grid grid-cols-12 gap-4 py-2 px-3 items-center text-sm hover:bg-muted/40 border-l-4 border-l-transparent",
+                      hasItems ? "cursor-pointer hover:border-l-primary/40" : ""
+                    )}
+                    onClick={(e) => hasItems && toggleGl(gl.gl_account_id, e)}
+                  >
+                    <div className="col-span-1"></div>
+                    <div className="col-span-5 flex items-center gap-2 pl-16 text-muted-foreground">
+                      <div className="w-4 h-4 shrink-0 flex items-center justify-center">
+                        {hasItems && (
+                          <div className="text-muted-foreground/50">
+                            {isGlExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                          </div>
+                        )}
+                      </div>
+                      <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground/70">{gl.gl_number}</span>
+                      <span className="truncate">{gl.short_name}</span>
+                    </div>
+                    <div className="col-span-2"></div>
+                    <div className="col-span-2"></div>
+                    <div className="col-span-2 text-right text-muted-foreground tabular-nums">{formatValue(gl.balance)}</div>
+                  </div>
+
+                  {/* Level 2: Transactions */}
+                  {hasItems && (
+                    <div className={cn("bg-background/50 py-1 shadow-inner pl-12 pr-4 border-y border-border/20", !isGlExpanded && "hidden print:block")}>
+                      {items.map((item: any) => (
+                        <div key={item.item_id} className="grid grid-cols-12 gap-4 py-1.5 items-center text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 px-2 rounded-md transition-colors">
+                          <div className="col-span-2 flex items-center gap-2">
+                            <ReceiptText className="w-3 h-3 opacity-50" />
+                            {item.item_date?.substring(0, 10).replace(/-/g, '.')}
+                          </div>
+                          <div className="col-span-6 flex items-center gap-2 truncate" title={item.description || item.partner}>
+                            {item.partner && <span className="font-medium text-foreground/80 mr-2">{item.partner}</span>}
+                            <span className="truncate">{item.description}</span>
+                          </div>
+                          <div className="col-span-2"></div>
+                          <div className="col-span-2 text-right tabular-nums">
+                            {formatValue(item.amount || 0)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </div>
         )}
-      </React.Fragment>
+      </>
     );
   };
 
@@ -406,13 +567,38 @@ function BsViewTab({ presetId }: { presetId?: string }) {
           <Label htmlFor="bs-view-mode" className="font-medium cursor-pointer">Hivatalos nézet (Ezer Ft)</Label>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="gap-2 h-9 bg-card" onClick={() => window.print()}>
-            <FileText className="w-4 h-4 text-indigo-500" /><span className="font-medium">PDF</span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 gap-2">
+                <Download className="h-4 w-4" />
+                Export
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => window.print()}>
+                <FileText className="h-4 w-4 mr-2" />
+                Export PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={async () => {
+                try {
+                  await exportBsExcel(assets, liabilities, totalAssets, totalLiabilities, inThousands, selectedCompany?.name || 'Vallalkozas');
+                  toast({ title: 'Sikeres exportálás', description: 'A mérleg letöltése megkezdődött.' });
+                } catch (err: any) {
+                  toast({ title: 'Hiba', description: err.message, variant: 'destructive' });
+                }
+              }}>
+                <FileText className="h-4 w-4 mr-2" />
+                Export XLSX
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
       {/* Table */}
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
       <div className="border rounded-md shadow-sm overflow-hidden bg-card">
         <div className="grid grid-cols-12 gap-4 p-4 bg-muted/80 border-b text-sm font-bold uppercase text-muted-foreground select-none">
           <div className="col-span-1 text-center">Sor</div>
@@ -422,11 +608,17 @@ function BsViewTab({ presetId }: { presetId?: string }) {
           <div className="col-span-2 text-right text-foreground">Tárgyév</div>
         </div>
         <div className="divide-y divide-border/40">
-          {assets.map(renderRow)}
+          {renderSection(assets)}
           <div className="h-4 bg-muted/30" /> {/* Separator */}
-          {liabilities.map(renderRow)}
+          {renderSection(liabilities)}
         </div>
       </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onClick={expandAllView} className="gap-2"><Maximize2 className="w-4 h-4" /> Mind kinyitása</ContextMenuItem>
+          <ContextMenuItem onClick={collapseAllView} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     </div>
   );
 }
@@ -441,6 +633,18 @@ export default function BalanceSheet() {
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
+      {/* Print-only header */}
+      <div className="hidden print:flex flex-col items-center justify-center mb-8 w-full border-b-2 border-primary/20 pb-6">
+        <h1 className="text-5xl font-black bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent tracking-tight print:text-black mb-2">Visibill</h1>
+        <h2 className="text-2xl font-bold uppercase tracking-widest text-foreground mt-2">Mérleg</h2>
+        <p className="text-sm text-muted-foreground mt-1">Sztv. "A" változat szerinti mérleg</p>
+        <div className="mt-4 flex items-center gap-4 text-sm font-medium text-muted-foreground">
+          <span>{selectedCompany?.name}</span>
+          <span>•</span>
+          <span>Fordulónap: {new Date().toISOString().slice(0, 10).replace(/-/g, '.')}</span>
+        </div>
+      </div>
+
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground/90">Mérleg</h1>

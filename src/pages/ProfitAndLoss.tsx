@@ -7,9 +7,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText, Maximize2, Minimize2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -304,6 +306,21 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
     });
   };
 
+  const expandAllPnl = () => {
+    if (!pnlData) return;
+    const romanIds = pnlData.filter(r => r.type === 'roman').map(r => r.pnl_structure_id);
+    setExpandedRows(new Set(romanIds));
+    // Also expand all GL accounts within roman rows
+    const glIds = pnlData.filter(r => r.type === 'roman' && ((r.gl_accounts as any[]) || []).length > 0)
+      .flatMap(r => ((r.gl_accounts as any[]) || []).map((gl: any) => gl.gl_account_id));
+    setExpandedGl(new Set(glIds));
+  };
+
+  const collapseAllPnl = () => {
+    setExpandedRows(new Set());
+    setExpandedGl(new Set());
+  };
+
   const formatValue = (val: number) => {
     const finalVal = inThousands ? Math.round(val / 1000) : val;
     if (finalVal === 0) return '0';
@@ -387,17 +404,30 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="gap-2 h-9 bg-card hover:bg-accent transition-all shadow-sm" onClick={handlePrintPdf}>
-            <FileText className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
-            <span className="font-medium">Letöltés PDF-ként</span>
-          </Button>
-          <Button variant="outline" className="gap-2 h-9 bg-card hover:bg-accent transition-all shadow-sm" onClick={handleExport}>
-            <Download className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-            <span className="font-medium">Letöltés Excelként</span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 gap-2">
+                <Download className="h-4 w-4" />
+                Export
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={handlePrintPdf}>
+                <FileText className="h-4 w-4 mr-2" />
+                Export PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExport}>
+                <FileText className="h-4 w-4 mr-2" />
+                Export XLSX
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
       <div className="border rounded-md shadow-sm overflow-hidden bg-card">
         <div className="grid grid-cols-12 gap-4 p-4 bg-muted/80 backdrop-blur-sm border-b border-border text-sm font-bold tracking-wide uppercase text-muted-foreground select-none">
           <div className="col-span-1 text-center">Sor</div>
@@ -533,6 +563,12 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
           )}
         </div>
       </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onClick={expandAllPnl} className="gap-2"><Maximize2 className="w-4 h-4" /> Mind kinyitása</ContextMenuItem>
+          <ContextMenuItem onClick={collapseAllPnl} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     </div>
   );
 }
