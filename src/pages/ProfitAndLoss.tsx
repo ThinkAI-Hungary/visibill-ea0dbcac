@@ -393,7 +393,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 content-animate">
       <div className="flex justify-between items-center mb-6 bg-muted/30 p-4 rounded-xl border border-border/50 print:hidden">
         <div className="flex items-center gap-4">
           <div className="flex items-center space-x-2">
@@ -646,7 +646,7 @@ export default function ProfitAndLoss() {
   };
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
+    <div className="space-y-6 max-w-[1600px] mx-auto pb-10 page-animate">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground/90">Eredménykimutatás</h1>

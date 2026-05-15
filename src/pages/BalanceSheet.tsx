@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -236,20 +237,24 @@ function BsMappingTab({ presetId }: { presetId?: string }) {
 // ─── View Tab ───
 function BsViewTab({ presetId }: { presetId?: string }) {
   const { selectedCompany } = useCompany();
+  const { dateToFormatted: dateTo } = useDateRange();
   const { toast } = useToast();
   const [inThousands, setInThousands] = useState(true);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [expandedGl, setExpandedGl] = useState<Set<string>>(new Set());
 
+  // Derive fiscal year from the global date picker
+  const fiscalYear = dateTo ? new Date(dateTo).getFullYear() : new Date().getFullYear();
+
   const { data: bsData, isLoading, isError, error: queryError } = useQuery({
-    queryKey: ['bs_report', selectedCompany?.id, presetId],
+    queryKey: ['bs_report', selectedCompany?.id, presetId, dateTo],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
       const { data, error } = await supabase.rpc('get_bs_report', {
         p_company_id: selectedCompany.id,
         p_preset_id: presetId,
-        p_date_to: null,
-        p_fiscal_year: null
+        p_date_to: dateTo || null,
+        p_fiscal_year: fiscalYear
       });
       if (error) {
         console.error('[BS Report RPC Error]', error);
@@ -258,7 +263,8 @@ function BsViewTab({ presetId }: { presetId?: string }) {
       return data;
     },
     enabled: !!selectedCompany?.id && !!presetId,
-    retry: false
+    retry: false,
+    gcTime: 0,          // don't cache — prevents stale data flash on date switch
   });
 
   // 2nd-level drill-down: transaction items per GL account
@@ -546,8 +552,9 @@ function BsViewTab({ presetId }: { presetId?: string }) {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Balance Validator */}
+    <div className="space-y-4 content-animate">
+      {/* Balance Validator — hidden while refetching */}
+      {(
       <div className={cn(
         "flex items-center gap-3 p-4 rounded-xl border-2 transition-all",
         isBalanced
@@ -559,6 +566,7 @@ function BsViewTab({ presetId }: { presetId?: string }) {
           {isBalanced ? '✓ A mérleg egyezik' : `✗ Eltérés: ${formatValue(difference)} ${inThousands ? 'E Ft' : 'Ft'}`}
         </span>
       </div>
+      )}
 
       {/* Controls */}
       <div className="flex justify-between items-center bg-muted/30 p-4 rounded-xl border border-border/50 print:hidden">
@@ -632,7 +640,7 @@ export default function BalanceSheet() {
   const { activePresetId, setActivePresetId, presets } = useActivePreset(selectedCompany?.id);
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
+    <div className="space-y-6 max-w-[1600px] mx-auto pb-10 page-animate">
       {/* Print-only header */}
       <div className="hidden print:flex flex-col items-center justify-center mb-8 w-full border-b-2 border-primary/20 pb-6">
         <h1 className="text-5xl font-black bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent tracking-tight print:text-black mb-2">Visibill</h1>

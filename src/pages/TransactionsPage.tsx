@@ -125,8 +125,8 @@ const TransactionsPage = () => {
   }
 
   return (
-    <div className="h-full bg-background">
-      <main className="w-full max-w-none px-4 py-4">
+    <div className="h-full bg-background page-animate">
+      <main className="w-full max-w-none px-4 py-4 content-animate">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabValue)}>
           <TabsList className="mb-4">
             {TABS.map(t => {

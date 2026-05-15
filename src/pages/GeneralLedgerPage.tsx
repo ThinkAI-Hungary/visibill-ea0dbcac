@@ -160,7 +160,7 @@ export default function GeneralLedgerPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
+    <div className="space-y-6 max-w-[1600px] mx-auto pb-10 page-animate">
       {/* Print-only beautifully formatted header */}
       <div className="hidden print:flex flex-col items-center justify-center mb-8 w-full border-b-2 border-primary/20 pb-6">
         <h1 className="text-5xl font-black bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent tracking-tight print:text-black mb-2">Visibill</h1>
@@ -247,7 +247,7 @@ export default function GeneralLedgerPage() {
         </div>
       </div>
 
-      <Card className="border-border/60 shadow-md print:border-none print:shadow-none print:bg-transparent">
+      <Card className="border-border/60 shadow-md print:border-none print:shadow-none print:bg-transparent content-animate">
         <CardHeader className="py-4 border-b border-border/40 bg-muted/30 relative overflow-hidden print:hidden">
           <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary/40 via-primary/20 to-transparent"></div>
           <CardTitle className="text-xl font-bold flex items-center gap-3">
