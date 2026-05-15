@@ -46,6 +46,14 @@ const ProfitAndLoss = lazy(() => import("./pages/ProfitAndLoss"));
 const BalanceSheet = lazy(() => import("./pages/BalanceSheet"));
 const AnnualReportPage = lazy(() => import("./pages/AnnualReportPage"));
 const ManagementDashboard = lazy(() => import("./pages/ManagementDashboard"));
+const AccountyApp = lazy(() => import("./pages/Accounty/AccountyApp"));
+const AccountyLayout = lazy(() => import("./pages/Accounty/AccountyLayout"));
+const NewClientPage = lazy(() => import("./pages/Accounty/NewClientPage"));
+const MissingInvoicesPage = lazy(() => import("./pages/Accounty/MissingInvoicesPage"));
+const ReportsPage = lazy(() => import("./pages/Accounty/ReportsPage"));
+const MissingInvoicesReportPage = lazy(() => import("./pages/Accounty/MissingInvoicesReportPage"));
+const ClientDetailsPage = lazy(() => import("./pages/Accounty/ClientDetailsPage"));
+const ClientMissingInvoicesPage = lazy(() => import("./pages/Accounty/ClientMissingInvoicesPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -203,6 +211,33 @@ const App = () => (
                         </Suspense>
                       </ProtectedPage>
                     } />
+
+                    {/* Accounty New Client Wizard (No Layout) */}
+                    <Route path="/accounty/new-client" element={
+                      <ProtectedPage>
+                        <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+                          <RemoveInitialLoader />
+                          <NewClientPage />
+                        </Suspense>
+                      </ProtectedPage>
+                    } />
+
+                    {/* Accounty frontend – standalone layout */}
+                    <Route path="/accounty" element={
+                      <ProtectedPage>
+                        <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+                          <RemoveInitialLoader />
+                          <AccountyLayout />
+                        </Suspense>
+                      </ProtectedPage>
+                    }>
+                      <Route index element={<AccountyApp />} />
+                      <Route path="client/:id" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientDetailsPage /></Suspense>} />
+                      <Route path="missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MissingInvoicesPage /></Suspense>} />
+                      <Route path="missing-invoices/:id" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientMissingInvoicesPage /></Suspense>} />
+                      <Route path="reports" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ReportsPage /></Suspense>} />
+                      <Route path="reports/missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MissingInvoicesReportPage /></Suspense>} />
+                    </Route>
 
                     {/* Protected routes with persistent sidebar */}
                     <Route element={<ProtectedLayout />}>
