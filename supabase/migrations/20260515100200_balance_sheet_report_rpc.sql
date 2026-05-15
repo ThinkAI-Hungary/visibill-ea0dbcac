@@ -1,5 +1,6 @@
 -- =============================================
 -- BALANCE SHEET - Report RPC (with P&L Bridge)
+-- FIXED: ambiguous column reference bs_structure_id
 -- =============================================
 
 CREATE OR REPLACE FUNCTION public.get_bs_report(
@@ -35,7 +36,7 @@ BEGIN
 
   -- 2. Map GL accounts to BS rows using prefix inheritance (same logic as P&L)
   all_mappings AS (
-    SELECT m.gl_account_id, m.bs_structure_id, a.gl_number,
+    SELECT m.gl_account_id, m.bs_structure_id AS mapped_bs_id, a.gl_number,
            REPLACE(a.gl_number, '.', '') as clean_gl_number
     FROM public.bs_mapping m
     JOIN public.gl_accounts a ON m.gl_account_id = a.id
@@ -48,12 +49,12 @@ BEGIN
       g.short_name,
       g.total_balance,
       (
-        SELECT am.bs_structure_id
+        SELECT am.mapped_bs_id
         FROM all_mappings am
         WHERE REPLACE(g.gl_number, '.', '') LIKE am.clean_gl_number || '%'
         ORDER BY LENGTH(am.clean_gl_number) DESC
         LIMIT 1
-      ) AS bs_structure_id
+      ) AS mapped_bs_id
     FROM gl_data g
   ),
 
@@ -62,7 +63,6 @@ BEGIN
     SELECT COALESCE(SUM(pnl_bal.total_balance), 0) AS pnl_result
     FROM public.get_gl_balances(p_company_id, p_preset_id, NULL, p_date_to) pnl_bal
     JOIN (
-      -- Find accounts mapped to P&L (5-9 class accounts)
       SELECT DISTINCT pm2.gl_account_id
       FROM public.pnl_mapping pm2
       WHERE pm2.company_id = p_company_id AND pm2.preset_id = p_preset_id
@@ -71,10 +71,10 @@ BEGIN
 
   -- 4. Prior year data
   prior_data AS (
-    SELECT bs_structure_id, prior_year_balance, prior_year_adjustment
-    FROM public.bs_prior_year
-    WHERE company_id = p_company_id
-      AND fiscal_year = COALESCE(p_fiscal_year, EXTRACT(YEAR FROM COALESCE(p_date_to, CURRENT_DATE))::integer)
+    SELECT py.bs_structure_id AS prior_bs_id, py.prior_year_balance AS py_balance, py.prior_year_adjustment AS py_adjustment
+    FROM public.bs_prior_year py
+    WHERE py.company_id = p_company_id
+      AND py.fiscal_year = COALESCE(p_fiscal_year, EXTRACT(YEAR FROM COALESCE(p_date_to, CURRENT_DATE))::integer)
   ),
 
   -- 5. Aggregate balances per BS structure row
@@ -92,8 +92,8 @@ BEGIN
         WHEN s.is_pnl_bridge THEN (SELECT pnl_result FROM pnl_bridge_calc)
         ELSE COALESCE(SUM(md.total_balance), 0)::numeric
       END AS current_balance,
-      COALESCE(pd.prior_year_balance, 0)::numeric AS prior_year_balance,
-      COALESCE(pd.prior_year_adjustment, 0)::numeric AS prior_year_adjustment,
+      COALESCE(pd.py_balance, 0)::numeric AS prior_year_balance,
+      COALESCE(pd.py_adjustment, 0)::numeric AS prior_year_adjustment,
       CASE
         WHEN s.is_pnl_bridge THEN '[]'::jsonb
         ELSE COALESCE(
@@ -109,12 +109,12 @@ BEGIN
         )
       END AS gl_accounts
     FROM public.bs_structure s
-    LEFT JOIN mapped_data md ON s.id = md.bs_structure_id AND NOT s.is_pnl_bridge
-    LEFT JOIN prior_data pd ON s.id = pd.bs_structure_id
+    LEFT JOIN mapped_data md ON s.id = md.mapped_bs_id AND NOT s.is_pnl_bridge
+    LEFT JOIN prior_data pd ON s.id = pd.prior_bs_id
     GROUP BY s.id, s.row_code, s.name, s.section, s.type, s.order_num,
-             s.parent_id, s.is_pnl_bridge, pd.prior_year_balance, pd.prior_year_adjustment
+             s.parent_id, s.is_pnl_bridge, pd.py_balance, pd.py_adjustment
   )
   SELECT * FROM aggregated
-  ORDER BY order_num;
+  ORDER BY aggregated.order_num;
 END;
 $$;

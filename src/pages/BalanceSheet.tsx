@@ -6,10 +6,11 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -95,6 +96,17 @@ function BsMappingTab({ presetId }: { presetId?: string }) {
     setExpandedRowIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   };
 
+  const expandAll = () => {
+    if (!glAccounts) return;
+    const allParents = glAccounts.filter(a => {
+      const cid = a.gl_number ? String(a.gl_number).replace(/\./g, '') : '';
+      return glAccounts.some(d => { const did = d.gl_number ? String(d.gl_number).replace(/\./g, '') : ''; return did.startsWith(cid) && did !== cid; });
+    });
+    setExpandedRowIds(new Set(allParents.map(a => a.id)));
+  };
+
+  const collapseAll = () => setExpandedRowIds(new Set());
+
   const processedAccounts = React.useMemo(() => {
     if (!glAccounts) return [];
     const cleanId = (id: string) => id ? String(id).replace(/\./g, '') : '';
@@ -146,6 +158,8 @@ function BsMappingTab({ presetId }: { presetId?: string }) {
           Mentés
         </Button>
       </div>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
       <div className="border rounded-md">
         <div className="grid grid-cols-12 gap-4 p-4 border-b bg-muted/50 font-medium text-sm">
           <div className="col-span-3">Főkönyvi Szám</div>
@@ -207,6 +221,12 @@ function BsMappingTab({ presetId }: { presetId?: string }) {
           )}
         </ScrollArea>
       </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onClick={expandAll} className="gap-2"><Maximize2 className="w-4 h-4" /> Mind kinyitása</ContextMenuItem>
+          <ContextMenuItem onClick={collapseAll} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     </div>
   );
 }
