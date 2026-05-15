@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { formatFileSize, extractStoragePath, cn } from '@/lib/utils';
+import { handleRateLimitError } from '@/lib/supabaseErrors';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -308,87 +309,68 @@ const ManualUpload = () => {
     setUploading(true);
 
     try {
-      let successfulUploads = 0;
-      const uploadedIds: { id: string; fileName: string }[] = [];
-
+      // Phase 1: Upload all files to storage, collect URLs
+      const storageResults: { file: File; fileUrl: string; storagePath: string }[] = [];
       for (const file of selectedInvoiceFiles) {
         try {
-          // Upload file to storage
           const fileUrl = await uploadFileToInvoiceStorage(file, user?.id!);
-
-          // Create upload record in database
-          const { data: uploadRecord, error: uploadError } = await supabase
-            .from('invoice_uploads')
-            .insert({
-              user_id: user?.id!,
-              company_id: selectedCompany?.id || null,
-              file_name: file.name,
-              file_size: file.size,
-              file_type: file.type,
-              file_url: fileUrl,
-              upload_status: 'uploaded',
-              processing_status: 'pending'
-            })
-            .select()
-            .single();
-
-          if (uploadError) {
-            console.error('Database insert error:', uploadError);
-            // BUG #5 FIX: Rollback — remove orphaned Storage file
-            const storagePath = extractStoragePath(fileUrl, 'invoice-uploads');
-            if (storagePath) {
-              await supabase.storage.from('invoice-uploads').remove([storagePath]);
-              console.log('Rolled back Storage file:', storagePath);
-            }
-            throw new Error(`Adatbázis hiba: ${uploadError.message}`);
-          }
-
-          // PGMQ: No webhook needed — database trigger automatically enqueues
-          // the job to the invoice_jobs queue upon INSERT with processing_status='pending'.
-          console.log(`[PGMQ] Invoice upload ${uploadRecord.id} enqueued via DB trigger`);
-
-          addToUploadHistoryCache({
-            id: uploadRecord.id,
-            file_name: file.name,
-            file_size: file.size,
-            file_type: file.type,
-            file_url: fileUrl,
-            user_id: user?.id!,
-            upload_status: 'uploaded',
-            processing_status: 'pending',
-            created_at: new Date().toISOString(),
-            error_message: null,
-          });
-          uploadedIds.push({ id: uploadRecord.id, fileName: file.name });
-          successfulUploads++;
+          const storagePath = extractStoragePath(fileUrl, 'invoice-uploads') || '';
+          storageResults.push({ file, fileUrl, storagePath });
         } catch (fileError) {
-          console.error(`Error processing file ${file.name}:`, fileError);
-          // Continue with next file
+          console.error(`Storage upload failed for ${file.name}:`, fileError);
         }
       }
 
-      if (successfulUploads > 0) {
-        toast({
-          title: "Feltöltés sikeres!",
-          description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.",
-          duration: 3000,
-        });
+      if (storageResults.length === 0) {
+        toast({ variant: "destructive", title: "Feltöltés sikertelen", description: "Nem sikerült egyetlen fájlt sem feltölteni." });
+        return;
+      }
 
+      // Phase 2: Single batch DB insert
+      const insertRows = storageResults.map(r => ({
+        user_id: user?.id!,
+        company_id: selectedCompany?.id || null,
+        file_name: r.file.name,
+        file_size: r.file.size,
+        file_type: r.file.type,
+        file_url: r.fileUrl,
+        upload_status: 'uploaded' as const,
+        processing_status: 'pending' as const,
+      }));
 
-        setSelectedInvoiceFiles([]);
-        delayedUploadHistoryInvalidation();
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Feltöltés sikertelen",
-          description: "Nem sikerült egyetlen fájlt sem feltölteni."
+      const { data: uploadRecords, error: batchError } = await supabase
+        .from('invoice_uploads')
+        .insert(insertRows)
+        .select();
+
+      if (batchError) {
+        console.error('Batch insert error:', batchError);
+        if (handleRateLimitError(batchError)) { setUploading(false); return; }
+        // Rollback all storage uploads
+        const paths = storageResults.map(r => r.storagePath).filter(Boolean);
+        if (paths.length > 0) await supabase.storage.from('invoice-uploads').remove(paths);
+        throw new Error(`Adatbázis hiba: ${batchError.message}`);
+      }
+
+      // Phase 3: Update cache for all records
+      // PGMQ: DB triggers automatically enqueue each inserted row
+      console.log(`[PGMQ] ${uploadRecords!.length} invoice uploads enqueued via DB trigger`);
+      for (const rec of uploadRecords!) {
+        addToUploadHistoryCache({
+          id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
+          file_type: rec.file_type, file_url: rec.file_url, user_id: user?.id!,
+          upload_status: 'uploaded', processing_status: 'pending',
+          created_at: new Date().toISOString(), error_message: null,
         });
       }
+
+      toast({ title: "Feltöltés sikeres!", description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.", duration: 3000 });
+      setSelectedInvoiceFiles([]);
+      delayedUploadHistoryInvalidation();
     } catch (error) {
       console.error('Upload error:', error);
       toast({
-        variant: "destructive",
-        title: "Feltöltés sikertelen",
+        variant: "destructive", title: "Feltöltés sikertelen",
         description: error instanceof Error ? error.message : "Hiba történt a fájlok feltöltése során. Kérlek próbáld újra."
       });
     } finally {
@@ -418,74 +400,54 @@ const ManualUpload = () => {
     setUploading(true);
 
     try {
+      // Phase 1: Upload all files to storage
+      const storageResults: { file: File; fileUrl: string; storagePath: string }[] = [];
       for (const file of selectedBankFiles) {
-        // Upload file to storage
         const uploadData = await uploadFileToStorage(file, 'bank-statements', user.id);
-
-        // Get the public URL
-        const { data: urlData } = supabase.storage
-          .from('bank-statements')
-          .getPublicUrl(uploadData.path);
-
-        // Save to bank_statement_uploads table for tracking
-        const { data: uploadRecord, error: dbError } = await supabase
-          .from('bank_statement_uploads')
-          .insert({
-            user_id: user.id,
-            company_id: selectedCompany?.id || null,
-            file_name: file.name,
-            file_url: urlData.publicUrl,
-            file_size: file.size,
-            file_type: file.type,
-            upload_status: 'uploaded',
-            processing_status: 'pending'
-          })
-          .select()
-          .single();
-
-        if (dbError) {
-          // BUG #5 FIX: Rollback — remove orphaned Storage file
-          await supabase.storage.from('bank-statements').remove([uploadData.path]);
-          console.log('Rolled back Storage file:', uploadData.path);
-          throw dbError;
-        }
-
-        // PGMQ: No webhook needed — database trigger automatically enqueues
-        // the job upon INSERT with processing_status='pending'.
-        console.log(`[PGMQ] Bank statement upload ${uploadRecord.id} enqueued via DB trigger`);
+        const { data: urlData } = supabase.storage.from('bank-statements').getPublicUrl(uploadData.path);
+        storageResults.push({ file, fileUrl: urlData.publicUrl, storagePath: uploadData.path });
       }
 
-      // Optimistic update for each uploaded bank file
-      for (const file of selectedBankFiles) {
+      // Phase 2: Single batch DB insert
+      const insertRows = storageResults.map(r => ({
+        user_id: user.id,
+        company_id: selectedCompany?.id || null,
+        file_name: r.file.name,
+        file_url: r.fileUrl,
+        file_size: r.file.size,
+        file_type: r.file.type,
+        upload_status: 'uploaded' as const,
+        processing_status: 'pending' as const,
+      }));
+
+      const { data: uploadRecords, error: batchError } = await supabase
+        .from('bank_statement_uploads')
+        .insert(insertRows)
+        .select();
+
+      if (batchError) {
+        if (handleRateLimitError(batchError)) { setUploading(false); return; }
+        const paths = storageResults.map(r => r.storagePath);
+        await supabase.storage.from('bank-statements').remove(paths);
+        throw batchError;
+      }
+
+      console.log(`[PGMQ] ${uploadRecords!.length} bank statement uploads enqueued via DB trigger`);
+      for (const rec of uploadRecords!) {
         addToUploadHistoryCache({
-          id: crypto.randomUUID(),
-          file_name: file.name,
-          file_size: file.size,
-          file_type: file.type,
-          file_url: '',
-          user_id: user.id,
-          upload_status: 'uploaded',
-          processing_status: 'pending',
-          created_at: new Date().toISOString(),
-          error_message: null,
+          id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
+          file_type: rec.file_type, file_url: rec.file_url, user_id: user.id,
+          upload_status: 'uploaded', processing_status: 'pending',
+          created_at: new Date().toISOString(), error_message: null,
         });
       }
 
-      toast({
-        title: "Feltöltés sikeres!",
-        description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.",
-        duration: 3000,
-      });
-
+      toast({ title: "Feltöltés sikeres!", description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.", duration: 3000 });
       setSelectedBankFiles([]);
       delayedUploadHistoryInvalidation();
     } catch (error) {
       console.error('Bank statement upload error:', error);
-      toast({
-        variant: "destructive",
-        title: "Feltöltés sikertelen",
-        description: "Hiba történt a bankkivonatok feltöltése során. Kérlek próbáld újra."
-      });
+      toast({ variant: "destructive", title: "Feltöltés sikertelen", description: "Hiba történt a bankkivonatok feltöltése során. Kérlek próbáld újra." });
     } finally {
       setUploading(false);
     }
@@ -513,87 +475,65 @@ const ManualUpload = () => {
     setUploading(true);
 
     try {
-      let successfulUploads = 0;
-      const uploadedIds: { id: string; fileName: string }[] = [];
-
+      // Phase 1: Upload all files to storage
+      const storageResults: { file: File; fileUrl: string; storagePath: string }[] = [];
       for (const file of selectedSalaryFiles) {
         try {
-          // Upload file to invoice-uploads storage (shared bucket)
           const fileUrl = await uploadFileToInvoiceStorage(file, user.id);
-
-          // Create upload record in invoice_uploads with document_category = 'payroll'
-          // The autonomous worker will pick this up and route it to the payroll pipeline
-          const { data: uploadRecord, error: uploadError } = await supabase
-            .from('invoice_uploads')
-            .insert({
-              user_id: user.id,
-              company_id: selectedCompany?.id || null,
-              file_name: file.name,
-              file_size: file.size,
-              file_type: file.type,
-              file_url: fileUrl,
-              upload_status: 'uploaded',
-              processing_status: 'pending',
-              document_category: 'payroll'
-            } as any)
-            .select()
-            .single();
-
-          if (uploadError) {
-            console.error('Database insert error:', uploadError);
-            // Rollback — remove orphaned Storage file
-            const storagePath = extractStoragePath(fileUrl, 'invoice-uploads');
-            if (storagePath) {
-              await supabase.storage.from('invoice-uploads').remove([storagePath]);
-              console.log('Rolled back Storage file:', storagePath);
-            }
-            throw new Error(`Adatbázis hiba: ${uploadError.message}`);
-          }
-
-          addToUploadHistoryCache({
-            id: uploadRecord.id,
-            file_name: file.name,
-            file_size: file.size,
-            file_type: file.type,
-            file_url: fileUrl,
-            user_id: user.id,
-            upload_status: 'uploaded',
-            processing_status: 'pending',
-            created_at: new Date().toISOString(),
-            error_message: null,
-          });
-          uploadedIds.push({ id: uploadRecord.id, fileName: file.name });
-          successfulUploads++;
+          const storagePath = extractStoragePath(fileUrl, 'invoice-uploads') || '';
+          storageResults.push({ file, fileUrl, storagePath });
         } catch (fileError) {
-          console.error(`Error processing salary file ${file.name}:`, fileError);
-          // Continue with next file
+          console.error(`Storage upload failed for ${file.name}:`, fileError);
         }
       }
 
-      if (successfulUploads > 0) {
-        toast({
-          title: "Feltöltés sikeres!",
-          description: "A bér/járulék fájlok feldolgozása automatikusan elindul. Az eredmény pár percen belül látható lesz.",
-          duration: 3000,
-        });
+      if (storageResults.length === 0) {
+        toast({ variant: "destructive", title: "Feltöltés sikertelen", description: "Nem sikerült egyetlen fájlt sem feltölteni." });
+        return;
+      }
 
+      // Phase 2: Single batch DB insert with document_category = 'payroll'
+      const insertRows = storageResults.map(r => ({
+        user_id: user.id,
+        company_id: selectedCompany?.id || null,
+        file_name: r.file.name,
+        file_size: r.file.size,
+        file_type: r.file.type,
+        file_url: r.fileUrl,
+        upload_status: 'uploaded' as const,
+        processing_status: 'pending' as const,
+        document_category: 'payroll',
+      }));
 
-        setSelectedSalaryFiles([]);
-        delayedUploadHistoryInvalidation();
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Feltöltés sikertelen",
-          description: "Nem sikerült egyetlen fájlt sem feltölteni."
+      const { data: uploadRecords, error: batchError } = await supabase
+        .from('invoice_uploads')
+        .insert(insertRows as any)
+        .select();
+
+      if (batchError) {
+        console.error('Batch insert error:', batchError);
+        if (handleRateLimitError(batchError)) { setUploading(false); return; }
+        const paths = storageResults.map(r => r.storagePath).filter(Boolean);
+        if (paths.length > 0) await supabase.storage.from('invoice-uploads').remove(paths);
+        throw new Error(`Adatbázis hiba: ${batchError.message}`);
+      }
+
+      console.log(`[PGMQ] ${uploadRecords!.length} salary uploads enqueued via DB trigger`);
+      for (const rec of uploadRecords!) {
+        addToUploadHistoryCache({
+          id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
+          file_type: rec.file_type, file_url: rec.file_url, user_id: user.id,
+          upload_status: 'uploaded', processing_status: 'pending',
+          created_at: new Date().toISOString(), error_message: null,
         });
       }
+
+      toast({ title: "Feltöltés sikeres!", description: "A bér/járulék fájlok feldolgozása automatikusan elindul.", duration: 3000 });
+      setSelectedSalaryFiles([]);
+      delayedUploadHistoryInvalidation();
     } catch (error) {
       console.error('Salary upload error:', error);
-      toast({
-        variant: "destructive",
-        title: "Feltöltés sikertelen",
-        description: "Hiba történt a bérek/járulékok feltöltése során. Kérlek próbáld újra."
-      });
+      toast({ variant: "destructive", title: "Feltöltés sikertelen", description: "Hiba történt a bérek/járulékok feltöltése során. Kérlek próbáld újra." });
     } finally {
       setUploading(false);
     }
@@ -650,111 +590,64 @@ const ManualUpload = () => {
 
   const proceedWithTransactionUpload = async () => {
     setUploading(true);
-
-    // Show processing toast
-    const processingToast = toast({
-      title: "Feldolgozás...",
-      description: "Tranzakciók feltöltése és feldolgozásra küldése folyamatban..."
-    });
+    const processingToast = toast({ title: "Feldolgozás...", description: "Tranzakciók feltöltése folyamatban..." });
 
     try {
-      let successfulUploads = 0;
-      const txUploadedIds: { id: string; fileName: string }[] = [];
-      const batchUploads: { uploadId: string; fileUrl: string; fileName: string }[] = [];
-
-      // Step 1: Upload all files to storage and create DB records
+      // Phase 1: Upload all files to storage
+      const storageResults: { file: File; fileUrl: string; storagePath: string }[] = [];
       for (const file of selectedTransactionFiles) {
         const uploadData = await uploadFileToStorage(file, 'transactions', user.id);
+        const { data: urlData } = supabase.storage.from('transactions').getPublicUrl(uploadData.path);
+        storageResults.push({ file, fileUrl: urlData.publicUrl, storagePath: uploadData.path });
+      }
 
-        const { data: urlData } = supabase.storage
-          .from('transactions')
-          .getPublicUrl(uploadData.path);
+      // Phase 2: Single batch DB insert
+      const insertRows = storageResults.map(r => ({
+        user_id: user.id,
+        company_id: selectedCompany.id,
+        file_name: r.file.name,
+        file_url: r.fileUrl,
+        file_size: r.file.size,
+        file_type: r.file.type,
+        upload_status: 'uploaded' as const,
+        processing_status: 'pending' as const,
+      }));
 
-        const { data: uploadRecord, error: dbError } = await supabase
-          .from('transaction_uploads')
-          .insert({
-            user_id: user.id,
-            company_id: selectedCompany.id,
-            file_name: file.name,
-            file_url: urlData.publicUrl,
-            file_size: file.size,
-            file_type: file.type,
-            upload_status: 'uploaded',
-            processing_status: 'pending'
-          })
-          .select()
-          .single();
+      const { data: uploadRecords, error: batchError } = await supabase
+        .from('transaction_uploads')
+        .insert(insertRows)
+        .select();
 
-        if (dbError) {
-          await supabase.storage.from('transactions').remove([uploadData.path]);
-          console.log('Rolled back Storage file:', uploadData.path);
-          throw dbError;
-        }
+      if (batchError) {
+        if (handleRateLimitError(batchError)) { setUploading(false); return; }
+        const paths = storageResults.map(r => r.storagePath);
+        await supabase.storage.from('transactions').remove(paths);
+        throw batchError;
+      }
 
+      // Phase 3: Update cache
+      console.log(`[PGMQ] ${uploadRecords!.length} transaction uploads enqueued via DB trigger`);
+      for (const rec of uploadRecords!) {
         addToUploadHistoryCache({
-          id: uploadRecord.id,
-          file_name: file.name,
-          file_size: file.size,
-          file_type: file.type,
-          file_url: urlData.publicUrl,
-          user_id: user.id,
-          upload_status: 'uploaded',
-          processing_status: 'pending',
-          created_at: new Date().toISOString(),
-          error_message: null,
+          id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
+          file_type: rec.file_type, file_url: rec.file_url, user_id: user.id,
+          upload_status: 'uploaded', processing_status: 'pending',
+          created_at: new Date().toISOString(), error_message: null,
         });
-
-        batchUploads.push({
-          uploadId: uploadRecord.id,
-          fileUrl: urlData.publicUrl,
-          fileName: file.name,
-        });
-        txUploadedIds.push({ id: uploadRecord.id, fileName: file.name });
-        successfulUploads++;
       }
 
-      // PGMQ: No webhook needed — each INSERT into transaction_uploads with
-      // processing_status='pending' automatically triggers the DB trigger
-      // that enqueues the job to the transaction_jobs PGMQ queue.
-      if (batchUploads.length > 0) {
-        console.log(`[PGMQ] ${batchUploads.length} transaction uploads enqueued via DB trigger`);
-      }
-
-      // Dismiss processing toast
       processingToast.dismiss();
-
-      if (successfulUploads > 0) {
-        toast({
-          title: "Feltöltés sikeres!",
-          description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.",
-          duration: 3000,
-        });
-
-
-        setSelectedTransactionFiles([]);
-        delayedUploadHistoryInvalidation();
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Feldolgozás sikertelen",
-          description: "A fájlok feltöltve, de a webhook hívás sikertelen. Kérlek próbáld újra később."
-        });
-      }
+      toast({ title: "Feltöltés sikeres!", description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.", duration: 3000 });
+      setSelectedTransactionFiles([]);
+      delayedUploadHistoryInvalidation();
     } catch (error) {
       console.error('Transaction upload error:', error);
       processingToast.dismiss();
-      toast({
-        variant: "destructive",
-        title: "Feltöltés sikertelen",
-        description: "Hiba történt a tranzakciók feltöltése során. Kérlek próbáld újra."
-      });
+      toast({ variant: "destructive", title: "Feltöltés sikertelen", description: "Hiba történt a tranzakciók feltöltése során. Kérlek próbáld újra." });
     } finally {
       setUploading(false);
-      // Reset file input to allow re-uploading
       const inputElement = document.getElementById('transaction-file-input') as HTMLInputElement;
-      if (inputElement) {
-        inputElement.value = '';
-      }
+      if (inputElement) inputElement.value = '';
     }
   };
 
@@ -775,52 +668,54 @@ const ManualUpload = () => {
     }
     setUploading(true);
     try {
-      let successfulUploads = 0;
+      // Phase 1: Upload all files to storage
+      const storageResults: { entry: typeof selectedReportFiles[0]; fileUrl: string; storagePath: string }[] = [];
       for (const entry of selectedReportFiles) {
-        const { file, reportType: fileReportType } = entry;
-        const uploadData = await uploadFileToStorage(file, 'report-uploads', user.id);
+        const uploadData = await uploadFileToStorage(entry.file, 'report-uploads', user.id);
         const { data: urlData } = supabase.storage.from('report-uploads').getPublicUrl(uploadData.path);
-        const { data: uploadRecord, error: dbError } = await supabase
-          .from('report_uploads')
-          .insert({
-            user_id: user.id,
-            company_id: selectedCompany.id,
-            file_name: file.name,
-            file_url: urlData.publicUrl,
-            file_size: file.size,
-            file_type: file.type,
-            report_type: fileReportType,
-            upload_status: 'uploaded',
-            processing_status: 'pending',
-          })
-          .select()
-          .single();
-        if (dbError) {
-          await supabase.storage.from('report-uploads').remove([uploadData.path]);
-          throw dbError;
-        }
+        storageResults.push({ entry, fileUrl: urlData.publicUrl, storagePath: uploadData.path });
+      }
+
+      // Phase 2: Single batch DB insert
+      const insertRows = storageResults.map(r => ({
+        user_id: user.id,
+        company_id: selectedCompany.id,
+        file_name: r.entry.file.name,
+        file_url: r.fileUrl,
+        file_size: r.entry.file.size,
+        file_type: r.entry.file.type,
+        report_type: r.entry.reportType,
+        upload_status: 'uploaded' as const,
+        processing_status: 'pending' as const,
+      }));
+
+      const { data: uploadRecords, error: batchError } = await supabase
+        .from('report_uploads')
+        .insert(insertRows)
+        .select();
+
+      if (batchError) {
+        if (handleRateLimitError(batchError)) { setUploading(false); return; }
+        const paths = storageResults.map(r => r.storagePath);
+        await supabase.storage.from('report-uploads').remove(paths);
+        throw batchError;
+      }
+
+      for (const rec of uploadRecords!) {
         addToUploadHistoryCache({
-          id: uploadRecord.id,
-          file_name: file.name,
-          file_size: file.size,
-          file_type: file.type,
-          file_url: urlData.publicUrl,
-          user_id: user.id,
-          upload_status: 'uploaded',
-          processing_status: 'pending',
-          created_at: new Date().toISOString(),
-          error_message: null,
+          id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
+          file_type: rec.file_type, file_url: rec.file_url, user_id: user.id,
+          upload_status: 'uploaded', processing_status: 'pending',
+          created_at: new Date().toISOString(), error_message: null,
         });
-        successfulUploads++;
       }
-      if (successfulUploads > 0) {
-        toast({ title: "Felt\u00f6lt\u00e9s sikeres!", description: `${successfulUploads} riport f\u00e1jl feldolgoz\u00e1sra k\u00fcldve.`, duration: 3000 });
-        setSelectedReportFiles([]);
-        delayedUploadHistoryInvalidation();
-      }
+
+      toast({ title: "Feltöltés sikeres!", description: `${uploadRecords!.length} riport fájl feldolgozásra küldve.`, duration: 3000 });
+      setSelectedReportFiles([]);
+      delayedUploadHistoryInvalidation();
     } catch (error) {
       console.error('Report upload error:', error);
-      toast({ variant: "destructive", title: "Felt\u00f6lt\u00e9s sikertelen", description: "Hiba t\u00f6rt\u00e9nt a riport felt\u00f6lt\u00e9se sor\u00e1n." });
+      toast({ variant: "destructive", title: "Feltöltés sikertelen", description: "Hiba történt a riport feltöltése során." });
     } finally {
       setUploading(false);
     }
