@@ -111,6 +111,23 @@ export const exportBsExcel = async (
         glRow.font = { italic: true, color: { argb: 'FF4B5563' }, size: 10 };
         glRow.getCell('targy').numFmt = numberFormat;
         glRow.outlineLevel = 1;
+
+        // 2nd-level: individual transactions under this GL account
+        if (gl.transactions && Array.isArray(gl.transactions)) {
+          for (const tx of gl.transactions) {
+            const txDate = tx.date ? new Date(tx.date).toLocaleDateString('hu-HU') : '';
+            const txRow = worksheet.addRow({
+              sor: '',
+              nev: `              ${txDate} | ${tx.partner_name || ''} | ${tx.description || ''}`,
+              elozo: null,
+              modositas: null,
+              targy: formatValue(Number(tx.amount) || 0),
+            });
+            txRow.font = { size: 9, color: { argb: 'FF6B7280' } };
+            txRow.getCell('targy').numFmt = numberFormat;
+            txRow.outlineLevel = 2;
+          }
+        }
       }
     }
   };

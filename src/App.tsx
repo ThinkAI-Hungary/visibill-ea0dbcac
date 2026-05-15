@@ -44,6 +44,7 @@ const WorkingTimePage = lazy(() => import("./pages/WorkingTimePage"));
 const FixedAssetsPage = lazy(() => import("./pages/FixedAssetsPage"));
 const ProfitAndLoss = lazy(() => import("./pages/ProfitAndLoss"));
 const BalanceSheet = lazy(() => import("./pages/BalanceSheet"));
+const AnnualReportPage = lazy(() => import("./pages/AnnualReportPage"));
 const ManagementDashboard = lazy(() => import("./pages/ManagementDashboard"));
 
 const queryClient = new QueryClient({
@@ -224,6 +225,7 @@ const App = () => (
                         <Route path="general-ledger/:tab?" element={<ProtectedPage><GeneralLedgerPage /></ProtectedPage>} />
                         <Route path="profit-and-loss/:tab?" element={<ProtectedPage><ProfitAndLoss /></ProtectedPage>} />
                         <Route path="balance-sheet/:tab?" element={<ProtectedPage><BalanceSheet /></ProtectedPage>} />
+                        <Route path="annual-report" element={<ProtectedPage><AnnualReportPage /></ProtectedPage>} />
                         <Route path="kintlevo/:tab?" element={<ProtectedPage><KintlevoPage /></ProtectedPage>} />
                         <Route path="petty-cash/:tab?" element={<ProtectedPage><PettyCashPage /></ProtectedPage>} />
                         <Route path="teny/:tab?" element={<ProtectedPage><FixedAssetsPage /></ProtectedPage>} />

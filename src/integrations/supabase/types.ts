@@ -14,6 +14,122 @@ export type Database = {
   }
   public: {
     Tables: {
+      annual_report_notes_templates: {
+        Row: {
+          id: string
+          section_key: string
+          section_title: string
+          default_text: string
+          order_num: number
+          is_required: boolean
+          category: string
+        }
+        Insert: {
+          id?: string
+          section_key: string
+          section_title: string
+          default_text: string
+          order_num: number
+          is_required?: boolean
+          category: string
+        }
+        Update: {
+          id?: string
+          section_key?: string
+          section_title?: string
+          default_text?: string
+          order_num?: number
+          is_required?: boolean
+          category?: string
+        }
+        Relationships: []
+      }
+      annual_reports: {
+        Row: {
+          id: string
+          company_id: string
+          preset_id: string
+          fiscal_year: number
+          status: string
+          representative_name: string | null
+          representative_role: string | null
+          report_date: string | null
+          accounting_method: string | null
+          frozen_bs_data: Json | null
+          frozen_pnl_data: Json | null
+          frozen_at: string | null
+          validation_results: Json
+          validated_at: string | null
+          notes_sections: Json
+          net_income: number
+          dividend_amount: number
+          retained_earnings: number
+          dividend_resolution_date: string | null
+          dividend_resolution_number: string | null
+          created_at: string | null
+          updated_at: string | null
+          created_by: string | null
+        }
+        Insert: {
+          id?: string
+          company_id: string
+          preset_id: string
+          fiscal_year: number
+          status?: string
+          representative_name?: string | null
+          representative_role?: string | null
+          report_date?: string | null
+          accounting_method?: string | null
+          frozen_bs_data?: Json | null
+          frozen_pnl_data?: Json | null
+          frozen_at?: string | null
+          validation_results?: Json
+          validated_at?: string | null
+          notes_sections?: Json
+          net_income?: number
+          dividend_amount?: number
+          retained_earnings?: number
+          dividend_resolution_date?: string | null
+          dividend_resolution_number?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          created_by?: string | null
+        }
+        Update: {
+          id?: string
+          company_id?: string
+          preset_id?: string
+          fiscal_year?: number
+          status?: string
+          representative_name?: string | null
+          representative_role?: string | null
+          report_date?: string | null
+          accounting_method?: string | null
+          frozen_bs_data?: Json | null
+          frozen_pnl_data?: Json | null
+          frozen_at?: string | null
+          validation_results?: Json
+          validated_at?: string | null
+          notes_sections?: Json
+          net_income?: number
+          dividend_amount?: number
+          retained_earnings?: number
+          dividend_resolution_date?: string | null
+          dividend_resolution_number?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          created_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annual_reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asset_events: {
         Row: {
           asset_id: string
