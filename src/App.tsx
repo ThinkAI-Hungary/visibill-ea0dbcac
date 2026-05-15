@@ -43,6 +43,7 @@ const GeneralLedgerPage = lazy(() => import("./pages/GeneralLedgerPage"));
 const WorkingTimePage = lazy(() => import("./pages/WorkingTimePage"));
 const FixedAssetsPage = lazy(() => import("./pages/FixedAssetsPage"));
 const ProfitAndLoss = lazy(() => import("./pages/ProfitAndLoss"));
+const BalanceSheet = lazy(() => import("./pages/BalanceSheet"));
 const ManagementDashboard = lazy(() => import("./pages/ManagementDashboard"));
 
 const queryClient = new QueryClient({
@@ -222,6 +223,7 @@ const App = () => (
                         <Route path="transactions/:tab?" element={<ProtectedPage><TransactionsPage /></ProtectedPage>} />
                         <Route path="general-ledger/:tab?" element={<ProtectedPage><GeneralLedgerPage /></ProtectedPage>} />
                         <Route path="profit-and-loss/:tab?" element={<ProtectedPage><ProfitAndLoss /></ProtectedPage>} />
+                        <Route path="balance-sheet/:tab?" element={<ProtectedPage><BalanceSheet /></ProtectedPage>} />
                         <Route path="kintlevo/:tab?" element={<ProtectedPage><KintlevoPage /></ProtectedPage>} />
                         <Route path="petty-cash/:tab?" element={<ProtectedPage><PettyCashPage /></ProtectedPage>} />
                         <Route path="teny/:tab?" element={<ProtectedPage><FixedAssetsPage /></ProtectedPage>} />
@@ -242,6 +244,7 @@ const App = () => (
                       <Route path="/transactions" element={<LegacyRedirect page="transactions" />} />
                       <Route path="/general-ledger" element={<LegacyRedirect page="general-ledger" />} />
                       <Route path="/profit-and-loss" element={<LegacyRedirect page="profit-and-loss" />} />
+                      <Route path="/balance-sheet" element={<LegacyRedirect page="balance-sheet" />} />
                       <Route path="/kintlevo" element={<LegacyRedirect page="kintlevo" />} />
                       <Route path="/petty-cash" element={<LegacyRedirect page="petty-cash" />} />
                       <Route path="/teny" element={<LegacyRedirect page="teny" />} />

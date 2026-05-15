@@ -313,6 +313,160 @@ export type Database = {
           },
         ]
       }
+      bs_mapping: {
+        Row: {
+          bs_structure_id: string
+          company_id: string
+          created_at: string | null
+          gl_account_id: string
+          id: string
+          preset_id: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          bs_structure_id: string
+          company_id: string
+          created_at?: string | null
+          gl_account_id: string
+          id?: string
+          preset_id: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          bs_structure_id?: string
+          company_id?: string
+          created_at?: string | null
+          gl_account_id?: string
+          id?: string
+          preset_id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bs_mapping_bs_structure_id_fkey"
+            columns: ["bs_structure_id"]
+            isOneToOne: false
+            referencedRelation: "bs_structure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bs_mapping_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bs_mapping_gl_account_id_fkey"
+            columns: ["gl_account_id"]
+            isOneToOne: false
+            referencedRelation: "gl_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bs_mapping_preset_id_fkey"
+            columns: ["preset_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts_presets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bs_prior_year: {
+        Row: {
+          bs_structure_id: string
+          company_id: string
+          fiscal_year: number
+          id: string
+          prior_year_adjustment: number
+          prior_year_balance: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          bs_structure_id: string
+          company_id: string
+          fiscal_year: number
+          id?: string
+          prior_year_adjustment?: number
+          prior_year_balance?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          bs_structure_id?: string
+          company_id?: string
+          fiscal_year?: number
+          id?: string
+          prior_year_adjustment?: number
+          prior_year_balance?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bs_prior_year_bs_structure_id_fkey"
+            columns: ["bs_structure_id"]
+            isOneToOne: false
+            referencedRelation: "bs_structure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bs_prior_year_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bs_structure: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_pnl_bridge: boolean
+          name: string
+          order_num: number
+          parent_id: string | null
+          row_code: string
+          section: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_pnl_bridge?: boolean
+          name: string
+          order_num: number
+          parent_id?: string | null
+          row_code: string
+          section: string
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_pnl_bridge?: boolean
+          name?: string
+          order_num?: number
+          parent_id?: string | null
+          row_code?: string
+          section?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bs_structure_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "bs_structure"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           company_id: string | null
@@ -535,6 +689,101 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: true
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courier_reports: {
+        Row: {
+          cod_amount: number | null
+          company_id: string
+          created_at: string | null
+          delivery_date: string | null
+          id: string
+          match_confidence: number | null
+          match_reason: string | null
+          match_status: string
+          matched_nav_invoice_id: string | null
+          matched_transaction_id: string | null
+          package_number: string | null
+          raw_data: Json | null
+          recipient_address: string | null
+          recipient_name: string | null
+          reference_number: string | null
+          report_number: string | null
+          report_type: string
+          row_type: string
+          upload_id: string
+        }
+        Insert: {
+          cod_amount?: number | null
+          company_id: string
+          created_at?: string | null
+          delivery_date?: string | null
+          id?: string
+          match_confidence?: number | null
+          match_reason?: string | null
+          match_status?: string
+          matched_nav_invoice_id?: string | null
+          matched_transaction_id?: string | null
+          package_number?: string | null
+          raw_data?: Json | null
+          recipient_address?: string | null
+          recipient_name?: string | null
+          reference_number?: string | null
+          report_number?: string | null
+          report_type: string
+          row_type?: string
+          upload_id: string
+        }
+        Update: {
+          cod_amount?: number | null
+          company_id?: string
+          created_at?: string | null
+          delivery_date?: string | null
+          id?: string
+          match_confidence?: number | null
+          match_reason?: string | null
+          match_status?: string
+          matched_nav_invoice_id?: string | null
+          matched_transaction_id?: string | null
+          package_number?: string | null
+          raw_data?: Json | null
+          recipient_address?: string | null
+          recipient_name?: string | null
+          reference_number?: string | null
+          report_number?: string | null
+          report_type?: string
+          row_type?: string
+          upload_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courier_reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courier_reports_matched_nav_invoice_id_fkey"
+            columns: ["matched_nav_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "nav_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courier_reports_matched_transaction_id_fkey"
+            columns: ["matched_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courier_reports_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "report_uploads"
             referencedColumns: ["id"]
           },
         ]
@@ -2165,18 +2414,77 @@ export type Database = {
           },
         ]
       }
+      report_uploads: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          error_message: string | null
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          metadata: Json | null
+          processing_status: string
+          report_type: string
+          updated_at: string | null
+          upload_status: string
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          metadata?: Json | null
+          processing_status?: string
+          report_type: string
+          updated_at?: string | null
+          upload_status?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          metadata?: Json | null
+          processing_status?: string
+          report_type?: string
+          updated_at?: string | null
+          upload_status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_uploads_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       salary: {
         Row: {
           company_id: string | null
           created_at: string
-          dátum: string | null
+          d├ítum: string | null
           fizetesi_mod: string
           id: string
           kifizetes_ideje: string | null
           megjegyzes: string | null
           munkavallalo_neve: string | null
-          név: string
-          összeg: number
+          n├®v: string
+          ├Âsszeg: number
           salary_file_id: string | null
           statusz: string
           tipus: string
@@ -2187,14 +2495,14 @@ export type Database = {
         Insert: {
           company_id?: string | null
           created_at?: string
-          dátum?: string | null
+          d├ítum?: string | null
           fizetesi_mod: string
           id?: string
           kifizetes_ideje?: string | null
           megjegyzes?: string | null
           munkavallalo_neve?: string | null
-          név: string
-          összeg: number
+          n├®v: string
+          ├Âsszeg: number
           salary_file_id?: string | null
           statusz: string
           tipus: string
@@ -2205,14 +2513,14 @@ export type Database = {
         Update: {
           company_id?: string | null
           created_at?: string
-          dátum?: string | null
+          d├ítum?: string | null
           fizetesi_mod?: string
           id?: string
           kifizetes_ideje?: string | null
           megjegyzes?: string | null
           munkavallalo_neve?: string | null
-          név?: string
-          összeg?: number
+          n├®v?: string
+          ├Âsszeg?: number
           salary_file_id?: string | null
           statusz?: string
           tipus?: string
@@ -3051,6 +3359,28 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_bs_report: {
+        Args: {
+          p_company_id: string
+          p_date_to?: string
+          p_fiscal_year?: number
+          p_preset_id: string
+        }
+        Returns: {
+          bs_structure_id: string
+          current_balance: number
+          gl_accounts: Json
+          is_pnl_bridge: boolean
+          name: string
+          order_num: number
+          parent_id: string
+          prior_year_adjustment: number
+          prior_year_balance: number
+          row_code: string
+          section: string
+          type: string
+        }[]
+      }
       get_filtered_nav_invoices: {
         Args: {
           p_amount_max?: number
@@ -3327,7 +3657,16 @@ export type Database = {
         }
         Returns: Json[]
       }
+      rematch_courier_report: { Args: { p_report_id: string }; Returns: Json }
       reset_monthly_usage: { Args: never; Returns: number }
+      save_bs_mappings: {
+        Args: { p_company_id: string; p_mappings: Json; p_preset_id: string }
+        Returns: undefined
+      }
+      save_bs_prior_year: {
+        Args: { p_company_id: string; p_data: Json; p_fiscal_year: number }
+        Returns: undefined
+      }
       save_nav_credentials: {
         Args: {
           p_company_id?: string
@@ -3358,22 +3697,22 @@ export type Database = {
     }
     Enums: {
       audit_action_type:
-        | "létrehozás"
-        | "módosítás"
-        | "törlés"
-        | "feltöltés"
-        | "párosítás"
-        | "aktiválás"
+        | "l├®trehoz├ís"
+        | "m├│dos├¡t├ís"
+        | "t├Ârl├®s"
+        | "felt├Âlt├®s"
+        | "p├íros├¡t├ís"
+        | "aktiv├íl├ís"
       audit_entity_type:
-        | "számla"
-        | "bérjegyzék"
-        | "tranzakció"
-        | "kategória"
+        | "sz├ímla"
+        | "b├®rjegyz├®k"
+        | "tranzakci├│"
+        | "kateg├│ria"
         | "dokumentum"
-        | "tárgyi_eszköz"
-      salary_item_type: "bér" | "ÁFA" | "adó" | "járulék"
-      salary_payment_method: "banki tranzakció" | "készpénz"
-      salary_status_type: "Függő" | "Kifizetve"
+        | "t├írgyi_eszk├Âz"
+      salary_item_type: "b├®r" | "├üFA" | "ad├│" | "j├írul├®k"
+      salary_payment_method: "banki tranzakci├│" | "k├®szp├®nz"
+      salary_status_type: "F├╝gg┼æ" | "Kifizetve"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3502,24 +3841,24 @@ export const Constants = {
   public: {
     Enums: {
       audit_action_type: [
-        "létrehozás",
-        "módosítás",
-        "törlés",
-        "feltöltés",
-        "párosítás",
-        "aktiválás",
+        "l├®trehoz├ís",
+        "m├│dos├¡t├ís",
+        "t├Ârl├®s",
+        "felt├Âlt├®s",
+        "p├íros├¡t├ís",
+        "aktiv├íl├ís",
       ],
       audit_entity_type: [
-        "számla",
-        "bérjegyzék",
-        "tranzakció",
-        "kategória",
+        "sz├ímla",
+        "b├®rjegyz├®k",
+        "tranzakci├│",
+        "kateg├│ria",
         "dokumentum",
-        "tárgyi_eszköz",
+        "t├írgyi_eszk├Âz",
       ],
-      salary_item_type: ["bér", "ÁFA", "adó", "járulék"],
-      salary_payment_method: ["banki tranzakció", "készpénz"],
-      salary_status_type: ["Függő", "Kifizetve"],
+      salary_item_type: ["b├®r", "├üFA", "ad├│", "j├írul├®k"],
+      salary_payment_method: ["banki tranzakci├│", "k├®szp├®nz"],
+      salary_status_type: ["F├╝gg┼æ", "Kifizetve"],
     },
   },
 } as const
