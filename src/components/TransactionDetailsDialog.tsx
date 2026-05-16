@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Search, Check, AlertTriangle, FileText, CheckCircle2, HelpCircle, Link2, Eye, Wallet } from 'lucide-react';
+import { Search, Check, AlertTriangle, FileText, CheckCircle2, HelpCircle, Link2, Eye, Wallet, Package } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { format, subDays, addDays } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
@@ -71,6 +71,19 @@ interface MatchedSalary {
   megjegyzes: string | null;
 }
 
+// Matched courier report
+interface MatchedCourierReport {
+  id: string;
+  report_type: string;
+  package_number: string | null;
+  reference_number: string | null;
+  delivery_date: string | null;
+  cod_amount: number | null;
+  recipient_name: string | null;
+  match_status: string;
+  match_confidence: number | null;
+}
+
 // Available invoices for manual matching (from invoices table)
 interface AvailableInvoice {
   id: string;
@@ -102,6 +115,7 @@ export const TransactionDetailsDialog = ({
   const [matchedInvoice, setMatchedInvoice] = useState<MatchedInvoice | null>(null);
   const [matchedNavInvoice, setMatchedNavInvoice] = useState<MatchedNavInvoice | null>(null);
   const [matchedSalary, setMatchedSalary] = useState<MatchedSalary | null>(null);
+  const [matchedCourierReports, setMatchedCourierReports] = useState<MatchedCourierReport[]>([]);
   const [availableInvoices, setAvailableInvoices] = useState<AvailableInvoice[]>([]);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [loadingAvailable, setLoadingAvailable] = useState(false);
@@ -117,6 +131,9 @@ export const TransactionDetailsDialog = ({
       setShowManualMatch(false);
       setSearch('');
       setSelectedInvoiceId(null);
+      
+      // Always fetch courier reports for this transaction
+      fetchCourierReports();
       
       if (transaction.matched_invoice_id) {
         fetchMatchedInvoice();
@@ -191,6 +208,23 @@ export const TransactionDetailsDialog = ({
       setMatchedNavInvoice(null);
     } finally {
       setLoadingInvoice(false);
+    }
+  };
+
+  // Fetch courier reports matched to this transaction
+  const fetchCourierReports = async () => {
+    if (!transaction) return;
+    try {
+      const { data, error } = await supabase
+        .from('courier_reports')
+        .select('id, report_type, package_number, reference_number, delivery_date, cod_amount, recipient_name, match_status, match_confidence')
+        .eq('matched_transaction_id', transaction.id);
+
+      if (error) throw error;
+      setMatchedCourierReports(data || []);
+    } catch (error) {
+      console.error('Error fetching courier reports:', error);
+      setMatchedCourierReports([]);
     }
   };
 
@@ -342,7 +376,7 @@ export const TransactionDetailsDialog = ({
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader className="pb-2">
           <DialogTitle className="flex items-center gap-2 text-base">
             <FileText className="h-4 w-4" />
@@ -353,6 +387,7 @@ export const TransactionDetailsDialog = ({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto space-y-3 pr-1">
         {/* Transaction Details - Compact */}
         <Card className="bg-muted/30 border-border/50">
           <CardHeader className="py-2 px-3">
@@ -410,6 +445,77 @@ export const TransactionDetailsDialog = ({
             </div>
           </CardContent>
         </Card>
+
+        {/* Matched Courier Reports */}
+        {matchedCourierReports.length > 0 && (
+          <>
+            <Separator className="my-1" />
+            <Card className="bg-muted/30 border-border/50">
+              <CardHeader className="py-2 px-3">
+                <CardTitle className="text-xs font-medium flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Package className="h-3.5 w-3.5" />
+                    Futár riport
+                  </span>
+                  <Badge variant="outline" className="text-[10px] h-5">
+                    {matchedCourierReports.length} tétel
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 pt-0">
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                  {matchedCourierReports.map((report) => (
+                    <div key={report.id} className="rounded-md border border-border/50 bg-background/50 p-2.5 text-xs">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="font-medium font-mono">
+                          {report.package_number || 'Összesítő sor'}
+                        </span>
+                        <Badge variant="outline" className={cn(
+                          "text-[10px] h-4",
+                          report.report_type === 'gls' && 'bg-yellow-500/10 text-yellow-700 border-yellow-500/30',
+                          report.report_type === 'mpl' && 'bg-blue-500/10 text-blue-700 border-blue-500/30',
+                          report.report_type === 'mixpack' && 'bg-purple-500/10 text-purple-700 border-purple-500/30'
+                        )}>
+                          {report.report_type === 'gls' ? 'GLS' : report.report_type === 'mpl' ? 'MPL / Posta' : 'Mixpack'}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1 text-[11px]">
+                        {report.reference_number && (
+                          <div>
+                            <span className="text-muted-foreground">Hivatkozás:</span>
+                            <span className="ml-1 font-mono">{report.reference_number}</span>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-muted-foreground">Kézbesítés:</span>
+                          <span className="ml-1">
+                            {report.delivery_date
+                              ? format(new Date(report.delivery_date), 'yyyy.MM.dd')
+                              : '-'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Utánvét:</span>
+                          <span className="ml-1 font-mono font-medium">
+                            {report.cod_amount != null
+                              ? formatCurrency(report.cod_amount)
+                              : '-'}
+                          </span>
+                        </div>
+                        {report.recipient_name && (
+                          <div className="col-span-2">
+                            <span className="text-muted-foreground">Címzett:</span>
+                            <span className="ml-1">{report.recipient_name}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
 
         <Separator className="my-1" />
 
@@ -687,6 +793,7 @@ export const TransactionDetailsDialog = ({
             </DialogFooter>
           </>
         )}
+        </div>
       </DialogContent>
     </Dialog>
 

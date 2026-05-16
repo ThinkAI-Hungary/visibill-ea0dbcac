@@ -105,6 +105,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           .eq('company_id', companyId)
           .gte('created_at', uploadDateFrom)
           .lte('created_at', uploadDateTo + 'T23:59:59')
+          .neq('status', 'ignored')
           .order('created_at', { ascending: false })
           .limit(50);
 
@@ -125,6 +126,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           .select('id, file_name, file_size, file_type, file_url, user_id, upload_status, processing_status, created_at, error_message')
           .gte('created_at', uploadDateFrom)
           .lte('created_at', uploadDateTo + 'T23:59:59')
+          .neq('processing_status', 'ignored')
           .order('created_at', { ascending: false })
           .limit(50);
 

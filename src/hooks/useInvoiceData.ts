@@ -81,6 +81,18 @@ export interface Project {
   name: string;
 }
 
+export interface CourierReportRecord {
+  id: string;
+  report_type: string;
+  package_number: string | null;
+  reference_number: string | null;
+  delivery_date: string | null;
+  cod_amount: number | null;
+  recipient_name: string | null;
+  matched_nav_invoice_id: string | null;
+  matched_transaction_id: string | null;
+}
+
 export function useInvoiceData(
   companyId: string,
   enabled: boolean,
@@ -228,6 +240,35 @@ export function useInvoiceData(
     [allTransactions]
   );
 
+  // Fetch courier reports matched to NAV invoices or transactions for this company
+  const { data: courierReports = [] } = useQuery({
+    queryKey: queryKeys.courierReportsForInvoices(companyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('courier_reports')
+        .select('id, report_type, package_number, reference_number, delivery_date, cod_amount, recipient_name, matched_nav_invoice_id, matched_transaction_id')
+        .eq('company_id', companyId)
+        .or('matched_nav_invoice_id.not.is.null,matched_transaction_id.not.is.null');
+      if (error) throw error;
+      return (data || []) as CourierReportRecord[];
+    },
+    enabled,
+    placeholderData: keepPreviousData,
+  });
+
+  // Map: nav_invoice_id -> courier reports
+  const navIdToCourierReportsMap = useMemo(() => {
+    const map = new Map<string, CourierReportRecord[]>();
+    for (const cr of courierReports) {
+      if (cr.matched_nav_invoice_id) {
+        const existing = map.get(cr.matched_nav_invoice_id) || [];
+        existing.push(cr);
+        map.set(cr.matched_nav_invoice_id, existing);
+      }
+    }
+    return map;
+  }, [courierReports]);
+
   const loading = submittedLoading || txLoading;
 
   const { data: credentialsExist = false } = useQuery({
@@ -267,6 +308,8 @@ export function useInvoiceData(
     allTransactions,
     navInvoicesLookup,
     matchedInvoiceIds,
+    courierReports,
+    navIdToCourierReportsMap,
     loading,
     credentialsExist,
     invalidateInvoiceData,

@@ -172,9 +172,27 @@ serve(async (req) => {
       const fileName = file.name.toLowerCase();
       const fileType = file.type.toLowerCase();
       
-      // Minimális fájlméret (1KB) - túl kicsi fájlok kiszűrése
+      // Minimális fájlméret (1KB) - túl kicsi fájlok kiszűrése (pl üres txt)
       if (file.size < 1024) {
         console.log(`Skipping too small file: ${file.name} (${file.size} bytes)`);
+        return false;
+      }
+      
+      // Képek esetében (png, jpg) szigorúbb méretkorlát (15KB), hogy a tipikus email aláírás logók kiessenek
+      const isImage = fileType.startsWith('image/') || fileName.endsWith('.png') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg');
+      if (isImage && file.size < 15 * 1024) {
+        console.log(`Skipping small image (likely signature): ${file.name} (${file.size} bytes)`);
+        return false;
+      }
+
+      // Fájlnév heurisztika - tipikus aláírás és social media logók kiszűrése
+      const junkKeywords = [
+        'logo', 'signature', 'facebook', 'twitter', 'instagram', 'linkedin',
+        'youtube', 'banner', 'spacer', 'image001', 'image002', 'image003',
+        'icon', 'footer'
+      ];
+      if (junkKeywords.some(keyword => fileName.includes(keyword))) {
+        console.log(`Skipping file with junk keyword in name: ${file.name}`);
         return false;
       }
       
