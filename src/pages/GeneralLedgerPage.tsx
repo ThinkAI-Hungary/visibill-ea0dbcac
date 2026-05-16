@@ -11,7 +11,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer } from 'lucide-react';
 import GeneralLedgerTable, { GeneralLedgerTableRef } from '@/components/general-ledger/GeneralLedgerTable';
 import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
 import { ManagePresetsModal } from '@/components/general-ledger/ManagePresetsModal';
@@ -32,7 +33,9 @@ export default function GeneralLedgerPage() {
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [isAIRunning, setIsAIRunning] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
+  const [glStats, setGlStats] = useState<{ accountCount: number; leafCount: number; totalDebit: number; totalCredit: number; classifiedItems: number; totalItems: number } | null>(null);
   const tableRef = useRef<GeneralLedgerTableRef>(null);
+  const handleStatsChange = useCallback((stats: typeof glStats) => setGlStats(stats), []);
 
   // ── URL deep-linking for modals ──
   const [searchParams, setSearchParams] = useSearchParams();
@@ -127,6 +130,8 @@ export default function GeneralLedgerPage() {
     setActivePresetId(val);
     toggleActivePresetMutation.mutate(val);
   };
+
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   const handlePrint = () => {
     if (tableRef.current) {
@@ -231,9 +236,13 @@ export default function GeneralLedgerPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => setShowPrintPreview(true)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Nyomtatási előnézet
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handlePrint}>
-                      <FileText className="h-4 w-4 mr-2" />
-                      Export PDF
+                      <Printer className="h-4 w-4 mr-2" />
+                      Nyomtatás / PDF
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => tableRef.current?.exportExcel(selectedCompany?.name)}>
                       <Download className="h-4 w-4 mr-2" />
@@ -246,6 +255,48 @@ export default function GeneralLedgerPage() {
           </div>
         </div>
       </div>
+
+      {/* ── KPI Summary Bar (F1) ── */}
+      {glStats && glStats.accountCount > 0 && (() => {
+        const fmtHuf = (v: number) => new Intl.NumberFormat('hu-HU').format(Math.round(v));
+        return (
+          <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 print:hidden">
+            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
+              <div className="bg-primary/10 text-primary p-2 rounded-lg"><Database className="w-4 h-4" /></div>
+              <div><div className="text-lg font-bold tabular-nums">{glStats.accountCount}</div><div className="text-[11px] text-muted-foreground">Összes számla</div></div>
+            </div>
+            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
+              <div className="bg-blue-500/10 text-blue-600 p-2 rounded-lg"><FileText className="w-4 h-4" /></div>
+              <div><div className="text-lg font-bold tabular-nums">{glStats.leafCount}</div><div className="text-[11px] text-muted-foreground">Analitikus számlák</div></div>
+            </div>
+            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
+              <div className="bg-emerald-500/10 text-emerald-600 p-2 rounded-lg"><Download className="w-4 h-4 rotate-180" /></div>
+              <div><div className="text-lg font-bold tabular-nums text-emerald-600">{fmtHuf(glStats.totalDebit)}</div><div className="text-[11px] text-muted-foreground">Tartozik (Ft)</div></div>
+            </div>
+            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
+              <div className="bg-red-500/10 text-red-500 p-2 rounded-lg"><Download className="w-4 h-4" /></div>
+              <div><div className="text-lg font-bold tabular-nums text-red-500">{fmtHuf(glStats.totalCredit)}</div><div className="text-[11px] text-muted-foreground">Követel (Ft)</div></div>
+            </div>
+          </div>
+          {/* ── Classification Progress Bar (F2) ── */}
+          {glStats.totalItems > 0 && (() => {
+            const pct = Math.round((glStats.classifiedItems / glStats.totalItems) * 100);
+            return (
+              <div className="mt-3 print:hidden">
+                <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                  <span>Besorolás: {glStats.classifiedItems}/{glStats.totalItems} tétel</span>
+                  <span className={pct === 100 ? 'text-emerald-600 font-semibold' : ''}>{pct}%</span>
+                </div>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-500 ${pct === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-primary to-blue-500'}`} style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            );
+          })()}
+          </>
+        );
+      })()}
 
       <Card className="border-border/60 shadow-md print:border-none print:shadow-none print:bg-transparent content-animate">
         <CardHeader className="py-4 border-b border-border/40 bg-muted/30 relative overflow-hidden print:hidden">
@@ -273,7 +324,7 @@ export default function GeneralLedgerPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <GeneralLedgerTable ref={tableRef} presetId={activePresetId} dateFrom={dateFrom} dateTo={dateTo} globalSearch={globalSearch} />
+          <GeneralLedgerTable ref={tableRef} presetId={activePresetId} dateFrom={dateFrom} dateTo={dateTo} globalSearch={globalSearch} onStatsChange={handleStatsChange} />
         </CardContent>
       </Card>
 
@@ -292,6 +343,37 @@ export default function GeneralLedgerPage() {
         presets={presets || []}
         companyId={selectedCompany?.id}
       />
+
+      {/* F5: Print Preview Dialog */}
+      <Dialog open={showPrintPreview} onOpenChange={setShowPrintPreview}>
+        <DialogContent className="max-w-5xl w-[95vw] h-[85vh] p-0 flex flex-col overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b border-border/40 bg-muted/30 shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <Eye className="w-5 h-5 text-primary" />
+              Főkönyv nyomtatási előnézet
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto p-6 bg-white dark:bg-background">
+            <div className="text-center mb-6 border-b-2 border-primary/20 pb-4">
+              <h1 className="text-2xl font-bold text-foreground">{selectedCompany?.name || 'Vállalkozás'}</h1>
+              <p className="text-sm text-muted-foreground mt-1">Főkönyvi kivonat — Nyomtatási előnézet</p>
+            </div>
+            <div className="border rounded-md shadow-sm bg-card">
+              <GeneralLedgerTable
+                presetId={activePresetId}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+              />
+            </div>
+          </div>
+          <DialogFooter className="px-6 py-3 border-t border-border/40 bg-muted/30 shrink-0 gap-2">
+            <Button variant="outline" onClick={() => setShowPrintPreview(false)}>Bezárás</Button>
+            <Button className="gap-2" onClick={() => { setShowPrintPreview(false); handlePrint(); }}>
+              <Printer className="w-4 h-4" /> Nyomtatás
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

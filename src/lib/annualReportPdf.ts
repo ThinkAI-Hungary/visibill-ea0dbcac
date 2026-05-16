@@ -54,7 +54,8 @@ function filterRelevantRows(allRows: any[]): any[] {
   );
 }
 
-export const generateAnnualReportPdf = (data: AnnualReportData) => {
+
+function buildAnnualReportHtml(data: AnnualReportData): string {
   const allBs = data.frozenBsData || [];
   const assets = filterRelevantRows(allBs.filter((r: any) => r.section === 'assets'));
   const liabilities = filterRelevantRows(allBs.filter((r: any) => r.section === 'liabilities'));
@@ -309,8 +310,10 @@ export const generateAnnualReportPdf = (data: AnnualReportData) => {
       .no-print { display: none !important; }
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif; color: #1f2937; font-size: 10.5px; line-height: 1.5; }
+    html, body { font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif; color: #1f2937; font-size: 10.5px; line-height: 1.5; background-color: #ffffff !important; color-scheme: light; }
     table { font-variant-numeric: tabular-nums; }
+    td, th { color: #1f2937; }
+    tr { background-color: transparent; }
 
     .cover { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; page-break-after: always; background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%); }
     .cover-accent { width: 50px; height: 3px; background: linear-gradient(90deg, #10b981, #059669); border-radius: 2px; margin-bottom: 28px; }
@@ -375,9 +378,23 @@ export const generateAnnualReportPdf = (data: AnnualReportData) => {
 </body>
 </html>`;
 
+  return html;
+}
+
+export const generateAnnualReportPdf = (data: AnnualReportData) => {
+  const html = buildAnnualReportHtml(data);
   const printWindow = window.open('', '_blank');
   if (printWindow) {
     printWindow.document.write(html);
     printWindow.document.close();
   }
+};
+
+/**
+ * Returns the generated HTML as a blob URL for live preview in an iframe.
+ */
+export const generateAnnualReportPreviewUrl = (data: AnnualReportData): string => {
+  const html = buildAnnualReportHtml(data);
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  return URL.createObjectURL(blob);
 };

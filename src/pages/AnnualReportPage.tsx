@@ -10,15 +10,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import {
   Loader2, CheckCircle2, AlertTriangle, XCircle, Info,
   ChevronRight, ChevronLeft, FileText, Download, RefreshCw,
   ClipboardCheck, BookOpen, DollarSign, Upload, Shield, Database,
-  Lock, Unlock, Plus, Trash2, RotateCcw
+  Lock, Unlock, Plus, Trash2, RotateCcw, ExternalLink, Eye
 } from 'lucide-react';
-import { generateAnnualReportPdf } from '@/lib/annualReportPdf';
+import { generateAnnualReportPdf, generateAnnualReportPreviewUrl } from '@/lib/annualReportPdf';
 import { useFixedAssets } from '@/hooks/useFixedAssets';
+import { useScopedNavigate } from '@/lib/navigation';
 
 // ═══════════════════════════════════════════
 // Types
@@ -64,8 +67,17 @@ const STEPS = [
   { id: 3, title: 'Validáció', icon: Shield, description: 'Törvényi ellenőrzések' },
   { id: 4, title: 'Kieg. Melléklet', icon: BookOpen, description: 'Szöveges sablonok' },
   { id: 5, title: 'Osztalék', icon: DollarSign, description: 'Eredményfelosztás' },
-  { id: 6, title: 'Export', icon: Download, description: 'XML + PDF letöltés' },
+  { id: 6, title: 'Export', icon: Download, description: 'PDF letöltés, zárás' },
 ];
+
+const STEP_HINTS: Record<number, string> = {
+  1: 'Töltsd ki a céges alapadatokat és a képviselő nevét. Ezek az adatok a végleges PDF borítójára kerülnek.',
+  2: 'Fagyaszd be a Mérleg és Eredménykimutatás adatait. Ez egy pillanatfelvételt készít a főkönyvi adatokból.',
+  3: 'Futtasd le az automatikus ellenőrzéseket. A rendszer ellenőrzi a mérlegegyezőséget, az EK-Mérleg összhangot és a kitöltöttséget.',
+  4: 'Szerkeszd a Kiegészítő Melléklet szöveges sablonjait. A {{változónevek}} automatikusan behelyettesítődnek a PDF-ben.',
+  5: 'Ha volt nyereség, itt dönthetsz az osztalékról és az eredménytartalékba helyezésről.',
+  6: 'Ellenőrizd az összefoglaló checklistet, töltsd le a PDF-et, majd véglegesítsd a beszámolót.',
+};
 
 // ═══════════════════════════════════════════
 // Main Component
@@ -76,6 +88,7 @@ export default function AnnualReportPage() {
   const { session } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const scopedNavigate = useScopedNavigate();
 
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
@@ -203,11 +216,21 @@ export default function AnnualReportPage() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['annual_report'] });
       const passed = data?.all_passed;
-      toast({
-        title: passed ? '✓ Minden ellenőrzés sikeres!' : '✗ Hibák találhatók',
-        description: passed ? 'A beszámoló megfelel a követelményeknek.' : 'Javítsd a jelzett hibákat.',
-        variant: passed ? 'default' : 'destructive',
-      });
+      const results: any[] = data?.results || [];
+      const errors = results.filter((r: any) => r.severity === 'error' && !r.passed);
+      const warnings = results.filter((r: any) => r.severity === 'warning' && !r.passed);
+
+      if (passed) {
+        toast({
+          title: '✓ Minden ellenőrzés sikeres!',
+          description: `${results.length} szabály ellenőrizve — a beszámoló megfelel a követelményeknek.`,
+        });
+      } else {
+        toast({
+          title: 'Ellenőrzés kész',
+          description: `${errors.length} hiba${warnings.length > 0 ? `, ${warnings.length} figyelmeztetés` : ''} — lásd a részleteket lent.`,
+        });
+      }
     },
     onError: (err: any) => {
       toast({ title: 'Hiba', description: err.message, variant: 'destructive' });
@@ -339,6 +362,9 @@ export default function AnnualReportPage() {
   // ── Custom sections state ──
   const [newSectionTitle, setNewSectionTitle] = useState('');
 
+  // ── PDF Preview state (B2) ──
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   // ── Loading state ──
   if (isLoadingReport) {
     return (
@@ -435,12 +461,46 @@ export default function AnnualReportPage() {
             );
           })}
         </div>
+        {/* ── Progress Bar (B1) ── */}
+        {(() => {
+          const stepsDone = [
+            !!(report.representative_name && report.report_date), // step 1
+            !!report.frozen_at, // step 2
+            !!report.validated_at, // step 3
+            ((report.notes_sections as any[]) || []).length > 0 || (notesTemplates && notesTemplates.length > 0), // step 4
+            report.net_income <= 0 || (report.dividend_amount >= 0), // step 5
+            report.status === 'finalized', // step 6
+          ];
+          const completedCount = stepsDone.filter(Boolean).length;
+          const pct = Math.round((completedCount / 6) * 100);
+          return (
+            <div className="mt-2 print:hidden">
+              <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                <span>{completedCount}/6 lépés kész</span>
+                <span>{pct}%</span>
+              </div>
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-primary to-emerald-500 rounded-full transition-all duration-500"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Step content */}
       <Card className="border-border/60 shadow-md">
         <CardContent className="p-6 overflow-hidden">
           <div key={currentStep} className="step-animate">
+          {/* ── Step Help Hint (B6) ── */}
+          {STEP_HINTS[currentStep] && (
+            <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/40 px-4 py-2.5 rounded-lg border border-border/30 mb-5 print:hidden">
+              <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/60" />
+              <span>{STEP_HINTS[currentStep]}</span>
+            </div>
+          )}
           {/* STEP 1: Basic Info */}
           {currentStep === 1 && (
             <div className="space-y-6">
@@ -522,14 +582,22 @@ export default function AnnualReportPage() {
                 3. Validáció — Az „Őrszem"
               </h2>
 
-              <Button
-                onClick={() => validateReport.mutate()}
-                disabled={validateReport.isPending || !report.frozen_at}
-                className="gap-2"
-              >
-                {validateReport.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
-                Ellenőrzések futtatása
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={() => {
+                    validateReport.reset();
+                    validateReport.mutate();
+                  }}
+                  disabled={validateReport.isPending || !report.frozen_at}
+                  className="gap-2"
+                >
+                  {validateReport.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+                  {validationResults.length > 0 ? 'Újra ellenőrzés' : 'Ellenőrzések futtatása'}
+                </Button>
+                {validateReport.isError && (
+                  <p className="text-sm text-red-500">Hiba: {(validateReport.error as any)?.message || 'Ismeretlen hiba'}</p>
+                )}
+              </div>
 
               {!report.frozen_at && (
                 <p className="text-amber-600 text-sm">⚠️ Először fagyaszd be az adatokat a 2. lépésben!</p>
@@ -537,7 +605,18 @@ export default function AnnualReportPage() {
 
               {validationResults.length > 0 && (
                 <div className="space-y-3">
-                  {validationResults.map((r: ValidationResult) => (
+                  {validationResults.map((r: ValidationResult) => {
+                    // Map rule_id to navigation target
+                    const ruleNavMap: Record<string, { type: 'step' | 'page'; target: number | string; label: string }> = {
+                      'V1': { type: 'page', target: 'balance-sheet', label: 'Mérleg megnyitása' },
+                      'V2': { type: 'page', target: 'profit-and-loss', label: 'Eredménykimutatás megnyitása' },
+                      'V3': { type: 'step', target: 1, label: 'Ugrás az 1. lépésre' },
+                      'V4': { type: 'step', target: 5, label: 'Ugrás az 5. lépésre' },
+                      'V5': { type: 'step', target: 2, label: 'Ugrás a 2. lépésre' },
+                    };
+                    const nav = ruleNavMap[r.rule_id];
+
+                    return (
                     <div key={r.rule_id} className={cn(
                       "flex items-start gap-3 p-4 rounded-xl border",
                       r.passed ? "bg-emerald-500/5 border-emerald-500/20" :
@@ -547,12 +626,30 @@ export default function AnnualReportPage() {
                       {r.passed ? <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-0.5" /> :
                        r.severity === 'error' ? <XCircle className="w-5 h-5 text-red-500 mt-0.5" /> :
                        <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />}
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm">{r.rule_id}: {r.rule_name}</p>
                         <p className="text-sm text-muted-foreground">{r.message}</p>
                       </div>
+                      {!r.passed && nav && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0 gap-1.5 text-xs h-8"
+                          onClick={() => {
+                            if (nav.type === 'step') {
+                              setCurrentStep(nav.target as number);
+                            } else {
+                              scopedNavigate(nav.target as string);
+                            }
+                          }}
+                        >
+                          {nav.type === 'page' ? <ExternalLink className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                          {nav.label}
+                        </Button>
+                      )}
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               )}
             </div>
@@ -671,15 +768,11 @@ export default function AnnualReportPage() {
                         </div>
                       )}
 
-                      <Textarea
-                        value={(draftFields[`note_${tmpl.section_key}`] !== undefined) ? draftFields[`note_${tmpl.section_key}`] : (saved?.text || tmpl.default_text)}
-                        rows={6}
-                        className="text-sm"
-                        onChange={(e) => {
-                          const newText = e.target.value;
-                          // Store locally for instant display
-                          setDraftFields(prev => ({ ...prev, [`note_${tmpl.section_key}`]: newText }));
-                          // Debounce the DB write
+                      <RichTextEditor
+                        key={`rte_${tmpl.section_key}_${saved?.text?.length ?? 0}_${!saved ? 'default' : 'saved'}`}
+                        initialContent={saved?.text || tmpl.default_text}
+                        onChange={(newText) => {
+                          // Debounce the DB write — no local draft needed since editor is uncontrolled
                           if (debounceRef.current) clearTimeout(debounceRef.current);
                           debounceRef.current = setTimeout(() => {
                             const sections = [...((report.notes_sections as any[]) || [])];
@@ -687,20 +780,14 @@ export default function AnnualReportPage() {
                             const entry = { section_key: tmpl.section_key, text: newText };
                             if (idx >= 0) sections[idx] = entry; else sections.push(entry);
                             updateReport.mutate({ notes_sections: sections } as any);
-                            setDraftFields(prev => {
-                              const next = { ...prev };
-                              delete next[`note_${tmpl.section_key}`];
-                              return next;
-                            });
-                          }, 800);
+                          }, 1200);
                         }}
+                        placeholder={tmpl.section_title}
                       />
 
                       {/* Live preview with variables replaced */}
                       {(() => {
-                        const currentText = (draftFields[`note_${tmpl.section_key}`] !== undefined)
-                          ? draftFields[`note_${tmpl.section_key}`]
-                          : (saved?.text || tmpl.default_text);
+                        const currentText = saved?.text || tmpl.default_text;
                         const hasVars = /\[.+?\]/.test(currentText);
                         if (!hasVars) return null;
                         return (
@@ -859,26 +946,144 @@ export default function AnnualReportPage() {
             </div>
           )}
 
-          {/* STEP 6: Export */}
+          {/* STEP 6: Export & Finalization */}
           {currentStep === 6 && (
             <div className="space-y-6">
               <h2 className="text-xl font-bold flex items-center gap-2">
                 <Download className="w-5 h-5 text-primary" />
-                6. Export és Beküldés
+                6. Zárás és Exportálás
               </h2>
+              <p className="text-sm text-muted-foreground -mt-3">
+                Ellenőrizd a beszámoló állapotát, töltsd le a végleges PDF-et, majd zárd le a dokumentumot.
+              </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* ── Summary Checklist ── */}
+              {(() => {
+                const validationResults: ValidationResult[] = (report.validation_results as any[]) || [];
+                const validationErrors = validationResults.filter(v => v.severity === 'error' && !v.passed);
+                const validationWarnings = validationResults.filter(v => v.severity === 'warning' && !v.passed);
+                const notesSections = (report.notes_sections as any[]) || [];
+                const hasBasicData = !!(report.representative_name && report.report_date);
+                const hasFrozenData = !!report.frozen_at;
+                const hasValidation = !!report.validated_at;
+                const validationPassed = hasValidation && validationErrors.length === 0;
+                const hasNotes = notesSections.length > 0 || (notesTemplates && notesTemplates.length > 0);
+                const hasDividend = report.net_income <= 0 || (report.dividend_amount >= 0 && report.retained_earnings >= 0);
+                const allReady = hasBasicData && hasFrozenData && validationPassed && hasNotes && hasDividend;
+
+                const checks = [
+                  { label: 'Alapadatok kitöltve', sublabel: `${report.representative_name || '—'} • ${report.report_date || '—'}`, ok: hasBasicData, step: 1 },
+                  { label: 'Mérleg & EK befagyasztva', sublabel: report.frozen_at ? `Befagyasztva: ${new Date(report.frozen_at).toLocaleString('hu-HU')}` : 'Még nincs befagyasztva', ok: hasFrozenData, step: 2 },
+                  { label: 'Validáció lefutott', sublabel: validationPassed ? `${validationResults.length} szabály ellenőrizve — mind OK` : validationErrors.length > 0 ? `${validationErrors.length} hiba, ${validationWarnings.length} figyelmeztetés` : 'Még nem futott le', ok: validationPassed, warn: hasValidation && !validationPassed, step: 3 },
+                  { label: 'Kiegészítő melléklet', sublabel: `${notesSections.length} egyéni szekció • ${notesTemplates?.length || 0} sablon`, ok: hasNotes, step: 4 },
+                  { label: 'Eredményfelosztás', sublabel: report.net_income > 0 ? `Osztalék: ${new Intl.NumberFormat('hu-HU').format(report.dividend_amount || 0)} Ft • Tartalék: ${new Intl.NumberFormat('hu-HU').format(report.retained_earnings || 0)} Ft` : 'Nincs pozitív eredmény — nem szükséges', ok: hasDividend, step: 5 },
+                ];
+
+                return (
+                  <Card className="border-border/60 shadow-sm">
+                    <CardHeader className="pb-3 border-b border-border/40">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <ClipboardCheck className="w-4 h-4 text-primary" />
+                        Beszámoló állapot
+                        {allReady ? (
+                          <span className="ml-auto text-xs font-semibold bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-full">
+                            ✓ Minden rendben
+                          </span>
+                        ) : (
+                          <span className="ml-auto text-xs font-semibold bg-amber-500/10 text-amber-600 px-3 py-1 rounded-full">
+                            Teendők vannak
+                          </span>
+                        )}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      {checks.map((c, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setCurrentStep(c.step)}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-muted/40",
+                            i < checks.length - 1 && "border-b border-border/30"
+                          )}
+                        >
+                          <div className={cn(
+                            "w-7 h-7 rounded-full flex items-center justify-center shrink-0",
+                            c.ok ? "bg-emerald-500/10 text-emerald-600" :
+                            (c as any).warn ? "bg-amber-500/10 text-amber-600" :
+                            "bg-muted text-muted-foreground"
+                          )}>
+                            {c.ok ? <CheckCircle2 className="w-4 h-4" /> :
+                             (c as any).warn ? <AlertTriangle className="w-3.5 h-3.5" /> :
+                             <XCircle className="w-3.5 h-3.5" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium">{c.label}</div>
+                            <div className="text-xs text-muted-foreground truncate">{c.sublabel}</div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+                        </button>
+                      ))}
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* ── Export & Finalize Grid ── */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* PDF Export Card */}
-                <Card className="border-border/50 hover:border-primary/40 transition-colors">
-                  <CardContent className="p-6 text-center space-y-3">
-                    <div className="mx-auto bg-primary/10 text-primary p-4 rounded-2xl w-fit">
-                      <FileText className="w-8 h-8" />
+                <Card className={cn(
+                  "border-border/50 transition-colors",
+                  report.frozen_at ? "hover:border-primary/40" : "opacity-60"
+                )}>
+                  <CardContent className="p-5 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-primary/10 text-primary p-2.5 rounded-xl">
+                        <FileText className="w-6 h-6" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-bold text-sm">Vezetői PDF</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">Nyomtatható, aláírható beszámoló — Mérleg, EK, Kiegészítő Melléklet, Osztalékhatározat</p>
+                      </div>
                     </div>
-                    <h3 className="font-bold">Vezetői PDF</h3>
-                    <p className="text-xs text-muted-foreground">Nyomtatható, aláírható PDF</p>
+                    <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      className="w-full gap-2"
+                      className="flex-1 gap-2"
+                      disabled={!report.frozen_at}
+                      onClick={() => {
+                        try {
+                          const pdfData = {
+                            companyName: selectedCompany?.name || '',
+                            companyAddress: selectedCompany?.address || '',
+                            companyTaxNumber: selectedCompany?.tax_number || '',
+                            fiscalYear: report.fiscal_year,
+                            representativeName: report.representative_name || '',
+                            representativeRole: report.representative_role || 'ügyvezető',
+                            reportDate: report.report_date || new Date().toISOString().slice(0, 10),
+                            frozenBsData: report.frozen_bs_data || [],
+                            frozenPnlData: report.frozen_pnl_data || [],
+                            notesSections: (report.notes_sections as any[]) || [],
+                            notesTemplates: notesTemplates || [],
+                            netIncome: report.net_income || 0,
+                            dividendAmount: report.dividend_amount || 0,
+                            retainedEarnings: report.retained_earnings || 0,
+                            dividendResolutionDate: report.dividend_resolution_date || '',
+                            assetMovement: assetMovement || undefined,
+                            salaryMetrics: salaryMetrics || undefined,
+                            equityRows: equityRows || undefined,
+                          };
+                          const url = generateAnnualReportPreviewUrl(pdfData);
+                          setPreviewUrl(url);
+                        } catch (err) {
+                          toast({ title: 'Hiba', description: 'Nem sikerült az előnézet generálás.', variant: 'destructive' });
+                        }
+                      }}
+                    >
+                      <Eye className="w-4 h-4" /> Előnézet
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 gap-2"
                       disabled={!report.frozen_at}
                       onClick={() => {
                         try {
@@ -908,35 +1113,72 @@ export default function AnnualReportPage() {
                         }
                       }}
                     >
-                      <Download className="w-4 h-4" /> Letöltés PDF
+                      <Download className="w-4 h-4" /> Letöltés
+                    </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* OBR XML Card — Placeholder */}
+                <Card className="border-border/50 opacity-50">
+                  <CardContent className="p-5 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-muted text-muted-foreground p-2.5 rounded-xl">
+                        <Upload className="w-6 h-6" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-bold text-sm flex items-center gap-2">
+                          OBR XML
+                          <span className="text-[10px] font-semibold bg-muted px-2 py-0.5 rounded-full text-muted-foreground">Hamarosan</span>
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">e-Beszámoló rendszerbe feltölthető XML formátum</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" className="w-full gap-2" disabled>
+                      <Upload className="w-4 h-4" /> Még nem elérhető
                     </Button>
                   </CardContent>
                 </Card>
 
                 {/* Finalization Card */}
-                <Card className="border-border/50 hover:border-primary/40 transition-colors">
-                  <CardContent className="p-6 text-center space-y-3">
-                    <div className={cn(
-                      "mx-auto p-4 rounded-2xl w-fit",
-                      report.status === 'finalized' ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
-                    )}>
-                      {report.status === 'finalized' ? <Lock className="w-8 h-8" /> : <Unlock className="w-8 h-8" />}
+                <Card className={cn(
+                  "border-2 transition-all",
+                  report.status === 'finalized'
+                    ? "border-emerald-500/40 bg-emerald-500/5"
+                    : "border-border/50 hover:border-primary/40"
+                )}>
+                  <CardContent className="p-5 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className={cn(
+                        "p-2.5 rounded-xl",
+                        report.status === 'finalized'
+                          ? "bg-emerald-500/10 text-emerald-600"
+                          : "bg-amber-500/10 text-amber-600"
+                      )}>
+                        {report.status === 'finalized' ? <Lock className="w-6 h-6" /> : <Unlock className="w-6 h-6" />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-bold text-sm">
+                          {report.status === 'finalized' ? 'Véglegesítve ✓' : 'Véglegesítés'}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {report.status === 'finalized'
+                            ? `Zárolva • Módosításhoz oldd fel`
+                            : !report.frozen_at
+                              ? 'Előfeltétel: adat befagyasztás'
+                              : !report.validated_at
+                                ? 'Előfeltétel: validáció lefuttatása'
+                                : 'Zárd le — ezután nem módosítható'}
+                        </p>
+                      </div>
                     </div>
-                    <h3 className="font-bold">
-                      {report.status === 'finalized' ? 'Véglegesítve ✓' : 'Véglegesítés'}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {report.status === 'finalized'
-                        ? 'A beszámoló véglegesítve van. Módosításhoz oldd fel.'
-                        : 'Zárd le a beszámolót — ezután nem módosítható.'}
-                    </p>
                     {report.status !== 'finalized' ? (
                       <Button
                         className="w-full gap-2"
                         disabled={!report.frozen_at || !report.validated_at}
                         onClick={() => {
                           updateReport.mutate({ status: 'finalized' } as any);
-                          toast({ title: 'Beszámoló véglegesítve', description: 'A beszámoló zárolva lett.' });
+                          toast({ title: '🎉 Beszámoló véglegesítve!', description: 'A beszámoló sikeresen zárolva. Gratulálunk!' });
                         }}
                       >
                         <Lock className="w-4 h-4" /> Véglegesítés
@@ -956,6 +1198,83 @@ export default function AnnualReportPage() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* ── B3: Változás-log (Audit Trail) ── */}
+              <Card className="border-border/60 shadow-sm">
+                <CardHeader className="pb-3 border-b border-border/40">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4 text-primary" />
+                    Változás-napló
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {(() => {
+                    const events: { date: string; label: string; icon: typeof CheckCircle2; color: string }[] = [];
+                    
+                    if (report.created_at) events.push({
+                      date: report.created_at,
+                      label: 'Beszámoló létrehozva',
+                      icon: FileText,
+                      color: 'text-blue-500 bg-blue-500/10'
+                    });
+                    if (report.frozen_at) events.push({
+                      date: report.frozen_at,
+                      label: 'Mérleg & EK adatok befagyasztva',
+                      icon: Lock,
+                      color: 'text-cyan-500 bg-cyan-500/10'
+                    });
+                    if (report.validated_at) events.push({
+                      date: report.validated_at,
+                      label: 'Validáció lefuttatva',
+                      icon: Shield,
+                      color: 'text-amber-500 bg-amber-500/10'
+                    });
+                    if (report.status === 'finalized') events.push({
+                      date: report.updated_at,
+                      label: 'Beszámoló véglegesítve',
+                      icon: CheckCircle2,
+                      color: 'text-emerald-500 bg-emerald-500/10'
+                    });
+                    if (report.updated_at && report.updated_at !== report.created_at) events.push({
+                      date: report.updated_at,
+                      label: 'Utolsó módosítás',
+                      icon: RefreshCw,
+                      color: 'text-muted-foreground bg-muted'
+                    });
+
+                    events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+                    return events.map((ev, i) => {
+                      const Icon = ev.icon;
+                      return (
+                        <div key={i} className={cn(
+                          "flex items-center gap-3 px-5 py-3",
+                          i < events.length - 1 && "border-b border-border/30"
+                        )}>
+                          <div className={cn("w-7 h-7 rounded-full flex items-center justify-center shrink-0", ev.color)}>
+                            <Icon className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium">{ev.label}</div>
+                            <div className="text-xs text-muted-foreground tabular-nums">
+                              {new Date(ev.date).toLocaleString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </CardContent>
+              </Card>
+
+              {/* ── Footer info ── */}
+              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 px-4 py-3 rounded-lg border border-border/40">
+                <Info className="w-4 h-4 shrink-0" />
+                <span>
+                  A véglegesítés után a beszámoló nem módosítható. A PDF bármikor újra letölthető.
+                  Az OBR XML export egy későbbi frissítésben lesz elérhető.
+                </span>
+              </div>
             </div>
           )}
           </div>{/* end step-animate wrapper */}
@@ -971,6 +1290,32 @@ export default function AnnualReportPage() {
           Következő <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
+
+      {/* B2: PDF Live Preview Dialog */}
+      <Dialog open={!!previewUrl} onOpenChange={(open) => {
+        if (!open) {
+          if (previewUrl) URL.revokeObjectURL(previewUrl);
+          setPreviewUrl(null);
+        }
+      }}>
+        <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 flex flex-col overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b border-border/40 bg-muted/30 shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <Eye className="w-5 h-5 text-primary" />
+              Beszámoló előnézet — {selectedYear}. üzleti év
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            {previewUrl && (
+              <iframe
+                src={previewUrl}
+                className="w-full h-full border-0"
+                title="Éves Beszámoló Előnézet"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

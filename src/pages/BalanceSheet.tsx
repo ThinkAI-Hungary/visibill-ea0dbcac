@@ -7,12 +7,12 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2, ReceiptText } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2, ReceiptText, ClipboardCopy } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -483,6 +483,18 @@ function BsViewTab({ presetId }: { presetId?: string }) {
           </div>
           <div className={cn("col-span-2 text-right tabular-nums", isTotal ? "text-primary text-base" : "", isLetter ? "font-bold" : "")}>
             {formatValue(row.computedBalance)}
+            {(() => {
+              const prev = Number(row.prior_year_balance) || 0;
+              const curr = row.computedBalance || 0;
+              if (prev === 0 || curr === prev) return null;
+              const pctChange = Math.round(((curr - prev) / Math.abs(prev)) * 100);
+              const isUp = pctChange > 0;
+              return (
+                <span className={cn("ml-1 text-[9px] font-medium", isUp ? "text-emerald-500" : "text-red-400")}>
+                  {isUp ? '▲' : '▼'}{Math.abs(pctChange)}%
+                </span>
+              );
+            })()}
           </div>
         </div>
 
@@ -568,6 +580,35 @@ function BsViewTab({ presetId }: { presetId?: string }) {
       </div>
       )}
 
+      {/* M1: Balance Equality Indicator — below eltérés, above controls */}
+      {totalAssets !== undefined && totalLiabilities !== undefined && (
+        <div className={cn(
+          "flex items-center justify-center gap-4 p-3 rounded-xl border-2 text-sm",
+          totalAssets === totalLiabilities
+            ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-400"
+            : "bg-red-500/10 border-red-500/40 text-red-700 dark:text-red-400"
+        )}>
+          <div className="text-right">
+            <div className="text-[10px] uppercase tracking-wider opacity-80">Eszközök</div>
+            <div className="font-bold tabular-nums">{new Intl.NumberFormat('hu-HU').format(Math.round(totalAssets))}</div>
+          </div>
+          <div className="text-lg font-bold">
+            {totalAssets === totalLiabilities ? '⚖️ =' : '⚖️ ≠'}
+          </div>
+          <div className="text-left">
+            <div className="text-[10px] uppercase tracking-wider opacity-80">Források</div>
+            <div className="font-bold tabular-nums">{new Intl.NumberFormat('hu-HU').format(Math.round(totalLiabilities))}</div>
+          </div>
+          {totalAssets === totalLiabilities && (
+            <CheckCircle2 className="w-4 h-4 ml-2" />
+          )}
+          {totalAssets !== totalLiabilities && (
+            <AlertTriangle className="w-4 h-4 ml-2" />
+          )}
+        </div>
+      )}
+
+
       {/* Controls */}
       <div className="flex justify-between items-center bg-muted/30 p-4 rounded-xl border border-border/50 print:hidden">
         <div className="flex items-center space-x-2">
@@ -607,8 +648,8 @@ function BsViewTab({ presetId }: { presetId?: string }) {
       {/* Table */}
       <ContextMenu>
         <ContextMenuTrigger asChild>
-      <div className="border rounded-md shadow-sm overflow-hidden bg-card">
-        <div className="grid grid-cols-12 gap-4 p-4 bg-muted/80 border-b text-sm font-bold uppercase text-muted-foreground select-none">
+      <div className="border rounded-md shadow-sm overflow-auto max-h-[70vh] bg-card">
+        <div className="grid grid-cols-12 gap-4 p-4 bg-muted/80 border-b text-sm font-bold uppercase text-muted-foreground select-none sticky top-0 z-10 backdrop-blur-sm">
           <div className="col-span-1 text-center">Sor</div>
           <div className="col-span-5">Megnevezés</div>
           <div className="col-span-2 text-right">Előző év</div>
@@ -625,6 +666,12 @@ function BsViewTab({ presetId }: { presetId?: string }) {
         <ContextMenuContent>
           <ContextMenuItem onClick={expandAllView} className="gap-2"><Maximize2 className="w-4 h-4" /> Mind kinyitása</ContextMenuItem>
           <ContextMenuItem onClick={collapseAllView} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem className="gap-2" onClick={() => {
+            const rows = [...assets, ...liabilities];
+            const csv = 'Sor;Megnevezés;Tárgyév\n' + rows.map(r => `${r.row_code};${r.name};${r.current_year_balance || 0}`).join('\n');
+            navigator.clipboard.writeText(csv);
+          }}><ClipboardCopy className="w-4 h-4" /> Másolás CSV-ként</ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
     </div>

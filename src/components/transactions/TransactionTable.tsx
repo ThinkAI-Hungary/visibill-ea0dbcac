@@ -102,9 +102,9 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, onOpenD
           <Tooltip>
             <TooltipTrigger>
               <div className="flex items-center justify-center gap-1">
-                {matchStatus === 'matched' && <CheckCircle2 className="h-4 w-4 text-success" />}
-                {matchStatus === 'suggested' && <AlertCircle className="h-4 w-4 text-warning" />}
-                {matchStatus === 'unmatched' && <HelpCircle className="h-4 w-4 text-destructive" />}
+                {matchStatus === 'matched' && <><CheckCircle2 className="h-3.5 w-3.5 text-success" /><span className="text-[10px] font-medium text-emerald-600">Párosított</span></>}
+                {matchStatus === 'suggested' && <><AlertCircle className="h-3.5 w-3.5 text-warning" /><span className="text-[10px] font-medium text-amber-600">Javasolt</span></>}
+                {matchStatus === 'unmatched' && <><HelpCircle className="h-3.5 w-3.5 text-destructive" /><span className="text-[10px] font-medium text-rose-500">Nincs</span></>}
                 {transaction.match_type === 'auto' && <Sparkles className="h-3 w-3 text-success" />}
               </div>
             </TooltipTrigger>
