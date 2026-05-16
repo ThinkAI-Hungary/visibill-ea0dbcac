@@ -18,8 +18,10 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { exportPnlExcel } from '@/lib/pnlExport';
+import { isSameDay, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
 
 import { useScopedNavigate } from '@/lib/navigation';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 
 function PnlMappingTab({ presetId }: { presetId?: string }) {
@@ -654,9 +656,14 @@ export default function ProfitAndLoss() {
   const { activePresetId, setActivePresetId, presets } = useActivePreset(selectedCompany?.id);
   const { dateFrom, dateTo, setDateFrom, setDateTo } = useDateRange();
   
-  const isThisMonth = isSameDay(dateFrom, startOfMonth(new Date())) && isSameDay(dateTo, endOfMonth(new Date()));
-  const isThisQuarter = isSameDay(dateFrom, startOfQuarter(new Date())) && isSameDay(dateTo, endOfQuarter(new Date()));
-  const isThisYear = isSameDay(dateFrom, startOfYear(new Date())) && isSameDay(dateTo, endOfYear(new Date()));
+  let isThisMonth = false, isThisQuarter = false, isThisYear = false;
+  try {
+    isThisMonth = isSameDay(dateFrom, startOfMonth(new Date())) && isSameDay(dateTo, endOfMonth(new Date()));
+    isThisQuarter = isSameDay(dateFrom, startOfQuarter(new Date())) && isSameDay(dateTo, endOfQuarter(new Date()));
+    isThisYear = isSameDay(dateFrom, startOfYear(new Date())) && isSameDay(dateTo, endOfYear(new Date()));
+  } catch (e) {
+    console.error('Date comparison error:', e);
+  }
   
   const activeDatePreset = isThisYear ? 'year' : isThisQuarter ? 'quarter' : isThisMonth ? 'month' : 'custom';
 
