@@ -46,7 +46,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 relative">
+    <div className="w-full space-y-8 animate-in fade-in duration-500 relative">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Riportok</h1>

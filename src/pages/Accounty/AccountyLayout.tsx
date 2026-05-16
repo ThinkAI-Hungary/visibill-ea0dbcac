@@ -12,8 +12,19 @@ import {
   Search,
   Bell,
   Sun,
-  Moon
+  Moon,
+  User,
+  LogOut,
+  ChevronDown
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -127,28 +138,51 @@ export default function AccountyLayout() {
 
         {/* User Profile Footer */}
         <div className="p-4 border-t border-white/10 shrink-0">
-          <div className="flex items-center gap-3 cursor-pointer hover:bg-white/5 p-2 rounded-md transition-colors">
-            <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
-              {getUserInitials()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">
-                {user?.user_metadata?.name || 'Kovács János'}
-              </p>
-              <p className="text-xs text-slate-400 truncate">Könyvelő</p>
-            </div>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setTheme(theme === 'dark' ? 'light' : 'dark');
-              }}
-              className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors flex items-center justify-center"
-              title="Sötét / világos mód"
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="flex items-center gap-3 cursor-pointer hover:bg-white/5 p-2 rounded-md transition-colors group">
+                <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                  {getUserInitials()}
+                </div>
+                <div className="flex-1 min-w-0 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-white truncate">
+                      {user?.user_metadata?.name || 'Kovács János'}
+                    </p>
+                    <p className="text-xs text-slate-400 truncate">Könyvelő</p>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors opacity-50 group-hover:opacity-100" />
+                </div>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 mb-2" align="start" side="top">
+              <DropdownMenuLabel className="font-semibold text-slate-900">Fiókom</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer flex items-center gap-2 text-slate-700">
+                <User className="w-4 h-4" />
+                <span>Profil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer flex items-center gap-2 text-slate-700">
+                <Settings className="w-4 h-4" />
+                <span>Beállítások</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="cursor-pointer flex items-center gap-2 text-slate-700"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setTheme(theme === 'dark' ? 'light' : 'dark');
+                }}
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                <span>{theme === 'dark' ? 'Világos mód' : 'Sötét mód'}</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer flex items-center gap-2 text-red-600 focus:bg-red-50 focus:text-red-700">
+                <LogOut className="w-4 h-4" />
+                <span>Kijelentkezés</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </aside>
 

@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, TrendingUp, CheckCircle2, Clock, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
-const barData = [
+const defaultBarData = [
   { name: 'Aug', requested: 12, resolved: 10 },
   { name: 'Sep', requested: 18, resolved: 15 },
   { name: 'Oct', requested: 15, resolved: 14 },
@@ -14,7 +14,7 @@ const barData = [
   { name: 'Jan', requested: 25, resolved: 19 },
 ];
 
-const pieData = [
+const defaultPieData = [
   { name: 'Email', value: 45 },
   { name: 'Viber', value: 25 },
   { name: 'Telegram', value: 20 },
@@ -32,9 +32,69 @@ const tableData = [
 
 export default function MissingInvoicesReportPage() {
   const navigate = useNavigate();
+  const [selectedClient, setSelectedClient] = useState('all');
+
+  const filteredTableData = useMemo(() => {
+    if (selectedClient === 'all') return tableData;
+    return tableData.filter(row => row.id.toString() === selectedClient);
+  }, [selectedClient]);
+
+  const kpis = useMemo(() => {
+    if (selectedClient === 'all') {
+      return {
+        requested: 156,
+        resolved: 118,
+        successRate: 76,
+        avgTime: 2.3,
+      };
+    }
+    const requested = filteredTableData.reduce((acc, row) => acc + row.requested, 0);
+    const resolved = filteredTableData.reduce((acc, row) => acc + row.resolved, 0);
+    const successRate = requested > 0 ? Math.round((resolved / requested) * 100) : 0;
+    const avgTime = filteredTableData.length > 0 
+      ? (filteredTableData.reduce((acc, row) => acc + parseFloat(row.avgTime), 0) / filteredTableData.length)
+      : 0;
+      
+    return {
+      requested,
+      resolved,
+      successRate,
+      avgTime: Number(avgTime.toFixed(1)),
+    };
+  }, [selectedClient, filteredTableData]);
+
+  const dynamicCharts = useMemo(() => {
+    if (selectedClient === 'all') return { barData: defaultBarData, pieData: defaultPieData };
+    
+    const idNum = parseInt(selectedClient, 10);
+    const clientData = filteredTableData[0];
+    const totalReq = clientData?.requested || 10;
+    const totalRes = clientData?.resolved || 5;
+
+    const barData = defaultBarData.map((month, index) => {
+      const factorReq = 0.5 + ((idNum * 13 + index * 7) % 10) / 10;
+      const factorRes = 0.5 + ((idNum * 17 + index * 11) % 10) / 10;
+      const requested = Math.max(1, Math.round((totalReq / 6) * factorReq));
+      const resolved = Math.min(requested, Math.max(0, Math.round((totalRes / 6) * factorRes)));
+      return { name: month.name, requested, resolved };
+    });
+
+    const emailVal = 30 + (idNum * 10) % 40;
+    const viberVal = 10 + (idNum * 15) % 30;
+    const telegramVal = 5 + (idNum * 20) % 25;
+    const sum = emailVal + viberVal + telegramVal;
+    const pieData = [
+      { name: 'Email', value: emailVal },
+      { name: 'Viber', value: viberVal },
+      { name: 'Telegram', value: telegramVal },
+      { name: 'AI Hívás', value: Math.max(5, 100 - sum) },
+    ];
+
+    return { barData, pieData };
+  }, [selectedClient, filteredTableData]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex justify-between items-start">
         <div className="flex items-start gap-4">
@@ -51,13 +111,15 @@ export default function MissingInvoicesReportPage() {
         </div>
         
         <div className="flex gap-3">
-          <Select defaultValue="all">
+          <Select value={selectedClient} onValueChange={setSelectedClient}>
             <SelectTrigger className="w-[180px] bg-white border-slate-200">
               <SelectValue placeholder="Összes ügyfél" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Összes ügyfél</SelectItem>
-              <SelectItem value="active">Aktív ügyfelek</SelectItem>
+              {tableData.map(client => (
+                <SelectItem key={client.id} value={client.id.toString()}>{client.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           
@@ -83,7 +145,7 @@ export default function MissingInvoicesReportPage() {
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
           <h3 className="text-sm font-medium text-slate-500">Összes felszólítás</h3>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900">156</span>
+            <span className="text-3xl font-bold text-slate-900">{kpis.requested}</span>
           </div>
           <div className="mt-2 flex items-center text-xs text-emerald-600 font-medium">
             <TrendingUp className="w-3.5 h-3.5 mr-1" />
@@ -94,18 +156,18 @@ export default function MissingInvoicesReportPage() {
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
           <h3 className="text-sm font-medium text-slate-500">Sikeres bekérés</h3>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900">118</span>
+            <span className="text-3xl font-bold text-slate-900">{kpis.resolved}</span>
           </div>
           <div className="mt-2 flex items-center text-xs text-emerald-600 font-medium">
             <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-            76% sikeresség
+            {kpis.successRate}% sikeresség
           </div>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
           <h3 className="text-sm font-medium text-slate-500">Átlagos válaszidő</h3>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900">2.3 nap</span>
+            <span className="text-3xl font-bold text-slate-900">{kpis.avgTime} nap</span>
           </div>
           <div className="mt-2 flex items-center text-xs text-emerald-600 font-medium">
             <Clock className="w-3.5 h-3.5 mr-1" />
@@ -135,7 +197,7 @@ export default function MissingInvoicesReportPage() {
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+              <BarChart data={dynamicCharts.barData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} />
@@ -158,7 +220,7 @@ export default function MissingInvoicesReportPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={pieData}
+                    data={dynamicCharts.pieData}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -167,7 +229,7 @@ export default function MissingInvoicesReportPage() {
                     dataKey="value"
                     stroke="none"
                   >
-                    {pieData.map((entry, index) => (
+                    {dynamicCharts.pieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -175,7 +237,7 @@ export default function MissingInvoicesReportPage() {
               </ResponsiveContainer>
               {/* Custom Legend to match screenshot closely */}
               <div className="flex justify-center gap-4 mt-2">
-                {pieData.map((entry, index) => (
+                {dynamicCharts.pieData.map((entry, index) => (
                   <div key={entry.name} className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                     <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: COLORS[index] }}></div>
                     {entry.name}
@@ -216,7 +278,7 @@ export default function MissingInvoicesReportPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {tableData.map((row) => (
+            {filteredTableData.map((row) => (
               <tr key={row.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4 font-semibold text-slate-900">{row.name}</td>
                 <td className="px-6 py-4 text-center font-medium text-slate-700">{row.requested}</td>
@@ -237,6 +299,13 @@ export default function MissingInvoicesReportPage() {
                 </td>
               </tr>
             ))}
+            {filteredTableData.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                  Nincs megjeleníthető adat.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

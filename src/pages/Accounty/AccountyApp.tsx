@@ -111,7 +111,7 @@ export default function AccountyApp() {
   });
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="w-full space-y-8 animate-in fade-in duration-500">
       
       {/* Header section */}
       <div className="flex items-end justify-between">

@@ -15,6 +15,7 @@ export default function ClientDetailsPage() {
   
   // Try to find the client from mockData, otherwise use generic data
   const client = mockClients.find(c => c.id === Number(id)) || {
+    id: Number(id) || 1,
     name: 'Tech Solutions Kft.',
     taxNumber: '12345678-1-42'
   };
@@ -30,7 +31,7 @@ export default function ClientDetailsPage() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 animate-in fade-in duration-500">
       
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -123,7 +124,11 @@ export default function ClientDetailsPage() {
               <FileCheck className="w-5 h-5" />
               Számlák feldolgozása
             </Button>
-            <Button variant="outline" className="h-14 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-base font-semibold flex items-center justify-center gap-2">
+            <Button 
+              variant="outline" 
+              className="h-14 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-base font-semibold flex items-center justify-center gap-2"
+              onClick={() => navigate(`/accounty/missing-invoices/${client.id}`)}
+            >
               <AlertTriangle className="w-5 h-5 text-slate-400" />
               Hiányzók bekérése
             </Button>

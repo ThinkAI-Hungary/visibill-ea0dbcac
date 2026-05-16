@@ -10,8 +10,19 @@ import {
   MessageSquare,
   CheckCircle,
   Clock,
-  Send
+  Send,
+  Phone,
+  Eye
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // Mock data for the specific client
 const invoiceData = [
@@ -72,31 +83,15 @@ const invoiceData = [
   }
 ];
 
-const historyData = [
-  {
-    id: 1,
-    title: 'Felszólítás küldve',
-    time: '2024-01-14 10:30',
-    icon: Mail,
-    status: 'Elküldve',
-    statusColor: 'text-blue-600 bg-blue-50 border-blue-200'
-  },
-  {
-    id: 2,
-    title: 'Üzenet kézbesítve',
-    time: '2024-01-12 14:15',
-    icon: MessageSquare,
-    status: 'Kézbesítve',
-    statusColor: 'text-emerald-600 bg-emerald-50 border-emerald-200'
-  },
-  {
-    id: 3,
-    title: 'Email megnyitva',
-    time: '2024-01-10 09:00',
-    icon: Mail,
-    status: 'Megnyitva',
-    statusColor: 'text-amber-600 bg-amber-50 border-amber-200'
-  }
+const detailedHistoryData = [
+  { id: 1, date: '2024-01-15 10:30', channel: 'Email', vendor: 'Telekom - Telefon számla', responseTime: '2 óra', status: 'Válaszolt', statusColor: 'text-emerald-600 bg-emerald-50 border-emerald-200', icon: Mail, iconColor: 'text-emerald-500' },
+  { id: 2, date: '2024-01-14 14:15', channel: 'Viber', vendor: 'MOL - Üzemanyag', responseTime: '-', status: 'Megnyitva', statusColor: 'text-amber-600 bg-amber-50 border-amber-200', icon: MessageSquare, iconColor: 'text-slate-400' },
+  { id: 3, date: '2024-01-14 09:00', channel: 'Email', vendor: 'Office Depot - Irodaszer', responseTime: '-', status: 'Kézbesítve', statusColor: 'text-slate-600 bg-slate-100 border-slate-200', icon: Mail, iconColor: 'text-slate-400' },
+  { id: 4, date: '2024-01-13 16:45', channel: 'AI Hívás', vendor: 'Vodafone - Mobiltelefon', responseTime: '1 nap', status: 'Válaszolt', statusColor: 'text-emerald-600 bg-emerald-50 border-emerald-200', icon: Phone, iconColor: 'text-emerald-500' },
+  { id: 5, date: '2024-01-12 11:00', channel: 'Telegram', vendor: 'Google - Hirdetés', responseTime: '-', status: 'Sikertelen', statusColor: 'text-red-600 bg-red-50 border-red-200', icon: Send, iconColor: 'text-red-400' },
+  { id: 6, date: '2024-01-11 08:30', channel: 'Email', vendor: 'Telekom - Internet', responseTime: '4 óra', status: 'Válaszolt', statusColor: 'text-emerald-600 bg-emerald-50 border-emerald-200', icon: Mail, iconColor: 'text-emerald-500' },
+  { id: 7, date: '2024-01-10 15:20', channel: 'Viber', vendor: 'MOL - Üzemanyag', responseTime: '-', status: 'Megnyitva', statusColor: 'text-amber-600 bg-amber-50 border-amber-200', icon: MessageSquare, iconColor: 'text-slate-400' },
+  { id: 8, date: '2024-01-09 10:00', channel: 'Email', vendor: 'Magyar Posta - Levelezés', responseTime: '-', status: 'Elküldve', statusColor: 'text-blue-600 bg-blue-50 border-blue-200', icon: Mail, iconColor: 'text-slate-400' },
 ];
 
 export default function ClientMissingInvoicesPage() {
@@ -107,6 +102,14 @@ export default function ClientMissingInvoicesPage() {
   const [sourceFilter, setSourceFilter] = useState('Minden forrás');
   const [statusFilter, setStatusFilter] = useState('Minden');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // History View State
+  const [showHistoryView, setShowHistoryView] = useState(false);
+  const [historySearchTerm, setHistorySearchTerm] = useState('');
+  const [historyChannelFilter, setHistoryChannelFilter] = useState('Minden');
+  const [historyStatusFilter, setHistoryStatusFilter] = useState('Minden');
+  const [historyTab, setHistoryTab] = useState<'timeline' | 'table'>('timeline');
 
   // In a real app, fetch client data based on ID. We use mock data here.
   const mockClients: Record<number, string> = {
@@ -167,8 +170,196 @@ export default function ClientMissingInvoicesPage() {
 
   const isAllSelected = filteredInvoices.length > 0 && selectedIds.length === filteredInvoices.length;
 
+  const filteredHistory = detailedHistoryData.filter(item => {
+    const matchesSearch = item.vendor.toLowerCase().includes(historySearchTerm.toLowerCase()) || item.channel.toLowerCase().includes(historySearchTerm.toLowerCase());
+    const matchesChannel = historyChannelFilter === 'Minden' || item.channel === historyChannelFilter;
+    const matchesStatus = historyStatusFilter === 'Minden' || item.status === historyStatusFilter;
+    return matchesSearch && matchesChannel && matchesStatus;
+  });
+
+  if (showHistoryView) {
+    return (
+      <div className="w-full space-y-6 pb-24 animate-in fade-in slide-in-from-right-8 duration-500">
+        
+        {/* Header */}
+        <div className="flex flex-col gap-1">
+          <button 
+            onClick={() => setShowHistoryView(false)}
+            className="flex items-center text-sm text-slate-500 hover:text-slate-800 transition-colors w-fit"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            {clientName} • Hiányzó számlák
+          </button>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Felszólítás előzmények</h1>
+        </div>
+
+        {/* KPIs */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <p className="text-xs font-semibold text-slate-500 mb-2">Összes</p>
+            <h3 className="text-2xl font-black text-slate-900">45</h3>
+          </div>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <p className="text-xs font-semibold text-emerald-600 mb-2">Sikeres</p>
+            <h3 className="text-2xl font-black text-emerald-600">38</h3>
+          </div>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <p className="text-xs font-semibold text-amber-600 mb-2">Folyamatban</p>
+            <h3 className="text-2xl font-black text-amber-600">5</h3>
+          </div>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <p className="text-xs font-semibold text-red-600 mb-2">Sikertelen</p>
+            <h3 className="text-2xl font-black text-red-600">2</h3>
+          </div>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <p className="text-xs font-semibold text-slate-500 mb-2">Átlag válaszidő</p>
+            <h3 className="text-2xl font-black text-slate-900">6 óra</h3>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="relative w-full md:w-[400px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Keresés..." 
+              value={historySearchTerm}
+              onChange={(e) => setHistorySearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-sm"
+            />
+          </div>
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <select 
+              value={historyChannelFilter}
+              onChange={(e) => setHistoryChannelFilter(e.target.value)}
+              className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm cursor-pointer min-w-[140px]"
+            >
+              <option value="Minden">Minden</option>
+              <option value="Email">Email</option>
+              <option value="Viber">Viber</option>
+              <option value="Telegram">Telegram</option>
+              <option value="AI Hívás">AI Hívás</option>
+            </select>
+            <select 
+              value={historyStatusFilter}
+              onChange={(e) => setHistoryStatusFilter(e.target.value)}
+              className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm cursor-pointer min-w-[140px]"
+            >
+              <option value="Minden">Minden</option>
+              <option value="Elküldve">Elküldve</option>
+              <option value="Kézbesítve">Kézbesítve</option>
+              <option value="Megnyitva">Megnyitva</option>
+              <option value="Válaszolt">Válaszolt</option>
+              <option value="Sikertelen">Sikertelen</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex bg-slate-100 p-1 rounded-lg w-fit">
+          <button 
+            onClick={() => setHistoryTab('timeline')}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${historyTab === 'timeline' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Idővonal
+          </button>
+          <button 
+            onClick={() => setHistoryTab('table')}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${historyTab === 'table' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Táblázat
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          {historyTab === 'timeline' ? (
+            <div className="p-6 space-y-0 relative">
+              {/* Vertical line connecting timeline items */}
+              <div className="absolute top-8 bottom-8 left-[43px] w-[2px] bg-slate-100 z-0"></div>
+              
+              {filteredHistory.map((item) => (
+                <div key={item.id} className="relative z-10 flex items-center justify-between p-4 group hover:bg-slate-50 transition-colors rounded-xl -ml-2 -mr-2">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                      <item.icon className={`w-4 h-4 ${item.iconColor}`} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900">{item.vendor}</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {item.channel} • {item.date}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    {item.responseTime !== '-' && (
+                      <span className="text-xs font-medium text-slate-500 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        {item.responseTime}
+                      </span>
+                    )}
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${item.statusColor}`}>
+                      {item.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {filteredHistory.length === 0 && (
+                <div className="py-8 text-center text-slate-500">Nincs a keresésnek megfelelő találat.</div>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/50">
+                    <th className="py-4 px-6 text-xs font-semibold text-slate-500 tracking-wider">Dátum</th>
+                    <th className="py-4 px-6 text-xs font-semibold text-slate-500 tracking-wider">Csatorna</th>
+                    <th className="py-4 px-6 text-xs font-semibold text-slate-500 tracking-wider">Számla</th>
+                    <th className="py-4 px-6 text-xs font-semibold text-slate-500 tracking-wider">Válaszidő</th>
+                    <th className="py-4 px-6 text-xs font-semibold text-slate-500 tracking-wider">Státusz</th>
+                    <th className="py-4 px-6 w-12 text-center"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredHistory.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-4 px-6 text-sm text-slate-600">{item.date}</td>
+                      <td className="py-4 px-6 text-sm text-slate-600 flex items-center gap-2">
+                        <item.icon className="w-4 h-4 text-slate-400" />
+                        {item.channel}
+                      </td>
+                      <td className="py-4 px-6 text-sm font-medium text-slate-900">{item.vendor}</td>
+                      <td className="py-4 px-6 text-sm text-slate-600">{item.responseTime}</td>
+                      <td className="py-4 px-6">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${item.statusColor}`}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-center">
+                        <button className="text-slate-400 hover:text-slate-600 p-1.5 rounded-md hover:bg-slate-200 transition-all">
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredHistory.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-slate-500">Nincs a keresésnek megfelelő találat.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="w-full space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -184,14 +375,67 @@ export default function ClientMissingInvoicesPage() {
         </div>
         
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium shadow-sm">
+          <button 
+            onClick={() => setShowHistoryView(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium shadow-sm"
+          >
             <History className="w-4 h-4" />
             Előzmények
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-[#1A1F2C] text-white rounded-lg hover:bg-[#2A3143] transition-colors text-sm font-medium shadow-sm">
-            <Plus className="w-4 h-4" />
-            Hiányzó hozzáadása
-          </button>
+          
+          <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+            <DialogTrigger asChild>
+              <button className="flex items-center gap-2 px-4 py-2 bg-[#1A1F2C] text-white rounded-lg hover:bg-[#2A3143] transition-colors text-sm font-medium shadow-sm">
+                <Plus className="w-4 h-4" />
+                Hiányzó hozzáadása
+              </button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Hiányzó számla hozzáadása</DialogTitle>
+                <DialogDescription>
+                  Add meg a hiányzó számla adatait
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Szállító neve</label>
+                  <input type="text" placeholder="pl. Telekom Magyarország" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Típus/Leírás</label>
+                  <input type="text" placeholder="pl. Telefon számla" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">Becsült összeg</label>
+                    <input type="text" defaultValue="0" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">Időszak</label>
+                    <input type="text" defaultValue="2024 Január" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Prioritás</label>
+                  <select defaultValue="Közepes" className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer">
+                    <option value="Sürgős">Sürgős</option>
+                    <option value="Magas">Magas</option>
+                    <option value="Közepes">Közepes</option>
+                    <option value="Alacsony">Alacsony</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Megjegyzés</label>
+                  <textarea placeholder="További információk..." className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 min-h-[100px] resize-none" />
+                </div>
+              </div>
+              <DialogFooter>
+                <button onClick={() => setIsAddModalOpen(false)} className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium">Mégse</button>
+                <button onClick={() => setIsAddModalOpen(false)} className="px-4 py-2 bg-[#1A1F2C] text-white rounded-lg hover:bg-[#2A3143] transition-colors text-sm font-medium">Hozzáadás</button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -299,7 +543,7 @@ export default function ClientMissingInvoicesPage() {
                     <td className="py-4 px-4">{getPriorityBadge(invoice.priority)}</td>
                     <td className="py-4 px-4">{getStatusBadge(invoice.status, invoice.statusVariant)}</td>
                     <td className="py-4 px-4 text-center">
-                      <button className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 opacity-0 group-hover:opacity-100 transition-all">
+                      <button className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 transition-all">
                         <MoreHorizontal className="w-5 h-5" />
                       </button>
                     </td>
@@ -314,38 +558,6 @@ export default function ClientMissingInvoicesPage() {
               )}
             </tbody>
           </table>
-        </div>
-      </div>
-
-      {/* History Section */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-900">Felszólítás előzmények</h2>
-        </div>
-        <div className="p-6">
-          <div className="space-y-4">
-            {historyData.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-sm">
-                    <item.icon className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-900">{item.title}</h4>
-                    <p className="text-xs text-slate-500 flex items-center mt-0.5">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {item.time}
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${item.statusColor}`}>
-                    {item.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 

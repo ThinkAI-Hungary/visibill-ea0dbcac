@@ -1,10 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Clock, MoreVertical, FileText, Settings, Search } from 'lucide-react';
+import { AlertTriangle, Clock, MoreVertical, FileText, Settings, Search, ChevronRight, Mail, Phone, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 // Mock data based on screenshot
 const missingInvoicesData = [
@@ -18,7 +19,7 @@ const missingInvoicesData = [
 export default function MissingInvoicesPage() {
   const navigate = useNavigate();
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+    <div className="w-full space-y-6 animate-in fade-in duration-500">
        {/* Header */}
        <div className="flex justify-between items-start">
          <div>
@@ -151,7 +152,31 @@ export default function MissingInvoicesPage() {
                    </span>
                  </td>
                  <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                   <button className="text-slate-300 hover:text-slate-600 p-1 opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical className="w-4 h-4" /></button>
+                   <DropdownMenu>
+                     <DropdownMenuTrigger asChild>
+                       <button className="text-slate-400 hover:text-slate-600 p-1 transition-colors">
+                         <MoreVertical className="w-4 h-4" />
+                       </button>
+                     </DropdownMenuTrigger>
+                     <DropdownMenuContent align="end" className="w-48">
+                       <DropdownMenuItem onClick={() => navigate(`/accounty/missing-invoices/${row.id}`)} className="cursor-pointer">
+                         <ChevronRight className="w-4 h-4 mr-2" />
+                         Részletek
+                       </DropdownMenuItem>
+                       <DropdownMenuItem className="cursor-pointer">
+                         <Mail className="w-4 h-4 mr-2" />
+                         Email küldés
+                       </DropdownMenuItem>
+                       <DropdownMenuItem className="cursor-pointer">
+                         <Phone className="w-4 h-4 mr-2" />
+                         AI telefonhívás
+                       </DropdownMenuItem>
+                       <DropdownMenuItem className="cursor-pointer text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50">
+                         <CheckCircle2 className="w-4 h-4 mr-2" />
+                         Megérkezettnek jelöl
+                       </DropdownMenuItem>
+                     </DropdownMenuContent>
+                   </DropdownMenu>
                  </td>
                </tr>
              ))}

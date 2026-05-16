@@ -412,7 +412,7 @@ export default function NewClientPage() {
 
           {/* STEP 3: Success */}
           {step === 3 && (
-            <div className="animate-in fade-in zoom-in-95 duration-500 max-w-lg mx-auto">
+            <div className="animate-in fade-in zoom-in-95 duration-500 w-full">
               <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-3xl">🎉</span>
