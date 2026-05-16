@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Clock, MoreVertical, FileText, Settings, Search, ChevronRight, Mail, Phone, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,17 @@ const missingInvoicesData = [
 
 export default function MissingInvoicesPage() {
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  const filteredData = React.useMemo(() => {
+    return missingInvoicesData.filter(row => {
+      const matchesSearch = row.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || row.statusType === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [searchQuery, statusFilter]);
+
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
        {/* Header */}
@@ -88,10 +99,15 @@ export default function MissingInvoicesPage() {
        <div className="flex justify-between items-center py-2">
          <div className="w-72 relative">
            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-           <Input placeholder="Keresés ügyfél..." className="pl-9 bg-white border-slate-200" />
+           <Input 
+             placeholder="Keresés ügyfél..." 
+             className="pl-9 bg-white border-slate-200" 
+             value={searchQuery}
+             onChange={(e) => setSearchQuery(e.target.value)}
+           />
          </div>
          <div className="w-48">
-           <Select defaultValue="all">
+           <Select value={statusFilter} onValueChange={setStatusFilter}>
              <SelectTrigger className="bg-white border-slate-200">
                <SelectValue placeholder="Minden státusz" />
              </SelectTrigger>
@@ -120,7 +136,8 @@ export default function MissingInvoicesPage() {
              </tr>
            </thead>
            <tbody className="divide-y divide-slate-100">
-             {missingInvoicesData.map((row) => (
+             {filteredData.length > 0 ? (
+               filteredData.map((row) => (
                <tr 
                  key={row.id} 
                  onClick={() => navigate(`/accounty/missing-invoices/${row.id}`)}
@@ -179,7 +196,14 @@ export default function MissingInvoicesPage() {
                    </DropdownMenu>
                  </td>
                </tr>
-             ))}
+             ))
+           ) : (
+             <tr>
+               <td colSpan={7} className="text-center py-12 text-slate-500">
+                 Nincs találat a keresésre.
+               </td>
+             </tr>
+           )}
            </tbody>
          </table>
        </div>

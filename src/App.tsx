@@ -54,6 +54,10 @@ const ReportsPage = lazy(() => import("./pages/Accounty/ReportsPage"));
 const MissingInvoicesReportPage = lazy(() => import("./pages/Accounty/MissingInvoicesReportPage"));
 const ClientDetailsPage = lazy(() => import("./pages/Accounty/ClientDetailsPage"));
 const ClientMissingInvoicesPage = lazy(() => import("./pages/Accounty/ClientMissingInvoicesPage"));
+const ClientReportsPage = lazy(() => import("./pages/Accounty/ClientReportsPage"));
+const ClientMissingInvoicesReportPage = lazy(() => import("./pages/Accounty/ClientMissingInvoicesReportPage"));
+const TaxCalendarPage = lazy(() => import("./pages/Accounty/TaxCalendarPage"));
+const ClientInvoicesPage = lazy(() => import("./pages/Accounty/ClientInvoicesPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -235,8 +239,12 @@ const App = () => (
                       <Route path="client/:id" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientDetailsPage /></Suspense>} />
                       <Route path="missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MissingInvoicesPage /></Suspense>} />
                       <Route path="missing-invoices/:id" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientMissingInvoicesPage /></Suspense>} />
+                      <Route path="client/:id/reports" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientReportsPage /></Suspense>} />
+                      <Route path="client/:id/reports/missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientMissingInvoicesReportPage /></Suspense>} />
+                      <Route path="client/:id/invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientInvoicesPage /></Suspense>} />
                       <Route path="reports" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ReportsPage /></Suspense>} />
                       <Route path="reports/missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MissingInvoicesReportPage /></Suspense>} />
+                      <Route path="tax-calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaxCalendarPage /></Suspense>} />
                     </Route>
 
                     {/* Protected routes with persistent sidebar */}

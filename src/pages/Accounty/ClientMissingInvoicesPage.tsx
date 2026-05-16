@@ -5,14 +5,15 @@ import {
   History, 
   Plus, 
   Search, 
-  MoreHorizontal,
   Mail,
   MessageSquare,
   CheckCircle,
   Clock,
   Send,
   Phone,
-  Eye
+  Eye,
+  XCircle,
+  MoreVertical
 } from 'lucide-react';
 import {
   Dialog,
@@ -23,6 +24,13 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Mock data for the specific client
 const invoiceData = [
@@ -103,6 +111,7 @@ export default function ClientMissingInvoicesPage() {
   const [statusFilter, setStatusFilter] = useState('Minden');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = useState<typeof invoiceData[0] | null>(null);
 
   // History View State
   const [showHistoryView, setShowHistoryView] = useState(false);
@@ -542,10 +551,36 @@ export default function ClientMissingInvoicesPage() {
                     <td className="py-4 px-4 text-sm text-slate-600">{invoice.source}</td>
                     <td className="py-4 px-4">{getPriorityBadge(invoice.priority)}</td>
                     <td className="py-4 px-4">{getStatusBadge(invoice.status, invoice.statusVariant)}</td>
-                    <td className="py-4 px-4 text-center">
-                      <button className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 transition-all">
-                        <MoreHorizontal className="w-5 h-5" />
-                      </button>
+                    <td className="py-4 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="text-slate-400 hover:text-slate-600 p-1.5 rounded-md hover:bg-slate-100 transition-all outline-none">
+                            <MoreVertical className="w-5 h-5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56 bg-white border-slate-200">
+                          <DropdownMenuItem 
+                            className="gap-2.5 cursor-pointer text-slate-700 py-2"
+                            onClick={() => setSelectedInvoiceForDetails(invoice)}
+                          >
+                            <Eye className="w-4 h-4 text-slate-500" />
+                            <span className="font-medium text-sm">Részletek</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-2.5 cursor-pointer text-slate-700 py-2">
+                            <Send className="w-4 h-4 text-slate-500" />
+                            <span className="font-medium text-sm">Felszólítás küldése</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-slate-100" />
+                          <DropdownMenuItem className="gap-2.5 cursor-pointer text-slate-700 py-2">
+                            <CheckCircle className="w-4 h-4 text-slate-500" />
+                            <span className="font-medium text-sm">Megérkezettnek jelöl</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-2.5 cursor-pointer text-slate-700 py-2">
+                            <XCircle className="w-4 h-4 text-slate-500" />
+                            <span className="font-medium text-sm">Téves találatnak jelöl</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))
@@ -558,6 +593,41 @@ export default function ClientMissingInvoicesPage() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Quick History Section */}
+      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mt-8">
+        <div className="px-6 py-5 border-b border-slate-100">
+          <h2 className="text-sm font-bold text-slate-900">Felszólítás előzmények</h2>
+        </div>
+        <div className="p-6 space-y-0 relative">
+          <div className="absolute top-8 bottom-8 left-[43px] w-[2px] bg-slate-100 z-0"></div>
+          
+          {[
+            { id: 1, title: 'Felszólítás küldve', date: '2024-01-14 10:30', icon: Mail, status: 'Elküldve', color: 'text-blue-600 bg-blue-50 border-blue-200', iconColor: 'text-slate-400' },
+            { id: 2, title: 'Üzenet kézbesítve', date: '2024-01-12 14:15', icon: MessageSquare, status: 'Kézbesítve', color: 'text-emerald-600 bg-emerald-50 border-emerald-200', iconColor: 'text-slate-400' },
+            { id: 3, title: 'Email megnyitva', date: '2024-01-10 09:00', icon: Mail, status: 'Megnyitva', color: 'text-amber-600 bg-amber-50 border-amber-200', iconColor: 'text-slate-400' }
+          ].map((item) => (
+            <div key={item.id} className="relative z-10 flex items-center justify-between p-4 group hover:bg-slate-50 transition-colors rounded-xl -ml-2 -mr-2">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                  <item.icon className={`w-4 h-4 ${item.iconColor}`} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">{item.title}</h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {item.date}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${item.color}`}>
+                  {item.status}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -579,6 +649,124 @@ export default function ClientMissingInvoicesPage() {
           </div>
         </div>
       )}
+
+      {/* Invoice Details Modal */}
+      <Dialog open={!!selectedInvoiceForDetails} onOpenChange={(open) => !open && setSelectedInvoiceForDetails(null)}>
+        <DialogContent className="sm:max-w-[600px] p-0 gap-0 overflow-hidden">
+          {selectedInvoiceForDetails && (
+            <>
+              <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100">
+                <DialogTitle className="text-xl font-bold text-slate-900">{selectedInvoiceForDetails.subtext}</DialogTitle>
+                <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-full mr-6">
+                  {selectedInvoiceForDetails.status}
+                </span>
+              </div>
+              
+              <div className="px-6 py-5 grid grid-cols-2 gap-y-6 gap-x-4">
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Szállító neve</p>
+                  <p className="text-sm font-medium text-slate-900">{selectedInvoiceForDetails.vendor}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Azonosítás módja</p>
+                  <span className="inline-block px-2.5 py-0.5 bg-slate-50 text-slate-600 border border-slate-200 rounded-md text-xs font-medium">
+                    {selectedInvoiceForDetails.source}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Becsült összeg</p>
+                  <p className="text-sm font-medium text-slate-900">{selectedInvoiceForDetails.amount}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Várható időszak</p>
+                  <p className="text-sm font-medium text-slate-900">{selectedInvoiceForDetails.period}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Prioritás</p>
+                  {getPriorityBadge(selectedInvoiceForDetails.priority)}
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Hozzáadva</p>
+                  <p className="text-sm font-medium text-slate-900">2024-01-10</p>
+                </div>
+              </div>
+
+              <div className="px-6 py-5 border-t border-slate-100">
+                <h3 className="text-sm font-bold text-slate-900 mb-4">NAV adatok</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">NAV számla azonosító</p>
+                    <p className="text-sm font-medium text-slate-900">N/A</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Szállító adószáma</p>
+                    <p className="text-sm font-medium text-slate-900">N/A</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 py-5 border-t border-slate-100">
+                <h3 className="text-sm font-bold text-slate-900 mb-4">Bekérési előzmények</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-slate-50 rounded-lg text-slate-400 border border-slate-100">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-900">2024-02-10 14:30</p>
+                        <p className="text-xs text-slate-500">Email</p>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 bg-[#1A1F2C] text-white text-xs font-semibold rounded-full">
+                      Megnyitva
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-slate-50 rounded-lg text-slate-400 border border-slate-100">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-900">2024-02-05 09:15</p>
+                        <p className="text-xs text-slate-500">Email</p>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-full border border-slate-200">
+                      Elküldve
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between">
+                <button 
+                  className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm"
+                  onClick={() => setSelectedInvoiceForDetails(null)}
+                >
+                  Téves azonosítás
+                </button>
+                <div className="flex items-center gap-3">
+                  <button 
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm"
+                    onClick={() => setSelectedInvoiceForDetails(null)}
+                  >
+                    <CheckCircle className="w-4 h-4 text-slate-500" />
+                    Megérkezett a számla
+                  </button>
+                  <button 
+                    className="flex items-center gap-2 px-4 py-2.5 bg-[#1A1F2C] text-white rounded-xl text-sm font-medium hover:bg-[#2A3143] transition-colors shadow-sm"
+                    onClick={() => setSelectedInvoiceForDetails(null)}
+                  >
+                    <Mail className="w-4 h-4" />
+                    Bekérés küldése
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

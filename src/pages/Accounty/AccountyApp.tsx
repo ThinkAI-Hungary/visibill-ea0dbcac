@@ -5,19 +5,26 @@ import {
   Filter, 
   Grid, 
   List as ListIcon, 
+  Kanban,
   Users, 
   FileText, 
-  AlertTriangle, 
+  AlertTriangle,
   Clock,
   MoreVertical,
   ArrowUpRight,
-  Building2
+  Building2,
+  Building,
+  User,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockKpis, mockClients, ClientData } from './mockData';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { mockKpis, mockClients, ClientData, mockAccountants } from './mockData';
 import { cn } from '@/lib/utils';
 
 function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900" }: { title: string, value: number, icon: React.ElementType, valueClass?: string }) {
@@ -45,10 +52,75 @@ function StatusBadge({ status }: { status: ClientData['status'] }) {
   );
 }
 
-function ClientCard({ client }: { client: ClientData }) {
+function OwnerDropdown({ client, onUpdateOwner }: { client: ClientData, onUpdateOwner?: (clientId: string, ownerId: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const owner = mockAccountants.find(a => a.id === client.ownerId) || mockAccountants[0];
+
+  if (!owner) return null;
+
   return (
-    <Link to={`/accounty/client/${client.id}`} className="block">
-      <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col group cursor-pointer h-full">
+    <div onClick={(e) => e.stopPropagation()}>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-8 px-2 flex items-center gap-2 hover:bg-slate-100 data-[state=open]:bg-slate-100 shadow-sm border border-slate-100/50">
+            <div className="w-5 h-5 rounded-full bg-slate-500 flex items-center justify-center text-[10px] font-bold text-white">
+              {owner.initial}
+            </div>
+            <span className="text-xs font-semibold text-slate-700">{owner.name}</span>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[200px] p-0" align="start">
+          <Command>
+            <CommandInput placeholder="Keresés könyvelőre..." className="h-9 text-xs" />
+            <CommandList>
+              <CommandEmpty>Nincs találat.</CommandEmpty>
+              <CommandGroup>
+                {mockAccountants.map((acc) => (
+                  <CommandItem
+                    key={acc.id}
+                    value={acc.name}
+                    onSelect={() => {
+                      onUpdateOwner?.(client.id, acc.id);
+                      setOpen(false);
+                    }}
+                    className="flex items-center justify-between text-xs cursor-pointer py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded-full bg-slate-500 flex items-center justify-center text-[10px] font-bold text-white">
+                        {acc.initial}
+                      </div>
+                      <span>{acc.name}</span>
+                    </div>
+                    {acc.id === owner.id && (
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    )}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+function ClientCard({ client, draggable, onDragStart, onDragEnd, isDragged, onUpdateOwner }: { client: ClientData, draggable?: boolean, onDragStart?: (e: React.DragEvent) => void, onDragEnd?: (e: React.DragEvent) => void, isDragged?: boolean, onUpdateOwner?: (clientId: string, ownerId: string) => void }) {
+  const navigate = useNavigate();
+
+  return (
+    <div 
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onClick={() => navigate(`/accounty/client/${client.id}`)}
+      className={cn(
+        "bg-white rounded-xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col group cursor-pointer h-full", 
+        draggable && "cursor-grab active:cursor-grabbing",
+        isDragged && "opacity-50 scale-[0.98] shadow-none border-dashed border-2 ring-2 ring-emerald-500/20"
+      )}
+    >
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${client.colorHex}`}>
@@ -83,32 +155,79 @@ function ClientCard({ client }: { client: ClientData }) {
         </div>
 
         <div className="mt-auto pt-4 border-t border-slate-50 flex justify-between items-center">
+          <OwnerDropdown client={client} onUpdateOwner={onUpdateOwner} />
           <div className="flex items-center gap-1.5 text-sm">
-            <span className="text-slate-500">Határidő:</span>
             <span className={`font-semibold ${client.status === 'Kritikus' ? 'text-red-600' : 'text-slate-900'}`}>
               {client.deadline}
             </span>
           </div>
-          <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-colors" />
         </div>
-      </div>
-    </Link>
+    </div>
   );
 }
 
 export default function AccountyApp() {
+  const [clients, setClients] = useState<ClientData[]>(mockClients);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('Minden');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'kanban'>('grid');
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<ClientData['status'] | null>(null);
   const navigate = useNavigate();
 
-  const filteredClients = mockClients.filter(client => {
+  const handleUpdateOwner = (clientId: string, ownerId: string) => {
+    setClients(prev => prev.map(c => c.id === clientId ? { ...c, ownerId } : c));
+  };
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    e.dataTransfer.setData('clientId', id);
+    e.dataTransfer.effectAllowed = 'move';
+    // Use setTimeout so the dragged ghost image doesn't get the opacity styles
+    setTimeout(() => setDraggedId(id), 0);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedId(null);
+    setDragOverColumn(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, status: ClientData['status']) => {
+    e.preventDefault();
+    if (dragOverColumn !== status) {
+      setDragOverColumn(status);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, newStatus: ClientData['status']) => {
+    e.preventDefault();
+    setDragOverColumn(null);
+    setDraggedId(null);
+    
+    const clientId = e.dataTransfer.getData('clientId');
+    if (!clientId) return;
+    
+    setClients(prev => prev.map(c => 
+      c.id === clientId ? { ...c, status: newStatus } : c
+    ));
+  };
+
+  const [viewScope, setViewScope] = useState<'mine' | 'all'>('mine');
+
+  // Előszűrjük a saját/összes nézet alapján
+  const scopedClients = clients.filter(client => 
+    viewScope === 'all' || client.assignedToMe
+  );
+
+  const filteredClients = scopedClients.filter(client => {
     const matchesSearch = client.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           client.taxNumber.includes(searchQuery);
     const matchesStatus = statusFilter === 'Minden' || client.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
+
+  const mineCount = clients.filter(c => c.assignedToMe).length;
+  const allCount = clients.length;
 
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-500">
@@ -133,6 +252,34 @@ export default function AccountyApp() {
         <KpiCard title="Feldolgozatlan számlák" value={mockKpis.unprocessedInvoices} icon={FileText} />
         <KpiCard title="Hiányzó számlák" value={mockKpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" />
         <KpiCard title="Közeledő határidők" value={mockKpis.upcomingDeadlines} icon={Clock} />
+      </div>
+
+      {/* Scope Tabs (Mine / All) */}
+      <div className="w-full bg-slate-100/80 p-1.5 rounded-xl border border-slate-200/60 shadow-inner flex items-center">
+        <button
+          onClick={() => setViewScope('mine')}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
+            viewScope === 'mine' 
+              ? "bg-white text-slate-900 shadow-sm" 
+              : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+          )}
+        >
+          <User className="w-4 h-4" />
+          Saját ügyfeleim ({mineCount})
+        </button>
+        <button
+          onClick={() => setViewScope('all')}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
+            viewScope === 'all' 
+              ? "bg-white text-slate-900 shadow-sm" 
+              : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+          )}
+        >
+          <Building className="w-4 h-4" />
+          Összes irodai ügyfél ({allCount})
+        </button>
       </div>
 
       {/* Toolbar */}
@@ -183,14 +330,126 @@ export default function AccountyApp() {
           >
             <ListIcon className="w-4 h-4" />
           </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setViewMode('kanban')}
+            className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'kanban' ? "bg-white shadow-sm text-slate-900" : "text-slate-400 hover:text-slate-700")}
+          >
+            <Kanban className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
       {/* Content based on View Mode */}
-      {viewMode === 'grid' ? (
+      {viewMode === 'kanban' ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+          {/* Feldolgozandó oszlop */}
+          <div 
+            className={cn(
+              "p-4 rounded-xl border flex flex-col gap-4 min-h-[500px] transition-all duration-200",
+              dragOverColumn === 'Feldolgozandó' ? "bg-amber-50/80 border-amber-300 ring-4 ring-amber-500/10" : "bg-slate-100/60 border-slate-200/60"
+            )}
+            onDragOver={(e) => handleDragOver(e, 'Feldolgozandó')}
+            onDrop={(e) => handleDrop(e, 'Feldolgozandó')}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                Feldolgozandó
+              </h3>
+              <span className="bg-slate-200 text-slate-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                {filteredClients.filter(c => c.status === 'Feldolgozandó').length}
+              </span>
+            </div>
+            {filteredClients.filter(c => c.status === 'Feldolgozandó').map(client => (
+              <ClientCard 
+                key={client.id} 
+                client={client} 
+                draggable 
+                isDragged={draggedId === client.id}
+                onDragStart={(e) => handleDragStart(e, client.id)} 
+                onDragEnd={handleDragEnd}
+                onUpdateOwner={handleUpdateOwner}
+              />
+            ))}
+            {filteredClients.filter(c => c.status === 'Feldolgozandó').length === 0 && (
+              <div className="text-center py-8 text-sm text-slate-400 border-2 border-dashed border-slate-200 rounded-lg">Nincs ügyfél</div>
+            )}
+          </div>
+
+          {/* Rendben oszlop */}
+          <div 
+            className={cn(
+              "p-4 rounded-xl border flex flex-col gap-4 min-h-[500px] transition-all duration-200",
+              dragOverColumn === 'Rendben' ? "bg-emerald-50/80 border-emerald-300 ring-4 ring-emerald-500/10" : "bg-slate-100/60 border-slate-200/60"
+            )}
+            onDragOver={(e) => handleDragOver(e, 'Rendben')}
+            onDrop={(e) => handleDrop(e, 'Rendben')}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                Rendben
+              </h3>
+              <span className="bg-slate-200 text-slate-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                {filteredClients.filter(c => c.status === 'Rendben').length}
+              </span>
+            </div>
+            {filteredClients.filter(c => c.status === 'Rendben').map(client => (
+              <ClientCard 
+                key={client.id} 
+                client={client} 
+                draggable 
+                isDragged={draggedId === client.id}
+                onDragStart={(e) => handleDragStart(e, client.id)} 
+                onDragEnd={handleDragEnd}
+                onUpdateOwner={handleUpdateOwner}
+              />
+            ))}
+            {filteredClients.filter(c => c.status === 'Rendben').length === 0 && (
+              <div className="text-center py-8 text-sm text-slate-400 border-2 border-dashed border-slate-200 rounded-lg">Nincs ügyfél</div>
+            )}
+          </div>
+
+          {/* Kritikus oszlop */}
+          <div 
+            className={cn(
+              "p-4 rounded-xl border flex flex-col gap-4 min-h-[500px] transition-all duration-200",
+              dragOverColumn === 'Kritikus' ? "bg-red-50/80 border-red-300 ring-4 ring-red-500/10" : "bg-slate-100/60 border-slate-200/60"
+            )}
+            onDragOver={(e) => handleDragOver(e, 'Kritikus')}
+            onDrop={(e) => handleDrop(e, 'Kritikus')}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                Kritikus
+              </h3>
+              <span className="bg-slate-200 text-slate-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                {filteredClients.filter(c => c.status === 'Kritikus').length}
+              </span>
+            </div>
+            {filteredClients.filter(c => c.status === 'Kritikus').map(client => (
+              <ClientCard 
+                key={client.id} 
+                client={client} 
+                draggable 
+                isDragged={draggedId === client.id}
+                onDragStart={(e) => handleDragStart(e, client.id)} 
+                onDragEnd={handleDragEnd}
+                onUpdateOwner={handleUpdateOwner}
+              />
+            ))}
+            {filteredClients.filter(c => c.status === 'Kritikus').length === 0 && (
+              <div className="text-center py-8 text-sm text-slate-400 border-2 border-dashed border-slate-200 rounded-lg">Nincs ügyfél</div>
+            )}
+          </div>
+        </div>
+      ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {filteredClients.map(client => (
-            <ClientCard key={client.id} client={client} />
+            <ClientCard key={client.id} client={client} onUpdateOwner={handleUpdateOwner} />
           ))}
           {filteredClients.length === 0 && (
             <div className="col-span-full py-12 text-center text-slate-500">
@@ -209,6 +468,7 @@ export default function AccountyApp() {
                   <th className="px-6 py-4 text-center">Feldolgozatlan</th>
                   <th className="px-6 py-4 text-center">Hiányzó</th>
                   <th className="px-6 py-4 text-center">Határidő</th>
+                  <th className="px-6 py-4 text-center">Felelős</th>
                   <th className="px-6 py-4 text-center">Státusz</th>
                   <th className="px-6 py-4 w-12 text-center"></th>
                 </tr>
@@ -240,6 +500,9 @@ export default function AccountyApp() {
                         <span className={`${client.status === 'Kritikus' ? 'text-red-600 font-medium' : ''}`}>
                           {client.deadline}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 flex justify-center">
+                        <OwnerDropdown client={client} onUpdateOwner={handleUpdateOwner} />
                       </td>
                       <td className="px-6 py-4 text-center">
                         <StatusBadge status={client.status} />

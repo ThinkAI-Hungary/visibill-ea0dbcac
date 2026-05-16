@@ -7,11 +7,15 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { mockClients, ClientData } from './mockData';
 
 export default function NewClientPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [integrationType, setIntegrationType] = useState<'rlb' | 'novitax' | 'other' | null>(null);
+
+  const [clientName, setClientName] = useState('');
+  const [taxNumber, setTaxNumber] = useState('12345678-1-23');
 
   // Mocks state
   const [useVisibillAccount, setUseVisibillAccount] = useState(false);
@@ -19,7 +23,25 @@ export default function NewClientPage() {
   const [selectedDocs, setSelectedDocs] = useState<string[]>(['szamlak']);
 
   const handleNext = () => {
-    if (step < 3) setStep((s) => (s + 1) as 1 | 2 | 3);
+    if (step === 2) {
+      // Add client to mockData
+      const newClient: ClientData = {
+        id: 'new-' + Date.now(),
+        name: clientName || (useVisibillAccount ? 'Meghívott Ügyfél Kft.' : 'Új Ügyfél Kft.'),
+        taxNumber: taxNumber || '12345678-1-23',
+        status: 'Rendben',
+        unprocessedCount: 0,
+        missingCount: 0,
+        deadline: 'Jún 15.',
+        colorHex: '#3b82f6', // blue to distinguish
+        assignedToMe: true,
+        ownerId: '1'
+      };
+      mockClients.unshift(newClient);
+      setStep(3);
+    } else if (step < 3) {
+      setStep((s) => (s + 1) as 1 | 2 | 3);
+    }
   };
 
   const toggleChannel = (id: string) => {
@@ -141,12 +163,19 @@ export default function NewClientPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-xs text-slate-700">Cégnév <span className="text-red-500">*</span></Label>
-                      <Input placeholder="" required className="bg-white border-slate-200" />
+                      <Input 
+                        placeholder="" 
+                        required 
+                        className="bg-white border-slate-200" 
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs text-slate-700">Adószám <span className="text-red-500">*</span></Label>
                       <Input 
-                        defaultValue="12345678-1-23" 
+                        value={taxNumber}
+                        onChange={(e) => setTaxNumber(e.target.value)}
                         required 
                         pattern="^[0-9]{8}-[0-9]-[0-9]{2}$"
                         title="Kérjük, érvényes magyar adószámot adjon meg, a következő formátumban: 12345678-1-23"

@@ -14,8 +14,8 @@ export default function ClientDetailsPage() {
   const [activeTab, setActiveTab] = useState('Áttekintés');
   
   // Try to find the client from mockData, otherwise use generic data
-  const client = mockClients.find(c => c.id === Number(id)) || {
-    id: Number(id) || 1,
+  const client = mockClients.find(c => c.id === id) || {
+    id: id || '1',
     name: 'Tech Solutions Kft.',
     taxNumber: '12345678-1-42'
   };
@@ -132,7 +132,11 @@ export default function ClientDetailsPage() {
               <AlertTriangle className="w-5 h-5 text-slate-400" />
               Hiányzók bekérése
             </Button>
-            <Button variant="outline" className="h-14 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-base font-semibold flex items-center justify-center gap-2">
+            <Button 
+              variant="outline" 
+              className="h-14 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-base font-semibold flex items-center justify-center gap-2"
+              onClick={() => navigate(`/accounty/client/${client.id}/reports`)}
+            >
               <UploadCloud className="w-5 h-5 text-slate-400" />
               Riport generálása
             </Button>
@@ -266,7 +270,12 @@ export default function ClientDetailsPage() {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
             <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white">
               <h3 className="font-semibold text-slate-900">Legutóbbi számlák</h3>
-              <Button variant="outline" size="sm" className="bg-white text-xs text-slate-600 h-8">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="bg-white text-xs text-slate-600 h-8"
+                onClick={() => navigate(`/accounty/client/${id}/invoices`)}
+              >
                 Összes megtekintése <ChevronRight className="w-3 h-3 ml-1" />
               </Button>
             </div>

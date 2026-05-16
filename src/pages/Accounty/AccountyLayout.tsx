@@ -96,8 +96,11 @@ export default function AccountyLayout() {
             <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">12</span>
           </Link>
           <Link 
-            to="#" 
-            className="flex items-center justify-between px-3 py-2.5 hover:bg-white/5 text-slate-300 hover:text-white rounded-md font-medium transition-colors"
+            to="/accounty/tax-calendar" 
+            className={cn(
+              "flex items-center justify-between px-3 py-2.5 rounded-md font-medium transition-colors",
+              isActive('/accounty/tax-calendar') ? "bg-white/10 text-white" : "hover:bg-white/5 text-slate-300 hover:text-white"
+            )}
           >
             <div className="flex items-center gap-3">
               <Calendar className="w-5 h-5" />
@@ -190,13 +193,7 @@ export default function AccountyLayout() {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
-          <div className="w-96 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input 
-              placeholder="Keresés az ügyfelek között..." 
-              className="w-full pl-10 bg-slate-50 border-slate-200 focus-visible:ring-emerald-500 rounded-full"
-            />
-          </div>
+          <div className="flex-1"></div>
           <div className="flex items-center gap-4">
             <Popover>
               <PopoverTrigger asChild>
