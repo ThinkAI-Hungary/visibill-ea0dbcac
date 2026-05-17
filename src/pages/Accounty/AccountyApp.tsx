@@ -16,7 +16,10 @@ import {
   Building,
   User,
   ChevronDown,
-  Check
+  Check,
+  Phone,
+  MessageCircle,
+  Mail
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -26,6 +29,32 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { mockKpis, mockClients, ClientData, mockAccountants } from './mockData';
 import { cn } from '@/lib/utils';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart2, PieChart as PieChartIcon } from 'lucide-react';
+
+const kpiStats = {
+  zarasiSzazalek: 82,
+  kritikusDb: 12,
+  kiosztottLezart: "15 / 9"
+};
+
+const barChartData = [
+  { name: 'Anna', value: 45 },
+  { name: 'Péter', value: 38 },
+  { name: 'Gábor', value: 24 }
+];
+
+const pieChartData = [
+  { name: 'Kész', value: 15, color: '#10b981' },
+  { name: 'Feldolgozandó', value: 5, color: '#f59e0b' },
+  { name: 'Kritikus', value: 4, color: '#ef4444' }
+];
+
+const colleagueStats = [
+  { name: 'Anna', initial: 'A', assigned: 45, closed: 38, inProgress: 5, missing: 12 },
+  { name: 'Péter', initial: 'P', assigned: 32, closed: 28, inProgress: 4, missing: 5 },
+  { name: 'Gábor', initial: 'G', assigned: 20, closed: 15, inProgress: 5, missing: 21 }
+];
 
 function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900" }: { title: string, value: number, icon: React.ElementType, valueClass?: string }) {
   return (
@@ -211,7 +240,7 @@ export default function AccountyApp() {
     ));
   };
 
-  const [viewScope, setViewScope] = useState<'mine' | 'all'>('mine');
+  const [viewScope, setViewScope] = useState<'kpi' | 'mine' | 'all'>('kpi');
 
   // Előszűrjük a saját/összes nézet alapján
   const scopedClients = clients.filter(client => 
@@ -246,16 +275,30 @@ export default function AccountyApp() {
         </Link>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard title="Összes ügyfél" value={mockKpis.totalClients} icon={Users} />
-        <KpiCard title="Feldolgozatlan számlák" value={mockKpis.unprocessedInvoices} icon={FileText} />
-        <KpiCard title="Hiányzó számlák" value={mockKpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" />
-        <KpiCard title="Közeledő határidők" value={mockKpis.upcomingDeadlines} icon={Clock} />
-      </div>
+      {/* KPIs (Hidden in KPI view since it has its own) */}
+      {viewScope !== 'kpi' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <KpiCard title="Összes ügyfél" value={mockKpis.totalClients} icon={Users} />
+          <KpiCard title="Feldolgozatlan számlák" value={mockKpis.unprocessedInvoices} icon={FileText} />
+          <KpiCard title="Hiányzó számlák" value={mockKpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" />
+          <KpiCard title="Közeledő határidők" value={mockKpis.upcomingDeadlines} icon={Clock} />
+        </div>
+      )}
 
-      {/* Scope Tabs (Mine / All) */}
+      {/* Scope Tabs */}
       <div className="w-full bg-slate-100/80 p-1.5 rounded-xl border border-slate-200/60 shadow-inner flex items-center">
+        <button
+          onClick={() => setViewScope('kpi')}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
+            viewScope === 'kpi' 
+              ? "bg-white text-slate-900 shadow-sm" 
+              : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+          )}
+        >
+          <BarChart2 className="w-4 h-4" />
+          Irodai KPI (Vezetői)
+        </button>
         <button
           onClick={() => setViewScope('mine')}
           className={cn(
@@ -266,7 +309,7 @@ export default function AccountyApp() {
           )}
         >
           <User className="w-4 h-4" />
-          Saját ügyfeleim ({mineCount})
+          Saját ügyfeleim (5)
         </button>
         <button
           onClick={() => setViewScope('all')}
@@ -278,71 +321,307 @@ export default function AccountyApp() {
           )}
         >
           <Building className="w-4 h-4" />
-          Összes irodai ügyfél ({allCount})
+          Összes ügyfél (24)
         </button>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-3 flex-1">
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input 
-              placeholder="Keresés..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-slate-50 border-transparent focus-visible:ring-emerald-500"
-            />
+      {/* Toolbar - Hide if KPI view */}
+      {viewScope !== 'kpi' && (
+        <div className="flex items-center justify-between gap-4 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input 
+                placeholder="Keresés..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 bg-slate-50 border-transparent focus-visible:ring-emerald-500"
+              />
+            </div>
+            
+            <div className="hidden sm:block">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px] bg-white border-slate-200 h-9 gap-2 text-slate-600">
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 shrink-0" />
+                    <SelectValue placeholder="Szűrés..." />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Minden">Minden</SelectItem>
+                  <SelectItem value="Rendben">Rendben</SelectItem>
+                  <SelectItem value="Feldolgozandó">Feldolgozandó</SelectItem>
+                  <SelectItem value="Kritikus">Kritikus</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
-          <div className="hidden sm:block">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px] bg-white border-slate-200 h-9 gap-2 text-slate-600">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 shrink-0" />
-                  <SelectValue placeholder="Szűrés..." />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Minden">Minden</SelectItem>
-                <SelectItem value="Rendben">Rendben</SelectItem>
-                <SelectItem value="Feldolgozandó">Feldolgozandó</SelectItem>
-                <SelectItem value="Kritikus">Kritikus</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex items-center bg-slate-50 rounded-lg p-1 border border-slate-100">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setViewMode('grid')}
+              className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'grid' ? "bg-white shadow-sm text-slate-900" : "text-slate-400 hover:text-slate-700")}
+            >
+              <Grid className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setViewMode('list')}
+              className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'list' ? "bg-white shadow-sm text-slate-900" : "text-slate-400 hover:text-slate-700")}
+            >
+              <ListIcon className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setViewMode('kanban')}
+              className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'kanban' ? "bg-white shadow-sm text-slate-900" : "text-slate-400 hover:text-slate-700")}
+            >
+              <Kanban className="w-4 h-4" />
+            </Button>
           </div>
         </div>
-        
-        <div className="flex items-center bg-slate-50 rounded-lg p-1 border border-slate-100">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setViewMode('grid')}
-            className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'grid' ? "bg-white shadow-sm text-slate-900" : "text-slate-400 hover:text-slate-700")}
-          >
-            <Grid className="w-4 h-4" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setViewMode('list')}
-            className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'list' ? "bg-white shadow-sm text-slate-900" : "text-slate-400 hover:text-slate-700")}
-          >
-            <ListIcon className="w-4 h-4" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setViewMode('kanban')}
-            className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'kanban' ? "bg-white shadow-sm text-slate-900" : "text-slate-400 hover:text-slate-700")}
-          >
-            <Kanban className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+      )}
 
       {/* Content based on View Mode */}
-      {viewMode === 'kanban' ? (
+      {viewScope === 'kpi' ? (
+        <div className="space-y-6 animate-in fade-in duration-500">
+          {/* Top Row: 3 KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col justify-center">
+              <h3 className="text-sm font-medium text-slate-500 mb-2">Zárási státusz (Május):</h3>
+              <div className="flex items-baseline gap-4">
+                <span className="text-4xl font-bold text-slate-900">{kpiStats.zarasiSzazalek}%</span>
+                <span className="text-sm font-semibold text-emerald-500">+5% előző hónap</span>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col justify-center">
+              <h3 className="text-sm font-medium text-slate-500 mb-2">Kritikus ügyfelek:</h3>
+              <div className="flex items-baseline gap-4">
+                <span className="text-4xl font-bold text-slate-900">{kpiStats.kritikusDb} db</span>
+                <span className="text-sm font-semibold text-red-500">-3 előző hó</span>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm flex flex-col justify-center">
+              <h3 className="text-sm font-medium text-slate-500 mb-2">Kiosztott/Lezárt cégek:</h3>
+              <div className="flex items-baseline gap-4">
+                <span className="text-4xl font-bold text-slate-900">{kpiStats.kiosztottLezart}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Middle Row: Charts */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm h-80 flex flex-col">
+              <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <BarChart2 className="w-4 h-4 text-emerald-500" />
+                Könyvelői Teljesítmény
+              </h3>
+              <div className="flex-1 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                    <RechartsTooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 border border-slate-100 shadow-sm h-80 flex flex-col relative">
+              <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <PieChartIcon className="w-4 h-4 text-amber-600" />
+                Irodai Ügyfél Státuszok
+              </h3>
+              <div className="flex-1 w-full flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={80}
+                      outerRadius={110}
+                      paddingAngle={2}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {pieChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-8">
+                  <span className="text-sm font-semibold text-slate-500">Összes:</span>
+                  <span className="text-3xl font-bold text-slate-900">24</span>
+                </div>
+              </div>
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-3">
+                 <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
+                    <span className="text-xs font-medium text-slate-600">Kész 65%</span>
+                 </div>
+                 <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#f59e0b]"></div>
+                    <span className="text-xs font-medium text-slate-600">Feldolgozandó 20%</span>
+                 </div>
+                 <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
+                    <span className="text-xs font-medium text-slate-600">Kritikus 15%</span>
+                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Row: Table */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                <User className="w-4 h-4 text-slate-500" />
+                Kolléga statisztikák (Havi Zárás)
+              </h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-slate-50/50 border-b border-slate-200 text-slate-500 font-medium text-xs tracking-wider">
+                  <tr>
+                    <th className="px-6 py-4">Kolléga + Név</th>
+                    <th className="px-6 py-4 text-center">Kiosztott Cégek</th>
+                    <th className="px-6 py-4 text-center">Lezárt Cégek</th>
+                    <th className="px-6 py-4 text-center">Folyamatban</th>
+                    <th className="px-6 py-4 text-center">Hiányzó számlák</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {colleagueStats.map((colleague, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-slate-500 flex items-center justify-center text-xs font-bold text-white shrink-0">
+                            {colleague.initial}
+                          </div>
+                          <span className="font-semibold text-slate-900">{colleague.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center font-medium text-slate-900">{colleague.assigned}</td>
+                      <td className="px-6 py-4 text-center font-medium text-slate-900">{colleague.closed}</td>
+                      <td className="px-6 py-4 text-center font-medium text-slate-900">{colleague.inProgress}</td>
+                      <td className="px-6 py-4 text-center">
+                        {colleague.missing > 15 ? (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 text-red-700 font-bold">
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            {colleague.missing}
+                          </div>
+                        ) : (
+                          <span className="font-medium text-slate-900">{colleague.missing}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Új Szekció: Automatizmus & Ügyfél Analitika */}
+          <div className="pt-8">
+            <h2 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+              🤖 Bekérési Automatizmus & Ügyfél Kockázat
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Bal kártya: Csatornák */}
+              <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <h3 className="font-bold text-slate-800 mb-6">Értesítési Csatornák (Sikeres adatbekérés %)</h3>
+                <div className="space-y-6">
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                        <Phone className="w-4 h-4 text-slate-400" />
+                        AI Telefonhívás
+                      </div>
+                      <span className="text-sm font-bold text-slate-900">92%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2">
+                      <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '92%' }}></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                        <MessageCircle className="w-4 h-4 text-slate-400" />
+                        Viber / Telegram
+                      </div>
+                      <span className="text-sm font-bold text-slate-900">75%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2">
+                      <div className="bg-amber-500 h-2 rounded-full" style={{ width: '75%' }}></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                        <Mail className="w-4 h-4 text-slate-400" />
+                        E-mail értesítés
+                      </div>
+                      <span className="text-sm font-bold text-slate-900">42%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2">
+                      <div className="bg-red-500 h-2 rounded-full" style={{ width: '42%' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Jobb kártya: Problémás Ügyfelek */}
+              <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+                <h3 className="font-bold text-slate-800 mb-6">Kritikus Válaszadási Idejű Ügyfelek</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-transparent border-b border-slate-100 text-slate-500 font-medium text-xs tracking-wider">
+                      <tr>
+                        <th className="pb-3 pr-4">Ügyfél neve</th>
+                        <th className="pb-3 px-4">Átlagos Késés</th>
+                        <th className="pb-3 pl-4 text-right">Kockázat</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      <tr className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-4 pr-4 font-semibold text-slate-900">Webshop Hungary Zrt.</td>
+                        <td className="py-4 px-4 font-medium text-slate-600">12 nap</td>
+                        <td className="py-4 pl-4 text-right">
+                          <span className="inline-flex px-2.5 py-1 rounded-md bg-red-100 text-red-700 text-[11px] font-bold uppercase tracking-wider">
+                            Kritikus
+                          </span>
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-4 pr-4 font-semibold text-slate-900">Gastro Delight Kft.</td>
+                        <td className="py-4 px-4 font-medium text-slate-600">8 nap</td>
+                        <td className="py-4 pl-4 text-right">
+                          <span className="inline-flex px-2.5 py-1 rounded-md bg-amber-100 text-amber-700 text-[11px] font-bold uppercase tracking-wider">
+                            Magas
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      ) : viewMode === 'kanban' ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
           {/* Feldolgozandó oszlop */}
           <div 

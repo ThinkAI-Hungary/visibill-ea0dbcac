@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, Settings, FileText, UploadCloud, RefreshCcw, FileCheck,
-  Clock, AlertTriangle, FileWarning, TrendingUp, CheckCircle2, ChevronRight
+  Clock, AlertTriangle, FileWarning, TrendingUp, CheckCircle2, ChevronRight,
+  Bell
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -77,7 +78,10 @@ export default function ClientDetailsPage() {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* KPI Cards */}
           <div className="grid grid-cols-4 gap-4">
-            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <div 
+              className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-indigo-300 hover:-translate-y-1"
+              onClick={() => setActiveTab('Számlák')}
+            >
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-sm font-medium text-slate-500">Feldolgozatlan számlák</h3>
                 <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center">
@@ -87,7 +91,10 @@ export default function ClientDetailsPage() {
               <div className="text-3xl font-bold text-slate-900">5</div>
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <div 
+              className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-indigo-300 hover:-translate-y-1"
+              onClick={() => setActiveTab('Számlák')}
+            >
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-sm font-medium text-slate-500">Kontírozásra vár</h3>
                 <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
@@ -97,7 +104,10 @@ export default function ClientDetailsPage() {
               <div className="text-3xl font-bold text-slate-900">3</div>
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <div 
+              className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-indigo-300 hover:-translate-y-1"
+              onClick={() => navigate(`/accounty/missing-invoices/${client.id}`)}
+            >
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-sm font-medium text-slate-500">Hiányzó számlák</h3>
                 <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center">
@@ -107,7 +117,7 @@ export default function ClientDetailsPage() {
               <div className="text-3xl font-bold text-slate-900">2</div>
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-indigo-300 hover:-translate-y-1">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-sm font-medium text-slate-500">ÁFA egyenleg (becsült)</h3>
                 <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
@@ -140,6 +150,70 @@ export default function ClientDetailsPage() {
               <UploadCloud className="w-5 h-5 text-slate-400" />
               Riport generálása
             </Button>
+          </div>
+
+          {/* 🚨 Zárást blokkoló hiányosságok */}
+          <div id="missing-items-section" className="mt-8 mb-8">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">🚨 Zárást blokkoló hiányosságok</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              
+              {/* Oszlop 1: Bejövő */}
+              <div className="bg-slate-100/80 border border-slate-200 rounded-xl p-4 flex flex-col gap-3 min-h-[300px]">
+                <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">📥 Bejövő</h3>
+                <div className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow rounded-lg p-3 flex justify-between items-start gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 leading-tight">MOL Nyrt.</p>
+                    <p className="text-xs font-medium text-slate-500 mt-1">24.500 Ft (PDF hiányzik)</p>
+                  </div>
+                  <button className="p-2 rounded-md bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all cursor-pointer shadow-sm shrink-0" title="Hiánypótlás kérése">
+                    <Bell size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Oszlop 2: Kimenő */}
+              <div className="bg-slate-100/80 border border-slate-200 rounded-xl p-4 flex flex-col gap-3 min-h-[300px]">
+                <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">📤 Kimenő</h3>
+                <div className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow rounded-lg p-3 flex justify-between items-start gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 leading-tight">Partner Kft.</p>
+                    <p className="text-xs font-medium text-slate-500 mt-1">120.000 Ft (5 napja lejárt)</p>
+                  </div>
+                  <button className="p-2 rounded-md bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all cursor-pointer shadow-sm shrink-0" title="Hiánypótlás kérése">
+                    <Bell size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Oszlop 3: Bank */}
+              <div className="bg-slate-100/80 border border-slate-200 rounded-xl p-4 flex flex-col gap-3 min-h-[300px]">
+                <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">🏦 Bank</h3>
+                <div className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow rounded-lg p-3 flex justify-between items-start gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 leading-tight">Hiányzó kivonat</p>
+                    <p className="text-xs font-medium text-slate-500 mt-1">Május 01-15</p>
+                  </div>
+                  <button className="p-2 rounded-md bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all cursor-pointer shadow-sm shrink-0" title="Hiánypótlás kérése">
+                    <Bell size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Oszlop 4: Bér */}
+              <div className="bg-slate-100/80 border border-slate-200 rounded-xl p-4 flex flex-col gap-3 min-h-[300px]">
+                <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">👥 Bér</h3>
+                <div className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow rounded-lg p-3 flex justify-between items-start gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 leading-tight">Májusi jelenléti ívek</p>
+                    <p className="text-xs font-medium text-red-500 mt-1">(❌)</p>
+                  </div>
+                  <button className="p-2 rounded-md bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all cursor-pointer shadow-sm shrink-0" title="Hiánypótlás kérése">
+                    <Bell size={16} />
+                  </button>
+                </div>
+              </div>
+
+            </div>
           </div>
 
           {/* Bottom Section */}
