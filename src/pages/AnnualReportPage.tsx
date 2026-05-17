@@ -13,6 +13,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { FinancialPageSkeleton } from '@/components/ui/financial-skeleton';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import {
   Loader2, CheckCircle2, AlertTriangle, XCircle, Info,
   ChevronRight, ChevronLeft, FileText, Download, RefreshCw,
@@ -365,14 +367,14 @@ export default function AnnualReportPage() {
   // ── PDF Preview state (B2) ──
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  // ── Keyboard shortcuts ──
+  useKeyboardShortcuts([
+    { combo: { key: 'p', ctrl: true }, handler: () => window.print(), description: 'Nyomtatás' },
+  ]);
+
   // ── Loading state ──
   if (isLoadingReport) {
-    return (
-      <div className="flex justify-center items-center h-96">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <span className="ml-3 text-muted-foreground">Beszámoló betöltése...</span>
-      </div>
-    );
+    return <FinancialPageSkeleton title="Beszámoló betöltése..." />;
   }
 
   // ── No report yet → show create ──
@@ -421,6 +423,8 @@ export default function AnnualReportPage() {
 
   // ── Wizard view ──
   const validationResults: ValidationResult[] = (report.validation_results as any[]) || [];
+
+
 
   return (
     <div className="space-y-6">

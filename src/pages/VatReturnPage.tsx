@@ -13,8 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, FileSpreadsheet, Settings2, Calculator, Plus, Trash2, Edit2, Save, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, Download } from 'lucide-react';
+import { Loader2, FileSpreadsheet, Settings2, Calculator, Plus, Trash2, Edit2, Save, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, Download, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/ui/page-header';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { generateVatReturnPdf } from '@/lib/vatReturnPdf';
 import { generateVatReturnXml } from '@/lib/vatReturnXml';
@@ -336,7 +338,65 @@ interface ReturnLine { row_number: string; base_amount: number; tax_amount: numb
 interface MLine { id: string; partner_name: string; partner_tax_number: string; invoice_count: number; base_amount_rounded: number; tax_amount_rounded: number; tax_5_amount: number; tax_18_amount: number; tax_27_amount: number; invoice_details: any[]; }
 
 const MONTHS = ['Január','Február','Március','Április','Május','Június','Július','Augusztus','Szeptember','Október','November','December'];
-const fmtEft = (v: number | null | undefined) => !v ? '—' : `${v.toLocaleString('hu-HU')} eFt`;
+const fmtEft = (v: number | null | undefined) => (v === null || v === undefined) ? '—' : `${v.toLocaleString('hu-HU')} eFt`;
+
+/** Live-fetches invoice items when an invoice row is expanded */
+function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNumber: string; companyId: string }) {
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ['nav_invoice_items_drill', companyId, invoiceNumber],
+    queryFn: async () => {
+      // Find the invoice by number, then get its items
+      const { data: inv } = await supabase
+        .from('nav_invoices' as any)
+        .select('id')
+        .eq('company_id', companyId)
+        .eq('invoice_number', invoiceNumber)
+        .limit(1)
+        .maybeSingle();
+      if (!inv?.id) return [];
+      const { data: items } = await supabase
+        .from('nav_invoice_items' as any)
+        .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate')
+        .eq('nav_invoice_id', inv.id)
+        .order('line_number');
+      return (items || []) as any[];
+    },
+    staleTime: 60_000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 px-4 py-3 text-xs text-muted-foreground">
+        <Loader2 className="w-3 h-3 animate-spin" /> Tételek betöltése...
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return <div className="px-4 py-2 text-xs text-muted-foreground italic">Nincs tétel ehhez a számlához</div>;
+  }
+
+  return (
+    <div className="bg-background/50 border border-border/20 rounded mx-4 mb-2 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+      <div className="grid grid-cols-12 gap-2 px-3 py-1.5 text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider bg-muted/10 border-b border-border/10">
+        <div className="col-span-4">Megnevezés</div>
+        <div className="col-span-2 text-right">Mennyiség</div>
+        <div className="col-span-2 text-right">Egységár</div>
+        <div className="col-span-2 text-right">Nettó</div>
+        <div className="col-span-2 text-right">ÁFA</div>
+      </div>
+      {items.map((item: any, j: number) => (
+        <div key={j} className="grid grid-cols-12 gap-2 px-3 py-1 text-[11px] text-muted-foreground hover:bg-muted/20 transition-colors">
+          <div className="col-span-4 truncate" title={item.line_description}>{item.line_description || '—'}</div>
+          <div className="col-span-2 text-right tabular-nums">{item.quantity != null ? Number(item.quantity).toLocaleString('hu-HU') : '—'}</div>
+          <div className="col-span-2 text-right tabular-nums">{item.unit_price != null ? Number(item.unit_price).toLocaleString('hu-HU') : '—'}</div>
+          <div className="col-span-2 text-right tabular-nums">{Number(item.net_amount || 0).toLocaleString('hu-HU')} Ft</div>
+          <div className="col-span-2 text-right tabular-nums">{Number(item.vat_amount || 0).toLocaleString('hu-HU')} Ft</div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function VatReturnViewTab() {
   const { selectedCompany } = useCompany();
@@ -346,11 +406,17 @@ function VatReturnViewTab() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() || 12); // prev month
   const [frequency, setFrequency] = useState<'H' | 'N'>('H'); // H=havi, N=negyedéves
-  const [expandedPartner, setExpandedPartner] = useState<string | null>(null);
+  const [expandedPartners, setExpandedPartners] = useState<Set<string>>(new Set());
+  const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null);
+  const togglePartner = (id: string) => setExpandedPartners(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) { next.delete(id); } else { next.add(id); }
+    return next;
+  });
 
   // Current return for this period
   const { data: vatReturn, error: vatReturnError } = useQuery({
-    queryKey: ['vat_return', selectedCompany?.id, year, month],
+    queryKey: ['vat_return', selectedCompany?.id, year, month, frequency],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('vat_returns' as any)
@@ -358,6 +424,7 @@ function VatReturnViewTab() {
         .eq('company_id', selectedCompany!.id)
         .eq('period_year', year)
         .eq('period_month', month)
+        .eq('frequency', frequency)
         .maybeSingle();
       if (error) { console.error('vat_returns query error:', error); return null; }
       return data;
@@ -434,7 +501,7 @@ function VatReturnViewTab() {
         p_company_id: selectedCompany!.id,
         p_year: year,
         p_month: month,
-        p_frequency: 'H',
+        p_frequency: frequency,
       });
       if (error) throw error;
       return data;
@@ -486,6 +553,51 @@ function VatReturnViewTab() {
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
   const [showAllRows, setShowAllRows] = useState(false);
 
+  // ── Inline editing for detail rows ──
+  const [editDrafts, setEditDrafts] = useState<Record<string, { base?: number; tax?: number }>>({}); 
+  const editTimerRef = React.useRef<ReturnType<typeof setTimeout>>();
+
+  const saveDetailRow = React.useCallback(async (rowNumber: string, base: number, tax: number) => {
+    if (!vatReturn?.id) return;
+    const { error } = await supabase
+      .from('vat_return_lines' as any)
+      .upsert({
+        vat_return_id: (vatReturn as any).id,
+        row_number: rowNumber,
+        base_amount: base * 1000,
+        tax_amount: tax * 1000,
+        base_amount_rounded: base,
+        tax_amount_rounded: tax,
+        is_calculated: false,
+      } as any, { onConflict: 'vat_return_id,row_number' });
+    if (error) {
+      console.error('Detail row save error:', error);
+      toast({ title: 'Mentési hiba', description: error.message, variant: 'destructive' });
+    } else {
+      qc.invalidateQueries({ queryKey: ['vat_return_lines', (vatReturn as any).id] });
+    }
+  }, [vatReturn, qc, toast]);
+
+  const handleDetailEdit = React.useCallback((rowNumber: string, field: 'base' | 'tax', value: string) => {
+    const numVal = value === '' ? 0 : parseInt(value, 10) || 0;
+    setEditDrafts(prev => {
+      const existing = prev[rowNumber] || {};
+      const line = lineMap[rowNumber];
+      const updated = {
+        base: field === 'base' ? numVal : (existing.base ?? line?.base_amount_rounded ?? 0),
+        tax: field === 'tax' ? numVal : (existing.tax ?? line?.tax_amount_rounded ?? 0),
+      };
+      const next = { ...prev, [rowNumber]: updated };
+      // Debounce save
+      if (editTimerRef.current) clearTimeout(editTimerRef.current);
+      editTimerRef.current = setTimeout(() => {
+        saveDetailRow(rowNumber, updated.base!, updated.tax!);
+        setEditDrafts(p => { const n = { ...p }; delete n[rowNumber]; return n; });
+      }, 800);
+      return next;
+    });
+  }, [lineMap, saveDetailRow]);
+
   // When lines change (after calculate), auto-open relevant sections
   React.useEffect(() => {
     if (lines.length > 0 && formRows.length > 0) {
@@ -513,6 +625,10 @@ function VatReturnViewTab() {
     { key: 'm_sheet', title: 'M-lap összesítő (105–109)', page: 'A-05', icon: '📊' },
   ];
 
+  useKeyboardShortcuts([
+    { combo: { key: 'p', ctrl: true }, handler: () => window.print(), description: 'Nyomtatás' },
+  ]);
+
   return (
     <div className="space-y-5 animate-in fade-in duration-300">
       {/* Period Selector + Actions */}
@@ -522,11 +638,11 @@ function VatReturnViewTab() {
           <div className="flex bg-muted/50 border rounded-lg p-0.5">
             <button
               className={cn("px-3 py-1.5 text-xs font-medium rounded-md transition-all", frequency === 'H' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground')}
-              onClick={() => setFrequency('H')}
+              onClick={() => { if (frequency === 'N') { setMonth((month - 1) * 3 + 1); } setFrequency('H'); }}
             >Havi</button>
             <button
               className={cn("px-3 py-1.5 text-xs font-medium rounded-md transition-all", frequency === 'N' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground')}
-              onClick={() => { setFrequency('N'); setMonth(Math.ceil(month / 3) * 3 - 2); }}
+              onClick={() => { setFrequency('N'); setMonth(Math.ceil(month / 3)); }}
             >Negyedéves</button>
           </div>
           <div className="border-l pl-3 border-border/60 flex items-center gap-2">
@@ -548,7 +664,7 @@ function VatReturnViewTab() {
                 </SelectContent>
               </Select>
             ) : (
-              <Select value={String(Math.ceil(month / 3))} onValueChange={v => setMonth((+v - 1) * 3 + 1)}>
+              <Select value={String(month)} onValueChange={v => setMonth(+v)}>
                 <SelectTrigger className="w-40 h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="1">Q1 (jan–márc)</SelectItem>
@@ -581,7 +697,7 @@ function VatReturnViewTab() {
                   companyAddress: (selectedCompany as any).address || '',
                   periodYear: year,
                   periodMonth: month,
-                  frequency: 'H',
+                  frequency,
                   formRows: formRows as any[],
                   lines: lines as any[],
                   mLines: mLines as any[],
@@ -597,7 +713,7 @@ function VatReturnViewTab() {
                   companyAddress: (selectedCompany as any).address || '',
                   periodYear: year,
                   periodMonth: month,
-                  frequency: 'H',
+                  frequency,
                   lines: lines as any[],
                   mLines: mLines as any[],
                 });
@@ -654,7 +770,7 @@ function VatReturnViewTab() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-4" style={{ animationDelay: '100ms' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" style={{ animationDelay: '100ms' }}>
         {[
           { label: 'Fizetendő ÁFA (36.)', value: getVal('36','tax'), prev: getPrevVal('36','tax'), color: 'text-red-500', bg: 'bg-red-500/10', borderColor: 'border-red-500/20' },
           { label: 'Levonható ÁFA (76.)', value: getVal('76','tax'), prev: getPrevVal('76','tax'), color: 'text-emerald-600', bg: 'bg-emerald-500/10', borderColor: 'border-emerald-500/20' },
@@ -680,7 +796,7 @@ function VatReturnViewTab() {
 
       {/* Carryforward + Validations */}
       {vatReturn && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Manual Carryforward (82. sor) */}
           <Card className="border-border/60">
             <CardContent className="p-4">
@@ -691,14 +807,14 @@ function VatReturnViewTab() {
               <div className="flex items-center gap-3">
                 <div className="flex-1">
                   <div className="text-xs text-muted-foreground mb-1">
-                    Automatikus (előző hó 86. sor): {fmtEft((vatReturn as any).prev_period_carryforward ?? 0)}
+                    Automatikus (előző hó 86. sor): {fmtEft(prevLineMap['86']?.tax_amount_rounded ?? 0)}
                   </div>
                   <div className="flex gap-2 items-center">
                     <Input
                       type="number"
                       className="w-40 h-8 text-sm tabular-nums"
                       placeholder="eFt"
-                      defaultValue={getVal('82', 'tax') || ''}
+                      defaultValue={getVal('82', 'tax') || prevLineMap['86']?.tax_amount_rounded || ''}
                       onBlur={async (e) => {
                         const newVal = Number(e.target.value) || 0;
                         const returnId = (vatReturn as any).id;
@@ -827,7 +943,8 @@ function VatReturnViewTab() {
             const rowsWithData = sectionRows.filter(r => lineMap[r.row_number]);
             const hasData = rowsWithData.length > 0;
             const isOpen = openSections.has(sec.key);
-            const displayRows = showAllRows ? sectionRows : sectionRows.filter(r => lineMap[r.row_number] || r.is_summary);
+            const displayRows = (sec.key === 'detail' || showAllRows) ? sectionRows : sectionRows.filter(r => lineMap[r.row_number] || r.is_summary);
+            const isEditable = sec.key === 'detail' && !isFinalized;
             // Section total for badge
             const summaryRow = sectionRows.find(r => r.is_summary);
             const summaryTax = summaryRow ? getVal(summaryRow.row_number, 'tax') : 0;
@@ -855,12 +972,19 @@ function VatReturnViewTab() {
                 </button>
                 {isOpen && displayRows.length > 0 && (
                   <div className="divide-y divide-border/30 animate-in fade-in slide-in-from-top-1 duration-200">
+                    {/* Editable hint for detail section */}
+                    {isEditable && (
+                      <div className="flex items-center gap-2 px-4 py-1.5 bg-primary/5 text-primary text-xs border-b border-primary/10">
+                        <Pencil className="w-3 h-3" />
+                        <span>Szerkeszthető — kattints a mezőkre az értékek kitöltéséhez (eFt-ban)</span>
+                      </div>
+                    )}
                     {/* Header */}
                     <div className="grid grid-cols-12 gap-2 px-4 py-2 text-xs font-medium text-muted-foreground bg-muted/20">
                       <div className="col-span-1">Sor</div>
                       <div className={hasPrevData ? "col-span-3" : "col-span-7"}>Megnevezés</div>
-                      <div className="col-span-2 text-right">Adóalap</div>
-                      <div className="col-span-2 text-right">Adó</div>
+                      <div className="col-span-2 text-right">{isEditable ? 'Adóalap (eFt)' : 'Adóalap'}</div>
+                      <div className="col-span-2 text-right">{isEditable ? 'Adó (eFt)' : 'Adó'}</div>
                       {hasPrevData && <div className="col-span-2 text-right">Előző hó</div>}
                       {hasPrevData && <div className="col-span-2 text-right">Δ</div>}
                     </div>
@@ -877,16 +1001,36 @@ function VatReturnViewTab() {
                           className={cn(
                             "grid grid-cols-12 gap-2 px-4 py-1.5 text-sm items-center",
                             isSummary ? "bg-primary/5 font-semibold border-t-2 border-primary/20" : "hover:bg-muted/20",
-                            !line && "opacity-40"
+                            !line && !isEditable && "opacity-40"
                           )}
                         >
                           <div className="col-span-1 font-mono text-xs text-muted-foreground">{row.row_number}.</div>
                           <div className={cn("text-xs leading-snug truncate", hasPrevData ? "col-span-3" : "col-span-7")} title={row.label}>{row.label}</div>
                           <div className="col-span-2 text-right tabular-nums text-xs">
-                            {row.has_base && line ? fmtEft(line.base_amount_rounded) : ''}
+                            {isEditable && row.has_base && !isSummary ? (
+                              <input
+                                type="number"
+                                className="w-full text-right bg-muted/40 border border-border/80 rounded px-2 py-1 text-xs tabular-nums focus:bg-muted/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                placeholder="0"
+                                value={editDrafts[row.row_number]?.base ?? (line?.base_amount_rounded || '')}
+                                onChange={e => handleDetailEdit(row.row_number, 'base', e.target.value)}
+                              />
+                            ) : (
+                              row.has_base && line ? fmtEft(line.base_amount_rounded) : ''
+                            )}
                           </div>
                           <div className="col-span-2 text-right tabular-nums text-xs font-medium">
-                            {row.has_tax && line ? fmtEft(line.tax_amount_rounded) : ''}
+                            {isEditable && row.has_tax && !isSummary ? (
+                              <input
+                                type="number"
+                                className="w-full text-right bg-muted/40 border border-border/80 rounded px-2 py-1 text-xs tabular-nums font-medium focus:bg-muted/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                placeholder="0"
+                                value={editDrafts[row.row_number]?.tax ?? (line?.tax_amount_rounded || '')}
+                                onChange={e => handleDetailEdit(row.row_number, 'tax', e.target.value)}
+                              />
+                            ) : (
+                              row.has_tax && line ? fmtEft(line.tax_amount_rounded) : ''
+                            )}
                           </div>
                           {hasPrevData && (
                             <div className="col-span-2 text-right tabular-nums text-muted-foreground text-xs">
@@ -913,7 +1057,7 @@ function VatReturnViewTab() {
           <Card className="border-border/60">
             <CardHeader className="pb-3 border-b border-border/40">
               <CardTitle className="text-base flex items-center gap-2">
-                M-Lap — Belföldi összesítő
+                M-Lap - Belföldi összesítő
                 <Badge variant="secondary" className="text-xs">{mLines.length} partner</Badge>
               </CardTitle>
             </CardHeader>
@@ -934,10 +1078,10 @@ function VatReturnViewTab() {
                     <React.Fragment key={ml.id}>
                       <div
                         className="grid grid-cols-12 gap-2 px-4 py-2.5 text-sm items-center hover:bg-muted/20 cursor-pointer transition-colors"
-                        onClick={() => setExpandedPartner(expandedPartner === ml.id ? null : ml.id)}
+                        onClick={() => togglePartner(ml.id)}
                       >
                         <div className="col-span-3 flex items-center gap-1.5 truncate">
-                          {expandedPartner === ml.id ? <ChevronDown className="w-3 h-3 shrink-0" /> : <ChevronRight className="w-3 h-3 shrink-0" />}
+                          {expandedPartners.has(ml.id) ? <ChevronDown className="w-3 h-3 shrink-0" /> : <ChevronRight className="w-3 h-3 shrink-0" />}
                           <span className="truncate">{ml.partner_name}</span>
                         </div>
                         <div className="col-span-2 font-mono text-xs">{ml.partner_tax_number}</div>
@@ -948,18 +1092,42 @@ function VatReturnViewTab() {
                           {Math.round(ml.tax_27_amount / 1000)} / {Math.round(ml.tax_18_amount / 1000)} / {Math.round(ml.tax_5_amount / 1000)}
                         </div>
                       </div>
-                      {expandedPartner === ml.id && ml.invoice_details?.length > 0 && (
-                        <div className="bg-muted/30 px-8 py-2 border-t border-border/20">
-                          <div className="text-xs font-medium text-muted-foreground mb-1">Számlák:</div>
-                          {(ml.invoice_details as any[]).map((inv: any, i: number) => (
-                            <div key={i} className="grid grid-cols-12 gap-2 text-xs py-1 text-muted-foreground">
-                              <div className="col-span-3 font-mono">{inv.invoice_number}</div>
-                              <div className="col-span-2">{inv.delivery_date?.substring(0, 10)}</div>
-                              <div className="col-span-2 text-right tabular-nums">{Math.round((inv.net || 0) / 1000)} eFt</div>
-                              <div className="col-span-2 text-right tabular-nums">{Math.round((inv.vat || 0) / 1000)} eFt</div>
-                              <div className="col-span-3 text-right">{inv.vat_rate}</div>
-                            </div>
-                          ))}
+                      {expandedPartners.has(ml.id) && ml.invoice_details?.length > 0 && (
+                        <div className="bg-muted/30 px-6 py-2 border-t border-border/20">
+                          <div className="text-xs font-medium text-muted-foreground mb-1.5">Számlák:</div>
+                          {/* Invoice header */}
+                          <div className="grid grid-cols-12 gap-2 text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider pb-1 mb-1 border-b border-border/20 pl-4">
+                            <div className="col-span-3">Számlaszám</div>
+                            <div className="col-span-2">Teljesítés</div>
+                            <div className="col-span-2 text-right">Nettó (eFt)</div>
+                            <div className="col-span-2 text-right">ÁFA (eFt)</div>
+                            <div className="col-span-3 text-right">ÁFA kulcs</div>
+                          </div>
+                          {(ml.invoice_details as any[]).map((inv: any, i: number) => {
+                            const invKey = `${ml.id}_${inv.invoice_number}_${i}`;
+                            const isInvExpanded = expandedInvoice === invKey;
+                            return (
+                              <React.Fragment key={i}>
+                                <div
+                                  className="grid grid-cols-12 gap-2 text-xs py-1.5 pl-4 transition-colors cursor-pointer hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+                                  onClick={() => setExpandedInvoice(isInvExpanded ? null : invKey)}
+                                >
+                                  <div className="col-span-3 font-mono flex items-center gap-1">
+                                    {isInvExpanded ? <ChevronDown className="w-2.5 h-2.5 shrink-0" /> : <ChevronRight className="w-2.5 h-2.5 shrink-0" />}
+                                    {inv.invoice_number}
+                                  </div>
+                                  <div className="col-span-2">{inv.delivery_date?.substring(0, 10)}</div>
+                                  <div className="col-span-2 text-right tabular-nums">{Math.round((inv.net || 0) / 1000).toLocaleString('hu-HU')} eFt</div>
+                                  <div className="col-span-2 text-right tabular-nums">{Math.round((inv.vat || 0) / 1000).toLocaleString('hu-HU')} eFt</div>
+                                  <div className="col-span-3 text-right font-medium">{inv.vat_rate === '0.27' ? '27%' : inv.vat_rate === '0.18' ? '18%' : inv.vat_rate === '0.05' ? '5%' : inv.vat_rate}</div>
+                                </div>
+                                {/* Invoice items drill-down — live query */}
+                                {isInvExpanded && (
+                                  <InvoiceItemsDrillDown invoiceNumber={inv.invoice_number} companyId={selectedCompany!.id} />
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
                         </div>
                       )}
                     </React.Fragment>
@@ -1065,20 +1233,12 @@ export default function VatReturnPage() {
 
   return (
     <div className="container max-w-7xl py-6 space-y-6 print:py-0 animate-in fade-in duration-300">
-      {/* Company + Period info strip */}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground print:hidden">
-        <span className="font-medium text-foreground/70">{selectedCompany?.name}</span>
-        <span>•</span>
-        <span>ÁFA Bevallás (2665)</span>
-      </div>
-
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 print:hidden">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground/90">ÁFA Bevallás</h1>
-          <p className="text-sm text-muted-foreground mt-1">2665-ös nyomtatvány — havi és negyedéves ÁFA bevallás generálás</p>
-        </div>
-      </div>
+      <PageHeader
+        companyName={selectedCompany?.name}
+        breadcrumb="ÁFA Bevallás (2665)"
+        title="ÁFA Bevallás"
+        description="2665-ös nyomtatvány — havi és negyedéves ÁFA bevallás generálás"
+      />
 
       <Tabs defaultValue="return" className="space-y-4">
         <TabsList className="bg-muted/50 p-1">

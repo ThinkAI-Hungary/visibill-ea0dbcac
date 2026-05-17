@@ -19,6 +19,8 @@ import { ManagePresetsModal } from '@/components/general-ledger/ManagePresetsMod
 import { Settings2 } from 'lucide-react';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { useDateRange } from '@/contexts/DateRangeContext';
+import { PageHeader } from '@/components/ui/page-header';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export default function GeneralLedgerPage() {
   const { selectedCompany } = useCompany();
@@ -164,9 +166,13 @@ export default function GeneralLedgerPage() {
     }
   };
 
+  useKeyboardShortcuts([
+    { combo: { key: 'p', ctrl: true }, handler: handlePrint, description: 'Nyomtatás' },
+  ]);
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10 page-animate">
-      {/* Print-only beautifully formatted header */}
+      {/* Print-only header */}
       <div className="hidden print:flex flex-col items-center justify-center mb-8 w-full border-b-2 border-primary/20 pb-6">
         <h1 className="text-5xl font-black bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent tracking-tight print:text-black mb-2">Visibill</h1>
         <h2 className="text-2xl font-bold uppercase tracking-widest text-foreground mt-2">Főkönyvi Kivonat</h2>
@@ -177,13 +183,14 @@ export default function GeneralLedgerPage() {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 print:hidden">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground/90">Főkönyv</h1>
-          <p className="text-sm text-muted-foreground mt-1">Hierarchikus főkönyvi kivonat és kategóriák</p>
-        </div>
+      <PageHeader
+        companyName={selectedCompany?.name}
+        breadcrumb="Főkönyv"
+        title="Főkönyv"
+        description="Hierarchikus főkönyvi kivonat és kategóriák"
+      />
 
-        <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 print:hidden">
           {/* Preset Selector & Action */}
           <div className="flex items-center justify-end gap-3 bg-card p-3 rounded-xl border border-border shadow-sm">
             <div className="flex items-center gap-2">
@@ -253,7 +260,6 @@ export default function GeneralLedgerPage() {
               </div>
             </div>
           </div>
-        </div>
       </div>
 
       {/* ── KPI Summary Bar (F1) ── */}

@@ -14,6 +14,8 @@ import { useActivePreset } from '@/hooks/useActivePreset';
 import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText, Maximize2, Minimize2, ClipboardCopy, ExternalLink } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/ui/page-header';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useDateRange } from '@/contexts/DateRangeContext';
@@ -715,23 +717,29 @@ export default function ProfitAndLoss() {
     toggleActivePresetMutation.mutate(val);
   };
 
+  useKeyboardShortcuts([
+    { combo: { key: 'p', ctrl: true }, handler: () => window.print(), description: 'Nyomtatás' },
+  ]);
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10 page-animate">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 print:hidden">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground/90">Eredménykimutatás</h1>
-          <p className="text-sm text-muted-foreground mt-1">Sztv. "A" változat szerinti eredménykimutatás és beállítások</p>
-        </div>
-        <div className="flex items-center gap-3 bg-muted/30 p-1.5 rounded-lg border border-border/50">
-          <span className="text-sm font-medium text-muted-foreground ml-2">Időszak:</span>
-          <ToggleGroup type="single" value={activeDatePreset} onValueChange={handleDatePresetChange} className="bg-background border rounded-md p-0.5 shadow-sm">
-            <ToggleGroupItem value="year" className="h-8 px-4 text-xs font-medium">Év</ToggleGroupItem>
-            <ToggleGroupItem value="quarter" className="h-8 px-4 text-xs font-medium">Negyedév</ToggleGroupItem>
-            <ToggleGroupItem value="month" className="h-8 px-4 text-xs font-medium">Hónap</ToggleGroupItem>
-            <ToggleGroupItem value="custom" className="h-8 px-4 text-xs font-medium" disabled>Egyedi</ToggleGroupItem>
-          </ToggleGroup>
-        </div>
-      </div>
+      <PageHeader
+        companyName={selectedCompany?.name}
+        breadcrumb="Eredménykimutatás"
+        title="Eredménykimutatás"
+        description="Sztv. 'A' változat szerinti eredménykimutatás és beállítások"
+        actions={
+          <div className="flex items-center gap-3 bg-muted/30 p-1.5 rounded-lg border border-border/50">
+            <span className="text-sm font-medium text-muted-foreground ml-2">Időszak:</span>
+            <ToggleGroup type="single" value={activeDatePreset} onValueChange={handleDatePresetChange} className="bg-background border rounded-md p-0.5 shadow-sm">
+              <ToggleGroupItem value="year" className="h-8 px-4 text-xs font-medium">Év</ToggleGroupItem>
+              <ToggleGroupItem value="quarter" className="h-8 px-4 text-xs font-medium">Negyedév</ToggleGroupItem>
+              <ToggleGroupItem value="month" className="h-8 px-4 text-xs font-medium">Hónap</ToggleGroupItem>
+              <ToggleGroupItem value="custom" className="h-8 px-4 text-xs font-medium" disabled>Egyedi</ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+        }
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6 h-12 w-full md:w-auto p-1 bg-muted/50">

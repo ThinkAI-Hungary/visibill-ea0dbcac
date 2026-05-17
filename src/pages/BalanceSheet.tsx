@@ -15,6 +15,9 @@ import { useActivePreset } from '@/hooks/useActivePreset';
 import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2, ReceiptText, ClipboardCopy } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/ui/page-header';
+import { FinancialPageSkeleton } from '@/components/ui/financial-skeleton';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { exportBsExcel } from '@/lib/bsExport';
@@ -374,7 +377,7 @@ function BsViewTab({ presetId }: { presetId?: string }) {
     return map;
   }, [bsData]);
 
-  if (isLoading) return <div className="p-12 flex justify-center"><Loader2 className="animate-spin w-8 h-8 text-primary" /></div>;
+  if (isLoading) return <FinancialPageSkeleton title="Mérleg betöltése..." />;
   if (isError) return (
     <div className="p-6 space-y-4">
       <div className="flex items-center gap-3 p-4 rounded-xl border-2 bg-red-500/10 border-red-500/40 text-red-700 dark:text-red-400">
@@ -686,6 +689,10 @@ export default function BalanceSheet() {
   const setActiveTab = (val: string) => { setSearchParams(prev => { const next = new URLSearchParams(prev); next.set('tab', val); return next; }, { replace: true }); };
   const { activePresetId, setActivePresetId, presets } = useActivePreset(selectedCompany?.id);
 
+  useKeyboardShortcuts([
+    { combo: { key: 'p', ctrl: true }, handler: () => window.print(), description: 'Nyomtatás' },
+  ]);
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10 page-animate">
       {/* Print-only header */}
@@ -700,12 +707,12 @@ export default function BalanceSheet() {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 print:hidden">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground/90">Mérleg</h1>
-          <p className="text-sm text-muted-foreground mt-1">Sztv. "A" változat szerinti mérleg és beállítások</p>
-        </div>
-      </div>
+      <PageHeader
+        companyName={selectedCompany?.name}
+        breadcrumb="Mérleg"
+        title="Mérleg"
+        description="Sztv. 'A' változat szerinti mérleg és beállítások"
+      />
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6 h-12 w-full md:w-auto p-1 bg-muted/50">
           <TabsTrigger value="view" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-6">Mérleg</TabsTrigger>
