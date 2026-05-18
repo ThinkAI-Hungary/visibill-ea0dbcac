@@ -13,7 +13,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   History, Plus, Pencil, Trash2, Upload, Link2, FileText, Banknote,
-  ArrowLeftRight, Tag, ClipboardList, Search, User, CalendarDays, CheckCircle2, Bot, ExternalLink, AlertCircle, Filter, ListFilter, Check, ChevronRight
+  ArrowLeftRight, Tag, ClipboardList, Search, User, CalendarDays, CheckCircle2, Bot, ExternalLink, AlertCircle, Filter, ListFilter, Check, ChevronRight, Mail
 } from 'lucide-react';
 import { format, startOfDay, endOfDay, subDays, startOfWeek } from 'date-fns';
 import { formatDistanceToNow } from 'date-fns';
@@ -90,6 +90,12 @@ function isInvoiceProcessed(log: AuditLogRow): boolean {
   if (!isProcessingComplete(log)) return false;
   const d = log.details as Record<string, any>;
   return d.processing_type === 'invoice_processed';
+}
+
+function isMailgunUpload(log: AuditLogRow): boolean {
+  if (log.action !== 'feltöltés') return false;
+  const d = log.details as Record<string, any> | null;
+  return d?.upload_source === 'email_alias';
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────────
@@ -943,13 +949,16 @@ export function ActivityLogSheet() {
                 <div className="space-y-1">
                   {filteredLogs.map((log, index) => {
                     const processed = isProcessingComplete(log);
+                    const mailgun = isMailgunUpload(log);
                     const actionCfg = processed
                       ? { icon: CheckCircle2, color: 'text-green-600 bg-green-50 dark:bg-green-950/30', label: 'feldolgozta' }
-                      : (ACTION_CONFIG[log.action] || ACTION_CONFIG['módosítás']);
+                      : mailgun
+                        ? { icon: Mail, color: 'text-amber-500 bg-amber-50 dark:bg-amber-950/30', label: 'e-mailből érkezett' }
+                        : (ACTION_CONFIG[log.action] || ACTION_CONFIG['módosítás']);
                     const entityCfg = ENTITY_CONFIG[log.entity] || { label: log.entity, icon: FileText };
                     const userName = getUserName(log.user_id);
                     const ActionIcon = actionCfg.icon;
-                    const isSystemAction = processed; // is_system from trigger details
+                    const isSystemAction = processed || mailgun; // system-originated events
 
                     return (
                       <div key={log.id} className={`relative flex items-center gap-4 py-3 px-3 rounded-lg transition-colors border-b border-border/60 ${index % 2 === 0 ? 'bg-slate-100 dark:bg-secondary/30' : 'bg-white dark:bg-transparent'}`}>
@@ -985,64 +994,55 @@ export function ActivityLogSheet() {
 
                         {/* Content — two rows */}
                         <div className="min-w-0 flex-1">
-                          {isSystemAction ? (
-                            <>
-                              {/* Row 1: action sentence */}
-                              <p className="text-sm leading-snug">
+                          {/* Row 1: action sentence */}
+                          <p className="text-sm leading-snug">
+                            {processed ? (
+                              <>
+                                <span className="text-muted-foreground">A </span>
                                 <button
-                                  onClick={() => setSelectedUserDialog({ userId: log.user_id, userName, isSystem: !log.user_id || isSystemAction })}
+                                  onClick={() => setSelectedUserDialog({ userId: null, userName: 'Rendszer', isSystem: true })}
                                   className="font-semibold hover:text-primary transition-colors hover:underline outline-none"
                                 >
-                                  {userName}
+                                  rendszer
                                 </button>
-                                {' '}
-                                <span className="text-muted-foreground">
-                                  {isInvoiceProcessed(log)
-                                    ? 'által feltöltött számla feldolgozva'
-                                    : 'feltöltése feldolgozva'}
-                                </span>
-                              </p>
-                              {/* Row 2: filename */}
-                              {getDisplayName(log) && (
-                                <p className="text-xs mt-0.5">
-                                  {isLikelyPdf(log) ? (
-                                    <button onClick={() => handlePdfClick(log)} className="font-medium text-green-600 dark:text-green-400 hover:underline hover:text-green-700 dark:hover:text-green-300 inline-flex items-center gap-1 transition-colors">
-                                      <FileText className="h-3 w-3 shrink-0" />
-                                      {getDisplayName(log)}
-                                    </button>
-                                  ) : (
-                                    <span className="font-medium text-foreground">{getDisplayName(log)}</span>
-                                  )}
-                                </p>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              {/* Row 1: action sentence */}
-                              <p className="text-sm leading-snug">
+                                <span className="text-muted-foreground"> sikeresen feldolgozott egy dokumentumot</span>
+                              </>
+                            ) : mailgun ? (
+                              <>
+                                <span className="text-muted-foreground">A </span>
                                 <button
-                                  onClick={() => setSelectedUserDialog({ userId: log.user_id, userName, isSystem: !log.user_id || isSystemAction })}
+                                  onClick={() => setSelectedUserDialog({ userId: null, userName: 'Rendszer', isSystem: true })}
+                                  className="font-semibold hover:text-primary transition-colors hover:underline outline-none"
+                                >
+                                  rendszer
+                                </button>
+                                <span className="text-muted-foreground"> felé érkezett egy dokumentum e-mailből</span>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => setSelectedUserDialog({ userId: log.user_id, userName, isSystem: !log.user_id })}
                                   className="font-semibold hover:text-primary transition-colors hover:underline outline-none"
                                 >
                                   {userName}
                                 </button>
                                 {' '}
                                 <span className="text-muted-foreground">{actionCfg.label} egy {entityCfg.label}</span>
-                              </p>
-                              {/* Row 2: filename */}
-                              {getDisplayName(log) && (
-                                <p className="text-xs mt-0.5">
-                                  {isLikelyPdf(log) ? (
-                                    <button onClick={() => handlePdfClick(log)} className="font-medium text-blue-500 hover:text-blue-600 hover:underline inline-flex items-center gap-1 transition-colors">
-                                      <FileText className="h-3 w-3 shrink-0" />
-                                      {getDisplayName(log)}
-                                    </button>
-                                  ) : (
-                                    <span className="font-medium text-foreground">{getDisplayName(log)}</span>
-                                  )}
-                                </p>
+                              </>
+                            )}
+                          </p>
+                          {/* Row 2: filename */}
+                          {getDisplayName(log) && (
+                            <p className="text-xs mt-0.5">
+                              {isLikelyPdf(log) ? (
+                                <button onClick={() => handlePdfClick(log)} className={`font-medium hover:underline inline-flex items-center gap-1 transition-colors ${processed ? 'text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300' : mailgun ? 'text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300' : 'text-blue-500 hover:text-blue-600'}`}>
+                                  <FileText className="h-3 w-3 shrink-0" />
+                                  {getDisplayName(log)}
+                                </button>
+                              ) : (
+                                <span className="font-medium text-foreground">{getDisplayName(log)}</span>
                               )}
-                            </>
+                            </p>
                           )}
                         </div>
                       </div>
