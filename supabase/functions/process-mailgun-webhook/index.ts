@@ -188,11 +188,17 @@ serve(async (req) => {
       // Fájlnév heurisztika - tipikus aláírás és social media logók kiszűrése
       const junkKeywords = [
         'logo', 'signature', 'facebook', 'twitter', 'instagram', 'linkedin',
-        'youtube', 'banner', 'spacer', 'image001', 'image002', 'image003',
-        'icon', 'footer'
+        'youtube', 'banner', 'spacer', 'icon', 'footer', 'pixel', 'tracking',
+        'badge',
       ];
       if (junkKeywords.some(keyword => fileName.includes(keyword))) {
         console.log(`Skipping file with junk keyword in name: ${file.name}`);
+        return false;
+      }
+
+      // Inline email images: image001.png, image002.jpg, etc. (Outlook / Exchange pattern)
+      if (/^image\d{1,4}\.(png|jpe?g|gif|bmp)$/.test(fileName)) {
+        console.log(`Skipping inline email image: ${file.name}`);
         return false;
       }
       
