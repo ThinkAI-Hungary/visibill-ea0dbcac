@@ -186,7 +186,7 @@ export function useDashboardData() {
       if (error) throw error;
       return (data || []) as Category[];
     },
-    enabled: !!companyId,
+    enabled: !!user && !!companyId,
     placeholderData: keepPreviousData,
   });
 
@@ -206,7 +206,7 @@ export function useDashboardData() {
         category_name: (invoice as any).categories?.name
       })) as Invoice[];
     },
-    enabled: !!companyId,
+    enabled: !!user && !!companyId,
     placeholderData: keepPreviousData,
   });
 
@@ -244,7 +244,7 @@ export function useDashboardData() {
         completedCount
       } as DashboardMetrics;
     },
-    enabled: !!companyId,
+    enabled: !!user && !!companyId,
     placeholderData: keepPreviousData,
   });
 
@@ -296,7 +296,7 @@ export function useDashboardData() {
 
       return { inboundVat, outboundVat, revenueNet, revenueGross, expensesNet, expensesGross, unpaidInboundNet, unpaidInboundGross, unpaidOutboundNet, unpaidOutboundGross } as NavVatData;
     },
-    enabled: !!companyId,
+    enabled: !!user && !!companyId,
     placeholderData: keepPreviousData,
   });
 
@@ -312,7 +312,7 @@ export function useDashboardData() {
       if (!row || !row.has_settings) return null;
       return Number(row.balance);
     },
-    enabled: !!companyId,
+    enabled: !!user && !!companyId,
     placeholderData: keepPreviousData,
   });
 
@@ -371,7 +371,7 @@ export function useDashboardData() {
         rawSalaries: (salRes.data || []).map((s: any) => ({ dátum: s.dátum, összeg: s.összeg, statusz: s.statusz })) as RawSalary[],
       };
     },
-    enabled: !!companyId,
+    enabled: !!user && !!companyId,
     staleTime: 30_000,
   });
 
@@ -533,7 +533,7 @@ export function useDashboardData() {
         };
       }
     },
-    enabled: !!companyId,
+    enabled: !!user && !!companyId,
     staleTime: 30_000,
   });
 
