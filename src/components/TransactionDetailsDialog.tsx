@@ -234,40 +234,78 @@ export const TransactionDetailsDialog = ({
     setLoadingAvailable(true);
     try {
       const transactionDate = new Date(transaction.transaction_date);
-      const dateFrom = format(subDays(transactionDate, 30), 'yyyy-MM-dd');
-      const dateTo = format(addDays(transactionDate, 7), 'yyyy-MM-dd');
+      const dateFrom = format(subDays(transactionDate, 60), 'yyyy-MM-dd');
+      const dateTo = format(addDays(transactionDate, 14), 'yyyy-MM-dd');
+      const txAmount = Math.abs(transaction.amount);
 
-      const { data: invoices, error } = await supabase
+      // 1. Fetch from invoices table
+      const { data: invoices } = await supabase
         .from('invoices')
         .select('id, bizonylatsorszam, brutto_vegosszeg, elado_nev, penznem, kibocsatas_datuma')
         .eq('company_id', companyId)
         .gte('kibocsatas_datuma', dateFrom)
         .lte('kibocsatas_datuma', dateTo)
-        .order('kibocsatas_datuma', { ascending: false });
+        .order('kibocsatas_datuma', { ascending: false })
+        .limit(100);
 
-      if (error) throw error;
+      // 2. Fetch from nav_invoices table
+      const { data: navInvoices } = await supabase
+        .from('nav_invoices')
+        .select('id, invoice_number, invoice_gross_amount, supplier_name, customer_name, currency, invoice_issue_date, invoice_direction')
+        .eq('company_id', companyId)
+        .gte('invoice_issue_date', dateFrom)
+        .lte('invoice_issue_date', dateTo)
+        .is('transaction_id', null)
+        .order('invoice_issue_date', { ascending: false })
+        .limit(100);
 
-      const invoicesWithPayments: AvailableInvoice[] = await Promise.all(
-        (invoices || []).map(async (inv) => {
-          const { data: matchedTransactions } = await supabase
-            .from('transactions')
-            .select('amount')
-            .eq('matched_invoice_id', inv.id)
-            .eq('is_verified', true);
+      // 3. Combine into unified list
+      const combined: AvailableInvoice[] = [];
 
-          const alreadyPaid = matchedTransactions?.reduce((sum, t) => sum + Math.abs(t.amount), 0) || 0;
-          const invoiceAmount = Math.abs(inv.brutto_vegosszeg || 0);
-          const remaining = invoiceAmount - alreadyPaid;
+      for (const inv of (invoices || [])) {
+        // Check already paid amounts
+        const { data: matchedTx } = await supabase
+          .from('transactions')
+          .select('amount')
+          .eq('matched_invoice_id', inv.id)
+          .eq('is_verified', true);
 
-          return {
-            ...inv,
-            already_paid: alreadyPaid,
-            remaining: remaining
-          };
-        })
-      );
+        const alreadyPaid = matchedTx?.reduce((sum, t) => sum + Math.abs(t.amount), 0) || 0;
+        const invoiceAmount = Math.abs(inv.brutto_vegosszeg || 0);
 
-      setAvailableInvoices(invoicesWithPayments);
+        combined.push({
+          id: inv.id,
+          bizonylatsorszam: inv.bizonylatsorszam,
+          brutto_vegosszeg: inv.brutto_vegosszeg,
+          elado_nev: inv.elado_nev,
+          penznem: inv.penznem,
+          kibocsatas_datuma: inv.kibocsatas_datuma,
+          already_paid: alreadyPaid,
+          remaining: invoiceAmount - alreadyPaid,
+        });
+      }
+
+      for (const nav of (navInvoices || [])) {
+        combined.push({
+          id: nav.id,
+          bizonylatsorszam: nav.invoice_number,
+          brutto_vegosszeg: nav.invoice_gross_amount || 0,
+          elado_nev: nav.supplier_name || nav.customer_name || '',
+          penznem: nav.currency,
+          kibocsatas_datuma: nav.invoice_issue_date || '',
+          already_paid: 0,
+          remaining: Math.abs(nav.invoice_gross_amount || 0),
+        });
+      }
+
+      // 4. Sort: exact matches first, then by amount proximity (raw values, no abs)
+      combined.sort((a, b) => {
+        const diffA = Math.abs((a.brutto_vegosszeg || 0) - txAmount);
+        const diffB = Math.abs((b.brutto_vegosszeg || 0) - txAmount);
+        return diffA - diffB;
+      });
+
+      setAvailableInvoices(combined);
     } catch (error) {
       console.error('Error fetching invoices:', error);
       toast({ title: 'Hiba a számlák betöltésekor', variant: 'destructive' });
@@ -359,16 +397,30 @@ export const TransactionDetailsDialog = ({
   };
 
   const filteredInvoices = useMemo(() => {
-    if (!search) return availableInvoices;
+    const txAmt = Math.abs(transaction?.amount || 0);
+    let list = availableInvoices;
+
+    // When no search: only show invoices within ±30% of transaction amount
+    if (!search) {
+      if (txAmt > 0) {
+        list = list.filter(inv => {
+          const diff = Math.abs((inv.brutto_vegosszeg || 0) - (transaction?.amount || 0));
+          return diff / txAmt <= 0.30;
+        });
+      }
+      return list;
+    }
+
+    // When searching: match text, no amount filter
     const searchLower = search.toLowerCase();
     return availableInvoices.filter(inv =>
       inv.bizonylatsorszam.toLowerCase().includes(searchLower) ||
       inv.elado_nev?.toLowerCase().includes(searchLower) ||
       inv.brutto_vegosszeg?.toString().includes(search)
     );
-  }, [availableInvoices, search]);
+  }, [availableInvoices, search, transaction?.amount]);
 
-  const transactionAmount = Math.abs(transaction?.amount || 0);
+  const transactionAmount = transaction?.amount || 0;
   const matchStatus = transaction ? computeMatchStatus(transaction) : 'unmatched';
 
   if (!transaction) return null;
@@ -705,14 +757,20 @@ export const TransactionDetailsDialog = ({
           </>
         )}
 
-        {/* Manual Match Section - Compact */}
+        {/* Manual Match Section - Smart Matching */}
         {(showManualMatch || !transaction.matched_invoice_id) && (
           <>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-medium">
-                  {transaction.matched_invoice_id ? 'Másik számla választása' : 'Manuális párosítás'}
-                </h4>
+                <div>
+                  <h4 className="text-xs font-medium flex items-center gap-1.5">
+                    <Link2 className="h-3.5 w-3.5 text-primary" />
+                    {transaction.matched_invoice_id ? 'Másik számla választása' : 'Manuális párosítás'}
+                  </h4>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Összeg alapján rendezve · keresett: <span className="font-mono font-medium">{formatCurrency(transactionAmount, transaction.currency || 'HUF')}</span>
+                  </p>
+                </div>
                 {transaction.matched_invoice_id && (
                   <Button variant="ghost" size="sm" onClick={() => setShowManualMatch(false)} className="h-6 text-xs">
                     Vissza
@@ -721,16 +779,24 @@ export const TransactionDetailsDialog = ({
               </div>
 
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
-                  placeholder="Keresés..."
+                  placeholder={`Keresés számlaszám, partner vagy összeg alapján...`}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-7 h-8 text-xs"
+                  className="pl-8 h-8 text-xs"
+                  autoFocus
                 />
               </div>
 
-              <div className="max-h-[180px] overflow-y-auto border rounded-md">
+              {/* Results count */}
+              {!loadingAvailable && filteredInvoices.length > 0 && (
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground px-0.5">
+                  <span>{filteredInvoices.length} számla az időszakban (±60 nap)</span>
+                </div>
+              )}
+
+              <div className="max-h-[240px] overflow-y-auto border rounded-md">
                 {loadingAvailable ? (
                   <div className="flex items-center justify-center h-20">
                     <LoadingSpinner />
@@ -738,41 +804,63 @@ export const TransactionDetailsDialog = ({
                 ) : filteredInvoices.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-20 text-muted-foreground">
                     <FileText className="h-5 w-5 mb-1" />
-                    <p className="text-xs">Nincs találat</p>
+                    <p className="text-xs">{search ? 'Nincs találat a keresésre' : 'Nincs elérhető számla az időszakban'}</p>
                   </div>
                 ) : (
                   <div className="p-1.5 space-y-1">
-                    {filteredInvoices.slice(0, 5).map((invoice) => {
+                    {filteredInvoices.map((invoice) => {
                       const isSelected = selectedInvoiceId === invoice.id;
-                      const isExactMatch = Math.abs((invoice.brutto_vegosszeg || 0) - transactionAmount) < 1;
+                      const invoiceAmt = invoice.brutto_vegosszeg || 0;
+                      const diff = invoiceAmt - transactionAmount;
+                      const absDiff = Math.abs(diff);
+                      const isExact = absDiff < 1;
+                      const isNear = !isExact && absDiff < Math.abs(transactionAmount) * 0.05;
+                      const pctDiff = transactionAmount !== 0 ? (absDiff / Math.abs(transactionAmount) * 100) : 0;
 
                       return (
-                        <Card
+                        <div
                           key={invoice.id}
                           className={cn(
-                            "cursor-pointer transition-colors p-2",
-                            isSelected ? "border-primary bg-primary/10" : "hover:bg-muted/50",
-                            isExactMatch && "border-success/50"
+                            "rounded-md border p-2.5 cursor-pointer transition-all",
+                            isSelected
+                              ? "border-primary bg-primary/10 ring-1 ring-primary/30"
+                              : "hover:bg-muted/40 hover:border-border",
+                            isExact && !isSelected && "border-emerald-500/40 bg-emerald-500/5",
+                            isNear && !isSelected && "border-amber-500/30 bg-amber-500/5"
                           )}
                           onClick={() => setSelectedInvoiceId(invoice.id)}
                         >
-                          <div className="flex justify-between items-center text-xs">
-                            <div>
-                              <p className="font-medium font-mono">{invoice.bizonylatsorszam}</p>
-                              <p className="text-muted-foreground text-[10px]">
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                {isSelected && <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />}
+                                <p className="font-medium font-mono text-xs truncate">{invoice.bizonylatsorszam}</p>
+                              </div>
+                              <p className="text-muted-foreground text-[10px] mt-0.5 truncate">
                                 {invoice.elado_nev || '-'}
                               </p>
+                              <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                                {invoice.kibocsatas_datuma ? format(new Date(invoice.kibocsatas_datuma), 'yyyy.MM.dd') : ''}
+                              </p>
                             </div>
-                            <div className="text-right">
-                              <p className="font-mono font-medium">
+                            <div className="text-right shrink-0">
+                              <p className="font-mono font-medium text-xs">
                                 {formatCurrency(invoice.brutto_vegosszeg || 0, invoice.penznem || 'HUF')}
                               </p>
-                              {isExactMatch && (
-                                <Badge variant="success" className="text-[9px] h-4">Egyező összeg</Badge>
+                              {isExact ? (
+                                <Badge variant="success" className="text-[9px] h-4 mt-0.5">✓ Egyező</Badge>
+                              ) : isNear ? (
+                                <Badge className="text-[9px] h-4 mt-0.5 bg-amber-500/20 text-amber-600 border-amber-500/30 hover:bg-amber-500/20">
+                                  ~{pctDiff.toFixed(0)}% elt.
+                                </Badge>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground/60 mt-0.5 block">
+                                  {diff > 0 ? '+' : ''}{formatCurrency(diff, invoice.penznem || 'HUF')}
+                                </span>
                               )}
                             </div>
                           </div>
-                        </Card>
+                        </div>
                       );
                     })}
                   </div>
