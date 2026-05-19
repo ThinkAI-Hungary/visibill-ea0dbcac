@@ -201,6 +201,13 @@ serve(async (req) => {
         console.log(`Skipping inline email image: ${file.name}`);
         return false;
       }
+
+      // Generic unnamed attachments: attachment-1, attachment-2, etc. (email client default names)
+      // These are typically inline images or embedded content without meaningful filenames
+      if (/^attachment-\d+(\.\w+)?$/.test(fileName)) {
+        console.log(`Skipping generic attachment: ${file.name}`);
+        return false;
+      }
       
       // Engedélyezett MIME típusok
       const allowedTypes = [

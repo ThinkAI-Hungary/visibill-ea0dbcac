@@ -78,12 +78,18 @@ function getDateRange(customFrom: string, customTo: string): { from: string; to:
 
 // ─── Processing detection ──────────────────────────────────────────────────────
 function isProcessingComplete(log: AuditLogRow): boolean {
-  if (log.action !== 'módosítás') return false;
-  const details = log.details;
-  if (!details || typeof details !== 'object') return false;
-  const d = details as Record<string, any>;
-  // The trigger sets is_system=true when n8n processes a file (status -> 'processed')
-  return d.is_system === true;
+  // Case 1: explicit is_system flag from trigger (módosítás on invoice_uploads)
+  if (log.action === 'módosítás') {
+    const details = log.details;
+    if (!details || typeof details !== 'object') return false;
+    const d = details as Record<string, any>;
+    return d.is_system === true;
+  }
+  // Case 2: invoice created by system (worker creates számla record after processing)
+  if (log.action === 'feltöltés' && log.entity === 'számla' && !log.user_id) {
+    return true;
+  }
+  return false;
 }
 
 function isInvoiceProcessed(log: AuditLogRow): boolean {
@@ -94,8 +100,13 @@ function isInvoiceProcessed(log: AuditLogRow): boolean {
 
 function isMailgunUpload(log: AuditLogRow): boolean {
   if (log.action !== 'feltöltés') return false;
+  // Explicit email_alias source from trigger details
   const d = log.details as Record<string, any> | null;
-  return d?.upload_source === 'email_alias';
+  if (d?.upload_source === 'email_alias') return true;
+  // Fallback: document uploads without a user_id are always email-originated
+  // (manual uploads always have a user_id from auth.uid())
+  if (!log.user_id && log.entity === 'dokumentum') return true;
+  return false;
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────────
@@ -488,7 +499,10 @@ export function ActivityLogSheet() {
 
 
   const isLikelyPdf = (log: AuditLogRow) => {
-    return log.entity_name?.toLowerCase().endsWith('.pdf') ||
+    const name = log.entity_name?.toLowerCase() || '';
+    return name.endsWith('.pdf') ||
+      name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') ||
+      name.endsWith('.xlsx') || name.endsWith('.xls') ||
       log.entity === 'számla' ||
       log.entity === 'bérjegyzék' ||
       log.action === 'feltöltés';
@@ -496,10 +510,13 @@ export function ActivityLogSheet() {
 
   const getDisplayName = (log: AuditLogRow) => {
     if (!log.entity_name) return '';
-    if (isLikelyPdf(log) && !log.entity_name.toLowerCase().endsWith('.pdf')) {
-      return `${log.entity_name}.pdf`;
+    const name = log.entity_name;
+    const lower = name.toLowerCase();
+    // Only append .pdf for számla entity (bizonylatsorszám has no extension)
+    if (log.entity === 'számla' && !lower.match(/\.\w{2,5}$/)) {
+      return `${name}.pdf`;
     }
-    return log.entity_name;
+    return name;
   };
 
   const handlePdfClick = async (log: AuditLogRow) => {
