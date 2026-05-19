@@ -185,11 +185,13 @@ serve(async (req) => {
         return false;
       }
 
-      // Fájlnév heurisztika - tipikus aláírás és social media logók kiszűrése
+      // Fájlnév heurisztika - tipikus aláírás, branding és social media logók kiszűrése
       const junkKeywords = [
         'logo', 'signature', 'facebook', 'twitter', 'instagram', 'linkedin',
         'youtube', 'banner', 'spacer', 'icon', 'footer', 'pixel', 'tracking',
-        'badge',
+        'badge', 'visa', 'mastercard', 'paypal', 'amex', 'diners',
+        'header', 'button', 'social', 'branding', 'template',
+        'unsubscribe', 'emailbg', 'bg_', 'divider',
       ];
       if (junkKeywords.some(keyword => fileName.includes(keyword))) {
         console.log(`Skipping file with junk keyword in name: ${file.name}`);
@@ -208,25 +210,22 @@ serve(async (req) => {
         console.log(`Skipping generic attachment: ${file.name}`);
         return false;
       }
-      
-      // Engedélyezett MIME típusok
+
+      // STRICT: Only accept document file types (PDF, Excel).
+      // Images from emails are almost never invoices - they're logos, signatures, banners etc.
       const allowedTypes = [
         'application/pdf',
-        'image/jpeg',
-        'image/jpg', 
-        'image/png',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
         'application/vnd.ms-excel', // xls
       ];
       
-      // Engedélyezett kiterjesztések (fallback ha a MIME type nem pontos)
-      const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.xlsx', '.xls'];
+      const allowedExtensions = ['.pdf', '.xlsx', '.xls'];
       
       const hasAllowedType = allowedTypes.includes(fileType);
       const hasAllowedExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
       
       if (!hasAllowedType && !hasAllowedExtension) {
-        console.log(`Skipping unsupported file: ${file.name} (type: ${fileType})`);
+        console.log(`Skipping non-document file: ${file.name} (type: ${fileType})`);
         return false;
       }
       
