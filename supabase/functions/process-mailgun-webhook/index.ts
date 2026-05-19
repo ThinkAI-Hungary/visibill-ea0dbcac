@@ -178,10 +178,11 @@ serve(async (req) => {
         return false;
       }
       
-      // Képek esetében (png, jpg) szigorúbb méretkorlát (15KB), hogy a tipikus email aláírás logók kiessenek
+      // Képek esetében (png, jpg) szigorúbb méretkorlát (100KB)
+      // Branding logók tipikusan 1-90KB, lefotózott számlák 200KB-5MB
       const isImage = fileType.startsWith('image/') || fileName.endsWith('.png') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg');
-      if (isImage && file.size < 15 * 1024) {
-        console.log(`Skipping small image (likely signature): ${file.name} (${file.size} bytes)`);
+      if (isImage && file.size < 100 * 1024) {
+        console.log(`Skipping small image (likely branding/signature): ${file.name} (${file.size} bytes)`);
         return false;
       }
 
@@ -211,21 +212,23 @@ serve(async (req) => {
         return false;
       }
 
-      // STRICT: Only accept document file types (PDF, Excel).
-      // Images from emails are almost never invoices - they're logos, signatures, banners etc.
+      // Engedélyezett fájltípusok: dokumentumok + képek (lefotózott számlákhoz)
       const allowedTypes = [
         'application/pdf',
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
         'application/vnd.ms-excel', // xls
       ];
       
-      const allowedExtensions = ['.pdf', '.xlsx', '.xls'];
+      const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.xlsx', '.xls'];
       
       const hasAllowedType = allowedTypes.includes(fileType);
       const hasAllowedExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
       
       if (!hasAllowedType && !hasAllowedExtension) {
-        console.log(`Skipping non-document file: ${file.name} (type: ${fileType})`);
+        console.log(`Skipping unsupported file: ${file.name} (type: ${fileType})`);
         return false;
       }
       
