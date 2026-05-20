@@ -24,6 +24,8 @@ import {
 import { generateAnnualReportPdf, generateAnnualReportPreviewUrl } from '@/lib/annualReportPdf';
 import { useFixedAssets } from '@/hooks/useFixedAssets';
 import { useScopedNavigate } from '@/lib/navigation';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+
 
 // ═══════════════════════════════════════════
 // Types
@@ -95,6 +97,8 @@ export default function AnnualReportPage() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [currentStep, setCurrentStep] = useState(1);
+  const { data: exchangeRates } = useExchangeRates();
+
 
   // ── Fetch or create report ──
   const { data: report, isLoading: isLoadingReport } = useQuery({
@@ -188,7 +192,8 @@ export default function AnnualReportPage() {
         p_report_id: report.id,
         p_company_id: selectedCompany.id,
         p_preset_id: activePresetId,
-        p_fiscal_year: selectedYear
+        p_fiscal_year: selectedYear,
+        p_exchange_rates: exchangeRates || {}
       });
       if (error) throw error;
       return data;
@@ -356,7 +361,7 @@ export default function AnnualReportPage() {
     };
     let result = text;
     for (const [key, val] of Object.entries(vars)) {
-      result = result.replaceAll(key, val);
+      result = result.split(key).join(val);
     }
     return result;
   };
@@ -424,7 +429,24 @@ export default function AnnualReportPage() {
   // ── Wizard view ──
   const validationResults: ValidationResult[] = (report.validation_results as any[]) || [];
 
-
+  const isStepCompleted = (stepId: number) => {
+    switch (stepId) {
+      case 1:
+        return !!report.representative_name;
+      case 2:
+        return !!report.frozen_at;
+      case 3:
+        return !!report.validated_at && validationResults.every(r => r.passed || r.severity !== 'error');
+      case 4:
+        return ((report.notes_sections as any[]) || []).length > 0;
+      case 5:
+        return report.net_income <= 0 || report.dividend_amount > 0 || report.dividend_resolution_number !== null;
+      case 6:
+        return report.status === 'finalized';
+      default:
+        return false;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -434,7 +456,7 @@ export default function AnnualReportPage() {
           {STEPS.map((step, idx) => {
             const StepIcon = step.icon;
             const isActive = currentStep === step.id;
-            const isDone = currentStep > step.id;
+            const isCompleted = isStepCompleted(step.id);
 
             return (
               <React.Fragment key={step.id}>
@@ -443,15 +465,15 @@ export default function AnnualReportPage() {
                   className={cn(
                     "flex items-center gap-2 px-2.5 py-2 rounded-lg transition-all flex-1 min-w-0",
                     isActive ? "bg-primary text-primary-foreground shadow-lg" :
-                    isDone ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20" :
+                    isCompleted ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20" :
                     "bg-muted/50 text-muted-foreground hover:bg-muted"
                   )}
                 >
                   <div className={cn(
                     "w-7 h-7 rounded-md flex items-center justify-center shrink-0",
-                    isActive ? "bg-primary-foreground/20" : isDone ? "bg-emerald-500/20" : "bg-muted"
+                    isActive ? "bg-primary-foreground/20" : isCompleted ? "bg-emerald-500/20" : "bg-muted"
                   )}>
-                    {isDone ? <CheckCircle2 className="w-3.5 h-3.5" /> : <StepIcon className="w-3.5 h-3.5" />}
+                    {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : <StepIcon className="w-3.5 h-3.5" />}
                   </div>
                   <div className="text-left min-w-0">
                     <div className="text-[11px] font-bold truncate">{step.id}. {step.title}</div>
@@ -610,15 +632,18 @@ export default function AnnualReportPage() {
               {validationResults.length > 0 && (
                 <div className="space-y-3">
                   {validationResults.map((r: ValidationResult) => {
-                    // Map rule_id to navigation target
-                    const ruleNavMap: Record<string, { type: 'step' | 'page'; target: number | string; label: string }> = {
-                      'V1': { type: 'page', target: 'balance-sheet', label: 'Mérleg megnyitása' },
-                      'V2': { type: 'page', target: 'profit-and-loss', label: 'Eredménykimutatás megnyitása' },
-                      'V3': { type: 'step', target: 1, label: 'Ugrás az 1. lépésre' },
-                      'V4': { type: 'step', target: 5, label: 'Ugrás az 5. lépésre' },
-                      'V5': { type: 'step', target: 2, label: 'Ugrás a 2. lépésre' },
+                    // Map rule_id to navigation target actions
+                    const ruleNavMap: Record<string, { type: 'step' | 'page'; target: number | string; label: string }[]> = {
+                      'V1': [{ type: 'page', target: '/balance-sheet?tab=mapping', label: 'Mérleg hozzárendelések' }],
+                      'V2': [
+                        { type: 'page', target: '/profit-and-loss?tab=mapping', label: 'Eredménykimutatás hozzárendelések' },
+                        { type: 'page', target: '/balance-sheet?tab=mapping', label: 'Mérleg hozzárendelések' }
+                      ],
+                      'V3': [{ type: 'step', target: 1, label: 'Ugrás az 1. lépésre' }],
+                      'V4': [{ type: 'step', target: 5, label: 'Ugrás az 5. lépésre' }],
+                      'V5': [{ type: 'step', target: 2, label: 'Ugrás a 2. lépésre' }],
                     };
-                    const nav = ruleNavMap[r.rule_id];
+                    const navActions = ruleNavMap[r.rule_id] || [];
 
                     return (
                     <div key={r.rule_id} className={cn(
@@ -634,22 +659,27 @@ export default function AnnualReportPage() {
                         <p className="font-bold text-sm">{r.rule_id}: {r.rule_name}</p>
                         <p className="text-sm text-muted-foreground">{r.message}</p>
                       </div>
-                      {!r.passed && nav && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="shrink-0 gap-1.5 text-xs h-8"
-                          onClick={() => {
-                            if (nav.type === 'step') {
-                              setCurrentStep(nav.target as number);
-                            } else {
-                              scopedNavigate(nav.target as string);
-                            }
-                          }}
-                        >
-                          {nav.type === 'page' ? <ExternalLink className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                          {nav.label}
-                        </Button>
+                      {!r.passed && navActions.length > 0 && (
+                        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                          {navActions.map((action, actionIdx) => (
+                            <Button
+                              key={actionIdx}
+                              variant="outline"
+                              size="sm"
+                              className="gap-1.5 text-xs h-8"
+                              onClick={() => {
+                                if (action.type === 'step') {
+                                  setCurrentStep(action.target as number);
+                                } else {
+                                  scopedNavigate(action.target as string);
+                                }
+                              }}
+                            >
+                              {action.type === 'page' ? <ExternalLink className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                              {action.label}
+                            </Button>
+                          ))}
+                        </div>
                       )}
                     </div>
                   );

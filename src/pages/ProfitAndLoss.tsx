@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText, Maximize2, Minimize2, ClipboardCopy, ExternalLink } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText, Maximize2, Minimize2, ClipboardCopy, ExternalLink, AlertTriangle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
@@ -24,6 +24,8 @@ import { isSameDay, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, star
 
 import { useScopedNavigate } from '@/lib/navigation';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+
 
 
 function PnlMappingTab({ presetId }: { presetId?: string }) {
@@ -261,20 +263,23 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   const { selectedCompany } = useCompany();
   const { dateFromFormatted: dateFrom, dateToFormatted: dateTo } = useDateRange();
   const [inThousands, setInThousands] = useState(true);
+  const [hideZeroRows, setHideZeroRows] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [expandedGl, setExpandedGl] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const scopedNavigate = useScopedNavigate();
+  const { data: exchangeRates } = useExchangeRates();
 
   const { data: pnlData, isLoading } = useQuery({
-    queryKey: ['pnl_report', selectedCompany?.id, presetId, dateFrom, dateTo],
+    queryKey: ['pnl_report', selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRates],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
       const { data, error } = await supabase.rpc('get_pnl_report', {
         p_company_id: selectedCompany.id,
         p_preset_id: presetId,
         p_date_from: dateFrom || null,
-        p_date_to: dateTo || null
+        p_date_to: dateTo || null,
+        p_exchange_rates: exchangeRates || {}
       });
       if (error) throw error;
       return data;
@@ -283,20 +288,22 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   });
 
   const { data: dbItems, isLoading: isLoadingItems } = useQuery({
-    queryKey: ['glItems', selectedCompany?.id, presetId, dateFrom, dateTo],
+    queryKey: ['glItems', selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRates],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
       const { data, error } = await supabase.rpc('get_gl_categorized_items', {
         p_company_id: selectedCompany.id,
         p_preset_id: presetId,
         p_date_from: dateFrom || null,
-        p_date_to: dateTo || null
+        p_date_to: dateTo || null,
+        p_exchange_rates: exchangeRates || {}
       });
       if (error) throw error;
       return data;
     },
     enabled: !!selectedCompany?.id && !!presetId
   });
+
 
   const toggleRow = (id: string) => {
     setExpandedRows(prev => {
@@ -433,11 +440,17 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
       )}
 
       <div className="flex justify-between items-center mb-6 bg-muted/30 p-4 rounded-xl border border-border/50 print:hidden">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <div className="flex items-center space-x-2">
             <Switch id="view-mode" checked={inThousands} onCheckedChange={setInThousands} />
             <Label htmlFor="view-mode" className="font-medium cursor-pointer">
               Hivatalos nézet (Ezer Ft)
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch id="hide-zero" checked={hideZeroRows} onCheckedChange={setHideZeroRows} />
+            <Label htmlFor="hide-zero" className="font-medium cursor-pointer">
+              Nullás sorok elrejtése
             </Label>
           </div>
         </div>
@@ -481,6 +494,10 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
             processedData.map(row => {
               const isRoman = row.type === 'roman';
               const isCapital = row.type === 'capital';
+
+              if (hideZeroRows && !isCapital && row.displayBalance === 0 && (Number(row.previous_year) || 0) === 0) {
+                return null;
+              }
               const glAccounts = (row.gl_accounts as any[]) || [];
               const hasGl = glAccounts.length > 0;
               const isExpanded = expandedRows.has(row.pnl_structure_id);
@@ -657,6 +674,48 @@ export default function ProfitAndLoss() {
 
   const { activePresetId, setActivePresetId, presets } = useActivePreset(selectedCompany?.id);
   const { dateFrom, dateTo, setDateFrom, setDateTo } = useDateRange();
+
+  // Queries to compute validation warning
+  const { data: glAccounts } = useQuery({
+    queryKey: ['gl_accounts', activePresetId],
+    queryFn: async () => {
+      if (!activePresetId) return [];
+      const { data, error } = await supabase.from('gl_accounts').select('*').eq('preset_id', activePresetId).order('gl_number');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!activePresetId
+  });
+
+  const { data: existingMappings } = useQuery({
+    queryKey: ['pnl_mapping', selectedCompany?.id, activePresetId],
+    queryFn: async () => {
+      if (!selectedCompany?.id || !activePresetId) return [];
+      const { data, error } = await supabase.from('pnl_mapping').select('*').eq('company_id', selectedCompany.id).eq('preset_id', activePresetId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedCompany?.id && !!activePresetId
+  });
+
+  const unassignedCount = React.useMemo(() => {
+    if (!glAccounts) return 0;
+    
+    // Find leaf nodes
+    const cleanId = (id: string) => id ? String(id).replace(/\./g, '') : '';
+    const rawData = glAccounts.map(dbItem => {
+      const cid = cleanId(dbItem.gl_number);
+      const hasChildren = glAccounts.some(d => 
+        cleanId(d.gl_number).startsWith(cid) && 
+        cleanId(d.gl_number) !== cid
+      );
+      return { ...dbItem, hasChildren };
+    });
+
+    const leafAccounts = rawData.filter(gl => !gl.hasChildren && !/^[1-4]/.test(gl.gl_number));
+    const mappedIds = new Set(existingMappings?.map(m => m.gl_account_id) || []);
+    return leafAccounts.filter(a => !mappedIds.has(a.id)).length;
+  }, [glAccounts, existingMappings]);
   
   let isThisMonth = false, isThisQuarter = false, isThisYear = false;
   try {
@@ -740,6 +799,29 @@ export default function ProfitAndLoss() {
           </div>
         }
       />
+
+      {unassignedCount > 0 && (
+        <div className="bg-amber-500/10 border-2 border-amber-500/30 text-amber-800 dark:text-amber-400 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm print:hidden">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-sm">Figyelmeztetés az Eredménykimutatás összeállításában</p>
+              <p className="text-xs mt-1 opacity-90">
+                Jelenleg {unassignedCount} db nem besorolt eredménykimutatás főkönyvi szám található.
+              </p>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setActiveTab('mapping')}
+            className="border-amber-500/30 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 font-semibold shrink-0 text-xs gap-1.5 h-8 bg-transparent"
+          >
+            <span>Hozzárendelési Mátrix megnyitása</span>
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6 h-12 w-full md:w-auto p-1 bg-muted/50">

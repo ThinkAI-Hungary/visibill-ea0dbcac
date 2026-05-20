@@ -56,6 +56,18 @@ interface LinkedInvoice {
   relationDirection?: 'parent' | 'child';
 }
 
+interface MatchedCourierReport {
+  id: string;
+  report_type: string;
+  package_number: string | null;
+  reference_number: string | null;
+  delivery_date: string | null;
+  cod_amount: number | null;
+  recipient_name: string | null;
+  matched_nav_invoice_id: string | null;
+  matched_transaction_id: string | null;
+}
+
 interface ExpandedInvoiceRowProps {
   colSpan: number;
   matchedSubmittedInvoices: MatchedSubmittedInvoice[];
@@ -66,6 +78,7 @@ interface ExpandedInvoiceRowProps {
   linkedInvoicesLoading?: boolean;
   onViewInvoice?: (invoice: MatchedSubmittedInvoice) => void;
   onViewNavItems?: (invoice: MatchedNavInvoice) => void;
+  matchedCourierReports?: MatchedCourierReport[];
 }
 
 const ExpandedInvoiceRow = ({
@@ -78,6 +91,7 @@ const ExpandedInvoiceRow = ({
   linkedInvoicesLoading = false,
   onViewInvoice,
   onViewNavItems,
+  matchedCourierReports = [],
 }: ExpandedInvoiceRowProps) => {
   // Detect broken chain: reference_number exists but no matching linked invoice found
   const hasBrokenChain = !linkedInvoicesLoading
@@ -86,7 +100,12 @@ const ExpandedInvoiceRow = ({
       (inv) => inv.bizonylatsorszam?.toUpperCase() === invoiceReferenceNumber.toUpperCase()
     );
 
-  const hasAny = matchedSubmittedInvoices.length > 0 || matchedNavInvoices.length > 0 || matchedTransactions.length > 0 || linkedInvoices.length > 0 || hasBrokenChain;
+  const hasAny = matchedSubmittedInvoices.length > 0 
+    || matchedNavInvoices.length > 0 
+    || matchedTransactions.length > 0 
+    || linkedInvoices.length > 0 
+    || matchedCourierReports.length > 0
+    || hasBrokenChain;
 
   return (
     <>
@@ -403,6 +422,61 @@ const ExpandedInvoiceRow = ({
                       <span className="text-muted-foreground">Leírás:</span>
                       <span className="ml-1">{tx.description || '-'}</span>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            {/* Separator between transactions and courier reports */}
+            {((matchedSubmittedInvoices.length > 0 || matchedNavInvoices.length > 0 || matchedTransactions.length > 0) && matchedCourierReports.length > 0) && (
+              <Separator className="my-1" />
+            )}
+
+            {/* Matched courier reports */}
+            {matchedCourierReports.map((cr) => (
+              <Card key={cr.id} className="bg-muted/30 border-border/50 expand-stagger-4">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs font-medium flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Badge variant="outline" className="uppercase text-[9px] px-1.5 h-4.5 bg-primary/5 text-primary border-primary/20">
+                        {cr.report_type}
+                      </Badge>
+                      Futárjelentés tétel
+                    </span>
+                    <Badge variant="success" className="gap-1 text-[10px] h-5">
+                      <CheckCircle2 className="h-2.5 w-2.5" />
+                      Párosított
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">Csomagszám:</span>
+                      <span className="ml-1 font-mono font-medium">{cr.package_number || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Utánvét összeg:</span>
+                      <span className="ml-1 font-mono font-medium">
+                        {formatCurrency(cr.cod_amount || 0, 'HUF')}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Kézbesítés:</span>
+                      <span className="ml-1 font-medium">
+                        {cr.delivery_date ? format(new Date(cr.delivery_date), 'yyyy.MM.dd', { locale: hu }) : '-'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Címzett:</span>
+                      <span className="ml-1 font-medium">{cr.recipient_name || '-'}</span>
+                    </div>
+                    {cr.reference_number && (
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">Hivatkozási szám:</span>
+                        <span className="ml-1 font-mono">{cr.reference_number}</span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
