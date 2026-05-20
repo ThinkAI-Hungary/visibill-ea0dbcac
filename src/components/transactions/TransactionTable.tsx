@@ -11,6 +11,8 @@ import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { TableEmptyState } from '@/components/ui/table-empty-state';
 import { TablePlaceholderRows } from '@/components/ui/table-placeholder-rows';
 import type { Transaction } from '@/hooks/useTransactionData';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+
 
 // ── Row styling helpers (static, outside component) ──
 
@@ -51,10 +53,11 @@ const getTypeBgClass = (type: string | null): string => {
 
 interface TransactionRowProps {
   transaction: Transaction;
+  exchangeRates?: Record<string, number>;
   onOpenDetails: (transaction: Transaction) => void;
 }
 
-const TransactionRow = React.memo(function TransactionRow({ transaction, onOpenDetails }: TransactionRowProps) {
+const TransactionRow = React.memo(function TransactionRow({ transaction, exchangeRates, onOpenDetails }: TransactionRowProps) {
   const matchStatus = computeMatchStatus(transaction);
 
   return (
@@ -82,9 +85,24 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, onOpenD
         "text-right font-mono text-xs",
         transaction.amount >= 0 ? "text-success" : "text-destructive"
       )}>
-        {formatCurrency(transaction.amount, transaction.currency || 'HUF')}
+        <div className="flex flex-col items-end">
+          <span>{formatCurrency(transaction.amount, transaction.currency || 'HUF')}</span>
+          {transaction.currency && transaction.currency !== 'HUF' && exchangeRates && (
+            <span className="text-[10px] text-muted-foreground font-normal leading-tight">
+              ({formatCurrency(transaction.amount * (exchangeRates[transaction.currency] || 1), 'HUF')})
+            </span>
+          )}
+        </div>
       </TableCell>
-      <TableCell className="text-xs">{transaction.currency || 'HUF'}</TableCell>
+      <TableCell className="text-xs">
+        {transaction.currency && transaction.currency !== 'HUF' ? (
+          <span className="font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
+            {transaction.currency}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">{transaction.currency || 'HUF'}</span>
+        )}
+      </TableCell>
       <TableCell>
         {transaction.type ? (
           <span className={cn(
@@ -163,6 +181,8 @@ const TransactionTable = React.memo(function TransactionTable({
   onSort,
   onOpenDetails,
 }: TransactionTableProps) {
+  const { data: exchangeRates } = useExchangeRates();
+
   return (
     <div className="rounded-lg border border-border/50 overflow-auto max-h-[calc(100vh-320px)]">
       <table className="w-full caption-bottom text-sm table-fixed compact-table">
@@ -209,6 +229,7 @@ const TransactionTable = React.memo(function TransactionTable({
               <TransactionRow
                 key={transaction.id}
                 transaction={transaction}
+                exchangeRates={exchangeRates}
                 onOpenDetails={onOpenDetails}
               />
             ))

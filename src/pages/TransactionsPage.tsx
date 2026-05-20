@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { RefreshCw, Download, ChevronDown, FileText, Package, Truck, Mail, ArrowDownRight, ArrowUpRight, Link2, Link2Off } from 'lucide-react';
+import { RefreshCw, Download, ChevronDown, FileText, Package, Truck, Mail, ArrowDownRight, ArrowUpRight, Link2, Link2Off, Loader2 } from 'lucide-react';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
 import TransactionFilters from '@/components/transactions/TransactionFilters';
@@ -19,6 +19,8 @@ import CourierReportTab from '@/components/CourierReportTab';
 import { useUrlTab } from '@/lib/navigation';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
 import { format } from 'date-fns';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+
 
 const TAB_VALUES = ['general', 'gls', 'mpl', 'mixpack'] as const;
 type TabValue = typeof TAB_VALUES[number];
@@ -58,18 +60,30 @@ const TransactionsPage = () => {
     queryClient,
   } = useTransactionData();
 
+  const [exporting, setExporting] = useState(false);
+  const runExport = async (format: 'csv' | 'xlsx') => {
+    setExporting(true);
+    try {
+      await handleExport(format);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const [searchParams, setSearchParams] = useSearchParams();
   const { dateFrom, dateTo } = useDateRange();
   const dateFromStr = dateFrom ? format(dateFrom, 'yyyy-MM-dd') : '';
   const dateToStr = dateTo ? format(dateTo, 'yyyy-MM-dd') : '';
 
+  const { data: exchangeRates } = useExchangeRates();
+
   // ── KPI: query ALL transactions (lightweight, no pagination) ──
   const { data: kpis } = useQuery({
-    queryKey: ['tx-kpis', selectedCompany?.id, dateFromStr, dateToStr],
+    queryKey: ['tx-kpis', selectedCompany?.id, dateFromStr, dateToStr, exchangeRates],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('transactions')
-        .select('matched_invoice_id, is_verified, confidence_score, match_type, type, amount')
+        .select('matched_invoice_id, is_verified, confidence_score, match_type, type, amount, currency')
         .eq('company_id', selectedCompany!.id)
         .gte('transaction_date', dateFromStr)
         .lte('transaction_date', dateToStr);
@@ -81,12 +95,17 @@ const TransactionsPage = () => {
         if (status === 'matched') matched++;
         else if (status === 'suggested') suggested++;
         else unmatched++;
-        if (t.amount > 0) inflow += t.amount;
-        else outflow += Math.abs(t.amount);
+        
+        const currency = t.currency || 'HUF';
+        const rate = exchangeRates?.[currency] ?? 1;
+        const hufAmount = t.amount * rate;
+
+        if (hufAmount > 0) inflow += hufAmount;
+        else outflow += Math.abs(hufAmount);
       }
       return { matched, suggested, unmatched, inflow, outflow, total: rows.length };
     },
-    enabled: !!selectedCompany?.id && !!dateFromStr && !!dateToStr,
+    enabled: !!selectedCompany?.id && !!dateFromStr && !!dateToStr && !!exchangeRates,
     staleTime: 30_000,
   });
 
@@ -250,18 +269,22 @@ const TransactionsPage = () => {
                     </TooltipProvider>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Download className="h-4 w-4 mr-2" />
+                        <Button variant="outline" size="sm" disabled={exporting}>
+                          {exporting ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Download className="h-4 w-4 mr-2" />
+                          )}
                           Export
                           <ChevronDown className="h-4 w-4 ml-2" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleExport('csv')}>
+                        <DropdownMenuItem onClick={() => runExport('csv')}>
                           <FileText className="h-4 w-4 mr-2" />
                           Export CSV
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleExport('xlsx')}>
+                        <DropdownMenuItem onClick={() => runExport('xlsx')}>
                           <FileText className="h-4 w-4 mr-2" />
                           Export XLSX
                         </DropdownMenuItem>

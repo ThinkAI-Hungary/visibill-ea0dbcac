@@ -396,16 +396,28 @@ export const TransactionDetailsDialog = ({
     }
   };
 
+  // Approximate exchange rates for frontend filtering only
+  const approxRates: Record<string, number> = { EUR: 395, USD: 370, GBP: 470, CHF: 420 };
+  const toHuf = (amount: number, currency?: string) => {
+    const ccy = (currency || 'HUF').toUpperCase();
+    if (ccy !== 'HUF' && approxRates[ccy]) return amount * approxRates[ccy];
+    return amount;
+  };
+
   const filteredInvoices = useMemo(() => {
     const txAmt = Math.abs(transaction?.amount || 0);
     let list = availableInvoices;
 
-    // When no search: only show invoices within ±30% of transaction amount
+    // When no search: only show invoices within tolerance of transaction amount
     if (!search) {
       if (txAmt > 0) {
         list = list.filter(inv => {
-          const diff = Math.abs((inv.brutto_vegosszeg || 0) - (transaction?.amount || 0));
-          return diff / txAmt <= 0.30;
+          const invHuf = Math.abs(toHuf(inv.brutto_vegosszeg || 0, inv.penznem));
+          const diff = Math.abs(invHuf - txAmt);
+          // Use wider tolerance (50%) for cross-currency, 30% for same currency
+          const isCrossCurrency = (inv.penznem || 'HUF').toUpperCase() !== (transaction?.currency || 'HUF').toUpperCase();
+          const tolerance = isCrossCurrency ? 0.50 : 0.30;
+          return diff / txAmt <= tolerance;
         });
       }
       return list;
@@ -418,7 +430,7 @@ export const TransactionDetailsDialog = ({
       inv.elado_nev?.toLowerCase().includes(searchLower) ||
       inv.brutto_vegosszeg?.toString().includes(search)
     );
-  }, [availableInvoices, search, transaction?.amount]);
+  }, [availableInvoices, search, transaction?.amount, transaction?.currency]);
 
   const transactionAmount = transaction?.amount || 0;
   const matchStatus = transaction ? computeMatchStatus(transaction) : 'unmatched';
@@ -817,6 +829,11 @@ export const TransactionDetailsDialog = ({
                       const isNear = !isExact && absDiff < Math.abs(transactionAmount) * 0.05;
                       const pctDiff = transactionAmount !== 0 ? (absDiff / Math.abs(transactionAmount) * 100) : 0;
 
+                      const partnerName = invoice.elado_nev?.toLowerCase() || '';
+                      const txDesc = transaction.description?.toLowerCase() || '';
+                      const cleanPartnerName = partnerName.replace(/\b(kft|zrt|bt|s\.r\.o\.|ev\.)\b/g, '').trim();
+                      const hasPartnerMatch = cleanPartnerName.length > 2 && txDesc.includes(cleanPartnerName);
+
                       return (
                         <div
                           key={invoice.id}
@@ -836,8 +853,13 @@ export const TransactionDetailsDialog = ({
                                 {isSelected && <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />}
                                 <p className="font-medium font-mono text-xs truncate">{invoice.bizonylatsorszam}</p>
                               </div>
-                              <p className="text-muted-foreground text-[10px] mt-0.5 truncate">
-                                {invoice.elado_nev || '-'}
+                              <p className="text-muted-foreground text-[10px] mt-0.5 truncate flex items-center gap-1.5">
+                                <span className="truncate">{invoice.elado_nev || '-'}</span>
+                                {hasPartnerMatch && (
+                                  <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[8px] h-3.5 px-1 font-semibold leading-none shrink-0 hover:bg-emerald-500/10">
+                                    Partner egyezik
+                                  </Badge>
+                                )}
                               </p>
                               <p className="text-[10px] text-muted-foreground/70 mt-0.5">
                                 {invoice.kibocsatas_datuma ? format(new Date(invoice.kibocsatas_datuma), 'yyyy.MM.dd') : ''}

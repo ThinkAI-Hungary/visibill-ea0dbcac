@@ -170,7 +170,7 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
     };
     let result = text;
     for (const [key, val] of Object.entries(vars)) {
-      result = result.replaceAll(key, val);
+      result = result.split(key).join(val);
     }
     return result;
   };

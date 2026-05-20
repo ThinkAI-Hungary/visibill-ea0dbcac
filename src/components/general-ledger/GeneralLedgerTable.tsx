@@ -77,6 +77,8 @@ export interface GeneralLedgerTableRef {
   expandAllAndPrint: () => void;
   exportExcel: (companyName?: string) => Promise<void>;
   getStats: () => { accountCount: number; leafCount: number; totalDebit: number; totalCredit: number };
+  expandAll: () => void;
+  collapseAll: () => void;
 }
 
 interface GeneralLedgerTableProps {
@@ -430,7 +432,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       const totalDebit = leaves.filter(d => d.balance > 0).reduce((s, d) => s + d.balance, 0);
       const totalCredit = leaves.filter(d => d.balance < 0).reduce((s, d) => s + Math.abs(d.balance), 0);
       return { accountCount: tableData.length, leafCount: leaves.length, totalDebit, totalCredit };
-    }
+    },
+    expandAll: handleExpandAll,
+    collapseAll: handleCollapseAll
   }));
 
   const handleExpandAll = () => {
@@ -667,7 +671,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                              <span className="text-xs truncate">{row.date ? row.date.substring(0, 10).replace(/-/g, '.') : ''}</span>
                            </>
                         ) : (
-                           row.id
+                           highlightMatch(row.id, deferredSearch)
                         )}
                       </div>
                       <div className="col-span-7 py-3 pr-3 text-sm flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
