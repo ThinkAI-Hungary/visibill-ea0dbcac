@@ -58,6 +58,7 @@ const ClientReportsPage = lazy(() => import("./pages/Accounty/ClientReportsPage"
 const ClientMissingInvoicesReportPage = lazy(() => import("./pages/Accounty/ClientMissingInvoicesReportPage"));
 const TaxCalendarPage = lazy(() => import("./pages/Accounty/TaxCalendarPage"));
 const ClientInvoicesPage = lazy(() => import("./pages/Accounty/ClientInvoicesPage"));
+const ClientPortalPage = lazy(() => import("./pages/Accounty/ClientPortalPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -215,6 +216,9 @@ const App = () => (
                         </Suspense>
                       </ProtectedPage>
                     } />
+
+                    {/* Client Portal – standalone, no auth (magic link) */}
+                    <Route path="/portal/:token" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RemoveInitialLoader /><ClientPortalPage /></Suspense>} />
 
                     {/* Accounty New Client Wizard (No Layout) */}
                     <Route path="/accounty/new-client" element={

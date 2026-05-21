@@ -73,11 +73,11 @@ const mockClientDeadlines: ClientDeadline[] = mockDeadlineGroups.flatMap((dg) =>
   ];
 });
 
-function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900" }: { title: string, value: number, icon: React.ElementType, valueClass?: string }) {
+function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900 dark:text-slate-100" }: { title: string, value: number, icon: React.ElementType, valueClass?: string }) {
   return (
-    <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
+    <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
-        <h3 className="text-sm font-medium text-slate-500">{title}</h3>
+        <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</h3>
         <Icon className={`w-5 h-5 ${valueClass === 'text-red-600' ? 'text-red-500' : 'text-slate-400'}`} />
       </div>
       <p className={`text-3xl font-bold ${valueClass}`}>{value}</p>
@@ -257,10 +257,10 @@ export default function TaxCalendarPage() {
 
   const getStatusColor = (status: Status) => {
     switch(status) {
-      case 'Zöld': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'Sárga': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'Piros': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-slate-100 text-slate-800 border-slate-200';
+      case 'Zöld': return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-800';
+      case 'Sárga': return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-800';
+      case 'Piros': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-400 dark:border-red-800';
+      default: return 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-800';
     }
   };
 
@@ -279,8 +279,8 @@ export default function TaxCalendarPage() {
       {/* Header section */}
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Adó naptár</h1>
-          <p className="text-slate-500 mt-1">Ügyfelek adózási és bérszámfejtési határidői</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Adó naptár</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Ügyfelek adózási és bérszámfejtési határidői</p>
         </div>
       </div>
 
@@ -293,14 +293,14 @@ export default function TaxCalendarPage() {
       </div>
 
       {/* Scope Tabs (Mine / All) */}
-      <div className="w-full bg-slate-100/80 p-1.5 rounded-xl border border-slate-200/60 shadow-inner flex items-center">
+      <div className="w-full bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800/60 shadow-inner flex items-center">
         <button
           onClick={() => { setViewScope('mine'); setSelectedClient('all'); }}
           className={cn(
             "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
             viewScope === 'mine' 
-              ? "bg-white text-slate-900 shadow-sm" 
-              : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+              ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" 
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
           )}
         >
           <User className="w-4 h-4" />
@@ -311,8 +311,8 @@ export default function TaxCalendarPage() {
           className={cn(
             "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
             viewScope === 'all' 
-              ? "bg-white text-slate-900 shadow-sm" 
-              : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+              ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" 
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
           )}
         >
           <Building className="w-4 h-4" />
@@ -328,7 +328,7 @@ export default function TaxCalendarPage() {
             <Button variant="outline" size="icon" onClick={handlePrev}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" onClick={handleToday} className="px-4 font-semibold text-slate-700">
+            <Button variant="outline" onClick={handleToday} className="px-4 font-semibold text-slate-700 dark:text-slate-300">
               Ma
             </Button>
             <Button variant="outline" size="icon" onClick={handleNext}>
@@ -336,13 +336,13 @@ export default function TaxCalendarPage() {
             </Button>
           </div>
           
-          <h2 className="text-xl font-bold text-slate-800 tracking-tight">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 tracking-tight">
             {getHeaderText()}
           </h2>
           
           <div className="flex items-center gap-4">
             <Select value={selectedClient} onValueChange={setSelectedClient}>
-              <SelectTrigger className="w-64 bg-white border-slate-200 shadow-sm h-10">
+              <SelectTrigger className="w-64 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm h-10">
                 <SelectValue placeholder="Minden ügyfél" />
               </SelectTrigger>
               <SelectContent>
@@ -353,22 +353,22 @@ export default function TaxCalendarPage() {
               </SelectContent>
             </Select>
 
-            <div className="bg-slate-100 p-1 rounded-lg border border-slate-200 flex items-center shadow-inner h-10">
+            <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center shadow-inner h-10">
             <button
               onClick={() => setCalendarView('month')}
-              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'month' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50")}
+              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'month' ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50")}
             >
               Havi
             </button>
             <button
               onClick={() => setCalendarView('week')}
-              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'week' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50")}
+              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'week' ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50")}
             >
               Heti
             </button>
             <button
               onClick={() => setCalendarView('list')}
-              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'list' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50")}
+              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'list' ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50")}
             >
               Lista
             </button>
@@ -376,10 +376,10 @@ export default function TaxCalendarPage() {
           </div>
         </div>
       {calendarView === 'list' ? (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col divide-y divide-slate-100">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
           {getListViewItems().map((item, idx) => (
-            <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-slate-50 transition-colors gap-4">
-              <div className="font-semibold text-slate-800">
+            <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors gap-4">
+              <div className="font-semibold text-slate-800 dark:text-slate-200">
                 {item.dateString}
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -403,24 +403,24 @@ export default function TaxCalendarPage() {
             </div>
           ))}
           {getListViewItems().length === 0 && (
-            <div className="p-8 text-center text-slate-500 font-medium">
+            <div className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
               Nincs határidő ebben a hónapban.
             </div>
           )}
         </div>
       ) : (
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         
         {/* Calendar Grid */}
-        <div className="grid grid-cols-7 border-b border-slate-100">
+        <div className="grid grid-cols-7 border-b border-slate-100 dark:border-slate-800">
           {['Mon', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap'].map((day, i) => (
-            <div key={day} className={`py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider ${i < 6 ? 'border-r border-slate-100' : ''}`}>
+            <div key={day} className={`py-3 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider ${i < 6 ? 'border-r border-slate-100 dark:border-slate-800' : ''}`}>
               {day}
             </div>
           ))}
         </div>
         
-        <div className="grid grid-cols-7 bg-slate-100 gap-[1px]">
+        <div className="grid grid-cols-7 bg-slate-100 dark:bg-slate-800 gap-[1px]">
           {calendarDays.map((cell, index) => {
             const badges = getBadgesForDay(cell.day, cell.isCurrentMonth);
             
@@ -428,13 +428,13 @@ export default function TaxCalendarPage() {
               <div 
                 key={index} 
                 className={cn(
-                  "bg-white min-h-[120px] p-2 hover:bg-slate-50 transition-colors group",
-                  !cell.isCurrentMonth && "text-slate-400 bg-slate-50/50"
+                  "bg-white dark:bg-slate-900 min-h-[120px] p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group",
+                  !cell.isCurrentMonth && "text-slate-400 bg-slate-50/50 dark:bg-slate-950/50"
                 )}
               >
                 <div className={cn(
                   "text-sm font-medium mb-2",
-                  cell.isCurrentMonth ? "text-slate-700" : "text-slate-400"
+                  cell.isCurrentMonth ? "text-slate-700 dark:text-slate-300" : "text-slate-400"
                 )}>
                   {cell.day}
                 </div>
@@ -469,12 +469,12 @@ export default function TaxCalendarPage() {
 
       {/* Side Drawer for Details */}
       <Sheet open={!!selectedDeadline} onOpenChange={(open) => !open && setSelectedDeadline(null)}>
-        <SheetContent className="w-[400px] sm:max-w-[400px] p-0 flex flex-col bg-white border-l shadow-2xl">
+        <SheetContent className="w-[400px] sm:max-w-[400px] p-0 flex flex-col bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl">
           {selectedDeadline && (
             <>
               {/* Drawer Header */}
-              <div className="p-6 border-b border-slate-100 bg-slate-50/50 relative">
-                <div className="flex items-center gap-3 text-slate-800">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 relative">
+                <div className="flex items-center gap-3 text-slate-800 dark:text-slate-200">
                   <div className="p-2 bg-red-100 text-red-600 rounded-lg shrink-0">
                     <CalendarIcon className="w-5 h-5" />
                   </div>
@@ -482,7 +482,7 @@ export default function TaxCalendarPage() {
                     <h3 className="text-lg font-bold">
                       {currentDate.toLocaleString('hu-HU', { month: 'long' }).charAt(0).toUpperCase() + currentDate.toLocaleString('hu-HU', { month: 'long' }).slice(1)} {selectedDeadline.date}.
                     </h3>
-                    <p className="text-sm font-medium text-slate-500">Havi {selectedDeadline.title} Bevallás</p>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Havi {selectedDeadline.title} Bevallás</p>
                   </div>
                 </div>
               </div>
@@ -490,7 +490,7 @@ export default function TaxCalendarPage() {
               {/* Drawer Content */}
               <div className="flex-1 overflow-y-auto p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-sm font-bold text-slate-900">
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                     {viewScope === 'mine' ? 'Saját ügyfelek' : 'Összes ügyfél'}
                   </h4>
                   <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Felelős</span>
@@ -498,9 +498,9 @@ export default function TaxCalendarPage() {
 
                 <div className="space-y-4">
                   {filteredClients.map((client) => (
-                    <div key={client.id} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                    <div key={client.id} className="flex items-center justify-between py-2 border-b border-slate-50 dark:border-slate-800 last:border-0">
                       <div>
-                        <p className="text-sm font-bold text-slate-800 mb-1">{client.clientName}</p>
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">{client.clientName}</p>
                         <div className="flex items-center gap-2">
                           <span className={cn(
                             "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1",
@@ -517,8 +517,8 @@ export default function TaxCalendarPage() {
                             {client.status}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500 font-medium">
-                          <div className="w-5 h-5 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center text-[10px] font-bold">
+                        <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                          <div className="w-5 h-5 rounded-full bg-slate-300 text-slate-700 dark:text-slate-300 flex items-center justify-center text-[10px] font-bold">
                             {client.ownerInitial}
                           </div>
                           Anna
@@ -526,8 +526,8 @@ export default function TaxCalendarPage() {
                       </div>
                       
                       {client.status !== 'Rendben' && (
-                        <Button variant="outline" size="sm" className="h-8 text-xs font-semibold gap-1.5 border-slate-200">
-                          <Mail className="w-3.5 h-3.5 text-slate-500" />
+                        <Button variant="outline" size="sm" className="h-8 text-xs font-semibold gap-1.5 border-slate-200 dark:border-slate-800">
+                          <Mail className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                           Értesítés
                         </Button>
                       )}
@@ -535,7 +535,7 @@ export default function TaxCalendarPage() {
                   ))}
 
                   {filteredClients.length === 0 && (
-                    <div className="text-center py-8 text-slate-500 text-sm">
+                    <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm">
                       Nincs megjeleníthető ügyfél ebben a nézetben.
                     </div>
                   )}

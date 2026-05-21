@@ -54,7 +54,7 @@ export default function AccountyLayout() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 overflow-hidden font-sans">
+    <div className="flex h-screen w-full bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-slate-100 overflow-hidden font-sans">
       {/* Sidebar */}
       <aside className="w-64 flex flex-col bg-[#1A1F2C] text-slate-300">
         {/* Logo Area */}
@@ -159,18 +159,18 @@ export default function AccountyLayout() {
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56 mb-2" align="start" side="top">
-              <DropdownMenuLabel className="font-semibold text-slate-900">Fiókom</DropdownMenuLabel>
+              <DropdownMenuLabel className="font-semibold text-slate-900 dark:text-slate-100">Fiókom</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer flex items-center gap-2 text-slate-700">
+              <DropdownMenuItem className="cursor-pointer flex items-center gap-2 text-slate-700 dark:text-slate-300">
                 <User className="w-4 h-4" />
                 <span>Profil</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer flex items-center gap-2 text-slate-700">
+              <DropdownMenuItem className="cursor-pointer flex items-center gap-2 text-slate-700 dark:text-slate-300">
                 <Settings className="w-4 h-4" />
                 <span>Beállítások</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
-                className="cursor-pointer flex items-center gap-2 text-slate-700"
+                className="cursor-pointer flex items-center gap-2 text-slate-700 dark:text-slate-300"
                 onClick={(e) => {
                   e.preventDefault();
                   setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -180,7 +180,7 @@ export default function AccountyLayout() {
                 <span>{theme === 'dark' ? 'Világos mód' : 'Sötét mód'}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer flex items-center gap-2 text-red-600 focus:bg-red-50 focus:text-red-700">
+              <DropdownMenuItem className="cursor-pointer flex items-center gap-2 text-red-600 dark:text-red-500 focus:bg-red-50 dark:focus:bg-red-950 focus:text-red-700 dark:focus:text-red-400">
                 <LogOut className="w-4 h-4" />
                 <span>Kijelentkezés</span>
               </DropdownMenuItem>
@@ -192,19 +192,19 @@ export default function AccountyLayout() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
+        <header className="h-16 bg-white dark:bg-[#1A1F2C] border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 shrink-0">
           <div className="flex-1"></div>
           <div className="flex items-center gap-4">
             <Popover>
               <PopoverTrigger asChild>
-                <button className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/20 rounded-md">
+                <button className="relative p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/20 rounded-md">
                   <Bell className="w-5 h-5" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-slate-900"></span>
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 p-0 mt-2 border-slate-200 shadow-lg rounded-xl overflow-hidden" align="end" sideOffset={8}>
-                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-                  <h3 className="font-semibold text-sm text-slate-900">Értesítések</h3>
+              <PopoverContent className="w-80 p-0 mt-2 border-slate-200 dark:border-slate-800 shadow-lg rounded-xl overflow-hidden dark:bg-[#1A1F2C]" align="end" sideOffset={8}>
+                <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                  <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Értesítések</h3>
                 </div>
                 <div className="p-8 flex items-center justify-center">
                   <span className="text-sm text-slate-500">Nincs új értesítés</span>

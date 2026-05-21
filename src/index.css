@@ -143,6 +143,11 @@ All colors MUST be HSL.
     --error-row-text: 0 85% 20%;
     --warning-row-bg: 38 80% 90%;
     --warning-row-text: 38 92% 15%;
+
+    /* Recharts tooltip variables */
+    --tooltip-bg: white;
+    --tooltip-text: #1e293b;
+    --tooltip-cursor: #f8fafc;
   }
 
   .dark {
@@ -250,6 +255,11 @@ All colors MUST be HSL.
     --error-row-text: 0 84% 70%;
     --warning-row-bg: 38 92% 8%;
     --warning-row-text: 38 92% 65%;
+
+    /* Recharts tooltip variables */
+    --tooltip-bg: #1e293b;
+    --tooltip-text: #e2e8f0;
+    --tooltip-cursor: rgba(255, 255, 255, 0.05);
   }
 }
 

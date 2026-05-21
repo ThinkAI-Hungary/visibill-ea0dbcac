@@ -100,19 +100,19 @@ export default function MissingInvoicesReportPage() {
         <div className="flex items-start gap-4">
           <button 
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-slate-100 rounded-full transition-colors mt-1"
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-full transition-colors mt-1"
           >
-            <ArrowLeft className="w-5 h-5 text-slate-600" />
+            <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Hiányzó számlák riport</h1>
-            <p className="text-sm text-slate-500 mt-1">Automatikus bekérő statisztikák és elemzések</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Hiányzó számlák riport</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Automatikus bekérő statisztikák és elemzések</p>
           </div>
         </div>
         
         <div className="flex gap-3">
           <Select value={selectedClient} onValueChange={setSelectedClient}>
-            <SelectTrigger className="w-[180px] bg-white border-slate-200">
+            <SelectTrigger className="w-[180px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
               <SelectValue placeholder="Összes ügyfél" />
             </SelectTrigger>
             <SelectContent>
@@ -124,7 +124,7 @@ export default function MissingInvoicesReportPage() {
           </Select>
           
           <Select defaultValue="last_month">
-            <SelectTrigger className="w-[180px] bg-white border-slate-200">
+            <SelectTrigger className="w-[180px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
               <SelectValue placeholder="Elmúlt hónap" />
             </SelectTrigger>
             <SelectContent>
@@ -134,7 +134,7 @@ export default function MissingInvoicesReportPage() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" className="bg-white border-slate-200 text-slate-700 gap-2 px-6">
+          <Button variant="outline" className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 gap-2 px-6">
             <Download className="w-4 h-4" /> Exportálás
           </Button>
         </div>
@@ -142,10 +142,10 @@ export default function MissingInvoicesReportPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500">Összes felszólítás</h3>
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Összes felszólítás</h3>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900">{kpis.requested}</span>
+            <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.requested}</span>
           </div>
           <div className="mt-2 flex items-center text-xs text-emerald-600 font-medium">
             <TrendingUp className="w-3.5 h-3.5 mr-1" />
@@ -153,10 +153,10 @@ export default function MissingInvoicesReportPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500">Sikeres bekérés</h3>
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Sikeres bekérés</h3>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900">{kpis.resolved}</span>
+            <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.resolved}</span>
           </div>
           <div className="mt-2 flex items-center text-xs text-emerald-600 font-medium">
             <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
@@ -164,10 +164,10 @@ export default function MissingInvoicesReportPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500">Átlagos válaszidő</h3>
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Átlagos válaszidő</h3>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900">{kpis.avgTime} nap</span>
+            <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.avgTime} nap</span>
           </div>
           <div className="mt-2 flex items-center text-xs text-emerald-600 font-medium">
             <Clock className="w-3.5 h-3.5 mr-1" />
@@ -175,12 +175,12 @@ export default function MissingInvoicesReportPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500">Automatikus bekérés</h3>
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Automatikus bekérés</h3>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900">68%</span>
+            <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">68%</span>
           </div>
-          <div className="mt-2 flex items-center text-xs text-slate-500 font-medium">
+          <div className="mt-2 flex items-center text-xs text-slate-500 dark:text-slate-400 font-medium">
             <Zap className="w-3.5 h-3.5 mr-1 text-amber-500" />
             Automatizált
           </div>
@@ -190,10 +190,10 @@ export default function MissingInvoicesReportPage() {
       {/* Charts */}
       <div className="grid grid-cols-2 gap-4">
         {/* Bar Chart */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-slate-900">Felszólítások időbeli alakulása</h3>
-            <p className="text-xs text-slate-500 mt-1">Küldött és megoldott kérések havonta</p>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Felszólítások időbeli alakulása</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Küldött és megoldott kérések havonta</p>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -210,10 +210,10 @@ export default function MissingInvoicesReportPage() {
         </div>
 
         {/* Donut Chart */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm flex flex-col">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col">
           <div className="mb-2">
-            <h3 className="text-lg font-semibold text-slate-900">Csatornák hatékonysága</h3>
-            <p className="text-xs text-slate-500 mt-1">Sikeres bekérések csatornánként</p>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Csatornák hatékonysága</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sikeres bekérések csatornánként</p>
           </div>
           <div className="flex-1 flex items-center justify-center -mt-4">
             <div className="h-48 w-full max-w-xs relative">
@@ -238,7 +238,7 @@ export default function MissingInvoicesReportPage() {
               {/* Custom Legend to match screenshot closely */}
               <div className="flex justify-center gap-4 mt-2">
                 {dynamicCharts.pieData.map((entry, index) => (
-                  <div key={entry.name} className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                  <div key={entry.name} className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
                     <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: COLORS[index] }}></div>
                     {entry.name}
                   </div>
@@ -246,7 +246,7 @@ export default function MissingInvoicesReportPage() {
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 text-xs font-medium text-slate-600 px-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 text-xs font-medium text-slate-600 dark:text-slate-400 px-4">
             <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#1A1F2C]"></div> Email:</span> <span>85% kézbesítés</span></div>
             <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#334155]"></div> Viber:</span> <span>92% olvasás</span></div>
             <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#64748B]"></div> Telegram:</span> <span>88% olvasás</span></div>
@@ -256,19 +256,19 @@ export default function MissingInvoicesReportPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden pb-4">
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden pb-4">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
           <div>
-            <h3 className="text-lg font-semibold text-slate-900">Ügyfél megbízhatóság</h3>
-            <p className="text-xs text-slate-500 mt-1">Válaszadási arányok és átlagos válaszidők</p>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Ügyfél megbízhatóság</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Válaszadási arányok és átlagos válaszidők</p>
           </div>
-          <Button variant="outline" size="sm" className="bg-white h-8 text-xs">
+          <Button variant="outline" size="sm" className="bg-white dark:bg-slate-900 h-8 text-xs">
             Szűrés
           </Button>
         </div>
         
         <table className="w-full text-sm text-left">
-          <thead className="bg-white border-b border-slate-100 text-slate-500 text-xs">
+          <thead className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-xs">
             <tr>
               <th className="px-6 py-4 font-medium">Ügyfél</th>
               <th className="px-6 py-4 font-medium text-center">Kérések</th>
@@ -279,14 +279,14 @@ export default function MissingInvoicesReportPage() {
           </thead>
           <tbody className="divide-y divide-slate-50">
             {filteredTableData.map((row) => (
-              <tr key={row.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-6 py-4 font-semibold text-slate-900">{row.name}</td>
-                <td className="px-6 py-4 text-center font-medium text-slate-700">{row.requested}</td>
-                <td className="px-6 py-4 text-center font-medium text-slate-700">{row.resolved}</td>
-                <td className="px-6 py-4 text-center font-medium text-slate-700">{row.avgTime}</td>
+              <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <td className="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100">{row.name}</td>
+                <td className="px-6 py-4 text-center font-medium text-slate-700 dark:text-slate-300">{row.requested}</td>
+                <td className="px-6 py-4 text-center font-medium text-slate-700 dark:text-slate-300">{row.resolved}</td>
+                <td className="px-6 py-4 text-center font-medium text-slate-700 dark:text-slate-300">{row.avgTime}</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="h-1.5 w-24 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-24 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div 
                         className={`h-full rounded-full ${row.reliability < 50 ? 'bg-red-500' : row.reliability < 80 ? 'bg-amber-500' : 'bg-slate-800'}`} 
                         style={{ width: `${row.reliability}%` }}
@@ -301,7 +301,7 @@ export default function MissingInvoicesReportPage() {
             ))}
             {filteredTableData.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                <td colSpan={5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
                   Nincs megjeleníthető adat.
                 </td>
               </tr>

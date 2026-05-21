@@ -1,99 +1,199 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Clock, MoreVertical, FileText, Settings, Search, ChevronRight, Mail, Phone, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Clock, MoreVertical, FileText, Settings, Search, ChevronRight, Mail, Phone, CheckCircle2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { globalMissingInvoicesData, globalClientInvoices } from './mockData';
 
-// Mock data based on screenshot
-const missingInvoicesData = [
-  { id: 1, name: 'Tech Solutions Kft.', missing: 5, critical: 2, lastNotice: '2024. 01. 14. (1x)', status: 'Felszólítva', statusType: 'warning' },
-  { id: 2, name: 'Digital Partners Zrt.', missing: 8, critical: 3, lastNotice: '-', status: 'Kritikus', statusType: 'danger' },
-  { id: 3, name: 'Innovation Labs Kft.', missing: 8, critical: 1, lastNotice: '2024. 01. 10. (2x)', status: 'Felszólítva', statusType: 'warning' },
-  { id: 4, name: 'Smart Office Bt.', missing: 2, critical: 0, lastNotice: '-', status: 'Nincs felszólítva', statusType: 'neutral' },
-  { id: 5, name: 'Global Trade Kft.', missing: 6, critical: 4, lastNotice: '2024. 01. 08. (3x)', status: 'Kritikus', statusType: 'danger' },
-];
+type KpiModalType = 'all' | 'critical' | 'sent' | 'response' | null;
 
 export default function MissingInvoicesPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [data, setData] = useState(globalMissingInvoicesData);
+  const [kpiModal, setKpiModal] = useState<KpiModalType>(null);
+
+  const totalMissing = data.reduce((sum, item) => sum + item.missing, 0);
+  const totalCritical = data.reduce((sum, item) => sum + item.critical, 0);
 
   const filteredData = React.useMemo(() => {
-    return missingInvoicesData.filter(row => {
+    return data.filter(row => {
       const matchesSearch = row.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'all' || row.statusType === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, statusFilter, data]);
+
+  // Modal data based on type
+  const modalData = React.useMemo(() => {
+    if (!kpiModal) return { title: '', items: [] as typeof globalClientInvoices };
+    switch (kpiModal) {
+      case 'all':
+        return { title: `Összes hiányzó számla (${globalClientInvoices.length})`, items: globalClientInvoices };
+      case 'critical':
+        return { title: `Kritikus számlák (${globalClientInvoices.filter(i => i.priority === 'Sürgős').length})`, items: globalClientInvoices.filter(i => i.priority === 'Sürgős') };
+      case 'sent':
+        return { title: `Felszólított számlák (${globalClientInvoices.filter(i => i.statusVariant === 'warning').length})`, items: globalClientInvoices.filter(i => i.statusVariant === 'warning') };
+      case 'response':
+        return { title: `Válaszra váró számlák`, items: globalClientInvoices.filter(i => i.statusVariant === 'neutral') };
+    }
+  }, [kpiModal]);
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
        {/* Header */}
        <div className="flex justify-between items-start">
          <div>
-           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Hiányzó számlák</h1>
-           <p className="text-sm text-slate-500 mt-1">Hiányzó számlák bekérése</p>
+           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Hiányzó számlák</h1>
+           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Hiányzó számlák bekérése</p>
          </div>
          <div className="flex gap-3">
            <Button 
              variant="outline" 
              size="sm" 
-             className="gap-2 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 h-9 px-4"
+             className="gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 h-9 px-4"
              onClick={() => navigate('/accounty/reports/missing-invoices')}
            >
              <FileText className="w-4 h-4"/> Riportok
            </Button>
-           <Button variant="outline" size="sm" className="gap-2 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 h-9 px-4">
+           <Button variant="outline" size="sm" className="gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 h-9 px-4">
              <Settings className="w-4 h-4"/> Beállítások
            </Button>
          </div>
        </div>
 
        {/* Alert Banner */}
-       <div className="border border-red-200 bg-red-50/50 rounded-xl p-4 flex gap-3 text-red-600 shadow-sm">
+       <div className="border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/20 rounded-xl p-4 flex gap-3 text-red-600 dark:text-red-400 shadow-sm">
          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
          <div>
            <h3 className="font-semibold text-sm">Bevallási határidő közeleg!</h3>
-           <p className="text-sm text-red-600/80 mt-0.5">5 nap múlva lejár a bevallási határidő. 10 kritikus számla még hiányzik.</p>
+           <p className="text-sm text-red-600/80 dark:text-red-400/70 mt-0.5">5 nap múlva lejár a bevallási határidő. 10 kritikus számla még hiányzik.</p>
          </div>
        </div>
 
-       {/* KPI Cards */}
+       {/* KPI Cards - CLICKABLE */}
        <div className="grid grid-cols-4 gap-4">
-         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
-           <h3 className="text-sm font-medium text-slate-500">Összes hiányzó</h3>
+         <button 
+           onClick={() => setKpiModal('all')}
+           className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between text-left hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer"
+         >
+           <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Összes hiányzó</h3>
            <div className="mt-4">
-             <div className="text-2xl font-bold text-slate-900">24</div>
-             <p className="text-xs text-slate-500 mt-1">5 ügyféltől</p>
+             <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{totalMissing}</div>
+             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{data.length} ügyféltől</p>
            </div>
-         </div>
-         <div className="bg-white rounded-xl border border-red-200 p-5 shadow-sm flex flex-col justify-between">
+         </button>
+         <button 
+           onClick={() => setKpiModal('critical')}
+           className="bg-white dark:bg-slate-900 rounded-xl border border-red-200 dark:border-red-900/50 p-5 shadow-sm flex flex-col justify-between text-left hover:border-red-400 dark:hover:border-red-700 hover:bg-red-50/50 dark:hover:bg-red-900/20 transition-all cursor-pointer"
+         >
            <h3 className="text-sm font-medium text-red-500">Kritikus</h3>
            <div className="mt-4">
-             <div className="text-2xl font-bold text-red-600">10</div>
+             <div className="text-2xl font-bold text-red-600">{totalCritical}</div>
              <p className="text-xs text-red-500 mt-1">Sürgős bekérés</p>
            </div>
-         </div>
-         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
-           <h3 className="text-sm font-medium text-slate-500">Küldött felszólítások</h3>
+         </button>
+         <button 
+           onClick={() => setKpiModal('sent')}
+           className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between text-left hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer"
+         >
+           <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Küldött felszólítások</h3>
            <div className="mt-4">
-             <div className="text-2xl font-bold text-slate-900">15</div>
-             <p className="text-xs text-slate-500 mt-1">ez a hónap</p>
+             <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">15</div>
+             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">ez a hónap</p>
            </div>
-         </div>
-         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
-           <h3 className="text-sm font-medium text-slate-500 mb-4">Válaszadási arány</h3>
+         </button>
+         <button 
+           onClick={() => setKpiModal('response')}
+           className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between text-left hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer"
+         >
+           <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4">Válaszadási arány</h3>
            <div>
-             <div className="text-2xl font-bold text-slate-900 mb-2">67%</div>
-             <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-               <div className="h-full bg-slate-800 rounded-full" style={{ width: '67%' }}></div>
+             <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">67%</div>
+             <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+               <div className="h-full bg-slate-800 dark:bg-slate-300 rounded-full" style={{ width: '67%' }}></div>
+             </div>
+           </div>
+         </button>
+       </div>
+
+       {/* KPI Detail Modal */}
+       {kpiModal && modalData && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+           {/* Backdrop */}
+           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setKpiModal(null)} />
+           
+           {/* Modal */}
+           <div className="relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-in zoom-in-95 fade-in duration-200">
+             {/* Header */}
+             <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+               <h3 className="font-bold text-slate-900 dark:text-slate-100 text-lg">{modalData.title}</h3>
+               <button 
+                 onClick={() => setKpiModal(null)}
+                 className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+               >
+                 <X className="w-5 h-5 text-slate-400" />
+               </button>
+             </div>
+             
+             {/* Invoice list */}
+             <div className="overflow-y-auto flex-1 p-2">
+               {modalData.items.length > 0 ? modalData.items.map((inv) => {
+                 const clientName = globalMissingInvoicesData.find(c => c.id === inv.clientId)?.name || '';
+                 return (
+                   <div key={inv.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                     <div className="flex items-center gap-3 min-w-0">
+                       <div className={cn(
+                         'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+                         inv.priority === 'Sürgős' ? 'bg-red-100 dark:bg-red-900/40' : 'bg-slate-100 dark:bg-slate-800'
+                       )}>
+                         <FileText className={cn('w-4 h-4', inv.priority === 'Sürgős' ? 'text-red-500' : 'text-slate-400')} />
+                       </div>
+                       <div className="min-w-0">
+                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{inv.vendor}</p>
+                         <div className="flex items-center gap-2 mt-0.5">
+                           <span className="text-[10px] text-slate-500 dark:text-slate-400">{clientName}</span>
+                           <span className="text-[10px] text-slate-400">•</span>
+                           <span className="text-[10px] text-slate-500 dark:text-slate-400">{inv.subtext}</span>
+                           <span className="text-[10px] text-slate-400">•</span>
+                           <span className="text-[10px] text-slate-500 dark:text-slate-400">{inv.period}</span>
+                         </div>
+                       </div>
+                     </div>
+                     <div className="flex items-center gap-3 shrink-0">
+                       <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{inv.amount}</span>
+                       <span className={cn(
+                         'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider',
+                         inv.priority === 'Sürgős' ? 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400' :
+                         inv.priority === 'Közepes' ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400' :
+                         'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                       )}>
+                         {inv.priority}
+                       </span>
+                     </div>
+                   </div>
+                 );
+               }) : (
+                 <div className="text-center py-12 text-slate-500 dark:text-slate-400">Nincs adat</div>
+               )}
+             </div>
+             
+             {/* Footer */}
+             <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+               <button 
+                 onClick={() => setKpiModal(null)}
+                 className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
+               >
+                 Bezárás
+               </button>
              </div>
            </div>
          </div>
-       </div>
+       )}
 
        {/* Toolbar */}
        <div className="flex justify-between items-center py-2">
@@ -101,14 +201,14 @@ export default function MissingInvoicesPage() {
            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
            <Input 
              placeholder="Keresés ügyfél..." 
-             className="pl-9 bg-white border-slate-200" 
+             className="pl-9 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" 
              value={searchQuery}
              onChange={(e) => setSearchQuery(e.target.value)}
            />
          </div>
          <div className="w-48">
            <Select value={statusFilter} onValueChange={setStatusFilter}>
-             <SelectTrigger className="bg-white border-slate-200">
+             <SelectTrigger className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                <SelectValue placeholder="Minden státusz" />
              </SelectTrigger>
              <SelectContent>
@@ -122,9 +222,9 @@ export default function MissingInvoicesPage() {
        </div>
 
        {/* Table */}
-       <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
          <table className="w-full text-sm text-left">
-           <thead className="bg-slate-50/50 border-b border-slate-200 text-slate-500 font-medium text-xs uppercase tracking-wider">
+           <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium text-xs uppercase tracking-wider">
              <tr>
                <th className="px-6 py-4 w-12 text-center"><input type="checkbox" className="rounded border-slate-300 w-4 h-4 accent-slate-900" /></th>
                <th className="px-6 py-4">Ügyfél</th>
@@ -135,25 +235,25 @@ export default function MissingInvoicesPage() {
                <th className="px-6 py-4 w-12 text-center"></th>
              </tr>
            </thead>
-           <tbody className="divide-y divide-slate-100">
+           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
              {filteredData.length > 0 ? (
                filteredData.map((row) => (
                <tr 
                  key={row.id} 
                  onClick={() => navigate(`/accounty/missing-invoices/${row.id}`)}
-                 className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                 className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
                >
                  <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="rounded border-slate-300 w-4 h-4 accent-slate-900" /></td>
-                 <td className="px-6 py-4 font-semibold text-slate-900 hover:text-emerald-600 transition-colors">{row.name}</td>
+                 <td className="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100 hover:text-emerald-600 transition-colors">{row.name}</td>
                  <td className="px-6 py-4 text-center">
-                   <span className="w-7 h-7 rounded-full border border-slate-200 bg-white shadow-sm flex items-center justify-center mx-auto text-xs font-semibold text-slate-700">{row.missing}</span>
+                   <span className="w-7 h-7 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center mx-auto text-xs font-semibold text-slate-700 dark:text-slate-300">{row.missing}</span>
                  </td>
                  <td className="px-6 py-4 text-center">
                    {row.critical > 0 ? (
-                     <span className="w-7 h-7 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto text-xs font-semibold">{row.critical}</span>
+                     <span className="w-7 h-7 rounded-full bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center mx-auto text-xs font-semibold">{row.critical}</span>
                    ) : <span className="text-slate-300">-</span>}
                  </td>
-                 <td className="px-6 py-4 text-slate-500">
+                 <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
                    {row.lastNotice !== '-' ? (
                      <div className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {row.lastNotice}</div>
                    ) : '-'}
@@ -161,9 +261,9 @@ export default function MissingInvoicesPage() {
                  <td className="px-6 py-4">
                    <span className={cn(
                      "px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider",
-                     row.statusType === 'danger' && "bg-red-50 text-red-600",
-                     row.statusType === 'warning' && "bg-amber-50 text-amber-600",
-                     row.statusType === 'neutral' && "bg-slate-100 text-slate-500"
+                     row.statusType === 'danger' && "bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-400",
+                     row.statusType === 'warning' && "bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400",
+                     row.statusType === 'neutral' && "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
                    )}>
                      {row.status}
                    </span>
@@ -171,7 +271,7 @@ export default function MissingInvoicesPage() {
                  <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                    <DropdownMenu>
                      <DropdownMenuTrigger asChild>
-                       <button className="text-slate-400 hover:text-slate-600 p-1 transition-colors">
+                       <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 dark:text-slate-400 p-1 transition-colors">
                          <MoreVertical className="w-4 h-4" />
                        </button>
                      </DropdownMenuTrigger>
@@ -199,7 +299,7 @@ export default function MissingInvoicesPage() {
              ))
            ) : (
              <tr>
-               <td colSpan={7} className="text-center py-12 text-slate-500">
+               <td colSpan={7} className="text-center py-12 text-slate-500 dark:text-slate-400">
                  Nincs találat a keresésre.
                </td>
              </tr>
