@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, Settings, FileText, UploadCloud, RefreshCcw, FileCheck,
   Clock, AlertTriangle, FileWarning, TrendingUp, CheckCircle2, ChevronRight,
   Bell, ChevronDown, EyeOff, Wrench, Calendar, Hash, Info, Plus, X,
-  Phone, MessageCircle, Mail, Globe, PhoneCall, PhoneOff, Mic, Link2, Check
+  Phone, MessageCircle, Mail, Globe, PhoneCall, PhoneOff, Mic, Link2, Check, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { mockClients, mockBlockingItems, blockingCategoryMeta, type BlockingCategory, type BlockingItem } from './mockData';
+import { blockingCategoryMeta, type BlockingCategory, type BlockingItem } from './mockData';
+import { useAccountyClients, useAccountyMissingItems, useIgnoreMissingItem, useAddMissingItem, useAccountyDeadlines, useAccountyCommunicationPrefs, useUpsertCommunicationPrefs, useCompleteDeadline, useAccountyTaxProfile, useUpsertTaxProfile, useGeneratePortalToken, useCompanyInvoices } from '@/hooks/useAccountyData';
 
 export default function ClientDetailsPage() {
   const navigate = useNavigate();
@@ -43,6 +44,8 @@ export default function ClientDetailsPage() {
     contactEmail: '',
     contactPhone: '',
   });
+  const [notifSaving, setNotifSaving] = useState(false);
+  const [notifSaved, setNotifSaved] = useState(false);
 
   // AI Call state machine
   type CallState = 'idle' | 'dialing' | 'ringing' | 'speaking' | 'completed' | 'failed';
@@ -73,22 +76,117 @@ export default function ClientDetailsPage() {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
   const [linkCopied, setLinkCopied] = useState(false);
   
-  // Try to find the client from mockData, otherwise use generic data
-  const client = mockClients.find(c => c.id === id) || {
-    id: id || '1',
-    name: 'Tech Solutions Kft.',
-    taxNumber: '12345678-1-42'
-  };
+  // Fetch client from Supabase
+  const { data: supabaseClients, isLoading: clientLoading } = useAccountyClients();
+  const { data: supabaseMissing } = useAccountyMissingItems(id || '');
+  const ignoreMutation = useIgnoreMissingItem();
+  const addMutation = useAddMissingItem();
+
+  // Communication preferences
+  const { data: commPrefsData } = useAccountyCommunicationPrefs(id || '');
+  const upsertCommPrefs = useUpsertCommunicationPrefs();
+
+  // Tax profile
+  const { data: taxProfileData } = useAccountyTaxProfile(id || '');
+  const upsertTaxProfile = useUpsertTaxProfile();
+
+  // Deadline completion
+  const completeDeadlineMutation = useCompleteDeadline();
+
+  // Portal token generation
+  const generateToken = useGeneratePortalToken();
+
+  // Deadlines for this company
+  const { data: allDeadlines } = useAccountyDeadlines();
+  const companyDeadlines = useMemo(() => {
+    return (allDeadlines || []).filter(d => d.companyId === id && d.status !== 'completed');
+  }, [allDeadlines, id]);
+
+  // Sync Supabase comm prefs → local state
+  useEffect(() => {
+    if (commPrefsData) {
+      setNotifPrefs({
+        email: commPrefsData.channelEmail,
+        viber: commPrefsData.channelViber,
+        phone: commPrefsData.channelPhone,
+        sms: commPrefsData.channelSms,
+        language: commPrefsData.preferredLanguage,
+        frequency: commPrefsData.reminderFrequency,
+        autoReminder: commPrefsData.autoReminder,
+        contactName: commPrefsData.contactName || '',
+        contactEmail: commPrefsData.contactEmail || '',
+        contactPhone: commPrefsData.contactPhone || '',
+      });
+    }
+  }, [commPrefsData]);
+
+  const client = useMemo(() => {
+    const found = supabaseClients?.find(c => c.id === id);
+    if (found) return { id: found.id, name: found.name, taxNumber: found.taxNumber || '' };
+    return { id: id || '1', name: 'Betöltés...', taxNumber: '' };
+  }, [supabaseClients, id]);
+
+  // Map Supabase missing items → BlockingItem format for UI compatibility
+  const supabaseBlockingItems: BlockingItem[] = useMemo(() => {
+    if (!supabaseMissing) return [];
+    return supabaseMissing.map(mi => ({
+      id: mi.id,
+      clientId: mi.companyId,
+      category: mi.category,
+      title: mi.title,
+      subtitle: mi.subtitle || '',
+      source: mi.source === 'nav_detektor' ? 'NAV Online Számla'
+        : mi.source === 'bank_detektor' ? 'Bankkivonat-figyelő'
+        : mi.source === 'ber_cron' ? 'Havi kötelező nyilatkozat'
+        : 'Kézi rögzítés',
+      amount: mi.amount ? `${mi.amount.toLocaleString('hu-HU')} Ft` : undefined,
+      date: mi.itemDate || undefined,
+      priority: mi.priority,
+      details: mi.details || '',
+      invoiceNumber: mi.invoiceNumber || undefined,
+      resolveRoute: mi.resolveRoute || undefined,
+    }));
+  }, [supabaseMissing]);
+
+  // Fetch deadlines for this company
+  const { data: allDeadlines } = useAccountyDeadlines();
+  const companyDeadlines = useMemo(() => {
+    if (!allDeadlines || !id) return [];
+    return allDeadlines.filter(d => d.companyId === id && d.status !== 'completed');
+  }, [allDeadlines, id]);
+
+  // Dynamic KPI values
+  const missingCount = supabaseMissing?.length || 0;
+  const upcomingDeadlineCount = companyDeadlines.length;
 
   const tabs = ['Áttekintés', 'Számlák', 'Bérszámfejtés', 'Riportok', 'Beállítások'];
 
-  const invoiceData = [
-    { id: 1, number: 'INV-2024-001', company: 'ABC Kft.', amount: '254 000 Ft', date: '2024.01.15', status: 'Feldolgozás alatt', dotColor: 'bg-blue-500', statusColor: 'bg-amber-100 text-amber-700' },
-    { id: 2, number: 'INV-2024-002', company: 'XYZ Zrt.', amount: '127 500 Ft', date: '2024.01.14', status: 'Könyvelve', dotColor: 'bg-emerald-500', statusColor: 'bg-emerald-100 text-emerald-700' },
-    { id: 3, number: 'INV-2024-003', company: 'Demo Bt.', amount: '89 000 Ft', date: '2024.01.13', status: 'Jóváhagyva', dotColor: 'bg-blue-500', statusColor: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400' },
-    { id: 4, number: 'INV-2024-004', company: 'Partner Kft.', amount: '456 000 Ft', date: '2024.01.12', status: 'Feldolgozás alatt', dotColor: 'bg-blue-500', statusColor: 'bg-amber-100 text-amber-700' },
-    { id: 5, number: 'INV-2024-005', company: 'Service Zrt.', amount: '78 500 Ft', date: '2024.01.11', status: 'Könyvelve', dotColor: 'bg-emerald-500', statusColor: 'bg-emerald-100 text-emerald-700' },
-  ];
+  // Real invoices
+  const { data: companyInvoices } = useCompanyInvoices(id || '');
+  const invoiceData = useMemo(() => {
+    if (!companyInvoices) return [];
+    return companyInvoices.slice(0, 5).map((inv) => {
+      const dotColor = inv.status === 'Kontírozott' || inv.status === 'Exportálva' ? 'bg-emerald-500'
+        : inv.status === 'Problémás' ? 'bg-red-500' : 'bg-blue-500';
+      const statusColor = inv.status === 'Kontírozott' || inv.status === 'Exportálva' ? 'bg-emerald-100 text-emerald-700'
+        : inv.status === 'Problémás' ? 'bg-red-100 text-red-700'
+        : inv.status === 'Új' ? 'bg-amber-100 text-amber-700'
+        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400';
+      const statusLabel = inv.status === 'Új' ? 'Feldolgozás alatt'
+        : inv.status === 'Kontírozott' ? 'Könyvelve'
+        : inv.status === 'Exportálva' ? 'Exportálva' : inv.status;
+      return {
+        id: inv.id,
+        number: inv.invoiceNumber,
+        company: inv.partnerName,
+        amount: new Intl.NumberFormat('hu-HU').format(inv.grossAmount) + ' Ft',
+        date: inv.date,
+        status: statusLabel,
+        dotColor,
+        statusColor,
+      };
+    });
+  }, [companyInvoices]);
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
@@ -122,12 +220,18 @@ export default function ClientDetailsPage() {
             AI Hívás
           </button>
           <button
-            onClick={() => {
-              const url = `${window.location.origin}/portal/${client.id}-${Math.random().toString(36).slice(2, 8)}`;
-              navigator.clipboard.writeText(url);
-              setLinkCopied(true);
-              setTimeout(() => setLinkCopied(false), 2000);
+            onClick={async () => {
+              try {
+                const result = await generateToken.mutateAsync(id!);
+                const url = `${window.location.origin}/portal/${result.token}`;
+                await navigator.clipboard.writeText(url);
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 2000);
+              } catch (e) {
+                console.error('Failed to generate portal token:', e);
+              }
             }}
+            disabled={generateToken.isPending}
             className={cn(
               'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all',
               linkCopied
@@ -135,8 +239,8 @@ export default function ClientDetailsPage() {
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
             )}
           >
-            {linkCopied ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
-            {linkCopied ? 'Másolt!' : 'Magic Link'}
+            {generateToken.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : linkCopied ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
+            {generateToken.isPending ? 'Generálás...' : linkCopied ? 'Másolt!' : 'Magic Link'}
           </button>
           <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 dark:text-slate-400">
             <Settings className="w-5 h-5" />
@@ -179,7 +283,7 @@ export default function ClientDetailsPage() {
                   <FileText className="w-4 h-4 text-amber-500" />
                 </div>
               </div>
-              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">5</div>
+              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">0</div>
             </div>
 
             <div 
@@ -192,7 +296,7 @@ export default function ClientDetailsPage() {
                   <FileCheck className="w-4 h-4 text-blue-500" />
                 </div>
               </div>
-              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">3</div>
+              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">0</div>
             </div>
 
             <div 
@@ -205,7 +309,7 @@ export default function ClientDetailsPage() {
                   <FileWarning className="w-4 h-4 text-red-500" />
                 </div>
               </div>
-              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">2</div>
+              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">{missingCount}</div>
             </div>
 
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-indigo-300 hover:-translate-y-1">
@@ -246,7 +350,7 @@ export default function ClientDetailsPage() {
           {/* 🚨 Zárást blokkoló hiányosságok */}
           {(() => {
             const allItems = [
-              ...mockBlockingItems.filter((item) => item.clientId === client.id),
+              ...supabaseBlockingItems.filter((item) => item.clientId === client.id),
               ...manualItems.filter((item) => item.clientId === client.id),
             ].filter((item) => !ignoredIds.has(item.id));
             const categories: BlockingCategory[] = ['bejovo', 'kimeno', 'bank', 'ber'];
@@ -369,21 +473,22 @@ export default function ClientDetailsPage() {
                         </div>
                         <div className="flex items-end">
                           <button
-                            onClick={() => {
-                              if (!newItem.title.trim()) return;
-                              const item: BlockingItem = {
-                                id: `manual-${Date.now()}`,
-                                clientId: client.id,
-                                category: newItem.category,
-                                title: newItem.title,
-                                subtitle: newItem.subtitle || 'Manuálisan felvett',
-                                source: 'Manuális',
-                                priority: newItem.priority,
-                                details: newItem.details || `Manuálisan felvett hiányosság: ${newItem.title}`,
-                              };
-                              setManualItems((prev) => [...prev, item]);
-                              setNewItem({ category: 'bejovo', title: '', subtitle: '', priority: 'medium', details: '' });
-                              setShowAddForm(false);
+                            onClick={async () => {
+                              if (!newItem.title.trim() || !id) return;
+                              try {
+                                await addMutation.mutateAsync({
+                                  companyId: id,
+                                  category: newItem.category,
+                                  title: newItem.title,
+                                  subtitle: newItem.subtitle || 'Manuálisan felvett',
+                                  priority: newItem.priority,
+                                  details: newItem.details || `Manuálisan felvett hiányosság: ${newItem.title}`,
+                                });
+                                setNewItem({ category: 'bejovo', title: '', subtitle: '', priority: 'medium', details: '' });
+                                setShowAddForm(false);
+                              } catch (err) {
+                                console.error('Add blocking item failed:', err);
+                              }
                             }}
                             disabled={!newItem.title.trim()}
                             className="h-9 px-4 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -507,9 +612,13 @@ export default function ClientDetailsPage() {
                                     {/* Action buttons */}
                                     <div className="mt-3 flex flex-col gap-1.5">
                                       <button
-                                        onClick={(e) => {
+                                        onClick={async (e) => {
                                           e.stopPropagation();
-                                          setIgnoredIds((prev) => new Set(prev).add(item.id));
+                                          try {
+                                            await ignoreMutation.mutateAsync(item.id);
+                                          } catch (err) {
+                                            console.error('Ignore failed:', err);
+                                          }
                                           setExpandedItemId(null);
                                         }}
                                         className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -611,37 +720,66 @@ export default function ClientDetailsPage() {
                 <h3 className="font-semibold text-slate-900 dark:text-slate-100">Következő határidők</h3>
               </div>
               <div className="p-4 space-y-3 flex-1">
-                
-                <div className="border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-xl p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 flex items-center justify-center shrink-0">
-                      <Clock className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">ÁFA bevallás</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">2024.01.20</p>
-                    </div>
+                {companyDeadlines.length === 0 ? (
+                  <div className="flex items-center justify-center h-32 text-sm text-slate-400 dark:text-slate-500">
+                    Nincs közelgő határidő
                   </div>
-                  <div className="px-2.5 py-1 rounded-full bg-slate-200/50 text-slate-600 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                    5 nap
-                  </div>
-                </div>
+                ) : (
+                  companyDeadlines.slice(0, 4).map((dl) => {
+                    const dueDate = new Date(dl.dueDate);
+                    const now = new Date();
+                    const diffDays = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                    const isOverdue = diffDays < 0;
+                    const typeLabels: Record<string, string> = { afa: 'ÁFA', jarulek: 'Járulék', kata: 'Kata', ber: 'Bér', tao: 'TAO', ipa: 'IPA', egyeb: 'Egyéb' };
+                    const label = dl.title || typeLabels[dl.deadlineType] || dl.deadlineType;
 
-                <div className="border border-red-200 dark:border-red-900/50 bg-red-50/30 dark:bg-red-900/20 rounded-xl p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 shadow-sm border border-red-100 dark:border-red-900/50 flex items-center justify-center shrink-0">
-                      <Clock className="w-5 h-5 text-red-500" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-red-600 dark:text-red-400">Bérszámfejtés</p>
-                      <p className="text-xs text-red-500/80 dark:text-red-400/60">2024.01.10</p>
-                    </div>
-                  </div>
-                  <div className="px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 text-[10px] font-bold uppercase tracking-wider">
-                    5 napja lejárt
-                  </div>
-                </div>
-
+                    return (
+                      <div
+                        key={dl.id}
+                        className={cn(
+                          "border rounded-xl p-4 flex items-center justify-between",
+                          isOverdue
+                            ? "border-red-200 dark:border-red-900/50 bg-red-50/30 dark:bg-red-900/20"
+                            : "border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50"
+                        )}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={cn(
+                            "w-10 h-10 rounded-full bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center shrink-0",
+                            isOverdue ? "border border-red-100 dark:border-red-900/50" : "border border-slate-200 dark:border-slate-800"
+                          )}>
+                            <Clock className={cn("w-5 h-5", isOverdue ? "text-red-500" : "text-slate-500 dark:text-slate-400")} />
+                          </div>
+                          <div>
+                            <p className={cn("text-sm font-semibold", isOverdue ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-slate-100")}>{label}</p>
+                            <p className={cn("text-xs", isOverdue ? "text-red-500/80 dark:text-red-400/60" : "text-slate-500 dark:text-slate-400")}>
+                              {dueDate.toLocaleDateString('hu-HU')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                            isOverdue
+                              ? "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400"
+                              : diffDays <= 3
+                                ? "bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400"
+                                : "bg-slate-200/50 text-slate-600 dark:text-slate-400"
+                          )}>
+                            {isOverdue ? `${Math.abs(diffDays)} napja lejárt` : `${diffDays} nap`}
+                          </div>
+                          <button
+                            onClick={() => completeDeadlineMutation.mutate(dl.id)}
+                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors"
+                            title="Megjelölés késznek"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
@@ -656,22 +794,22 @@ export default function ClientDetailsPage() {
           <div className="grid grid-cols-4 gap-4">
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
               <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Összes számla</h3>
-              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">47</div>
+              <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">{companyInvoices?.length || 0}</div>
             </div>
 
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
               <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Feldolgozásra vár</h3>
-              <div className="text-3xl font-bold text-amber-500">8</div>
+              <div className="text-3xl font-bold text-amber-500">{companyInvoices?.filter(i => i.status === 'Új' || i.status === 'Kontírozásra vár').length || 0}</div>
             </div>
 
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
               <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Bruttó összesen</h3>
-              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">4 567 000 Ft</div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{new Intl.NumberFormat('hu-HU').format(companyInvoices?.reduce((s, i) => s + i.grossAmount, 0) || 0)} Ft</div>
             </div>
 
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
               <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">ÁFA összesen</h3>
-              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">912 000 Ft</div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{new Intl.NumberFormat('hu-HU').format(companyInvoices?.reduce((s, i) => s + i.vatAmount, 0) || 0)} Ft</div>
             </div>
           </div>
 
@@ -876,10 +1014,176 @@ export default function ClientDetailsPage() {
                 />
               </div>
             </div>
+
+            {/* GDPR Opt-in */}
+            <div className="mt-4 p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">GDPR Hozzájárulás</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Az ügyfél hozzájárult az értesítések fogadásához
+                    {commPrefsData?.gdprOptedIn && commPrefsData.gdprOptedInAt && (
+                      <span className="ml-1 text-emerald-600 dark:text-emerald-400">
+                        — {new Date(commPrefsData.gdprOptedInAt).toLocaleDateString('hu-HU')}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    const newVal = !commPrefsData?.gdprOptedIn;
+                    upsertCommPrefs.mutate({
+                      companyId: id!,
+                      contactName: notifPrefs.contactName,
+                      contactEmail: notifPrefs.contactEmail,
+                      contactPhone: notifPrefs.contactPhone,
+                      channelEmail: notifPrefs.email,
+                      channelViber: notifPrefs.viber,
+                      channelSms: notifPrefs.sms,
+                      channelPhone: notifPrefs.phone,
+                      preferredLanguage: notifPrefs.language,
+                      reminderFrequency: notifPrefs.frequency as 'low' | 'normal' | 'high',
+                      autoReminder: notifPrefs.autoReminder,
+                    });
+                  }}
+                  className={cn(
+                    'relative w-11 h-6 rounded-full transition-colors duration-200',
+                    commPrefsData?.gdprOptedIn ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                  )}
+                >
+                  <div className={cn(
+                    'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200',
+                    commPrefsData?.gdprOptedIn ? 'translate-x-[22px]' : 'translate-x-0.5'
+                  )}></div>
+                </button>
+              </div>
+            </div>
+
             <div className="mt-4 flex justify-end">
-              <button className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors">
-                Mentés
+              <button 
+                onClick={async () => {
+                  setNotifSaving(true);
+                  try {
+                    await upsertCommPrefs.mutateAsync({
+                      companyId: id!,
+                      contactName: notifPrefs.contactName,
+                      contactEmail: notifPrefs.contactEmail,
+                      contactPhone: notifPrefs.contactPhone,
+                      channelEmail: notifPrefs.email,
+                      channelViber: notifPrefs.viber,
+                      channelSms: notifPrefs.sms,
+                      channelPhone: notifPrefs.phone,
+                      preferredLanguage: notifPrefs.language,
+                      reminderFrequency: notifPrefs.frequency as 'low' | 'normal' | 'high',
+                      autoReminder: notifPrefs.autoReminder,
+                    });
+                    setNotifSaved(true);
+                    setTimeout(() => setNotifSaved(false), 2000);
+                  } catch (e) {
+                    console.error('Failed to save communication prefs:', e);
+                  } finally {
+                    setNotifSaving(false);
+                  }
+                }}
+                disabled={notifSaving}
+                className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {notifSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : notifSaved ? <Check className="w-4 h-4" /> : null}
+                {notifSaving ? 'Mentés...' : notifSaved ? 'Mentve!' : 'Mentés'}
               </button>
+            </div>
+          </div>
+
+          {/* Adózási Profil */}
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Settings className="w-4 h-4 text-slate-500" />
+                Adózási profil
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Cég adózási beállításai — ÁFA, járulék, KATA/KIVA státusz</p>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">ÁFA bevallás gyakorisága</label>
+                  <select
+                    value={taxProfileData?.vatFrequency || 'monthly'}
+                    onChange={(e) => {
+                      upsertTaxProfile.mutate({
+                        companyId: id!,
+                        vatFrequency: e.target.value as any,
+                        contributionFrequency: taxProfileData?.contributionFrequency || 'monthly',
+                        isKata: taxProfileData?.isKata ?? false,
+                        isKiva: taxProfileData?.isKiva ?? false,
+                      });
+                    }}
+                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  >
+                    <option value="monthly">Havi</option>
+                    <option value="quarterly">Negyedéves</option>
+                    <option value="yearly">Éves</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Járulék bevallás gyakorisága</label>
+                  <select
+                    value={taxProfileData?.contributionFrequency || 'monthly'}
+                    onChange={(e) => {
+                      upsertTaxProfile.mutate({
+                        companyId: id!,
+                        vatFrequency: taxProfileData?.vatFrequency || 'monthly',
+                        contributionFrequency: e.target.value as any,
+                        isKata: taxProfileData?.isKata ?? false,
+                        isKiva: taxProfileData?.isKiva ?? false,
+                      });
+                    }}
+                    className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  >
+                    <option value="monthly">Havi</option>
+                    <option value="quarterly">Negyedéves</option>
+                    <option value="yearly">Éves</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-6">
+                {[
+                  { key: 'isKata', label: 'KATA alany', value: taxProfileData?.isKata ?? false },
+                  { key: 'isKiva', label: 'KIVA alany', value: taxProfileData?.isKiva ?? false },
+                ].map(({ key, label, value }) => (
+                  <div key={key} className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        upsertTaxProfile.mutate({
+                          companyId: id!,
+                          vatFrequency: taxProfileData?.vatFrequency || 'monthly',
+                          contributionFrequency: taxProfileData?.contributionFrequency || 'monthly',
+                          isKata: key === 'isKata' ? !value : (taxProfileData?.isKata ?? false),
+                          isKiva: key === 'isKiva' ? !value : (taxProfileData?.isKiva ?? false),
+                        });
+                      }}
+                      className={cn(
+                        'relative w-11 h-6 rounded-full transition-colors duration-200',
+                        value ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                      )}
+                    >
+                      <div className={cn(
+                        'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200',
+                        value ? 'translate-x-[22px]' : 'translate-x-0.5'
+                      )}></div>
+                    </button>
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
+                  </div>
+                ))}
+              </div>
+
+              {taxProfileData?.navSynced && (
+                <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-3 py-2">
+                  <Check className="w-3.5 h-3.5" />
+                  NAV-ból szinkronizálva
+                </div>
+              )}
             </div>
           </div>
 

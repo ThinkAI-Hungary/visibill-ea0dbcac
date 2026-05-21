@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Calendar, FileText, PieChart, TrendingUp, Users, FileWarning, 
-  Filter, Eye, Download, FileJson, Mail, ChevronRight, X, ArrowLeft
+  Download, FileJson, Mail, ChevronRight, X, ArrowLeft, Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { useAccountyClients } from '@/hooks/useAccountyData';
 
 type ReportType = 'havi' | 'afa' | 'koltseg' | 'cashflow' | 'partner' | 'hianyzo';
 
@@ -29,26 +30,13 @@ export default function ClientReportsPage() {
   const [selectedType, setSelectedType] = useState<ReportType>('havi');
   const [format, setFormat] = useState<'pdf' | 'excel'>('pdf');
 
-  // Mock data for client resolution
-  const mockClients: Record<number, string> = {
-    1: 'Tech Solutions Kft.',
-    2: 'Digital Partners Zrt.',
-    3: 'Innovation Labs Kft.',
-    4: 'Smart Office Bt.',
-    5: 'Global Trade Kft.',
-  };
-  
-  const clientName = id && !isNaN(Number(id)) ? mockClients[Number(id)] || "Ismeretlen Ügyfél" : "Ismeretlen Ügyfél";
+  const { data: clients } = useAccountyClients();
+  const clientName = useMemo(() => {
+    const found = clients?.find(c => c.id === id);
+    return found?.name || 'Betöltés...';
+  }, [clients, id]);
 
-  const allRecentReports = [
-    { id: 1, title: 'Havi összesítő 2024 Január', date: '2024. 01. 15.', clientId: 1, format: 'PDF', iconColor: 'text-red-500', bg: 'bg-red-50' },
-    { id: 2, title: 'ÁFA kimutatás Q4 2023', date: '2024. 01. 10.', clientId: 1, format: 'EXCEL', iconColor: 'text-emerald-500', bg: 'bg-emerald-50' },
-    { id: 3, title: 'Költségkimutatás 2023', date: '2024. 01. 05.', clientId: 1, format: 'PDF', iconColor: 'text-red-500', bg: 'bg-red-50' },
-    { id: 4, title: 'Havi összesítő 2024 Január', date: '2024. 01. 14.', clientId: 4, format: 'PDF', iconColor: 'text-red-500', bg: 'bg-red-50' },
-    { id: 5, title: 'Cash flow riport Q4', date: '2024. 01. 08.', clientId: 5, format: 'EXCEL', iconColor: 'text-emerald-500', bg: 'bg-emerald-50' },
-  ];
 
-  const recentReports = allRecentReports.filter(r => r.clientId === Number(id));
 
   const openModal = (type: ReportType) => {
     if (type === 'hianyzo') {
@@ -94,47 +82,20 @@ export default function ClientReportsPage() {
         ))}
       </div>
 
-      {/* Recent Reports */}
+      {/* Recent Reports - empty state */}
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Legutóbbi riportok</h2>
-          <Button variant="outline" size="sm" className="gap-2 bg-white dark:bg-slate-900 h-9">
-            <Filter className="w-4 h-4" /> Szűrés
-          </Button>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden divide-y divide-slate-100">
-          {recentReports.length > 0 ? (
-            recentReports.map((report) => (
-              <div key={report.id} className="flex items-center justify-between p-4 hover:bg-slate-50/50 dark:bg-slate-900/50 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", report.bg)}>
-                    <FileText className={cn("w-5 h-5", report.iconColor)} />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{report.title}</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{report.date}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-6">
-                  <span className={cn(
-                    "px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider",
-                    report.format === 'PDF' ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                  )}>
-                    {report.format}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 dark:text-slate-400 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800"><Eye className="w-4 h-4" /></button>
-                    <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 dark:text-slate-400 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800"><Download className="w-4 h-4" /></button>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="p-8 text-center text-slate-500 dark:text-slate-400">
-              Még nincsenek legutóbbi riportok.
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+          <div className="p-12 text-center">
+            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-6 h-6 text-slate-400" />
             </div>
-          )}
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Még nincs generált riport</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">A generált riportok itt fognak megjelenni</p>
+          </div>
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -14,7 +14,8 @@ import {
   Eye,
   XCircle,
   MoreVertical,
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import {
   Dialog,
@@ -32,37 +33,94 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { globalMissingInvoicesData, globalClientInvoices } from './mockData';
+import { useAccountyMissingItems, useAddMissingItem, useIgnoreMissingItem, useResolveMissingItem } from '@/hooks/useAccountyData';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
-const detailedHistoryData = [
-  { id: 1, date: '2024-01-15 10:30', channel: 'Email', vendor: 'Telekom - Telefon számla', responseTime: '2 óra', status: 'Válaszolt', statusColor: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/40 border-emerald-200 dark:border-emerald-800', icon: Mail, iconColor: 'text-emerald-500' },
-  { id: 2, date: '2024-01-14 14:15', channel: 'Viber', vendor: 'MOL - Üzemanyag', responseTime: '-', status: 'Megnyitva', statusColor: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/40 border-amber-200 dark:border-amber-800', icon: MessageSquare, iconColor: 'text-slate-400' },
-  { id: 3, date: '2024-01-14 09:00', channel: 'Email', vendor: 'Office Depot - Irodaszer', responseTime: '-', status: 'Kézbesítve', statusColor: 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-800', icon: Mail, iconColor: 'text-slate-400' },
-  { id: 4, date: '2024-01-13 16:45', channel: 'AI Hívás', vendor: 'Vodafone - Mobiltelefon', responseTime: '1 nap', status: 'Válaszolt', statusColor: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/40 border-emerald-200 dark:border-emerald-800', icon: Phone, iconColor: 'text-emerald-500' },
-  { id: 5, date: '2024-01-12 11:00', channel: 'Telegram', vendor: 'Google - Hirdetés', responseTime: '-', status: 'Sikertelen', statusColor: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/40 border-red-200 dark:border-red-800', icon: Send, iconColor: 'text-red-400' },
-  { id: 6, date: '2024-01-11 08:30', channel: 'Email', vendor: 'Telekom - Internet', responseTime: '4 óra', status: 'Válaszolt', statusColor: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/40 border-emerald-200 dark:border-emerald-800', icon: Mail, iconColor: 'text-emerald-500' },
-  { id: 7, date: '2024-01-10 15:20', channel: 'Viber', vendor: 'MOL - Üzemanyag', responseTime: '-', status: 'Megnyitva', statusColor: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/40 border-amber-200 dark:border-amber-800', icon: MessageSquare, iconColor: 'text-slate-400' },
-  { id: 8, date: '2024-01-09 10:00', channel: 'Email', vendor: 'Magyar Posta - Levelezés', responseTime: '-', status: 'Elküldve', statusColor: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 border-blue-200 dark:border-blue-800', icon: Mail, iconColor: 'text-slate-400' },
-];
+// Invoice item type from Supabase
+interface InvoiceItem {
+  id: string;
+  vendor: string;
+  subtext: string;
+  period: string;
+  amount: string;
+  source: string;
+  priority: string;
+  status: string;
+  statusVariant: string;
+  category: string;
+  notificationCount: number;
+  itemDate: string | null;
+  amountRaw: number | null;
+}
 
 export default function ClientMissingInvoicesPage() {
-  const { id } = useParams();
+  const { id: companyId } = useParams();
   const navigate = useNavigate();
-  const clientId = Number(id) || 1;
+
+  // Fetch company name
+  const { data: companyData } = useQuery({
+    queryKey: ['company-name', companyId],
+    queryFn: async () => {
+      if (!companyId) return null;
+      const { data } = await supabase
+        .from('companies')
+        .select('id, name')
+        .eq('id', companyId)
+        .single();
+      return data;
+    },
+    enabled: !!companyId,
+  });
+
+  // Fetch missing items from Supabase
+  const { data: supabaseMissing, isLoading } = useAccountyMissingItems(companyId || '');
+
+  // Mutations
+  const addMissingItem = useAddMissingItem();
+  const ignoreMissingItem = useIgnoreMissingItem();
+  const resolveMissingItem = useResolveMissingItem();
+
+  // Transform Supabase data to invoice format
+  const invoices: InvoiceItem[] = useMemo(() => {
+    if (!supabaseMissing) return [];
+    return supabaseMissing.map(mi => {
+      const sourceLabel = mi.source === 'nav_detektor' ? 'NAV' 
+        : mi.source === 'bank_detektor' ? 'Bank' 
+        : mi.source === 'ber_cron' ? 'Bér' 
+        : 'Kézi';
+      const priorityLabel = mi.priority === 'urgent' ? 'Sürgős' 
+        : mi.priority === 'medium' ? 'Közepes' 
+        : 'Alacsony';
+      const statusLabel = mi.notificationCount > 0 
+        ? `Bekérve (${mi.notificationCount}x)` 
+        : 'Bekérésre vár';
+      return {
+        id: mi.id,
+        vendor: mi.title,
+        subtext: mi.subtitle || mi.category,
+        period: mi.itemDate ? new Date(mi.itemDate).toLocaleDateString('hu-HU', { year: 'numeric', month: 'long' }) : '-',
+        amount: mi.amount ? `${mi.amount.toLocaleString('hu-HU')} Ft` : '-',
+        source: sourceLabel,
+        priority: priorityLabel,
+        status: statusLabel,
+        statusVariant: mi.notificationCount > 0 ? 'warning' : 'neutral',
+        category: mi.category,
+        notificationCount: mi.notificationCount,
+        itemDate: mi.itemDate,
+        amountRaw: mi.amount,
+      };
+    });
+  }, [supabaseMissing]);
+
+  const clientName = companyData?.name || 'Betöltés...';
 
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('Minden forrás');
   const [statusFilter, setStatusFilter] = useState('Minden');
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = useState<typeof globalClientInvoices[0] | null>(null);
-
-  const [invoices, setInvoices] = useState(() => globalClientInvoices.filter(inv => inv.clientId === clientId));
-  
-  React.useEffect(() => {
-    setInvoices(globalClientInvoices.filter(inv => inv.clientId === clientId));
-    setSelectedIds([]);
-  }, [clientId]);
+  const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = useState<InvoiceItem | null>(null);
   const [newInvoiceForm, setNewInvoiceForm] = useState({
     vendor: '',
     subtext: '',
@@ -72,99 +130,58 @@ export default function ClientMissingInvoicesPage() {
     note: ''
   });
 
-  const handleAddInvoice = () => {
-    const parsedAmount = parseInt(newInvoiceForm.amount.replace(/\D/g, ''), 10);
-    const formattedAmount = isNaN(parsedAmount) ? '0 Ft' : `${new Intl.NumberFormat('hu-HU').format(parsedAmount).replace(/,/g, ' ')} Ft`;
-
-    const newItem = {
-      id: Date.now(),
-      clientId: clientId,
-      vendor: newInvoiceForm.vendor || 'Új szállító',
-      subtext: newInvoiceForm.subtext || '-',
-      period: newInvoiceForm.period || '2024 Január',
-      amount: formattedAmount,
-      source: 'Kézi',
-      priority: newInvoiceForm.priority,
-      status: 'Bekérésre vár',
-      statusVariant: 'neutral'
+  const handleAddInvoice = async () => {
+    if (!companyId || !newInvoiceForm.vendor) return;
+    const priorityMap: Record<string, 'urgent' | 'medium' | 'low'> = {
+      'Sürgős': 'urgent', 'Közepes': 'medium', 'Alacsony': 'low'
     };
-    globalClientInvoices.unshift(newItem); // Save to mock data
-    
-    // Update global summary data
-    const clientStats = globalMissingInvoicesData.find(c => c.id === clientId);
-    if (clientStats) {
-      clientStats.missing += 1;
-      if (newItem.priority === 'Sürgős') {
-        clientStats.critical += 1;
-      }
+    try {
+      await addMissingItem.mutateAsync({
+        companyId,
+        category: 'bejovo',
+        title: newInvoiceForm.vendor,
+        subtitle: newInvoiceForm.subtext || undefined,
+        priority: priorityMap[newInvoiceForm.priority] || 'medium',
+        details: newInvoiceForm.note || undefined,
+        amount: newInvoiceForm.amount ? Number(newInvoiceForm.amount) : undefined,
+      });
+      setIsAddModalOpen(false);
+      setNewInvoiceForm({ vendor: '', subtext: '', amount: '0', period: '2024 Január', priority: 'Közepes', note: '' });
+    } catch (err) {
+      console.error('Add invoice failed:', err);
     }
-    
-    setInvoices([newItem, ...invoices]);
-    setIsAddModalOpen(false);
-    setNewInvoiceForm({ vendor: '', subtext: '', amount: '0', period: '2024 Január', priority: 'Közepes', note: '' });
   };
 
-  const handleDeleteInvoice = (idToDelete: number) => {
-    const invoiceToDelete = invoices.find(inv => inv.id === idToDelete);
-    if (!invoiceToDelete) return;
-
-    const index = globalClientInvoices.findIndex(inv => inv.id === idToDelete);
-    if (index > -1) {
-      globalClientInvoices.splice(index, 1);
+  const handleDeleteInvoice = async (idToDelete: string) => {
+    try {
+      await ignoreMissingItem.mutateAsync(idToDelete);
+    } catch (err) {
+      console.error('Delete invoice failed:', err);
     }
-
-    const clientStats = globalMissingInvoicesData.find(c => c.id === clientId);
-    if (clientStats) {
-      clientStats.missing = Math.max(0, clientStats.missing - 1);
-      if (invoiceToDelete.priority === 'Sürgős') {
-        clientStats.critical = Math.max(0, clientStats.critical - 1);
-      }
-    }
-
-    setInvoices(invoices.filter(inv => inv.id !== idToDelete));
-    setSelectedIds(selectedIds.filter(id => id !== idToDelete));
   };
 
-  const handleBulkDelete = () => {
-    selectedIds.forEach(id => {
-      const invoiceToDelete = invoices.find(inv => inv.id === id);
-      if (!invoiceToDelete) return;
-
-      const index = globalClientInvoices.findIndex(inv => inv.id === id);
-      if (index > -1) {
-        globalClientInvoices.splice(index, 1);
-      }
-
-      const clientStats = globalMissingInvoicesData.find(c => c.id === clientId);
-      if (clientStats) {
-        clientStats.missing = Math.max(0, clientStats.missing - 1);
-        if (invoiceToDelete.priority === 'Sürgős') {
-          clientStats.critical = Math.max(0, clientStats.critical - 1);
-        }
-      }
-    });
-
-    setInvoices(invoices.filter(inv => !selectedIds.includes(inv.id)));
-    setSelectedIds([]);
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(selectedIds.map(id => ignoreMissingItem.mutateAsync(id)));
+      setSelectedIds([]);
+    } catch (err) {
+      console.error('Bulk delete failed:', err);
+    }
   };
 
-  // History View State
+  const handleResolveInvoice = async (idToResolve: string) => {
+    try {
+      await resolveMissingItem.mutateAsync(idToResolve);
+    } catch (err) {
+      console.error('Resolve invoice failed:', err);
+    }
+  };
+
   const [showHistoryView, setShowHistoryView] = useState(false);
   const [historySearchTerm, setHistorySearchTerm] = useState('');
   const [historyChannelFilter, setHistoryChannelFilter] = useState('Minden');
   const [historyStatusFilter, setHistoryStatusFilter] = useState('Minden');
   const [historyTab, setHistoryTab] = useState<'timeline' | 'table'>('timeline');
-
-  // In a real app, fetch client data based on ID. We use mock data here.
-  const mockClients: Record<number, string> = {
-    1: 'Tech Solutions Kft.',
-    2: 'Digital Partners Zrt.',
-    3: 'Innovation Labs Kft.',
-    4: 'Smart Office Bt.',
-    5: 'Global Trade Kft.',
-  };
-  
-  const clientName = id && !isNaN(Number(id)) ? mockClients[Number(id)] || "Ismeretlen Ügyfél" : "Ismeretlen Ügyfél";
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
@@ -206,7 +223,7 @@ export default function ClientMissingInvoicesPage() {
     }
   };
 
-  const handleSelectItem = (id: number) => {
+  const handleSelectItem = (id: string) => {
     setSelectedIds(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
@@ -214,12 +231,8 @@ export default function ClientMissingInvoicesPage() {
 
   const isAllSelected = filteredInvoices.length > 0 && selectedIds.length === filteredInvoices.length;
 
-  const filteredHistory = detailedHistoryData.filter(item => {
-    const matchesSearch = item.vendor.toLowerCase().includes(historySearchTerm.toLowerCase()) || item.channel.toLowerCase().includes(historySearchTerm.toLowerCase());
-    const matchesChannel = historyChannelFilter === 'Minden' || item.channel === historyChannelFilter;
-    const matchesStatus = historyStatusFilter === 'Minden' || item.status === historyStatusFilter;
-    return matchesSearch && matchesChannel && matchesStatus;
-  });
+  // History data placeholder - communication feature out of scope
+  const filteredHistory: { id: number; date: string; channel: string; vendor: string; responseTime: string; status: string; statusColor: string; icon: any; iconColor: string }[] = [];
 
   if (showHistoryView) {
     return (
@@ -504,7 +517,7 @@ export default function ClientMissingInvoicesPage() {
         <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Becsült összeg</p>
           <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">
-            {new Intl.NumberFormat('hu-HU').format(invoices.reduce((sum, inv) => sum + (parseInt(inv.amount.replace(/\D/g, ''), 10) || 0), 0))} Ft
+            {new Intl.NumberFormat('hu-HU').format(invoices.reduce((sum, inv) => sum + (inv.amountRaw || 0), 0))} Ft
           </h3>
         </div>
       </div>
@@ -529,7 +542,8 @@ export default function ClientMissingInvoicesPage() {
           >
             <option value="Minden forrás">Minden forrás</option>
             <option value="NAV">NAV</option>
-            <option value="Minta">Minta</option>
+            <option value="Bank">Bank</option>
+            <option value="Bér">Bér</option>
             <option value="Kézi">Kézi</option>
           </select>
           <select 
@@ -603,16 +617,18 @@ export default function ClientMissingInvoicesPage() {
                             <Eye className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                             <span className="font-medium text-sm">Részletek</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2.5 cursor-pointer text-slate-700 dark:text-slate-300 py-2">
-                            <Send className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                            <span className="font-medium text-sm">Felszólítás küldése</span>
-                          </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
-                          <DropdownMenuItem className="gap-2.5 cursor-pointer text-slate-700 dark:text-slate-300 py-2">
+                          <DropdownMenuItem 
+                            className="gap-2.5 cursor-pointer text-slate-700 dark:text-slate-300 py-2"
+                            onClick={() => handleResolveInvoice(invoice.id)}
+                          >
                             <CheckCircle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                             <span className="font-medium text-sm">Megérkezettnek jelöl</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2.5 cursor-pointer text-slate-700 dark:text-slate-300 py-2">
+                          <DropdownMenuItem 
+                            className="gap-2.5 cursor-pointer text-slate-700 dark:text-slate-300 py-2"
+                            onClick={() => handleDeleteInvoice(invoice.id)}
+                          >
                             <XCircle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                             <span className="font-medium text-sm">Téves találatnak jelöl</span>
                           </DropdownMenuItem>

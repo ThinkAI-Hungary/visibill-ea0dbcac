@@ -7,15 +7,20 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { mockClients, ClientData } from './mockData';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function NewClientPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [integrationType, setIntegrationType] = useState<'rlb' | 'novitax' | 'other' | null>(null);
 
   const [clientName, setClientName] = useState('');
-  const [taxNumber, setTaxNumber] = useState('12345678-1-23');
+  const [taxNumber, setTaxNumber] = useState('');
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // Mocks state
   const [useVisibillAccount, setUseVisibillAccount] = useState(false);
@@ -64,22 +69,69 @@ export default function NewClientPage() {
     }, 2000);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (step === 1 && !useVisibillAccount) {
+      // Validate Step 1
+      const errors: Record<string, string> = {};
+      if (!clientName.trim()) errors.clientName = 'Cégnév megadása kötelező';
+      if (!taxNumber.trim()) {
+        errors.taxNumber = 'Adószám megadása kötelező';
+      } else if (!/^[0-9]{8}-[0-9]-[0-9]{2}$/.test(taxNumber)) {
+        errors.taxNumber = 'Érvényes formátum: 12345678-1-23';
+      }
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        return;
+      }
+      setValidationErrors({});
+    }
     if (step === 2) {
-      // Add client to mockData
-      const newClient: ClientData = {
-        id: 'new-' + Date.now(),
-        name: clientName || (useVisibillAccount ? 'Meghívott Ügyfél Kft.' : 'Új Ügyfél Kft.'),
-        taxNumber: taxNumber || '12345678-1-23',
-        status: 'Rendben',
-        unprocessedCount: 0,
-        missingCount: 0,
-        deadline: 'Jún 15.',
-        colorHex: '#3b82f6', // blue to distinguish
-        assignedToMe: true,
-        ownerId: '1'
-      };
-      mockClients.unshift(newClient);
+      // Create assignment in Supabase
+      if (user?.id) {
+        try {
+          const name = clientName || (useVisibillAccount ? 'Meghívott Ügyfél Kft.' : 'Új Ügyfél Kft.');
+          const tax = taxNumber || '12345678-1-23';
+
+          // 1. Check if company exists by tax_number
+          const { data: existing } = await supabase
+            .from('companies')
+            .select('id')
+            .eq('tax_number', tax)
+            .maybeSingle();
+
+          let companyId: string;
+          if (existing) {
+            companyId = existing.id;
+          } else {
+            // Create new company
+            const { data: newCompany, error: compErr } = await supabase
+              .from('companies')
+              .insert({ name, tax_number: tax } as any)
+              .select('id')
+              .single();
+            if (compErr) throw compErr;
+            companyId = newCompany.id;
+          }
+
+          // 2. Create assignment
+          const { error: assignErr } = await supabase
+            .from('accounty_assignments' as any)
+            .upsert({
+              accountant_user_id: user.id,
+              company_id: companyId,
+              role: 'junior',
+              is_primary: true,
+            } as any, { onConflict: 'accountant_user_id,company_id' });
+
+          if (assignErr) throw assignErr;
+
+          // Invalidate relevant queries
+          queryClient.invalidateQueries({ queryKey: ['accounty-clients'] });
+          queryClient.invalidateQueries({ queryKey: ['accounty-kpis'] });
+        } catch (err) {
+          console.error('Failed to create client assignment:', err);
+        }
+      }
       setStep(3);
     } else if (step < 3) {
       setStep((s) => (s + 1) as 1 | 2 | 3);
@@ -208,21 +260,24 @@ export default function NewClientPage() {
                       <Input 
                         placeholder="" 
                         required 
-                        className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" 
+                        className={cn("bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800", validationErrors.clientName && "border-red-400 focus-visible:ring-red-500")} 
                         value={clientName}
-                        onChange={(e) => setClientName(e.target.value)}
+                        onChange={(e) => { setClientName(e.target.value); setValidationErrors(prev => { const n = {...prev}; delete n.clientName; return n; }); }}
                       />
+                      {validationErrors.clientName && <p className="text-xs text-red-500 mt-1">{validationErrors.clientName}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs text-slate-700 dark:text-slate-300">Adószám <span className="text-red-500">*</span></Label>
                       <Input 
                         value={taxNumber}
-                        onChange={(e) => setTaxNumber(e.target.value)}
+                        onChange={(e) => { setTaxNumber(e.target.value); setValidationErrors(prev => { const n = {...prev}; delete n.taxNumber; return n; }); }}
                         required 
                         pattern="^[0-9]{8}-[0-9]-[0-9]{2}$"
                         title="Kérjük, érvényes magyar adószámot adjon meg, a következő formátumban: 12345678-1-23"
-                        className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" 
+                        placeholder="12345678-1-23"
+                        className={cn("bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800", validationErrors.taxNumber && "border-red-400 focus-visible:ring-red-500")} 
                       />
+                      {validationErrors.taxNumber && <p className="text-xs text-red-500 mt-1">{validationErrors.taxNumber}</p>}
                     </div>
                     <div className="space-y-2 col-span-2">
                       <Label className="text-xs text-slate-700 dark:text-slate-300">Kapcsolattartó neve <span className="text-red-500">*</span></Label>

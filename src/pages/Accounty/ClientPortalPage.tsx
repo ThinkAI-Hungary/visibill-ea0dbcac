@@ -1,19 +1,12 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Upload, FileText, CheckCircle2, AlertTriangle, X, File,
   Clock, Shield, Building2, ChevronDown, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-// Mock missing items for the client
-const mockMissingDocs = [
-  { id: '1', title: 'MOL Nyrt. – 2024. januári számla', category: 'Bejövő számla', deadline: '2024.01.20', urgent: true },
-  { id: '2', title: 'Telekom – Havi telefondíj', category: 'Bejövő számla', deadline: '2024.01.20', urgent: false },
-  { id: '3', title: 'Bankkivonat – OTP 2024. január', category: 'Banki dokumentum', deadline: '2024.01.22', urgent: true },
-  { id: '4', title: 'Munkabér igazolás – 2024. január', category: 'Bérszámfejtés', deadline: '2024.01.25', urgent: false },
-  { id: '5', title: 'Áram számla – ELMŰ', category: 'Bejövő számla', deadline: '2024.01.20', urgent: false },
-];
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UploadedFile {
   id: string;
@@ -23,11 +16,76 @@ interface UploadedFile {
   status: 'uploading' | 'done' | 'error';
 }
 
+interface MissingDoc {
+  id: string;
+  title: string;
+  category: string;
+  deadline: string;
+  urgent: boolean;
+}
+
 export default function ClientPortalPage() {
   const { token } = useParams();
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [submittedDocs, setSubmittedDocs] = useState<Set<string>>(new Set());
+
+  // Validate portal token and get company info
+  const { data: portalData, isLoading: portalLoading } = useQuery({
+    queryKey: ['portal-token', token],
+    queryFn: async () => {
+      if (!token) return null;
+      // Look up token
+      const { data: tokenData, error: tokenErr } = await supabase
+        .from('accounty_portal_tokens' as any)
+        .select('*')
+        .eq('token', token)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (tokenErr || !tokenData) return null;
+
+      // Check expiry
+      const tokenRow = tokenData as any;
+      if (tokenRow.expires_at && new Date(tokenRow.expires_at) < new Date()) return null;
+
+      // Get company name
+      const { data: company } = await supabase
+        .from('companies')
+        .select('id, name')
+        .eq('id', tokenRow.company_id)
+        .single();
+
+      // Get missing items for this company
+      const { data: items } = await supabase
+        .from('accounty_missing_items' as any)
+        .select('*')
+        .eq('company_id', tokenRow.company_id)
+        .in('status', ['open', 'notified'])
+        .order('priority', { ascending: true });
+
+      const missingDocs: MissingDoc[] = (items || []).map((item: any) => ({
+        id: item.id,
+        title: item.title + (item.subtitle ? ` – ${item.subtitle}` : ''),
+        category: item.category === 'bejovo' ? 'Bejövő számla'
+          : item.category === 'kimeno' ? 'Kimenő számla'
+          : item.category === 'bank' ? 'Banki dokumentum'
+          : 'Bérszámfejtés',
+        deadline: item.item_date ? new Date(item.item_date).toLocaleDateString('hu-HU') : '-',
+        urgent: item.priority === 'urgent',
+      }));
+
+      return {
+        companyName: company?.name || 'Ismeretlen cég',
+        companyId: tokenRow.company_id,
+        missingDocs,
+      };
+    },
+    enabled: !!token,
+  });
+
+  const missingDocs = portalData?.missingDocs || [];
+  const companyName = portalData?.companyName || 'Betöltés...';
 
   const simulateUpload = useCallback((file: File) => {
     const fileId = `file-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -82,7 +140,7 @@ export default function ClientPortalPage() {
   };
 
   const completedCount = uploadedFiles.filter(f => f.status === 'done').length;
-  const remainingDocs = mockMissingDocs.filter(d => !submittedDocs.has(d.id));
+  const remainingDocs = missingDocs.filter(d => !submittedDocs.has(d.id));
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0a]">
@@ -94,7 +152,7 @@ export default function ClientPortalPage() {
               <Building2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">Tech Solutions Kft.</h1>
+              <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">{companyName}</h1>
               <p className="text-xs text-slate-500 dark:text-slate-400">Dokumentum feltöltő portál</p>
             </div>
           </div>
@@ -143,7 +201,7 @@ export default function ClientPortalPage() {
             </h3>
           </div>
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            {mockMissingDocs.map(doc => {
+            {missingDocs.map(doc => {
               const isSubmitted = submittedDocs.has(doc.id);
               return (
                 <div key={doc.id} className={cn(

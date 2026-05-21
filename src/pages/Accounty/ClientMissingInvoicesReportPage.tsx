@@ -4,6 +4,7 @@ import { ArrowLeft, Download, TrendingUp, CheckCircle2, Clock, Zap } from 'lucid
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useAccountyClients, useAccountyMissingItems } from '@/hooks/useAccountyData';
 
 const defaultBarData = [
   { name: 'Aug', requested: 12, resolved: 10 },
@@ -15,86 +16,60 @@ const defaultBarData = [
 ];
 
 const defaultPieData = [
-  { name: 'Email', value: 45 },
-  { name: 'Viber', value: 25 },
-  { name: 'Telegram', value: 20 },
-  { name: 'AI Hívás', value: 10 },
+  { name: 'Bejövő', value: 45 },
+  { name: 'Kimenő', value: 25 },
+  { name: 'Bank', value: 20 },
+  { name: 'Bér', value: 10 },
 ];
 const COLORS = ['#1A1F2C', '#334155', '#64748B', '#94A3B8'];
-
-const tableData = [
-  { id: 1, name: 'Tech Solutions Kft.', requested: 12, resolved: 11, avgTime: '1.2 nap', reliability: 92 },
-  { id: 2, name: 'Digital Partners Zrt.', requested: 8, resolved: 5, avgTime: '4.5 nap', reliability: 63 },
-  { id: 3, name: 'Innovation Labs Kft.', requested: 15, resolved: 14, avgTime: '2.1 nap', reliability: 93 },
-  { id: 4, name: 'Smart Office Bt.', requested: 6, resolved: 6, avgTime: '0.8 nap', reliability: 100 },
-  { id: 5, name: 'Global Trade Kft.', requested: 10, resolved: 4, avgTime: '5.2 nap', reliability: 40 },
-];
-
-const mockClients: Record<number, string> = {
-  1: 'Tech Solutions Kft.',
-  2: 'Digital Partners Zrt.',
-  3: 'Innovation Labs Kft.',
-  4: 'Smart Office Bt.',
-  5: 'Global Trade Kft.',
-};
 
 export default function ClientMissingInvoicesReportPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   
-  const selectedClient = id || '1';
-  const clientName = mockClients[Number(selectedClient)] || 'Ismeretlen Ügyfél';
+  const { data: clients } = useAccountyClients();
+  const { data: missingItems } = useAccountyMissingItems(id || '');
 
-  const filteredTableData = useMemo(() => {
-    return tableData.filter(row => row.id.toString() === selectedClient);
-  }, [selectedClient]);
+  const clientName = useMemo(() => {
+    const found = clients?.find(c => c.id === id);
+    return found?.name || 'Betöltés...';
+  }, [clients, id]);
 
+  // Build KPIs from real missing items
   const kpis = useMemo(() => {
-    if (filteredTableData.length === 0) {
-      return { requested: 0, resolved: 0, successRate: 0, avgTime: 0 };
-    }
-    const requested = filteredTableData[0].requested;
-    const resolved = filteredTableData[0].resolved;
-    const successRate = requested > 0 ? Math.round((resolved / requested) * 100) : 0;
-    const avgTime = parseFloat(filteredTableData[0].avgTime);
-      
-    return {
-      requested,
-      resolved,
-      successRate,
-      avgTime: Number(avgTime.toFixed(1)),
-    };
-  }, [filteredTableData]);
+    if (!missingItems) return { requested: 0, resolved: 0, successRate: 0, pending: 0 };
+    const requested = missingItems.length;
+    const resolved = missingItems.filter(mi => mi.status === 'resolved').length;
+    const ignored = missingItems.filter(mi => mi.status === 'ignored').length;
+    const pending = missingItems.filter(mi => mi.status === 'pending').length;
+    const successRate = requested > 0 ? Math.round(((resolved + ignored) / requested) * 100) : 0;
+    return { requested, resolved, successRate, pending };
+  }, [missingItems]);
 
-  const dynamicCharts = useMemo(() => {
-    if (filteredTableData.length === 0) return { barData: defaultBarData, pieData: defaultPieData };
-    
-    const idNum = parseInt(selectedClient, 10);
-    const clientData = filteredTableData[0];
-    const totalReq = clientData.requested;
-    const totalRes = clientData.resolved;
-
-    const barData = defaultBarData.map((month, index) => {
-      const factorReq = 0.5 + ((idNum * 13 + index * 7) % 10) / 10;
-      const factorRes = 0.5 + ((idNum * 17 + index * 11) % 10) / 10;
-      const requested = Math.max(1, Math.round((totalReq / 6) * factorReq));
-      const resolved = Math.min(requested, Math.max(0, Math.round((totalRes / 6) * factorRes)));
-      return { name: month.name, requested, resolved };
+  // Dynamic pie: category breakdown
+  const dynamicPieData = useMemo(() => {
+    if (!missingItems || missingItems.length === 0) return defaultPieData;
+    const cats: Record<string, number> = {};
+    const catLabels: Record<string, string> = { bejovo: 'Bejövő', kimeno: 'Kimenő', bank: 'Bank', ber: 'Bér' };
+    missingItems.forEach(mi => {
+      const label = catLabels[mi.category] || mi.category;
+      cats[label] = (cats[label] || 0) + 1;
     });
+    return Object.entries(cats).map(([name, value]) => ({ name, value }));
+  }, [missingItems]);
 
-    const emailVal = 30 + (idNum * 10) % 40;
-    const viberVal = 10 + (idNum * 15) % 30;
-    const telegramVal = 5 + (idNum * 20) % 25;
-    const sum = emailVal + viberVal + telegramVal;
-    const pieData = [
-      { name: 'Email', value: emailVal },
-      { name: 'Viber', value: viberVal },
-      { name: 'Telegram', value: telegramVal },
-      { name: 'AI Hívás', value: Math.max(5, 100 - sum) },
+  // Dynamic bar: status breakdown as simple chart
+  const dynamicBarData = useMemo(() => {
+    if (!missingItems || missingItems.length === 0) return defaultBarData;
+    const pending = missingItems.filter(mi => mi.status === 'pending').length;
+    const resolved = missingItems.filter(mi => mi.status === 'resolved').length;
+    const ignored = missingItems.filter(mi => mi.status === 'ignored').length;
+    return [
+      { name: 'Függőben', requested: pending, resolved: 0 },
+      { name: 'Megoldott', requested: 0, resolved },
+      { name: 'Ignorált', requested: ignored, resolved: 0 },
     ];
-
-    return { barData, pieData };
-  }, [selectedClient, filteredTableData]);
+  }, [missingItems]);
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500 pb-24">
@@ -134,46 +109,46 @@ export default function ClientMissingInvoicesReportPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-4 gap-4">
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Összes felszólítás</h3>
+          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Összes hiányzó tétel</h3>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.requested}</span>
           </div>
-          <div className="mt-2 flex items-center text-xs text-emerald-600 font-medium">
+          <div className="mt-2 flex items-center text-xs text-slate-500 font-medium">
             <TrendingUp className="w-3.5 h-3.5 mr-1" />
-            +8% az előző hónaphoz képest
+            Supabase adat
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Sikeres bekérés</h3>
+          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Megoldott</h3>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.resolved}</span>
           </div>
           <div className="mt-2 flex items-center text-xs text-emerald-600 font-medium">
             <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-            {kpis.successRate}% sikeresség
+            {kpis.successRate}% kezelt
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Átlagos válaszidő</h3>
+          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Függőben</h3>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.avgTime} nap</span>
+            <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.pending}</span>
+          </div>
+          <div className="mt-2 flex items-center text-xs text-amber-600 font-medium">
+            <Clock className="w-3.5 h-3.5 mr-1" />
+            Várakozik
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Sikerességi arány</h3>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.successRate}%</span>
           </div>
           <div className="mt-2 flex items-center text-xs text-emerald-600 font-medium">
-            <Clock className="w-3.5 h-3.5 mr-1" />
-            -0.3 nap javulás
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Automatikus bekérés</h3>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">72%</span>
-          </div>
-          <div className="mt-2 flex items-center text-xs text-slate-500 dark:text-slate-400 font-medium">
-            <Zap className="w-3.5 h-3.5 mr-1 text-slate-400" />
-            Automatizált
+            <Zap className="w-3.5 h-3.5 mr-1" />
+            Megoldott + Ignorált
           </div>
         </div>
       </div>
@@ -183,12 +158,12 @@ export default function ClientMissingInvoicesReportPage() {
         {/* Bar Chart */}
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Felszólítások időbeli alakulása</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Küldött és megoldott kérések havonta</p>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Státusz bontás</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Függőben / megoldott / ignorált</p>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dynamicCharts.barData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+              <BarChart data={dynamicBarData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} />
@@ -203,15 +178,15 @@ export default function ClientMissingInvoicesReportPage() {
         {/* Donut Chart */}
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col">
           <div className="mb-2">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Csatornák hatékonysága</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sikeres bekérések csatornánként</p>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Kategória bontás</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Hiányzó tételek kategóriánként</p>
           </div>
           <div className="flex-1 flex items-center justify-center -mt-4">
             <div className="h-48 w-full max-w-xs relative">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={dynamicCharts.pieData}
+                    data={dynamicPieData}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -220,7 +195,7 @@ export default function ClientMissingInvoicesReportPage() {
                     dataKey="value"
                     stroke="none"
                   >
-                    {dynamicCharts.pieData.map((entry, index) => (
+                    {dynamicPieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -228,9 +203,9 @@ export default function ClientMissingInvoicesReportPage() {
               </ResponsiveContainer>
               {/* Custom Legend to match screenshot closely */}
               <div className="flex justify-center gap-4 mt-2">
-                {dynamicCharts.pieData.map((entry, index) => (
+                {dynamicPieData.map((entry, index) => (
                   <div key={entry.name} className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: COLORS[index] }}></div>
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
                     {entry.name}
                   </div>
                 ))}
@@ -238,62 +213,79 @@ export default function ClientMissingInvoicesReportPage() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 text-xs font-medium text-slate-600 dark:text-slate-400 px-4">
-            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#1A1F2C]"></div> Email:</span> <span>85% kézbesítés</span></div>
-            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#334155]"></div> Viber:</span> <span>92% olvasás</span></div>
-            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#64748B]"></div> Telegram:</span> <span>88% olvasás</span></div>
-            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#94A3B8]"></div> AI Hívás:</span> <span>78% válasz</span></div>
+            {dynamicPieData.map((entry, index) => (
+              <div key={entry.name} className="flex justify-between items-center">
+                <span className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                  {entry.name}:
+                </span>
+                <span>{entry.value} db</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Table */}
+      {/* Summary */}
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden pb-4">
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Statisztika részletei</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Válaszadási arányok és átlagos válaszidők</p>
-          </div>
+        <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Összesítés</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{clientName} hiányzó tételeinek részletes bontása</p>
         </div>
         
         <table className="w-full text-sm text-left mt-2">
           <thead className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-xs">
             <tr>
-              <th className="px-6 py-4 font-medium">Ügyfél</th>
-              <th className="px-6 py-4 font-medium text-center">Kérések</th>
+              <th className="px-6 py-4 font-medium">Kategória</th>
+              <th className="px-6 py-4 font-medium text-center">Összes</th>
               <th className="px-6 py-4 font-medium text-center">Megoldott</th>
-              <th className="px-6 py-4 font-medium text-center">Átlag válaszidő</th>
-              <th className="px-6 py-4 font-medium">Megbízhatóság</th>
+              <th className="px-6 py-4 font-medium text-center">Függőben</th>
+              <th className="px-6 py-4 font-medium">Arány</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {filteredTableData.map((row) => (
-              <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <td className="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100">{row.name}</td>
-                <td className="px-6 py-4 text-center font-medium text-slate-700 dark:text-slate-300">{row.requested}</td>
-                <td className="px-6 py-4 text-center font-medium text-slate-700 dark:text-slate-300">{row.resolved}</td>
-                <td className="px-6 py-4 text-center font-medium text-slate-700 dark:text-slate-300">{row.avgTime}</td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-1.5 w-24 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full ${row.reliability < 50 ? 'bg-red-500' : row.reliability < 80 ? 'bg-amber-500' : 'bg-[#1A1F2C]'}`} 
-                        style={{ width: `${row.reliability}%` }}
-                      ></div>
-                    </div>
-                    <span className={`text-xs font-bold ${row.reliability < 50 ? 'text-red-500' : row.reliability < 80 ? 'text-amber-500' : 'text-emerald-500'}`}>
-                      {row.reliability}%
-                    </span>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {filteredTableData.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
-                  Nincs megjeleníthető adat.
-                </td>
-              </tr>
-            )}
+            {(() => {
+              if (!missingItems || missingItems.length === 0) {
+                return (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
+                      Nincs megjeleníthető adat.
+                    </td>
+                  </tr>
+                );
+              }
+              const catLabels: Record<string, string> = { bejovo: '📥 Bejövő', kimeno: '📤 Kimenő', bank: '🏦 Bank', ber: '👥 Bér' };
+              const cats = ['bejovo', 'kimeno', 'bank', 'ber'];
+              return cats.map(cat => {
+                const items = missingItems.filter(mi => mi.category === cat);
+                const total = items.length;
+                if (total === 0) return null;
+                const resolved = items.filter(mi => mi.status === 'resolved' || mi.status === 'ignored').length;
+                const pending = items.filter(mi => mi.status === 'pending').length;
+                const pct = total > 0 ? Math.round((resolved / total) * 100) : 0;
+                return (
+                  <tr key={cat} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td className="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100">{catLabels[cat] || cat}</td>
+                    <td className="px-6 py-4 text-center font-medium text-slate-700 dark:text-slate-300">{total}</td>
+                    <td className="px-6 py-4 text-center font-medium text-emerald-600">{resolved}</td>
+                    <td className="px-6 py-4 text-center font-medium text-amber-600">{pending}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-1.5 w-24 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full ${pct < 50 ? 'bg-red-500' : pct < 80 ? 'bg-amber-500' : 'bg-emerald-500'}`} 
+                            style={{ width: `${pct}%` }}
+                          ></div>
+                        </div>
+                        <span className={`text-xs font-bold ${pct < 50 ? 'text-red-500' : pct < 80 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                          {pct}%
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              }).filter(Boolean);
+            })()}
           </tbody>
         </table>
       </div>

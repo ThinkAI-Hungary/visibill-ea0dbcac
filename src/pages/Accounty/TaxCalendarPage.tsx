@@ -11,14 +11,15 @@ import {
   User,
   Building,
   Calendar as CalendarIcon,
-  Search
+  Search,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import { mockKpis } from './mockData';
 import { useAccountyRole } from './AccountyRoleContext';
+import { useAccountyDeadlines, useAccountyKpis, useCompleteDeadline } from '@/hooks/useAccountyData';
 
 type Status = 'Zöld' | 'Sárga' | 'Piros';
 
@@ -33,46 +34,23 @@ interface DeadlineGroup {
 
 interface ClientDeadline {
   id: string;
-  deadlineId: string;
+  deadlineGroupKey: string;
   clientName: string;
   assignedToMe: boolean;
   status: 'Rendben' | 'Feldolgozandó' | 'Kritikus';
-  ownerInitial: string;
+  deadlineStatus: string;
 }
 
-// --- MOCK ADATOK ---
-const mockDeadlineGroups: DeadlineGroup[] = [
-  { id: '1', title: 'Bér', date: 2, countMine: 45, countAll: 110, status: 'Zöld' },
-  { id: '2', title: 'Bér', date: 7, countMine: 45, countAll: 110, status: 'Zöld' },
-  { id: '3', title: 'Kata', date: 7, countMine: 8, countAll: 25, status: 'Sárga' },
-  { id: '4', title: 'Bér', date: 10, countMine: 45, countAll: 110, status: 'Zöld' },
-  { id: '5', title: 'Bér', date: 11, countMine: 45, countAll: 110, status: 'Zöld' },
-  { id: '6', title: 'Kata', date: 11, countMine: 8, countAll: 25, status: 'Sárga' },
-  { id: '7', title: 'Bér', date: 12, countMine: 45, countAll: 110, status: 'Zöld' },
-  { id: '8', title: 'Kata', date: 12, countMine: 8, countAll: 25, status: 'Sárga' },
-  { id: '9', title: 'Bér', date: 16, countMine: 45, countAll: 110, status: 'Zöld' },
-  { id: '10', title: 'ÁFA', date: 16, countMine: 12, countAll: 40, status: 'Piros' },
-  { id: '11', title: 'Bér', date: 17, countMine: 45, countAll: 110, status: 'Zöld' },
-  { id: '12', title: 'Bér', date: 18, countMine: 45, countAll: 110, status: 'Zöld' },
-  { id: '13', title: 'Kata', date: 18, countMine: 8, countAll: 25, status: 'Sárga' },
-  { id: '14', title: 'Bér', date: 19, countMine: 45, countAll: 110, status: 'Zöld' },
-  { id: '15', title: 'Kata', date: 19, countMine: 8, countAll: 25, status: 'Sárga' },
-  { id: '16', title: 'ÁFA', date: 20, countMine: 12, countAll: 40, status: 'Piros' },
-  { id: '17', title: 'Kata', date: 20, countMine: 8, countAll: 25, status: 'Sárga' },
-  { id: '18', title: 'Bér', date: 24, countMine: 45, countAll: 110, status: 'Zöld' },
-  { id: '19', title: 'Bér', date: 25, countMine: 45, countAll: 110, status: 'Zöld' },
-  { id: '20', title: 'Bér', date: 31, countMine: 45, countAll: 110, status: 'Zöld' },
-];
-
-const mockClientDeadlines: ClientDeadline[] = mockDeadlineGroups.flatMap((dg) => {
-  return [
-    { id: `${dg.id}_c1`, deadlineId: dg.id, clientName: 'Tech Solutions Kft.', assignedToMe: true, status: 'Rendben', ownerInitial: 'A' },
-    { id: `${dg.id}_c2`, deadlineId: dg.id, clientName: 'Webshop Hungary Zrt.', assignedToMe: true, status: 'Feldolgozandó', ownerInitial: 'A' },
-    { id: `${dg.id}_c3`, deadlineId: dg.id, clientName: 'Gastro Delight Kft.', assignedToMe: true, status: 'Kritikus', ownerInitial: 'A' },
-    { id: `${dg.id}_c4`, deadlineId: dg.id, clientName: 'Global Trade Kft.', assignedToMe: false, status: 'Feldolgozandó', ownerInitial: 'B' },
-    { id: `${dg.id}_c5`, deadlineId: dg.id, clientName: 'Smart Office Bt.', assignedToMe: false, status: 'Rendben', ownerInitial: 'C' },
-  ];
-});
+// Map deadline_type to display title
+const deadlineTypeTitle: Record<string, string> = {
+  afa: 'ÁFA',
+  jarulek: 'Járulék',
+  kata: 'Kata',
+  ber: 'Bér',
+  tao: 'TAO',
+  ipa: 'IPA',
+  egyeb: 'Egyéb',
+};
 
 function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900 dark:text-slate-100" }: { title: string, value: number, icon: React.ElementType, valueClass?: string }) {
   return (
@@ -92,21 +70,82 @@ export default function TaxCalendarPage() {
   const [selectedDeadline, setSelectedDeadline] = useState<DeadlineGroup | null>(null);
   const [selectedClient, setSelectedClient] = useState<string>('all');
 
+  // Supabase data
+  const { data: deadlinesData } = useAccountyDeadlines();
+  const { data: kpisData } = useAccountyKpis();
+  const completeDeadlineMutation = useCompleteDeadline();
+
   // Ha könyvelő módban van, mindig saját nézet
   React.useEffect(() => {
     if (role === 'könyvelő') {
       setViewScope('mine');
     }
   }, [role]);
-  
+
+  // Build DeadlineGroups from Supabase data, grouped by (due_date day + deadline_type)
+  const { deadlineGroups, clientDeadlines } = useMemo(() => {
+    if (!deadlinesData || deadlinesData.length === 0) return { deadlineGroups: [] as DeadlineGroup[], clientDeadlines: [] as ClientDeadline[] };
+
+    // Group by "day-type" key
+    const groupMap: Record<string, { deadlines: typeof deadlinesData }> = {};
+    deadlinesData.forEach(d => {
+      const dayOfMonth = new Date(d.dueDate).getDate();
+      const key = `${dayOfMonth}-${d.deadlineType}`;
+      if (!groupMap[key]) groupMap[key] = { deadlines: [] };
+      groupMap[key].deadlines.push(d);
+    });
+
+    const groups: DeadlineGroup[] = [];
+    const clients: ClientDeadline[] = [];
+
+    Object.entries(groupMap).forEach(([key, { deadlines }]) => {
+      const dayOfMonth = parseInt(key.split('-')[0]);
+      const type = key.split('-').slice(1).join('-');
+      const count = deadlines.length;
+      const overdueCount = deadlines.filter(d => d.status === 'overdue').length;
+      const pendingCount = deadlines.filter(d => d.status === 'pending' || d.status === 'in_progress').length;
+
+      let status: Status = 'Zöld';
+      if (overdueCount > 0) status = 'Piros';
+      else if (pendingCount > count * 0.3) status = 'Sárga';
+
+      const group: DeadlineGroup = {
+        id: key,
+        title: deadlineTypeTitle[type] || type,
+        date: dayOfMonth,
+        countMine: count, // All are "mine" since we only fetch assigned companies
+        countAll: count,
+        status,
+      };
+      groups.push(group);
+
+      // Build client deadlines for the drawer
+      deadlines.forEach(d => {
+        const dlStatus = d.status === 'completed' ? 'Rendben'
+          : d.status === 'overdue' ? 'Kritikus'
+          : 'Feldolgozandó';
+        clients.push({
+          id: d.id,
+          deadlineGroupKey: key,
+          clientName: d.companyName || 'Ismeretlen',
+          assignedToMe: true,
+          status: dlStatus as any,
+          deadlineStatus: d.status,
+        });
+      });
+    });
+
+    return { deadlineGroups: groups, clientDeadlines: clients };
+  }, [deadlinesData]);
+
   const uniqueClients = useMemo(() => {
-    const clients = mockClientDeadlines
+    const clients = clientDeadlines
       .filter(c => viewScope === 'all' || c.assignedToMe)
       .map(c => c.clientName);
     return Array.from(new Set(clients)).sort();
-  }, [viewScope]);
+  }, [viewScope, clientDeadlines]);
   
-  const [currentDate, setCurrentDate] = useState<Date>(new Date(2024, 4, 1)); // Május 2024
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [calendarView, setCalendarView] = useState<'month' | 'week' | 'list'>('month');
 
   const handlePrev = () => {
@@ -201,23 +240,23 @@ export default function TaxCalendarPage() {
 
   const getBadgesForDay = (day: number, isCurrentMonth: boolean) => {
     if (!isCurrentMonth) return [];
-    const baseBadges = mockDeadlineGroups.filter(dg => dg.date === day);
+    const baseBadges = deadlineGroups.filter(dg => dg.date === day);
     
     if (selectedClient === 'all') return baseBadges;
 
     return baseBadges.map(badge => {
-      const filteredClients = mockClientDeadlines.filter(c => 
-        c.deadlineId === badge.id && 
+      const filteredClts = clientDeadlines.filter(c => 
+        c.deadlineGroupKey === badge.id && 
         c.clientName === selectedClient &&
         (viewScope === 'all' || c.assignedToMe)
       );
       
-      if (filteredClients.length === 0) return null;
+      if (filteredClts.length === 0) return null;
       
       return {
         ...badge,
-        countMine: filteredClients.filter(c => c.assignedToMe).length,
-        countAll: filteredClients.length
+        countMine: filteredClts.filter(c => c.assignedToMe).length,
+        countAll: filteredClts.length
       };
     }).filter(Boolean) as DeadlineGroup[];
   };
@@ -232,7 +271,7 @@ export default function TaxCalendarPage() {
     const month = currentDate.getMonth();
     const months = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
     
-    const uniqueDays = Array.from(new Set(mockDeadlineGroups.map(dg => dg.date))).sort((a, b) => a - b);
+    const uniqueDays = Array.from(new Set(deadlineGroups.map(dg => dg.date))).sort((a, b) => a - b);
     
     return uniqueDays.map(dayNum => {
       const fullDate = new Date(year, month, dayNum);
@@ -251,14 +290,12 @@ export default function TaxCalendarPage() {
 
   const filteredClients = useMemo(() => {
     if (!selectedDeadline) return [];
-    return mockClientDeadlines.filter(c => {
-      // Szűrjük az adott deadline-ra
-      if (c.deadlineId !== selectedDeadline.id) return false;
-      // Szűrjük aszerint, hogy saját vagy összes
+    return clientDeadlines.filter(c => {
+      if (c.deadlineGroupKey !== selectedDeadline.id) return false;
       if (viewScope === 'mine' && !c.assignedToMe) return false;
       return true;
     });
-  }, [selectedDeadline, viewScope]);
+  }, [selectedDeadline, viewScope, clientDeadlines]);
 
   const handleDeadlineClick = (deadline: DeadlineGroup) => {
     setSelectedDeadline(deadline);
@@ -295,10 +332,10 @@ export default function TaxCalendarPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard title={viewScope === 'mine' ? 'Saját ügyfeleim' : 'Összes ügyfél'} value={viewScope === 'mine' ? 5 : mockKpis.totalClients} icon={Users} />
-        <KpiCard title="Feldolgozatlan számlák" value={viewScope === 'mine' ? 18 : mockKpis.unprocessedInvoices} icon={FileText} />
-        <KpiCard title="Hiányzó számlák" value={viewScope === 'mine' ? 4 : mockKpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" />
-        <KpiCard title="Közeledő határidők" value={viewScope === 'mine' ? 3 : mockKpis.upcomingDeadlines} icon={Clock} />
+        <KpiCard title={viewScope === 'mine' ? 'Saját ügyfeleim' : 'Összes ügyfél'} value={kpisData?.totalClients || 0} icon={Users} />
+        <KpiCard title="Feldolgozatlan számlák" value={kpisData?.unprocessedInvoices || 0} icon={FileText} />
+        <KpiCard title="Hiányzó számlák" value={kpisData?.missingItems || 0} icon={AlertTriangle} valueClass="text-red-600" />
+        <KpiCard title="Közeledő határidők" value={kpisData?.upcomingDeadlines || 0} icon={Clock} />
       </div>
 
       {/* Scope Tabs (Mine / All) */}
@@ -313,7 +350,7 @@ export default function TaxCalendarPage() {
           )}
         >
           <User className="w-4 h-4" />
-          Saját ügyfeleim (5)
+          Saját ügyfeleim ({kpisData?.totalClients || 0})
         </button>
         {role === 'admin' && (
           <button
@@ -326,7 +363,7 @@ export default function TaxCalendarPage() {
             )}
           >
             <Building className="w-4 h-4" />
-            Összes irodai ügyfél (24)
+            Összes irodai ügyfél ({kpisData?.totalClients || 0})
           </button>
         )}
       </div>
@@ -530,18 +567,29 @@ export default function TaxCalendarPage() {
                         </div>
                         <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
                           <div className="w-5 h-5 rounded-full bg-slate-300 text-slate-700 dark:text-slate-300 flex items-center justify-center text-[10px] font-bold">
-                            {client.ownerInitial}
+                            {client.clientName.charAt(0)}
                           </div>
-                          Anna
+                          {client.clientName.split(' ')[0]}
                         </div>
                       </div>
                       
-                      {client.status !== 'Rendben' && (
-                        <Button variant="outline" size="sm" className="h-8 text-xs font-semibold gap-1.5 border-slate-200 dark:border-slate-800">
-                          <Mail className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                          Értesítés
+                      <div className="flex items-center gap-2">
+                        {client.status !== 'Rendben' && (
+                          <Button variant="outline" size="sm" className="h-8 text-xs font-semibold gap-1.5 border-slate-200 dark:border-slate-800">
+                            <Mail className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                            Értesítés
+                          </Button>
+                        )}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => completeDeadlineMutation.mutate(client.id)}
+                          className="h-8 text-xs font-semibold gap-1.5 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          Kész
                         </Button>
-                      )}
+                      </div>
                     </div>
                   ))}
 

@@ -4,6 +4,7 @@ import { ArrowLeft, Download, TrendingUp, CheckCircle2, Clock, Zap } from 'lucid
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { useAccountyClients, useAccountyAllMissingItems } from '@/hooks/useAccountyData';
 
 const defaultBarData = [
   { name: 'Aug', requested: 12, resolved: 10 },
@@ -22,51 +23,55 @@ const defaultPieData = [
 ];
 const COLORS = ['#1A1F2C', '#334155', '#64748B', '#94A3B8'];
 
-const tableData = [
-  { id: 1, name: 'Tech Solutions Kft.', requested: 12, resolved: 11, avgTime: '1.2 nap', reliability: 92 },
-  { id: 2, name: 'Digital Partners Zrt.', requested: 8, resolved: 5, avgTime: '4.5 nap', reliability: 63 },
-  { id: 3, name: 'Innovation Labs Kft.', requested: 15, resolved: 14, avgTime: '2.1 nap', reliability: 93 },
-  { id: 4, name: 'Smart Office Bt.', requested: 6, resolved: 6, avgTime: '0.8 nap', reliability: 100 },
-  { id: 5, name: 'Global Trade Kft.', requested: 10, resolved: 4, avgTime: '5.2 nap', reliability: 40 },
-];
-
 export default function MissingInvoicesReportPage() {
   const navigate = useNavigate();
   const [selectedClient, setSelectedClient] = useState('all');
+  
+  const { data: clients } = useAccountyClients();
+  const { data: allMissingItems } = useAccountyAllMissingItems();
+
+  // Build table data from real Supabase data
+  const tableData = useMemo(() => {
+    if (!clients || !allMissingItems) return [];
+    return clients.map(c => {
+      const items = allMissingItems.filter(mi => mi.companyId === c.id);
+      const requested = items.length;
+      const resolved = items.filter(mi => mi.status === 'resolved').length;
+      const ignored = items.filter(mi => mi.status === 'ignored').length;
+      const reliability = requested > 0 ? Math.round(((resolved + ignored) / requested) * 100) : 100;
+      return {
+        id: c.id,
+        name: c.name,
+        requested,
+        resolved,
+        avgTime: '–',
+        reliability,
+      };
+    }).filter(row => row.requested > 0); // Only show clients with missing items
+  }, [clients, allMissingItems]);
 
   const filteredTableData = useMemo(() => {
     if (selectedClient === 'all') return tableData;
-    return tableData.filter(row => row.id.toString() === selectedClient);
-  }, [selectedClient]);
+    return tableData.filter(row => row.id === selectedClient);
+  }, [selectedClient, tableData]);
 
   const kpis = useMemo(() => {
-    if (selectedClient === 'all') {
-      return {
-        requested: 156,
-        resolved: 118,
-        successRate: 76,
-        avgTime: 2.3,
-      };
-    }
     const requested = filteredTableData.reduce((acc, row) => acc + row.requested, 0);
     const resolved = filteredTableData.reduce((acc, row) => acc + row.resolved, 0);
     const successRate = requested > 0 ? Math.round((resolved / requested) * 100) : 0;
-    const avgTime = filteredTableData.length > 0 
-      ? (filteredTableData.reduce((acc, row) => acc + parseFloat(row.avgTime), 0) / filteredTableData.length)
-      : 0;
-      
     return {
       requested,
       resolved,
       successRate,
-      avgTime: Number(avgTime.toFixed(1)),
+      avgTime: 0,
     };
-  }, [selectedClient, filteredTableData]);
+  }, [filteredTableData]);
 
   const dynamicCharts = useMemo(() => {
     if (selectedClient === 'all') return { barData: defaultBarData, pieData: defaultPieData };
     
-    const idNum = parseInt(selectedClient, 10);
+    // Simple hash for deterministic chart generation from UUID
+    const idNum = selectedClient.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const clientData = filteredTableData[0];
     const totalReq = clientData?.requested || 10;
     const totalRes = clientData?.resolved || 5;
@@ -118,7 +123,7 @@ export default function MissingInvoicesReportPage() {
             <SelectContent>
               <SelectItem value="all">Összes ügyfél</SelectItem>
               {tableData.map(client => (
-                <SelectItem key={client.id} value={client.id.toString()}>{client.name}</SelectItem>
+                <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>

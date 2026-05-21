@@ -4,7 +4,8 @@ import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Clo
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockClients, mockInvoices } from './mockData';
+import { useCompanyInvoices } from '@/hooks/useAccountyData';
+import { useAccountyClients } from '@/hooks/useAccountyData';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -13,7 +14,12 @@ export default function ClientInvoicesPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   
-  const client = mockClients.find((c) => c.id === id) || mockClients[0];
+  const { data: supabaseClients } = useAccountyClients();
+  const client = useMemo(() => {
+    const found = supabaseClients?.find((c) => c.id === id);
+    if (found) return { id: found.id, name: found.name, taxNumber: found.taxNumber || '' };
+    return { id: id || '1', name: 'Betöltés...', taxNumber: '' };
+  }, [supabaseClients, id]);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -22,19 +28,18 @@ export default function ClientInvoicesPage() {
   const [isNavSyncOpen, setIsNavSyncOpen] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
+  const { data: invoicesData, isLoading: invoicesLoading } = useCompanyInvoices(id || '');
+
   const filteredInvoices = useMemo(() => {
-    return mockInvoices.filter((inv) => {
-      // For now, filter by clientId if we want strict client scope.
-      // Assuming mockInvoices only has one client's invoices for demo, but let's filter by it just in case.
-      // Wait, in my mockData I hardcoded clientId: '1'. Let's just use it regardless or filter by clientId if matches.
-      // Actually, if we filter by clientId and we view client id='2', it's empty. Let's just show all for demo purposes.
+    if (!invoicesData) return [];
+    return invoicesData.filter((inv) => {
       const matchSearch = inv.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           inv.partnerName.toLowerCase().includes(searchQuery.toLowerCase());
       const matchStatus = statusFilter === 'all' || inv.status === statusFilter;
       const matchType = typeFilter === 'all' || inv.type === typeFilter;
       return matchSearch && matchStatus && matchType;
     });
-  }, [searchQuery, statusFilter, typeFilter]);
+  }, [invoicesData, searchQuery, statusFilter, typeFilter]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('hu-HU', { style: 'currency', currency: 'HUF', minimumFractionDigits: 0 }).format(amount);
@@ -290,7 +295,16 @@ export default function ClientInvoicesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredInvoices.length > 0 ? (
+              {invoicesLoading ? (
+                <tr>
+                  <td colSpan={8} className="text-center py-12 text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></div>
+                      Számlák betöltése...
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredInvoices.length > 0 ? (
                 filteredInvoices.map((inv) => (
                   <tr key={inv.id} className="hover:bg-slate-50/50 dark:bg-slate-900/50 transition-colors group">
                     <td className="px-6 py-4 text-center"><input type="checkbox" className="rounded border-slate-300 w-4 h-4 accent-slate-900" /></td>

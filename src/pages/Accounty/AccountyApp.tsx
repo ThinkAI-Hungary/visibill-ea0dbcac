@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Plus, 
   Search, 
@@ -23,7 +23,9 @@ import {
   Shield,
   UserCheck,
   Download,
-  TrendingUp
+  TrendingUp,
+  Loader2,
+  Database
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -31,29 +33,15 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { mockKpis, mockClients, ClientData, mockAccountants } from './mockData';
+import { ClientData } from './mockData';
+import { useAccountyClients, useAccountyKpis, useUpdateKanbanStatus, useAccountyAccountants } from '@/hooks/useAccountyData';
 import { useAccountyRole } from './AccountyRoleContext';
+import { seedAccountyAssignments } from '@/utils/seedAccounty';
 import { cn } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { BarChart2, PieChart as PieChartIcon } from 'lucide-react';
 
-const kpiStats = {
-  zarasiSzazalek: 82,
-  kritikusDb: 12,
-  kiosztottLezart: "15 / 9"
-};
-
-const barChartData = [
-  { name: 'Anna', value: 45 },
-  { name: 'Péter', value: 38 },
-  { name: 'Gábor', value: 24 }
-];
-
-const pieChartData = [
-  { name: 'Kész', value: 15, color: '#10b981' },
-  { name: 'Feldolgozandó', value: 5, color: '#f59e0b' },
-  { name: 'Kritikus', value: 4, color: '#ef4444' }
-];
+// KPI stats, bar/pie chart data are now computed dynamically inside the component from Supabase data
 
 const monthlyTrendData = [
   { month: 'Okt', zaras: 68, szamlak: 320, hianyzok: 28 },
@@ -97,7 +85,9 @@ function StatusBadge({ status }: { status: ClientData['status'] }) {
 
 function OwnerDropdown({ client, onUpdateOwner }: { client: ClientData, onUpdateOwner?: (clientId: string, ownerId: string) => void }) {
   const [open, setOpen] = useState(false);
-  const owner = mockAccountants.find(a => a.id === client.ownerId) || mockAccountants[0];
+  const { data: accountants } = useAccountyAccountants();
+  const safeAccountants = accountants || [{ id: '1', userId: '1', name: 'Névtelen', initial: 'N', clientCount: 0 }];
+  const owner = safeAccountants.find(a => a.id === client.ownerId) || safeAccountants[0];
 
   if (!owner) return null;
 
@@ -119,7 +109,7 @@ function OwnerDropdown({ client, onUpdateOwner }: { client: ClientData, onUpdate
             <CommandList>
               <CommandEmpty>Nincs találat.</CommandEmpty>
               <CommandGroup>
-                {mockAccountants.map((acc) => (
+                {safeAccountants.map((acc) => (
                   <CommandItem
                     key={acc.id}
                     value={acc.name}
@@ -253,18 +243,96 @@ function ClientCard({ client, draggable, onDragStart, onDragEnd, isDragged, onUp
   );
 }
 
+// Color palette for client cards
+const CLIENT_COLORS = [
+  'bg-emerald-100 text-emerald-600', 'bg-amber-100 text-amber-600',
+  'bg-indigo-100 text-indigo-600', 'bg-pink-100 text-pink-600',
+  'bg-teal-100 text-teal-600', 'bg-sky-100 text-sky-600',
+  'bg-violet-100 text-violet-600', 'bg-rose-100 text-rose-600',
+];
+
 export default function AccountyApp() {
-  const [clients, setClients] = useState<ClientData[]>(mockClients);
+  const { data: supabaseClients, isLoading: clientsLoading } = useAccountyClients();
+  const { data: supabaseKpis } = useAccountyKpis();
+  const kanbanMutation = useUpdateKanbanStatus();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('Minden');
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'kanban'>('grid');
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ClientData['status'] | null>(null);
+  const [ownerOverrides, setOwnerOverrides] = useState<Record<string, string>>({});
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, ClientData['status']>>({});
   const navigate = useNavigate();
   const { role, setRole } = useAccountyRole();
 
+  // Map Supabase data → ClientData format for UI compatibility
+  const clients: ClientData[] = useMemo(() => {
+    if (!supabaseClients || supabaseClients.length === 0) return [];
+    return supabaseClients.map((sc, idx): ClientData => ({
+      id: sc.id,
+      name: sc.name,
+      taxNumber: sc.taxNumber || '',
+      status: statusOverrides[sc.id] || sc.status,
+      unprocessedCount: sc.unprocessedCount,
+      missingCount: sc.missingCount,
+      deadline: sc.deadlineDate
+        ? new Date(sc.deadlineDate).toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' }) + '.'
+        : '–',
+      deadlineDate: sc.deadlineDate || new Date(Date.now() + 30 * 86400000).toISOString(),
+      progress: sc.progress,
+      colorHex: CLIENT_COLORS[idx % CLIENT_COLORS.length],
+      assignedToMe: sc.assignedToMe,
+      ownerId: ownerOverrides[sc.id] || '1',
+    }));
+  }, [supabaseClients, ownerOverrides, statusOverrides]);
+
+  // KPIs from Supabase (fallback to 0)
+  const kpis = useMemo(() => ({
+    totalClients: supabaseKpis?.totalClients || 0,
+    unprocessedInvoices: supabaseKpis?.unprocessedInvoices || 0,
+    missingInvoices: supabaseKpis?.missingItems || 0,
+    upcomingDeadlines: supabaseKpis?.upcomingDeadlines || 0,
+  }), [supabaseKpis]);
+
+  // Dynamic KPI stats for "Irodai KPI" view – computed from actual clients
+  const dynamicKpiStats = useMemo(() => {
+    const total = clients.length;
+    const kritikus = clients.filter(c => c.status === 'Kritikus').length;
+    const rendben = clients.filter(c => c.status === 'Rendben').length;
+    const zarasiPct = total > 0 ? Math.round((rendben / total) * 100) : 0;
+    return {
+      zarasiSzazalek: zarasiPct,
+      kritikusDb: kritikus,
+      kiosztottLezart: `${total} / ${rendben}`,
+    };
+  }, [clients]);
+
+  // Dynamic pie chart from actual client statuses
+  const dynamicPieData = useMemo(() => {
+    const rendben = clients.filter(c => c.status === 'Rendben').length;
+    const feldolgozando = clients.filter(c => c.status === 'Feldolgozandó').length;
+    const kritikus = clients.filter(c => c.status === 'Kritikus').length;
+    return [
+      { name: 'Rendben', value: rendben, color: '#10b981' },
+      { name: 'Feldolgozandó', value: feldolgozando, color: '#f59e0b' },
+      { name: 'Kritikus', value: kritikus, color: '#ef4444' },
+    ];
+  }, [clients]);
+
+  // Dynamic bar chart – missing items per accountant (mock accountant names, real values)
+  const dynamicBarData = useMemo(() => {
+    // Since we don't have per-accountant breakdown, group all as single entry
+    const totalMissing = clients.reduce((sum, c) => sum + c.missingCount, 0);
+    const totalUnprocessed = clients.reduce((sum, c) => sum + c.unprocessedCount, 0);
+    return [
+      { name: 'Hiányzó', value: totalMissing },
+      { name: 'Feldolgozatlan', value: totalUnprocessed },
+      { name: 'Rendben', value: clients.filter(c => c.status === 'Rendben').length },
+    ];
+  }, [clients]);
+
   const handleUpdateOwner = (clientId: string, ownerId: string) => {
-    setClients(prev => prev.map(c => c.id === clientId ? { ...c, ownerId } : c));
+    setOwnerOverrides(prev => ({ ...prev, [clientId]: ownerId }));
   };
 
   const handleDragStart = (e: React.DragEvent, id: string) => {
@@ -286,6 +354,7 @@ export default function AccountyApp() {
     }
   };
 
+
   const handleDrop = (e: React.DragEvent, newStatus: ClientData['status']) => {
     e.preventDefault();
     setDragOverColumn(null);
@@ -294,9 +363,13 @@ export default function AccountyApp() {
     const clientId = e.dataTransfer.getData('clientId');
     if (!clientId) return;
     
-    setClients(prev => prev.map(c => 
-      c.id === clientId ? { ...c, status: newStatus } : c
-    ));
+    setStatusOverrides(prev => ({ ...prev, [clientId]: newStatus }));
+    
+    // Persist to Supabase
+    const sc = supabaseClients?.find(c => c.id === clientId);
+    if (sc) {
+      kanbanMutation.mutate({ assignmentId: sc.id, status: newStatus });
+    }
   };
 
   const [viewScope, setViewScope] = useState<'kpi' | 'mine' | 'all'>('kpi');
@@ -316,6 +389,40 @@ export default function AccountyApp() {
 
   const mineCount = clients.filter(c => c.assignedToMe).length;
   const allCount = clients.length;
+
+  if (clientsLoading) {
+    return (
+      <div className="w-full flex flex-col items-center justify-center py-24 gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+        <p className="text-sm text-slate-500 dark:text-slate-400">Portfólió betöltése...</p>
+      </div>
+    );
+  }
+
+  if (!clientsLoading && clients.length === 0) {
+    return (
+      <div className="w-full flex flex-col items-center justify-center py-24 gap-6">
+        <Database className="w-12 h-12 text-slate-300 dark:text-slate-600" />
+        <div className="text-center space-y-2">
+          <h2 className="text-lg font-bold text-slate-700 dark:text-slate-300">Nincs hozzárendelt ügyfél</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md">
+            Az Accounty modulhoz először könyvelőként hozzá kell rendelned magad a cégekhez.
+          </p>
+        </div>
+        <button
+          onClick={async () => {
+            const result = await seedAccountyAssignments();
+            if (result && !('error' in result)) {
+              window.location.reload();
+            }
+          }}
+          className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium text-sm transition-colors shadow-lg"
+        >
+          Hozzárendelés indítása (összes cég)
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-500">
@@ -366,10 +473,10 @@ export default function AccountyApp() {
       {/* KPIs (Hidden in KPI view since it has its own) */}
       {viewScope !== 'kpi' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard title="Összes ügyfél" value={mockKpis.totalClients} icon={Users} />
-          <KpiCard title="Feldolgozatlan számlák" value={mockKpis.unprocessedInvoices} icon={FileText} />
-          <KpiCard title="Hiányzó számlák" value={mockKpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" />
-          <KpiCard title="Közeledő határidők" value={mockKpis.upcomingDeadlines} icon={Clock} />
+          <KpiCard title="Összes ügyfél" value={kpis.totalClients} icon={Users} />
+          <KpiCard title="Feldolgozatlan számlák" value={kpis.unprocessedInvoices} icon={FileText} />
+          <KpiCard title="Hiányzó számlák" value={kpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" />
+          <KpiCard title="Közeledő határidők" value={kpis.upcomingDeadlines} icon={Clock} />
         </div>
       )}
 
@@ -486,21 +593,20 @@ export default function AccountyApp() {
             <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-center">
               <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Zárási státusz (Május):</h3>
               <div className="flex items-baseline gap-4">
-                <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">{kpiStats.zarasiSzazalek}%</span>
-                <span className="text-sm font-semibold text-emerald-500">+5% előző hónap</span>
+                <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">{dynamicKpiStats.zarasiSzazalek}%</span>
+                <span className="text-sm font-semibold text-emerald-500">aktív</span>
               </div>
             </div>
             <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-center">
               <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Kritikus ügyfelek:</h3>
               <div className="flex items-baseline gap-4">
-                <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">{kpiStats.kritikusDb} db</span>
-                <span className="text-sm font-semibold text-red-500">-3 előző hó</span>
+                <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">{dynamicKpiStats.kritikusDb} db</span>
               </div>
             </div>
             <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-center">
-              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Kiosztott/Lezárt cégek:</h3>
+              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Kiosztott / Rendben:</h3>
               <div className="flex items-baseline gap-4">
-                <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">{kpiStats.kiosztottLezart}</span>
+                <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">{dynamicKpiStats.kiosztottLezart}</span>
               </div>
             </div>
           </div>
@@ -514,7 +620,7 @@ export default function AccountyApp() {
               </h3>
               <div className="flex-1 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <BarChart data={dynamicBarData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} className="[&>line]:stroke-slate-100 dark:[&>line]:stroke-slate-800" stroke="#f1f5f9" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
@@ -534,7 +640,7 @@ export default function AccountyApp() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={pieChartData}
+                      data={dynamicPieData}
                       cx="50%"
                       cy="50%"
                       innerRadius={80}
@@ -543,7 +649,7 @@ export default function AccountyApp() {
                       dataKey="value"
                       stroke="none"
                     >
-                      {pieChartData.map((entry, index) => (
+                      {dynamicPieData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -552,22 +658,19 @@ export default function AccountyApp() {
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-8">
                   <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Összes:</span>
-                  <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">24</span>
+                  <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{clients.length}</span>
                 </div>
               </div>
               <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-3">
-                 <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
-                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Kész 65%</span>
-                 </div>
-                 <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#f59e0b]"></div>
-                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Feldolgozandó 20%</span>
-                 </div>
-                 <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
-                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Kritikus 15%</span>
-                 </div>
+                 {dynamicPieData.map((entry) => {
+                   const pct = clients.length > 0 ? Math.round((entry.value / clients.length) * 100) : 0;
+                   return (
+                     <div key={entry.name} className="flex items-center gap-2">
+                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }}></div>
+                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{entry.name} {pct}%</span>
+                     </div>
+                   );
+                 })}
               </div>
             </div>
           </div>

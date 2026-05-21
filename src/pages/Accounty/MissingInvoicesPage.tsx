@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Clock, MoreVertical, FileText, Settings, Search, ChevronRight, Mail, Phone, CheckCircle2, X, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Clock, MoreVertical, FileText, Settings, Search, ChevronRight, Mail, Phone, CheckCircle2, X, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { globalMissingInvoicesData, globalClientInvoices } from './mockData';
+import { useAccountyCompanySummary } from '@/hooks/useAccountyData';
 
 type KpiModalType = 'all' | 'critical' | 'sent' | 'response' | null;
 
@@ -15,14 +15,49 @@ export default function MissingInvoicesPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [data, setData] = useState(globalMissingInvoicesData);
   const [kpiModal, setKpiModal] = useState<KpiModalType>(null);
-  const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = useState<typeof globalClientInvoices[0] | null>(null);
+
+  const { data: companySummary, isLoading } = useAccountyCompanySummary();
+
+  // Transform RPC data to table format
+  const data = useMemo(() => {
+    if (!companySummary || companySummary.length === 0) return [];
+    return companySummary.map(cs => {
+      let status = 'Nincs felszólítva';
+      let statusType = 'neutral';
+      let lastNotice = '-';
+
+      if (cs.totalNotified > 0) {
+        status = cs.maxNotificationCount >= 3 ? 'Kritikus' : 'Felszólítva';
+        statusType = cs.maxNotificationCount >= 3 ? 'danger' : 'warning';
+        if (cs.lastNotifiedAt) {
+          lastNotice = new Date(cs.lastNotifiedAt).toLocaleDateString('hu-HU');
+        }
+      }
+
+      return {
+        id: cs.companyId,
+        name: cs.companyName,
+        missing: cs.missingCount,
+        critical: cs.criticalCount,
+        lastNotice,
+        status,
+        statusType,
+      };
+    });
+  }, [companySummary]);
+
+  const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = useState<any>(null);
 
   const totalMissing = data.reduce((sum, item) => sum + item.missing, 0);
   const totalCritical = data.reduce((sum, item) => sum + item.critical, 0);
+  const totalNotified = useMemo(() => {
+    if (!companySummary) return 0;
+    return companySummary.reduce((sum, cs) => sum + cs.totalNotified, 0);
+  }, [companySummary]);
+  const responseRate = 0; // Will be calculated when notification tracking is implemented
 
-  const filteredData = React.useMemo(() => {
+  const filteredData = useMemo(() => {
     return data.filter(row => {
       const matchesSearch = row.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'all' || row.statusType === statusFilter;
@@ -30,20 +65,21 @@ export default function MissingInvoicesPage() {
     });
   }, [searchQuery, statusFilter, data]);
 
-  // Modal data based on type
-  const modalData = React.useMemo(() => {
-    if (!kpiModal) return { title: '', items: [] as typeof globalClientInvoices };
+  // Modal data based on type (placeholder - modals will use per-company detail page)
+  const modalData = useMemo(() => {
+    const emptyItems: any[] = [];
+    if (!kpiModal) return { title: '', items: emptyItems };
     switch (kpiModal) {
       case 'all':
-        return { title: `\u00D6sszes hi\u00E1nyz\u00F3 sz\u00E1mla (${globalClientInvoices.length})`, items: globalClientInvoices };
+        return { title: `Összes hiányzó számla (${totalMissing})`, items: emptyItems };
       case 'critical':
-        return { title: `Kritikus sz\u00E1ml\u00E1k (${globalClientInvoices.filter(i => i.priority === 'S\u00FCrg\u0151s').length})`, items: globalClientInvoices.filter(i => i.priority === 'S\u00FCrg\u0151s') };
+        return { title: `Kritikus számlák (${totalCritical})`, items: emptyItems };
       case 'sent':
-        return { title: `Felsz\u00F3l\u00EDtott sz\u00E1ml\u00E1k (${globalClientInvoices.filter(i => i.statusVariant === 'warning').length})`, items: globalClientInvoices.filter(i => i.statusVariant === 'warning') };
+        return { title: `Felszólított számlák (${totalNotified})`, items: emptyItems };
       case 'response':
-        return { title: `V\u00E1laszra v\u00E1r\u00F3 sz\u00E1ml\u00E1k`, items: globalClientInvoices.filter(i => i.statusVariant === 'neutral') };
+        return { title: `Válaszra váró számlák`, items: emptyItems };
     }
-  }, [kpiModal]);
+  }, [kpiModal, totalMissing, totalCritical, totalNotified]);
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
@@ -58,7 +94,7 @@ export default function MissingInvoicesPage() {
     }
   };
 
-  const handleInvoiceClick = (invoice: typeof globalClientInvoices[0]) => {
+  const handleInvoiceClick = (invoice: any) => {
     setSelectedInvoiceForDetails(invoice);
   };
 
@@ -85,14 +121,15 @@ export default function MissingInvoicesPage() {
          </div>
        </div>
 
-       {/* Alert Banner */}
+       {totalCritical > 0 && (
        <div className="border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/20 rounded-xl p-4 flex gap-3 text-red-600 dark:text-red-400 shadow-sm">
          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
          <div>
-           <h3 className="font-semibold text-sm">Bevall&#225;si hat&#225;rid&#337; k&#246;zeleg!</h3>
-           <p className="text-sm text-red-600/80 dark:text-red-400/70 mt-0.5">5 nap m&#250;lva lej&#225;r a bevall&#225;si hat&#225;rid&#337;. 10 kritikus sz&#225;mla m&#233;g hi&#225;nyzik.</p>
+           <h3 className="font-semibold text-sm">Kritikus hiányok!</h3>
+           <p className="text-sm text-red-600/80 dark:text-red-400/70 mt-0.5">{totalCritical} sürgős számla vár bekérésre {data.length} ügyféltől.</p>
          </div>
        </div>
+       )}
 
        {/* KPI Cards - CLICKABLE */}
        <div className="grid grid-cols-4 gap-4">
@@ -122,8 +159,8 @@ export default function MissingInvoicesPage() {
          >
            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">K&#252;ld&#246;tt felsz&#243;l&#237;t&#225;sok</h3>
            <div className="mt-4">
-             <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">15</div>
-             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">ez a h&#243;nap</p>
+            <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{totalNotified}</div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">ez a hónap</p>
            </div>
          </button>
          <button 
@@ -132,9 +169,9 @@ export default function MissingInvoicesPage() {
          >
            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4">V&#225;laszad&#225;si ar&#225;ny</h3>
            <div>
-             <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">67%</div>
-             <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-               <div className="h-full bg-slate-800 dark:bg-slate-300 rounded-full" style={{ width: '67%' }}></div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">{responseRate}%</div>
+              <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div className="h-full bg-slate-800 dark:bg-slate-300 rounded-full" style={{ width: `${responseRate}%` }}></div>
              </div>
            </div>
          </button>
@@ -161,8 +198,8 @@ export default function MissingInvoicesPage() {
              
              {/* Invoice list */}
              <div className="overflow-y-auto flex-1 p-2">
-               {modalData.items.length > 0 ? modalData.items.map((inv) => {
-                 const clientName = globalMissingInvoicesData.find(c => c.id === inv.clientId)?.name || '';
+               {modalData.items.length > 0 ? modalData.items.map((inv: any) => {
+                 const clientName = inv.clientName || '';
                  return (
                    <button
                      key={inv.id}
