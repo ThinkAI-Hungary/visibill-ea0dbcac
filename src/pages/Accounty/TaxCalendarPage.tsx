@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { mockKpis } from './mockData';
+import { useAccountyRole } from './AccountyRoleContext';
 
 type Status = 'Zöld' | 'Sárga' | 'Piros';
 
@@ -86,9 +87,17 @@ function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900 dark:t
 }
 
 export default function TaxCalendarPage() {
+  const { role } = useAccountyRole();
   const [viewScope, setViewScope] = useState<'mine' | 'all'>('mine');
   const [selectedDeadline, setSelectedDeadline] = useState<DeadlineGroup | null>(null);
   const [selectedClient, setSelectedClient] = useState<string>('all');
+
+  // Ha könyvelő módban van, mindig saját nézet
+  React.useEffect(() => {
+    if (role === 'könyvelő') {
+      setViewScope('mine');
+    }
+  }, [role]);
   
   const uniqueClients = useMemo(() => {
     const clients = mockClientDeadlines
@@ -286,10 +295,10 @@ export default function TaxCalendarPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard title="Összes ügyfél" value={mockKpis.totalClients} icon={Users} />
-        <KpiCard title="Feldolgozatlan számlák" value={mockKpis.unprocessedInvoices} icon={FileText} />
-        <KpiCard title="Hiányzó számlák" value={mockKpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" />
-        <KpiCard title="Közeledő határidők" value={mockKpis.upcomingDeadlines} icon={Clock} />
+        <KpiCard title={viewScope === 'mine' ? 'Saját ügyfeleim' : 'Összes ügyfél'} value={viewScope === 'mine' ? 5 : mockKpis.totalClients} icon={Users} />
+        <KpiCard title="Feldolgozatlan számlák" value={viewScope === 'mine' ? 18 : mockKpis.unprocessedInvoices} icon={FileText} />
+        <KpiCard title="Hiányzó számlák" value={viewScope === 'mine' ? 4 : mockKpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" />
+        <KpiCard title="Közeledő határidők" value={viewScope === 'mine' ? 3 : mockKpis.upcomingDeadlines} icon={Clock} />
       </div>
 
       {/* Scope Tabs (Mine / All) */}
@@ -306,18 +315,20 @@ export default function TaxCalendarPage() {
           <User className="w-4 h-4" />
           Saját ügyfeleim (5)
         </button>
-        <button
-          onClick={() => { setViewScope('all'); setSelectedClient('all'); }}
-          className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
-            viewScope === 'all' 
-              ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" 
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
-          )}
-        >
-          <Building className="w-4 h-4" />
-          Összes irodai ügyfél (24)
-        </button>
+        {role === 'admin' && (
+          <button
+            onClick={() => { setViewScope('all'); setSelectedClient('all'); }}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
+              viewScope === 'all' 
+                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" 
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
+            )}
+          >
+            <Building className="w-4 h-4" />
+            Összes irodai ügyfél (24)
+          </button>
+        )}
       </div>
 
       {/* Calendar Area */}

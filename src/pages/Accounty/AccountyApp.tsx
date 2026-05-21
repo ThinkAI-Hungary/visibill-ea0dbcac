@@ -32,6 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { mockKpis, mockClients, ClientData, mockAccountants } from './mockData';
+import { useAccountyRole } from './AccountyRoleContext';
 import { cn } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { BarChart2, PieChart as PieChartIcon } from 'lucide-react';
@@ -260,7 +261,7 @@ export default function AccountyApp() {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ClientData['status'] | null>(null);
   const navigate = useNavigate();
-  const [role, setRole] = useState<'admin' | 'konyvelő'>('admin');
+  const { role, setRole } = useAccountyRole();
 
   const handleUpdateOwner = (clientId: string, ownerId: string) => {
     setClients(prev => prev.map(c => c.id === clientId ? { ...c, ownerId } : c));

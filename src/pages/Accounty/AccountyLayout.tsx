@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { AccountyRoleProvider } from './AccountyRoleContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { 
@@ -216,7 +217,9 @@ export default function AccountyLayout() {
 
         {/* Page Content */}
         <div className="flex-1 overflow-auto p-8">
-          <Outlet />
+          <AccountyRoleProvider>
+            <Outlet />
+          </AccountyRoleProvider>
         </div>
       </main>
     </div>

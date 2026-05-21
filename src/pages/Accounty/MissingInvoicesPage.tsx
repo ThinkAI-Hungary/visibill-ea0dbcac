@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Clock, MoreVertical, FileText, Settings, Search, ChevronRight, Mail, Phone, CheckCircle2, X } from 'lucide-react';
+import { AlertTriangle, Clock, MoreVertical, FileText, Settings, Search, ChevronRight, Mail, Phone, CheckCircle2, X, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { globalMissingInvoicesData, globalClientInvoices } from './mockData';
 
 type KpiModalType = 'all' | 'critical' | 'sent' | 'response' | null;
@@ -16,6 +17,7 @@ export default function MissingInvoicesPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [data, setData] = useState(globalMissingInvoicesData);
   const [kpiModal, setKpiModal] = useState<KpiModalType>(null);
+  const [selectedInvoiceForDetails, setSelectedInvoiceForDetails] = useState<typeof globalClientInvoices[0] | null>(null);
 
   const totalMissing = data.reduce((sum, item) => sum + item.missing, 0);
   const totalCritical = data.reduce((sum, item) => sum + item.critical, 0);
@@ -33,23 +35,40 @@ export default function MissingInvoicesPage() {
     if (!kpiModal) return { title: '', items: [] as typeof globalClientInvoices };
     switch (kpiModal) {
       case 'all':
-        return { title: `Összes hiányzó számla (${globalClientInvoices.length})`, items: globalClientInvoices };
+        return { title: `\u00D6sszes hi\u00E1nyz\u00F3 sz\u00E1mla (${globalClientInvoices.length})`, items: globalClientInvoices };
       case 'critical':
-        return { title: `Kritikus számlák (${globalClientInvoices.filter(i => i.priority === 'Sürgős').length})`, items: globalClientInvoices.filter(i => i.priority === 'Sürgős') };
+        return { title: `Kritikus sz\u00E1ml\u00E1k (${globalClientInvoices.filter(i => i.priority === 'S\u00FCrg\u0151s').length})`, items: globalClientInvoices.filter(i => i.priority === 'S\u00FCrg\u0151s') };
       case 'sent':
-        return { title: `Felszólított számlák (${globalClientInvoices.filter(i => i.statusVariant === 'warning').length})`, items: globalClientInvoices.filter(i => i.statusVariant === 'warning') };
+        return { title: `Felsz\u00F3l\u00EDtott sz\u00E1ml\u00E1k (${globalClientInvoices.filter(i => i.statusVariant === 'warning').length})`, items: globalClientInvoices.filter(i => i.statusVariant === 'warning') };
       case 'response':
-        return { title: `Válaszra váró számlák`, items: globalClientInvoices.filter(i => i.statusVariant === 'neutral') };
+        return { title: `V\u00E1laszra v\u00E1r\u00F3 sz\u00E1ml\u00E1k`, items: globalClientInvoices.filter(i => i.statusVariant === 'neutral') };
     }
   }, [kpiModal]);
+
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case 'S\u00FCrg\u0151s':
+        return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-50 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-800">S&#252;rg&#337;s</span>;
+      case 'K\u00F6zepes':
+        return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-800">K&#246;zepes</span>;
+      case 'Alacsony':
+        return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">Alacsony</span>;
+      default:
+        return null;
+    }
+  };
+
+  const handleInvoiceClick = (invoice: typeof globalClientInvoices[0]) => {
+    setSelectedInvoiceForDetails(invoice);
+  };
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
        {/* Header */}
        <div className="flex justify-between items-start">
          <div>
-           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Hiányzó számlák</h1>
-           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Hiányzó számlák bekérése</p>
+           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Hi&#225;nyz&#243; sz&#225;ml&#225;k</h1>
+           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Hi&#225;nyz&#243; sz&#225;ml&#225;k bek&#233;r&#233;se</p>
          </div>
          <div className="flex gap-3">
            <Button 
@@ -61,7 +80,7 @@ export default function MissingInvoicesPage() {
              <FileText className="w-4 h-4"/> Riportok
            </Button>
            <Button variant="outline" size="sm" className="gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 h-9 px-4">
-             <Settings className="w-4 h-4"/> Beállítások
+             <Settings className="w-4 h-4"/> Be&#225;ll&#237;t&#225;sok
            </Button>
          </div>
        </div>
@@ -70,8 +89,8 @@ export default function MissingInvoicesPage() {
        <div className="border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/20 rounded-xl p-4 flex gap-3 text-red-600 dark:text-red-400 shadow-sm">
          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
          <div>
-           <h3 className="font-semibold text-sm">Bevallási határidő közeleg!</h3>
-           <p className="text-sm text-red-600/80 dark:text-red-400/70 mt-0.5">5 nap múlva lejár a bevallási határidő. 10 kritikus számla még hiányzik.</p>
+           <h3 className="font-semibold text-sm">Bevall&#225;si hat&#225;rid&#337; k&#246;zeleg!</h3>
+           <p className="text-sm text-red-600/80 dark:text-red-400/70 mt-0.5">5 nap m&#250;lva lej&#225;r a bevall&#225;si hat&#225;rid&#337;. 10 kritikus sz&#225;mla m&#233;g hi&#225;nyzik.</p>
          </div>
        </div>
 
@@ -81,10 +100,10 @@ export default function MissingInvoicesPage() {
            onClick={() => setKpiModal('all')}
            className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between text-left hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer"
          >
-           <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Összes hiányzó</h3>
+           <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">&#214;sszes hi&#225;nyz&#243;</h3>
            <div className="mt-4">
              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{totalMissing}</div>
-             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{data.length} ügyféltől</p>
+             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{data.length} &#252;gyf&#233;lt&#337;l</p>
            </div>
          </button>
          <button 
@@ -94,24 +113,24 @@ export default function MissingInvoicesPage() {
            <h3 className="text-sm font-medium text-red-500">Kritikus</h3>
            <div className="mt-4">
              <div className="text-2xl font-bold text-red-600">{totalCritical}</div>
-             <p className="text-xs text-red-500 mt-1">Sürgős bekérés</p>
+             <p className="text-xs text-red-500 mt-1">S&#252;rg&#337;s bek&#233;r&#233;s</p>
            </div>
          </button>
          <button 
            onClick={() => setKpiModal('sent')}
            className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between text-left hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer"
          >
-           <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Küldött felszólítások</h3>
+           <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">K&#252;ld&#246;tt felsz&#243;l&#237;t&#225;sok</h3>
            <div className="mt-4">
              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">15</div>
-             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">ez a hónap</p>
+             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">ez a h&#243;nap</p>
            </div>
          </button>
          <button 
            onClick={() => setKpiModal('response')}
            className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between text-left hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer"
          >
-           <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4">Válaszadási arány</h3>
+           <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4">V&#225;laszad&#225;si ar&#225;ny</h3>
            <div>
              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">67%</div>
              <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -145,21 +164,25 @@ export default function MissingInvoicesPage() {
                {modalData.items.length > 0 ? modalData.items.map((inv) => {
                  const clientName = globalMissingInvoicesData.find(c => c.id === inv.clientId)?.name || '';
                  return (
-                   <div key={inv.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                   <button
+                     key={inv.id}
+                     onClick={() => handleInvoiceClick(inv)}
+                     className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group text-left"
+                   >
                      <div className="flex items-center gap-3 min-w-0">
                        <div className={cn(
-                         'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-                         inv.priority === 'Sürgős' ? 'bg-red-100 dark:bg-red-900/40' : 'bg-slate-100 dark:bg-slate-800'
+                         'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors',
+                         inv.priority === 'S\u00FCrg\u0151s' ? 'bg-red-100 dark:bg-red-900/40 group-hover:bg-red-200 dark:group-hover:bg-red-900/60' : 'bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700'
                        )}>
-                         <FileText className={cn('w-4 h-4', inv.priority === 'Sürgős' ? 'text-red-500' : 'text-slate-400')} />
+                         <FileText className={cn('w-4 h-4', inv.priority === 'S\u00FCrg\u0151s' ? 'text-red-500' : 'text-slate-400')} />
                        </div>
                        <div className="min-w-0">
-                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{inv.vendor}</p>
+                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{inv.vendor}</p>
                          <div className="flex items-center gap-2 mt-0.5">
                            <span className="text-[10px] text-slate-500 dark:text-slate-400">{clientName}</span>
-                           <span className="text-[10px] text-slate-400">•</span>
+                           <span className="text-[10px] text-slate-400">{'\u2022'}</span>
                            <span className="text-[10px] text-slate-500 dark:text-slate-400">{inv.subtext}</span>
-                           <span className="text-[10px] text-slate-400">•</span>
+                           <span className="text-[10px] text-slate-400">{'\u2022'}</span>
                            <span className="text-[10px] text-slate-500 dark:text-slate-400">{inv.period}</span>
                          </div>
                        </div>
@@ -168,14 +191,15 @@ export default function MissingInvoicesPage() {
                        <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{inv.amount}</span>
                        <span className={cn(
                          'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider',
-                         inv.priority === 'Sürgős' ? 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400' :
-                         inv.priority === 'Közepes' ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400' :
+                         inv.priority === 'S\u00FCrg\u0151s' ? 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400' :
+                         inv.priority === 'K\u00F6zepes' ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400' :
                          'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                        )}>
                          {inv.priority}
                        </span>
+                       <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                      </div>
-                   </div>
+                   </button>
                  );
                }) : (
                  <div className="text-center py-12 text-slate-500 dark:text-slate-400">Nincs adat</div>
@@ -188,19 +212,137 @@ export default function MissingInvoicesPage() {
                  onClick={() => setKpiModal(null)}
                  className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
                >
-                 Bezárás
+                 Bez&#225;r&#225;s
                </button>
              </div>
            </div>
          </div>
        )}
 
+       {/* Invoice Detail Dialog */}
+       <Dialog open={!!selectedInvoiceForDetails} onOpenChange={(open) => !open && setSelectedInvoiceForDetails(null)}>
+         <DialogContent className="sm:max-w-[600px] p-0 gap-0 overflow-hidden">
+           {selectedInvoiceForDetails && (
+             <>
+               <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+                 <DialogTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">{selectedInvoiceForDetails.subtext}</DialogTitle>
+                 <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-full mr-6">
+                   {selectedInvoiceForDetails.status}
+                 </span>
+               </div>
+               
+               <div className="px-6 py-5 grid grid-cols-2 gap-y-6 gap-x-4">
+                 <div>
+                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Sz&#225;ll&#237;t&#243; neve</p>
+                   <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{selectedInvoiceForDetails.vendor}</p>
+                 </div>
+                 <div>
+                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Azonos&#237;t&#225;s m&#243;dja</p>
+                   <span className="inline-block px-2.5 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 rounded-md text-xs font-medium">
+                     {selectedInvoiceForDetails.source}
+                   </span>
+                 </div>
+                 <div>
+                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Becs&#252;lt &#246;sszeg</p>
+                   <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{selectedInvoiceForDetails.amount}</p>
+                 </div>
+                 <div>
+                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">V&#225;rhat&#243; id&#337;szak</p>
+                   <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{selectedInvoiceForDetails.period}</p>
+                 </div>
+                 <div>
+                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Priorit&#225;s</p>
+                   {getPriorityBadge(selectedInvoiceForDetails.priority)}
+                 </div>
+                 <div>
+                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Hozz&#225;adva</p>
+                   <p className="text-sm font-medium text-slate-900 dark:text-slate-100">2024-01-10</p>
+                 </div>
+               </div>
+
+               <div className="px-6 py-5 border-t border-slate-100 dark:border-slate-800">
+                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">NAV adatok</h3>
+                 <div className="grid grid-cols-2 gap-4">
+                   <div>
+                     <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">NAV sz&#225;mla azonos&#237;t&#243;</p>
+                     <p className="text-sm font-medium text-slate-900 dark:text-slate-100">N/A</p>
+                   </div>
+                   <div>
+                     <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Sz&#225;ll&#237;t&#243; ad&#243;sz&#225;ma</p>
+                     <p className="text-sm font-medium text-slate-900 dark:text-slate-100">N/A</p>
+                   </div>
+                 </div>
+               </div>
+
+               <div className="px-6 py-5 border-t border-slate-100 dark:border-slate-800">
+                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">Bek&#233;r&#233;si el&#337;zm&#233;nyek</h3>
+                 <div className="space-y-3">
+                   <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
+                     <div className="flex items-center gap-3">
+                       <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 border border-slate-100 dark:border-slate-800">
+                         <Mail className="w-4 h-4" />
+                       </div>
+                       <div>
+                         <p className="text-sm font-medium text-slate-900 dark:text-slate-100">2024-02-10 14:30</p>
+                         <p className="text-xs text-slate-500 dark:text-slate-400">Email</p>
+                       </div>
+                     </div>
+                     <span className="px-3 py-1 bg-[#1A1F2C] text-white text-xs font-semibold rounded-full">
+                       Megnyitva
+                     </span>
+                   </div>
+                   <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
+                     <div className="flex items-center gap-3">
+                       <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 border border-slate-100 dark:border-slate-800">
+                         <Mail className="w-4 h-4" />
+                       </div>
+                       <div>
+                         <p className="text-sm font-medium text-slate-900 dark:text-slate-100">2024-02-05 09:15</p>
+                         <p className="text-xs text-slate-500 dark:text-slate-400">Email</p>
+                       </div>
+                     </div>
+                     <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold rounded-full border border-slate-200 dark:border-slate-800">
+                       Elk&#252;ldve
+                     </span>
+                   </div>
+                 </div>
+               </div>
+
+               <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                 <button 
+                   className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors shadow-sm"
+                   onClick={() => setSelectedInvoiceForDetails(null)}
+                 >
+                   T&#233;ves azonos&#237;t&#225;s
+                 </button>
+                 <div className="flex items-center gap-3">
+                   <button 
+                     className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors shadow-sm"
+                     onClick={() => setSelectedInvoiceForDetails(null)}
+                   >
+                     <CheckCircle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                     Meg&#233;rkezett a sz&#225;mla
+                   </button>
+                   <button 
+                     className="flex items-center gap-2 px-4 py-2.5 bg-[#1A1F2C] text-white rounded-xl text-sm font-medium hover:bg-[#2A3143] transition-colors shadow-sm"
+                     onClick={() => setSelectedInvoiceForDetails(null)}
+                   >
+                     <Mail className="w-4 h-4" />
+                     Bek&#233;r&#233;s k&#252;ld&#233;se
+                   </button>
+                 </div>
+               </div>
+             </>
+           )}
+         </DialogContent>
+       </Dialog>
+
        {/* Toolbar */}
        <div className="flex justify-between items-center py-2">
          <div className="w-72 relative">
            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
            <Input 
-             placeholder="Keresés ügyfél..." 
+             placeholder={"Keres\u00E9s \u00FCgyf\u00E9l..."} 
              className="pl-9 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" 
              value={searchQuery}
              onChange={(e) => setSearchQuery(e.target.value)}
@@ -209,13 +351,13 @@ export default function MissingInvoicesPage() {
          <div className="w-48">
            <Select value={statusFilter} onValueChange={setStatusFilter}>
              <SelectTrigger className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-               <SelectValue placeholder="Minden státusz" />
+               <SelectValue placeholder={"Minden st\u00E1tusz"} />
              </SelectTrigger>
              <SelectContent>
-               <SelectItem value="all">Minden státusz</SelectItem>
+               <SelectItem value="all">Minden st&#225;tusz</SelectItem>
                <SelectItem value="critical">Kritikus</SelectItem>
-               <SelectItem value="warning">Felszólítva</SelectItem>
-               <SelectItem value="neutral">Nincs felszólítva</SelectItem>
+               <SelectItem value="warning">Felsz&#243;l&#237;tva</SelectItem>
+               <SelectItem value="neutral">Nincs felsz&#243;l&#237;tva</SelectItem>
              </SelectContent>
            </Select>
          </div>
@@ -227,11 +369,11 @@ export default function MissingInvoicesPage() {
            <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium text-xs uppercase tracking-wider">
              <tr>
                <th className="px-6 py-4 w-12 text-center"><input type="checkbox" className="rounded border-slate-300 w-4 h-4 accent-slate-900" /></th>
-               <th className="px-6 py-4">Ügyfél</th>
-               <th className="px-6 py-4 text-center">Hiányzó</th>
+               <th className="px-6 py-4">&#220;gyf&#233;l</th>
+               <th className="px-6 py-4 text-center">Hi&#225;nyz&#243;</th>
                <th className="px-6 py-4 text-center">Kritikus</th>
-               <th className="px-6 py-4">Utolsó felszólítás</th>
-               <th className="px-6 py-4">Státusz</th>
+               <th className="px-6 py-4">Utols&#243; felsz&#243;l&#237;t&#225;s</th>
+               <th className="px-6 py-4">St&#225;tusz</th>
                <th className="px-6 py-4 w-12 text-center"></th>
              </tr>
            </thead>
@@ -278,19 +420,19 @@ export default function MissingInvoicesPage() {
                      <DropdownMenuContent align="end" className="w-48">
                        <DropdownMenuItem onClick={() => navigate(`/accounty/missing-invoices/${row.id}`)} className="cursor-pointer">
                          <ChevronRight className="w-4 h-4 mr-2" />
-                         Részletek
+                         R&#233;szletek
                        </DropdownMenuItem>
                        <DropdownMenuItem className="cursor-pointer">
                          <Mail className="w-4 h-4 mr-2" />
-                         Email küldés
+                         Email k&#252;ld&#233;s
                        </DropdownMenuItem>
                        <DropdownMenuItem className="cursor-pointer">
                          <Phone className="w-4 h-4 mr-2" />
-                         AI telefonhívás
+                         AI telefonh&#237;v&#225;s
                        </DropdownMenuItem>
                        <DropdownMenuItem className="cursor-pointer text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50">
                          <CheckCircle2 className="w-4 h-4 mr-2" />
-                         Megérkezettnek jelöl
+                         Meg&#233;rkezettnek jel&#246;l
                        </DropdownMenuItem>
                      </DropdownMenuContent>
                    </DropdownMenu>
@@ -300,7 +442,7 @@ export default function MissingInvoicesPage() {
            ) : (
              <tr>
                <td colSpan={7} className="text-center py-12 text-slate-500 dark:text-slate-400">
-                 Nincs találat a keresésre.
+                 Nincs tal&#225;lat a keres&#233;sre.
                </td>
              </tr>
            )}
