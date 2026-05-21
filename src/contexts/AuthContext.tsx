@@ -106,7 +106,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Session error:', error.message);
           if (error.message.includes('Refresh Token') || error.message.includes('refresh_token')) {
             console.log('Invalid refresh token detected, clearing session...');
-            localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            try {
+              localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            } catch {}
             setSession(null);
             setUser(null);
           }

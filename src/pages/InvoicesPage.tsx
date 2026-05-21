@@ -117,7 +117,8 @@ const InvoicesPage = () => {
   const {
     submittedInvoices, linkedInvoicesPool, linkedInvoicesLoading,
     partners, categories, projects, allTransactions, navInvoicesLookup,
-    matchedInvoiceIds, loading: dataLoading, credentialsExist, invalidateInvoiceData,
+    matchedInvoiceIds, navIdToCourierReportsMap,
+    loading: dataLoading, credentialsExist, invalidateInvoiceData,
   } = useInvoiceData(companyId, enabled, dateFromFormatted, dateToFormatted, selectedCompany?.id);
 
   // ── Filters hook (server-side, unified across all tabs) ──
@@ -436,7 +437,7 @@ const InvoicesPage = () => {
         if (!linkedInvs.some(x => x.id === l.id) && !matchedSubmitted.some(x => x.id === l.id)) linkedInvs.push(l);
       });
     });
-    return { matchedSubmitted, matchedTransactions: matchedTx, matchedNav: [] as NavInvoice[], linkedInvoices: linkedInvs };
+    return { matchedSubmitted, matchedTransactions: matchedTx, matchedNav: [] as NavInvoice[], linkedInvoices: linkedInvs, matchedCourierReports: navIdToCourierReportsMap.get(navInvoice.id) || [] };
   };
 
   const getSubmittedInvoiceMatches = (submitted: SubmittedInvoice) => {
@@ -943,6 +944,7 @@ const InvoicesPage = () => {
                                       matchedSubmittedInvoices={matches.matchedSubmitted}
                                       matchedNavInvoices={[]}
                                       matchedTransactions={matches.matchedTransactions}
+                                      matchedCourierReports={matches.matchedCourierReports}
                                       linkedInvoices={matches.linkedInvoices}
                                       linkedInvoicesLoading={linkedInvoicesLoading}
                                       onViewInvoice={(inv) => { setSelectedInvoice(inv as any); setImageDialogOpen(true); }}

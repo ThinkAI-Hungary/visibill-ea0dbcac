@@ -2,6 +2,8 @@ import { createContext, useContext, useState, ReactNode, useCallback, useEffect 
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, addDays, differenceInDays } from 'date-fns';
 import { STORAGE_KEYS } from '@/lib/constants';
 
+import { safeStorage } from '@/lib/storage';
+
 const MAX_RANGE_DAYS = 365;
 
 interface DateRangeContextType {
@@ -28,7 +30,7 @@ function formatDate(date: Date): string {
 /** Restore persisted date range from localStorage, or default to "This Year". */
 function getInitialDates(): { from: Date; to: Date } {
   try {
-    const saved = localStorage.getItem(STORAGE_KEYS.DATE_RANGE);
+    const saved = safeStorage.getItem(STORAGE_KEYS.DATE_RANGE);
     if (saved) {
       const parsed = JSON.parse(saved);
       const from = new Date(parsed.from);
@@ -51,7 +53,7 @@ export function DateRangeProvider({ children }: { children: ReactNode }) {
 
   // Persist to localStorage on every change
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.DATE_RANGE, JSON.stringify({
+    safeStorage.setItem(STORAGE_KEYS.DATE_RANGE, JSON.stringify({
       from: formatDate(dateFrom),
       to: formatDate(dateTo),
     }));

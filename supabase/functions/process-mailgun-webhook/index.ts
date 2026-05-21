@@ -172,23 +172,56 @@ serve(async (req) => {
       const fileName = file.name.toLowerCase();
       const fileType = file.type.toLowerCase();
       
-      // Minimális fájlméret (1KB) - túl kicsi fájlok kiszűrése
+      // Minimális fájlméret (1KB) - túl kicsi fájlok kiszűrése (pl üres txt)
       if (file.size < 1024) {
         console.log(`Skipping too small file: ${file.name} (${file.size} bytes)`);
         return false;
       }
       
-      // Engedélyezett MIME típusok
+      // Képek esetében (png, jpg) szigorúbb méretkorlát (100KB)
+      // Branding logók tipikusan 1-90KB, lefotózott számlák 200KB-5MB
+      const isImage = fileType.startsWith('image/') || fileName.endsWith('.png') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg');
+      if (isImage && file.size < 100 * 1024) {
+        console.log(`Skipping small image (likely branding/signature): ${file.name} (${file.size} bytes)`);
+        return false;
+      }
+
+      // Fájlnév heurisztika - tipikus aláírás, branding és social media logók kiszűrése
+      const junkKeywords = [
+        'logo', 'signature', 'facebook', 'twitter', 'instagram', 'linkedin',
+        'youtube', 'banner', 'spacer', 'icon', 'footer', 'pixel', 'tracking',
+        'badge', 'visa', 'mastercard', 'paypal', 'amex', 'diners',
+        'header', 'button', 'social', 'branding', 'template',
+        'unsubscribe', 'emailbg', 'bg_', 'divider',
+      ];
+      if (junkKeywords.some(keyword => fileName.includes(keyword))) {
+        console.log(`Skipping file with junk keyword in name: ${file.name}`);
+        return false;
+      }
+
+      // Inline email images: image001.png, image002.jpg, etc. (Outlook / Exchange pattern)
+      if (/^image\d{1,4}\.(png|jpe?g|gif|bmp)$/.test(fileName)) {
+        console.log(`Skipping inline email image: ${file.name}`);
+        return false;
+      }
+
+      // Generic unnamed attachments: attachment-1, attachment-2, etc. (email client default names)
+      // These are typically inline images or embedded content without meaningful filenames
+      if (/^attachment-\d+(\.\w+)?$/.test(fileName)) {
+        console.log(`Skipping generic attachment: ${file.name}`);
+        return false;
+      }
+
+      // Engedélyezett fájltípusok: dokumentumok + képek (lefotózott számlákhoz)
       const allowedTypes = [
         'application/pdf',
         'image/jpeg',
-        'image/jpg', 
+        'image/jpg',
         'image/png',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
         'application/vnd.ms-excel', // xls
       ];
       
-      // Engedélyezett kiterjesztések (fallback ha a MIME type nem pontos)
       const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.xlsx', '.xls'];
       
       const hasAllowedType = allowedTypes.includes(fileType);

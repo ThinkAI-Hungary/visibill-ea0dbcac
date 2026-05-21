@@ -2593,14 +2593,14 @@ export type Database = {
         Row: {
           company_id: string | null
           created_at: string
-          d├ítum: string | null
+          dátum: string | null
           fizetesi_mod: string
           id: string
           kifizetes_ideje: string | null
           megjegyzes: string | null
           munkavallalo_neve: string | null
-          n├®v: string
-          ├Âsszeg: number
+          név: string
+          összeg: number
           salary_file_id: string | null
           statusz: string
           tipus: string
@@ -2611,14 +2611,14 @@ export type Database = {
         Insert: {
           company_id?: string | null
           created_at?: string
-          d├ítum?: string | null
+          dátum?: string | null
           fizetesi_mod: string
           id?: string
           kifizetes_ideje?: string | null
           megjegyzes?: string | null
           munkavallalo_neve?: string | null
-          n├®v: string
-          ├Âsszeg: number
+          név: string
+          összeg: number
           salary_file_id?: string | null
           statusz: string
           tipus: string
@@ -2629,14 +2629,14 @@ export type Database = {
         Update: {
           company_id?: string | null
           created_at?: string
-          d├ítum?: string | null
+          dátum?: string | null
           fizetesi_mod?: string
           id?: string
           kifizetes_ideje?: string | null
           megjegyzes?: string | null
           munkavallalo_neve?: string | null
-          n├®v?: string
-          ├Âsszeg?: number
+          név?: string
+          összeg?: number
           salary_file_id?: string | null
           statusz?: string
           tipus?: string
@@ -3397,6 +3397,37 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_vat_return: {
+        Args: {
+          p_company_id: string
+          p_year: number
+          p_month: number
+          p_frequency?: string
+        }
+        Returns: string
+      }
+      freeze_annual_data: {
+        Args: {
+          p_report_id: string
+          p_company_id: string
+          p_preset_id: string
+          p_fiscal_year: number
+          p_exchange_rates?: Json
+        }
+        Returns: Json
+      }
+      seed_default_vat_codes: {
+        Args: {
+          p_company_id: string
+        }
+        Returns: unknown
+      }
+      validate_annual_report: {
+        Args: {
+          p_report_id: string
+        }
+        Returns: Json
+      }
       assign_supplier_default_projects: {
         Args: { p_company_id: string }
         Returns: number
@@ -3481,6 +3512,7 @@ export type Database = {
           p_date_to?: string
           p_fiscal_year?: number
           p_preset_id: string
+          p_exchange_rates?: Json
         }
         Returns: {
           bs_structure_id: string
@@ -3697,6 +3729,7 @@ export type Database = {
           p_date_from?: string
           p_date_to?: string
           p_preset_id: string
+          p_exchange_rates?: Json
         }
         Returns: {
           balance: number
@@ -3813,22 +3846,22 @@ export type Database = {
     }
     Enums: {
       audit_action_type:
-        | "l├®trehoz├ís"
-        | "m├│dos├¡t├ís"
-        | "t├Ârl├®s"
-        | "felt├Âlt├®s"
-        | "p├íros├¡t├ís"
-        | "aktiv├íl├ís"
+        | "létrehozás"
+        | "módosítás"
+        | "törlés"
+        | "feltöltés"
+        | "párosítás"
+        | "aktiválás"
       audit_entity_type:
-        | "sz├ímla"
-        | "b├®rjegyz├®k"
-        | "tranzakci├│"
-        | "kateg├│ria"
+        | "számla"
+        | "bérjegyzék"
+        | "tranzakció"
+        | "kategória"
         | "dokumentum"
-        | "t├írgyi_eszk├Âz"
-      salary_item_type: "b├®r" | "├üFA" | "ad├│" | "j├írul├®k"
-      salary_payment_method: "banki tranzakci├│" | "k├®szp├®nz"
-      salary_status_type: "F├╝gg┼æ" | "Kifizetve"
+        | "tárgyi_eszköz"
+      salary_item_type: "bér" | "ÁFA" | "adó" | "járulék"
+      salary_payment_method: "banki tranzakció" | "készpénz"
+      salary_status_type: "Függő" | "Kifizetve"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3957,24 +3990,24 @@ export const Constants = {
   public: {
     Enums: {
       audit_action_type: [
-        "l├®trehoz├ís",
-        "m├│dos├¡t├ís",
-        "t├Ârl├®s",
-        "felt├Âlt├®s",
-        "p├íros├¡t├ís",
-        "aktiv├íl├ís",
+        "létrehozás",
+        "módosítás",
+        "törlés",
+        "feltöltés",
+        "párosítás",
+        "aktiválás",
       ],
       audit_entity_type: [
-        "sz├ímla",
-        "b├®rjegyz├®k",
-        "tranzakci├│",
-        "kateg├│ria",
+        "számla",
+        "bérjegyzék",
+        "tranzakció",
+        "kategória",
         "dokumentum",
-        "t├írgyi_eszk├Âz",
+        "tárgyi_eszköz",
       ],
-      salary_item_type: ["b├®r", "├üFA", "ad├│", "j├írul├®k"],
-      salary_payment_method: ["banki tranzakci├│", "k├®szp├®nz"],
-      salary_status_type: ["F├╝gg┼æ", "Kifizetve"],
+      salary_item_type: ["bér", "ÁFA", "adó", "járulék"],
+      salary_payment_method: ["banki tranzakció", "készpénz"],
+      salary_status_type: ["Függő", "Kifizetve"],
     },
   },
 } as const

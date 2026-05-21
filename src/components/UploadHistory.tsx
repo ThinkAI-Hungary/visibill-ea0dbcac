@@ -26,6 +26,13 @@ interface UploadRecord {
   processing_status: string;
   created_at: string;
   error_message: string | null;
+  metadata: {
+    multi_invoice?: boolean;
+    invoice_count_total?: number;
+    invoice_count_processed?: number;
+    invoice_count_errors?: number;
+    invoice_count_ignored?: number;
+  } | null;
 }
 
 interface UploadHistoryProps {
@@ -41,19 +48,28 @@ const doneStatuses = new Set(['completed', 'processed']);
 
 // formatFileSize is now imported from @/lib/utils
 
-function getStatus(record: UploadRecord, processedIds: Set<string>): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } {
+function getStatus(record: UploadRecord, processedIds: Set<string>): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; multiProgress?: string } {
+  const meta = record.metadata;
+  const isMulti = meta?.multi_invoice === true;
+  const total = meta?.invoice_count_total || 0;
+  const processed = meta?.invoice_count_processed || 0;
+  const errors = meta?.invoice_count_errors || 0;
+
   if (errorStatuses.has(record.processing_status)) {
-    return { label: 'A feltöltés sikertelen', variant: 'destructive' };
+    const multiInfo = isMulti ? `${processed}/${total} feldolgozva, ${errors} hiba` : undefined;
+    return { label: 'A feltöltés sikertelen', variant: 'destructive', multiProgress: multiInfo };
   }
   // Check processing_status FIRST — worker sets this to 'processing' while
   // actively working on the file (extraction, categorization, matching).
   // Transactions may already be inserted in DB before matching completes,
   // so processedIds check must come AFTER this.
   if (processingStatuses.has(record.processing_status)) {
-    return { label: 'Feldolgozás alatt', variant: 'outline' };
+    const multiInfo = isMulti ? `${processed}/${total} számla` : undefined;
+    return { label: 'Feldolgozás alatt', variant: 'outline', multiProgress: multiInfo };
   }
   if (doneStatuses.has(record.processing_status) || processedIds.has(record.id)) {
-    return { label: 'Feldolgozva', variant: 'default' };
+    const multiInfo = isMulti ? `${total} számla` : undefined;
+    return { label: 'Feldolgozva', variant: 'default', multiProgress: multiInfo };
   }
   return { label: 'Feltöltve', variant: 'secondary' };
 }
@@ -105,6 +121,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           .eq('company_id', companyId)
           .gte('created_at', uploadDateFrom)
           .lte('created_at', uploadDateTo + 'T23:59:59')
+          .neq('status', 'ignored')
           .order('created_at', { ascending: false })
           .limit(50);
 
@@ -122,9 +139,10 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
       } else {
         let query = supabase
           .from(tableName)
-          .select('id, file_name, file_size, file_type, file_url, user_id, upload_status, processing_status, created_at, error_message')
+          .select('id, file_name, file_size, file_type, file_url, user_id, upload_status, processing_status, created_at, error_message, metadata')
           .gte('created_at', uploadDateFrom)
           .lte('created_at', uploadDateTo + 'T23:59:59')
+          .neq('processing_status', 'ignored')
           .order('created_at', { ascending: false })
           .limit(50);
 
@@ -251,7 +269,9 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
 
         toast({
           title: toastTitle,
-          description: `${rec.file_name} sikeresen fel lett dolgozva.`,
+          description: rec.metadata?.multi_invoice
+            ? `${rec.file_name} — ${rec.metadata.invoice_count_processed || 0} számla sikeresen feldolgozva.`
+            : `${rec.file_name} sikeresen fel lett dolgozva.`,
           variant: 'default',
           duration: 5000,
         });
@@ -334,14 +354,33 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
                         {format(new Date(record.created_at), 'yyyy.MM.dd HH:mm', { locale: hu })}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={status.variant} className="text-xs">
-                          {status.label}
-                        </Badge>
-                        {record.error_message && errorStatuses.has(record.processing_status) && (
-                          <p className="text-xs text-destructive mt-1 max-w-[150px] truncate" title={record.error_message}>
-                            {record.error_message}
-                          </p>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <Badge variant={status.variant} className="text-xs">
+                              {status.label}
+                            </Badge>
+                            {status.multiProgress && (
+                              <span className="text-[11px] text-muted-foreground font-medium">
+                                ({status.multiProgress})
+                              </span>
+                            )}
+                          </div>
+                          {record.metadata?.multi_invoice && processingStatuses.has(record.processing_status) && (
+                            <div className="w-full max-w-[120px] h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-primary rounded-full transition-all duration-500"
+                                style={{
+                                  width: `${Math.min(100, Math.round(((record.metadata.invoice_count_processed || 0) / (record.metadata.invoice_count_total || 1)) * 100))}%`
+                                }}
+                              />
+                            </div>
+                          )}
+                          {record.error_message && errorStatuses.has(record.processing_status) && (
+                            <p className="text-xs text-destructive max-w-[150px] truncate" title={record.error_message}>
+                              {record.error_message}
+                            </p>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );

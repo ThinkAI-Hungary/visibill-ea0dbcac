@@ -630,3 +630,26 @@ All colors MUST be HSL.
     transparent 100%
   );
 }
+
+/* ── Page & Step Fade Animations ── */
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes stepFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-animate {
+  animation: pageFadeIn 0.4s ease-out both;
+}
+
+.step-animate {
+  animation: stepFadeIn 0.3s ease-out both;
+}
+
+.content-animate {
+  animation: pageFadeIn 0.4s ease-out 0.15s both;
+}

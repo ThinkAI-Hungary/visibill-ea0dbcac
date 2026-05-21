@@ -59,6 +59,7 @@ const ClientMissingInvoicesReportPage = lazy(() => import("./pages/Accounty/Clie
 const TaxCalendarPage = lazy(() => import("./pages/Accounty/TaxCalendarPage"));
 const ClientInvoicesPage = lazy(() => import("./pages/Accounty/ClientInvoicesPage"));
 const ClientPortalPage = lazy(() => import("./pages/Accounty/ClientPortalPage"));
+const VatReturnPage = lazy(() => import("./pages/VatReturnPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -273,6 +274,7 @@ const App = () => (
                         <Route path="profit-and-loss/:tab?" element={<ProtectedPage><ProfitAndLoss /></ProtectedPage>} />
                         <Route path="balance-sheet/:tab?" element={<ProtectedPage><BalanceSheet /></ProtectedPage>} />
                         <Route path="annual-report" element={<ProtectedPage><AnnualReportPage /></ProtectedPage>} />
+                        <Route path="vat-return/:tab?" element={<ProtectedPage><VatReturnPage /></ProtectedPage>} />
                         <Route path="kintlevo/:tab?" element={<ProtectedPage><KintlevoPage /></ProtectedPage>} />
                         <Route path="petty-cash/:tab?" element={<ProtectedPage><PettyCashPage /></ProtectedPage>} />
                         <Route path="teny/:tab?" element={<ProtectedPage><FixedAssetsPage /></ProtectedPage>} />

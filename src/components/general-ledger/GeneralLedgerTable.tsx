@@ -59,9 +59,26 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
+// F4: Highlight search matches in text
+function highlightMatch(text: string, query: string): React.ReactNode {
+  if (!query || query.length < 2) return text;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return text;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="bg-yellow-200 dark:bg-yellow-500/40 rounded-sm px-0.5">{text.slice(idx, idx + query.length)}</mark>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
+
 export interface GeneralLedgerTableRef {
   expandAllAndPrint: () => void;
   exportExcel: (companyName?: string) => Promise<void>;
+  getStats: () => { accountCount: number; leafCount: number; totalDebit: number; totalCredit: number };
+  expandAll: () => void;
+  collapseAll: () => void;
 }
 
 interface GeneralLedgerTableProps {
@@ -69,10 +86,11 @@ interface GeneralLedgerTableProps {
   dateFrom?: string;
   dateTo?: string;
   globalSearch?: string;
+  onStatsChange?: (stats: { accountCount: number; leafCount: number; totalDebit: number; totalCredit: number; classifiedItems: number; totalItems: number }) => void;
 }
 
 function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.ForwardedRef<GeneralLedgerTableRef>) {
-  const { presetId, dateFrom, dateTo, globalSearch } = props;
+  const { presetId, dateFrom, dateTo, globalSearch, onStatsChange } = props;
   const { selectedCompany } = useCompany();
   const { session } = useAuth();
   const { toast } = useToast();
@@ -329,6 +347,17 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   }, [dbData, dbItems]);
 
   const orphanCount = dbItems?.filter(i => i.gl_account_id === '00000000-0000-0000-0000-000000000000').length || 0;
+
+  // ── Fire stats callback when tableData changes ──
+  useEffect(() => {
+    if (!onStatsChange || tableData.length === 0) return;
+    const leaves = tableData.filter(d => !d.hasChildren);
+    const totalDebit = leaves.filter(d => d.balance > 0).reduce((s, d) => s + d.balance, 0);
+    const totalCredit = leaves.filter(d => d.balance < 0).reduce((s, d) => s + Math.abs(d.balance), 0);
+    const totalItemCount = dbItems?.length || 0;
+    const classifiedItemCount = totalItemCount - orphanCount;
+    onStatsChange({ accountCount: tableData.length, leafCount: leaves.length, totalDebit, totalCredit, classifiedItems: classifiedItemCount, totalItems: totalItemCount });
+  }, [tableData, onStatsChange, dbItems, orphanCount]);
   
   // Parse localStorage to check if banner was dismissed for this preset
   const localBannerState = useMemo(() => {
@@ -390,8 +419,6 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
   useImperativeHandle(ref, () => ({
     expandAllAndPrint: () => {
       setIsPrinting(true);
-
-      // Wait for DOM to render the hidden print nodes
       setTimeout(() => {
         window.print();
         setIsPrinting(false);
@@ -399,7 +426,15 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     },
     exportExcel: async (companyName?: string) => {
       await exportGlExcel(processedRows, companyName, footerTotals);
-    }
+    },
+    getStats: () => {
+      const leaves = tableData.filter(d => !d.hasChildren);
+      const totalDebit = leaves.filter(d => d.balance > 0).reduce((s, d) => s + d.balance, 0);
+      const totalCredit = leaves.filter(d => d.balance < 0).reduce((s, d) => s + Math.abs(d.balance), 0);
+      return { accountCount: tableData.length, leafCount: leaves.length, totalDebit, totalCredit };
+    },
+    expandAll: handleExpandAll,
+    collapseAll: handleCollapseAll
   }));
 
   const handleExpandAll = () => {
@@ -636,7 +671,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                              <span className="text-xs truncate">{row.date ? row.date.substring(0, 10).replace(/-/g, '.') : ''}</span>
                            </>
                         ) : (
-                           row.id
+                           highlightMatch(row.id, deferredSearch)
                         )}
                       </div>
                       <div className="col-span-7 py-3 pr-3 text-sm flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
@@ -648,7 +683,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                           )}
                         </div>
                         <span className={cn("truncate", isRoot ? "uppercase" : "", row.isItem ? "text-muted-foreground italic" : "")} title={row.name}>
-                          {row.name}
+                          {highlightMatch(row.name, deferredSearch)}
                         </span>
                         {row.isItem && row.itemType && (
                           <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-muted whitespace-nowrap text-muted-foreground hidden lg:inline-block">
@@ -717,12 +752,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       <ContextMenuContent className="w-56">
         <ContextMenuItem onClick={handleExpandAll} className="gap-2 cursor-pointer">
           <Maximize2 className="h-4 w-4" />
-          <span>Minden lenyitása</span>
+          <span>Mind kinyitása</span>
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleCollapseAll} className="gap-2 cursor-pointer">
           <Minimize2 className="h-4 w-4" />
-          <span>Minden összecsukása</span>
+          <span>Mind összecsukása</span>
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleRefetchAll} disabled={isFetching} className="gap-2 cursor-pointer">

@@ -668,6 +668,27 @@ const ManualUpload = () => {
     }
     setUploading(true);
     try {
+      // Phase 0: Check for duplicate files already in the system
+      const fileNames = selectedReportFiles.map(e => e.file.name);
+      const { data: existingUploads } = await supabase
+        .from('report_uploads')
+        .select('id, file_name, report_type, processing_status')
+        .eq('company_id', selectedCompany.id)
+        .in('file_name', fileNames);
+
+      if (existingUploads && existingUploads.length > 0) {
+        const dupeNames = [...new Set(existingUploads.map(u => u.file_name))];
+        const confirmed = window.confirm(
+          `A következő fájl(ok) már korábban fel lettek töltve:\n\n` +
+          dupeNames.map(n => `  • ${n}`).join('\n') +
+          `\n\nÚjra feltöltés esetén a korábbi adatok felülíródnak.\nFolytatod?`
+        );
+        if (!confirmed) {
+          setUploading(false);
+          return;
+        }
+      }
+
       // Phase 1: Upload all files to storage
       const storageResults: { entry: typeof selectedReportFiles[0]; fileUrl: string; storagePath: string }[] = [];
       for (const entry of selectedReportFiles) {

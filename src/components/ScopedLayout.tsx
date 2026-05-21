@@ -144,11 +144,14 @@ export function ScopedLayout() {
   const isCompanySynced = !urlCompanyId || selectedCompany?.id === urlCompanyId;
   const isDateSynced = !parsedUrlDateRange || `${dateFromFormatted}_${dateToFormatted}` === urlDateRange;
 
-  if (!isCompanySynced || !isDateSynced) {
-    return null;
-  }
+  // Keep Outlet mounted during URL sync to prevent child component unmount/remount flash
+  const isSyncing = !isCompanySynced || !isDateSynced;
 
-  return <Outlet />;
+  return (
+    <div style={isSyncing ? { opacity: 0, pointerEvents: 'none', minHeight: '50vh' } : undefined}>
+      <Outlet />
+    </div>
+  );
 }
 
 // ── Helpers ──

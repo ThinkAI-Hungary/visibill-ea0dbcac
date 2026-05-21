@@ -38,6 +38,8 @@ export const queryKeys = {
     ['navSyncCooldown', companyId] as const,
   navCredentials: (companyId: string) =>
     ['navCredentials', companyId] as const,
+  courierReportsForInvoices: (companyId: string) =>
+    ['courierReportsForInvoices', companyId] as const,
 
   // ── Salaries ──
   salaries: (companyId: string, dateFrom: string, dateTo: string) =>

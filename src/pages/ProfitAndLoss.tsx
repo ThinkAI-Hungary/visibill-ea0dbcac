@@ -8,18 +8,25 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText, Maximize2, Minimize2 } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText, Maximize2, Minimize2, ClipboardCopy, ExternalLink, AlertTriangle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/ui/page-header';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { exportPnlExcel } from '@/lib/pnlExport';
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { startOfMonth, endOfMonth, startOfYear, endOfYear, startOfQuarter, endOfQuarter, isSameDay } from 'date-fns';
+import { isSameDay, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
+
+import { useScopedNavigate } from '@/lib/navigation';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
+
+
 
 function PnlMappingTab({ presetId }: { presetId?: string }) {
   const { selectedCompany } = useCompany();
@@ -216,7 +223,12 @@ function PnlMappingTab({ presetId }: { presetId?: string }) {
                     </div>
                     {gl.gl_number}
                   </div>
-                  <div className={cn("col-span-4 text-sm truncate", gl.isRoot ? "uppercase" : "")} title={gl.short_name}>
+                  <div className={cn("col-span-4 text-sm truncate flex items-center gap-1.5", gl.isRoot ? "uppercase" : "")} title={gl.short_name}>
+                    {!gl.hasChildren && (
+                      mappings[gl.id]
+                        ? <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Besorolva" />
+                        : <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" title="Nincs besorolva" />
+                    )}
                     {gl.short_name}
                   </div>
                   <div className="col-span-5" onClick={e => e.stopPropagation()}>
@@ -251,19 +263,23 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   const { selectedCompany } = useCompany();
   const { dateFromFormatted: dateFrom, dateToFormatted: dateTo } = useDateRange();
   const [inThousands, setInThousands] = useState(true);
+  const [hideZeroRows, setHideZeroRows] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [expandedGl, setExpandedGl] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+  const scopedNavigate = useScopedNavigate();
+  const { data: exchangeRates } = useExchangeRates();
 
   const { data: pnlData, isLoading } = useQuery({
-    queryKey: ['pnl_report', selectedCompany?.id, presetId, dateFrom, dateTo],
+    queryKey: ['pnl_report', selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRates],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
       const { data, error } = await supabase.rpc('get_pnl_report', {
         p_company_id: selectedCompany.id,
         p_preset_id: presetId,
         p_date_from: dateFrom || null,
-        p_date_to: dateTo || null
+        p_date_to: dateTo || null,
+        p_exchange_rates: exchangeRates || {}
       });
       if (error) throw error;
       return data;
@@ -272,20 +288,22 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   });
 
   const { data: dbItems, isLoading: isLoadingItems } = useQuery({
-    queryKey: ['glItems', selectedCompany?.id, presetId, dateFrom, dateTo],
+    queryKey: ['glItems', selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRates],
     queryFn: async () => {
       if (!selectedCompany?.id || !presetId) return [];
       const { data, error } = await supabase.rpc('get_gl_categorized_items', {
         p_company_id: selectedCompany.id,
         p_preset_id: presetId,
         p_date_from: dateFrom || null,
-        p_date_to: dateTo || null
+        p_date_to: dateTo || null,
+        p_exchange_rates: exchangeRates || {}
       });
       if (error) throw error;
       return data;
     },
     enabled: !!selectedCompany?.id && !!presetId
   });
+
 
   const toggleRow = (id: string) => {
     setExpandedRows(prev => {
@@ -393,13 +411,46 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 content-animate">
+      {/* ── KPI Summary Bar (E1) ── */}
+      {processedData.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 print:hidden">
+          {[
+            { code: 'A.', label: 'Üzemi eredmény' },
+            { code: 'B.', label: 'Pénzügyi eredmény' },
+            { code: 'C.', label: 'Adózás előtti eredmény' },
+            { code: 'D.', label: 'Adózott eredmény' },
+          ].map(kpi => {
+            const row = processedData.find(r => r.row_code === kpi.code);
+            const val = row?.displayBalance || 0;
+            const isPositive = val >= 0;
+            return (
+              <div key={kpi.code} className="bg-card border border-border/60 rounded-xl p-3.5">
+                <div className="text-[11px] text-muted-foreground mb-1">{kpi.label}</div>
+                <div className={cn(
+                  "text-lg font-bold tabular-nums",
+                  isPositive ? "text-emerald-600" : "text-red-500"
+                )}>
+                  {isPositive ? '+' : ''}{formatValue(val)} <span className="text-xs font-normal text-muted-foreground">{inThousands ? 'E Ft' : 'Ft'}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-6 bg-muted/30 p-4 rounded-xl border border-border/50 print:hidden">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <div className="flex items-center space-x-2">
             <Switch id="view-mode" checked={inThousands} onCheckedChange={setInThousands} />
             <Label htmlFor="view-mode" className="font-medium cursor-pointer">
               Hivatalos nézet (Ezer Ft)
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch id="hide-zero" checked={hideZeroRows} onCheckedChange={setHideZeroRows} />
+            <Label htmlFor="hide-zero" className="font-medium cursor-pointer">
+              Nullás sorok elrejtése
             </Label>
           </div>
         </div>
@@ -428,8 +479,8 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
 
       <ContextMenu>
         <ContextMenuTrigger asChild>
-      <div className="border rounded-md shadow-sm overflow-hidden bg-card">
-        <div className="grid grid-cols-12 gap-4 p-4 bg-muted/80 backdrop-blur-sm border-b border-border text-sm font-bold tracking-wide uppercase text-muted-foreground select-none">
+      <div className="border rounded-md shadow-sm overflow-auto max-h-[70vh] bg-card">
+        <div className="grid grid-cols-12 gap-4 p-4 bg-muted/80 backdrop-blur-sm border-b border-border text-sm font-bold tracking-wide uppercase text-muted-foreground select-none sticky top-0 z-10">
           <div className="col-span-1 text-center">Sor</div>
           <div className="col-span-7">Megnevezés</div>
           <div className="col-span-2 text-right">Előző Év</div>
@@ -443,6 +494,10 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
             processedData.map(row => {
               const isRoman = row.type === 'roman';
               const isCapital = row.type === 'capital';
+
+              if (hideZeroRows && !isCapital && row.displayBalance === 0 && (Number(row.previous_year) || 0) === 0) {
+                return null;
+              }
               const glAccounts = (row.gl_accounts as any[]) || [];
               const hasGl = glAccounts.length > 0;
               const isExpanded = expandedRows.has(row.pnl_structure_id);
@@ -478,6 +533,18 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                       isCapital ? "text-primary text-base" : ""
                     )}>
                       {formatValue(row.displayBalance)}
+                      {(() => {
+                        const prev = Number(row.previous_year) || 0;
+                        const curr = row.displayBalance || 0;
+                        if (prev === 0 || curr === prev) return null;
+                        const pctChange = Math.round(((curr - prev) / Math.abs(prev)) * 100);
+                        const isUp = pctChange > 0;
+                        return (
+                          <span className={cn("ml-1 text-[9px] font-medium", isUp ? "text-emerald-500" : "text-red-400")}>
+                            {isUp ? '▲' : '▼'}{Math.abs(pctChange)}%
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -526,7 +593,19 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                                       {item.item_date?.substring(0, 10).replace(/-/g, '.')}
                                     </div>
                                     <div className="col-span-6 flex items-center gap-2 truncate" title={item.description || item.partner}>
-                                      {item.partner && <span className="font-medium text-foreground/80 mr-2">{item.partner}</span>}
+                                      {item.partner && (
+                                        <button
+                                          className="font-medium text-foreground/80 mr-2 hover:text-primary hover:underline underline-offset-2 transition-colors flex items-center gap-1 cursor-pointer"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            scopedNavigate(`/invoices?search=${encodeURIComponent(item.partner)}`);
+                                          }}
+                                          title={`Számlák szűrése: ${item.partner}`}
+                                        >
+                                          {item.partner}
+                                          <ExternalLink className="w-2.5 h-2.5 opacity-50" />
+                                        </button>
+                                      )}
                                       <span className="truncate">{item.description}</span>
                                       {item.document_url && (
                                         <a 
@@ -567,6 +646,11 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
         <ContextMenuContent>
           <ContextMenuItem onClick={expandAllPnl} className="gap-2"><Maximize2 className="w-4 h-4" /> Mind kinyitása</ContextMenuItem>
           <ContextMenuItem onClick={collapseAllPnl} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem className="gap-2" onClick={() => {
+            const csv = 'Sor;Megnevezés;Előző év;Tárgyév\n' + processedData.map(r => `${r.row_code};${r.name};${r.previous_year || 0};${r.displayBalance || 0}`).join('\n');
+            navigator.clipboard.writeText(csv);
+          }}><ClipboardCopy className="w-4 h-4" /> Másolás CSV-ként</ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
     </div>
@@ -590,10 +674,57 @@ export default function ProfitAndLoss() {
 
   const { activePresetId, setActivePresetId, presets } = useActivePreset(selectedCompany?.id);
   const { dateFrom, dateTo, setDateFrom, setDateTo } = useDateRange();
+
+  // Queries to compute validation warning
+  const { data: glAccounts } = useQuery({
+    queryKey: ['gl_accounts', activePresetId],
+    queryFn: async () => {
+      if (!activePresetId) return [];
+      const { data, error } = await supabase.from('gl_accounts').select('*').eq('preset_id', activePresetId).order('gl_number');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!activePresetId
+  });
+
+  const { data: existingMappings } = useQuery({
+    queryKey: ['pnl_mapping', selectedCompany?.id, activePresetId],
+    queryFn: async () => {
+      if (!selectedCompany?.id || !activePresetId) return [];
+      const { data, error } = await supabase.from('pnl_mapping').select('*').eq('company_id', selectedCompany.id).eq('preset_id', activePresetId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedCompany?.id && !!activePresetId
+  });
+
+  const unassignedCount = React.useMemo(() => {
+    if (!glAccounts) return 0;
+    
+    // Find leaf nodes
+    const cleanId = (id: string) => id ? String(id).replace(/\./g, '') : '';
+    const rawData = glAccounts.map(dbItem => {
+      const cid = cleanId(dbItem.gl_number);
+      const hasChildren = glAccounts.some(d => 
+        cleanId(d.gl_number).startsWith(cid) && 
+        cleanId(d.gl_number) !== cid
+      );
+      return { ...dbItem, hasChildren };
+    });
+
+    const leafAccounts = rawData.filter(gl => !gl.hasChildren && !/^[1-4]/.test(gl.gl_number));
+    const mappedIds = new Set(existingMappings?.map(m => m.gl_account_id) || []);
+    return leafAccounts.filter(a => !mappedIds.has(a.id)).length;
+  }, [glAccounts, existingMappings]);
   
-  const isThisMonth = isSameDay(dateFrom, startOfMonth(new Date())) && isSameDay(dateTo, endOfMonth(new Date()));
-  const isThisQuarter = isSameDay(dateFrom, startOfQuarter(new Date())) && isSameDay(dateTo, endOfQuarter(new Date()));
-  const isThisYear = isSameDay(dateFrom, startOfYear(new Date())) && isSameDay(dateTo, endOfYear(new Date()));
+  let isThisMonth = false, isThisQuarter = false, isThisYear = false;
+  try {
+    isThisMonth = isSameDay(dateFrom, startOfMonth(new Date())) && isSameDay(dateTo, endOfMonth(new Date()));
+    isThisQuarter = isSameDay(dateFrom, startOfQuarter(new Date())) && isSameDay(dateTo, endOfQuarter(new Date()));
+    isThisYear = isSameDay(dateFrom, startOfYear(new Date())) && isSameDay(dateTo, endOfYear(new Date()));
+  } catch (e) {
+    console.error('Date comparison error:', e);
+  }
   
   const activeDatePreset = isThisYear ? 'year' : isThisQuarter ? 'quarter' : isThisMonth ? 'month' : 'custom';
 
@@ -645,23 +776,52 @@ export default function ProfitAndLoss() {
     toggleActivePresetMutation.mutate(val);
   };
 
+  useKeyboardShortcuts([
+    { combo: { key: 'p', ctrl: true }, handler: () => window.print(), description: 'Nyomtatás' },
+  ]);
+
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 print:hidden">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground/90">Eredménykimutatás</h1>
-          <p className="text-sm text-muted-foreground mt-1">Sztv. "A" változat szerinti eredménykimutatás és beállítások</p>
+    <div className="space-y-6 max-w-[1600px] mx-auto pb-10 page-animate">
+      <PageHeader
+        companyName={selectedCompany?.name}
+        breadcrumb="Eredménykimutatás"
+        title="Eredménykimutatás"
+        description="Sztv. 'A' változat szerinti eredménykimutatás és beállítások"
+        actions={
+          <div className="flex items-center gap-3 bg-muted/30 p-1.5 rounded-lg border border-border/50">
+            <span className="text-sm font-medium text-muted-foreground ml-2">Időszak:</span>
+            <ToggleGroup type="single" value={activeDatePreset} onValueChange={handleDatePresetChange} className="bg-background border rounded-md p-0.5 shadow-sm">
+              <ToggleGroupItem value="year" className="h-8 px-4 text-xs font-medium">Év</ToggleGroupItem>
+              <ToggleGroupItem value="quarter" className="h-8 px-4 text-xs font-medium">Negyedév</ToggleGroupItem>
+              <ToggleGroupItem value="month" className="h-8 px-4 text-xs font-medium">Hónap</ToggleGroupItem>
+              <ToggleGroupItem value="custom" className="h-8 px-4 text-xs font-medium" disabled>Egyedi</ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+        }
+      />
+
+      {unassignedCount > 0 && (
+        <div className="bg-amber-500/10 border-2 border-amber-500/30 text-amber-800 dark:text-amber-400 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm print:hidden">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-sm">Figyelmeztetés az Eredménykimutatás összeállításában</p>
+              <p className="text-xs mt-1 opacity-90">
+                Jelenleg {unassignedCount} db nem besorolt eredménykimutatás főkönyvi szám található.
+              </p>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setActiveTab('mapping')}
+            className="border-amber-500/30 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 font-semibold shrink-0 text-xs gap-1.5 h-8 bg-transparent"
+          >
+            <span>Hozzárendelési Mátrix megnyitása</span>
+            <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
-        <div className="flex items-center gap-3 bg-muted/30 p-1.5 rounded-lg border border-border/50">
-          <span className="text-sm font-medium text-muted-foreground ml-2">Időszak:</span>
-          <ToggleGroup type="single" value={activeDatePreset} onValueChange={handleDatePresetChange} className="bg-background border rounded-md p-0.5 shadow-sm">
-            <ToggleGroupItem value="year" className="h-8 px-4 text-xs font-medium">Év</ToggleGroupItem>
-            <ToggleGroupItem value="quarter" className="h-8 px-4 text-xs font-medium">Negyedév</ToggleGroupItem>
-            <ToggleGroupItem value="month" className="h-8 px-4 text-xs font-medium">Hónap</ToggleGroupItem>
-            <ToggleGroupItem value="custom" className="h-8 px-4 text-xs font-medium" disabled>Egyedi</ToggleGroupItem>
-          </ToggleGroup>
-        </div>
-      </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6 h-12 w-full md:w-auto p-1 bg-muted/50">

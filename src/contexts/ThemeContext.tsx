@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { STORAGE_KEYS } from '@/lib/constants';
+import { safeStorage } from '@/lib/storage';
 
 type Theme = "light" | "dark";
 
@@ -12,7 +13,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.THEME) as Theme | null;
+    const saved = safeStorage.getItem(STORAGE_KEYS.THEME) as Theme | null;
     return saved === 'dark' ? 'dark' : 'light';
   });
 
@@ -33,7 +34,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       // Suppress per-element transitions so colors snap instantly
       body.classList.add('no-transitions');
       setThemeState(newTheme);
-      localStorage.setItem(STORAGE_KEYS.THEME, newTheme);
+      safeStorage.setItem(STORAGE_KEYS.THEME, newTheme);
       applyTheme(newTheme);
       // Re-enable transitions after a single frame
       requestAnimationFrame(() => {

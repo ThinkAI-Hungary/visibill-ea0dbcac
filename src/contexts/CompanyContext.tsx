@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { STORAGE_KEYS } from '@/lib/constants';
 import { queryKeys } from '@/lib/queryKeys';
+import { safeStorage } from '@/lib/storage';
 
 export interface Company {
   id: string;
@@ -80,23 +81,23 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
     }
 
     // Restore from localStorage or default to first
-    const savedId = localStorage.getItem(SELECTED_COMPANY_KEY);
+    const savedId = safeStorage.getItem(SELECTED_COMPANY_KEY);
     const saved = companies.find(c => c.id === savedId);
 
     if (saved) {
       setSelectedCompanyState(saved);
     } else {
       setSelectedCompanyState(companies[0]);
-      localStorage.setItem(SELECTED_COMPANY_KEY, companies[0].id);
+      safeStorage.setItem(SELECTED_COMPANY_KEY, companies[0].id);
     }
   }, [companies, user]);
 
   const setSelectedCompany = useCallback((company: Company | null) => {
     setSelectedCompanyState(company);
     if (company) {
-      localStorage.setItem(SELECTED_COMPANY_KEY, company.id);
+      safeStorage.setItem(SELECTED_COMPANY_KEY, company.id);
     } else {
-      localStorage.removeItem(SELECTED_COMPANY_KEY);
+      safeStorage.removeItem(SELECTED_COMPANY_KEY);
     }
   }, []);
 
