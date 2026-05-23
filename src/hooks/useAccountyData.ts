@@ -477,7 +477,9 @@ export function useAccountyDeadlines() {
       const nameMap: Record<string, string> = {};
       (companies || []).forEach(c => { nameMap[c.id] = c.name; });
 
-      return (deadlines || []).map((d: any): AccountyDeadline => ({
+      return (deadlines || [])
+        .filter((d: any) => nameMap[d.company_id] && nameMap[d.company_id] !== 'SANDBOX')
+        .map((d: any): AccountyDeadline => ({
         id: d.id,
         companyId: d.company_id,
         companyName: nameMap[d.company_id] || 'Ismeretlen',
@@ -516,7 +518,16 @@ export function useAccountyKpis() {
         return { totalClients: 0, unprocessedInvoices: 0, missingItems: 0, upcomingDeadlines: 0 };
       }
 
-      const companyIds = assignments.map((a: any) => a.company_id);
+      const allCompanyIds = assignments.map((a: any) => a.company_id);
+
+      // Exclude SANDBOX
+      const { data: companies } = await supabase
+        .from('companies')
+        .select('id, name')
+        .in('id', allCompanyIds);
+      const companyIds = (companies || [])
+        .filter(c => c.name !== 'SANDBOX')
+        .map(c => c.id);
       const totalClients = companyIds.length;
 
       // Count open missing items
@@ -1229,4 +1240,295 @@ export function useAccountyFullReportData() {
     clients: clientRows,
     invoices: invoiceQuery.data || [],
   } as FullReportData;
+}
+
+// ══════════════════════════════════════════════════════════════
+// useAccountyMonthlyTrend – 6-month trend for dashboard chart
+// ══════════════════════════════════════════════════════════════
+
+export interface MonthlyTrendPoint {
+  month: string;       // e.g. "Jan", "Feb"
+  szamlak: number;     // total invoices that month
+  hianyzok: number;    // missing items created that month
+  zaras: number;       // closing % (invoices / (invoices + missing) * 100)
+}
+
+export function useAccountyMonthlyTrend() {
+  const { user } = useAuth();
+  const userId = user?.id || '';
+
+  return useQuery({
+    queryKey: ['accounty-monthly-trend', userId],
+    queryFn: async (): Promise<MonthlyTrendPoint[]> => {
+      // Get assigned companies (excl SANDBOX)
+      const { data: assignments } = await supabase
+        .from('accounty_assignments' as any)
+        .select('company_id')
+        .eq('accountant_user_id', userId);
+      if (!assignments || assignments.length === 0) return [];
+
+      const allIds = assignments.map((a: any) => a.company_id);
+      const { data: companies } = await supabase
+        .from('companies')
+        .select('id, name')
+        .in('id', allIds);
+      const companyIds = (companies || []).filter(c => c.name !== 'SANDBOX').map(c => c.id);
+      if (companyIds.length === 0) return [];
+
+      const now = new Date();
+      const months: MonthlyTrendPoint[] = [];
+      const monthNames = ['Jan', 'Feb', 'Már', 'Ápr', 'Máj', 'Jún', 'Júl', 'Aug', 'Szep', 'Okt', 'Nov', 'Dec'];
+
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthStart = d.toISOString().split('T')[0];
+        const nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+        const monthEnd = nextMonth.toISOString().split('T')[0];
+        const label = monthNames[d.getMonth()];
+
+        // Count invoices in this month (by kibocsatas_datuma)
+        const { count: invCount } = await supabase
+          .from('invoices')
+          .select('id', { count: 'exact', head: true })
+          .in('company_id', companyIds)
+          .gte('kibocsatas_datuma', monthStart)
+          .lt('kibocsatas_datuma', monthEnd);
+
+        // Count NAV invoices in this month
+        const { count: navCount } = await supabase
+          .from('nav_invoices')
+          .select('id', { count: 'exact', head: true })
+          .in('company_id', companyIds)
+          .gte('invoice_issue_date', monthStart)
+          .lt('invoice_issue_date', monthEnd);
+
+        // Count missing items created this month
+        const { count: missingCount } = await supabase
+          .from('accounty_missing_items' as any)
+          .select('id', { count: 'exact', head: true })
+          .in('company_id', companyIds)
+          .gte('created_at', monthStart)
+          .lt('created_at', monthEnd);
+
+        const totalInv = (invCount || 0) + (navCount || 0);
+        const totalMissing = missingCount || 0;
+        const zaras = totalInv + totalMissing > 0
+          ? Math.round((totalInv / (totalInv + totalMissing)) * 100)
+          : 0;
+
+        months.push({ month: label, szamlak: totalInv, hianyzok: totalMissing, zaras });
+      }
+
+      return months;
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60_000, // 5 min — heavy query
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// useAccountyColleagueStats – Per-accountant performance stats
+// ══════════════════════════════════════════════════════════════
+
+export interface ColleagueStat {
+  name: string;
+  initial: string;
+  assigned: number;
+  closed: number;
+  inProgress: number;
+  missing: number;
+  closingPct: number;
+  avgDays: number;
+  efficiency: 'Kiváló' | 'Jó' | 'Fejlesztendő';
+}
+
+export function useAccountyColleagueStats() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['accounty-colleague-stats'],
+    queryFn: async (): Promise<ColleagueStat[]> => {
+      // Get all assignments
+      const { data: assignments } = await supabase
+        .from('accounty_assignments' as any)
+        .select('accountant_user_id, company_id') as any;
+      if (!assignments || assignments.length === 0) return [];
+
+      // Get company names to exclude SANDBOX
+      const allCompanyIds = [...new Set(assignments.map((a: any) => a.company_id))] as string[];
+      const { data: companies } = await supabase
+        .from('companies')
+        .select('id, name')
+        .in('id', allCompanyIds);
+      const sandboxIds = new Set((companies || []).filter(c => c.name === 'SANDBOX').map(c => c.id));
+
+      // Group by accountant (exclude SANDBOX assignments)
+      const accountantCompanies: Record<string, string[]> = {};
+      for (const a of assignments) {
+        if (sandboxIds.has(a.company_id)) continue;
+        if (!accountantCompanies[a.accountant_user_id]) accountantCompanies[a.accountant_user_id] = [];
+        accountantCompanies[a.accountant_user_id].push(a.company_id);
+      }
+
+      const accountantIds = Object.keys(accountantCompanies);
+
+      // Get profiles
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .in('user_id', accountantIds);
+      const nameMap: Record<string, string> = {};
+      (profiles || []).forEach((p: any) => { nameMap[p.user_id] = p.name || 'Névtelen'; });
+
+      const results: ColleagueStat[] = [];
+
+      for (const uid of accountantIds) {
+        const coIds = accountantCompanies[uid];
+        const name = nameMap[uid] || 'Névtelen';
+
+        // Missing items (open/notified)
+        const { count: missingOpen } = await supabase
+          .from('accounty_missing_items' as any)
+          .select('id', { count: 'exact', head: true })
+          .in('company_id', coIds)
+          .in('status', ['open', 'notified']);
+
+        // Resolved items
+        const { count: resolved } = await supabase
+          .from('accounty_missing_items' as any)
+          .select('id', { count: 'exact', head: true })
+          .in('company_id', coIds)
+          .eq('status', 'resolved');
+
+        // Completed deadlines
+        const { count: completedDeadlines } = await supabase
+          .from('accounty_deadlines' as any)
+          .select('id', { count: 'exact', head: true })
+          .in('company_id', coIds)
+          .eq('status', 'completed');
+
+        // In-progress deadlines
+        const { count: inProgressDeadlines } = await supabase
+          .from('accounty_deadlines' as any)
+          .select('id', { count: 'exact', head: true })
+          .in('company_id', coIds)
+          .eq('status', 'in_progress');
+
+        const assigned = coIds.length;
+        const closed = completedDeadlines || 0;
+        const inProgress = inProgressDeadlines || 0;
+        const missing = missingOpen || 0;
+        const totalHandled = (resolved || 0) + missing;
+        const closingPct = totalHandled > 0 ? Math.round(((resolved || 0) / totalHandled) * 100) : 0;
+
+        // Efficiency rating
+        let efficiency: ColleagueStat['efficiency'] = 'Fejlesztendő';
+        if (closingPct >= 80) efficiency = 'Kiváló';
+        else if (closingPct >= 50) efficiency = 'Jó';
+
+        results.push({
+          name,
+          initial: name.charAt(0).toUpperCase(),
+          assigned,
+          closed,
+          inProgress,
+          missing,
+          closingPct,
+          avgDays: 0, // Need timestamp tracking for accurate calc
+          efficiency,
+        });
+      }
+
+      return results.sort((a, b) => b.closingPct - a.closingPct);
+    },
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// useAccountyAuditLog – Recent audit log entries
+// ══════════════════════════════════════════════════════════════
+
+export interface AuditLogEntry {
+  id: string;
+  userId: string;
+  userName: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  companyId: string | null;
+  companyName: string | null;
+  details: Record<string, any>;
+  createdAt: string;
+}
+
+export function useAccountyAuditLog(limit = 20) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['accounty-audit-log', limit],
+    queryFn: async (): Promise<AuditLogEntry[]> => {
+      const { data, error } = await supabase
+        .from('accounty_audit_log' as any)
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+
+      return (data || []).map((d: any): AuditLogEntry => ({
+        id: d.id,
+        userId: d.user_id,
+        userName: d.user_name || 'Ismeretlen',
+        action: d.action,
+        entityType: d.entity_type,
+        entityId: d.entity_id,
+        companyId: d.company_id,
+        companyName: d.company_name,
+        details: d.details || {},
+        createdAt: d.created_at,
+      }));
+    },
+    enabled: !!user,
+    staleTime: 30_000,
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// useLogAuditEvent – Write an audit log entry
+// ══════════════════════════════════════════════════════════════
+
+export function useLogAuditEvent() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (event: {
+      action: string;
+      entityType: string;
+      entityId?: string;
+      companyId?: string;
+      companyName?: string;
+      details?: Record<string, any>;
+    }) => {
+      const { error } = await supabase
+        .from('accounty_audit_log' as any)
+        .insert({
+          user_id: user?.id,
+          user_name: user?.user_metadata?.name || user?.email || 'Ismeretlen',
+          action: event.action,
+          entity_type: event.entityType,
+          entity_id: event.entityId || null,
+          company_id: event.companyId || null,
+          company_name: event.companyName || null,
+          details: event.details || {},
+        } as any);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounty-audit-log'] });
+    },
+  });
 }

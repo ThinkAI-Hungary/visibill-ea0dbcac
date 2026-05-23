@@ -151,11 +151,11 @@ export default function NewClientPage() {
   };
 
   return (
-    <div className="h-screen w-full flex flex-col bg-slate-50 dark:bg-[#0a0a0a] font-sans text-slate-900 dark:text-slate-100">
+    <div className="h-screen w-full flex flex-col bg-slate-50 dark:bg-background font-sans text-slate-900 dark:text-slate-100">
       {/* Top Bar */}
       <header className="h-16 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold text-lg leading-none">v</div>
+          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg leading-none">v</div>
           <span className="text-xl font-bold text-slate-800 dark:text-slate-200 tracking-tight">Visibill for Accountants</span>
         </div>
         
@@ -171,8 +171,8 @@ export default function NewClientPage() {
                 <div key={num} className="flex items-center gap-2">
                   <div className={cn(
                     "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-colors",
-                    isCompleted ? "bg-[#1A1F2C] text-white" : 
-                    isActive ? "bg-[#1A1F2C] text-white ring-2 ring-offset-1 ring-[#1A1F2C]" : 
+                    isCompleted ? "bg-primary text-primary-foreground" : 
+                    isActive ? "bg-primary text-primary-foreground ring-2 ring-offset-1 ring-primary" : 
                     "bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
                   )}>
                     {isCompleted ? <Check className="w-3.5 h-3.5" /> : num}
@@ -324,7 +324,7 @@ export default function NewClientPage() {
                       >
                       {isUploadingDocs ? (
                         <>
-                          <div className="w-10 h-10 border-4 border-slate-200 border-t-[#1A1F2C] dark:border-slate-700 dark:border-t-slate-300 rounded-full animate-spin"></div>
+                          <div className="w-10 h-10 border-4 border-slate-200 border-t-primary dark:border-slate-700 dark:border-t-slate-300 rounded-full animate-spin"></div>
                           <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Okmányok feldolgozása (OCR)...</p>
                         </>
                       ) : (
@@ -342,7 +342,7 @@ export default function NewClientPage() {
                   </>
                   ) : (
                     <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                      <div className="flex items-center gap-2 mb-4 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 rounded-lg border border-emerald-100 dark:border-emerald-900/30">
+                      <div className="flex items-center gap-2 mb-4 text-primary bg-accent-subtle dark:bg-accent px-4 py-3 rounded-lg border border-accent dark:border-accent">
                         <Check className="w-5 h-5 shrink-0" />
                         <p className="text-sm font-medium">Okmányok sikeresen feldolgozva. Kérjük, ellenőrizze az adatokat!</p>
                       </div>
@@ -503,7 +503,7 @@ export default function NewClientPage() {
                 </div>
 
                 <div className="flex justify-end pt-2">
-                  <Button type="submit" className="bg-[#1A1F2C] hover:bg-[#1A1F2C]/90 text-white px-8">
+                  <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8">
                     Ügyfél hozzáadása
                   </Button>
                 </div>
@@ -527,10 +527,10 @@ export default function NewClientPage() {
                   {/* RLB Option */}
                   <button 
                     onClick={() => setIntegrationType('rlb')}
-                    className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'rlb' ? "border-slate-900 dark:border-emerald-500 bg-slate-50 dark:bg-emerald-900/20" : "border-slate-100 dark:border-slate-800 hover:border-slate-200")}
+                    className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'rlb' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-slate-100 dark:border-slate-800 hover:border-slate-200")}
                   >
                     <div className="w-10 h-10 mb-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded flex items-center justify-center shadow-sm">
-                      <BarChart2 className="w-6 h-6 text-emerald-600" />
+                      <BarChart2 className="w-6 h-6 text-primary" />
                     </div>
                     <h3 className="font-semibold text-slate-900 dark:text-slate-100">RLB</h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-tight">RLB könyvelőprogram integráció RPA-val</p>
@@ -540,7 +540,7 @@ export default function NewClientPage() {
                   {/* Novitax Option */}
                   <button 
                     onClick={() => setIntegrationType('novitax')}
-                    className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'novitax' ? "border-slate-900 dark:border-emerald-500 bg-slate-50 dark:bg-emerald-900/20" : "border-slate-100 dark:border-slate-800 hover:border-slate-200")}
+                    className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'novitax' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-slate-100 dark:border-slate-800 hover:border-slate-200")}
                   >
                     <div className="w-10 h-10 mb-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded flex items-center justify-center shadow-sm">
                       <div className="text-red-500 font-bold text-lg"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
@@ -553,7 +553,7 @@ export default function NewClientPage() {
                   {/* Other Option */}
                   <button 
                     onClick={() => setIntegrationType('other')}
-                    className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'other' ? "border-slate-900 dark:border-emerald-500 bg-slate-50 dark:bg-emerald-900/20" : "border-slate-100 dark:border-slate-800 hover:border-slate-200")}
+                    className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'other' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-slate-100 dark:border-slate-800 hover:border-slate-200")}
                   >
                     <div className="w-10 h-10 mb-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded flex items-center justify-center shadow-sm">
                       <div className="w-6 h-5 bg-amber-400 rounded-sm relative"><div className="absolute top-0 right-0 w-2 h-2 bg-amber-300 rounded-bl-sm"></div></div>
@@ -646,7 +646,7 @@ export default function NewClientPage() {
               )}
 
               <div className="flex justify-end pt-6">
-                <Button onClick={handleNext} disabled={!integrationType} className="bg-[#1A1F2C] hover:bg-[#1A1F2C]/90 text-white px-8">
+                <Button onClick={handleNext} disabled={!integrationType} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8">
                   Befejezés
                 </Button>
               </div>
@@ -667,7 +667,7 @@ export default function NewClientPage() {
               <div className="space-y-3 mb-6">
                 <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><Check className="w-3.5 h-3.5" /></div>
+                    <div className="w-6 h-6 rounded-full bg-accent text-primary flex items-center justify-center"><Check className="w-3.5 h-3.5" /></div>
                     <div>
                       <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">Profil</p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">Kész</p>
@@ -678,7 +678,7 @@ export default function NewClientPage() {
 
                 <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><Check className="w-3.5 h-3.5" /></div>
+                    <div className="w-6 h-6 rounded-full bg-accent text-primary flex items-center justify-center"><Check className="w-3.5 h-3.5" /></div>
                     <div>
                       <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">Ügyfelek</p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">1 ügyfél hozzáadva</p>
@@ -689,7 +689,7 @@ export default function NewClientPage() {
 
                 <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><Check className="w-3.5 h-3.5" /></div>
+                    <div className="w-6 h-6 rounded-full bg-accent text-primary flex items-center justify-center"><Check className="w-3.5 h-3.5" /></div>
                     <div>
                       <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">Integráció</p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{integrationType === 'other' ? 'Manuális beállítva' : `${integrationType?.toUpperCase()} beállítva`}</p>
@@ -710,7 +710,7 @@ export default function NewClientPage() {
                 </ul>
               </div>
 
-              <Button onClick={() => navigate('/accounty')} className="w-full bg-[#1A1F2C] hover:bg-[#1A1F2C]/90 text-white mb-3">
+              <Button onClick={() => navigate('/accounty')} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground mb-3">
                 Irány a Dashboard &rarr;
               </Button>
               

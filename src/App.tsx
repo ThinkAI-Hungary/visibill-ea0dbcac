@@ -59,6 +59,8 @@ const ClientMissingInvoicesReportPage = lazy(() => import("./pages/Accounty/Clie
 const TaxCalendarPage = lazy(() => import("./pages/Accounty/TaxCalendarPage"));
 const ClientInvoicesPage = lazy(() => import("./pages/Accounty/ClientInvoicesPage"));
 const ClientPortalPage = lazy(() => import("./pages/Accounty/ClientPortalPage"));
+const SettingsPage = lazy(() => import("./pages/Accounty/SettingsPage"));
+const HelpPage = lazy(() => import("./pages/Accounty/HelpPage"));
 const VatReturnPage = lazy(() => import("./pages/VatReturnPage"));
 
 const queryClient = new QueryClient({
@@ -250,6 +252,9 @@ const App = () => (
                       <Route path="reports" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ReportsPage /></Suspense>} />
                       <Route path="reports/missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MissingInvoicesReportPage /></Suspense>} />
                       <Route path="tax-calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaxCalendarPage /></Suspense>} />
+                      <Route path="settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><SettingsPage /></Suspense>} />
+                      <Route path="help" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><HelpPage /></Suspense>} />
+                      <Route path="new-client" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NewClientPage /></Suspense>} />
                     </Route>
 
                     {/* Protected routes with persistent sidebar */}

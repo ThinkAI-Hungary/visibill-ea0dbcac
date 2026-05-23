@@ -143,13 +143,13 @@ export default function ClientPortalPage() {
   const remainingDocs = missingDocs.filter(d => !submittedDocs.has(d.id));
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0a]">
+    <div className="min-h-screen bg-slate-50 dark:bg-background animate-in fade-in duration-500">
       {/* Header */}
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="max-w-3xl mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="w-10 h-10 rounded-xl bg-accent dark:bg-accent flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-primary dark:text-primary" />
             </div>
             <div>
               <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">{companyName}</h1>
@@ -157,7 +157,7 @@ export default function ClientPortalPage() {
             </div>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-            <Shield className="w-3.5 h-3.5 text-emerald-500" />
+            <Shield className="w-3.5 h-3.5 text-primary" />
             Biztonságos kapcsolat
           </div>
         </div>
@@ -183,9 +183,9 @@ export default function ClientPortalPage() {
             </div>
             {completedCount > 0 && (
               <div className="flex items-center gap-2 text-sm">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <div className="w-2 h-2 rounded-full bg-primary" />
                 <span className="text-slate-600 dark:text-slate-400">
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{completedCount}</span> feltöltve
+                  <span className="font-bold text-primary dark:text-primary">{completedCount}</span> feltöltve
                 </span>
               </div>
             )}
@@ -206,15 +206,15 @@ export default function ClientPortalPage() {
               return (
                 <div key={doc.id} className={cn(
                   'flex items-center justify-between p-4 transition-all',
-                  isSubmitted ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
+                  isSubmitted ? 'bg-accent-subtle/50 dark:bg-accent' : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
                 )}>
                   <div className="flex items-center gap-3">
                     <div className={cn(
                       'w-8 h-8 rounded-lg flex items-center justify-center',
-                      isSubmitted ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-slate-100 dark:bg-slate-800'
+                      isSubmitted ? 'bg-accent dark:bg-accent' : 'bg-slate-100 dark:bg-slate-800'
                     )}>
                       {isSubmitted ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <CheckCircle2 className="w-4 h-4 text-primary dark:text-primary" />
                       ) : (
                         <FileText className="w-4 h-4 text-slate-400" />
                       )}
@@ -222,7 +222,7 @@ export default function ClientPortalPage() {
                     <div>
                       <p className={cn(
                         'text-sm font-medium',
-                        isSubmitted ? 'text-emerald-700 dark:text-emerald-400 line-through' : 'text-slate-900 dark:text-slate-100'
+                        isSubmitted ? 'text-accent-foreground dark:text-primary line-through' : 'text-slate-900 dark:text-slate-100'
                       )}>{doc.title}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[10px] text-slate-500 dark:text-slate-400">{doc.category}</span>
@@ -239,7 +239,7 @@ export default function ClientPortalPage() {
                   {!isSubmitted && (
                     <button
                       onClick={() => setSubmittedDocs(prev => new Set(prev).add(doc.id))}
-                      className="text-[10px] font-medium text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 px-2 py-1 rounded transition-colors"
+                      className="text-[10px] font-medium text-slate-400 dark:text-slate-500 hover:text-primary dark:hover:text-primary px-2 py-1 rounded transition-colors"
                     >
                       Megjelölöm kézbesítettnek
                     </button>
@@ -258,18 +258,18 @@ export default function ClientPortalPage() {
           className={cn(
             'relative bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed transition-all duration-200 p-8',
             isDragging
-              ? 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 scale-[1.01]'
+              ? 'border-primary bg-accent-subtle/50 dark:bg-accent scale-[1.01]'
               : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
           )}
         >
           <div className="text-center">
             <div className={cn(
               'w-16 h-16 rounded-2xl mx-auto flex items-center justify-center mb-4 transition-colors',
-              isDragging ? 'bg-emerald-100 dark:bg-emerald-900/50' : 'bg-slate-100 dark:bg-slate-800'
+              isDragging ? 'bg-accent dark:bg-accent' : 'bg-slate-100 dark:bg-slate-800'
             )}>
               <Upload className={cn(
                 'w-8 h-8 transition-colors',
-                isDragging ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'
+                isDragging ? 'text-primary dark:text-primary' : 'text-slate-400'
               )} />
             </div>
             <p className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-1">
@@ -304,7 +304,7 @@ export default function ClientPortalPage() {
                 Feltöltött fájlok ({uploadedFiles.length})
               </h3>
               {uploadedFiles.every(f => f.status === 'done') && (
-                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <span className="text-xs font-medium text-primary dark:text-primary flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Minden feltöltve
                 </span>
@@ -315,14 +315,14 @@ export default function ClientPortalPage() {
                 <div key={file.id} className="flex items-center gap-3 p-4">
                   <div className={cn(
                     'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-                    file.status === 'done' ? 'bg-emerald-100 dark:bg-emerald-900/40' :
+                    file.status === 'done' ? 'bg-accent dark:bg-accent' :
                     file.status === 'error' ? 'bg-red-100 dark:bg-red-900/40' :
                     'bg-slate-100 dark:bg-slate-800'
                   )}>
                     {file.status === 'uploading' ? (
                       <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
                     ) : file.status === 'done' ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <CheckCircle2 className="w-4 h-4 text-primary dark:text-primary" />
                     ) : (
                       <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
                     )}
@@ -341,7 +341,7 @@ export default function ClientPortalPage() {
                     {file.status === 'uploading' && (
                       <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1 mt-1.5">
                         <div
-                          className="h-1 rounded-full bg-emerald-500 transition-all duration-300"
+                          className="h-1 rounded-full bg-primary transition-all duration-300"
                           style={{ width: `${file.progress}%` }}
                         />
                       </div>

@@ -303,7 +303,7 @@ export default function TaxCalendarPage() {
 
   const getStatusColor = (status: Status) => {
     switch(status) {
-      case 'Zöld': return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-800';
+      case 'Zöld': return 'bg-accent text-accent-foreground border-accent dark:bg-accent dark:text-primary dark:border-accent';
       case 'Sárga': return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-800';
       case 'Piros': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-400 dark:border-red-800';
       default: return 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-800';
@@ -312,7 +312,7 @@ export default function TaxCalendarPage() {
 
   const getDotColor = (status: Status) => {
     switch(status) {
-      case 'Zöld': return 'bg-emerald-500';
+      case 'Zöld': return 'bg-primary';
       case 'Sárga': return 'bg-amber-500';
       case 'Piros': return 'bg-red-500';
       default: return 'bg-slate-500';
@@ -552,13 +552,13 @@ export default function TaxCalendarPage() {
                         <div className="flex items-center gap-2">
                           <span className={cn(
                             "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1",
-                            client.status === 'Rendben' ? "bg-emerald-100 text-emerald-700" :
+                            client.status === 'Rendben' ? "bg-accent text-accent-foreground" :
                             client.status === 'Feldolgozandó' ? "bg-amber-100 text-amber-700" :
                             "bg-red-100 text-red-700"
                           )}>
                             <div className={cn(
                               "w-1.5 h-1.5 rounded-full",
-                              client.status === 'Rendben' ? "bg-emerald-500" :
+                              client.status === 'Rendben' ? "bg-primary" :
                               client.status === 'Feldolgozandó' ? "bg-amber-500" :
                               "bg-red-500"
                             )}></div>
@@ -584,7 +584,7 @@ export default function TaxCalendarPage() {
                           variant="outline" 
                           size="sm" 
                           onClick={() => completeDeadlineMutation.mutate(client.id)}
-                          className="h-8 text-xs font-semibold gap-1.5 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
+                          className="h-8 text-xs font-semibold gap-1.5 border-accent dark:border-accent text-accent-foreground dark:text-primary hover:bg-accent-subtle dark:hover:bg-accent"
                         >
                           <Check className="w-3.5 h-3.5" />
                           Kész

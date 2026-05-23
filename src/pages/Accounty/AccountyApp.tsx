@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Plus, 
   Search, 
@@ -25,7 +25,8 @@ import {
   Download,
   TrendingUp,
   Loader2,
-  Database
+  Database,
+  X
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -34,45 +35,80 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ClientData } from './mockData';
-import { useAccountyClients, useAccountyKpis, useUpdateKanbanStatus, useAccountyAccountants } from '@/hooks/useAccountyData';
+import { useAccountyClients, useAccountyKpis, useUpdateKanbanStatus, useAccountyAccountants, useAccountyMonthlyTrend, useAccountyColleagueStats } from '@/hooks/useAccountyData';
 import { useAccountyRole } from './AccountyRoleContext';
 import { seedAccountyAssignments } from '@/utils/seedAccounty';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { BarChart2, PieChart as PieChartIcon } from 'lucide-react';
 
-// KPI stats, bar/pie chart data are now computed dynamically inside the component from Supabase data
+// KPI stats, bar/pie chart data, and colleague stats are now computed dynamically from Supabase data
 
-const monthlyTrendData = [
-  { month: 'Okt', zaras: 68, szamlak: 320, hianyzok: 28 },
-  { month: 'Nov', zaras: 72, szamlak: 345, hianyzok: 22 },
-  { month: 'Dec', zaras: 65, szamlak: 290, hianyzok: 31 },
-  { month: 'Jan', zaras: 77, szamlak: 360, hianyzok: 18 },
-  { month: 'Feb', zaras: 80, szamlak: 375, hianyzok: 15 },
-  { month: 'Már', zaras: 82, szamlak: 390, hianyzok: 12 },
-];
+function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    if (value === 0) { setDisplay(0); return; }
+    let start = 0;
+    const step = Math.max(1, Math.ceil(value / (duration / 16)));
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= value) { setDisplay(value); clearInterval(timer); }
+      else setDisplay(start);
+    }, 16);
+    return () => clearInterval(timer);
+  }, [value, duration]);
+  return <>{display.toLocaleString('hu-HU')}</>;
+}
 
-const colleagueStats = [
-  { name: 'Anna', initial: 'A', assigned: 45, closed: 38, inProgress: 5, missing: 12, closingPct: 84, avgDays: 2.1, efficiency: 'Kiváló' as const },
-  { name: 'Péter', initial: 'P', assigned: 32, closed: 28, inProgress: 4, missing: 5, closingPct: 87, avgDays: 1.8, efficiency: 'Kiváló' as const },
-  { name: 'Gábor', initial: 'G', assigned: 20, closed: 15, inProgress: 5, missing: 21, closingPct: 75, avgDays: 3.5, efficiency: 'Fejlesztendő' as const }
-];
-
-function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900 dark:text-slate-100" }: { title: string, value: number, icon: React.ElementType, valueClass?: string }) {
+function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900 dark:text-slate-100", accentColor = "teal" }: { title: string, value: number, icon: React.ElementType, valueClass?: string, accentColor?: string }) {
+  const colorMap: Record<string, string> = {
+    teal: 'from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10',
+    emerald: 'from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10',
+    blue: 'from-blue-500/10 to-blue-600/5 dark:from-blue-500/20 dark:to-blue-600/10',
+    red: 'from-red-500/10 to-red-600/5 dark:from-red-500/20 dark:to-red-600/10',
+    amber: 'from-amber-500/10 to-amber-600/5 dark:from-amber-500/20 dark:to-amber-600/10',
+  };
+  const iconColorMap: Record<string, string> = {
+    teal: 'bg-accent dark:bg-accent text-primary',
+    emerald: 'bg-accent dark:bg-accent text-primary',
+    blue: 'bg-blue-100 dark:bg-blue-900/50 text-blue-600',
+    red: 'bg-red-100 dark:bg-red-900/50 text-red-600',
+    amber: 'bg-amber-100 dark:bg-amber-900/50 text-amber-600',
+  };
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
+    <div
+      className={cn(
+        "relative overflow-hidden bg-gradient-to-br rounded-xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between h-32 card-ripple",
+        "hover:shadow-lg hover:scale-[1.02] hover:border-slate-200 dark:hover:border-slate-700 transition-all duration-300 cursor-default group",
+        colorMap[accentColor] || colorMap.emerald,
+        "bg-white dark:bg-slate-900"
+      )}
+      onMouseMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`);
+        e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`);
+      }}
+    >
       <div className="flex items-start justify-between">
         <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</h3>
-        <Icon className={`w-5 h-5 ${valueClass === 'text-red-600' ? 'text-red-500' : 'text-slate-400'}`} />
+        <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110", iconColorMap[accentColor] || iconColorMap.emerald)}>
+          <Icon className="w-4.5 h-4.5" />
+        </div>
       </div>
-      <p className={`text-3xl font-bold ${valueClass}`}>{value}</p>
+      <p className={`text-3xl font-bold tracking-tight ${valueClass}`}>
+        <AnimatedNumber value={value} />
+      </p>
+      {/* Subtle shimmer on hover */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none bg-gradient-to-r from-transparent via-white/5 to-transparent" />
     </div>
   );
 }
 
 function StatusBadge({ status }: { status: ClientData['status'] }) {
   const styles = {
-    'Rendben': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+    'Rendben': 'bg-accent text-accent-foreground dark:bg-accent dark:text-primary',
     'Feldolgozandó': 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
     'Kritikus': 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
   };
@@ -126,7 +162,7 @@ function OwnerDropdown({ client, onUpdateOwner }: { client: ClientData, onUpdate
                       <span>{acc.name}</span>
                     </div>
                     {acc.id === owner.id && (
-                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      <Check className="w-3.5 h-3.5 text-primary" />
                     )}
                   </CommandItem>
                 ))}
@@ -135,6 +171,43 @@ function OwnerDropdown({ client, onUpdateOwner }: { client: ClientData, onUpdate
           </Command>
         </PopoverContent>
       </Popover>
+    </div>
+  );
+}
+
+function MissingItemsTooltip({ companyId }: { companyId: string }) {
+  const { data: items } = useQuery({
+    queryKey: ['missing-top3', companyId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('accounty_missing_items' as any)
+        .select('title, amount, priority')
+        .eq('company_id', companyId)
+        .in('status', ['open', 'notified'])
+        .order('amount', { ascending: false, nullsFirst: false })
+        .limit(3) as any;
+      return (data || []) as { title: string; amount: number | null; priority: string }[];
+    },
+    staleTime: 60_000,
+  });
+
+  if (!items || items.length === 0) return null;
+
+  return (
+    <div className="absolute right-0 top-1/2 -translate-y-1/2 z-50 opacity-0 group-hover/row:opacity-100 pointer-events-none transition-opacity duration-200">
+      <div className="bg-slate-900 dark:bg-slate-800 text-white rounded-lg shadow-xl p-3 ml-2 min-w-[220px] border border-slate-700">
+        <p className="text-[10px] uppercase tracking-wider text-slate-400 mb-2 font-semibold">Top tételek</p>
+        {items.map((item, i) => (
+          <div key={i} className="flex items-center justify-between gap-3 py-1">
+            <span className="text-xs text-slate-200 truncate max-w-[140px]">{item.title}</span>
+            {item.amount ? (
+              <span className="text-xs font-bold text-primary whitespace-nowrap">{item.amount.toLocaleString('hu-HU')} Ft</span>
+            ) : (
+              <span className="text-xs text-slate-500">–</span>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -151,14 +224,14 @@ function ClientCard({ client, draggable, onDragStart, onDragEnd, isDragged, onUp
       ? 'bg-red-500'
       : daysLeft <= 7
         ? 'bg-amber-500'
-        : 'bg-emerald-500';
+        : 'bg-primary';
   const deadlineBadgeStyle = isOverdue
     ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400'
     : daysLeft <= 3
       ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400'
       : daysLeft <= 7
         ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
-        : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400';
+        : 'bg-accent dark:bg-accent text-accent-foreground dark:text-primary';
   const deadlineText = isOverdue
     ? `${Math.abs(daysLeft)} napja lejárt!`
     : daysLeft === 0
@@ -167,7 +240,7 @@ function ClientCard({ client, draggable, onDragStart, onDragEnd, isDragged, onUp
         ? 'Holnap lejár'
         : `${daysLeft} nap`;
   const progressColor = client.progress >= 80
-    ? 'bg-emerald-500'
+    ? 'bg-primary'
     : client.progress >= 50
       ? 'bg-amber-500'
       : 'bg-red-500';
@@ -179,11 +252,20 @@ function ClientCard({ client, draggable, onDragStart, onDragEnd, isDragged, onUp
       onDragEnd={onDragEnd}
       onClick={() => navigate(`/accounty/client/${client.id}`)}
       className={cn(
-        "bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col group cursor-pointer h-full", 
+        "bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col group cursor-pointer h-full overflow-hidden", 
+        "hover:shadow-lg hover:border-slate-200 dark:hover:border-slate-700 hover:-translate-y-0.5 transition-all duration-300",
+        "animate-in fade-in slide-in-from-bottom-2 duration-300",
         draggable && "cursor-grab active:cursor-grabbing",
-        isDragged && "opacity-50 scale-[0.98] shadow-none border-dashed border-2 ring-2 ring-emerald-500/20"
+        isDragged && "opacity-50 scale-[0.98] shadow-none border-dashed border-2 ring-2 ring-primary/20"
       )}
     >
+        {/* Status accent bar */}
+        <div className={cn(
+          "h-1 w-full",
+          client.status === 'Rendben' ? 'bg-gradient-to-r from-primary to-primary/80' :
+          client.status === 'Feldolgozandó' ? 'bg-gradient-to-r from-amber-400 to-amber-500' :
+          'bg-gradient-to-r from-red-400 to-red-500'
+        )} />
         <div className="p-5 flex flex-col h-full">
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center gap-3">
@@ -245,7 +327,7 @@ function ClientCard({ client, draggable, onDragStart, onDragEnd, isDragged, onUp
 
 // Color palette for client cards
 const CLIENT_COLORS = [
-  'bg-emerald-100 text-emerald-600', 'bg-amber-100 text-amber-600',
+  'bg-accent text-primary', 'bg-amber-100 text-amber-600',
   'bg-indigo-100 text-indigo-600', 'bg-pink-100 text-pink-600',
   'bg-teal-100 text-teal-600', 'bg-sky-100 text-sky-600',
   'bg-violet-100 text-violet-600', 'bg-rose-100 text-rose-600',
@@ -254,6 +336,8 @@ const CLIENT_COLORS = [
 export default function AccountyApp() {
   const { data: supabaseClients, isLoading: clientsLoading } = useAccountyClients();
   const { data: supabaseKpis } = useAccountyKpis();
+  const { data: monthlyTrendData } = useAccountyMonthlyTrend();
+  const { data: colleagueStats } = useAccountyColleagueStats();
   const kanbanMutation = useUpdateKanbanStatus();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('Minden');
@@ -313,7 +397,7 @@ export default function AccountyApp() {
     const feldolgozando = clients.filter(c => c.status === 'Feldolgozandó').length;
     const kritikus = clients.filter(c => c.status === 'Kritikus').length;
     return [
-      { name: 'Rendben', value: rendben, color: '#10b981' },
+      { name: 'Rendben', value: rendben, color: 'hsl(173, 80%, 40%)' },
       { name: 'Feldolgozandó', value: feldolgozando, color: '#f59e0b' },
       { name: 'Kritikus', value: kritikus, color: '#ef4444' },
     ];
@@ -392,9 +476,41 @@ export default function AccountyApp() {
 
   if (clientsLoading) {
     return (
-      <div className="w-full flex flex-col items-center justify-center py-24 gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-        <p className="text-sm text-slate-500 dark:text-slate-400">Portfólió betöltése...</p>
+      <div className="w-full space-y-6 animate-in fade-in duration-300">
+        {/* Skeleton KPIs */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-100 dark:border-slate-800 h-32 animate-pulse">
+              <div className="flex justify-between">
+                <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+                <div className="w-9 h-9 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+              </div>
+              <div className="h-8 w-16 bg-slate-200 dark:bg-slate-800 rounded mt-8" />
+            </div>
+          ))}
+        </div>
+        {/* Skeleton cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[0, 1, 2, 3, 4, 5].map(i => (
+            <div key={i} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-pulse" style={{ animationDelay: `${i * 100}ms` }}>
+              <div className="h-1 w-full bg-slate-200 dark:bg-slate-800" />
+              <div className="p-5 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className="h-3 w-20 bg-slate-100 dark:bg-slate-800 rounded" />
+                  </div>
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded" />
+                  <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -416,7 +532,7 @@ export default function AccountyApp() {
               window.location.reload();
             }
           }}
-          className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium text-sm transition-colors shadow-lg"
+          className="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-medium text-sm transition-colors shadow-lg"
         >
           Hozzárendelés indítása (összes cég)
         </button>
@@ -462,7 +578,7 @@ export default function AccountyApp() {
             </button>
           </div>
           <Link to="/accounty/new-client">
-          <Button className="bg-[#1A1F2C] hover:bg-[#1A1F2C]/90 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white rounded-lg px-4 flex items-center gap-2">
+          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-4 flex items-center gap-2">
             <Plus className="w-4 h-4" />
             Új ügyfél
           </Button>
@@ -473,10 +589,10 @@ export default function AccountyApp() {
       {/* KPIs (Hidden in KPI view since it has its own) */}
       {viewScope !== 'kpi' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard title="Összes ügyfél" value={kpis.totalClients} icon={Users} />
-          <KpiCard title="Feldolgozatlan számlák" value={kpis.unprocessedInvoices} icon={FileText} />
-          <KpiCard title="Hiányzó számlák" value={kpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" />
-          <KpiCard title="Közeledő határidők" value={kpis.upcomingDeadlines} icon={Clock} />
+          <div className="stagger-1"><KpiCard title="Összes ügyfél" value={kpis.totalClients} icon={Users} accentColor="teal" /></div>
+          <div className="stagger-2"><KpiCard title="Feldolgozatlan számlák" value={kpis.unprocessedInvoices} icon={FileText} accentColor="blue" /></div>
+          <div className="stagger-3"><KpiCard title="Hiányzó számlák" value={kpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" accentColor="red" /></div>
+          <div className="stagger-4"><KpiCard title="Közeledő határidők" value={kpis.upcomingDeadlines} icon={Clock} accentColor="amber" /></div>
         </div>
       )}
 
@@ -526,7 +642,7 @@ export default function AccountyApp() {
 
       {/* Toolbar - Hide if KPI view */}
       {viewScope !== 'kpi' && (
-        <div className="flex items-center justify-between gap-4 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center justify-between gap-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm p-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm sticky top-0 z-10">
           <div className="flex items-center gap-3 flex-1">
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -534,7 +650,7 @@ export default function AccountyApp() {
                 placeholder="Keresés..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-slate-50 dark:bg-[#0a0a0a] border-transparent focus-visible:ring-emerald-500"
+                className="pl-9 bg-slate-50 dark:bg-background border-transparent focus-visible:ring-primary"
               />
             </div>
             
@@ -556,7 +672,7 @@ export default function AccountyApp() {
             </div>
           </div>
           
-          <div className="flex items-center bg-slate-50 dark:bg-[#0a0a0a] rounded-lg p-1 border border-slate-100 dark:border-slate-800">
+          <div className="flex items-center bg-slate-50 dark:bg-background rounded-lg p-1 border border-slate-100 dark:border-slate-800">
             <Button 
               variant="ghost" 
               size="icon" 
@@ -594,7 +710,7 @@ export default function AccountyApp() {
               <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Zárási státusz (Május):</h3>
               <div className="flex items-baseline gap-4">
                 <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">{dynamicKpiStats.zarasiSzazalek}%</span>
-                <span className="text-sm font-semibold text-emerald-500">aktív</span>
+                <span className="text-sm font-semibold text-primary">aktív</span>
               </div>
             </div>
             <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-center">
@@ -615,7 +731,7 @@ export default function AccountyApp() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm h-80 flex flex-col">
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
-                <BarChart2 className="w-4 h-4 text-emerald-500" />
+                <BarChart2 className="w-4 h-4 text-primary" />
                 Könyvelői Teljesítmény
               </h3>
               <div className="flex-1 w-full">
@@ -624,8 +740,16 @@ export default function AccountyApp() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} className="[&>line]:stroke-slate-100 dark:[&>line]:stroke-slate-800" stroke="#f1f5f9" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                    <RechartsTooltip cursor={{ fill: 'var(--tooltip-cursor, #f8fafc)' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', backgroundColor: 'var(--tooltip-bg, white)', color: 'var(--tooltip-text, #1e293b)' }} />
-                    <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                    <RechartsTooltip cursor={{ fill: 'rgba(100,116,139,0.1)' }} content={({ active, payload, label }) => {
+                      if (!active || !payload?.length) return null;
+                      return (
+                        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
+                          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">{label}</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">{Number(payload[0].value).toLocaleString('hu-HU')}</p>
+                        </div>
+                      );
+                    }} />
+                    <Bar dataKey="value" fill="hsl(173, 80%, 40%)" radius={[4, 4, 0, 0]} maxBarSize={50} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -653,7 +777,15 @@ export default function AccountyApp() {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', backgroundColor: 'var(--tooltip-bg, white)', color: 'var(--tooltip-text, #1e293b)' }} />
+                    <RechartsTooltip content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      return (
+                        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
+                          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-0.5">{payload[0].name}</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">{payload[0].value}</p>
+                        </div>
+                      );
+                    }} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-8">
@@ -689,22 +821,32 @@ export default function AccountyApp() {
             </div>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyTrendData} margin={{ top: 10, right: 30, left: -10, bottom: 0 }}>
+                <LineChart data={monthlyTrendData || []} margin={{ top: 10, right: 30, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="[&>line]:stroke-slate-100 dark:[&>line]:stroke-slate-800" stroke="#f1f5f9" />
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                  <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', backgroundColor: 'var(--tooltip-bg, white)', color: 'var(--tooltip-text, #1e293b)' }} formatter={(value: number, name: string) => {
+                  <RechartsTooltip content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
                     const labels: Record<string, string> = { zaras: 'Zárási %', hianyzok: 'Hiányzó számlák' };
-                    return [`${value}${name === 'zaras' ? '%' : ' db'}`, labels[name] || name];
+                    return (
+                      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 px-3 py-2">
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{label}</p>
+                        {payload.map((p: any, i: number) => (
+                          <p key={i} className="text-sm font-bold text-slate-900 dark:text-white">
+                            {labels[p.dataKey] || p.dataKey}: {p.value}{p.dataKey === 'zaras' ? '%' : ' db'}
+                          </p>
+                        ))}
+                      </div>
+                    );
                   }} />
-                  <Line type="monotone" dataKey="zaras" stroke="#10b981" strokeWidth={2.5} dot={{ fill: '#10b981', r: 4 }} activeDot={{ r: 6 }} name="zaras" />
+                  <Line type="monotone" dataKey="zaras" stroke="hsl(173, 80%, 40%)" strokeWidth={2.5} dot={{ fill: 'hsl(173, 80%, 40%)', r: 4 }} activeDot={{ r: 6 }} name="zaras" />
                   <Line type="monotone" dataKey="hianyzok" stroke="#ef4444" strokeWidth={2} dot={{ fill: '#ef4444', r: 3 }} strokeDasharray="5 5" name="hianyzok" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
             <div className="flex items-center gap-6 mt-3 justify-center">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-emerald-500 rounded"></div>
+                <div className="w-4 h-0.5 bg-primary rounded"></div>
                 <span className="text-xs text-slate-500 dark:text-slate-400">Zárási %</span>
               </div>
               <div className="flex items-center gap-2">
@@ -740,7 +882,7 @@ export default function AccountyApp() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {colleagueStats.map((colleague, idx) => (
+                  {(colleagueStats || []).map((colleague, idx) => (
                     <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -755,7 +897,7 @@ export default function AccountyApp() {
                       <td className="px-4 py-4 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <div className="w-16 bg-slate-100 dark:bg-slate-800 rounded-full h-1.5">
-                            <div className={cn('h-1.5 rounded-full', colleague.closingPct >= 80 ? 'bg-emerald-500' : colleague.closingPct >= 60 ? 'bg-amber-500' : 'bg-red-500')} style={{ width: `${colleague.closingPct}%` }} />
+                            <div className={cn('h-1.5 rounded-full', colleague.closingPct >= 80 ? 'bg-primary' : colleague.closingPct >= 60 ? 'bg-amber-500' : 'bg-red-500')} style={{ width: `${colleague.closingPct}%` }} />
                           </div>
                           <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{colleague.closingPct}%</span>
                         </div>
@@ -775,7 +917,7 @@ export default function AccountyApp() {
                         <span className={cn(
                           'inline-flex px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider',
                           colleague.efficiency === 'Kiváló' 
-                            ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400'
+                            ? 'bg-accent dark:bg-accent text-accent-foreground dark:text-primary'
                             : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
                         )}>
                           {colleague.efficiency}
@@ -808,7 +950,7 @@ export default function AccountyApp() {
                       <span className="text-sm font-bold text-slate-900 dark:text-slate-100">92%</span>
                     </div>
                     <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
-                      <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '92%' }}></div>
+                      <div className="bg-primary h-2 rounded-full" style={{ width: '92%' }}></div>
                     </div>
                   </div>
 
@@ -842,35 +984,46 @@ export default function AccountyApp() {
 
               {/* Jobb kártya: Problémás Ügyfelek */}
               <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-6">Kritikus Válaszadási Idejű Ügyfelek</h3>
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-6">Legtöbb hiányzó tétellel rendelkező ügyfelek</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">
                     <thead className="bg-transparent border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium text-xs tracking-wider">
                       <tr>
                         <th className="pb-3 pr-4">Ügyfél neve</th>
-                        <th className="pb-3 px-4">Átlagos Késés</th>
+                        <th className="pb-3 px-4 text-center">Hiányzó</th>
                         <th className="pb-3 pl-4 text-right">Kockázat</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="py-4 pr-4 font-semibold text-slate-900 dark:text-slate-100">Webshop Hungary Zrt.</td>
-                        <td className="py-4 px-4 font-medium text-slate-600 dark:text-slate-400">12 nap</td>
-                        <td className="py-4 pl-4 text-right">
-                          <span className="inline-flex px-2.5 py-1 rounded-md bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 text-[11px] font-bold uppercase tracking-wider">
-                            Kritikus
-                          </span>
-                        </td>
-                      </tr>
-                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="py-4 pr-4 font-semibold text-slate-900 dark:text-slate-100">Gastro Delight Kft.</td>
-                        <td className="py-4 px-4 font-medium text-slate-600 dark:text-slate-400">8 nap</td>
-                        <td className="py-4 pl-4 text-right">
-                          <span className="inline-flex px-2.5 py-1 rounded-md bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-[11px] font-bold uppercase tracking-wider">
-                            Magas
-                          </span>
-                        </td>
-                      </tr>
+                      {[...clients]
+                        .sort((a, b) => b.missingCount - a.missingCount)
+                        .slice(0, 5)
+                        .filter(c => c.missingCount > 0)
+                        .map(c => (
+                        <tr key={c.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group/row relative" onClick={() => navigate(`/accounty/missing-invoices/${c.id}`)}>
+                          <td className="py-3 pr-4 font-semibold text-slate-900 dark:text-slate-100">{c.name}</td>
+                          <td className="py-3 px-4 text-center font-bold text-slate-900 dark:text-slate-100">{c.missingCount}</td>
+                          <td className="py-3 pl-4 text-right">
+                            <span className={cn(
+                              "inline-flex px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider",
+                              c.missingCount > 500
+                                ? "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400"
+                                : c.missingCount > 100
+                                ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400"
+                                : "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400"
+                            )}>
+                              {c.missingCount > 500 ? 'Kritikus' : c.missingCount > 100 ? 'Magas' : 'Közepes'}
+                            </span>
+                          </td>
+                          {/* Hover tooltip with top items */}
+                          <td className="p-0 relative">
+                            <MissingItemsTooltip companyId={c.id} />
+                          </td>
+                        </tr>
+                      ))}
+                      {clients.filter(c => c.missingCount > 0).length === 0 && (
+                        <tr><td colSpan={3} className="py-6 text-center text-slate-400 text-sm">Nincs kritikus ügyfél</td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -919,14 +1072,14 @@ export default function AccountyApp() {
           <div 
             className={cn(
               "p-4 rounded-xl border flex flex-col gap-4 min-h-[500px] transition-all duration-200",
-              dragOverColumn === 'Rendben' ? "bg-emerald-50/80 border-emerald-300 ring-4 ring-emerald-500/10" : "bg-slate-100/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/60"
+              dragOverColumn === 'Rendben' ? "bg-accent-subtle/80 border-primary/30 ring-4 ring-primary/10" : "bg-slate-100/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/60"
             )}
             onDragOver={(e) => handleDragOver(e, 'Rendben')}
             onDrop={(e) => handleDrop(e, 'Rendben')}
           >
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-primary"></span>
                 Rendben
               </h3>
               <span className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold px-2 py-0.5 rounded-full">
@@ -985,12 +1138,22 @@ export default function AccountyApp() {
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {filteredClients.map(client => (
-            <ClientCard key={client.id} client={client} onUpdateOwner={handleUpdateOwner} />
+          {filteredClients.map((client, idx) => (
+            <div key={client.id} className={`stagger-${Math.min(idx + 1, 8)}`}>
+              <ClientCard client={client} onUpdateOwner={handleUpdateOwner} />
+            </div>
           ))}
           {filteredClients.length === 0 && (
-            <div className="col-span-full py-12 text-center text-slate-500 dark:text-slate-400">
-              Nincs találat a következőre: "{searchQuery}" {statusFilter !== 'Minden' && `és státusz: ${statusFilter}`}
+            <div className="col-span-full py-16 text-center">
+              <Search className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
+              <p className="text-lg font-semibold text-foreground">Nincs találat</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Keresés: "{searchQuery}" {statusFilter !== 'Minden' && `· Státusz: ${statusFilter}`}
+              </p>
+              <Button variant="outline" className="mt-4 gap-2" onClick={() => { setSearchQuery(''); setStatusFilter('Minden'); }}>
+                <X className="w-4 h-4" />
+                Szűrők törlése
+              </Button>
             </div>
           )}
         </div>
@@ -1023,7 +1186,7 @@ export default function AccountyApp() {
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${client.colorHex} shrink-0`}>
                             <Building2 className="w-4 h-4" />
                           </div>
-                          <span className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">{client.name}</span>
+                          <span className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors">{client.name}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center text-slate-500 dark:text-slate-400">{client.taxNumber}</td>

@@ -16,7 +16,7 @@ type ReportType = 'havi' | 'afa' | 'koltseg' | 'cashflow' | 'partner' | 'hianyzo
 
 const reportTypes = [
   { id: 'havi', title: 'Havi összesítő', description: 'Bejövő és kimenő számlák összesítése, ÁFA kimutatás', icon: Calendar, color: 'text-indigo-500', bg: 'bg-indigo-50' },
-  { id: 'afa', title: 'ÁFA kimutatás', description: 'Részletes ÁFA bontás kategóriánként', icon: FileText, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+  { id: 'afa', title: 'ÁFA kimutatás', description: 'Részletes ÁFA bontás kategóriánként', icon: FileText, color: 'text-primary', bg: 'bg-accent-subtle' },
   { id: 'koltseg', title: 'Költségkimutatás', description: 'Költségek főkönyvi szám és kategória szerint', icon: PieChart, color: 'text-amber-500', bg: 'bg-amber-50' },
   { id: 'cashflow', title: 'Cash flow riport', description: 'Pénzforgalom és likviditás elemzés', icon: TrendingUp, color: 'text-blue-500', bg: 'bg-blue-50' },
   { id: 'partner', title: 'Partner kimutatás', description: 'Szállítói és vevői forgalom riport', icon: Users, color: 'text-rose-500', bg: 'bg-rose-50' },
@@ -187,7 +187,7 @@ export default function ClientReportsPage() {
                     onClick={() => setFormat('pdf')}
                     className={cn(
                       "flex items-center gap-2 p-3 rounded-xl border-2 transition-colors text-sm font-medium",
-                      format === 'pdf' ? "border-slate-900 dark:border-emerald-500 bg-slate-50 dark:bg-emerald-900/20" : "border-slate-100 dark:border-slate-800 hover:border-slate-200"
+                      format === 'pdf' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-slate-100 dark:border-slate-800 hover:border-slate-200"
                     )}
                   >
                     <FileText className={cn("w-4 h-4", format === 'pdf' ? "text-red-500" : "text-slate-400")} />
@@ -197,10 +197,10 @@ export default function ClientReportsPage() {
                     onClick={() => setFormat('excel')}
                     className={cn(
                       "flex items-center gap-2 p-3 rounded-xl border-2 transition-colors text-sm font-medium",
-                      format === 'excel' ? "border-slate-900 dark:border-emerald-500 bg-slate-50 dark:bg-emerald-900/20" : "border-slate-100 dark:border-slate-800 hover:border-slate-200"
+                      format === 'excel' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-slate-100 dark:border-slate-800 hover:border-slate-200"
                     )}
                   >
-                    <FileJson className={cn("w-4 h-4", format === 'excel' ? "text-emerald-500" : "text-slate-400")} />
+                    <FileJson className={cn("w-4 h-4", format === 'excel' ? "text-primary" : "text-slate-400")} />
                     Excel
                   </button>
                 </div>
@@ -238,7 +238,7 @@ export default function ClientReportsPage() {
                 <Button variant="outline" className="gap-2 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 whitespace-nowrap">
                   <Eye className="w-4 h-4" /> Előnézet
                 </Button>
-                <Button className="gap-2 bg-[#1A1F2C] text-white hover:bg-[#1A1F2C]/90 whitespace-nowrap" onClick={() => setIsModalOpen(false)}>
+                <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 whitespace-nowrap" onClick={() => setIsModalOpen(false)}>
                   <Download className="w-4 h-4" /> Generálás
                 </Button>
               </div>

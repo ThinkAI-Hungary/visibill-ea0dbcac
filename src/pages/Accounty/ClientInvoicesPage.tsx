@@ -52,7 +52,7 @@ export default function ClientInvoicesPage() {
       case 'Kontírozásra vár':
         return <span className="px-2.5 py-1 rounded-md bg-amber-100 text-amber-700 text-xs font-semibold">Kontírozásra vár</span>;
       case 'Kontírozott':
-        return <span className="px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-700 text-xs font-semibold">Kontírozott</span>;
+        return <span className="px-2.5 py-1 rounded-md bg-accent text-accent-foreground text-xs font-semibold">Kontírozott</span>;
       case 'Exportálva':
         return <span className="px-2.5 py-1 rounded-md bg-blue-100 text-blue-700 text-xs font-semibold">Exportálva</span>;
       case 'Problémás':
@@ -114,7 +114,7 @@ export default function ClientInvoicesPage() {
                     <span className="text-sm font-bold text-slate-900 dark:text-slate-100">2024-01-15 10:30</span>
                   </div>
                   <div className="flex gap-4 text-sm font-medium">
-                    <span className="text-emerald-600">12 importálva</span>
+                    <span className="text-primary">12 importálva</span>
                     <span className="text-amber-500">2 duplikált</span>
                     <span className="text-red-500">0 hiba</span>
                   </div>
@@ -146,14 +146,14 @@ export default function ClientInvoicesPage() {
                   <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Számla típusok</h3>
                   <div className="space-y-2.5">
                     <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full bg-[#1A1F2C] flex items-center justify-center shrink-0">
+                      <div className="w-5 h-5 rounded-full bg-card flex items-center justify-center shrink-0">
                         <Check className="w-3 h-3 text-white" />
                       </div>
-                      <Download className="w-4 h-4 text-emerald-600" />
+                      <Download className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium text-slate-900 dark:text-slate-100">Bejövő számlák (vásárlások)</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full bg-[#1A1F2C] flex items-center justify-center shrink-0">
+                      <div className="w-5 h-5 rounded-full bg-card flex items-center justify-center shrink-0">
                         <Check className="w-3 h-3 text-white" />
                       </div>
                       <Upload className="w-4 h-4 text-blue-600" />
@@ -173,7 +173,7 @@ export default function ClientInvoicesPage() {
                     <Button variant="outline" className="gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 h-10">
                       <Settings className="w-4 h-4" /> Beállítások
                     </Button>
-                    <Button className="gap-2 bg-[#1A1F2C] hover:bg-[#1A1F2C]/90 text-white px-6 h-10">
+                    <Button className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-10">
                       <RefreshCcw className="w-4 h-4" /> Szinkronizálás
                     </Button>
                   </div>
@@ -184,7 +184,7 @@ export default function ClientInvoicesPage() {
           
           <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2 bg-[#1A1F2C] hover:bg-[#1A1F2C]/90 text-white">
+              <Button className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
                 <Upload className="w-4 h-4" /> Számla feltöltése
               </Button>
             </DialogTrigger>

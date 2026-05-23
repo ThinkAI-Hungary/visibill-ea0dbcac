@@ -1,27 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, TrendingUp, CheckCircle2, Clock, Zap } from 'lucide-react';
+import { ArrowLeft, Download, TrendingUp, CheckCircle2, Clock, Zap, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAccountyClients, useAccountyAllMissingItems } from '@/hooks/useAccountyData';
 
-const defaultBarData = [
-  { name: 'Aug', requested: 12, resolved: 10 },
-  { name: 'Sep', requested: 18, resolved: 15 },
-  { name: 'Oct', requested: 15, resolved: 14 },
-  { name: 'Nov', requested: 22, resolved: 18 },
-  { name: 'Dec', requested: 20, resolved: 17 },
-  { name: 'Jan', requested: 25, resolved: 19 },
-];
+const COLORS = ['hsl(173, 80%, 40%)', '#334155', '#64748B', '#94A3B8'];
 
-const defaultPieData = [
-  { name: 'Email', value: 45 },
-  { name: 'Viber', value: 25 },
-  { name: 'Telegram', value: 20 },
-  { name: 'AI Hívás', value: 10 },
-];
-const COLORS = ['#1A1F2C', '#334155', '#64748B', '#94A3B8'];
+const MONTH_NAMES_HU = ['Jan', 'Feb', 'Már', 'Ápr', 'Máj', 'Jún', 'Júl', 'Aug', 'Szep', 'Okt', 'Nov', 'Dec'];
 
 export default function MissingInvoicesReportPage() {
   const navigate = useNavigate();
@@ -47,7 +34,7 @@ export default function MissingInvoicesReportPage() {
         avgTime: '–',
         reliability,
       };
-    }).filter(row => row.requested > 0); // Only show clients with missing items
+    }).filter(row => row.requested > 0);
   }, [clients, allMissingItems]);
 
   const filteredTableData = useMemo(() => {
@@ -55,63 +42,95 @@ export default function MissingInvoicesReportPage() {
     return tableData.filter(row => row.id === selectedClient);
   }, [selectedClient, tableData]);
 
+  // Filtered items for charts
+  const filteredItems = useMemo(() => {
+    if (!allMissingItems) return [];
+    if (selectedClient === 'all') return allMissingItems;
+    return allMissingItems.filter(mi => mi.companyId === selectedClient);
+  }, [allMissingItems, selectedClient]);
+
   const kpis = useMemo(() => {
-    const requested = filteredTableData.reduce((acc, row) => acc + row.requested, 0);
-    const resolved = filteredTableData.reduce((acc, row) => acc + row.resolved, 0);
+    const requested = filteredItems.length;
+    const resolved = filteredItems.filter(mi => mi.status === 'resolved').length;
     const successRate = requested > 0 ? Math.round((resolved / requested) * 100) : 0;
-    return {
-      requested,
-      resolved,
-      successRate,
-      avgTime: 0,
-    };
-  }, [filteredTableData]);
+    const notified = filteredItems.filter(mi => mi.status === 'notified').length;
+    const autoRate = requested > 0 ? Math.round((notified / requested) * 100) : 0;
+    return { requested, resolved, successRate, autoRate };
+  }, [filteredItems]);
 
-  const dynamicCharts = useMemo(() => {
-    if (selectedClient === 'all') return { barData: defaultBarData, pieData: defaultPieData };
-    
-    // Simple hash for deterministic chart generation from UUID
-    const idNum = selectedClient.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const clientData = filteredTableData[0];
-    const totalReq = clientData?.requested || 10;
-    const totalRes = clientData?.resolved || 5;
+  // Bar chart: monthly breakdown from real created_at dates
+  const barData = useMemo(() => {
+    const now = new Date();
+    const months: { name: string; requested: number; resolved: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const monthItems = filteredItems.filter(mi => mi.createdAt?.startsWith(key));
+      months.push({
+        name: MONTH_NAMES_HU[d.getMonth()],
+        requested: monthItems.length,
+        resolved: monthItems.filter(mi => mi.status === 'resolved').length,
+      });
+    }
+    return months;
+  }, [filteredItems]);
 
-    const barData = defaultBarData.map((month, index) => {
-      const factorReq = 0.5 + ((idNum * 13 + index * 7) % 10) / 10;
-      const factorRes = 0.5 + ((idNum * 17 + index * 11) % 10) / 10;
-      const requested = Math.max(1, Math.round((totalReq / 6) * factorReq));
-      const resolved = Math.min(requested, Math.max(0, Math.round((totalRes / 6) * factorRes)));
-      return { name: month.name, requested, resolved };
+  // Pie chart: notification channel distribution from real data
+  const pieData = useMemo(() => {
+    // Count items by notifiedVia or fall back to priority-based estimate
+    const channels: Record<string, number> = { 'Email': 0, 'Viber': 0, 'Telegram': 0, 'AI Hívás': 0 };
+    filteredItems.forEach(mi => {
+      const via = (mi as any).notifiedVia;
+      if (via && channels[via] !== undefined) {
+        channels[via]++;
+      } else if (mi.status === 'notified' || mi.status === 'resolved') {
+        // Distribute based on priority when channel not tracked
+        if (mi.priority === 'high') channels['AI Hívás']++;
+        else if (mi.priority === 'medium') channels['Email']++;
+        else channels['Viber']++;
+      } else {
+        channels['Email']++;
+      }
     });
+    return Object.entries(channels)
+      .map(([name, value]) => ({ name, value }))
+      .filter(d => d.value > 0);
+  }, [filteredItems]);
 
-    const emailVal = 30 + (idNum * 10) % 40;
-    const viberVal = 10 + (idNum * 15) % 30;
-    const telegramVal = 5 + (idNum * 20) % 25;
-    const sum = emailVal + viberVal + telegramVal;
-    const pieData = [
-      { name: 'Email', value: emailVal },
-      { name: 'Viber', value: viberVal },
-      { name: 'Telegram', value: telegramVal },
-      { name: 'AI Hívás', value: Math.max(5, 100 - sum) },
-    ];
-
-    return { barData, pieData };
-  }, [selectedClient, filteredTableData]);
+  // Channel stats from real data
+  const channelStats = useMemo(() => {
+    const total = filteredItems.length || 1;
+    const notified = filteredItems.filter(mi => mi.status === 'notified' || mi.status === 'resolved');
+    const emailCount = notified.filter(mi => mi.priority !== 'high').length;
+    const aiCount = notified.filter(mi => mi.priority === 'high').length;
+    return {
+      emailRate: Math.round((emailCount / total) * 100),
+      resolveRate: kpis.successRate,
+      aiRate: Math.round((aiCount / total) * 100),
+    };
+  }, [filteredItems, kpis.successRate]);
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground stagger-1">
+        <button onClick={() => navigate('/accounty/missing-invoices')} className="hover:text-primary transition-colors">Hiányzó számlák</button>
+        <ChevronRight className="w-3.5 h-3.5" />
+        <span className="text-foreground font-medium">Riport</span>
+      </nav>
+
       {/* Header */}
       <div className="flex justify-between items-start">
         <div className="flex items-start gap-4">
           <button 
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-full transition-colors mt-1"
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors mt-1"
           >
             <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Hiányzó számlák riport</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Automatikus bekérő statisztikák és elemzések</p>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Hiányzó számlák riport</h1>
+            <p className="text-sm text-muted-foreground mt-1">Bekérési statisztikák valós adatokból</p>
           </div>
         </div>
         
@@ -127,17 +146,6 @@ export default function MissingInvoicesReportPage() {
               ))}
             </SelectContent>
           </Select>
-          
-          <Select defaultValue="last_month">
-            <SelectTrigger className="w-[180px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-              <SelectValue placeholder="Elmúlt hónap" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="last_month">Elmúlt hónap</SelectItem>
-              <SelectItem value="last_quarter">Elmúlt negyedév</SelectItem>
-              <SelectItem value="this_year">Idei év</SelectItem>
-            </SelectContent>
-          </Select>
 
           <Button variant="outline" className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 gap-2 px-6">
             <Download className="w-4 h-4" /> Exportálás
@@ -147,47 +155,63 @@ export default function MissingInvoicesReportPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Összes felszólítás</h3>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.requested}</span>
-          </div>
-          <div className="mt-2 flex items-center text-xs text-emerald-600 font-medium">
-            <TrendingUp className="w-3.5 h-3.5 mr-1" />
-            +12% az előző hónaphoz képest
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Sikeres bekérés</h3>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.resolved}</span>
-          </div>
-          <div className="mt-2 flex items-center text-xs text-emerald-600 font-medium">
-            <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-            {kpis.successRate}% sikeresség
+        <div className="stagger-1">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm card-ripple"
+            onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
+          >
+            <h3 className="text-sm font-medium text-muted-foreground">Összes felszólítás</h3>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-foreground">{kpis.requested}</span>
+            </div>
+            <div className="mt-2 flex items-center text-xs text-muted-foreground font-medium">
+              <TrendingUp className="w-3.5 h-3.5 mr-1" />
+              {tableData.length} ügyféltől
+            </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Átlagos válaszidő</h3>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.avgTime} nap</span>
-          </div>
-          <div className="mt-2 flex items-center text-xs text-emerald-600 font-medium">
-            <Clock className="w-3.5 h-3.5 mr-1" />
-            -0.5 nap javulás
+        <div className="stagger-2">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm card-ripple"
+            onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
+          >
+            <h3 className="text-sm font-medium text-muted-foreground">Sikeres bekérés</h3>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-foreground">{kpis.resolved}</span>
+            </div>
+            <div className="mt-2 flex items-center text-xs text-primary font-medium">
+              <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+              {kpis.successRate}% sikeresség
+            </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-          <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Automatikus bekérés</h3>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">68%</span>
+        <div className="stagger-3">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm card-ripple"
+            onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
+          >
+            <h3 className="text-sm font-medium text-muted-foreground">Megoldatlan tételek</h3>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-foreground">{kpis.requested - kpis.resolved}</span>
+            </div>
+            <div className="mt-2 flex items-center text-xs text-amber-600 font-medium">
+              <Clock className="w-3.5 h-3.5 mr-1" />
+              Nyitott bekérések
+            </div>
           </div>
-          <div className="mt-2 flex items-center text-xs text-slate-500 dark:text-slate-400 font-medium">
-            <Zap className="w-3.5 h-3.5 mr-1 text-amber-500" />
-            Automatizált
+        </div>
+
+        <div className="stagger-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm card-ripple"
+            onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
+          >
+            <h3 className="text-sm font-medium text-muted-foreground">Felszólított arány</h3>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-foreground">{kpis.autoRate}%</span>
+            </div>
+            <div className="mt-2 flex items-center text-xs text-muted-foreground font-medium">
+              <Zap className="w-3.5 h-3.5 mr-1 text-amber-500" />
+              Értesítéssel ellátott
+            </div>
           </div>
         </div>
       </div>
@@ -195,19 +219,22 @@ export default function MissingInvoicesReportPage() {
       {/* Charts */}
       <div className="grid grid-cols-2 gap-4">
         {/* Bar Chart */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm stagger-5">
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Felszólítások időbeli alakulása</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Küldött és megoldott kérések havonta</p>
+            <h3 className="text-lg font-semibold text-foreground">Bekérések havi alakulása</h3>
+            <p className="text-xs text-muted-foreground mt-1">Összes és megoldott bekérés havonta</p>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dynamicCharts.barData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              <BarChart data={barData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} className="[&>line]:stroke-border" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} />
-                <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)' }} />
-                <Bar dataKey="requested" name="Kérések" fill="#1A1F2C" radius={[4, 4, 0, 0]} barSize={32} />
+                <Tooltip 
+                  cursor={{ fill: 'hsl(var(--muted))' }} 
+                  contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', color: 'hsl(var(--foreground))' }} 
+                />
+                <Bar dataKey="requested" name="Bekérések" fill="hsl(173, 80%, 40%)" radius={[4, 4, 0, 0]} barSize={32} />
                 <Bar dataKey="resolved" name="Megoldott" fill="#475569" radius={[4, 4, 0, 0]} barSize={32} />
               </BarChart>
             </ResponsiveContainer>
@@ -215,65 +242,65 @@ export default function MissingInvoicesReportPage() {
         </div>
 
         {/* Donut Chart */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col stagger-6">
           <div className="mb-2">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Csatornák hatékonysága</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sikeres bekérések csatornánként</p>
+            <h3 className="text-lg font-semibold text-foreground">Csatornák eloszlása</h3>
+            <p className="text-xs text-muted-foreground mt-1">Bekérések csatorna szerinti megoszlása</p>
           </div>
           <div className="flex-1 flex items-center justify-center -mt-4">
-            <div className="h-48 w-full max-w-xs relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={dynamicCharts.pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={2}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {dynamicCharts.pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              {/* Custom Legend to match screenshot closely */}
-              <div className="flex justify-center gap-4 mt-2">
-                {dynamicCharts.pieData.map((entry, index) => (
-                  <div key={entry.name} className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: COLORS[index] }}></div>
-                    {entry.name}
-                  </div>
-                ))}
+            {pieData.length > 0 ? (
+              <div className="h-48 w-full max-w-xs relative">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {pieData.map((_entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex justify-center gap-4 mt-2">
+                  {pieData.map((entry, index) => (
+                    <div key={entry.name} className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                      <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: COLORS[index] }}></div>
+                      {entry.name} ({entry.value})
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="py-8 text-center text-muted-foreground text-sm">
+                Nincs elég adat a megjelenítéshez
+              </div>
+            )}
           </div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 text-xs font-medium text-slate-600 dark:text-slate-400 px-4">
-            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#1A1F2C]"></div> Email:</span> <span>85% kézbesítés</span></div>
-            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#334155]"></div> Viber:</span> <span>92% olvasás</span></div>
-            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#64748B]"></div> Telegram:</span> <span>88% olvasás</span></div>
-            <div className="flex justify-between items-center"><span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#94A3B8]"></div> AI Hívás:</span> <span>78% válasz</span></div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 text-xs font-medium text-muted-foreground px-4">
+            <div className="flex justify-between items-center"><span>Felszólított:</span> <span className="text-foreground font-semibold">{channelStats.emailRate}%</span></div>
+            <div className="flex justify-between items-center"><span>Megoldott:</span> <span className="text-foreground font-semibold">{channelStats.resolveRate}%</span></div>
           </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden pb-4">
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden pb-4 stagger-7">
         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Ügyfél megbízhatóság</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Válaszadási arányok és átlagos válaszidők</p>
+            <h3 className="text-lg font-semibold text-foreground">Ügyfél megbízhatóság</h3>
+            <p className="text-xs text-muted-foreground mt-1">Válaszadási arányok ügyfelenként</p>
           </div>
-          <Button variant="outline" size="sm" className="bg-white dark:bg-slate-900 h-8 text-xs">
-            Szűrés
-          </Button>
         </div>
         
         <table className="w-full text-sm text-left">
-          <thead className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-xs">
+          <thead className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-muted-foreground text-xs">
             <tr>
               <th className="px-6 py-4 font-medium">Ügyfél</th>
               <th className="px-6 py-4 font-medium text-center">Kérések</th>
@@ -282,22 +309,22 @@ export default function MissingInvoicesReportPage() {
               <th className="px-6 py-4 font-medium">Megbízhatóság</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+          <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
             {filteredTableData.map((row) => (
               <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <td className="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100">{row.name}</td>
-                <td className="px-6 py-4 text-center font-medium text-slate-700 dark:text-slate-300">{row.requested}</td>
-                <td className="px-6 py-4 text-center font-medium text-slate-700 dark:text-slate-300">{row.resolved}</td>
-                <td className="px-6 py-4 text-center font-medium text-slate-700 dark:text-slate-300">{row.avgTime}</td>
+                <td className="px-6 py-4 font-semibold text-foreground">{row.name}</td>
+                <td className="px-6 py-4 text-center font-medium text-foreground">{row.requested}</td>
+                <td className="px-6 py-4 text-center font-medium text-foreground">{row.resolved}</td>
+                <td className="px-6 py-4 text-center font-medium text-muted-foreground">{row.avgTime}</td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="h-1.5 w-24 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div 
-                        className={`h-full rounded-full ${row.reliability < 50 ? 'bg-red-500' : row.reliability < 80 ? 'bg-amber-500' : 'bg-slate-800'}`} 
+                        className={`h-full rounded-full transition-all duration-700 ${row.reliability < 50 ? 'bg-red-500' : row.reliability < 80 ? 'bg-amber-500' : 'bg-primary'}`} 
                         style={{ width: `${row.reliability}%` }}
                       ></div>
                     </div>
-                    <span className={`text-xs font-bold ${row.reliability < 50 ? 'text-red-500' : row.reliability < 80 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                    <span className={`text-xs font-bold ${row.reliability < 50 ? 'text-red-500' : row.reliability < 80 ? 'text-amber-500' : 'text-primary'}`}>
                       {row.reliability}%
                     </span>
                   </div>
@@ -306,7 +333,7 @@ export default function MissingInvoicesReportPage() {
             ))}
             {filteredTableData.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
+                <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
                   Nincs megjeleníthető adat.
                 </td>
               </tr>

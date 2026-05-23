@@ -653,3 +653,85 @@ All colors MUST be HSL.
 .content-animate {
   animation: pageFadeIn 0.4s ease-out 0.15s both;
 }
+
+/* ── Staggered Animation Delays ── */
+.stagger-1 { animation: stepFadeIn 0.4s ease-out 0.05s both; }
+.stagger-2 { animation: stepFadeIn 0.4s ease-out 0.1s both; }
+.stagger-3 { animation: stepFadeIn 0.4s ease-out 0.15s both; }
+.stagger-4 { animation: stepFadeIn 0.4s ease-out 0.2s both; }
+.stagger-5 { animation: stepFadeIn 0.4s ease-out 0.25s both; }
+.stagger-6 { animation: stepFadeIn 0.4s ease-out 0.3s both; }
+.stagger-7 { animation: stepFadeIn 0.4s ease-out 0.35s both; }
+.stagger-8 { animation: stepFadeIn 0.4s ease-out 0.4s both; }
+
+/* ── Card Ripple Effect ── */
+.card-ripple {
+  position: relative;
+  overflow: hidden;
+}
+.card-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), hsl(var(--primary) / 0.08) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.card-ripple:hover::after {
+  opacity: 1;
+}
+
+/* ── Settings / Tab Content Transition ── */
+.tab-content-enter {
+  animation: tabSlide 0.25s ease-out both;
+}
+@keyframes tabSlide {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Skeleton Card ── */
+.skeleton-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: hsl(var(--muted));
+}
+.skeleton-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  animation: shimmer 1.8s infinite ease-in-out;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--foreground) / 0.04) 40%,
+    hsl(var(--foreground) / 0.06) 50%,
+    hsl(var(--foreground) / 0.04) 60%,
+    transparent 100%
+  );
+}
+.skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  background: hsl(var(--muted));
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  animation: shimmer 1.8s infinite ease-in-out;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--foreground) / 0.04) 40%,
+    hsl(var(--foreground) / 0.06) 50%,
+    hsl(var(--foreground) / 0.04) 60%,
+    transparent 100%
+  );
+}

@@ -16,7 +16,7 @@ type ReportType = 'havi' | 'afa' | 'koltseg' | 'cashflow' | 'partner' | 'hianyzo
 
 const reportTypes = [
   { id: 'havi', title: 'Havi összesítő', description: 'Bejövő és kimenő számlák összesítése, ÁFA kimutatás', icon: Calendar, color: 'text-indigo-500', bg: 'bg-indigo-50 dark:bg-indigo-900/30' },
-  { id: 'afa', title: 'ÁFA kimutatás', description: 'Részletes ÁFA bontás kategóriánként', icon: FileText, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/30' },
+  { id: 'afa', title: 'ÁFA kimutatás', description: 'Részletes ÁFA bontás kategóriánként', icon: FileText, color: 'text-primary', bg: 'bg-accent-subtle dark:bg-accent' },
   { id: 'koltseg', title: 'Költségkimutatás', description: 'Költségek főkönyvi szám és kategória szerint', icon: PieChart, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/30' },
   { id: 'cashflow', title: 'Cash flow riport', description: 'Pénzforgalom és likviditás elemzés', icon: TrendingUp, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/30' },
   { id: 'partner', title: 'Partner kimutatás', description: 'Szállítói és vevői forgalom riport', icon: Users, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/30' },
@@ -227,7 +227,7 @@ export default function ReportsPage() {
                     onClick={() => setFormat('pdf')}
                     className={cn(
                       "flex items-center gap-2 p-3 rounded-xl border-2 transition-colors text-sm font-medium",
-                      format === 'pdf' ? "border-slate-900 dark:border-emerald-500 bg-slate-50 dark:bg-emerald-900/20" : "border-slate-100 dark:border-slate-800 hover:border-slate-200"
+                      format === 'pdf' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-slate-100 dark:border-slate-800 hover:border-slate-200"
                     )}
                   >
                     <FileText className={cn("w-4 h-4", format === 'pdf' ? "text-red-500" : "text-slate-400")} />
@@ -237,10 +237,10 @@ export default function ReportsPage() {
                     onClick={() => setFormat('excel')}
                     className={cn(
                       "flex items-center gap-2 p-3 rounded-xl border-2 transition-colors text-sm font-medium",
-                      format === 'excel' ? "border-slate-900 dark:border-emerald-500 bg-slate-50 dark:bg-emerald-900/20" : "border-slate-100 dark:border-slate-800 hover:border-slate-200"
+                      format === 'excel' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-slate-100 dark:border-slate-800 hover:border-slate-200"
                     )}
                   >
-                    <FileJson className={cn("w-4 h-4", format === 'excel' ? "text-emerald-500" : "text-slate-400")} />
+                    <FileJson className={cn("w-4 h-4", format === 'excel' ? "text-primary" : "text-slate-400")} />
                     Excel
                   </button>
                 </div>
@@ -293,7 +293,7 @@ export default function ReportsPage() {
                   disabled={isGenerating}
                   className={cn(
                     "gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 whitespace-nowrap transition-all",
-                    emailSent ? "text-emerald-600 border-emerald-300" : "text-slate-700 dark:text-slate-300"
+                    emailSent ? "text-primary border-primary/30" : "text-slate-700 dark:text-slate-300"
                   )}
                 >
                   {emailSent ? <><Check className="w-4 h-4" /> Elküldve!</> : <><Mail className="w-4 h-4" /> Generálás és küldés</>}
@@ -314,8 +314,8 @@ export default function ReportsPage() {
                   className={cn(
                     "gap-2 whitespace-nowrap transition-all",
                     generated 
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                      : "bg-[#1A1F2C] text-white hover:bg-[#1A1F2C]/90"
+                      ? "bg-primary text-white hover:bg-primary/90" 
+                      : "bg-primary text-primary-foreground hover:bg-primary/90"
                   )}
                 >
                   {isGenerating ? (
@@ -347,12 +347,12 @@ function PreviewTable({ data, type }: { data: FullReportData; type: ReportType }
       <div className="space-y-3">
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3"><div className="text-[10px] text-blue-600 font-medium">Összes számla</div><div className="text-lg font-bold text-blue-700">{data.invoices.length}</div></div>
-          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3"><div className="text-[10px] text-emerald-600 font-medium">Bejövő</div><div className="text-lg font-bold text-emerald-700">{inbound.length}</div></div>
+          <div className="bg-accent-subtle dark:bg-accent rounded-lg p-3"><div className="text-[10px] text-primary font-medium">Bejövő</div><div className="text-lg font-bold text-accent-foreground">{inbound.length}</div></div>
           <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3"><div className="text-[10px] text-amber-600 font-medium">Kimenő</div><div className="text-lg font-bold text-amber-700">{outbound.length}</div></div>
         </div>
         <table className="w-full"><thead><tr className="text-[10px] text-slate-500 border-b"><th className="pb-1 text-left">Szám</th><th className="pb-1 text-left">Partner</th><th className="pb-1">Irány</th><th className="pb-1 text-right">Bruttó</th></tr></thead>
         <tbody>{data.invoices.slice(0, 5).map((inv, i) => (
-          <tr key={i} className="border-b border-slate-100"><td className="py-1 font-medium">{inv.invoiceNumber}</td><td className="py-1 text-slate-500">{inv.partnerName}</td><td className="py-1 text-center"><span className={cn("px-1.5 py-0.5 rounded text-[9px] font-bold", inv.direction === 'Bejövő' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700')}>{inv.direction}</span></td><td className="py-1 text-right font-semibold">{fmt(inv.grossAmount)} Ft</td></tr>
+          <tr key={i} className="border-b border-slate-100"><td className="py-1 font-medium">{inv.invoiceNumber}</td><td className="py-1 text-slate-500">{inv.partnerName}</td><td className="py-1 text-center"><span className={cn("px-1.5 py-0.5 rounded text-[9px] font-bold", inv.direction === 'Bejövő' ? 'bg-accent text-accent-foreground' : 'bg-blue-100 text-blue-700')}>{inv.direction}</span></td><td className="py-1 text-right font-semibold">{fmt(inv.grossAmount)} Ft</td></tr>
         ))}</tbody></table>
         {data.invoices.length > 5 && <p className="text-[10px] text-slate-400 text-center">+{data.invoices.length - 5} további számla...</p>}
       </div>
@@ -399,9 +399,9 @@ function PreviewTable({ data, type }: { data: FullReportData; type: ReportType }
     return (
       <div className="space-y-3">
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3"><div className="text-[10px] text-emerald-600 font-medium">Befolyó (kimenő számlák)</div><div className="text-sm font-bold text-emerald-700">+{fmt(inflow)} Ft</div></div>
+          <div className="bg-accent-subtle dark:bg-accent rounded-lg p-3"><div className="text-[10px] text-primary font-medium">Befolyó (kimenő számlák)</div><div className="text-sm font-bold text-accent-foreground">+{fmt(inflow)} Ft</div></div>
           <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3"><div className="text-[10px] text-red-500 font-medium">Kiáramló (bejövő számlák)</div><div className="text-sm font-bold text-red-700">-{fmt(outflow)} Ft</div></div>
-          <div className={cn("rounded-lg p-3", inflow - outflow >= 0 ? "bg-emerald-50 dark:bg-emerald-900/20" : "bg-red-50 dark:bg-red-900/20")}><div className="text-[10px] text-slate-500 font-medium">Egyenleg</div><div className={cn("text-sm font-bold", inflow - outflow >= 0 ? "text-emerald-700" : "text-red-700")}>{fmt(inflow - outflow)} Ft</div></div>
+          <div className={cn("rounded-lg p-3", inflow - outflow >= 0 ? "bg-accent-subtle dark:bg-accent" : "bg-red-50 dark:bg-red-900/20")}><div className="text-[10px] text-slate-500 font-medium">Egyenleg</div><div className={cn("text-sm font-bold", inflow - outflow >= 0 ? "text-accent-foreground" : "text-red-700")}>{fmt(inflow - outflow)} Ft</div></div>
         </div>
       </div>
     );
@@ -503,7 +503,7 @@ function exportPDF(data: FullReportData, type: string) {
     const inflow = data.invoices.filter(i => i.direction === 'Kimenő').reduce((s, i) => s + i.grossAmount, 0);
     const outflow = data.invoices.filter(i => i.direction === 'Bejövő').reduce((s, i) => s + i.grossAmount, 0);
     tableHtml = `
-      <div class="summary"><span style="color:#059669">Befolyó: <strong>+${fmt(inflow)} Ft</strong></span> &nbsp;|&nbsp; <span style="color:#dc2626">Kiáramló: <strong>-${fmt(outflow)} Ft</strong></span> &nbsp;|&nbsp; Egyenleg: <strong>${fmt(inflow - outflow)} Ft</strong></div>
+      <div class="summary"><span style="color:hsl(173, 80%, 40%)">Befolyó: <strong>+${fmt(inflow)} Ft</strong></span> &nbsp;|&nbsp; <span style="color:#dc2626">Kiáramló: <strong>-${fmt(outflow)} Ft</strong></span> &nbsp;|&nbsp; Egyenleg: <strong>${fmt(inflow - outflow)} Ft</strong></div>
       <table><thead><tr><th>Irány</th><th>Partner</th><th>Dátum</th><th style="text-align:right">Összeg</th><th>Ügyfél</th></tr></thead>
       <tbody>${data.invoices.map(i => `<tr><td><span class="badge ${i.direction === 'Kimenő' ? 'rendben' : 'kritikus'}">${i.direction}</span></td><td>${i.partnerName}</td><td>${i.date}</td><td style="text-align:right"><strong>${i.direction === 'Kimenő' ? '+' : '-'}${fmt(i.grossAmount)}</strong></td><td>${i.clientName}</td></tr>`).join('')}</tbody></table>`;
   } else if (type === 'partner') {

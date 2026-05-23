@@ -21,7 +21,7 @@ const defaultPieData = [
   { name: 'Bank', value: 20 },
   { name: 'Bér', value: 10 },
 ];
-const COLORS = ['#1A1F2C', '#334155', '#64748B', '#94A3B8'];
+const COLORS = ['hsl(173, 80%, 40%)', '#334155', '#64748B', '#94A3B8'];
 
 export default function ClientMissingInvoicesReportPage() {
   const navigate = useNavigate();
@@ -124,7 +124,7 @@ export default function ClientMissingInvoicesReportPage() {
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.resolved}</span>
           </div>
-          <div className="mt-2 flex items-center text-xs text-emerald-600 font-medium">
+          <div className="mt-2 flex items-center text-xs text-primary font-medium">
             <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
             {kpis.successRate}% kezelt
           </div>
@@ -146,7 +146,7 @@ export default function ClientMissingInvoicesReportPage() {
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.successRate}%</span>
           </div>
-          <div className="mt-2 flex items-center text-xs text-emerald-600 font-medium">
+          <div className="mt-2 flex items-center text-xs text-primary font-medium">
             <Zap className="w-3.5 h-3.5 mr-1" />
             Megoldott + Ignorált
           </div>
@@ -168,7 +168,7 @@ export default function ClientMissingInvoicesReportPage() {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} />
                 <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)' }} />
-                <Bar dataKey="requested" name="Kérések" fill="#1A1F2C" radius={[4, 4, 0, 0]} barSize={32} />
+                <Bar dataKey="requested" name="Kérések" fill="hsl(173, 80%, 40%)" radius={[4, 4, 0, 0]} barSize={32} />
                 <Bar dataKey="resolved" name="Megoldott" fill="#475569" radius={[4, 4, 0, 0]} barSize={32} />
               </BarChart>
             </ResponsiveContainer>
@@ -267,17 +267,17 @@ export default function ClientMissingInvoicesReportPage() {
                   <tr key={cat} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100">{catLabels[cat] || cat}</td>
                     <td className="px-6 py-4 text-center font-medium text-slate-700 dark:text-slate-300">{total}</td>
-                    <td className="px-6 py-4 text-center font-medium text-emerald-600">{resolved}</td>
+                    <td className="px-6 py-4 text-center font-medium text-primary">{resolved}</td>
                     <td className="px-6 py-4 text-center font-medium text-amber-600">{pending}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="h-1.5 w-24 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                           <div 
-                            className={`h-full rounded-full ${pct < 50 ? 'bg-red-500' : pct < 80 ? 'bg-amber-500' : 'bg-emerald-500'}`} 
+                            className={`h-full rounded-full ${pct < 50 ? 'bg-red-500' : pct < 80 ? 'bg-amber-500' : 'bg-primary'}`} 
                             style={{ width: `${pct}%` }}
                           ></div>
                         </div>
-                        <span className={`text-xs font-bold ${pct < 50 ? 'text-red-500' : pct < 80 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                        <span className={`text-xs font-bold ${pct < 50 ? 'text-red-500' : pct < 80 ? 'text-amber-500' : 'text-primary'}`}>
                           {pct}%
                         </span>
                       </div>

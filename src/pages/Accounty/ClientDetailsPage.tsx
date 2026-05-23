@@ -148,12 +148,6 @@ export default function ClientDetailsPage() {
     }));
   }, [supabaseMissing]);
 
-  // Fetch deadlines for this company
-  const { data: allDeadlines } = useAccountyDeadlines();
-  const companyDeadlines = useMemo(() => {
-    if (!allDeadlines || !id) return [];
-    return allDeadlines.filter(d => d.companyId === id && d.status !== 'completed');
-  }, [allDeadlines, id]);
 
   // Dynamic KPI values
   const missingCount = supabaseMissing?.length || 0;
@@ -166,9 +160,9 @@ export default function ClientDetailsPage() {
   const invoiceData = useMemo(() => {
     if (!companyInvoices) return [];
     return companyInvoices.slice(0, 5).map((inv) => {
-      const dotColor = inv.status === 'Kontírozott' || inv.status === 'Exportálva' ? 'bg-emerald-500'
+      const dotColor = inv.status === 'Kontírozott' || inv.status === 'Exportálva' ? 'bg-primary'
         : inv.status === 'Problémás' ? 'bg-red-500' : 'bg-blue-500';
-      const statusColor = inv.status === 'Kontírozott' || inv.status === 'Exportálva' ? 'bg-emerald-100 text-emerald-700'
+      const statusColor = inv.status === 'Kontírozott' || inv.status === 'Exportálva' ? 'bg-accent text-accent-foreground'
         : inv.status === 'Problémás' ? 'bg-red-100 text-red-700'
         : inv.status === 'Új' ? 'bg-amber-100 text-amber-700'
         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400';
@@ -192,17 +186,24 @@ export default function ClientDetailsPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       
       {/* Header */}
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2 stagger-1">
+        <button onClick={() => navigate('/accounty')} className="hover:text-primary transition-colors">Portfólió</button>
+        <ChevronRight className="w-3.5 h-3.5" />
+        <span className="text-foreground font-medium truncate max-w-[200px]">{client.name}</span>
+      </nav>
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-full transition-colors"
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{client.name}</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{client.taxNumber}</p>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">{client.name}</h1>
+            <p className="text-sm text-muted-foreground">{client.taxNumber}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -212,7 +213,7 @@ export default function ClientDetailsPage() {
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors',
               callState === 'idle' || callState === 'completed' || callState === 'failed'
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                ? 'bg-primary hover:bg-primary/90 text-white'
                 : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
             )}
           >
@@ -235,7 +236,7 @@ export default function ClientDetailsPage() {
             className={cn(
               'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all',
               linkCopied
-                ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400'
+                ? 'bg-accent dark:bg-accent text-accent-foreground dark:text-primary'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
             )}
           >
@@ -315,8 +316,8 @@ export default function ClientDetailsPage() {
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:border-indigo-300 hover:-translate-y-1">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">ÁFA egyenleg (becsült)</h3>
-                <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-emerald-500" />
+                <div className="w-8 h-8 rounded-full bg-accent-subtle dark:bg-accent flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-primary" />
                 </div>
               </div>
               <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">245,000 Ft</div>
@@ -325,7 +326,7 @@ export default function ClientDetailsPage() {
 
           {/* Action Buttons */}
           <div className="grid grid-cols-3 gap-4">
-            <Button className="h-14 bg-[#1A1F2C] hover:bg-[#1A1F2C]/90 text-white rounded-xl text-base font-semibold flex items-center justify-center gap-2">
+            <Button className="h-14 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-base font-semibold flex items-center justify-center gap-2">
               <FileCheck className="w-5 h-5" />
               Számlák feldolgozása
             </Button>
@@ -391,7 +392,7 @@ export default function ClientDetailsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     {totalCount === 0 && (
-                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
+                      <div className="flex items-center gap-2 text-primary dark:text-primary text-sm font-medium">
                         <CheckCircle2 className="w-4 h-4" />
                         Nincs blokkoló hiányosság
                       </div>
@@ -517,7 +518,7 @@ export default function ClientDetailsPage() {
                           'text-xs font-bold px-2 py-0.5 rounded-full',
                           items.length > 0
                             ? 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-                            : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-accent dark:bg-accent text-primary dark:text-primary'
                         )}>
                           {items.length > 0 ? items.length : '✓'}
                         </span>
@@ -632,7 +633,7 @@ export default function ClientDetailsPage() {
                                             e.stopPropagation();
                                             navigate(item.resolveRoute!);
                                           }}
-                                          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+                                          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-accent-foreground dark:text-primary bg-accent-subtle dark:bg-accent hover:bg-accent dark:hover:bg-accent transition-colors"
                                         >
                                           <Wrench className="w-3.5 h-3.5" />
                                           Megoldom
@@ -683,8 +684,8 @@ export default function ClientDetailsPage() {
                 </div>
                 
                 <div className="flex items-start gap-4 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center shrink-0 mt-0.5">
-                    <FileText className="w-4 h-4 text-emerald-600" />
+                  <div className="w-8 h-8 rounded-full bg-accent-subtle dark:bg-accent flex items-center justify-center shrink-0 mt-0.5">
+                    <FileText className="w-4 h-4 text-primary" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Bérszámfejtés lezárva</p>
@@ -770,7 +771,7 @@ export default function ClientDetailsPage() {
                           </div>
                           <button
                             onClick={() => completeDeadlineMutation.mutate(dl.id)}
-                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors"
+                            className="p-1.5 rounded-lg text-primary hover:bg-accent-subtle dark:hover:bg-accent transition-colors"
                             title="Megjelölés késznek"
                           >
                             <Check className="w-4 h-4" />
@@ -853,6 +854,181 @@ export default function ClientDetailsPage() {
         </div>
       )}
 
+      {/* Bérszámfejtés Tab */}
+      {activeTab === 'Bérszámfejtés' && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+          {/* Bérszámfejtés határidők */}
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-blue-500" />
+                Bérszámfejtési határidők
+              </h3>
+            </div>
+            <div className="p-5">
+              {companyDeadlines.filter(d => d.title.toLowerCase().includes('bér') || d.title.toLowerCase().includes('járulék') || d.title.toLowerCase().includes('szja') || d.title.toLowerCase().includes('tbj')).length > 0 ? (
+                <div className="space-y-3">
+                  {companyDeadlines
+                    .filter(d => d.title.toLowerCase().includes('bér') || d.title.toLowerCase().includes('járulék') || d.title.toLowerCase().includes('szja') || d.title.toLowerCase().includes('tbj'))
+                    .map(d => {
+                      const daysLeft = Math.ceil((new Date(d.dueDate).getTime() - Date.now()) / 86400000);
+                      return (
+                        <div key={d.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "w-8 h-8 rounded-lg flex items-center justify-center",
+                              daysLeft <= 3 ? "bg-red-100 dark:bg-red-900/40" : daysLeft <= 7 ? "bg-amber-100 dark:bg-amber-900/40" : "bg-blue-100 dark:bg-blue-900/40"
+                            )}>
+                              <Calendar className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{d.title}</p>
+                              <p className="text-xs text-slate-500">{new Date(d.dueDate).toLocaleDateString('hu-HU')}</p>
+                            </div>
+                          </div>
+                          <span className={cn(
+                            "text-xs font-bold px-2.5 py-1 rounded-full",
+                            daysLeft <= 3 ? "bg-red-100 dark:bg-red-900/40 text-red-600" : daysLeft <= 7 ? "bg-amber-100 dark:bg-amber-900/40 text-amber-600" : "bg-blue-100 dark:bg-blue-900/40 text-blue-600"
+                          )}>
+                            {daysLeft < 0 ? `${Math.abs(daysLeft)} napja lejárt` : daysLeft === 0 ? 'Ma!' : `${daysLeft} nap`}
+                          </span>
+                        </div>
+                      );
+                    })}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Clock className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Nincs aktív bérszámfejtési határidő</p>
+                  <p className="text-xs text-slate-400 mt-1">A rendszer automatikusan generálja a határidőket</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Hiányzó bérszámfejtési dokumentumok */}
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <FileWarning className="w-4 h-4 text-amber-500" />
+                Hiányzó bér dokumentumok
+              </h3>
+            </div>
+            <div className="p-5">
+              {supabaseBlockingItems.filter(bi => bi.category === 'ber').length > 0 ? (
+                <div className="space-y-2">
+                  {supabaseBlockingItems.filter(bi => bi.category === 'ber').map(bi => (
+                    <div key={bi.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-2 h-2 rounded-full",
+                          bi.priority === 'urgent' ? 'bg-red-500' : bi.priority === 'medium' ? 'bg-amber-500' : 'bg-blue-500'
+                        )} />
+                        <div>
+                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{bi.title}</p>
+                          {bi.subtitle && <p className="text-xs text-slate-500">{bi.subtitle}</p>}
+                        </div>
+                      </div>
+                      {bi.amount && <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{bi.amount}</span>}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <CheckCircle2 className="w-10 h-10 text-primary mx-auto mb-3" />
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Minden bér dokumentum rendben</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Riportok Tab */}
+      {activeTab === 'Riportok' && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-primary" />
+                Elérhető riportok
+              </h3>
+            </div>
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+              
+              {/* Hiányzó számlák riport */}
+              <button
+                onClick={() => navigate(`/accounty/client/${id}/reports`)}
+                className="flex items-start gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-primary/30 dark:hover:border-accent hover:bg-accent-subtle/50 dark:hover:bg-accent transition-all text-left group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-accent dark:bg-accent flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <FileWarning className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">Hiányzó számlák riport</p>
+                  <p className="text-xs text-slate-500 mt-1">Hiányzó tételek összesítése, exportálás</p>
+                </div>
+              </button>
+
+              {/* Számlaforgalom riport */}
+              <button
+                onClick={() => navigate(`/accounty/client/${id}/invoices`)}
+                className="flex items-start gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-800 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all text-left group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">Számlaforgalom</p>
+                  <p className="text-xs text-slate-500 mt-1">Összes bejövő és kimenő számla</p>
+                </div>
+              </button>
+
+              {/* Felszólítás történet */}
+              <button
+                onClick={() => navigate(`/accounty/client/${id}/missing-invoices`)}
+                className="flex items-start gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-800 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 transition-all text-left group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">Bekérési előzmények</p>
+                  <p className="text-xs text-slate-500 mt-1">Felszólítások és bekérések története</p>
+                </div>
+              </button>
+
+              {/* KPI összesítő */}
+              <div className="flex items-start gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                  <Info className="w-5 h-5 text-slate-400" />
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-700 dark:text-slate-300 text-sm">Ügyfél KPI-ok</p>
+                  <div className="flex gap-4 mt-2">
+                    <div>
+                      <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{missingCount}</p>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">Hiányzó</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{upcomingDeadlineCount}</p>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">Határidő</p>
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{companyInvoices?.length || 0}</p>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-wider">Számla</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Beállítások Tab */}
       {activeTab === tabs[4] && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -877,9 +1053,9 @@ export default function ClientDetailsPage() {
                   <div className="flex items-center gap-4">
                     <div className={cn(
                       'w-10 h-10 rounded-lg flex items-center justify-center',
-                      notifPrefs[key] ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-slate-100 dark:bg-slate-800'
+                      notifPrefs[key] ? 'bg-accent dark:bg-accent' : 'bg-slate-100 dark:bg-slate-800'
                     )}>
-                      <Icon className={cn('w-5 h-5', notifPrefs[key] ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400')} />
+                      <Icon className={cn('w-5 h-5', notifPrefs[key] ? 'text-primary dark:text-primary' : 'text-slate-400')} />
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{label}</p>
@@ -890,7 +1066,7 @@ export default function ClientDetailsPage() {
                     onClick={() => setNotifPrefs(prev => ({ ...prev, [key]: !prev[key] }))}
                     className={cn(
                       'relative w-11 h-6 rounded-full transition-colors duration-200',
-                      notifPrefs[key] ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                      notifPrefs[key] ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'
                     )}
                   >
                     <div className={cn(
@@ -953,7 +1129,7 @@ export default function ClientDetailsPage() {
                     onClick={() => setNotifPrefs(prev => ({ ...prev, autoReminder: !prev.autoReminder }))}
                     className={cn(
                       'relative w-11 h-6 rounded-full transition-colors duration-200',
-                      notifPrefs.autoReminder ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                      notifPrefs.autoReminder ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'
                     )}
                   >
                     <div className={cn(
@@ -1023,7 +1199,7 @@ export default function ClientDetailsPage() {
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Az ügyfél hozzájárult az értesítések fogadásához
                     {commPrefsData?.gdprOptedIn && commPrefsData.gdprOptedInAt && (
-                      <span className="ml-1 text-emerald-600 dark:text-emerald-400">
+                      <span className="ml-1 text-primary dark:text-primary">
                         — {new Date(commPrefsData.gdprOptedInAt).toLocaleDateString('hu-HU')}
                       </span>
                     )}
@@ -1048,7 +1224,7 @@ export default function ClientDetailsPage() {
                   }}
                   className={cn(
                     'relative w-11 h-6 rounded-full transition-colors duration-200',
-                    commPrefsData?.gdprOptedIn ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                    commPrefsData?.gdprOptedIn ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'
                   )}
                 >
                   <div className={cn(
@@ -1165,7 +1341,7 @@ export default function ClientDetailsPage() {
                       }}
                       className={cn(
                         'relative w-11 h-6 rounded-full transition-colors duration-200',
-                        value ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                        value ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700'
                       )}
                     >
                       <div className={cn(
@@ -1179,7 +1355,7 @@ export default function ClientDetailsPage() {
               </div>
 
               {taxProfileData?.navSynced && (
-                <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-3 py-2">
+                <div className="flex items-center gap-2 text-xs text-primary dark:text-primary font-medium bg-accent-subtle dark:bg-accent rounded-lg px-3 py-2">
                   <Check className="w-3.5 h-3.5" />
                   NAV-ból szinkronizálva
                 </div>
@@ -1196,7 +1372,7 @@ export default function ClientDetailsPage() {
           <div className={cn(
             'rounded-2xl shadow-2xl border p-5 w-80 transition-all duration-300',
             callState === 'completed'
-              ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800'
+              ? 'bg-accent-subtle dark:bg-accent border-accent dark:border-accent'
               : callState === 'failed'
                 ? 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800'
                 : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
@@ -1206,16 +1382,16 @@ export default function ClientDetailsPage() {
               <div className="flex items-center gap-2">
                 <div className={cn(
                   'w-8 h-8 rounded-full flex items-center justify-center',
-                  callState === 'completed' ? 'bg-emerald-100 dark:bg-emerald-900/50' :
+                  callState === 'completed' ? 'bg-accent dark:bg-accent' :
                   callState === 'failed' ? 'bg-red-100 dark:bg-red-900/50' :
-                  'bg-emerald-100 dark:bg-emerald-900/50'
+                  'bg-accent dark:bg-accent'
                 )}>
                   {callState === 'completed' ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <CheckCircle2 className="w-4 h-4 text-primary dark:text-primary" />
                   ) : callState === 'failed' ? (
                     <PhoneOff className="w-4 h-4 text-red-600 dark:text-red-400" />
                   ) : (
-                    <PhoneCall className={cn('w-4 h-4 text-emerald-600 dark:text-emerald-400', (callState === 'dialing' || callState === 'ringing') && 'animate-pulse')} />
+                    <PhoneCall className={cn('w-4 h-4 text-primary dark:text-primary', (callState === 'dialing' || callState === 'ringing') && 'animate-pulse')} />
                   )}
                 </div>
                 <div>
@@ -1238,8 +1414,8 @@ export default function ClientDetailsPage() {
               {callState === 'dialing' && (
                 <div className="space-y-2">
                   <div className="flex justify-center">
-                    <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center animate-pulse">
-                      <Phone className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    <div className="w-12 h-12 rounded-full bg-accent dark:bg-accent flex items-center justify-center animate-pulse">
+                      <Phone className="w-6 h-6 text-primary dark:text-primary" />
                     </div>
                   </div>
                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Tárcsázás...</p>
@@ -1250,10 +1426,10 @@ export default function ClientDetailsPage() {
                 <div className="space-y-2">
                   <div className="flex justify-center">
                     <div className="relative">
-                      <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                        <PhoneCall className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                      <div className="w-12 h-12 rounded-full bg-accent dark:bg-accent flex items-center justify-center">
+                        <PhoneCall className="w-6 h-6 text-primary dark:text-primary" />
                       </div>
-                      <div className="absolute inset-0 w-12 h-12 rounded-full border-2 border-emerald-400 animate-ping opacity-30" />
+                      <div className="absolute inset-0 w-12 h-12 rounded-full border-2 border-primary animate-ping opacity-30" />
                     </div>
                   </div>
                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Csörög...</p>
@@ -1263,23 +1439,23 @@ export default function ClientDetailsPage() {
               {callState === 'speaking' && (
                 <div className="space-y-2">
                   <div className="flex justify-center">
-                    <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
                       <Mic className="w-6 h-6 text-white" />
                     </div>
                   </div>
                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Beszélgetés folyamatban</p>
-                  <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{formatTime(callTimer)}</p>
+                  <p className="text-lg font-bold text-primary dark:text-primary tabular-nums">{formatTime(callTimer)}</p>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400">🤖 AI kéri a hiányzó dokumentumokat</p>
                 </div>
               )}
               {callState === 'completed' && (
                 <div className="space-y-2">
                   <div className="flex justify-center">
-                    <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                      <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    <div className="w-12 h-12 rounded-full bg-accent dark:bg-accent flex items-center justify-center">
+                      <CheckCircle2 className="w-6 h-6 text-primary dark:text-primary" />
                     </div>
                   </div>
-                  <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Sikeres hívás!</p>
+                  <p className="text-sm font-semibold text-accent-foreground dark:text-primary">Sikeres hívás!</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">Az ügyfél ígérte a dokumentumokat 2 napon belül</p>
                 </div>
               )}
