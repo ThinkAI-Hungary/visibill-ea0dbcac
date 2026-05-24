@@ -46,6 +46,29 @@ export default function ClientMissingInvoicesReportPage() {
     return { requested, resolved, successRate, pending };
   }, [missingItems]);
 
+  const exportToCSV = () => {
+    const headers = ['Dokumentum', 'Kategória', 'Állapot', 'Létrehozva'];
+    const rows = (missingItems || []).map(r => {
+      const typeMap: Record<string, string> = { bejovo: 'Bejövő', kimeno: 'Kimenő', bank: 'Bank', ber: 'Bér' };
+      const statusMap: Record<string, string> = { pending: 'Feldolgozandó', notified: 'Felszólítva', resolved: 'Rendben', ignored: 'Mellőzve' };
+      return [
+        r.description,
+        typeMap[r.category] || r.category,
+        statusMap[r.status] || r.status,
+        new Date(r.created_at).toLocaleDateString('hu-HU')
+      ];
+    });
+    const csvContent = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ugyfel_hianyzok_${id}_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Dynamic pie: category breakdown
   const dynamicPieData = useMemo(() => {
     if (!missingItems || missingItems.length === 0) return defaultPieData;
@@ -90,7 +113,7 @@ export default function ClientMissingInvoicesReportPage() {
         
         <div className="flex gap-3">
           <Select defaultValue="last_month">
-            <SelectTrigger className="w-[180px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+            <SelectTrigger className="w-[180px] bg-card border-border">
               <SelectValue placeholder="Elmúlt hónap" />
             </SelectTrigger>
             <SelectContent>
@@ -100,15 +123,16 @@ export default function ClientMissingInvoicesReportPage() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 gap-2 px-6">
-            <Download className="w-4 h-4" /> Exportálás
+          <Button variant="outline" className="gap-2" onClick={exportToCSV}>
+            <Download className="w-4 h-4" />
+            Riport Exportálása
           </Button>
         </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+        <div className="bg-card rounded-xl border border-border p-5 shadow-soft">
           <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Összes hiányzó tétel</h3>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.requested}</span>
@@ -119,7 +143,7 @@ export default function ClientMissingInvoicesReportPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+        <div className="bg-card rounded-xl border border-border p-5 shadow-soft">
           <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Megoldott</h3>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.resolved}</span>
@@ -130,7 +154,7 @@ export default function ClientMissingInvoicesReportPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+        <div className="bg-card rounded-xl border border-border p-5 shadow-soft">
           <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Függőben</h3>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.pending}</span>
@@ -141,7 +165,7 @@ export default function ClientMissingInvoicesReportPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+        <div className="bg-card rounded-xl border border-border p-5 shadow-soft">
           <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Sikerességi arány</h3>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{kpis.successRate}%</span>
@@ -156,7 +180,7 @@ export default function ClientMissingInvoicesReportPage() {
       {/* Charts */}
       <div className="grid grid-cols-2 gap-4">
         {/* Bar Chart */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+        <div className="bg-card rounded-xl border border-border p-6 shadow-soft">
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Státusz bontás</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Függőben / megoldott / ignorált</p>
@@ -176,7 +200,7 @@ export default function ClientMissingInvoicesReportPage() {
         </div>
 
         {/* Donut Chart */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col">
+        <div className="bg-card rounded-xl border border-border p-6 shadow-soft flex flex-col">
           <div className="mb-2">
             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Kategória bontás</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Hiányzó tételek kategóriánként</p>
@@ -227,14 +251,14 @@ export default function ClientMissingInvoicesReportPage() {
       </div>
 
       {/* Summary */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden pb-4">
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden pb-4">
+        <div className="p-6 border-b border-border">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Összesítés</h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{clientName} hiányzó tételeinek részletes bontása</p>
         </div>
         
         <table className="w-full text-sm text-left mt-2">
-          <thead className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-xs">
+          <thead className="bg-card border-b border-border text-slate-500 dark:text-slate-400 text-xs">
             <tr>
               <th className="px-6 py-4 font-medium">Kategória</th>
               <th className="px-6 py-4 font-medium text-center">Összes</th>

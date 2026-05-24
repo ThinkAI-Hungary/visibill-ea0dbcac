@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Settings, Building2, Mail, Phone, Bell, Shield, Users, Globe,
   Save, Check, Loader2, ChevronRight, AlertTriangle, Key, Clock
@@ -37,14 +37,59 @@ export default function SettingsPage() {
   const [reminderFrequency, setReminderFrequency] = useState('normal');
   const [autoReminder, setAutoReminder] = useState(true);
 
-  const handleSave = () => {
+  useEffect(() => {
+    // Try load from local storage first
+    try {
+      const saved = localStorage.getItem('accounty_office_settings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.officeName) setOfficeName(parsed.officeName);
+        if (parsed.officeEmail) setOfficeEmail(parsed.officeEmail);
+        if (parsed.officePhone) setOfficePhone(parsed.officePhone);
+        if (parsed.officeAddress) setOfficeAddress(parsed.officeAddress);
+        if (parsed.defaultChannels) setDefaultChannels(parsed.defaultChannels);
+        if (parsed.reminderFrequency) setReminderFrequency(parsed.reminderFrequency);
+        if (parsed.autoReminder !== undefined) setAutoReminder(parsed.autoReminder);
+      }
+    } catch {}
+    
+    // Then override with Supabase user_metadata if available
+    if (user?.user_metadata?.accounty_office_settings) {
+      const meta = user.user_metadata.accounty_office_settings;
+      if (meta.officeName) setOfficeName(meta.officeName);
+      if (meta.officeEmail) setOfficeEmail(meta.officeEmail);
+      if (meta.officePhone) setOfficePhone(meta.officePhone);
+      if (meta.officeAddress) setOfficeAddress(meta.officeAddress);
+    }
+  }, [user]);
+
+  const handleSave = async () => {
     setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
-      setSaved(true);
-      toast({ title: '✅ Beállítások mentve', description: 'A módosítások sikeresen elmentve.' });
-      setTimeout(() => setSaved(false), 2000);
-    }, 800);
+    
+    const newSettings = {
+      officeName,
+      officeEmail,
+      officePhone,
+      officeAddress,
+      defaultChannels,
+      reminderFrequency,
+      autoReminder
+    };
+
+    // Save to localStorage
+    localStorage.setItem('accounty_office_settings', JSON.stringify(newSettings));
+
+    // Save to Supabase (if we have auth)
+    if (user) {
+      await supabase.auth.updateUser({
+        data: { accounty_office_settings: newSettings }
+      });
+    }
+
+    setSaving(false);
+    setSaved(true);
+    toast({ title: '✅ Beállítások mentve', description: 'A módosítások sikeresen elmentve.' });
+    setTimeout(() => setSaved(false), 2000);
   };
 
   const tabs = [
@@ -72,7 +117,7 @@ export default function SettingsPage() {
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
                 activeTab === tab.id
-                  ? "bg-primary/15 text-primary shadow-sm border border-primary/20"
+                  ? "bg-primary/15 text-primary shadow-soft border border-primary/20"
                   : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50"
               )}
             >
@@ -83,11 +128,11 @@ export default function SettingsPage() {
         </div>
 
         {/* Right: Content */}
-        <div className="flex-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="flex-1 bg-card rounded-xl border border-border shadow-soft overflow-hidden">
           {/* General */}
           {activeTab === 'general' && (
             <div key="general" className="p-6 space-y-6 tab-content-enter">
-              <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="border-b border-border pb-4">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Iroda adatok</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Könyvelő iroda alapadatai</p>
               </div>
@@ -99,7 +144,7 @@ export default function SettingsPage() {
                     value={officeName} 
                     onChange={e => setOfficeName(e.target.value)} 
                     placeholder="Pl. Taxology Könyvelőiroda"
-                    className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+                    className="bg-card border-border"
                   />
                 </div>
                 <div className="space-y-2">
@@ -108,7 +153,7 @@ export default function SettingsPage() {
                     value={officeEmail} 
                     onChange={e => setOfficeEmail(e.target.value)} 
                     placeholder="iroda@example.com"
-                    className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+                    className="bg-card border-border"
                   />
                 </div>
                 <div className="space-y-2">
@@ -117,7 +162,7 @@ export default function SettingsPage() {
                     value={officePhone} 
                     onChange={e => setOfficePhone(e.target.value)} 
                     placeholder="+36 1 234 5678"
-                    className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+                    className="bg-card border-border"
                   />
                 </div>
                 <div className="space-y-2">
@@ -126,12 +171,12 @@ export default function SettingsPage() {
                     value={officeAddress} 
                     onChange={e => setOfficeAddress(e.target.value)} 
                     placeholder="1234 Budapest, Példa utca 1."
-                    className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+                    className="bg-card border-border"
                   />
                 </div>
               </div>
 
-              <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+              <div className="border-t border-border pt-4">
                 <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">API kapcsolatok</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
@@ -166,7 +211,7 @@ export default function SettingsPage() {
           {/* Notifications */}
           {activeTab === 'notifications' && (
             <div key="notifications" className="p-6 space-y-6 tab-content-enter">
-              <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="border-b border-border pb-4">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Értesítési beállítások</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Alapértelmezett értesítési csatornák és gyakoriság új ügyfelekhez</p>
               </div>
@@ -187,7 +232,7 @@ export default function SettingsPage() {
                         "flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left",
                         defaultChannels[ch.key as keyof typeof defaultChannels]
                           ? "border-primary/30 dark:border-primary/40 bg-accent-subtle/50 dark:bg-accent"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300"
+                          : "border-border hover:border-slate-300"
                       )}
                     >
                       <div className={cn(
@@ -222,7 +267,7 @@ export default function SettingsPage() {
                         "flex-1 p-4 rounded-xl border-2 transition-all text-center",
                         reminderFrequency === freq.value
                           ? "border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-900/20"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300"
+                          : "border-border hover:border-slate-300"
                       )}
                     >
                       <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{freq.label}</p>
@@ -250,7 +295,7 @@ export default function SettingsPage() {
           {/* Team */}
           {activeTab === 'team' && (
             <div key="team" className="p-6 space-y-6 tab-content-enter">
-              <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="border-b border-border pb-4">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Csapat</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Könyvelők és hozzáférések kezelése</p>
               </div>
@@ -294,7 +339,7 @@ export default function SettingsPage() {
           {/* Security */}
           {activeTab === 'security' && (
             <div key="security" className="p-6 space-y-6 tab-content-enter">
-              <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="border-b border-border pb-4">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Biztonság</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Jelszó, munkamenet és adatvédelem</p>
               </div>
@@ -343,7 +388,7 @@ export default function SettingsPage() {
           )}
 
           {/* Save button */}
-          <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-end">
+          <div className="p-4 border-t border-border bg-slate-50/50 dark:bg-slate-900/50 flex justify-end">
             <Button
               onClick={handleSave}
               disabled={saving}

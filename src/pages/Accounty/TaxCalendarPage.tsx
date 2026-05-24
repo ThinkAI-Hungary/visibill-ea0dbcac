@@ -54,7 +54,7 @@ const deadlineTypeTitle: Record<string, string> = {
 
 function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900 dark:text-slate-100" }: { title: string, value: number, icon: React.ElementType, valueClass?: string }) {
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
+    <div className="bg-card rounded-xl p-5 border border-border shadow-soft flex flex-col justify-between h-32 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</h3>
         <Icon className={`w-5 h-5 ${valueClass === 'text-red-600' ? 'text-red-500' : 'text-slate-400'}`} />
@@ -306,7 +306,7 @@ export default function TaxCalendarPage() {
       case 'Zöld': return 'bg-accent text-accent-foreground border-accent dark:bg-accent dark:text-primary dark:border-accent';
       case 'Sárga': return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-800';
       case 'Piros': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-400 dark:border-red-800';
-      default: return 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-800';
+      default: return 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-border';
     }
   };
 
@@ -339,13 +339,13 @@ export default function TaxCalendarPage() {
       </div>
 
       {/* Scope Tabs (Mine / All) */}
-      <div className="w-full bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800/60 shadow-inner flex items-center">
+      <div className="w-full bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-xl border border-border/60 shadow-inner flex items-center">
         <button
           onClick={() => { setViewScope('mine'); setSelectedClient('all'); }}
           className={cn(
             "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
             viewScope === 'mine' 
-              ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" 
+              ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" 
               : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
           )}
         >
@@ -358,7 +358,7 @@ export default function TaxCalendarPage() {
             className={cn(
               "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
               viewScope === 'all' 
-                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" 
+                ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" 
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
             )}
           >
@@ -390,7 +390,7 @@ export default function TaxCalendarPage() {
           
           <div className="flex items-center gap-4">
             <Select value={selectedClient} onValueChange={setSelectedClient}>
-              <SelectTrigger className="w-64 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm h-10">
+              <SelectTrigger className="w-64 bg-card border-border shadow-soft h-10">
                 <SelectValue placeholder="Minden ügyfél" />
               </SelectTrigger>
               <SelectContent>
@@ -401,22 +401,22 @@ export default function TaxCalendarPage() {
               </SelectContent>
             </Select>
 
-            <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center shadow-inner h-10">
+            <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-border flex items-center shadow-inner h-10">
             <button
               onClick={() => setCalendarView('month')}
-              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'month' ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50")}
+              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'month' ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50")}
             >
               Havi
             </button>
             <button
               onClick={() => setCalendarView('week')}
-              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'week' ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50")}
+              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'week' ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50")}
             >
               Heti
             </button>
             <button
               onClick={() => setCalendarView('list')}
-              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'list' ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50")}
+              className={cn("px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200", calendarView === 'list' ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50")}
             >
               Lista
             </button>
@@ -424,7 +424,7 @@ export default function TaxCalendarPage() {
           </div>
         </div>
       {calendarView === 'list' ? (
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
           {getListViewItems().map((item, idx) => (
             <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors gap-4">
               <div className="font-semibold text-slate-800 dark:text-slate-200">
@@ -438,7 +438,7 @@ export default function TaxCalendarPage() {
                       key={bIdx}
                       onClick={() => handleDeadlineClick(badge)}
                       className={cn(
-                        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-bold transition-all shadow-sm hover:shadow",
+                        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-bold transition-all shadow-soft hover:shadow",
                         getStatusColor(badge.status)
                       )}
                     >
@@ -457,12 +457,12 @@ export default function TaxCalendarPage() {
           )}
         </div>
       ) : (
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
         
         {/* Calendar Grid */}
-        <div className="grid grid-cols-7 border-b border-slate-100 dark:border-slate-800">
+        <div className="grid grid-cols-7 border-b border-border">
           {['Mon', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap'].map((day, i) => (
-            <div key={day} className={`py-3 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider ${i < 6 ? 'border-r border-slate-100 dark:border-slate-800' : ''}`}>
+            <div key={day} className={`py-3 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider ${i < 6 ? 'border-r border-border' : ''}`}>
               {day}
             </div>
           ))}
@@ -476,7 +476,7 @@ export default function TaxCalendarPage() {
               <div 
                 key={index} 
                 className={cn(
-                  "bg-white dark:bg-slate-900 min-h-[120px] p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group",
+                  "bg-card min-h-[120px] p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group",
                   !cell.isCurrentMonth && "text-slate-400 bg-slate-50/50 dark:bg-slate-950/50"
                 )}
               >
@@ -517,11 +517,11 @@ export default function TaxCalendarPage() {
 
       {/* Side Drawer for Details */}
       <Sheet open={!!selectedDeadline} onOpenChange={(open) => !open && setSelectedDeadline(null)}>
-        <SheetContent className="w-[400px] sm:max-w-[400px] p-0 flex flex-col bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl">
+        <SheetContent className="w-[400px] sm:max-w-[400px] p-0 flex flex-col bg-card border-l border-border shadow-2xl">
           {selectedDeadline && (
             <>
               {/* Drawer Header */}
-              <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 relative">
+              <div className="p-6 border-b border-border bg-slate-50/50 dark:bg-slate-900/50 relative">
                 <div className="flex items-center gap-3 text-slate-800 dark:text-slate-200">
                   <div className="p-2 bg-red-100 text-red-600 rounded-lg shrink-0">
                     <CalendarIcon className="w-5 h-5" />
@@ -575,7 +575,7 @@ export default function TaxCalendarPage() {
                       
                       <div className="flex items-center gap-2">
                         {client.status !== 'Rendben' && (
-                          <Button variant="outline" size="sm" className="h-8 text-xs font-semibold gap-1.5 border-slate-200 dark:border-slate-800">
+                          <Button variant="outline" size="sm" className="h-8 text-xs font-semibold gap-1.5 border-border">
                             <Mail className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                             Értesítés
                           </Button>

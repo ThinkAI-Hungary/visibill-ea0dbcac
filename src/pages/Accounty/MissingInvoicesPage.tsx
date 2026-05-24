@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Clock, MoreVertical, FileText, Settings, Search, ChevronRight, Mail, Phone, CheckCircle2, X, CheckCircle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Clock, MoreVertical, FileText, Settings, Search, ChevronRight, Mail, Phone, CheckCircle2, X, CheckCircle, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -103,7 +103,7 @@ export default function MissingInvoicesPage() {
       case 'K\u00F6zepes':
         return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-800">K&#246;zepes</span>;
       case 'Alacsony':
-        return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">Alacsony</span>;
+        return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-border">Alacsony</span>;
       default:
         return null;
     }
@@ -125,19 +125,19 @@ export default function MissingInvoicesPage() {
            <Button 
              variant="outline" 
              size="sm" 
-             className="gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 h-9 px-4"
+             className="gap-2 bg-card border-border text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 h-9 px-4"
              onClick={() => navigate('/accounty/reports/missing-invoices')}
            >
              <FileText className="w-4 h-4"/> Riportok
            </Button>
-           <Button variant="outline" size="sm" className="gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 h-9 px-4">
+           <Button variant="outline" size="sm" className="gap-2 bg-card border-border text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 h-9 px-4">
              <Settings className="w-4 h-4"/> Be&#225;ll&#237;t&#225;sok
            </Button>
          </div>
        </div>
 
        {totalCritical > 0 && (
-       <div className="border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/20 rounded-xl p-4 flex gap-3 text-red-600 dark:text-red-400 shadow-sm">
+       <div className="border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/20 rounded-xl p-4 flex gap-3 text-red-600 dark:text-red-400 shadow-soft">
          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
          <div>
            <h3 className="font-semibold text-sm">Kritikus hiányok!</h3>
@@ -151,20 +151,23 @@ export default function MissingInvoicesPage() {
          <div className="stagger-1">
           <button 
             onClick={() => setKpiModal('all')}
-            className="w-full bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between text-left hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer card-ripple"
+            className="w-full bg-card rounded-xl border border-border p-5 shadow-soft flex flex-col justify-between text-left hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
             <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Összes hiányzó</h3>
             <div className="mt-4">
               <div className="text-2xl font-bold text-slate-900 dark:text-slate-100"><AnimatedNumber value={totalMissing} /></div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{data.length} ügyféltől</p>
+              <div className="flex items-center gap-1 mt-1">
+                <TrendingDown className="w-3 h-3 text-red-500" />
+                <p className="text-xs text-red-500">{data.length} ügyféltől</p>
+              </div>
             </div>
           </button>
          </div>
          <div className="stagger-2">
           <button 
             onClick={() => setKpiModal('critical')}
-            className="w-full bg-white dark:bg-slate-900 rounded-xl border border-red-200 dark:border-red-900/50 p-5 shadow-sm flex flex-col justify-between text-left hover:border-red-400 dark:hover:border-red-700 hover:bg-red-50/50 dark:hover:bg-red-900/20 transition-all cursor-pointer card-ripple"
+            className="w-full bg-card rounded-xl border border-red-200 dark:border-red-900/50 p-5 shadow-soft flex flex-col justify-between text-left hover:border-red-400 dark:hover:border-red-700 hover:bg-red-50/50 dark:hover:bg-red-900/20 transition-all cursor-pointer card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
             <h3 className="text-sm font-medium text-red-500">Kritikus</h3>
@@ -177,7 +180,7 @@ export default function MissingInvoicesPage() {
          <div className="stagger-3">
           <button 
             onClick={() => setKpiModal('sent')}
-            className="w-full bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between text-left hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer card-ripple"
+            className="w-full bg-card rounded-xl border border-border p-5 shadow-soft flex flex-col justify-between text-left hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
             <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">Küldött felszólítások</h3>
@@ -190,7 +193,7 @@ export default function MissingInvoicesPage() {
          <div className="stagger-4">
           <button 
             onClick={() => setKpiModal('response')}
-            className="w-full bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between text-left hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer card-ripple"
+            className="w-full bg-card rounded-xl border border-border p-5 shadow-soft flex flex-col justify-between text-left hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
             <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4">Válaszadási arány</h3>
@@ -211,9 +214,9 @@ export default function MissingInvoicesPage() {
            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setKpiModal(null)} />
            
            {/* Modal */}
-           <div className="relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-in zoom-in-95 fade-in duration-200">
+           <div className="relative bg-card rounded-2xl border border-border shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-in zoom-in-95 fade-in duration-200">
              {/* Header */}
-             <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+             <div className="flex items-center justify-between p-5 border-b border-border">
                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-lg">{modalData.title}</h3>
                <button 
                  onClick={() => setKpiModal(null)}
@@ -269,7 +272,7 @@ export default function MissingInvoicesPage() {
              </div>
              
              {/* Footer */}
-             <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+             <div className="p-4 border-t border-border flex justify-end">
                <button 
                  onClick={() => setKpiModal(null)}
                  className="px-4 py-2 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
@@ -286,7 +289,7 @@ export default function MissingInvoicesPage() {
          <DialogContent className="sm:max-w-[600px] p-0 gap-0 overflow-hidden">
            {selectedInvoiceForDetails && (
              <>
-               <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+               <div className="px-6 py-4 flex items-center justify-between border-b border-border">
                  <DialogTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">{selectedInvoiceForDetails.subtext}</DialogTitle>
                  <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-full mr-6">
                    {selectedInvoiceForDetails.status}
@@ -300,7 +303,7 @@ export default function MissingInvoicesPage() {
                  </div>
                  <div>
                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Azonos&#237;t&#225;s m&#243;dja</p>
-                   <span className="inline-block px-2.5 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 rounded-md text-xs font-medium">
+                   <span className="inline-block px-2.5 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-border rounded-md text-xs font-medium">
                      {selectedInvoiceForDetails.source}
                    </span>
                  </div>
@@ -322,7 +325,7 @@ export default function MissingInvoicesPage() {
                  </div>
                </div>
 
-               <div className="px-6 py-5 border-t border-slate-100 dark:border-slate-800">
+               <div className="px-6 py-5 border-t border-border">
                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">NAV adatok</h3>
                  <div className="grid grid-cols-2 gap-4">
                    <div>
@@ -336,12 +339,12 @@ export default function MissingInvoicesPage() {
                  </div>
                </div>
 
-               <div className="px-6 py-5 border-t border-slate-100 dark:border-slate-800">
+               <div className="px-6 py-5 border-t border-border">
                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">Bek&#233;r&#233;si el&#337;zm&#233;nyek</h3>
                  <div className="space-y-3">
-                   <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
+                   <div className="flex items-center justify-between p-3 bg-card border border-border rounded-xl shadow-soft">
                      <div className="flex items-center gap-3">
-                       <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 border border-slate-100 dark:border-slate-800">
+                       <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 border border-border">
                          <Mail className="w-4 h-4" />
                        </div>
                        <div>
@@ -353,9 +356,9 @@ export default function MissingInvoicesPage() {
                        Megnyitva
                      </span>
                    </div>
-                   <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
+                   <div className="flex items-center justify-between p-3 bg-card border border-border rounded-xl shadow-soft">
                      <div className="flex items-center gap-3">
-                       <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 border border-slate-100 dark:border-slate-800">
+                       <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 border border-border">
                          <Mail className="w-4 h-4" />
                        </div>
                        <div>
@@ -363,30 +366,30 @@ export default function MissingInvoicesPage() {
                          <p className="text-xs text-slate-500 dark:text-slate-400">Email</p>
                        </div>
                      </div>
-                     <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold rounded-full border border-slate-200 dark:border-slate-800">
+                     <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold rounded-full border border-border">
                        Elk&#252;ldve
                      </span>
                    </div>
                  </div>
                </div>
 
-               <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+               <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/80 border-t border-border flex items-center justify-between">
                  <button 
-                   className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors shadow-sm"
+                   className="px-4 py-2.5 bg-card border border-border text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors shadow-soft"
                    onClick={() => setSelectedInvoiceForDetails(null)}
                  >
                    T&#233;ves azonos&#237;t&#225;s
                  </button>
                  <div className="flex items-center gap-3">
                    <button 
-                     className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors shadow-sm"
+                     className="flex items-center gap-2 px-4 py-2.5 bg-card border border-border text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors shadow-soft"
                      onClick={() => setSelectedInvoiceForDetails(null)}
                    >
                      <CheckCircle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                      Meg&#233;rkezett a sz&#225;mla
                    </button>
                    <button 
-                     className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm"
+                     className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors shadow-soft"
                      onClick={() => setSelectedInvoiceForDetails(null)}
                    >
                      <Mail className="w-4 h-4" />
@@ -405,14 +408,14 @@ export default function MissingInvoicesPage() {
            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
            <Input 
              placeholder={"Keres\u00E9s \u00FCgyf\u00E9l..."} 
-             className="pl-9 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" 
+             className="pl-9 bg-card border-border" 
              value={searchQuery}
              onChange={(e) => setSearchQuery(e.target.value)}
            />
          </div>
          <div className="w-48">
            <Select value={statusFilter} onValueChange={setStatusFilter}>
-             <SelectTrigger className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+             <SelectTrigger className="bg-card border-border">
                <SelectValue placeholder={"Minden st\u00E1tusz"} />
              </SelectTrigger>
              <SelectContent>
@@ -426,9 +429,9 @@ export default function MissingInvoicesPage() {
        </div>
 
        {/* Table */}
-       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+       <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden">
          <table className="w-full text-sm text-left">
-           <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium text-xs uppercase tracking-wider">
+           <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-border text-slate-500 dark:text-slate-400 font-medium text-xs uppercase tracking-wider">
              <tr>
                <th className="px-6 py-4 w-12 text-center"><input type="checkbox" className="rounded border-slate-300 w-4 h-4 accent-slate-900" /></th>
                <th className="px-6 py-4">&#220;gyf&#233;l</th>
@@ -450,7 +453,7 @@ export default function MissingInvoicesPage() {
                  <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="rounded border-slate-300 w-4 h-4 accent-slate-900" /></td>
                  <td className="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100 hover:text-primary transition-colors">{row.name}</td>
                  <td className="px-6 py-4 text-center">
-                   <span className="w-7 h-7 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center mx-auto text-xs font-semibold text-slate-700 dark:text-slate-300">{row.missing}</span>
+                   <span className="w-7 h-7 rounded-full border border-border bg-card shadow-soft flex items-center justify-center mx-auto text-xs font-semibold text-slate-700 dark:text-slate-300">{row.missing}</span>
                  </td>
                  <td className="px-6 py-4 text-center">
                    {row.critical > 0 ? (

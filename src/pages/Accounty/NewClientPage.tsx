@@ -153,7 +153,7 @@ export default function NewClientPage() {
   return (
     <div className="h-screen w-full flex flex-col bg-slate-50 dark:bg-background font-sans text-slate-900 dark:text-slate-100">
       {/* Top Bar */}
-      <header className="h-16 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8">
+      <header className="h-16 shrink-0 bg-card border-b border-border flex items-center justify-between px-8">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg leading-none">v</div>
           <span className="text-xl font-bold text-slate-800 dark:text-slate-200 tracking-tight">Visibill for Accountants</span>
@@ -204,24 +204,24 @@ export default function NewClientPage() {
               </div>
 
               {/* Prep Toggle */}
-              <div className="flex p-1 bg-slate-100/80 dark:bg-slate-900/80 rounded-full mb-8 max-w-sm mx-auto border border-slate-200 dark:border-slate-800/60">
+              <div className="flex p-1 bg-slate-100/80 dark:bg-slate-900/80 rounded-full mb-8 max-w-sm mx-auto border border-border/60">
                 <button 
                   onClick={() => setUseVisibillAccount(true)}
-                  className={cn("flex-1 py-2 px-4 text-sm font-medium rounded-full flex items-center justify-center gap-2 transition-all", useVisibillAccount ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-slate-100" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
+                  className={cn("flex-1 py-2 px-4 text-sm font-medium rounded-full flex items-center justify-center gap-2 transition-all", useVisibillAccount ? "bg-card shadow-soft text-slate-900 dark:text-slate-100" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
                 >
                   <svg className="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
                   Van Visibill fiókja
                 </button>
                 <button 
                   onClick={() => setUseVisibillAccount(false)}
-                  className={cn("flex-1 py-2 px-4 text-sm font-medium rounded-full flex items-center justify-center gap-2 transition-all", !useVisibillAccount ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-slate-100" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
+                  className={cn("flex-1 py-2 px-4 text-sm font-medium rounded-full flex items-center justify-center gap-2 transition-all", !useVisibillAccount ? "bg-card shadow-soft text-slate-900 dark:text-slate-100" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
                 >
                   <Building2 className="w-4 h-4 opacity-70" /> Manuálisan adom hozzá
                 </button>
               </div>
 
               {useVisibillAccount ? (
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="bg-card rounded-xl p-6 border border-border shadow-soft animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-1">Ügyfelemnek van Visibill fiókja</h2>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Az ügyfeled a saját fiókjából fog meghívni</p>
                   
@@ -235,11 +235,11 @@ export default function NewClientPage() {
 
                   <div className="space-y-2 mb-8">
                     <Label className="text-sm font-medium text-slate-900 dark:text-slate-100">Vagy add meg a meghívó kódot</Label>
-                    <Input placeholder="ABC-123-XYZ" className="bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 font-mono" />
+                    <Input placeholder="ABC-123-XYZ" className="bg-slate-50/50 dark:bg-slate-900/50 border-border font-mono" />
                   </div>
 
                   <div className="flex justify-end gap-3 pt-2 border-t border-slate-50 mt-4">
-                    <Button variant="outline" onClick={() => navigate('/accounty')} className="border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
+                    <Button variant="outline" onClick={() => navigate('/accounty')} className="border-border text-slate-700 dark:text-slate-300">
                       Várok a meghívóra
                     </Button>
                     <Button onClick={handleNext} className="bg-[#6B7280] hover:bg-[#4B5563] text-white px-6">
@@ -250,7 +250,7 @@ export default function NewClientPage() {
               ) : (
               <form className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300" onSubmit={(e) => { e.preventDefault(); handleNext(); }}>
                 {/* Section 1: Client Data */}
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="bg-card rounded-xl p-6 border border-border shadow-soft">
                   <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">Ügyfél adatai</h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Az ügyfél nem használ Visibill-t</p>
                   
@@ -260,7 +260,7 @@ export default function NewClientPage() {
                       <Input 
                         placeholder="" 
                         required 
-                        className={cn("bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800", validationErrors.clientName && "border-red-400 focus-visible:ring-red-500")} 
+                        className={cn("bg-card border-border", validationErrors.clientName && "border-red-400 focus-visible:ring-red-500")} 
                         value={clientName}
                         onChange={(e) => { setClientName(e.target.value); setValidationErrors(prev => { const n = {...prev}; delete n.clientName; return n; }); }}
                       />
@@ -275,17 +275,17 @@ export default function NewClientPage() {
                         pattern="^[0-9]{8}-[0-9]-[0-9]{2}$"
                         title="Kérjük, érvényes magyar adószámot adjon meg, a következő formátumban: 12345678-1-23"
                         placeholder="12345678-1-23"
-                        className={cn("bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800", validationErrors.taxNumber && "border-red-400 focus-visible:ring-red-500")} 
+                        className={cn("bg-card border-border", validationErrors.taxNumber && "border-red-400 focus-visible:ring-red-500")} 
                       />
                       {validationErrors.taxNumber && <p className="text-xs text-red-500 mt-1">{validationErrors.taxNumber}</p>}
                     </div>
                     <div className="space-y-2 col-span-2">
                       <Label className="text-xs text-slate-700 dark:text-slate-300">Kapcsolattartó neve <span className="text-red-500">*</span></Label>
-                      <Input placeholder="" required className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" />
+                      <Input placeholder="" required className="bg-card border-border" />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs text-slate-700 dark:text-slate-300">E-mail cím <span className="text-red-500">*</span></Label>
-                      <Input type="email" placeholder="" required className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" />
+                      <Input type="email" placeholder="" required className="bg-card border-border" />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs text-slate-700 dark:text-slate-300">Telefonszám</Label>
@@ -294,14 +294,14 @@ export default function NewClientPage() {
                         pattern="^[\+]?[0-9\s\-\(\)]+$" 
                         title="Kérjük, érvényes telefonszámot adjon meg (csak számok, szóköz, +, - vagy zárójel)!"
                         placeholder="" 
-                        className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" 
+                        className="bg-card border-border" 
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Section 1.5: Personal Data & ID Upload */}
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="bg-card rounded-xl p-6 border border-border shadow-soft">
                   <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">Személyes adatok és okmányok</h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Személyi igazolvány és lakcímkártya feltöltése az automatikus kitöltéshez</p>
                   
@@ -329,7 +329,7 @@ export default function NewClientPage() {
                         </>
                       ) : (
                         <>
-                          <div className="w-12 h-12 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center shadow-sm text-slate-400">
+                          <div className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center shadow-soft text-slate-400">
                             <FileText className="w-6 h-6" />
                           </div>
                           <div>
@@ -354,7 +354,7 @@ export default function NewClientPage() {
                             value={personalData.fullName}
                             onChange={(e) => setPersonalData({...personalData, fullName: e.target.value})}
                             required
-                            className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" 
+                            className="bg-card border-border" 
                           />
                         </div>
                         <div className="space-y-2">
@@ -362,7 +362,7 @@ export default function NewClientPage() {
                           <Input 
                             value={personalData.birthName}
                             onChange={(e) => setPersonalData({...personalData, birthName: e.target.value})}
-                            className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" 
+                            className="bg-card border-border" 
                           />
                         </div>
                         <div className="space-y-2">
@@ -370,7 +370,7 @@ export default function NewClientPage() {
                           <Input 
                             value={personalData.mothersName}
                             onChange={(e) => setPersonalData({...personalData, mothersName: e.target.value})}
-                            className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" 
+                            className="bg-card border-border" 
                           />
                         </div>
                         <div className="space-y-2">
@@ -378,7 +378,7 @@ export default function NewClientPage() {
                           <Input 
                             value={personalData.birthPlaceDate}
                             onChange={(e) => setPersonalData({...personalData, birthPlaceDate: e.target.value})}
-                            className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" 
+                            className="bg-card border-border" 
                           />
                         </div>
                         <div className="space-y-2">
@@ -386,7 +386,7 @@ export default function NewClientPage() {
                           <Input 
                             value={personalData.idCardNumber}
                             onChange={(e) => setPersonalData({...personalData, idCardNumber: e.target.value})}
-                            className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" 
+                            className="bg-card border-border" 
                           />
                         </div>
                         <div className="space-y-2">
@@ -394,7 +394,7 @@ export default function NewClientPage() {
                           <Input 
                             value={personalData.address}
                             onChange={(e) => setPersonalData({...personalData, address: e.target.value})}
-                            className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" 
+                            className="bg-card border-border" 
                           />
                         </div>
                       </div>
@@ -408,7 +408,7 @@ export default function NewClientPage() {
                             setDocsUploaded(false);
                             setPersonalData({ fullName: '', birthName: '', mothersName: '', birthPlaceDate: '', idCardNumber: '', address: '' });
                           }}
-                          className="text-xs text-slate-500 hover:text-slate-700 border-slate-200 dark:border-slate-800"
+                          className="text-xs text-slate-500 hover:text-slate-700 border-border"
                         >
                           Újrafeltöltés
                         </Button>
@@ -418,7 +418,7 @@ export default function NewClientPage() {
                 </div>
 
                 {/* Section 2: Communication Channels */}
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="bg-card rounded-xl p-6 border border-border shadow-soft">
                   <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">Kommunikációs csatornák</h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Hogyan kommunikálsz az ügyféllel?</p>
                   
@@ -426,7 +426,7 @@ export default function NewClientPage() {
                     <button 
                       type="button" 
                       onClick={() => toggleChannel('email')}
-                      className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('email') ? "border-slate-900 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 text-slate-600 dark:text-slate-400")}
+                      className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('email') ? "border-slate-900 bg-card text-slate-900 dark:text-slate-100" : "border-border bg-card hover:border-slate-300 text-slate-600 dark:text-slate-400")}
                     >
                       {selectedChannels.includes('email') && <Check className="w-4 h-4 text-slate-900 dark:text-slate-100 shrink-0" />}
                       <Mail className={cn("w-4 h-4 shrink-0", selectedChannels.includes('email') ? "text-slate-600 dark:text-slate-400" : "text-slate-400")} />
@@ -435,7 +435,7 @@ export default function NewClientPage() {
                     <button 
                       type="button" 
                       onClick={() => toggleChannel('viber')}
-                      className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('viber') ? "border-slate-900 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 text-slate-600 dark:text-slate-400")}
+                      className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('viber') ? "border-slate-900 bg-card text-slate-900 dark:text-slate-100" : "border-border bg-card hover:border-slate-300 text-slate-600 dark:text-slate-400")}
                     >
                       {selectedChannels.includes('viber') && <Check className="w-4 h-4 text-slate-900 dark:text-slate-100 shrink-0" />}
                       <Smartphone className={cn("w-4 h-4 shrink-0", selectedChannels.includes('viber') ? "text-slate-600 dark:text-slate-400" : "text-slate-400")} />
@@ -444,7 +444,7 @@ export default function NewClientPage() {
                     <button 
                       type="button" 
                       onClick={() => toggleChannel('telegram')}
-                      className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('telegram') ? "border-slate-900 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 text-slate-600 dark:text-slate-400")}
+                      className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedChannels.includes('telegram') ? "border-slate-900 bg-card text-slate-900 dark:text-slate-100" : "border-border bg-card hover:border-slate-300 text-slate-600 dark:text-slate-400")}
                     >
                       {selectedChannels.includes('telegram') && <Check className="w-4 h-4 text-slate-900 dark:text-slate-100 shrink-0" />}
                       <Send className={cn("w-4 h-4 shrink-0", selectedChannels.includes('telegram') ? "text-slate-600 dark:text-slate-400" : "text-slate-400")} />
@@ -454,7 +454,7 @@ export default function NewClientPage() {
                 </div>
 
                 {/* Section 3: Documents */}
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="bg-card rounded-xl p-6 border border-border shadow-soft">
                   <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">Bekérendő dokumentumok</h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Milyen dokumentumokat kérsz be rendszeresen?</p>
                   
@@ -462,7 +462,7 @@ export default function NewClientPage() {
                     <button 
                       type="button" 
                       onClick={() => toggleDoc('szamlak')}
-                      className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedDocs.includes('szamlak') ? "border-slate-900 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 text-slate-600 dark:text-slate-400")}
+                      className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedDocs.includes('szamlak') ? "border-slate-900 bg-card text-slate-900 dark:text-slate-100" : "border-border bg-card hover:border-slate-300 text-slate-600 dark:text-slate-400")}
                     >
                       <div className={cn("w-4 h-4 rounded-full flex items-center justify-center shrink-0", selectedDocs.includes('szamlak') ? "bg-slate-900 text-white" : "border border-slate-300")}>
                         {selectedDocs.includes('szamlak') && <Check className="w-3 h-3" />}
@@ -472,7 +472,7 @@ export default function NewClientPage() {
                     <button 
                       type="button" 
                       onClick={() => toggleDoc('penztargep')}
-                      className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedDocs.includes('penztargep') ? "border-slate-900 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 text-slate-600 dark:text-slate-400")}
+                      className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedDocs.includes('penztargep') ? "border-slate-900 bg-card text-slate-900 dark:text-slate-100" : "border-border bg-card hover:border-slate-300 text-slate-600 dark:text-slate-400")}
                     >
                       <div className={cn("w-4 h-4 rounded-full flex items-center justify-center shrink-0", selectedDocs.includes('penztargep') ? "bg-slate-900 text-white" : "border border-slate-300")}>
                         {selectedDocs.includes('penztargep') && <Check className="w-3 h-3" />}
@@ -482,7 +482,7 @@ export default function NewClientPage() {
                     <button 
                       type="button" 
                       onClick={() => toggleDoc('bankkivonat')}
-                      className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedDocs.includes('bankkivonat') ? "border-slate-900 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 text-slate-600 dark:text-slate-400")}
+                      className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedDocs.includes('bankkivonat') ? "border-slate-900 bg-card text-slate-900 dark:text-slate-100" : "border-border bg-card hover:border-slate-300 text-slate-600 dark:text-slate-400")}
                     >
                       <div className={cn("w-4 h-4 rounded-full flex items-center justify-center shrink-0", selectedDocs.includes('bankkivonat') ? "bg-slate-900 text-white" : "border border-slate-300")}>
                         {selectedDocs.includes('bankkivonat') && <Check className="w-3 h-3" />}
@@ -492,7 +492,7 @@ export default function NewClientPage() {
                     <button 
                       type="button" 
                       onClick={() => toggleDoc('berszamfejtes')}
-                      className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedDocs.includes('berszamfejtes') ? "border-slate-900 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 text-slate-600 dark:text-slate-400")}
+                      className={cn("flex items-center gap-2 p-3 rounded-full border transition-colors text-sm font-medium", selectedDocs.includes('berszamfejtes') ? "border-slate-900 bg-card text-slate-900 dark:text-slate-100" : "border-border bg-card hover:border-slate-300 text-slate-600 dark:text-slate-400")}
                     >
                       <div className={cn("w-4 h-4 rounded-full flex items-center justify-center shrink-0", selectedDocs.includes('berszamfejtes') ? "bg-slate-900 text-white" : "border border-slate-300")}>
                         {selectedDocs.includes('berszamfejtes') && <Check className="w-3 h-3" />}
@@ -520,16 +520,16 @@ export default function NewClientPage() {
                 <p className="text-slate-500 dark:text-slate-400 mt-1">Automatizáld az adatátvitelt a könyvelőprogramod és a Visibill között</p>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm mb-6">
+              <div className="bg-card rounded-xl p-6 border border-border shadow-soft mb-6">
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Milyen könyvelőprogramot használsz?</h2>
                 
                 <div className="grid grid-cols-3 gap-4">
                   {/* RLB Option */}
                   <button 
                     onClick={() => setIntegrationType('rlb')}
-                    className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'rlb' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-slate-100 dark:border-slate-800 hover:border-slate-200")}
+                    className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'rlb' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-border hover:border-slate-200")}
                   >
-                    <div className="w-10 h-10 mb-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded flex items-center justify-center shadow-sm">
+                    <div className="w-10 h-10 mb-3 bg-card border border-border rounded flex items-center justify-center shadow-soft">
                       <BarChart2 className="w-6 h-6 text-primary" />
                     </div>
                     <h3 className="font-semibold text-slate-900 dark:text-slate-100">RLB</h3>
@@ -540,9 +540,9 @@ export default function NewClientPage() {
                   {/* Novitax Option */}
                   <button 
                     onClick={() => setIntegrationType('novitax')}
-                    className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'novitax' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-slate-100 dark:border-slate-800 hover:border-slate-200")}
+                    className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'novitax' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-border hover:border-slate-200")}
                   >
-                    <div className="w-10 h-10 mb-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded flex items-center justify-center shadow-sm">
+                    <div className="w-10 h-10 mb-3 bg-card border border-border rounded flex items-center justify-center shadow-soft">
                       <div className="text-red-500 font-bold text-lg"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
                     </div>
                     <h3 className="font-semibold text-slate-900 dark:text-slate-100">Novitax</h3>
@@ -553,9 +553,9 @@ export default function NewClientPage() {
                   {/* Other Option */}
                   <button 
                     onClick={() => setIntegrationType('other')}
-                    className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'other' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-slate-100 dark:border-slate-800 hover:border-slate-200")}
+                    className={cn("p-4 rounded-xl border-2 text-left transition-all", integrationType === 'other' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-border hover:border-slate-200")}
                   >
-                    <div className="w-10 h-10 mb-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded flex items-center justify-center shadow-sm">
+                    <div className="w-10 h-10 mb-3 bg-card border border-border rounded flex items-center justify-center shadow-soft">
                       <div className="w-6 h-5 bg-amber-400 rounded-sm relative"><div className="absolute top-0 right-0 w-2 h-2 bg-amber-300 rounded-bl-sm"></div></div>
                     </div>
                     <h3 className="font-semibold text-slate-900 dark:text-slate-100">Egyéb / Nincs</h3>
@@ -567,7 +567,7 @@ export default function NewClientPage() {
 
               {/* Dynamic Content based on selection */}
               {integrationType === 'rlb' && (
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="bg-card rounded-xl p-6 border border-border shadow-soft animate-in fade-in slide-in-from-top-4 duration-300">
                   <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">RLB integráció beállítása</h2>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">Kövesd az alábbi lépéseket az integráció beállításához</p>
                   
@@ -602,7 +602,7 @@ export default function NewClientPage() {
               )}
 
               {integrationType === 'novitax' && (
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="bg-card rounded-xl p-6 border border-border shadow-soft animate-in fade-in slide-in-from-top-4 duration-300">
                   <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Novitax integráció beállítása</h2>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">Kövesd az alábbi lépéseket az integráció beállításához</p>
                   
@@ -637,7 +637,7 @@ export default function NewClientPage() {
               )}
 
               {integrationType === 'other' && (
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="bg-card rounded-xl p-6 border border-border shadow-soft animate-in fade-in slide-in-from-top-4 duration-300">
                   <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-4">Manuális exportálás</h2>
                   <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg text-sm text-slate-600 dark:text-slate-400">
                     Manuális exportálást fogsz használni. Az adatokat CSV vagy Excel formátumban töltheted le a feldolgozott számlákból, majd importálhatod a könyvelőprogramodba.
@@ -665,7 +665,7 @@ export default function NewClientPage() {
               </div>
 
               <div className="space-y-3 mb-6">
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                <div className="bg-card rounded-xl p-4 border border-border shadow-soft flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 rounded-full bg-accent text-primary flex items-center justify-center"><Check className="w-3.5 h-3.5" /></div>
                     <div>
@@ -676,7 +676,7 @@ export default function NewClientPage() {
                   <User className="w-5 h-5 text-slate-400" />
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                <div className="bg-card rounded-xl p-4 border border-border shadow-soft flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 rounded-full bg-accent text-primary flex items-center justify-center"><Check className="w-3.5 h-3.5" /></div>
                     <div>
@@ -687,7 +687,7 @@ export default function NewClientPage() {
                   <Users className="w-5 h-5 text-slate-400" />
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                <div className="bg-card rounded-xl p-4 border border-border shadow-soft flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 rounded-full bg-accent text-primary flex items-center justify-center"><Check className="w-3.5 h-3.5" /></div>
                     <div>
@@ -699,7 +699,7 @@ export default function NewClientPage() {
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm mb-6 text-sm">
+              <div className="bg-card rounded-xl p-5 border border-border shadow-soft mb-6 text-sm">
                 <p className="font-semibold text-amber-600 flex items-center gap-2 mb-2">
                   <span className="text-base">💡</span> Tudtad?
                 </p>

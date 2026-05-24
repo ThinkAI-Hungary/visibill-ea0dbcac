@@ -145,7 +145,7 @@ export default function ClientPortalPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-background animate-in fade-in duration-500">
       {/* Header */}
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+      <header className="bg-card border-b border-border shadow-soft">
         <div className="max-w-3xl mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-accent dark:bg-accent flex items-center justify-center">
@@ -166,7 +166,7 @@ export default function ClientPortalPage() {
       <main className="max-w-3xl mx-auto px-6 py-8 space-y-6">
 
         {/* Welcome Card */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+        <div className="bg-card rounded-2xl border border-border shadow-soft p-6">
           <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
             Üdvözöljük! 👋
           </h2>
@@ -193,8 +193,8 @@ export default function ClientPortalPage() {
         </div>
 
         {/* Missing Documents List */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-slate-100 dark:border-slate-800">
+        <div className="bg-card rounded-2xl border border-border shadow-soft overflow-hidden">
+          <div className="p-5 border-b border-border">
             <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-500" />
               Hiányzó dokumentumok
@@ -256,10 +256,10 @@ export default function ClientPortalPage() {
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           className={cn(
-            'relative bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed transition-all duration-200 p-8',
+            'relative bg-card rounded-2xl border-2 border-dashed transition-all duration-200 p-8',
             isDragging
               ? 'border-primary bg-accent-subtle/50 dark:bg-accent scale-[1.01]'
-              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+              : 'border-border hover:border-slate-300 dark:hover:border-slate-700'
           )}
         >
           <div className="text-center">
@@ -297,8 +297,8 @@ export default function ClientPortalPage() {
 
         {/* Uploaded Files */}
         {uploadedFiles.length > 0 && (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="bg-card rounded-2xl border border-border shadow-soft overflow-hidden">
+            <div className="p-5 border-b border-border flex items-center justify-between">
               <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <File className="w-4 h-4 text-slate-500" />
                 Feltöltött fájlok ({uploadedFiles.length})

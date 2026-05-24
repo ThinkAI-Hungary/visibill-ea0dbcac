@@ -190,7 +190,7 @@ export default function ClientMissingInvoicesPage() {
       case 'Közepes':
         return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-800">Közepes</span>;
       case 'Alacsony':
-        return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">Alacsony</span>;
+        return <span className="px-2 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-border">Alacsony</span>;
       default:
         return null;
     }
@@ -200,7 +200,7 @@ export default function ClientMissingInvoicesPage() {
     if (variant === 'warning') {
       return <span className="text-xs font-semibold text-amber-500 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/40 px-2.5 py-1 rounded-md border border-amber-100/50 dark:border-amber-800">{status}</span>;
     }
-    return <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800">{status}</span>;
+    return <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 px-2.5 py-1 rounded-md border border-border">{status}</span>;
   };
 
   const filteredInvoices = invoices.filter(invoice => {
@@ -252,23 +252,23 @@ export default function ClientMissingInvoicesPage() {
 
         {/* KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">Összes</p>
             <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">45</h3>
           </div>
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
             <p className="text-xs font-semibold text-primary mb-2">Sikeres</p>
             <h3 className="text-2xl font-black text-primary">38</h3>
           </div>
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
             <p className="text-xs font-semibold text-amber-600 mb-2">Folyamatban</p>
             <h3 className="text-2xl font-black text-amber-600">5</h3>
           </div>
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
             <p className="text-xs font-semibold text-red-600 mb-2">Sikertelen</p>
             <h3 className="text-2xl font-black text-red-600">2</h3>
           </div>
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">Átlag válaszidő</p>
             <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">6 óra</h3>
           </div>
@@ -283,14 +283,14 @@ export default function ClientMissingInvoicesPage() {
               placeholder="Keresés..." 
               value={historySearchTerm}
               onChange={(e) => setHistorySearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
+              className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-soft"
             />
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto">
             <select 
               value={historyChannelFilter}
               onChange={(e) => setHistoryChannelFilter(e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm cursor-pointer min-w-[140px]"
+              className="px-3 py-2 bg-card border border-border rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-soft cursor-pointer min-w-[140px]"
             >
               <option value="Minden">Minden</option>
               <option value="Email">Email</option>
@@ -301,7 +301,7 @@ export default function ClientMissingInvoicesPage() {
             <select 
               value={historyStatusFilter}
               onChange={(e) => setHistoryStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm cursor-pointer min-w-[140px]"
+              className="px-3 py-2 bg-card border border-border rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-soft cursor-pointer min-w-[140px]"
             >
               <option value="Minden">Minden</option>
               <option value="Elküldve">Elküldve</option>
@@ -317,20 +317,20 @@ export default function ClientMissingInvoicesPage() {
         <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg w-fit">
           <button 
             onClick={() => setHistoryTab('timeline')}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${historyTab === 'timeline' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'}`}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${historyTab === 'timeline' ? 'bg-card text-slate-900 dark:text-slate-100 shadow-soft' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'}`}
           >
             Idővonal
           </button>
           <button 
             onClick={() => setHistoryTab('table')}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${historyTab === 'table' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'}`}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${historyTab === 'table' ? 'bg-card text-slate-900 dark:text-slate-100 shadow-soft' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300'}`}
           >
             Táblázat
           </button>
         </div>
 
         {/* Content */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden">
           {historyTab === 'timeline' ? (
             <div className="p-6 space-y-0 relative">
               {/* Vertical line connecting timeline items */}
@@ -339,7 +339,7 @@ export default function ClientMissingInvoicesPage() {
               {filteredHistory.map((item) => (
                 <div key={item.id} className="relative z-10 flex items-center justify-between p-4 group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors rounded-xl -ml-2 -mr-2">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center shadow-sm">
+                    <div className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center shadow-soft">
                       <item.icon className={`w-4 h-4 ${item.iconColor}`} />
                     </div>
                     <div>
@@ -370,7 +370,7 @@ export default function ClientMissingInvoicesPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                  <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/50">
                     <th className="py-4 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">Dátum</th>
                     <th className="py-4 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">Csatorna</th>
                     <th className="py-4 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">Számla</th>
@@ -434,7 +434,7 @@ export default function ClientMissingInvoicesPage() {
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setShowHistoryView(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-sm font-medium shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-sm font-medium shadow-soft"
           >
             <History className="w-4 h-4" />
             Előzmények
@@ -442,7 +442,7 @@ export default function ClientMissingInvoicesPage() {
           
           <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
             <DialogTrigger asChild>
-              <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-card/80 dark:hover:bg-primary/90 transition-colors text-sm font-medium shadow-sm">
+              <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-card/80 dark:hover:bg-primary/90 transition-colors text-sm font-medium shadow-soft">
                 <Plus className="w-4 h-4" />
                 Hiányzó hozzáadása
               </button>
@@ -457,25 +457,25 @@ export default function ClientMissingInvoicesPage() {
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Szállító neve</label>
-                  <input type="text" value={newInvoiceForm.vendor} onChange={e => setNewInvoiceForm({...newInvoiceForm, vendor: e.target.value})} placeholder="pl. Telekom Magyarország" className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                  <input type="text" value={newInvoiceForm.vendor} onChange={e => setNewInvoiceForm({...newInvoiceForm, vendor: e.target.value})} placeholder="pl. Telekom Magyarország" className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Típus/Leírás</label>
-                  <input type="text" value={newInvoiceForm.subtext} onChange={e => setNewInvoiceForm({...newInvoiceForm, subtext: e.target.value})} placeholder="pl. Telefon számla" className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                  <input type="text" value={newInvoiceForm.subtext} onChange={e => setNewInvoiceForm({...newInvoiceForm, subtext: e.target.value})} placeholder="pl. Telefon számla" className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Becsült összeg</label>
-                    <input type="text" value={newInvoiceForm.amount} onChange={e => setNewInvoiceForm({...newInvoiceForm, amount: e.target.value})} className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                    <input type="text" value={newInvoiceForm.amount} onChange={e => setNewInvoiceForm({...newInvoiceForm, amount: e.target.value})} className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Időszak</label>
-                    <input type="text" value={newInvoiceForm.period} onChange={e => setNewInvoiceForm({...newInvoiceForm, period: e.target.value})} className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+                    <input type="text" value={newInvoiceForm.period} onChange={e => setNewInvoiceForm({...newInvoiceForm, period: e.target.value})} className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Prioritás</label>
-                  <select value={newInvoiceForm.priority} onChange={e => setNewInvoiceForm({...newInvoiceForm, priority: e.target.value})} className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer">
+                  <select value={newInvoiceForm.priority} onChange={e => setNewInvoiceForm({...newInvoiceForm, priority: e.target.value})} className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer">
                     <option value="Sürgős">Sürgős</option>
                     <option value="Magas">Magas</option>
                     <option value="Közepes">Közepes</option>
@@ -484,11 +484,11 @@ export default function ClientMissingInvoicesPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Megjegyzés</label>
-                  <textarea value={newInvoiceForm.note} onChange={e => setNewInvoiceForm({...newInvoiceForm, note: e.target.value})} placeholder="További információk..." className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-h-[100px] resize-none" />
+                  <textarea value={newInvoiceForm.note} onChange={e => setNewInvoiceForm({...newInvoiceForm, note: e.target.value})} placeholder="További információk..." className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-h-[100px] resize-none" />
                 </div>
               </div>
               <DialogFooter>
-                <button onClick={() => setIsAddModalOpen(false)} className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-sm font-medium">Mégse</button>
+                <button onClick={() => setIsAddModalOpen(false)} className="px-4 py-2 bg-card border border-border text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-sm font-medium">Mégse</button>
                 <button onClick={handleAddInvoice} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-card/80 dark:hover:bg-primary/90 transition-colors text-sm font-medium">Hozzáadás</button>
               </DialogFooter>
             </DialogContent>
@@ -498,23 +498,23 @@ export default function ClientMissingInvoicesPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+        <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Összes hiányzó</p>
           <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{invoices.length}</h3>
         </div>
         
-        <div className="bg-red-50/50 dark:bg-red-900/20 p-5 rounded-xl border-2 border-red-200 dark:border-red-900/50 shadow-sm flex flex-col justify-between relative overflow-hidden">
+        <div className="bg-red-50/50 dark:bg-red-900/20 p-5 rounded-xl border-2 border-red-200 dark:border-red-900/50 shadow-soft flex flex-col justify-between relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
           <p className="text-sm font-bold text-red-600 mb-2">Sürgős</p>
           <h3 className="text-3xl font-black text-red-600">{invoices.filter(i => i.priority === 'Sürgős').length}</h3>
         </div>
         
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+        <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">NAV-ból</p>
           <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{invoices.filter(i => i.source === 'NAV').length}</h3>
         </div>
         
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+        <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Becsült összeg</p>
           <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">
             {new Intl.NumberFormat('hu-HU').format(invoices.reduce((sum, inv) => sum + (inv.amountRaw || 0), 0))} Ft
@@ -531,14 +531,14 @@ export default function ClientMissingInvoicesPage() {
             placeholder="Keresés szállító, leírás..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
+            className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-soft"
           />
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
           <select 
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value)}
-            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm cursor-pointer min-w-[140px]"
+            className="px-3 py-2 bg-card border border-border rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-soft cursor-pointer min-w-[140px]"
           >
             <option value="Minden forrás">Minden forrás</option>
             <option value="NAV">NAV</option>
@@ -549,7 +549,7 @@ export default function ClientMissingInvoicesPage() {
           <select 
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm cursor-pointer min-w-[120px]"
+            className="px-3 py-2 bg-card border border-border rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-soft cursor-pointer min-w-[120px]"
           >
             <option value="Minden">Minden</option>
             <option value="Sürgős">Sürgős</option>
@@ -559,11 +559,11 @@ export default function ClientMissingInvoicesPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+              <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/50">
                 <th className="py-4 px-4 w-12">
                   <input 
                     type="checkbox" 
@@ -609,7 +609,7 @@ export default function ClientMissingInvoicesPage() {
                             <MoreVertical className="w-5 h-5" />
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                        <DropdownMenuContent align="end" className="w-56 bg-card border-border">
                           <DropdownMenuItem 
                             className="gap-2.5 cursor-pointer text-slate-700 dark:text-slate-300 py-2"
                             onClick={() => setSelectedInvoiceForDetails(invoice)}
@@ -657,8 +657,8 @@ export default function ClientMissingInvoicesPage() {
       </div>
 
       {/* Quick History Section */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden mt-8">
-        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800">
+      <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden mt-8">
+        <div className="px-6 py-5 border-b border-border">
           <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Felszólítás előzmények</h2>
         </div>
         <div className="p-6 space-y-0 relative">
@@ -671,7 +671,7 @@ export default function ClientMissingInvoicesPage() {
           ].map((item) => (
             <div key={item.id} className="relative z-10 flex items-center justify-between p-4 group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors rounded-xl -ml-2 -mr-2">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center shadow-sm">
+                <div className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center shadow-soft">
                   <item.icon className={`w-4 h-4 ${item.iconColor}`} />
                 </div>
                 <div>
@@ -698,17 +698,17 @@ export default function ClientMissingInvoicesPage() {
             {selectedIds.length} kijelölve
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-card/80 dark:hover:bg-primary/90 transition-colors text-sm font-medium shadow-sm">
+            <button className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-card/80 dark:hover:bg-primary/90 transition-colors text-sm font-medium shadow-soft">
               <Send className="w-4 h-4" />
               Felszólítás küldése
             </button>
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-sm font-medium shadow-sm">
+            <button className="flex items-center gap-2 px-5 py-2.5 bg-card border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-sm font-medium shadow-soft">
               <CheckCircle className="w-4 h-4" />
               Megérkezett
             </button>
             <button 
               onClick={handleBulkDelete}
-              className="flex items-center gap-2 px-5 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors text-sm font-medium shadow-sm"
+              className="flex items-center gap-2 px-5 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors text-sm font-medium shadow-soft"
             >
               <Trash2 className="w-4 h-4" />
               Törlés
@@ -722,7 +722,7 @@ export default function ClientMissingInvoicesPage() {
         <DialogContent className="sm:max-w-[600px] p-0 gap-0 overflow-hidden">
           {selectedInvoiceForDetails && (
             <>
-              <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+              <div className="px-6 py-4 flex items-center justify-between border-b border-border">
                 <DialogTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">{selectedInvoiceForDetails.subtext}</DialogTitle>
                 <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-full mr-6">
                   {selectedInvoiceForDetails.status}
@@ -736,7 +736,7 @@ export default function ClientMissingInvoicesPage() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Azonosítás módja</p>
-                  <span className="inline-block px-2.5 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 rounded-md text-xs font-medium">
+                  <span className="inline-block px-2.5 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-border rounded-md text-xs font-medium">
                     {selectedInvoiceForDetails.source}
                   </span>
                 </div>
@@ -758,7 +758,7 @@ export default function ClientMissingInvoicesPage() {
                 </div>
               </div>
 
-              <div className="px-6 py-5 border-t border-slate-100 dark:border-slate-800">
+              <div className="px-6 py-5 border-t border-border">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">NAV adatok</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -772,12 +772,12 @@ export default function ClientMissingInvoicesPage() {
                 </div>
               </div>
 
-              <div className="px-6 py-5 border-t border-slate-100 dark:border-slate-800">
+              <div className="px-6 py-5 border-t border-border">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">Bekérési előzmények</h3>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
+                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded-xl shadow-soft">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 border border-slate-100 dark:border-slate-800">
+                      <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 border border-border">
                         <Mail className="w-4 h-4" />
                       </div>
                       <div>
@@ -789,9 +789,9 @@ export default function ClientMissingInvoicesPage() {
                       Megnyitva
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
+                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded-xl shadow-soft">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 border border-slate-100 dark:border-slate-800">
+                      <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 border border-border">
                         <Mail className="w-4 h-4" />
                       </div>
                       <div>
@@ -799,30 +799,30 @@ export default function ClientMissingInvoicesPage() {
                         <p className="text-xs text-slate-500 dark:text-slate-400">Email</p>
                       </div>
                     </div>
-                    <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold rounded-full border border-slate-200 dark:border-slate-800">
+                    <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold rounded-full border border-border">
                       Elküldve
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/80 border-t border-border flex items-center justify-between">
                 <button 
-                  className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors shadow-sm"
+                  className="px-4 py-2.5 bg-card border border-border text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors shadow-soft"
                   onClick={() => setSelectedInvoiceForDetails(null)}
                 >
                   Téves azonosítás
                 </button>
                 <div className="flex items-center gap-3">
                   <button 
-                    className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-card border border-border text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors shadow-soft"
                     onClick={() => setSelectedInvoiceForDetails(null)}
                   >
                     <CheckCircle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                     Megérkezett a számla
                   </button>
                   <button 
-                    className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors shadow-soft"
                     onClick={() => setSelectedInvoiceForDetails(null)}
                   >
                     <Mail className="w-4 h-4" />

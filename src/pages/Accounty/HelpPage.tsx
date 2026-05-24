@@ -53,7 +53,7 @@ export default function HelpPage() {
       </div>
 
       {/* Quick Start */}
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
         <div className="p-5 border-b border-border">
           <h2 className="font-semibold text-foreground flex items-center gap-2">
             <Zap className="w-4 h-4 text-primary" />
@@ -88,7 +88,7 @@ export default function HelpPage() {
       </div>
 
       {/* Modules */}
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
         <div className="p-5 border-b border-border">
           <h2 className="font-semibold text-foreground flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-primary" />
@@ -111,7 +111,7 @@ export default function HelpPage() {
       </div>
 
       {/* FAQ */}
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
         <div className="p-5 border-b border-border">
           <h2 className="font-semibold text-foreground flex items-center gap-2">
             <Lightbulb className="w-4 h-4 text-amber-500" />
@@ -144,7 +144,7 @@ export default function HelpPage() {
       </div>
 
       {/* Keyboard Shortcuts */}
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
         <div className="p-5 border-b border-border">
           <h2 className="font-semibold text-foreground flex items-center gap-2">
             <Keyboard className="w-4 h-4 text-primary" />
@@ -158,7 +158,7 @@ export default function HelpPage() {
               <div className="flex items-center gap-1">
                 {s.keys.map((k, j) => (
                   <span key={j}>
-                    <kbd className="px-2 py-1 text-xs font-mono font-semibold bg-muted text-muted-foreground rounded border border-border shadow-sm">
+                    <kbd className="px-2 py-1 text-xs font-mono font-semibold bg-muted text-muted-foreground rounded border border-border shadow-soft">
                       {k}
                     </kbd>
                     {j < s.keys.length - 1 && <span className="text-xs text-muted-foreground mx-1">+</span>}
@@ -172,7 +172,7 @@ export default function HelpPage() {
 
       {/* Contact & Support */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
+        <div className="bg-card rounded-xl border border-border shadow-soft p-5">
           <h3 className="font-semibold text-foreground flex items-center gap-2 mb-4">
             <MessageCircle className="w-4 h-4 text-primary" />
             Kapcsolat
@@ -195,7 +195,7 @@ export default function HelpPage() {
           </div>
         </div>
 
-        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
+        <div className="bg-card rounded-xl border border-border shadow-soft p-5">
           <h3 className="font-semibold text-foreground flex items-center gap-2 mb-4">
             <Shield className="w-4 h-4 text-primary" />
             Verzió & Adatvédelem

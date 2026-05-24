@@ -26,12 +26,21 @@ export default function MissingInvoicesReportPage() {
       const resolved = items.filter(mi => mi.status === 'resolved').length;
       const ignored = items.filter(mi => mi.status === 'ignored').length;
       const reliability = requested > 0 ? Math.round(((resolved + ignored) / requested) * 100) : 100;
+      const resolvedItems = items.filter(mi => mi.status === 'resolved' && mi.resolved_at);
+      let avgTime = '–';
+      if (resolvedItems.length > 0) {
+        const totalMs = resolvedItems.reduce((sum, mi) => {
+          return sum + (new Date(mi.resolved_at!).getTime() - new Date(mi.created_at).getTime());
+        }, 0);
+        const avgDays = Math.round(totalMs / resolvedItems.length / (1000 * 60 * 60 * 24));
+        avgTime = `${Math.max(1, avgDays)} nap`;
+      }
       return {
         id: c.id,
         name: c.name,
         requested,
         resolved,
-        avgTime: '–',
+        avgTime,
         reliability,
       };
     }).filter(row => row.requested > 0);
@@ -57,6 +66,26 @@ export default function MissingInvoicesReportPage() {
     const autoRate = requested > 0 ? Math.round((notified / requested) * 100) : 0;
     return { requested, resolved, successRate, autoRate };
   }, [filteredItems]);
+
+  const exportToCSV = () => {
+    const headers = ['Cégnév', 'Bekért dokumentumok', 'Beérkezett', 'Válaszidő', 'Megbízhatóság'];
+    const rows = filteredTableData.map(r => [
+      r.name,
+      r.requested,
+      r.resolved,
+      r.avgTime,
+      r.reliability
+    ]);
+    const csvContent = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `hianyzo_szamlak_riport_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Bar chart: monthly breakdown from real created_at dates
   const barData = useMemo(() => {
@@ -136,7 +165,7 @@ export default function MissingInvoicesReportPage() {
         
         <div className="flex gap-3">
           <Select value={selectedClient} onValueChange={setSelectedClient}>
-            <SelectTrigger className="w-[180px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+            <SelectTrigger className="w-[180px] bg-card border-border">
               <SelectValue placeholder="Összes ügyfél" />
             </SelectTrigger>
             <SelectContent>
@@ -147,16 +176,17 @@ export default function MissingInvoicesReportPage() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 gap-2 px-6">
-            <Download className="w-4 h-4" /> Exportálás
-          </Button>
+          <Button variant="outline" className="gap-2" onClick={exportToCSV}>
+              <Download className="w-4 h-4" />
+              Riport Exportálása
+            </Button>
         </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-4 gap-4">
         <div className="stagger-1">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm card-ripple"
+          <div className="bg-card rounded-xl border border-border p-5 shadow-soft card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
             <h3 className="text-sm font-medium text-muted-foreground">Összes felszólítás</h3>
@@ -171,7 +201,7 @@ export default function MissingInvoicesReportPage() {
         </div>
 
         <div className="stagger-2">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm card-ripple"
+          <div className="bg-card rounded-xl border border-border p-5 shadow-soft card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
             <h3 className="text-sm font-medium text-muted-foreground">Sikeres bekérés</h3>
@@ -186,7 +216,7 @@ export default function MissingInvoicesReportPage() {
         </div>
 
         <div className="stagger-3">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm card-ripple"
+          <div className="bg-card rounded-xl border border-border p-5 shadow-soft card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
             <h3 className="text-sm font-medium text-muted-foreground">Megoldatlan tételek</h3>
@@ -201,7 +231,7 @@ export default function MissingInvoicesReportPage() {
         </div>
 
         <div className="stagger-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm card-ripple"
+          <div className="bg-card rounded-xl border border-border p-5 shadow-soft card-ripple"
             onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--ripple-x', `${((e.clientX - rect.left) / rect.width) * 100}%`); e.currentTarget.style.setProperty('--ripple-y', `${((e.clientY - rect.top) / rect.height) * 100}%`); }}
           >
             <h3 className="text-sm font-medium text-muted-foreground">Felszólított arány</h3>
@@ -219,7 +249,7 @@ export default function MissingInvoicesReportPage() {
       {/* Charts */}
       <div className="grid grid-cols-2 gap-4">
         {/* Bar Chart */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm stagger-5">
+        <div className="bg-card rounded-xl border border-border p-6 shadow-soft stagger-5">
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-foreground">Bekérések havi alakulása</h3>
             <p className="text-xs text-muted-foreground mt-1">Összes és megoldott bekérés havonta</p>
@@ -242,7 +272,7 @@ export default function MissingInvoicesReportPage() {
         </div>
 
         {/* Donut Chart */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col stagger-6">
+        <div className="bg-card rounded-xl border border-border p-6 shadow-soft flex flex-col stagger-6">
           <div className="mb-2">
             <h3 className="text-lg font-semibold text-foreground">Csatornák eloszlása</h3>
             <p className="text-xs text-muted-foreground mt-1">Bekérések csatorna szerinti megoszlása</p>
@@ -291,8 +321,8 @@ export default function MissingInvoicesReportPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden pb-4 stagger-7">
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden pb-4 stagger-7">
+        <div className="p-6 border-b border-border flex justify-between items-center">
           <div>
             <h3 className="text-lg font-semibold text-foreground">Ügyfél megbízhatóság</h3>
             <p className="text-xs text-muted-foreground mt-1">Válaszadási arányok ügyfelenként</p>
@@ -300,7 +330,7 @@ export default function MissingInvoicesReportPage() {
         </div>
         
         <table className="w-full text-sm text-left">
-          <thead className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-muted-foreground text-xs">
+          <thead className="bg-card border-b border-border text-muted-foreground text-xs">
             <tr>
               <th className="px-6 py-4 font-medium">Ügyfél</th>
               <th className="px-6 py-4 font-medium text-center">Kérések</th>

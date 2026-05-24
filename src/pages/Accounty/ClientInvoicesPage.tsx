@@ -90,11 +90,11 @@ export default function ClientInvoicesPage() {
         <div className="flex gap-3">
           <Dialog open={isNavSyncOpen} onOpenChange={setIsNavSyncOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+              <Button variant="outline" className="gap-2 bg-card border-border text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50">
                 <RefreshCcw className="w-4 h-4" /> NAV szinkron
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden bg-white dark:bg-slate-900">
+            <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden bg-card">
               <div className="p-6">
                 <DialogHeader className="mb-6">
                   <DialogTitle className="flex items-center gap-2 text-lg text-slate-900 dark:text-slate-100 font-bold">
@@ -105,7 +105,7 @@ export default function ClientInvoicesPage() {
                 </DialogHeader>
 
                 {/* Status Box */}
-                <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl p-4 mb-6">
+                <div className="bg-slate-50 dark:bg-slate-800/50 border border-border rounded-xl p-4 mb-6">
                   <div className="flex justify-between items-center mb-3">
                     <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400">
                       <Clock className="w-4 h-4 text-slate-400" />
@@ -127,14 +127,14 @@ export default function ClientInvoicesPage() {
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Kezdő dátum</label>
                       <div className="relative">
-                        <Input defaultValue="2024. 01. 01." className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" />
+                        <Input defaultValue="2024. 01. 01." className="bg-card border-border" />
                         <Calendar className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
                       </div>
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Záró dátum</label>
                       <div className="relative">
-                        <Input defaultValue="2024. 01. 31." className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" />
+                        <Input defaultValue="2024. 01. 31." className="bg-card border-border" />
                         <Calendar className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
                       </div>
                     </div>
@@ -165,12 +165,12 @@ export default function ClientInvoicesPage() {
                 {/* Footer Buttons */}
                 <div className="flex items-center justify-between pt-2">
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 px-6 h-10">
+                    <Button variant="outline" className="bg-card border-border text-slate-700 dark:text-slate-300 px-6 h-10">
                       Mégse
                     </Button>
                   </DialogTrigger>
                   <div className="flex items-center gap-3">
-                    <Button variant="outline" className="gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 h-10">
+                    <Button variant="outline" className="gap-2 bg-card border-border text-slate-700 dark:text-slate-300 h-10">
                       <Settings className="w-4 h-4" /> Beállítások
                     </Button>
                     <Button className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-6 h-10">
@@ -200,7 +200,7 @@ export default function ClientInvoicesPage() {
                 </div>
                 <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-1.5 text-sm">Húzd ide a fájlokat vagy kattints a tallózáshoz</h3>
                 <p className="text-xs text-slate-400 mb-4">PDF, JPG, PNG (max 10 MB / fájl)</p>
-                <Button variant="outline" className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 h-9 px-6 font-medium text-xs">
+                <Button variant="outline" className="bg-card border-border text-slate-700 dark:text-slate-300 h-9 px-6 font-medium text-xs">
                   Tallózás
                 </Button>
               </div>
@@ -225,7 +225,7 @@ export default function ClientInvoicesPage() {
               {/* Footer Actions */}
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-50">
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 px-6">
+                  <Button variant="outline" className="bg-card border-border text-slate-700 dark:text-slate-300 px-6">
                     Mégse
                   </Button>
                 </DialogTrigger>
@@ -239,21 +239,21 @@ export default function ClientInvoicesPage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden flex flex-col">
+      <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden flex flex-col">
         {/* Toolbar */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
+        <div className="p-4 border-b border-border flex justify-between items-center bg-card">
           <div className="w-96 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input 
               placeholder="Keresés számla szám, szállító..." 
-              className="pl-9 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" 
+              className="pl-9 bg-card border-border" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <div className="flex gap-3">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+              <SelectTrigger className="w-48 bg-card border-border">
                 <SelectValue placeholder="Minden típus" />
               </SelectTrigger>
               <SelectContent>
@@ -264,7 +264,7 @@ export default function ClientInvoicesPage() {
             </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+              <SelectTrigger className="w-48 bg-card border-border">
                 <SelectValue placeholder="Minden státusz" />
               </SelectTrigger>
               <SelectContent>
@@ -282,7 +282,7 @@ export default function ClientInvoicesPage() {
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium text-xs">
+            <thead className="bg-card border-b border-border text-slate-500 dark:text-slate-400 font-medium text-xs">
               <tr>
                 <th className="px-6 py-4 w-12 text-center font-medium"><input type="checkbox" className="rounded border-slate-300 w-4 h-4 accent-slate-900" /></th>
                 <th className="px-6 py-4 font-medium">Számla sorszám</th>
@@ -344,7 +344,7 @@ export default function ClientInvoicesPage() {
         </div>
 
         {/* Footer Summary */}
-        <div className="bg-slate-50/50 dark:bg-slate-900/50 p-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-6 text-xs text-slate-600 dark:text-slate-400">
+        <div className="bg-slate-50/50 dark:bg-slate-900/50 p-4 border-t border-border flex items-center gap-6 text-xs text-slate-600 dark:text-slate-400">
           <div>Számlák: <span className="font-bold text-slate-900 dark:text-slate-100">{filteredInvoices.length}</span></div>
           <div>Összesen: <span className="font-bold text-slate-900 dark:text-slate-100">{formatCurrency(totalGross)}</span></div>
           <div>ÁFA: <span className="font-bold text-slate-900 dark:text-slate-100">{formatCurrency(totalVat)}</span></div>

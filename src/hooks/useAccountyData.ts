@@ -42,6 +42,7 @@ export interface AccountyMissingItem {
   escalationLevel: number;
   isIgnored: boolean;
   createdAt: string;
+  resolvedAt: string | null;
 }
 
 export interface AccountyDeadline {
@@ -61,6 +62,8 @@ export interface AccountyKpis {
   unprocessedInvoices: number;
   missingItems: number;
   upcomingDeadlines: number;
+  criticalClients: number;
+  todayDeadlines: number;
 }
 
 export interface AccountyTaxProfile {
@@ -221,6 +224,7 @@ export function useAccountyMissingItems(companyId: string) {
         escalationLevel: item.escalation_level || 0,
         isIgnored: item.is_ignored || false,
         createdAt: item.created_at,
+        resolvedAt: item.resolved_at || null,
       }));
     },
     enabled: !!companyId,
@@ -284,6 +288,7 @@ export function useAccountyAllMissingItems() {
         escalationLevel: item.escalation_level || 0,
         isIgnored: item.is_ignored || false,
         createdAt: item.created_at,
+        resolvedAt: item.resolved_at || null,
       }));
     },
     enabled: !!userId,
@@ -515,7 +520,7 @@ export function useAccountyKpis() {
 
       if (assignErr) throw assignErr;
       if (!assignments || assignments.length === 0) {
-        return { totalClients: 0, unprocessedInvoices: 0, missingItems: 0, upcomingDeadlines: 0 };
+        return { totalClients: 0, unprocessedInvoices: 0, missingItems: 0, upcomingDeadlines: 0, criticalClients: 0, todayDeadlines: 0 };
       }
 
       const allCompanyIds = assignments.map((a: any) => a.company_id);
@@ -556,11 +561,29 @@ export function useAccountyKpis() {
 
       if (deadErr) throw deadErr;
 
+      // Count critical clients (urgent priority open items)
+      const { count: criticalCount } = await supabase
+        .from('accounty_missing_items' as any)
+        .select('company_id', { count: 'exact', head: true })
+        .in('company_id', companyIds)
+        .eq('priority', 'urgent')
+        .in('status', ['open', 'notified']);
+
+      // Count today's deadlines
+      const { count: todayCount } = await supabase
+        .from('accounty_deadlines' as any)
+        .select('id', { count: 'exact', head: true })
+        .in('company_id', companyIds)
+        .in('status', ['pending', 'in_progress'])
+        .eq('due_date', nowStr);
+
       return {
         totalClients,
-        unprocessedInvoices: 0, // TODO: aggregate from invoices table
+        unprocessedInvoices: 0,
         missingItems: missingCount || 0,
         upcomingDeadlines: deadlineCount || 0,
+        criticalClients: criticalCount || 0,
+        todayDeadlines: todayCount || 0,
       };
     },
     enabled: !!userId,
@@ -1128,6 +1151,7 @@ export interface InvoiceReportRow {
   netAmount: number;
   vatAmount: number;
   grossAmount: number;
+  currency: string;
   clientName: string;
 }
 
@@ -1183,7 +1207,7 @@ export function useAccountyFullReportData() {
         // 1. Uploaded invoices (bizonylatsorszam = was szamlaszam)
         const { data: uploaded } = await supabase
           .from('invoices')
-          .select('bizonylatsorszam, elado_nev, vevo_nev, kibocsatas_datuma, afa_osszeg_osszesen, adoalap_osszesen, brutto_vegosszeg, invoice_direction, company_id')
+          .select('bizonylatsorszam, elado_nev, vevo_nev, kibocsatas_datuma, afa_osszeg_osszesen, adoalap_osszesen, brutto_vegosszeg, invoice_direction, company_id, penznem')
           .eq('company_id', cid)
           .order('kibocsatas_datuma', { ascending: false })
           .limit(100);
@@ -1201,6 +1225,7 @@ export function useAccountyFullReportData() {
             netAmount: net,
             vatAmount: vat,
             grossAmount: gross,
+            currency: (inv.penznem === 'HUF' || !inv.penznem) ? 'Ft' : inv.penznem,
             clientName: companyMap[inv.company_id!] || '-',
           });
         }
@@ -1208,7 +1233,7 @@ export function useAccountyFullReportData() {
         // 2. NAV invoices (has direction)
         const { data: navBatch } = await supabase
           .from('nav_invoices')
-          .select('invoice_number, supplier_name, customer_name, invoice_issue_date, invoice_net_amount, invoice_vat_amount, invoice_gross_amount, invoice_direction, company_id')
+          .select('invoice_number, supplier_name, customer_name, invoice_issue_date, invoice_net_amount, invoice_vat_amount, invoice_gross_amount, invoice_direction, company_id, currency')
           .eq('company_id', cid)
           .order('invoice_issue_date', { ascending: false })
           .limit(100);
@@ -1226,7 +1251,8 @@ export function useAccountyFullReportData() {
             netAmount: net,
             vatAmount: vat,
             grossAmount: gross,
-            clientName: companyMap[nav.company_id] || '-',
+            currency: (nav.currency === 'HUF' || !nav.currency) ? 'Ft' : nav.currency,
+            clientName: companyMap[nav.company_id!] || '-',
           });
         }
       }
@@ -1530,5 +1556,47 @@ export function useLogAuditEvent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounty-audit-log'] });
     },
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// useAccountyPortalStats – Portal usage statistics
+// ══════════════════════════════════════════════════════════════
+
+export interface PortalStats {
+  totalTokens: number;
+  activeTokens: number;
+  totalVisits: number;
+  lastAccessedAt: string | null;
+}
+
+export function useAccountyPortalStats() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['accounty-portal-stats'],
+    queryFn: async (): Promise<PortalStats> => {
+      const { data, error } = await supabase
+        .from('accounty_portal_tokens' as any)
+        .select('*');
+
+      if (error) throw error;
+
+      const tokens = (data || []) as any[];
+      const active = tokens.filter(t => t.is_active);
+      const totalVisits = tokens.reduce((sum: number, t: any) => sum + (t.visit_count || 0), 0);
+      const lastAccessed = tokens
+        .filter((t: any) => t.last_accessed_at)
+        .sort((a: any, b: any) => new Date(b.last_accessed_at).getTime() - new Date(a.last_accessed_at).getTime())[0];
+
+      return {
+        totalTokens: tokens.length,
+        activeTokens: active.length,
+        totalVisits,
+        lastAccessedAt: lastAccessed?.last_accessed_at || null,
+      };
+    },
+    enabled: !!user,
+    staleTime: 60_000,
   });
 }

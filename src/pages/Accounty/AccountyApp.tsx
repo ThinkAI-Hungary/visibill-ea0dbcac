@@ -26,7 +26,10 @@ import {
   TrendingUp,
   Loader2,
   Database,
-  X
+  X,
+  CheckSquare,
+  GripVertical,
+  ChevronUp
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
@@ -35,7 +38,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ClientData } from './mockData';
-import { useAccountyClients, useAccountyKpis, useUpdateKanbanStatus, useAccountyAccountants, useAccountyMonthlyTrend, useAccountyColleagueStats } from '@/hooks/useAccountyData';
+import { useAccountyClients, useAccountyKpis, useUpdateKanbanStatus, useAccountyAccountants, useAccountyMonthlyTrend, useAccountyColleagueStats, useAccountyAuditLog, useAccountyPortalStats } from '@/hooks/useAccountyData';
 import { useAccountyRole } from './AccountyRoleContext';
 import { seedAccountyAssignments } from '@/utils/seedAccounty';
 import { cn } from '@/lib/utils';
@@ -80,10 +83,10 @@ function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900 dark:t
   return (
     <div
       className={cn(
-        "relative overflow-hidden bg-gradient-to-br rounded-xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-between h-32 card-ripple",
+        "relative overflow-hidden bg-gradient-to-br rounded-xl p-5 border border-border shadow-soft flex flex-col justify-between h-32 card-ripple",
         "hover:shadow-lg hover:scale-[1.02] hover:border-slate-200 dark:hover:border-slate-700 transition-all duration-300 cursor-default group",
         colorMap[accentColor] || colorMap.emerald,
-        "bg-white dark:bg-slate-900"
+        "bg-card"
       )}
       onMouseMove={(e) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -131,7 +134,7 @@ function OwnerDropdown({ client, onUpdateOwner }: { client: ClientData, onUpdate
     <div onClick={(e) => e.stopPropagation()}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 px-2 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 data-[state=open]:bg-slate-100 dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-800/50">
+          <Button variant="ghost" size="sm" className="h-8 px-2 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 data-[state=open]:bg-slate-100 dark:bg-slate-800 shadow-soft border border-border/50">
             <div className="w-5 h-5 rounded-full bg-slate-500 flex items-center justify-center text-[10px] font-bold text-white">
               {owner.initial}
             </div>
@@ -252,7 +255,7 @@ function ClientCard({ client, draggable, onDragStart, onDragEnd, isDragged, onUp
       onDragEnd={onDragEnd}
       onClick={() => navigate(`/accounty/client/${client.id}`)}
       className={cn(
-        "bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col group cursor-pointer h-full overflow-hidden", 
+        "bg-card rounded-xl border border-border shadow-soft flex flex-col group cursor-pointer h-full overflow-hidden", 
         "hover:shadow-lg hover:border-slate-200 dark:hover:border-slate-700 hover:-translate-y-0.5 transition-all duration-300",
         "animate-in fade-in slide-in-from-bottom-2 duration-300",
         draggable && "cursor-grab active:cursor-grabbing",
@@ -311,7 +314,7 @@ function ClientCard({ client, draggable, onDragStart, onDragEnd, isDragged, onUp
           </div>
         </div>
 
-        <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+        <div className="mt-auto pt-4 border-t border-border flex justify-between items-center">
           <OwnerDropdown client={client} onUpdateOwner={onUpdateOwner} />
           <div className="flex items-center gap-1.5">
             <Clock className={cn('w-3.5 h-3.5', isOverdue ? 'text-red-500' : daysLeft <= 3 ? 'text-red-500' : daysLeft <= 7 ? 'text-amber-500' : 'text-slate-400')} />
@@ -333,11 +336,58 @@ const CLIENT_COLORS = [
   'bg-violet-100 text-violet-600', 'bg-rose-100 text-rose-600',
 ];
 
+function WidgetWrapper({ 
+  children, 
+  id, 
+  editingLayout, 
+  onMoveUp, 
+  onMoveDown, 
+  isFirst, 
+  isLast,
+  order
+}: { 
+  children: React.ReactNode; 
+  id: string; 
+  editingLayout: boolean; 
+  onMoveUp: () => void; 
+  onMoveDown: () => void;
+  isFirst: boolean;
+  isLast: boolean;
+  order: number;
+}) {
+  return (
+    <div className={cn("relative transition-all duration-300", editingLayout && "p-4 border-2 border-dashed border-primary/40 rounded-xl bg-primary/5")} style={{ order }}>
+      {editingLayout && (
+        <div className="absolute -left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1 bg-white dark:bg-slate-800 shadow-md rounded-lg p-1 z-10 border border-slate-200 dark:border-slate-700">
+          <button 
+            onClick={onMoveUp} 
+            disabled={isFirst}
+            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 disabled:opacity-30"
+          >
+            <ChevronUp className="w-4 h-4" />
+          </button>
+          <div className="w-full h-px bg-slate-100 dark:bg-slate-700"></div>
+          <button 
+            onClick={onMoveDown} 
+            disabled={isLast}
+            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 disabled:opacity-30"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
 export default function AccountyApp() {
   const { data: supabaseClients, isLoading: clientsLoading } = useAccountyClients();
   const { data: supabaseKpis } = useAccountyKpis();
   const { data: monthlyTrendData } = useAccountyMonthlyTrend();
   const { data: colleagueStats } = useAccountyColleagueStats();
+  const { data: auditLog } = useAccountyAuditLog(10);
+  const { data: portalStats } = useAccountyPortalStats();
   const kanbanMutation = useUpdateKanbanStatus();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('Minden');
@@ -348,6 +398,35 @@ export default function AccountyApp() {
   const [statusOverrides, setStatusOverrides] = useState<Record<string, ClientData['status']>>({});
   const navigate = useNavigate();
   const { role, setRole } = useAccountyRole();
+
+  // F1: Bulk operations
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const toggleSelect = (id: string) => setSelectedIds(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+  const selectAll = (ids: string[]) => setSelectedIds(new Set(ids));
+  const clearSelection = () => setSelectedIds(new Set());
+
+  // F2: Keyboard navigation
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+
+  // F8: Widget order with localStorage persistence
+  const DEFAULT_WIDGET_ORDER = ['kpi_cards', 'charts', 'monthly_trend', 'colleague_table', 'audit_log', 'automation_analytics'] as const;
+  const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
+    try { 
+      const saved = localStorage.getItem('accounty-widget-order'); 
+      let parsed = saved ? JSON.parse(saved) : [...DEFAULT_WIDGET_ORDER]; 
+      if (Array.isArray(parsed) && !parsed.includes('automation_analytics')) {
+        parsed.push('automation_analytics');
+      }
+      return parsed;
+    } catch { return [...DEFAULT_WIDGET_ORDER]; }
+  });
+  const [editingLayout, setEditingLayout] = useState(false);
+  useEffect(() => { localStorage.setItem('accounty-widget-order', JSON.stringify(widgetOrder)); }, [widgetOrder]);
+  const moveWidget = (idx: number, dir: -1 | 1) => {
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= widgetOrder.length) return;
+    setWidgetOrder(prev => { const next = [...prev]; [next[idx], next[newIdx]] = [next[newIdx], next[idx]]; return next; });
+  };
 
   // Map Supabase data → ClientData format for UI compatibility
   const clients: ClientData[] = useMemo(() => {
@@ -480,7 +559,7 @@ export default function AccountyApp() {
         {/* Skeleton KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[0, 1, 2, 3].map(i => (
-            <div key={i} className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-100 dark:border-slate-800 h-32 animate-pulse">
+            <div key={i} className="bg-card rounded-xl p-5 border border-border h-32 animate-pulse">
               <div className="flex justify-between">
                 <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
                 <div className="w-9 h-9 bg-slate-100 dark:bg-slate-800 rounded-lg" />
@@ -492,7 +571,7 @@ export default function AccountyApp() {
         {/* Skeleton cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[0, 1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-pulse" style={{ animationDelay: `${i * 100}ms` }}>
+            <div key={i} className="bg-card rounded-xl border border-border overflow-hidden animate-pulse" style={{ animationDelay: `${i * 100}ms` }}>
               <div className="h-1 w-full bg-slate-200 dark:bg-slate-800" />
               <div className="p-5 space-y-4">
                 <div className="flex items-center gap-3">
@@ -557,7 +636,7 @@ export default function AccountyApp() {
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all',
                 role === 'admin'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm'
+                  ? 'bg-card text-slate-900 dark:text-slate-100 shadow-soft'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               )}
             >
@@ -569,7 +648,7 @@ export default function AccountyApp() {
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all',
                 role === 'könyvelő'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm'
+                  ? 'bg-card text-slate-900 dark:text-slate-100 shadow-soft'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               )}
             >
@@ -597,14 +676,14 @@ export default function AccountyApp() {
       )}
 
       {/* Scope Tabs */}
-      <div className="w-full bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800/60 shadow-inner flex items-center">
+      <div className="w-full bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-xl border border-border/60 shadow-inner flex items-center">
         {role === 'admin' && (
           <button
             onClick={() => setViewScope('kpi')}
             className={cn(
               "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
               viewScope === 'kpi' 
-                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" 
+                ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" 
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
             )}
           >
@@ -617,7 +696,7 @@ export default function AccountyApp() {
           className={cn(
             "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
             viewScope === 'mine' 
-              ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" 
+              ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" 
               : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
           )}
         >
@@ -630,7 +709,7 @@ export default function AccountyApp() {
             className={cn(
               "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
               viewScope === 'all' 
-                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm" 
+                ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" 
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
             )}
           >
@@ -642,7 +721,7 @@ export default function AccountyApp() {
 
       {/* Toolbar - Hide if KPI view */}
       {viewScope !== 'kpi' && (
-        <div className="flex items-center justify-between gap-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm p-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm sticky top-0 z-10">
+        <div className="flex items-center justify-between gap-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm p-3 rounded-xl border border-border shadow-soft sticky top-0 z-10">
           <div className="flex items-center gap-3 flex-1">
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -656,7 +735,7 @@ export default function AccountyApp() {
             
             <div className="hidden sm:block">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 h-9 gap-2 text-slate-600 dark:text-slate-400">
+                <SelectTrigger className="w-[140px] bg-card border-border h-9 gap-2 text-slate-600 dark:text-slate-400">
                   <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 shrink-0" />
                     <SelectValue placeholder="Szűrés..." />
@@ -672,12 +751,12 @@ export default function AccountyApp() {
             </div>
           </div>
           
-          <div className="flex items-center bg-slate-50 dark:bg-background rounded-lg p-1 border border-slate-100 dark:border-slate-800">
+          <div className="flex items-center bg-slate-50 dark:bg-background rounded-lg p-1 border border-border">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={() => setViewMode('grid')}
-              className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'grid' ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-slate-100" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
+              className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'grid' ? "bg-card shadow-soft text-slate-900 dark:text-slate-100" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
             >
               <Grid className="w-4 h-4" />
             </Button>
@@ -685,7 +764,7 @@ export default function AccountyApp() {
               variant="ghost" 
               size="icon" 
               onClick={() => setViewMode('list')}
-              className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'list' ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-slate-100" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
+              className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'list' ? "bg-card shadow-soft text-slate-900 dark:text-slate-100" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
             >
               <ListIcon className="w-4 h-4" />
             </Button>
@@ -693,7 +772,7 @@ export default function AccountyApp() {
               variant="ghost" 
               size="icon" 
               onClick={() => setViewMode('kanban')}
-              className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'kanban' ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-slate-100" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
+              className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'kanban' ? "bg-card shadow-soft text-slate-900 dark:text-slate-100" : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300")}
             >
               <Kanban className="w-4 h-4" />
             </Button>
@@ -703,33 +782,76 @@ export default function AccountyApp() {
 
       {/* Content based on View Mode */}
       {viewScope === 'kpi' ? (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="flex flex-col gap-6 animate-in fade-in duration-500">
           {/* Top Row: 3 KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+          <WidgetWrapper 
+            id="kpi_cards" 
+            editingLayout={editingLayout} 
+            onMoveUp={() => moveWidget(widgetOrder.indexOf('kpi_cards'), -1)} 
+            onMoveDown={() => moveWidget(widgetOrder.indexOf('kpi_cards'), 1)}
+            isFirst={widgetOrder.indexOf('kpi_cards') === 0}
+            isLast={widgetOrder.indexOf('kpi_cards') === widgetOrder.length - 1}
+            order={widgetOrder.indexOf('kpi_cards')}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-card rounded-xl p-6 border border-border shadow-soft flex flex-col justify-center">
               <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Zárási státusz (Május):</h3>
               <div className="flex items-baseline gap-4">
                 <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">{dynamicKpiStats.zarasiSzazalek}%</span>
                 <span className="text-sm font-semibold text-primary">aktív</span>
               </div>
             </div>
-            <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+            <div className="bg-card rounded-xl p-6 border border-border shadow-soft flex flex-col justify-center">
               <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Kritikus ügyfelek:</h3>
               <div className="flex items-baseline gap-4">
                 <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">{dynamicKpiStats.kritikusDb} db</span>
               </div>
             </div>
-            <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+            <div className="bg-card rounded-xl p-6 border border-border shadow-soft flex flex-col justify-center">
               <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Kiosztott / Rendben:</h3>
               <div className="flex items-baseline gap-4">
                 <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">{dynamicKpiStats.kiosztottLezart}</span>
               </div>
             </div>
+            <div className="bg-card rounded-xl p-6 border border-border shadow-soft flex flex-col justify-center">
+              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Portál aktivitás:</h3>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">{portalStats?.totalVisits ?? 0}</span>
+                <span className="text-sm font-semibold text-primary">látogatás</span>
+              </div>
+              <span className="text-xs text-slate-400 mt-1">{portalStats?.activeLinks ?? 0} aktív link</span>
+            </div>
+            </div>
+          </WidgetWrapper>
+
+          {/* F8: Widget layout edit button */}
+          <div className="flex justify-end" style={{ order: -1 }}>
+            <button
+              onClick={() => setEditingLayout(!editingLayout)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                editingLayout
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+              )}
+            >
+              <GripVertical className="w-3.5 h-3.5" />
+              Elrendezés
+            </button>
           </div>
 
           {/* Middle Row: Charts */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm h-80 flex flex-col">
+          <WidgetWrapper 
+            id="charts" 
+            editingLayout={editingLayout} 
+            onMoveUp={() => moveWidget(widgetOrder.indexOf('charts'), -1)} 
+            onMoveDown={() => moveWidget(widgetOrder.indexOf('charts'), 1)}
+            isFirst={widgetOrder.indexOf('charts') === 0}
+            isLast={widgetOrder.indexOf('charts') === widgetOrder.length - 1}
+            order={widgetOrder.indexOf('charts')}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-card rounded-xl p-6 border border-border shadow-soft h-80 flex flex-col">
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
                 <BarChart2 className="w-4 h-4 text-primary" />
                 Könyvelői Teljesítmény
@@ -755,7 +877,7 @@ export default function AccountyApp() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm h-80 flex flex-col relative">
+            <div className="bg-card rounded-xl p-6 border border-border shadow-soft h-80 flex flex-col relative">
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
                 <PieChartIcon className="w-4 h-4 text-amber-600" />
                 Irodai Ügyfél Státuszok
@@ -806,9 +928,19 @@ export default function AccountyApp() {
               </div>
             </div>
           </div>
+          </WidgetWrapper>
 
           {/* Monthly Trend Chart */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+          <WidgetWrapper 
+            id="monthly_trend" 
+            editingLayout={editingLayout} 
+            onMoveUp={() => moveWidget(widgetOrder.indexOf('monthly_trend'), -1)} 
+            onMoveDown={() => moveWidget(widgetOrder.indexOf('monthly_trend'), 1)}
+            isFirst={widgetOrder.indexOf('monthly_trend') === 0}
+            isLast={widgetOrder.indexOf('monthly_trend') === widgetOrder.length - 1}
+            order={widgetOrder.indexOf('monthly_trend')}
+          >
+            <div className="bg-card rounded-xl p-6 border border-border shadow-soft">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-blue-500" />
@@ -855,10 +987,20 @@ export default function AccountyApp() {
               </div>
             </div>
           </div>
+          </WidgetWrapper>
 
           {/* Bottom Row: Table */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
+          <WidgetWrapper 
+            id="colleague_table" 
+            editingLayout={editingLayout} 
+            onMoveUp={() => moveWidget(widgetOrder.indexOf('colleague_table'), -1)} 
+            onMoveDown={() => moveWidget(widgetOrder.indexOf('colleague_table'), 1)}
+            isFirst={widgetOrder.indexOf('colleague_table') === 0}
+            isLast={widgetOrder.indexOf('colleague_table') === widgetOrder.length - 1}
+            order={widgetOrder.indexOf('colleague_table')}
+          >
+            <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+            <div className="p-4 border-b border-border bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
               <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <User className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 Kolléga statisztikák (Havi Zárás)
@@ -870,7 +1012,7 @@ export default function AccountyApp() {
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium text-xs tracking-wider">
+                <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-border text-slate-500 dark:text-slate-400 font-medium text-xs tracking-wider">
                   <tr>
                     <th className="px-6 py-4">Kolléga</th>
                     <th className="px-4 py-4 text-center">Kiosztott</th>
@@ -929,16 +1071,62 @@ export default function AccountyApp() {
               </table>
             </div>
           </div>
+          </WidgetWrapper>
+
+          {/* F5: Audit Log Timeline */}
+          <WidgetWrapper 
+            id="audit_log" 
+            editingLayout={editingLayout} 
+            onMoveUp={() => moveWidget(widgetOrder.indexOf('audit_log'), -1)} 
+            onMoveDown={() => moveWidget(widgetOrder.indexOf('audit_log'), 1)}
+            isFirst={widgetOrder.indexOf('audit_log') === 0}
+            isLast={widgetOrder.indexOf('audit_log') === widgetOrder.length - 1}
+            order={widgetOrder.indexOf('audit_log')}
+          >
+            <div className="bg-card rounded-xl border border-border shadow-soft p-6">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-500" />
+              Tevékenységnapló
+            </h3>
+            <div className="space-y-3 max-h-72 overflow-y-auto">
+              {(auditLog || []).length === 0 ? (
+                <p className="text-xs text-slate-400 text-center py-4">Még nincs bejegyzés</p>
+              ) : (
+                (auditLog || []).map((entry: any, i: number) => (
+                  <div key={i} className="flex items-start gap-3 text-xs">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium text-slate-700 dark:text-slate-300">{entry.action}</span>
+                      {entry.details && <span className="text-slate-400 ml-1">— {typeof entry.details === 'string' ? entry.details : JSON.stringify(entry.details)}</span>}
+                    </div>
+                    <span className="text-slate-400 shrink-0">
+                      {entry.created_at ? new Date(entry.created_at).toLocaleString('hu-HU', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          </WidgetWrapper>
 
           {/* Új Szekció: Automatizmus & Ügyfél Analitika */}
-          <div className="pt-8">
-            <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-6 flex items-center gap-2">
+          <WidgetWrapper 
+            id="automation_analytics" 
+            editingLayout={editingLayout} 
+            onMoveUp={() => moveWidget(widgetOrder.indexOf('automation_analytics'), -1)} 
+            onMoveDown={() => moveWidget(widgetOrder.indexOf('automation_analytics'), 1)}
+            isFirst={widgetOrder.indexOf('automation_analytics') === 0}
+            isLast={widgetOrder.indexOf('automation_analytics') === widgetOrder.length - 1}
+            order={widgetOrder.indexOf('automation_analytics')}
+          >
+            <div className="pt-8">
+              <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-6 flex items-center gap-2">
               🤖 Bekérési Automatizmus & Ügyfél Kockázat
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               {/* Bal kártya: Csatornák */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+              <div className="bg-card rounded-xl p-6 border border-border shadow-soft hover:shadow-md transition-shadow">
                 <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-6">Értesítési Csatornák (Sikeres adatbekérés %)</h3>
                 <div className="space-y-6">
                   <div>
@@ -983,11 +1171,11 @@ export default function AccountyApp() {
               </div>
 
               {/* Jobb kártya: Problémás Ügyfelek */}
-              <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+              <div className="bg-card rounded-xl p-6 border border-border shadow-soft hover:shadow-md transition-shadow flex flex-col">
                 <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-6">Legtöbb hiányzó tétellel rendelkező ügyfelek</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">
-                    <thead className="bg-transparent border-b border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium text-xs tracking-wider">
+                    <thead className="bg-transparent border-b border-border text-slate-500 dark:text-slate-400 font-medium text-xs tracking-wider">
                       <tr>
                         <th className="pb-3 pr-4">Ügyfél neve</th>
                         <th className="pb-3 px-4 text-center">Hiányzó</th>
@@ -1030,7 +1218,8 @@ export default function AccountyApp() {
               </div>
 
             </div>
-          </div>
+            </div>
+          </WidgetWrapper>
         </div>
       ) : viewMode === 'kanban' ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
@@ -1038,7 +1227,7 @@ export default function AccountyApp() {
           <div 
             className={cn(
               "p-4 rounded-xl border flex flex-col gap-4 min-h-[500px] transition-all duration-200",
-              dragOverColumn === 'Feldolgozandó' ? "bg-amber-50/80 border-amber-300 ring-4 ring-amber-500/10" : "bg-slate-100/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/60"
+              dragOverColumn === 'Feldolgozandó' ? "bg-amber-50/80 border-amber-300 ring-4 ring-amber-500/10" : "bg-slate-100/60 dark:bg-slate-900/60 border-border/60"
             )}
             onDragOver={(e) => handleDragOver(e, 'Feldolgozandó')}
             onDrop={(e) => handleDrop(e, 'Feldolgozandó')}
@@ -1064,7 +1253,7 @@ export default function AccountyApp() {
               />
             ))}
             {filteredClients.filter(c => c.status === 'Feldolgozandó').length === 0 && (
-              <div className="text-center py-8 text-sm text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-lg">Nincs ügyfél</div>
+              <div className="text-center py-8 text-sm text-slate-400 border-2 border-dashed border-border rounded-lg">Nincs ügyfél</div>
             )}
           </div>
 
@@ -1072,7 +1261,7 @@ export default function AccountyApp() {
           <div 
             className={cn(
               "p-4 rounded-xl border flex flex-col gap-4 min-h-[500px] transition-all duration-200",
-              dragOverColumn === 'Rendben' ? "bg-accent-subtle/80 border-primary/30 ring-4 ring-primary/10" : "bg-slate-100/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/60"
+              dragOverColumn === 'Rendben' ? "bg-accent-subtle/80 border-primary/30 ring-4 ring-primary/10" : "bg-slate-100/60 dark:bg-slate-900/60 border-border/60"
             )}
             onDragOver={(e) => handleDragOver(e, 'Rendben')}
             onDrop={(e) => handleDrop(e, 'Rendben')}
@@ -1098,7 +1287,7 @@ export default function AccountyApp() {
               />
             ))}
             {filteredClients.filter(c => c.status === 'Rendben').length === 0 && (
-              <div className="text-center py-8 text-sm text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-lg">Nincs ügyfél</div>
+              <div className="text-center py-8 text-sm text-slate-400 border-2 border-dashed border-border rounded-lg">Nincs ügyfél</div>
             )}
           </div>
 
@@ -1106,7 +1295,7 @@ export default function AccountyApp() {
           <div 
             className={cn(
               "p-4 rounded-xl border flex flex-col gap-4 min-h-[500px] transition-all duration-200",
-              dragOverColumn === 'Kritikus' ? "bg-red-50/80 border-red-300 ring-4 ring-red-500/10" : "bg-slate-100/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/60"
+              dragOverColumn === 'Kritikus' ? "bg-red-50/80 border-red-300 ring-4 ring-red-500/10" : "bg-slate-100/60 dark:bg-slate-900/60 border-border/60"
             )}
             onDragOver={(e) => handleDragOver(e, 'Kritikus')}
             onDrop={(e) => handleDrop(e, 'Kritikus')}
@@ -1132,7 +1321,7 @@ export default function AccountyApp() {
               />
             ))}
             {filteredClients.filter(c => c.status === 'Kritikus').length === 0 && (
-              <div className="text-center py-8 text-sm text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-lg">Nincs ügyfél</div>
+              <div className="text-center py-8 text-sm text-slate-400 border-2 border-dashed border-border rounded-lg">Nincs ügyfél</div>
             )}
           </div>
         </div>
@@ -1158,11 +1347,31 @@ export default function AccountyApp() {
           )}
         </div>
       ) : (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.target instanceof HTMLInputElement) return;
+            if (e.key === 'ArrowDown') { e.preventDefault(); setFocusedIndex(prev => Math.min(prev + 1, filteredClients.length - 1)); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); setFocusedIndex(prev => Math.max(prev - 1, 0)); }
+            else if (e.key === 'Enter' && focusedIndex >= 0 && focusedIndex < filteredClients.length) { navigate(`/accounty/client/${filteredClients[focusedIndex].id}`); }
+            else if (e.key === 'Escape') { setFocusedIndex(-1); clearSelection(); }
+          }}
+        >
+          {/* F1: Bulk toolbar */}
+          {selectedIds.size > 0 && (
+            <div className="px-6 py-3 bg-primary/5 border-b border-primary/10 flex items-center gap-4">
+              <span className="text-sm font-semibold text-primary">{selectedIds.size} kijelölve</span>
+              <button onClick={() => selectAll(filteredClients.map(c => c.id))} className="text-xs text-slate-500 hover:text-primary transition-colors">Mind kijelölés</button>
+              <button onClick={clearSelection} className="text-xs text-slate-500 hover:text-red-500 transition-colors">Törlés</button>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-medium text-xs uppercase tracking-wider">
+              <thead className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-border text-slate-500 dark:text-slate-400 font-medium text-xs uppercase tracking-wider">
                 <tr>
+                  <th className="px-3 py-4 w-10">
+                    <input type="checkbox" className="rounded border-slate-300 dark:border-slate-600" checked={selectedIds.size === filteredClients.length && filteredClients.length > 0} onChange={(e) => e.target.checked ? selectAll(filteredClients.map(c => c.id)) : clearSelection()} />
+                  </th>
                   <th className="px-6 py-4">Cégnév</th>
                   <th className="px-6 py-4 text-center">Adószám</th>
                   <th className="px-6 py-4 text-center">Feldolgozatlan</th>
@@ -1175,12 +1384,19 @@ export default function AccountyApp() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {filteredClients.length > 0 ? (
-                  filteredClients.map((client) => (
+                  filteredClients.map((client, idx) => (
                     <tr 
                       key={client.id} 
                       onClick={() => navigate(`/accounty/client/${client.id}`)}
-                      className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
+                      className={cn(
+                        "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer",
+                        selectedIds.has(client.id) && "bg-primary/5",
+                        focusedIndex === idx && "ring-2 ring-primary/30 ring-inset"
+                      )}
                     >
+                      <td className="px-3 py-4 w-10" onClick={(e) => e.stopPropagation()}>
+                        <input type="checkbox" className="rounded border-slate-300 dark:border-slate-600" checked={selectedIds.has(client.id)} onChange={() => toggleSelect(client.id)} />
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${client.colorHex} shrink-0`}>

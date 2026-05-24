@@ -68,7 +68,7 @@ export default function ClientReportsPage() {
           <button 
             key={report.id}
             onClick={() => openModal(report.id as ReportType)}
-            className="flex flex-col text-left bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:border-slate-300 hover:shadow-sm transition-all group relative overflow-hidden"
+            className="flex flex-col text-left bg-card border border-border rounded-xl p-5 hover:border-slate-300 hover:shadow-soft transition-all group relative overflow-hidden"
           >
             <div className="flex justify-between items-start w-full mb-4">
               <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", report.bg)}>
@@ -88,7 +88,7 @@ export default function ClientReportsPage() {
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Legutóbbi riportok</h2>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden">
           <div className="p-12 text-center">
             <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
               <FileText className="w-6 h-6 text-slate-400" />
@@ -107,9 +107,9 @@ export default function ClientReportsPage() {
             onClick={() => setIsModalOpen(false)}
           ></div>
           
-          <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 z-10 flex flex-col max-h-[90vh]">
+          <div className="relative bg-card rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 z-10 flex flex-col max-h-[90vh]">
             {/* Modal Header */}
-            <div className="flex justify-between items-start p-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
+            <div className="flex justify-between items-start p-6 border-b border-border shrink-0">
               <div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Riport generálása</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Állítsd be a {clientName} riport paramétereit</p>
@@ -162,7 +162,7 @@ export default function ClientReportsPage() {
                   <div className="space-y-1.5">
                     <Label className="text-xs text-slate-500 dark:text-slate-400">Kezdő dátum</Label>
                     <div className="relative">
-                      <Input defaultValue="2024. 01. 01." className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-sm pl-10" />
+                      <Input defaultValue="2024. 01. 01." className="bg-card border-border text-sm pl-10" />
                       <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                         <div className="bg-blue-600 text-white text-[10px] font-bold px-1 rounded-sm">2024</div>
                       </div>
@@ -172,7 +172,7 @@ export default function ClientReportsPage() {
                   <div className="space-y-1.5">
                     <Label className="text-xs text-slate-500 dark:text-slate-400">Záró dátum</Label>
                     <div className="relative">
-                      <Input defaultValue="2024. 01. 31." className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-sm" />
+                      <Input defaultValue="2024. 01. 31." className="bg-card border-border text-sm" />
                       <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     </div>
                   </div>
@@ -187,7 +187,7 @@ export default function ClientReportsPage() {
                     onClick={() => setFormat('pdf')}
                     className={cn(
                       "flex items-center gap-2 p-3 rounded-xl border-2 transition-colors text-sm font-medium",
-                      format === 'pdf' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-slate-100 dark:border-slate-800 hover:border-slate-200"
+                      format === 'pdf' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-border hover:border-slate-200"
                     )}
                   >
                     <FileText className={cn("w-4 h-4", format === 'pdf' ? "text-red-500" : "text-slate-400")} />
@@ -197,7 +197,7 @@ export default function ClientReportsPage() {
                     onClick={() => setFormat('excel')}
                     className={cn(
                       "flex items-center gap-2 p-3 rounded-xl border-2 transition-colors text-sm font-medium",
-                      format === 'excel' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-slate-100 dark:border-slate-800 hover:border-slate-200"
+                      format === 'excel' ? "border-slate-900 dark:border-primary bg-slate-50 dark:bg-accent" : "border-border hover:border-slate-200"
                     )}
                   >
                     <FileJson className={cn("w-4 h-4", format === 'excel' ? "text-primary" : "text-slate-400")} />
@@ -214,28 +214,20 @@ export default function ClientReportsPage() {
                     <Checkbox id="opt-1" defaultChecked className="border-slate-300 rounded" />
                     <Label htmlFor="opt-1" className="text-sm font-normal cursor-pointer">Részletes tételsorok</Label>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="opt-2" defaultChecked className="border-slate-300 rounded" />
-                    <Label htmlFor="opt-2" className="text-sm font-normal cursor-pointer">Diagramok hozzáadása</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="opt-3" className="border-slate-300 rounded" />
-                    <Label htmlFor="opt-3" className="text-sm font-normal cursor-pointer">Csak összesítő</Label>
-                  </div>
                 </div>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="p-4 border-t border-border flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
               <Button variant="ghost" className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 whitespace-nowrap" onClick={() => setIsModalOpen(false)}>
                 Mégse
               </Button>
               <div className="flex gap-2">
-                <Button variant="outline" className="gap-2 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 whitespace-nowrap">
+                <Button variant="outline" className="gap-2 bg-card text-slate-700 dark:text-slate-300 border-border whitespace-nowrap">
                   <Mail className="w-4 h-4" /> Generálás és küldés
                 </Button>
-                <Button variant="outline" className="gap-2 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 whitespace-nowrap">
+                <Button variant="outline" className="gap-2 bg-card text-slate-700 dark:text-slate-300 border-border whitespace-nowrap">
                   <Eye className="w-4 h-4" /> Előnézet
                 </Button>
                 <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 whitespace-nowrap" onClick={() => setIsModalOpen(false)}>

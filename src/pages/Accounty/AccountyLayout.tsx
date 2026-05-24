@@ -17,7 +17,9 @@ import {
   Moon,
   User,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  AlertTriangle,
+  Clock
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -276,24 +278,46 @@ export default function AccountyLayout() {
               <PopoverTrigger asChild>
                 <button className="relative p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-md">
                   <Bell className="w-5 h-5" />
-                  {((kpis?.missingItems ?? 0) > 0 || (kpis?.upcomingDeadlines ?? 0) > 0) && (
+                  {((kpis?.criticalClients ?? 0) > 0 || (kpis?.missingItems ?? 0) > 0 || (kpis?.todayDeadlines ?? 0) > 0 || (kpis?.upcomingDeadlines ?? 0) > 0) && (
                     <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-slate-900"></span>
                   )}
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 p-0 mt-2 border-slate-200 dark:border-slate-800 shadow-lg rounded-xl overflow-hidden dark:bg-card" align="end" sideOffset={8}>
-                <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+              <PopoverContent className="w-80 p-0 mt-2 border-border shadow-lg rounded-xl overflow-hidden dark:bg-card" align="end" sideOffset={8}>
+                <div className="px-4 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/50">
                   <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Értesítések</h3>
                 </div>
-                {(kpis?.missingItems ?? 0) > 0 || (kpis?.upcomingDeadlines ?? 0) > 0 ? (
+                {(kpis?.criticalClients ?? 0) > 0 || (kpis?.missingItems ?? 0) > 0 || (kpis?.todayDeadlines ?? 0) > 0 || (kpis?.upcomingDeadlines ?? 0) > 0 ? (
                   <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-64 overflow-y-auto">
-                    {(kpis?.missingItems ?? 0) > 0 && (
-                      <div className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => navigate('/accounty/missing-invoices')}>
+                    {(kpis?.criticalClients ?? 0) > 0 && (
+                      <div className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => navigate('/accounty')}>
                         <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0 mt-0.5">
-                          <Bell className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                          <AlertTriangle className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Hiányzó számlák</p>
+                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Kritikus ügyfelek</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{kpis?.criticalClients} ügyfélnél kritikus elmaradás</p>
+                        </div>
+                      </div>
+                    )}
+                    {(kpis?.todayDeadlines ?? 0) > 0 && (
+                      <div className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => navigate('/accounty/tax-calendar')}>
+                        <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center shrink-0 mt-0.5">
+                          <Clock className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Mai határidők</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{kpis?.todayDeadlines} deadline ma lejár</p>
+                        </div>
+                      </div>
+                    )}
+                    {(kpis?.missingItems ?? 0) > 0 && (
+                      <div className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => navigate('/accounty/missing-invoices')}>
+                        <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center shrink-0 mt-0.5">
+                          <FileWarning className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Hiányzó dokumentumok</p>
                           <p className="text-xs text-slate-500 mt-0.5">{kpis?.missingItems} tétel vár bekérésre</p>
                         </div>
                       </div>
@@ -301,7 +325,7 @@ export default function AccountyLayout() {
                     {(kpis?.upcomingDeadlines ?? 0) > 0 && (
                       <div className="px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer" onClick={() => navigate('/accounty/tax-calendar')}>
                         <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0 mt-0.5">
-                          <Bell className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                          <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Közelgő határidők</p>
