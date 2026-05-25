@@ -19,7 +19,8 @@ import {
   LogOut,
   ChevronDown,
   AlertTriangle,
-  Clock
+  Clock,
+  MailCheck
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -88,6 +89,7 @@ export default function AccountyLayout() {
     { name: 'Hiányzó számlák', path: '/accounty/missing-invoices', icon: FileWarning },
     { name: 'Adó naptár', path: '/accounty/tax-calendar', icon: Calendar },
     { name: 'Riportok', path: '/accounty/reports', icon: BarChart2 },
+    { name: 'Jóváhagyó rendszer', path: '/accounty/approval-queue', icon: MailCheck },
     { name: 'Beállítások', path: '/accounty/settings', icon: Settings },
     { name: 'Segítség', path: '/accounty/help', icon: HelpCircle },
   ];
@@ -178,6 +180,18 @@ export default function AccountyLayout() {
               >
                 <BarChart2 className="h-4 w-4 shrink-0" />
                 <span className="truncate">Riportok</span>
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/accounty/approval-queue" 
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
+                  isActive('/accounty/approval-queue') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                )}
+              >
+                <MailCheck className="h-4 w-4 shrink-0" />
+                <span className="truncate">Jóváhagyó rendszer</span>
               </Link>
             </li>
             <li>

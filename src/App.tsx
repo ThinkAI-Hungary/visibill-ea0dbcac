@@ -61,6 +61,7 @@ const ClientInvoicesPage = lazy(() => import("./pages/Accounty/ClientInvoicesPag
 const ClientPortalPage = lazy(() => import("./pages/Accounty/ClientPortalPage"));
 const SettingsPage = lazy(() => import("./pages/Accounty/SettingsPage"));
 const HelpPage = lazy(() => import("./pages/Accounty/HelpPage"));
+const ApprovalQueuePage = lazy(() => import("./pages/Accounty/ApprovalQueuePage"));
 const VatReturnPage = lazy(() => import("./pages/VatReturnPage"));
 
 const queryClient = new QueryClient({
@@ -254,6 +255,7 @@ const App = () => (
                       <Route path="tax-calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaxCalendarPage /></Suspense>} />
                       <Route path="settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><SettingsPage /></Suspense>} />
                       <Route path="help" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><HelpPage /></Suspense>} />
+                      <Route path="approval-queue" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ApprovalQueuePage /></Suspense>} />
                       <Route path="new-client" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NewClientPage /></Suspense>} />
                     </Route>
 

@@ -33,9 +33,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAccountyMissingItems, useAddMissingItem, useIgnoreMissingItem, useResolveMissingItem } from '@/hooks/useAccountyData';
+import { useAccountyMissingItems, useAddMissingItem, useIgnoreMissingItem, useResolveMissingItem, useAccountyCommunicationPrefs } from '@/hooks/useAccountyData';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import {
+  generateRequestEmail,
+  addToApprovalQueue,
+  type OutgoingMessage,
+  type MissingItemForEmail,
+} from './generateRequestEmail';
 
 // Invoice item type from Supabase
 interface InvoiceItem {
@@ -57,6 +64,7 @@ interface InvoiceItem {
 export default function ClientMissingInvoicesPage() {
   const { id: companyId } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Fetch company name
   const { data: companyData } = useQuery({
@@ -80,6 +88,53 @@ export default function ClientMissingInvoicesPage() {
   const addMissingItem = useAddMissingItem();
   const ignoreMissingItem = useIgnoreMissingItem();
   const resolveMissingItem = useResolveMissingItem();
+
+  // Communication preferences for contact email
+  const { data: commPrefs } = useAccountyCommunicationPrefs(companyId || '');
+
+  // ── Handler: send request to approval queue ──
+  const handleSendToApprovalQueue = (items: InvoiceItem[]) => {
+    if (!companyId || items.length === 0) return;
+
+    const contactEmail = commPrefs?.contactEmail || 'nincs-megadva@example.com';
+    const missingItemsForEmail: MissingItemForEmail[] = items.map(item => ({
+      title: item.vendor + (item.subtext ? ` – ${item.subtext}` : ''),
+      category: item.category,
+      deadline: item.itemDate ? new Date(item.itemDate).toLocaleDateString('hu-HU') : undefined,
+    }));
+
+    const portalLink = `${window.location.origin}/portal/demo-token-${Date.now()}`;
+    const generated = generateRequestEmail({
+      companyName: clientName,
+      missingItems: missingItemsForEmail,
+      portalLink,
+      senderName: 'ThinkAI',
+    });
+
+    const message: OutgoingMessage = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      companyId,
+      companyName: clientName,
+      contactEmail,
+      channel: 'email',
+      category: items.some(i => i.priority === 'Sürgős') ? 'urgent' : 'normal',
+      subject: generated.subject,
+      originalContext: items.map(i => `${i.vendor} – ${i.subtext}`).join(', '),
+      aiGeneratedBody: generated.body,
+      htmlPreview: generated.htmlPreview,
+      portalLink,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      missingItemIds: items.map(i => i.id),
+    };
+
+    addToApprovalQueue(message);
+    toast({
+      title: '📬 Bekérés a jóváhagyó sorba került',
+      description: `${items.length} dokumentum – ${clientName}`,
+    });
+    navigate('/accounty/approval-queue');
+  };
 
   // Transform Supabase data to invoice format
   const invoices: InvoiceItem[] = useMemo(() => {
@@ -698,7 +753,14 @@ export default function ClientMissingInvoicesPage() {
             {selectedIds.length} kijelölve
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-card/80 dark:hover:bg-primary/90 transition-colors text-sm font-medium shadow-soft">
+            <button 
+              onClick={() => {
+                const selectedItems = invoices.filter(inv => selectedIds.includes(inv.id));
+                handleSendToApprovalQueue(selectedItems);
+                setSelectedIds([]);
+              }}
+              className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-card/80 dark:hover:bg-primary/90 transition-colors text-sm font-medium shadow-soft"
+            >
               <Send className="w-4 h-4" />
               Felszólítás küldése
             </button>
@@ -823,7 +885,12 @@ export default function ClientMissingInvoicesPage() {
                   </button>
                   <button 
                     className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors shadow-soft"
-                    onClick={() => setSelectedInvoiceForDetails(null)}
+                    onClick={() => {
+                      if (selectedInvoiceForDetails) {
+                        handleSendToApprovalQueue([selectedInvoiceForDetails]);
+                      }
+                      setSelectedInvoiceForDetails(null);
+                    }}
                   >
                     <Mail className="w-4 h-4" />
                     Bekérés küldése
