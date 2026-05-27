@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import {
   Mail,
@@ -90,6 +91,8 @@ export default function ApprovalQueuePage() {
   const [selectedMessage, setSelectedMessage] = useState<OutgoingMessage | null>(null);
   const [editedBody, setEditedBody] = useState('');
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [editedRecipient, setEditedRecipient] = useState('');
 
   // State trigger for re-renders
   const [refreshKey, setRefreshKey] = useState(0);
@@ -129,20 +132,61 @@ export default function ApprovalQueuePage() {
   const handleOpenApproval = (message: OutgoingMessage) => {
     setSelectedMessage(message);
     setEditedBody(message.aiGeneratedBody);
+    setEditedRecipient(message.contactEmail);
     setIsApprovalModalOpen(true);
   };
 
-  const handleApprove = () => {
+  const sendViaEdgeFunction = async (message: OutgoingMessage, bodyOverride?: string, emailOverride?: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.functions.invoke('send-accounty-email', {
+        body: {
+          to: emailOverride || message.contactEmail,
+          subject: message.subject,
+          htmlBody: message.htmlPreview,
+          textBody: bodyOverride || message.aiGeneratedBody,
+          companyName: message.companyName,
+          companyId: message.companyId,
+          category: message.category,
+          messageId: message.id,
+          portalLink: message.portalLink,
+          missingItemIds: message.missingItemIds,
+        },
+      });
+      if (error) throw error;
+      return true;
+    } catch (err: any) {
+      console.error('[accounty-email] Send error:', err);
+      return false;
+    }
+  };
+
+  const handleApprove = async () => {
     if (!selectedMessage) return;
-    updateMessageBody(selectedMessage.id, editedBody);
-    updateMessageStatus(selectedMessage.id, 'approved');
-    setIsApprovalModalOpen(false);
-    setSelectedMessage(null);
-    refresh();
-    toast({
-      title: '✅ Üzenet jóváhagyva',
-      description: `${selectedMessage.companyName} – Az üzenet a kimenő sorba került.`,
-    });
+    setIsSending(true);
+    try {
+      updateMessageBody(selectedMessage.id, editedBody);
+      const recipientEmail = editedRecipient.trim() || selectedMessage.contactEmail;
+      const success = await sendViaEdgeFunction(selectedMessage, editedBody, recipientEmail);
+      if (success) {
+        updateMessageStatus(selectedMessage.id, 'sent');
+        toast({
+          title: '✅ Üzenet elküldve',
+          description: `${selectedMessage.companyName} – Az email sikeresen elküldve a(z) ${recipientEmail} címre.`,
+        });
+      } else {
+        updateMessageStatus(selectedMessage.id, 'approved');
+        toast({
+          title: '⚠️ Jóváhagyva, de küldési hiba',
+          description: `${selectedMessage.companyName} – Az email jóváhagyásra került, de a küldés sikertelen volt. Később újrapróbálható.`,
+          variant: 'destructive',
+        });
+      }
+      setIsApprovalModalOpen(false);
+      setSelectedMessage(null);
+      refresh();
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleReject = () => {
@@ -157,20 +201,41 @@ export default function ApprovalQueuePage() {
     });
   };
 
-  const handleBulkApprove = () => {
+  const handleBulkApprove = async () => {
+    setIsSending(true);
     const queue = getApprovalQueue();
-    const updated = queue.map((m) =>
-      selectedIds.has(m.id)
-        ? { ...m, status: 'approved' as const, approvedAt: new Date().toISOString() }
-        : m
-    );
-    saveApprovalQueue(updated);
-    setSelectedIds(new Set());
-    refresh();
-    toast({
-      title: '✅ Tömeges jóváhagyás',
-      description: `${selectedIds.size} üzenet jóváhagyva.`,
-    });
+    const targetMessages = queue.filter((m) => selectedIds.has(m.id));
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      for (const message of targetMessages) {
+        const success = await sendViaEdgeFunction(message);
+        if (success) {
+          updateMessageStatus(message.id, 'sent');
+          successCount++;
+        } else {
+          updateMessageStatus(message.id, 'approved');
+          errorCount++;
+        }
+      }
+      setSelectedIds(new Set());
+      refresh();
+      if (successCount > 0) {
+        toast({
+          title: `✅ ${successCount} üzenet sikeresen elküldve`,
+          description: errorCount > 0 ? `${errorCount} küldés sikertelen.` : undefined,
+        });
+      }
+      if (errorCount > 0 && successCount === 0) {
+        toast({
+          title: `❌ ${errorCount} küldés sikertelen`,
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleBulkReject = () => {
@@ -366,9 +431,7 @@ export default function ApprovalQueuePage() {
                     ? 'border-primary ring-2 ring-primary/20'
                     : 'border-border hover:border-slate-300 dark:hover:border-slate-600'
                 )}
-                onClick={() => {
-                  if (activeTab === 'pending') handleOpenApproval(message);
-                }}
+                onClick={() => handleOpenApproval(message)}
               >
                 {/* Top row */}
                 <div className="p-4 pb-3">
@@ -481,9 +544,7 @@ export default function ApprovalQueuePage() {
                         'hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors cursor-pointer',
                         isSelected && 'bg-slate-50 dark:bg-slate-800/30'
                       )}
-                      onClick={() => {
-                        if (activeTab === 'pending') handleOpenApproval(message);
-                      }}
+                      onClick={() => handleOpenApproval(message)}
                     >
                       {activeTab === 'pending' && (
                         <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
@@ -554,10 +615,14 @@ export default function ApprovalQueuePage() {
           <div className="flex items-center gap-3">
             <button
               onClick={handleBulkApprove}
-              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium shadow-soft transition-colors"
+              disabled={isSending}
+              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-medium shadow-soft transition-colors"
             >
-              <CheckCircle2 className="w-4 h-4" />
-              Jóváhagyás
+              {isSending ? (
+                <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Küldés...</>
+              ) : (
+                <><CheckCircle2 className="w-4 h-4" /> Jóváhagyás és Küldés</>
+              )}
             </button>
             <button
               onClick={handleBulkReject}
@@ -591,10 +656,30 @@ export default function ApprovalQueuePage() {
                     {selectedMessage.originalContext}
                   </p>
                   <div className="flex items-center gap-4 mt-3 text-xs text-slate-500 dark:text-slate-400">
-                    <span>📧 {selectedMessage.contactEmail}</span>
                     <span>🏢 {selectedMessage.companyName}</span>
                   </div>
                 </div>
+
+                {/* Editable Recipient */}
+                {selectedMessage.status === 'pending' && (
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                      Címzett email:
+                    </p>
+                    <input
+                      type="email"
+                      value={editedRecipient}
+                      onChange={(e) => setEditedRecipient(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-card border border-border rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      placeholder="email@example.com"
+                    />
+                    {editedRecipient !== selectedMessage.contactEmail && (
+                      <p className="text-[11px] text-amber-500 mt-1.5 flex items-center gap-1">
+                        ⚠️ Módosított címzett (eredeti: {selectedMessage.contactEmail})
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* AI Generated Body */}
                 <div>
@@ -643,10 +728,14 @@ export default function ApprovalQueuePage() {
                   </button>
                   <button
                     onClick={handleApprove}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-soft"
+                    disabled={isSending}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-colors shadow-soft"
                   >
-                    <AlertTriangle className="w-4 h-4" />
-                    Jóváhagyás és Küldés
+                    {isSending ? (
+                      <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Küldés...</>
+                    ) : (
+                      <><Send className="w-4 h-4" /> Jóváhagyás és Küldés</>
+                    )}
                   </button>
                 </div>
               ) : (

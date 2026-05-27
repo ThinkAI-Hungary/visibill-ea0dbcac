@@ -639,12 +639,35 @@ export default function ClientDetailsPage() {
                                         </button>
                                       )}
                                       <button
-                                        onClick={(e) => {
+                                        onClick={async (e) => {
                                           e.stopPropagation();
                                           // Build approval queue message from this single item
                                           if (!id) return;
                                           const contactEmail = notifPrefs.contactEmail || 'nincs-megadva@example.com';
-                                          const portalLink = `${window.location.origin}/portal/demo-token-${Date.now()}`;
+
+                                          // Generate real portal token
+                                          let portalLink = `${window.location.origin}/portal/demo-fallback`;
+                                          try {
+                                            const { data: { user } } = await supabase.auth.getUser();
+                                            const token = crypto.randomUUID();
+                                            const expiresAt = new Date();
+                                            expiresAt.setDate(expiresAt.getDate() + 30);
+                                            const { error: tokenError } = await supabase
+                                              .from('accounty_portal_tokens' as any)
+                                              .insert({
+                                                company_id: id,
+                                                token,
+                                                created_by: user?.id,
+                                                expires_at: expiresAt.toISOString(),
+                                                is_active: true,
+                                              });
+                                            if (!tokenError) {
+                                              portalLink = `${window.location.origin}/portal/${token}`;
+                                            }
+                                          } catch (err) {
+                                            console.error('Portal token creation failed:', err);
+                                          }
+
                                           const missingItemForEmail: MissingItemForEmail = {
                                             title: item.title + (item.subtitle ? ` – ${item.subtitle}` : ''),
                                             category: item.category,

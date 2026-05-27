@@ -93,7 +93,7 @@ export default function ClientMissingInvoicesPage() {
   const { data: commPrefs } = useAccountyCommunicationPrefs(companyId || '');
 
   // ── Handler: send request to approval queue ──
-  const handleSendToApprovalQueue = (items: InvoiceItem[]) => {
+  const handleSendToApprovalQueue = async (items: InvoiceItem[]) => {
     if (!companyId || items.length === 0) return;
 
     const contactEmail = commPrefs?.contactEmail || 'nincs-megadva@example.com';
@@ -103,7 +103,33 @@ export default function ClientMissingInvoicesPage() {
       deadline: item.itemDate ? new Date(item.itemDate).toLocaleDateString('hu-HU') : undefined,
     }));
 
-    const portalLink = `${window.location.origin}/portal/demo-token-${Date.now()}`;
+    // Generate real portal token
+    let portalLink = `${window.location.origin}/portal/demo-fallback`;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const token = crypto.randomUUID();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30); // 30 day expiry
+
+      const { error: tokenError } = await supabase
+        .from('accounty_portal_tokens' as any)
+        .insert({
+          company_id: companyId,
+          token,
+          created_by: user?.id,
+          expires_at: expiresAt.toISOString(),
+          is_active: true,
+        });
+
+      if (!tokenError) {
+        portalLink = `${window.location.origin}/portal/${token}`;
+      } else {
+        console.error('Portal token creation error:', tokenError);
+      }
+    } catch (err) {
+      console.error('Portal token creation failed:', err);
+    }
+
     const generated = generateRequestEmail({
       companyName: clientName,
       missingItems: missingItemsForEmail,
