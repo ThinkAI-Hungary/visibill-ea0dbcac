@@ -823,11 +823,13 @@ export const TransactionDetailsDialog = ({
                     {filteredInvoices.map((invoice) => {
                       const isSelected = selectedInvoiceId === invoice.id;
                       const invoiceAmt = invoice.brutto_vegosszeg || 0;
-                      const diff = invoiceAmt - transactionAmount;
+                      const invoiceHuf = toHuf(Math.abs(invoiceAmt), invoice.penznem);
+                      const txAbs = Math.abs(transactionAmount);
+                      const diff = invoiceHuf - txAbs;
                       const absDiff = Math.abs(diff);
                       const isExact = absDiff < 1;
-                      const isNear = !isExact && absDiff < Math.abs(transactionAmount) * 0.05;
-                      const pctDiff = transactionAmount !== 0 ? (absDiff / Math.abs(transactionAmount) * 100) : 0;
+                      const isNear = !isExact && txAbs > 0 && absDiff < txAbs * 0.05;
+                      const pctDiff = txAbs > 0 ? (absDiff / txAbs * 100) : 0;
 
                       const partnerName = invoice.elado_nev?.toLowerCase() || '';
                       const txDesc = transaction.description?.toLowerCase() || '';
