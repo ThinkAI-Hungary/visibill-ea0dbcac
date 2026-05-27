@@ -270,8 +270,8 @@ export const TransactionDetailsDialog = ({
           .eq('matched_invoice_id', inv.id)
           .eq('is_verified', true);
 
-        const alreadyPaid = matchedTx?.reduce((sum, t) => sum + Math.abs(t.amount), 0) || 0;
-        const invoiceAmount = Math.abs(inv.brutto_vegosszeg || 0);
+        // Skip invoices that are already matched to a verified transaction
+        if (matchedTx && matchedTx.length > 0) continue;
 
         combined.push({
           id: inv.id,
@@ -280,8 +280,8 @@ export const TransactionDetailsDialog = ({
           elado_nev: inv.elado_nev,
           penznem: inv.penznem,
           kibocsatas_datuma: inv.kibocsatas_datuma,
-          already_paid: alreadyPaid,
-          remaining: invoiceAmount - alreadyPaid,
+          already_paid: 0,
+          remaining: Math.abs(inv.brutto_vegosszeg || 0),
         });
       }
 
@@ -298,12 +298,7 @@ export const TransactionDetailsDialog = ({
         });
       }
 
-      // 4. Sort: exact matches first, then by amount proximity (raw values, no abs)
-      combined.sort((a, b) => {
-        const diffA = Math.abs((a.brutto_vegosszeg || 0) - txAmount);
-        const diffB = Math.abs((b.brutto_vegosszeg || 0) - txAmount);
-        return diffA - diffB;
-      });
+      // (sorting is handled in filteredInvoices useMemo)
 
       setAvailableInvoices(combined);
     } catch (error) {
@@ -406,7 +401,7 @@ export const TransactionDetailsDialog = ({
 
   const filteredInvoices = useMemo(() => {
     const txAmt = Math.abs(transaction?.amount || 0);
-    let list = availableInvoices;
+    let list = [...availableInvoices];
 
     // When no search: only show invoices within tolerance of transaction amount
     if (!search) {
@@ -420,16 +415,40 @@ export const TransactionDetailsDialog = ({
           return diff / txAmt <= tolerance;
         });
       }
-      return list;
+    } else {
+      // When searching: match text, no amount filter
+      const searchLower = search.toLowerCase();
+      // Normalize search input: accept both '.' and ',' as decimal separator
+      const searchNormalized = search.replace(',', '.');
+
+      list = availableInvoices.filter(inv => {
+        // Text match on invoice number or vendor name
+        if (inv.bizonylatsorszam.toLowerCase().includes(searchLower)) return true;
+        if (inv.elado_nev?.toLowerCase().includes(searchLower)) return true;
+
+        // Amount match: compare as formatted string and as number
+        if (inv.brutto_vegosszeg != null) {
+          const amt = inv.brutto_vegosszeg;
+          const amtStr = amt.toString();
+          const amtFixed2 = amt.toFixed(2);
+          const amtInt = Math.round(amt).toString();
+          if (amtStr.includes(searchNormalized) || amtFixed2.includes(searchNormalized) || amtInt.includes(searchNormalized)) return true;
+          if (amtStr.includes(search) || amtFixed2.includes(search)) return true;
+        }
+        return false;
+      });
     }
 
-    // When searching: match text, no amount filter
-    const searchLower = search.toLowerCase();
-    return availableInvoices.filter(inv =>
-      inv.bizonylatsorszam.toLowerCase().includes(searchLower) ||
-      inv.elado_nev?.toLowerCase().includes(searchLower) ||
-      inv.brutto_vegosszeg?.toString().includes(search)
-    );
+    // Always sort by proximity to transaction amount (FX-converted to HUF)
+    list.sort((a, b) => {
+      const aHuf = Math.abs(toHuf(a.brutto_vegosszeg || 0, a.penznem));
+      const bHuf = Math.abs(toHuf(b.brutto_vegosszeg || 0, b.penznem));
+      const diffA = Math.abs(aHuf - txAmt);
+      const diffB = Math.abs(bHuf - txAmt);
+      return diffA - diffB;
+    });
+
+    return list;
   }, [availableInvoices, search, transaction?.amount, transaction?.currency]);
 
   const transactionAmount = transaction?.amount || 0;
