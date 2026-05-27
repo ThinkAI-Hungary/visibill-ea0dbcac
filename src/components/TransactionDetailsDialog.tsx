@@ -879,7 +879,7 @@ export const TransactionDetailsDialog = ({
                                 </Badge>
                               ) : (
                                 <span className="text-[10px] text-muted-foreground/60 mt-0.5 block">
-                                  {diff > 0 ? '+' : ''}{formatCurrency(diff, invoice.penznem || 'HUF')}
+                                  {diff > 0 ? '+' : ''}{formatCurrency(diff, 'HUF')}
                                 </span>
                               )}
                             </div>
