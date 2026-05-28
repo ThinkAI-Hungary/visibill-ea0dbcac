@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Search, Check, AlertTriangle, FileText, CheckCircle2, HelpCircle, Link2, Eye, Wallet, Package } from 'lucide-react';
+import { Search, Check, AlertTriangle, FileText, CheckCircle2, HelpCircle, Link2, Eye, Wallet, Package, Ban, UploadCloud, Undo2 } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { format, subDays, addDays } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
@@ -391,6 +391,85 @@ export const TransactionDetailsDialog = ({
     }
   };
 
+  const handleMarkNoInvoice = async () => {
+    if (!transaction) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({
+          match_type: 'no_invoice',
+          matched_invoice_id: null,
+          is_verified: false,
+        })
+        .eq('id', transaction.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Tranzakció megjelölve: Nincs hozzá számla' });
+      onUpdate();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error marking no invoice:', error);
+      toast({ title: 'Hiba a jelölés mentésekor', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleMarkInvoiceMissing = async () => {
+    if (!transaction) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({
+          match_type: 'invoice_missing',
+          matched_invoice_id: null,
+          is_verified: false,
+        })
+        .eq('id', transaction.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Tranzakció megjelölve: Számla nincs feltöltve' });
+      onUpdate();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error marking invoice missing:', error);
+      toast({ title: 'Hiba a jelölés mentésekor', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRevertStatus = async () => {
+    if (!transaction) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({
+          match_type: null,
+        })
+        .eq('id', transaction.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Státusz visszavonva' });
+      onUpdate();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error reverting status:', error);
+      toast({ title: 'Hiba a visszavonás során', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Approximate exchange rates for frontend filtering only
   const approxRates: Record<string, number> = { EUR: 395, USD: 370, GBP: 470, CHF: 420 };
   const toHuf = (amount: number, currency?: string) => {
@@ -494,6 +573,18 @@ export const TransactionDetailsDialog = ({
                   Párosítatlan
                 </Badge>
               )}
+              {matchStatus === 'no_invoice' && (
+                <Badge className="gap-1 text-[10px] h-5 bg-purple-500/15 text-purple-600 border-purple-500/30 hover:bg-purple-500/15">
+                  <Ban className="h-2.5 w-2.5" />
+                  Nincs hozzá számla
+                </Badge>
+              )}
+              {matchStatus === 'invoice_missing' && (
+                <Badge className="gap-1 text-[10px] h-5 bg-sky-500/15 text-sky-600 border-sky-500/30 hover:bg-sky-500/15">
+                  <UploadCloud className="h-2.5 w-2.5" />
+                  Számla nincs feltöltve
+                </Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3 pt-0">
@@ -528,6 +619,27 @@ export const TransactionDetailsDialog = ({
             </div>
           </CardContent>
         </Card>
+
+        {/* Undo status button for no_invoice / invoice_missing */}
+        {(matchStatus === 'no_invoice' || matchStatus === 'invoice_missing') && (
+          <div className="flex items-center justify-between px-1">
+            <p className="text-[11px] text-muted-foreground">
+              {matchStatus === 'no_invoice'
+                ? 'Megjelölve: nincs hozzá számla — könyvelő feladata'
+                : 'Megjelölve: számla nincs feltöltve — fel kell tölteni'}
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={saving}
+              onClick={handleRevertStatus}
+              className="text-xs h-7 gap-1 text-muted-foreground hover:text-foreground"
+            >
+              <Undo2 className="h-3 w-3" />
+              Visszavonás
+            </Button>
+          </div>
+        )}
 
         {/* Matched Courier Reports */}
         {matchedCourierReports.length > 0 && (
@@ -911,16 +1023,48 @@ export const TransactionDetailsDialog = ({
               </div>
             </div>
 
-            <DialogFooter className="pt-2">
-              <Button
-                size="sm"
-                disabled={!selectedInvoiceId || saving}
-                onClick={handleMatch}
-                className="text-xs h-8"
-              >
-                <Check className="h-3 w-3 mr-1" />
-                {saving ? 'Mentés...' : 'Párosítás mentése'}
-              </Button>
+            <DialogFooter className="pt-2 flex-col gap-2">
+              {/* Status marking buttons */}
+              <div className="flex items-center gap-2 w-full">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={saving}
+                  onClick={handleMarkNoInvoice}
+                  className={cn(
+                    "text-xs h-8 flex-1 border-purple-500/30 hover:bg-purple-500/10",
+                    matchStatus === 'no_invoice' && "bg-purple-500/15 border-purple-500/50"
+                  )}
+                >
+                  <Ban className="h-3 w-3 mr-1 text-purple-500" />
+                  Nincs hozzá számla
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={saving}
+                  onClick={handleMarkInvoiceMissing}
+                  className={cn(
+                    "text-xs h-8 flex-1 border-sky-500/30 hover:bg-sky-500/10",
+                    matchStatus === 'invoice_missing' && "bg-sky-500/15 border-sky-500/50"
+                  )}
+                >
+                  <UploadCloud className="h-3 w-3 mr-1 text-sky-500" />
+                  Számla nincs feltöltve
+                </Button>
+              </div>
+              {/* Match action */}
+              <div className="flex justify-end w-full">
+                <Button
+                  size="sm"
+                  disabled={!selectedInvoiceId || saving}
+                  onClick={handleMatch}
+                  className="text-xs h-8"
+                >
+                  <Check className="h-3 w-3 mr-1" />
+                  {saving ? 'Mentés...' : 'Párosítás mentése'}
+                </Button>
+              </div>
             </DialogFooter>
           </>
         )}

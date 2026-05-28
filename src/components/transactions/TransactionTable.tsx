@@ -3,7 +3,7 @@ import { TableBody, TableRow, TableCell, TableHead, TableHeader } from '@/compon
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, Eye, Sparkles, Settings } from 'lucide-react';
+import { CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, Eye, Sparkles, Settings, Ban, UploadCloud } from 'lucide-react';
 import { format } from 'date-fns';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
 import { TransactionReasonCell } from '@/components/TransactionReasonCell';
@@ -23,6 +23,12 @@ const getRowBackgroundClass = (transaction: Transaction): string => {
   }
   if (status === 'suggested') {
     return 'bg-amber-100/60 dark:bg-amber-950/40 border-l-2 border-l-amber-500/60 border-b border-border/40';
+  }
+  if (status === 'no_invoice') {
+    return 'bg-purple-100/60 dark:bg-purple-950/40 border-l-2 border-l-purple-500/60 border-b border-border/40';
+  }
+  if (status === 'invoice_missing') {
+    return 'bg-sky-100/60 dark:bg-sky-950/40 border-l-2 border-l-sky-500/60 border-b border-border/40';
   }
   return 'bg-rose-100/60 dark:bg-rose-950/30 border-l-2 border-l-rose-400/50 border-b border-border/40';
 };
@@ -123,6 +129,8 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
                 {matchStatus === 'matched' && <><CheckCircle2 className="h-3.5 w-3.5 text-success" /><span className="text-[10px] font-medium text-emerald-600">Párosított</span></>}
                 {matchStatus === 'suggested' && <><AlertCircle className="h-3.5 w-3.5 text-warning" /><span className="text-[10px] font-medium text-amber-600">Javasolt</span></>}
                 {matchStatus === 'unmatched' && <><HelpCircle className="h-3.5 w-3.5 text-destructive" /><span className="text-[10px] font-medium text-rose-500">Nincs</span></>}
+                {matchStatus === 'no_invoice' && <><Ban className="h-3.5 w-3.5 text-purple-500" /><span className="text-[10px] font-medium text-purple-600 dark:text-purple-400">Nincs számla</span></>}
+                {matchStatus === 'invoice_missing' && <><UploadCloud className="h-3.5 w-3.5 text-sky-500" /><span className="text-[10px] font-medium text-sky-600 dark:text-sky-400">Feltöltendő</span></>}
                 {transaction.match_type === 'auto' && <Sparkles className="h-3 w-3 text-success" />}
               </div>
             </TooltipTrigger>
@@ -131,6 +139,8 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
               {matchStatus === 'matched' && transaction.match_type !== 'auto' && 'Párosított és jóváhagyott'}
               {matchStatus === 'suggested' && `Javasolt párosítás ${transaction.confidence_score ? `(${Math.round(transaction.confidence_score * 100)}%)` : ''}`}
               {matchStatus === 'unmatched' && 'Nincs párosítva'}
+              {matchStatus === 'no_invoice' && 'Nincs hozzá számla — könyvelő feladata'}
+              {matchStatus === 'invoice_missing' && 'Számla nincs feltöltve — fel kell tölteni'}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

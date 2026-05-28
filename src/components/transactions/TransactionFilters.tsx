@@ -64,6 +64,8 @@ const TransactionFilters = React.memo(function TransactionFilters({
           <SelectItem value="matched">Párosított</SelectItem>
           <SelectItem value="suggested">Javasolt</SelectItem>
           <SelectItem value="unmatched">Párosítatlan</SelectItem>
+          <SelectItem value="no_invoice">Nincs hozzá számla</SelectItem>
+          <SelectItem value="invoice_missing">Számla nincs feltöltve</SelectItem>
         </SelectContent>
       </Select>
 
