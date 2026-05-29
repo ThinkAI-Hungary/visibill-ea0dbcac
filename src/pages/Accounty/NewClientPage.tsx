@@ -26,6 +26,9 @@ export default function NewClientPage() {
   const [useVisibillAccount, setUseVisibillAccount] = useState(false);
   const [selectedChannels, setSelectedChannels] = useState<string[]>(['email']);
   const [selectedDocs, setSelectedDocs] = useState<string[]>(['szamlak']);
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
 
   const [isUploadingDocs, setIsUploadingDocs] = useState(false);
   const [docsUploaded, setDocsUploaded] = useState(false);
@@ -124,6 +127,21 @@ export default function NewClientPage() {
             } as any, { onConflict: 'accountant_user_id,company_id' });
 
           if (assignErr) throw assignErr;
+
+          // 3. Save communication preferences
+          await supabase
+            .from('accounty_communication_preferences' as any)
+            .upsert({
+              company_id: companyId,
+              contact_name: contactName || null,
+              contact_email: contactEmail || null,
+              contact_phone: contactPhone || null,
+              channel_email: selectedChannels.includes('email'),
+              channel_viber: selectedChannels.includes('viber'),
+              channel_sms: selectedChannels.includes('telegram'),
+              channel_phone: false,
+              auto_reminder: true,
+            } as any, { onConflict: 'company_id' });
 
           // Invalidate relevant queries
           queryClient.invalidateQueries({ queryKey: ['accounty-clients'] });
@@ -281,11 +299,11 @@ export default function NewClientPage() {
                     </div>
                     <div className="space-y-2 col-span-2">
                       <Label className="text-xs text-slate-700 dark:text-slate-300">Kapcsolattartó neve <span className="text-red-500">*</span></Label>
-                      <Input placeholder="" required className="bg-card border-border" />
+                      <Input placeholder="" required className="bg-card border-border" value={contactName} onChange={(e) => setContactName(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs text-slate-700 dark:text-slate-300">E-mail cím <span className="text-red-500">*</span></Label>
-                      <Input type="email" placeholder="" required className="bg-card border-border" />
+                      <Input type="email" placeholder="" required className="bg-card border-border" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs text-slate-700 dark:text-slate-300">Telefonszám</Label>
@@ -294,7 +312,9 @@ export default function NewClientPage() {
                         pattern="^[\+]?[0-9\s\-\(\)]+$" 
                         title="Kérjük, érvényes telefonszámot adjon meg (csak számok, szóköz, +, - vagy zárójel)!"
                         placeholder="" 
-                        className="bg-card border-border" 
+                        className="bg-card border-border"
+                        value={contactPhone}
+                        onChange={(e) => setContactPhone(e.target.value)}
                       />
                     </div>
                   </div>

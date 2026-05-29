@@ -54,11 +54,21 @@ export default function PayrollCyclePage() {
   const [emailSent, setEmailSent] = useState(false);
 
   // Attendance data per employee
-  const [attendanceData, setAttendanceData] = useState<Record<string, { workDays: number; overtime: number; sickDays: number; leaveDays: number }>>({}); 
+  const [attendanceData, setAttendanceData] = useState<Record<string, { workDays: number; overtime: number; sickDays: number; leaveDays: number }>>({});
+
+  // CSV validation results
+  interface CsvValidationResult {
+    matched: number;
+    total: number;
+    fileName: string;
+    unmatchedNames: string[];
+    warnings: { row: number; name: string; message: string }[];
+  }
+  const [csvValidation, setCsvValidation] = useState<CsvValidationResult | null>(null);
 
   const getAttendance = (empId: string) => attendanceData[empId] || { workDays: 22, overtime: 0, sickDays: 0, leaveDays: 0 };
 
-  // CSV parser
+  // CSV parser with validation
   const handleCsvUpload = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -67,30 +77,73 @@ export default function PayrollCyclePage() {
       const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
       const newData: typeof attendanceData = {};
       let matched = 0;
+      const unmatchedNames: string[] = [];
+      const warnings: CsvValidationResult['warnings'] = [];
+
       // Skip header if first line looks like header
       const startIdx = lines[0]?.match(/n[eé]v|munkanap/i) ? 1 : 0;
+      const dataRowCount = lines.length - startIdx;
+
       for (let i = startIdx; i < lines.length; i++) {
         const cols = lines[i].split(/[;,\t]/).map(c => c.trim());
-        if (cols.length < 2) continue;
+        if (cols.length < 2) {
+          warnings.push({ row: i + 1, name: cols[0] || '?', message: 'Túl kevés oszlop (minimum 2 szükséges)' });
+          continue;
+        }
         const name = cols[0].toLowerCase();
+
+        // Try to match employee
         const emp = activeEmployees.find(emp =>
           `${emp.last_name} ${emp.first_name}`.toLowerCase() === name ||
           `${emp.first_name} ${emp.last_name}`.toLowerCase() === name
         );
+
         if (emp) {
+          const workDays = parseInt(cols[1]);
+          const overtime = parseInt(cols[2]) || 0;
+          const sickDays = parseInt(cols[3]) || 0;
+          const leaveDays = parseInt(cols[4]) || 0;
+
+          // Validate values
+          if (isNaN(workDays)) {
+            warnings.push({ row: i + 1, name: cols[0], message: `Érvénytelen munkanapok: "${cols[1]}"` });
+          }
+          if (workDays > 31) {
+            warnings.push({ row: i + 1, name: cols[0], message: `Munkanapok > 31: ${workDays}` });
+          }
+          if (overtime > 200) {
+            warnings.push({ row: i + 1, name: cols[0], message: `Rendkívül magas túlóra: ${overtime} óra` });
+          }
+          if (sickDays + leaveDays > workDays && workDays > 0) {
+            warnings.push({ row: i + 1, name: cols[0], message: `Táppénz + szabadság (${sickDays + leaveDays}) > munkanapok (${workDays})` });
+          }
+
           newData[emp.id] = {
-            workDays: parseInt(cols[1]) || 22,
-            overtime: parseInt(cols[2]) || 0,
-            sickDays: parseInt(cols[3]) || 0,
-            leaveDays: parseInt(cols[4]) || 0,
+            workDays: isNaN(workDays) ? 22 : workDays,
+            overtime,
+            sickDays,
+            leaveDays,
           };
           matched++;
+        } else {
+          unmatchedNames.push(cols[0]);
         }
       }
+
       setAttendanceData(prev => ({ ...prev, ...newData }));
+      setCsvValidation({
+        matched,
+        total: dataRowCount,
+        fileName: file.name,
+        unmatchedNames,
+        warnings,
+      });
+
+
       toast({
-        title: 'CSV beolvasva',
-        description: `${file.name} — ${matched}/${activeEmployees.length} foglalkoztatott párosítva.`,
+        title: unmatchedNames.length === 0 && warnings.length === 0 ? 'CSV sikeresen beolvasva ✓' : 'CSV beolvasva — figyelmeztetésekkel',
+        description: `${file.name} — ${matched}/${dataRowCount} foglalkoztatott párosítva.${unmatchedNames.length > 0 ? ` ${unmatchedNames.length} nem párosított.` : ''}`,
+        variant: unmatchedNames.length > 0 ? 'destructive' : undefined,
       });
     };
     reader.readAsText(file);
@@ -518,6 +571,73 @@ export default function PayrollCyclePage() {
                   </span>
                 )}
               </div>
+
+              {/* CSV Validation Feedback */}
+              {csvValidation && (
+                <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                  {/* Summary bar */}
+                  <div className={cn(
+                    'flex items-center justify-between px-4 py-3 rounded-lg border text-sm',
+                    csvValidation.unmatchedNames.length === 0 && csvValidation.warnings.length === 0
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                      : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                  )}>
+                    <div className="flex items-center gap-2">
+                      {csvValidation.unmatchedNames.length === 0 && csvValidation.warnings.length === 0 ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      )}
+                      <span className="font-medium text-slate-900 dark:text-slate-100">
+                        {csvValidation.fileName}: {csvValidation.matched}/{csvValidation.total} párosítva
+                      </span>
+                    </div>
+                    <button onClick={() => setCsvValidation(null)} className="text-slate-400 hover:text-slate-600 text-xs font-medium">
+                      Bezárás
+                    </button>
+                  </div>
+
+                  {/* Unmatched names */}
+                  {csvValidation.unmatchedNames.length > 0 && (
+                    <div className="px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                      <p className="text-xs font-bold text-red-700 dark:text-red-400 uppercase tracking-wider mb-1.5">
+                        Nem párosított nevek ({csvValidation.unmatchedNames.length})
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {csvValidation.unmatchedNames.map((name, i) => (
+                          <span key={i} className="px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded text-xs font-mono">
+                            {name}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-red-500 dark:text-red-400 mt-2">
+                        Tipp: a CSV-ben a nevek formátuma legyen „Vezetéknév Keresztnév" vagy „Keresztnév Vezetéknév"
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Warnings */}
+                  {csvValidation.warnings.length > 0 && (
+                    <div className="px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                      <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-1.5">
+                        Figyelmeztetések ({csvValidation.warnings.length})
+                      </p>
+                      <div className="space-y-1">
+                        {csvValidation.warnings.slice(0, 10).map((w, i) => (
+                          <div key={i} className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-300">
+                            <span className="font-mono text-[10px] text-amber-500 shrink-0">#{w.row}</span>
+                            <span className="font-medium">{w.name}:</span>
+                            <span>{w.message}</span>
+                          </div>
+                        ))}
+                        {csvValidation.warnings.length > 10 && (
+                          <p className="text-[10px] text-amber-500 mt-1">…és még {csvValidation.warnings.length - 10} figyelmeztetés</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full">
