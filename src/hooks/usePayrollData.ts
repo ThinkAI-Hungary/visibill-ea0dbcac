@@ -492,6 +492,70 @@ export function usePayrollCalculations(cycleId: string) {
 // ADÓELŐLEG-NYILATKOZATOK
 // ═══════════════════════════════════════════════════════════════
 
+export interface SalaryHistoryEntry {
+  id: string;
+  cycle_id: string;
+  gross_salary: number;
+  net_salary: number;
+  szja_amount: number;
+  tb_amount: number;
+  szocho_amount: number;
+  total_deductions: number;
+  created_at: string;
+  cycle_year: number;
+  cycle_month: number;
+  cycle_status: string;
+}
+
+/**
+ * Fetch salary history for a specific employment (joins calculations with cycles)
+ */
+export function useEmployeeSalaryHistory(employmentId: string) {
+  return useQuery({
+    queryKey: ['payroll', 'salary-history', employmentId] as const,
+    queryFn: async (): Promise<SalaryHistoryEntry[]> => {
+      const { data, error } = await supabase
+        .from('accounty_payroll_calculations')
+        .select(`
+          id,
+          cycle_id,
+          gross_salary,
+          net_salary,
+          szja_amount,
+          tb_amount,
+          szocho_amount,
+          total_deductions,
+          created_at,
+          accounty_payroll_cycles!inner (
+            year,
+            month,
+            status
+          )
+        `)
+        .eq('employment_id', employmentId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return ((data || []) as any[]).map((row: any) => ({
+        id: row.id,
+        cycle_id: row.cycle_id,
+        gross_salary: row.gross_salary || 0,
+        net_salary: row.net_salary || 0,
+        szja_amount: row.szja_amount || 0,
+        tb_amount: row.tb_amount || 0,
+        szocho_amount: row.szocho_amount || 0,
+        total_deductions: row.total_deductions || 0,
+        created_at: row.created_at,
+        cycle_year: row.accounty_payroll_cycles?.year || 0,
+        cycle_month: row.accounty_payroll_cycles?.month || 0,
+        cycle_status: row.accounty_payroll_cycles?.status || 'unknown',
+      }));
+    },
+    enabled: !!employmentId,
+  });
+}
+
 export function usePayrollDeclarations(employeeId: string) {
   return useQuery({
     queryKey: payrollQueryKeys.declarations(employeeId),
