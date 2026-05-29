@@ -67,7 +67,8 @@ export function ReportFilesDialog({ reportType, open: externalOpen, onOpenChange
         .from('report_uploads')
         .select('id, file_name, created_at, user_id, report_type, upload_status, processing_status, metadata')
         .eq('company_id', companyId!)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false });
 
       if (reportType) {
         query = query.eq('report_type', reportType);

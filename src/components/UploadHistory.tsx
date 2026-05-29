@@ -123,6 +123,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           .lte('created_at', uploadDateTo + 'T23:59:59')
           .neq('status', 'ignored')
           .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
           .limit(50);
 
         const res = await (query as any);
@@ -144,6 +145,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           .lte('created_at', uploadDateTo + 'T23:59:59')
           .neq('processing_status', 'ignored')
           .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
           .limit(50);
 
         if (companyId) {

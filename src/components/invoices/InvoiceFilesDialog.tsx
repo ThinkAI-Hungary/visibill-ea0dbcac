@@ -61,7 +61,8 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
         .from('invoice_uploads')
         .select('id, file_name, created_at, user_id')
         .eq('company_id', companyId!)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false });
       if (uploadError) throw uploadError;
       if (!uploadData || uploadData.length === 0) return [];
 

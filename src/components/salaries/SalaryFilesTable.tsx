@@ -59,7 +59,8 @@ export function SalaryFilesDialog({ open: externalOpen, onOpenChange: externalOn
         .from('salary_files')
         .select('id, file_name, created_at, user_id')
         .eq('company_id', companyId!)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false });
       if (error) throw error;
       return (data || []) as SalaryFileRow[];
     },
