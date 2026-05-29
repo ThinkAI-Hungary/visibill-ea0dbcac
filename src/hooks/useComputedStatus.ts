@@ -29,7 +29,7 @@ export function getPaymentStatusBadge(transactionId: string | null | undefined) 
 
 // ── Transactions ─────────────────────────────────────────────────────
 
-export type MatchStatus = 'matched' | 'suggested' | 'unmatched';
+export type MatchStatus = 'matched' | 'suggested' | 'unmatched' | 'no_invoice' | 'invoice_missing';
 
 interface TransactionLike {
   matched_invoice_id: string | null;
@@ -48,6 +48,10 @@ const CASH_TYPES = [
 
 export function computeMatchStatus(transaction: TransactionLike): MatchStatus {
   const t = transaction.type?.toLowerCase().trim() ?? '';
+
+  // Manual status flags — checked first, these override everything
+  if (transaction.match_type === 'no_invoice') return 'no_invoice';
+  if (transaction.match_type === 'invoice_missing') return 'invoice_missing';
 
   // Special cases always count as matched
   if (

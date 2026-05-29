@@ -3,7 +3,7 @@ import { TableBody, TableRow, TableCell, TableHead, TableHeader } from '@/compon
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, Eye, Sparkles } from 'lucide-react';
+import { CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, Eye, Sparkles, Settings, Ban, UploadCloud } from 'lucide-react';
 import { format } from 'date-fns';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
 import { TransactionReasonCell } from '@/components/TransactionReasonCell';
@@ -23,6 +23,12 @@ const getRowBackgroundClass = (transaction: Transaction): string => {
   }
   if (status === 'suggested') {
     return 'bg-amber-100/60 dark:bg-amber-950/40 border-l-2 border-l-amber-500/60 border-b border-border/40';
+  }
+  if (status === 'no_invoice') {
+    return 'bg-purple-100/60 dark:bg-purple-950/40 border-l-2 border-l-purple-500/60 border-b border-border/40';
+  }
+  if (status === 'invoice_missing') {
+    return 'bg-sky-100/60 dark:bg-sky-950/40 border-l-2 border-l-sky-500/60 border-b border-border/40';
   }
   return 'bg-rose-100/60 dark:bg-rose-950/30 border-l-2 border-l-rose-400/50 border-b border-border/40';
 };
@@ -62,27 +68,27 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
 
   return (
     <TableRow className={cn("h-10", getRowBackgroundClass(transaction))}>
-      <TableCell className="font-medium text-xs">
+      <TableCell className="font-medium text-xs whitespace-nowrap">
         {transaction.transaction_date
           ? format(new Date(transaction.transaction_date), 'yyyy.MM.dd')
           : '-'}
       </TableCell>
-      <TableCell className="max-w-[200px] text-xs">
-        {transaction.description ? (
-          <TooltipProvider delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="block truncate cursor-default">{transaction.description}</span>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-[400px]">
-                <p className="whitespace-pre-wrap text-sm">{transaction.description}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        ) : '-'}
+      <TableCell className="overflow-hidden">
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="block truncate text-xs cursor-default">
+                {transaction.description || '-'}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[500px]">
+              <p className="whitespace-pre-wrap text-sm">{transaction.description}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </TableCell>
       <TableCell className={cn(
-        "text-right font-mono text-xs",
+        "text-right font-mono text-xs whitespace-nowrap",
         transaction.amount >= 0 ? "text-success" : "text-destructive"
       )}>
         <div className="flex flex-col items-end">
@@ -94,7 +100,7 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
           )}
         </div>
       </TableCell>
-      <TableCell className="text-xs">
+      <TableCell className="text-xs whitespace-nowrap">
         {transaction.currency && transaction.currency !== 'HUF' ? (
           <span className="font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded text-[10px]">
             {transaction.currency}
@@ -103,10 +109,10 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
           <span className="text-muted-foreground">{transaction.currency || 'HUF'}</span>
         )}
       </TableCell>
-      <TableCell>
+      <TableCell className="overflow-hidden">
         {transaction.type ? (
           <span className={cn(
-            "text-xs px-2.5 py-0.5 rounded-md inline-flex items-center justify-center text-center min-w-[170px] min-h-[24px] whitespace-nowrap",
+            "text-[11px] px-1.5 py-0.5 rounded-md inline-block truncate max-w-full text-center",
             getTypeBgClass(transaction.type) || "text-muted-foreground"
           )}>
             {transaction.type}
@@ -115,7 +121,7 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
           <span className="text-xs text-muted-foreground">-</span>
         )}
       </TableCell>
-      <TableCell className="text-center">
+      <TableCell className="text-center whitespace-nowrap">
         <TooltipProvider delayDuration={0}>
           <Tooltip>
             <TooltipTrigger>
@@ -123,6 +129,8 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
                 {matchStatus === 'matched' && <><CheckCircle2 className="h-3.5 w-3.5 text-success" /><span className="text-[10px] font-medium text-emerald-600">Párosított</span></>}
                 {matchStatus === 'suggested' && <><AlertCircle className="h-3.5 w-3.5 text-warning" /><span className="text-[10px] font-medium text-amber-600">Javasolt</span></>}
                 {matchStatus === 'unmatched' && <><HelpCircle className="h-3.5 w-3.5 text-destructive" /><span className="text-[10px] font-medium text-rose-500">Nincs</span></>}
+                {matchStatus === 'no_invoice' && <><Ban className="h-3.5 w-3.5 text-purple-500" /><span className="text-[10px] font-medium text-purple-600 dark:text-purple-400">Nincs számla</span></>}
+                {matchStatus === 'invoice_missing' && <><UploadCloud className="h-3.5 w-3.5 text-sky-500" /><span className="text-[10px] font-medium text-sky-600 dark:text-sky-400">Feltöltendő</span></>}
                 {transaction.match_type === 'auto' && <Sparkles className="h-3 w-3 text-success" />}
               </div>
             </TooltipTrigger>
@@ -131,11 +139,13 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
               {matchStatus === 'matched' && transaction.match_type !== 'auto' && 'Párosított és jóváhagyott'}
               {matchStatus === 'suggested' && `Javasolt párosítás ${transaction.confidence_score ? `(${Math.round(transaction.confidence_score * 100)}%)` : ''}`}
               {matchStatus === 'unmatched' && 'Nincs párosítva'}
+              {matchStatus === 'no_invoice' && 'Nincs hozzá számla — könyvelő feladata'}
+              {matchStatus === 'invoice_missing' && 'Számla nincs feltöltve — fel kell tölteni'}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </TableCell>
-      <TableCell>
+      <TableCell className="overflow-hidden">
         <TransactionReasonCell reason={transaction.reason} />
       </TableCell>
       <TableCell className="text-center">
@@ -143,13 +153,12 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="outline"
-                size="sm"
-                className="h-7 px-2 text-xs"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
                 onClick={() => onOpenDetails(transaction)}
               >
-                <Eye className="h-3 w-3 mr-1" />
-                Számlák
+                <Eye className="h-3.5 w-3.5 text-muted-foreground" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Tranzakció és számla részletei</TooltipContent>
@@ -184,34 +193,44 @@ const TransactionTable = React.memo(function TransactionTable({
   const { data: exchangeRates } = useExchangeRates();
 
   return (
-    <div className="rounded-lg border border-border/50 overflow-auto max-h-[calc(100vh-320px)]">
-      <table className="w-full caption-bottom text-sm table-fixed compact-table">
-        <TableHeader className="sticky top-0 z-10">
+    <div className="rounded-lg border border-border/50">
+      <table className="w-full caption-bottom text-sm compact-table" style={{ tableLayout: 'fixed' }}>
+        <colgroup>
+          <col style={{ width: '8%' }} />
+          <col style={{ width: '34%' }} />
+          <col style={{ width: '11%' }} />
+          <col style={{ width: '6%' }} />
+          <col style={{ width: '14%' }} />
+          <col style={{ width: '9%' }} />
+          <col style={{ width: '13%' }} />
+          <col style={{ width: '5%' }} />
+        </colgroup>
+        <TableHeader>
           <TableRow className="bg-muted hover:bg-muted">
             <TableHead
-              className="cursor-pointer hover:bg-muted/50 font-semibold w-[10%]"
+              className="cursor-pointer hover:bg-muted/50 font-semibold"
               onClick={() => onSort('transaction_date')}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 Dátum
-                <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
               </div>
             </TableHead>
-            <TableHead className="font-semibold w-[30%]">Leírás</TableHead>
+            <TableHead className="font-semibold">Leírás</TableHead>
             <TableHead
-              className="cursor-pointer hover:bg-muted/50 text-right font-semibold w-[12%]"
+              className="cursor-pointer hover:bg-muted/50 text-right font-semibold"
               onClick={() => onSort('amount')}
             >
-              <div className="flex items-center justify-end gap-2">
+              <div className="flex items-center justify-end gap-1">
                 Összeg
-                <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
               </div>
             </TableHead>
-            <TableHead className="font-semibold w-[7%]">Pénznem</TableHead>
-            <TableHead className="font-semibold w-[14%]">Típus</TableHead>
-            <TableHead className="font-semibold w-[8%] text-center">Státusz</TableHead>
-            <TableHead className="font-semibold w-[9%]">Indoklás</TableHead>
-            <TableHead className="font-semibold w-[10%] text-center">Művelet</TableHead>
+            <TableHead className="font-semibold">Pénznem</TableHead>
+            <TableHead className="font-semibold">Típus</TableHead>
+            <TableHead className="font-semibold text-center">Státusz</TableHead>
+            <TableHead className="font-semibold">Indoklás</TableHead>
+            <TableHead className="font-semibold text-center">Tételek</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
