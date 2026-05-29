@@ -22,7 +22,7 @@ export default function NewClientPage() {
   const [taxNumber, setTaxNumber] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  // Mocks state
+  // UI interaction state
   const [useVisibillAccount, setUseVisibillAccount] = useState(false);
   const [selectedChannels, setSelectedChannels] = useState<string[]>(['email']);
   const [selectedDocs, setSelectedDocs] = useState<string[]>(['szamlak']);
