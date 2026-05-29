@@ -105,7 +105,7 @@ export function useAccountyClients() {
     queryFn: async (): Promise<AccountyClient[]> => {
       // 1. Get all assignments for this accountant
       const { data: assignments, error: assignErr } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('company_id, role, is_primary')
         .eq('accountant_user_id', userId);
 
@@ -126,7 +126,7 @@ export function useAccountyClients() {
       const missingCountMap: Record<string, number> = {};
       for (const cid of companyIds) {
         const { count, error: countErr } = await supabase
-          .from('accounty_missing_items' as any)
+          .from('accounty_missing_items')
           .select('id', { count: 'exact', head: true })
           .eq('company_id', cid)
           .in('status', ['open', 'notified']);
@@ -136,7 +136,7 @@ export function useAccountyClients() {
 
       // 4. Get nearest deadline per company
       const { data: deadlines, error: deadErr } = await supabase
-        .from('accounty_deadlines' as any)
+        .from('accounty_deadlines')
         .select('company_id, due_date')
         .in('company_id', companyIds)
         .in('status', ['pending', 'in_progress'])
@@ -194,7 +194,7 @@ export function useAccountyMissingItems(companyId: string) {
     queryKey: queryKeys.accountyMissingItems(companyId),
     queryFn: async (): Promise<AccountyMissingItem[]> => {
       const { data, error } = await supabase
-        .from('accounty_missing_items' as any)
+        .from('accounty_missing_items')
         .select('*')
         .eq('company_id', companyId)
         .in('status', ['open', 'notified'])
@@ -245,7 +245,7 @@ export function useAccountyAllMissingItems() {
     queryFn: async (): Promise<(AccountyMissingItem & { companyName: string })[]> => {
       // Get assignments first
       const { data: assignments, error: assignErr } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('company_id')
         .eq('accountant_user_id', userId);
 
@@ -322,7 +322,7 @@ async function fetchAllMissingItems(companyIds: string[]) {
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
     const { data, error } = await supabase
-      .from('accounty_missing_items' as any)
+      .from('accounty_missing_items')
       .select('company_id, priority, last_notified_at, notification_count')
       .in('company_id', companyIds)
       .in('status', ['open', 'notified'])
@@ -351,7 +351,7 @@ async function fetchAllMissingItemsFull(companyIds: string[]) {
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
     const { data, error } = await supabase
-      .from('accounty_missing_items' as any)
+      .from('accounty_missing_items')
       .select('*')
       .in('company_id', companyIds)
       .in('status', ['open', 'notified'])
@@ -380,7 +380,7 @@ export function useAccountyCompanySummary() {
     queryFn: async (): Promise<AccountyCompanySummary[]> => {
       // 1. Get assignments for this accountant
       const { data: assignments, error: assignErr } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('company_id')
         .eq('accountant_user_id', userId);
 
@@ -455,7 +455,7 @@ export function useAccountyDeadlines() {
     queryFn: async (): Promise<AccountyDeadline[]> => {
       // Get assignments
       const { data: assignments, error: assignErr } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('company_id')
         .eq('accountant_user_id', userId);
 
@@ -466,7 +466,7 @@ export function useAccountyDeadlines() {
 
       // Get deadlines
       const { data: deadlines, error } = await supabase
-        .from('accounty_deadlines' as any)
+        .from('accounty_deadlines')
         .select('*')
         .in('company_id', companyIds)
         .order('due_date', { ascending: true });
@@ -514,7 +514,7 @@ export function useAccountyKpis() {
     queryFn: async (): Promise<AccountyKpis> => {
       // Get assignments
       const { data: assignments, error: assignErr } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('company_id')
         .eq('accountant_user_id', userId);
 
@@ -537,7 +537,7 @@ export function useAccountyKpis() {
 
       // Count open missing items
       const { count: missingCount, error: missingErr } = await supabase
-        .from('accounty_missing_items' as any)
+        .from('accounty_missing_items')
         .select('id', { count: 'exact', head: true })
         .in('company_id', companyIds)
         .in('status', ['open', 'notified']);
@@ -552,7 +552,7 @@ export function useAccountyKpis() {
       const weekStr = weekFromNow.toISOString().split('T')[0];
 
       const { count: deadlineCount, error: deadErr } = await supabase
-        .from('accounty_deadlines' as any)
+        .from('accounty_deadlines')
         .select('id', { count: 'exact', head: true })
         .in('company_id', companyIds)
         .in('status', ['pending', 'in_progress'])
@@ -563,7 +563,7 @@ export function useAccountyKpis() {
 
       // Count critical clients (urgent priority open items)
       const { count: criticalCount } = await supabase
-        .from('accounty_missing_items' as any)
+        .from('accounty_missing_items')
         .select('company_id', { count: 'exact', head: true })
         .in('company_id', companyIds)
         .eq('priority', 'urgent')
@@ -571,7 +571,7 @@ export function useAccountyKpis() {
 
       // Count today's deadlines
       const { count: todayCount } = await supabase
-        .from('accounty_deadlines' as any)
+        .from('accounty_deadlines')
         .select('id', { count: 'exact', head: true })
         .in('company_id', companyIds)
         .in('status', ['pending', 'in_progress'])
@@ -600,7 +600,7 @@ export function useAccountyTaxProfile(companyId: string) {
     queryKey: queryKeys.accountyTaxProfile(companyId),
     queryFn: async (): Promise<AccountyTaxProfile | null> => {
       const { data, error } = await supabase
-        .from('accounty_tax_profiles' as any)
+        .from('accounty_tax_profiles')
         .select('*')
         .eq('company_id', companyId)
         .maybeSingle();
@@ -609,14 +609,14 @@ export function useAccountyTaxProfile(companyId: string) {
       if (!data) return null;
 
       return {
-        id: (data as any).id,
-        companyId: (data as any).company_id,
-        vatFrequency: (data as any).vat_frequency || 'monthly',
-        contributionFrequency: (data as any).contribution_frequency || 'monthly',
-        isKata: (data as any).is_kata || false,
-        isKiva: (data as any).is_kiva || false,
-        taxGroup: (data as any).tax_group,
-        navSynced: (data as any).nav_synced || false,
+        id: (data).id,
+        companyId: (data).company_id,
+        vatFrequency: (data).vat_frequency || 'monthly',
+        contributionFrequency: (data).contribution_frequency || 'monthly',
+        isKata: (data).is_kata || false,
+        isKiva: (data).is_kiva || false,
+        taxGroup: (data).tax_group,
+        navSynced: (data).nav_synced || false,
       };
     },
     enabled: !!companyId,
@@ -633,7 +633,7 @@ export function useAccountyPortalTokens(companyId: string) {
     queryKey: queryKeys.accountyPortalTokens(companyId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('accounty_portal_tokens' as any)
+        .from('accounty_portal_tokens')
         .select('*')
         .eq('company_id', companyId)
         .eq('is_active', true)
@@ -666,13 +666,13 @@ export function useIgnoreMissingItem() {
   return useMutation({
     mutationFn: async (itemId: string) => {
       const { error } = await supabase
-        .from('accounty_missing_items' as any)
+        .from('accounty_missing_items')
         .update({
           status: 'ignored',
           is_ignored: true,
           ignored_at: new Date().toISOString(),
           ignored_by: user?.id,
-        } as any)
+        })
         .eq('id', itemId);
 
       if (error) throw error;
@@ -694,12 +694,12 @@ export function useResolveMissingItem() {
   return useMutation({
     mutationFn: async (itemId: string) => {
       const { error } = await supabase
-        .from('accounty_missing_items' as any)
+        .from('accounty_missing_items')
         .update({
           status: 'resolved',
           resolved_at: new Date().toISOString(),
           resolved_by: user?.id,
-        } as any)
+        })
         .eq('id', itemId);
 
       if (error) throw error;
@@ -730,7 +730,7 @@ export function useAddMissingItem() {
       itemDate?: string;
     }) => {
       const { error } = await supabase
-        .from('accounty_missing_items' as any)
+        .from('accounty_missing_items')
         .insert({
           company_id: item.companyId,
           category: item.category,
@@ -742,7 +742,7 @@ export function useAddMissingItem() {
           amount: item.amount || null,
           invoice_number: item.invoiceNumber || null,
           item_date: item.itemDate || null,
-        } as any);
+        });
 
       if (error) throw error;
     },
@@ -767,18 +767,18 @@ export function useGeneratePortalToken() {
       expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
 
       const { data, error } = await supabase
-        .from('accounty_portal_tokens' as any)
+        .from('accounty_portal_tokens')
         .insert({
           company_id: companyId,
           token,
           created_by: user?.id,
           expires_at: expiresAt.toISOString(),
-        } as any)
+        })
         .select()
         .single();
 
       if (error) throw error;
-      return { token: (data as any).token, expiresAt: (data as any).expires_at };
+      return { token: (data).token, expiresAt: (data).expires_at };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounty-portal-tokens'] });
@@ -794,12 +794,12 @@ export function useCompleteDeadline() {
   return useMutation({
     mutationFn: async (deadlineId: string) => {
       const { error } = await supabase
-        .from('accounty_deadlines' as any)
+        .from('accounty_deadlines')
         .update({
           status: 'completed',
           completed_at: new Date().toISOString(),
           completed_by: user?.id,
-        } as any)
+        })
         .eq('id', deadlineId);
 
       if (error) throw error;
@@ -838,7 +838,7 @@ export function useAccountyCommunicationPrefs(companyId: string) {
     queryKey: queryKeys.accountyCommunicationPrefs(companyId),
     queryFn: async (): Promise<AccountyCommunicationPrefs | null> => {
       const { data, error } = await supabase
-        .from('accounty_communication_preferences' as any)
+        .from('accounty_communication_preferences')
         .select('*')
         .eq('company_id', companyId)
         .maybeSingle();
@@ -891,7 +891,7 @@ export function useUpsertCommunicationPrefs() {
       autoReminder?: boolean;
     }) => {
       const { error } = await supabase
-        .from('accounty_communication_preferences' as any)
+        .from('accounty_communication_preferences')
         .upsert({
           company_id: prefs.companyId,
           contact_name: prefs.contactName || null,
@@ -931,7 +931,7 @@ export function useUpsertTaxProfile() {
       taxGroup?: string;
     }) => {
       const { error } = await supabase
-        .from('accounty_tax_profiles' as any)
+        .from('accounty_tax_profiles')
         .upsert({
           company_id: profile.companyId,
           vat_frequency: profile.vatFrequency || 'monthly',
@@ -1063,8 +1063,8 @@ export function useUpdateKanbanStatus() {
     mutationFn: async ({ assignmentId, status }: { assignmentId: string; status: string }) => {
       const dbStatus = kanbanStatusMap[status] || 'aktiv';
       const { error } = await supabase
-        .from('accounty_assignments' as any)
-        .update({ kanban_status: dbStatus } as any)
+        .from('accounty_assignments')
+        .update({ kanban_status: dbStatus })
         .eq('id', assignmentId);
       if (error) throw error;
     },
@@ -1091,7 +1091,7 @@ export function useAccountyAccountants() {
     queryFn: async (): Promise<AccountyAccountant[]> => {
       // Get all unique accountant_user_ids from assignments
       const { data: assignments, error: aErr } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('accountant_user_id, id') as any;
       if (aErr) throw aErr;
       if (!assignments || assignments.length === 0) return [];
@@ -1183,7 +1183,7 @@ export function useAccountyFullReportData() {
     queryFn: async (): Promise<InvoiceReportRow[]> => {
       // Get all company_ids this user is assigned to
       const { data: assignments } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('company_id') as any;
       if (!assignments || assignments.length === 0) return [];
 
@@ -1288,7 +1288,7 @@ export function useAccountyMonthlyTrend() {
     queryFn: async (): Promise<MonthlyTrendPoint[]> => {
       // Get assigned companies (excl SANDBOX)
       const { data: assignments } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('company_id')
         .eq('accountant_user_id', userId);
       if (!assignments || assignments.length === 0) return [];
@@ -1330,7 +1330,7 @@ export function useAccountyMonthlyTrend() {
 
         // Count missing items created this month
         const { count: missingCount } = await supabase
-          .from('accounty_missing_items' as any)
+          .from('accounty_missing_items')
           .select('id', { count: 'exact', head: true })
           .in('company_id', companyIds)
           .gte('created_at', monthStart)
@@ -1376,7 +1376,7 @@ export function useAccountyColleagueStats() {
     queryFn: async (): Promise<ColleagueStat[]> => {
       // Get all assignments
       const { data: assignments } = await supabase
-        .from('accounty_assignments' as any)
+        .from('accounty_assignments')
         .select('accountant_user_id, company_id') as any;
       if (!assignments || assignments.length === 0) return [];
 
@@ -1414,28 +1414,28 @@ export function useAccountyColleagueStats() {
 
         // Missing items (open/notified)
         const { count: missingOpen } = await supabase
-          .from('accounty_missing_items' as any)
+          .from('accounty_missing_items')
           .select('id', { count: 'exact', head: true })
           .in('company_id', coIds)
           .in('status', ['open', 'notified']);
 
         // Resolved items
         const { count: resolved } = await supabase
-          .from('accounty_missing_items' as any)
+          .from('accounty_missing_items')
           .select('id', { count: 'exact', head: true })
           .in('company_id', coIds)
           .eq('status', 'resolved');
 
         // Completed deadlines
         const { count: completedDeadlines } = await supabase
-          .from('accounty_deadlines' as any)
+          .from('accounty_deadlines')
           .select('id', { count: 'exact', head: true })
           .in('company_id', coIds)
           .eq('status', 'completed');
 
         // In-progress deadlines
         const { count: inProgressDeadlines } = await supabase
-          .from('accounty_deadlines' as any)
+          .from('accounty_deadlines')
           .select('id', { count: 'exact', head: true })
           .in('company_id', coIds)
           .eq('status', 'in_progress');
@@ -1496,7 +1496,7 @@ export function useAccountyAuditLog(limit = 20) {
     queryKey: ['accounty-audit-log', limit],
     queryFn: async (): Promise<AuditLogEntry[]> => {
       const { data, error } = await supabase
-        .from('accounty_audit_log' as any)
+        .from('accounty_audit_log')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -1539,7 +1539,7 @@ export function useLogAuditEvent() {
       details?: Record<string, any>;
     }) => {
       const { error } = await supabase
-        .from('accounty_audit_log' as any)
+        .from('accounty_audit_log')
         .insert({
           user_id: user?.id,
           user_name: user?.user_metadata?.name || user?.email || 'Ismeretlen',
@@ -1549,7 +1549,7 @@ export function useLogAuditEvent() {
           company_id: event.companyId || null,
           company_name: event.companyName || null,
           details: event.details || {},
-        } as any);
+        });
 
       if (error) throw error;
     },
@@ -1577,7 +1577,7 @@ export function useAccountyPortalStats() {
     queryKey: ['accounty-portal-stats'],
     queryFn: async (): Promise<PortalStats> => {
       const { data, error } = await supabase
-        .from('accounty_portal_tokens' as any)
+        .from('accounty_portal_tokens')
         .select('*');
 
       if (error) throw error;

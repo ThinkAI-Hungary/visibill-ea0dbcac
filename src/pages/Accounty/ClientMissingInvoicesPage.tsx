@@ -112,7 +112,7 @@ export default function ClientMissingInvoicesPage() {
       expiresAt.setDate(expiresAt.getDate() + 30); // 30 day expiry
 
       const { error: tokenError } = await supabase
-        .from('accounty_portal_tokens' as any)
+        .from('accounty_portal_tokens')
         .insert({
           company_id: companyId,
           token,

@@ -1,0 +1,867 @@
+/**
+ * Accounty Bérszámfejtési Modul — React Hooks (éles Supabase)
+ *
+ * Query és mutáció hookök az összes payroll tábla CRUD műveleteihez.
+ * Az accounty_assignments alapú RLS policy-k biztosítják a hozzáférés-védelmet.
+ */
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import type { TaxParameters } from '@/lib/payroll/taxEngine';
+
+// ═══════════════════════════════════════════════════════════════
+// TÍPUSOK (DB row típusok)
+// ═══════════════════════════════════════════════════════════════
+
+export interface PayrollEmployee {
+  id: string;
+  company_id: string;
+  first_name: string;
+  last_name: string;
+  birth_name: string | null;
+  birth_place: string | null;
+  birth_date: string | null;
+  mothers_name: string | null;
+  gender: 'male' | 'female' | 'other' | null;
+  nationality: string;
+  taj_number: string | null;
+  tax_id: string | null;
+  id_card_number: string | null;
+  address: Record<string, unknown> | null;
+  temp_address: Record<string, unknown> | null;
+  email: string | null;
+  phone: string | null;
+  bank_account: string | null;
+  iban: string | null;
+  status: 'active' | 'terminated' | 'pending' | 'suspended';
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PayrollEmployment {
+  id: string;
+  employee_id: string;
+  company_id: string;
+  job_code: string;
+  job_serial_number: number;
+  employment_type: string;
+  start_date: string;
+  end_date: string | null;
+  probation_end: string | null;
+  is_fixed_term: boolean;
+  weekly_hours: number;
+  feor_code: string | null;
+  job_title: string | null;
+  location_id: string | null;
+  cost_center: string | null;
+  department: string | null;
+  base_salary: number | null;
+  salary_type: string;
+  remote_work_type: string | null;
+  remote_work_days_per_week: number | null;
+  is_insured: boolean;
+  status: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PayrollCycle {
+  id: string;
+  company_id: string;
+  year: number;
+  month: number;
+  status: string;
+  current_step: number;
+  approved_by: string | null;
+  approved_at: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PayrollItem {
+  id: string;
+  cycle_id: string;
+  employment_id: string;
+  item_type: string;
+  description: string | null;
+  amount: number;
+  hours: number | null;
+  days: number | null;
+  rate_pct: number | null;
+  is_deduction: boolean;
+  created_at: string;
+}
+
+export interface PayrollCalculation {
+  id: string;
+  cycle_id: string;
+  employment_id: string;
+  gross_salary: number | null;
+  szja_base: number | null;
+  szja_amount: number | null;
+  tb_amount: number | null;
+  szocho_amount: number | null;
+  net_salary: number | null;
+  total_deductions: number | null;
+  tax_credits: Record<string, unknown>;
+  szocho_credits: Record<string, unknown>;
+  deductions: Record<string, unknown>;
+  cafeteria_tax: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface PayrollDeclaration {
+  id: string;
+  employee_id: string;
+  declaration_type: string;
+  valid_from: string;
+  valid_until: string | null;
+  status: string;
+  parameters: Record<string, unknown>;
+  document_url: string | null;
+  nav_receipt_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PayrollFiling {
+  id: string;
+  company_id: string;
+  filing_type: string;
+  period_year: number | null;
+  period_month: number | null;
+  period_quarter: number | null;
+  status: string;
+  xml_data: string | null;
+  channel: string | null;
+  nav_receipt_id: string | null;
+  nav_receipt_status: string | null;
+  error_codes: unknown;
+  submitted_at: string | null;
+  signed_by: string | null;
+  signed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PayrollJobCode {
+  code: string;
+  name: string;
+  is_insured: boolean;
+  min_contribution_base_rule: string | null;
+  valid_from: string | null;
+  valid_until: string | null;
+  description: string | null;
+}
+
+export interface PayrollLeave {
+  id: string;
+  employment_id: string;
+  cycle_id: string | null;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  days: number;
+  daily_rate: number | null;
+  status: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface PayrollCafeteriaItem {
+  id: string;
+  employment_id: string;
+  cycle_id: string | null;
+  benefit_type: string;
+  amount: number;
+  provider: string | null;
+  card_number: string | null;
+  tax_rate: number | null;
+  status: string;
+  created_at: string;
+}
+
+export interface PayrollGarnishment {
+  id: string;
+  employee_id: string;
+  garnishment_type: string;
+  creditor_name: string | null;
+  creditor_account: string | null;
+  decree_number: string | null;
+  original_amount: number | null;
+  remaining_amount: number | null;
+  monthly_deduction: number | null;
+  max_deduction_pct: number;
+  priority: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PAYROLL QUERY KEYS (extends queryKeys)
+// ═══════════════════════════════════════════════════════════════
+
+export const payrollQueryKeys = {
+  employees: (companyId: string) => ['payroll', 'employees', companyId] as const,
+  employee: (empId: string) => ['payroll', 'employee', empId] as const,
+  employments: (empId: string) => ['payroll', 'employments', empId] as const,
+  cycles: (companyId: string) => ['payroll', 'cycles', companyId] as const,
+  cycle: (cycleId: string) => ['payroll', 'cycle', cycleId] as const,
+  items: (cycleId: string) => ['payroll', 'items', cycleId] as const,
+  calculations: (cycleId: string) => ['payroll', 'calculations', cycleId] as const,
+  declarations: (empId: string) => ['payroll', 'declarations', empId] as const,
+  filings: (companyId: string) => ['payroll', 'filings', companyId] as const,
+  taxParameters: (year: number) => ['payroll', 'taxParameters', year] as const,
+  jobCodes: () => ['payroll', 'jobCodes'] as const,
+  leaves: (empId: string) => ['payroll', 'leaves', empId] as const,
+  cafeteria: (empId: string, cycleId: string) => ['payroll', 'cafeteria', empId, cycleId] as const,
+  garnishments: (empId: string) => ['payroll', 'garnishments', empId] as const,
+};
+
+// ═══════════════════════════════════════════════════════════════
+// FOGLALKOZTATOTTAK
+// ═══════════════════════════════════════════════════════════════
+
+export function usePayrollEmployees(companyId: string) {
+  return useQuery({
+    queryKey: payrollQueryKeys.employees(companyId),
+    queryFn: async (): Promise<PayrollEmployee[]> => {
+      const { data, error } = await supabase
+        .from('accounty_employees')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('last_name', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as PayrollEmployee[];
+    },
+    enabled: !!companyId,
+    staleTime: 30_000,
+  });
+}
+
+export function usePayrollEmployee(employeeId: string) {
+  return useQuery({
+    queryKey: payrollQueryKeys.employee(employeeId),
+    queryFn: async (): Promise<PayrollEmployee | null> => {
+      const { data, error } = await supabase
+        .from('accounty_employees')
+        .select('*')
+        .eq('id', employeeId)
+        .single();
+
+      if (error) throw error;
+      return data as PayrollEmployee;
+    },
+    enabled: !!employeeId,
+  });
+}
+
+export function useCreateEmployee() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (employee: Omit<PayrollEmployee, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('accounty_employees')
+        .insert(employee)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as PayrollEmployee;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.employees(data.company_id) });
+      toast({ title: 'Siker', description: 'Foglalkoztatott sikeresen hozzáadva.' });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    },
+  });
+}
+
+export function useUpdateEmployee() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<PayrollEmployee> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('accounty_employees')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as PayrollEmployee;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.employee(data.id) });
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.employees(data.company_id) });
+      toast({ title: 'Siker', description: 'Foglalkoztatott adatai frissítve.' });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// JOGVISZONYOK
+// ═══════════════════════════════════════════════════════════════
+
+export function usePayrollEmployments(employeeId: string) {
+  return useQuery({
+    queryKey: payrollQueryKeys.employments(employeeId),
+    queryFn: async (): Promise<PayrollEmployment[]> => {
+      const { data, error } = await supabase
+        .from('accounty_employments')
+        .select('*')
+        .eq('employee_id', employeeId)
+        .order('start_date', { ascending: false });
+
+      if (error) throw error;
+      return (data || []) as PayrollEmployment[];
+    },
+    enabled: !!employeeId,
+  });
+}
+
+export function useCreateEmployment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (employment: Omit<PayrollEmployment, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('accounty_employments')
+        .insert(employment)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as PayrollEmployment;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.employments(data.employee_id) });
+      toast({ title: 'Siker', description: 'Jogviszony sikeresen rögzítve.' });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HAVI CIKLUSOK
+// ═══════════════════════════════════════════════════════════════
+
+export function usePayrollCycles(companyId: string) {
+  return useQuery({
+    queryKey: payrollQueryKeys.cycles(companyId),
+    queryFn: async (): Promise<PayrollCycle[]> => {
+      const { data, error } = await supabase
+        .from('accounty_payroll_cycles')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('year', { ascending: false })
+        .order('month', { ascending: false });
+
+      if (error) throw error;
+      return (data || []) as PayrollCycle[];
+    },
+    enabled: !!companyId,
+    staleTime: 30_000,
+  });
+}
+
+export function usePayrollCycle(cycleId: string) {
+  return useQuery({
+    queryKey: payrollQueryKeys.cycle(cycleId),
+    queryFn: async (): Promise<PayrollCycle | null> => {
+      const { data, error } = await supabase
+        .from('accounty_payroll_cycles')
+        .select('*')
+        .eq('id', cycleId)
+        .single();
+
+      if (error) throw error;
+      return data as PayrollCycle;
+    },
+    enabled: !!cycleId,
+  });
+}
+
+export function useCreateCycle() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (cycle: { company_id: string; year: number; month: number }) => {
+      const { data, error } = await supabase
+        .from('accounty_payroll_cycles')
+        .insert(cycle)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as PayrollCycle;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.cycles(data.company_id) });
+      toast({ title: 'Siker', description: `${data.year}/${String(data.month).padStart(2, '0')} havi ciklus létrehozva.` });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    },
+  });
+}
+
+export function useUpdateCycleStep() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ cycleId, step, status }: { cycleId: string; step: number; status?: string }) => {
+      const updates: Record<string, unknown> = { current_step: step };
+      if (status) updates.status = status;
+
+      const { data, error } = await supabase
+        .from('accounty_payroll_cycles')
+        .update(updates)
+        .eq('id', cycleId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as PayrollCycle;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.cycle(data.id) });
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BÉRELEMEK
+// ═══════════════════════════════════════════════════════════════
+
+export function usePayrollItems(cycleId: string) {
+  return useQuery({
+    queryKey: payrollQueryKeys.items(cycleId),
+    queryFn: async (): Promise<PayrollItem[]> => {
+      const { data, error } = await supabase
+        .from('accounty_payroll_items')
+        .select('*')
+        .eq('cycle_id', cycleId);
+
+      if (error) throw error;
+      return (data || []) as PayrollItem[];
+    },
+    enabled: !!cycleId,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SZÁMFEJTETT EREDMÉNYEK
+// ═══════════════════════════════════════════════════════════════
+
+export function usePayrollCalculations(cycleId: string) {
+  return useQuery({
+    queryKey: payrollQueryKeys.calculations(cycleId),
+    queryFn: async (): Promise<PayrollCalculation[]> => {
+      const { data, error } = await supabase
+        .from('accounty_payroll_calculations')
+        .select('*')
+        .eq('cycle_id', cycleId);
+
+      if (error) throw error;
+      return (data || []) as PayrollCalculation[];
+    },
+    enabled: !!cycleId,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ADÓELŐLEG-NYILATKOZATOK
+// ═══════════════════════════════════════════════════════════════
+
+export function usePayrollDeclarations(employeeId: string) {
+  return useQuery({
+    queryKey: payrollQueryKeys.declarations(employeeId),
+    queryFn: async (): Promise<PayrollDeclaration[]> => {
+      const { data, error } = await supabase
+        .from('accounty_declarations')
+        .select('*')
+        .eq('employee_id', employeeId)
+        .order('valid_from', { ascending: false });
+
+      if (error) throw error;
+      return (data || []) as PayrollDeclaration[];
+    },
+    enabled: !!employeeId,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAV BEVALLÁSOK
+// ═══════════════════════════════════════════════════════════════
+
+export function usePayrollFilings(companyId: string) {
+  return useQuery({
+    queryKey: payrollQueryKeys.filings(companyId),
+    queryFn: async (): Promise<PayrollFiling[]> => {
+      const { data, error } = await supabase
+        .from('accounty_filings')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []) as PayrollFiling[];
+    },
+    enabled: !!companyId,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PARAMÉTERTÁBLA & JOGVISZONYKÓDOK (master data)
+// ═══════════════════════════════════════════════════════════════
+
+export function useTaxParameters(year: number = 2026) {
+  return useQuery({
+    queryKey: payrollQueryKeys.taxParameters(year),
+    queryFn: async (): Promise<Record<string, number>> => {
+      const { data, error } = await supabase
+        .from('accounty_tax_parameters')
+        .select('parameter_key, parameter_value')
+        .eq('tax_year', year);
+
+      if (error) throw error;
+
+      const params: Record<string, number> = {};
+      (data || []).forEach((row: any) => {
+        params[row.parameter_key] = row.parameter_value;
+      });
+      return params;
+    },
+    staleTime: 5 * 60 * 1000, // 5 perc cache
+  });
+}
+
+/**
+ * Paraméter értékének módosítása (upsert)
+ */
+export function useUpdateTaxParameter() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ year, key, value }: { year: number; key: string; value: number }) => {
+      const { error } = await supabase
+        .from('accounty_tax_parameters')
+        .upsert({ tax_year: year, parameter_key: key, parameter_value: value }, { onConflict: 'tax_year,parameter_key' });
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.taxParameters(vars.year) });
+    },
+  });
+}
+
+/**
+ * Paramétertábla → TaxParameters objektum konverzió
+ */
+export function paramsToTaxParams(params: Record<string, number>): TaxParameters {
+  return {
+    szja_rate: params.szja_rate ?? 0.15,
+    tb_rate: params.tb_rate ?? 0.185,
+    szocho_rate: params.szocho_rate ?? 0.13,
+    minimum_wage: params.minimum_wage ?? 322800,
+    guaranteed_minimum: params.guaranteed_minimum ?? 373200,
+    family_1_child: params.family_1_child ?? 133340,
+    family_2_children: params.family_2_children ?? 266660,
+    family_3plus_children: params.family_3plus_children ?? 440000,
+    young_25_cap: params.young_25_cap ?? 715765,
+    personal_disability: params.personal_disability ?? 107600,
+    first_marriage: params.first_marriage ?? 33335,
+    health_service_monthly: params.health_service_monthly ?? 12300,
+  };
+}
+
+export function useJobCodes() {
+  return useQuery({
+    queryKey: payrollQueryKeys.jobCodes(),
+    queryFn: async (): Promise<PayrollJobCode[]> => {
+      const { data, error } = await supabase
+        .from('accounty_job_codes')
+        .select('*')
+        .order('code', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as PayrollJobCode[];
+    },
+    staleTime: 10 * 60 * 1000, // 10 perc cache
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SZABADSÁGOK
+// ═══════════════════════════════════════════════════════════════
+
+export function usePayrollLeaves(employmentId: string) {
+  return useQuery({
+    queryKey: payrollQueryKeys.leaves(employmentId),
+    queryFn: async (): Promise<PayrollLeave[]> => {
+      const { data, error } = await supabase
+        .from('accounty_leaves')
+        .select('*')
+        .eq('employment_id', employmentId)
+        .order('start_date', { ascending: false });
+
+      if (error) throw error;
+      return (data || []) as PayrollLeave[];
+    },
+    enabled: !!employmentId,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CAFETERIA
+// ═══════════════════════════════════════════════════════════════
+
+export function usePayrollCafeteria(employmentId: string, cycleId?: string) {
+  return useQuery({
+    queryKey: payrollQueryKeys.cafeteria(employmentId, cycleId || ''),
+    queryFn: async (): Promise<PayrollCafeteriaItem[]> => {
+      let query = supabase
+        .from('accounty_cafeteria')
+        .select('*')
+        .eq('employment_id', employmentId);
+
+      if (cycleId) {
+        query = query.eq('cycle_id', cycleId);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []) as PayrollCafeteriaItem[];
+    },
+    enabled: !!employmentId,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LETILTÁSOK
+// ═══════════════════════════════════════════════════════════════
+
+export function usePayrollGarnishments(employeeId: string) {
+  return useQuery({
+    queryKey: payrollQueryKeys.garnishments(employeeId),
+    queryFn: async (): Promise<PayrollGarnishment[]> => {
+      const { data, error } = await supabase
+        .from('accounty_garnishments')
+        .select('*')
+        .eq('employee_id', employeeId)
+        .eq('is_active', true)
+        .order('priority', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as PayrollGarnishment[];
+    },
+    enabled: !!employeeId,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TÖMEGES SZÁMFEJTÉS (Batch Payroll)
+// ═══════════════════════════════════════════════════════════════
+
+import { calculatePayroll, type PayrollCalculationInput, type EmployeeDeclarations } from '@/lib/payroll/taxEngine';
+
+export interface BatchPayrollInput {
+  cycleId: string;
+  companyId: string;
+  year: number;
+  month: number;
+}
+
+export interface BatchPayrollResult {
+  totalEmployees: number;
+  totalGross: number;
+  totalNet: number;
+  totalSzja: number;
+  totalTb: number;
+  totalSzocho: number;
+  calculations: PayrollCalculation[];
+}
+
+export function useRunBatchPayroll() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: BatchPayrollInput): Promise<BatchPayrollResult> => {
+      // 1. Fetch active employments for this company
+      const { data: employments, error: empErr } = await supabase
+        .from('accounty_employments')
+        .select('*, accounty_employees!inner(*)')
+        .eq('company_id', input.companyId)
+        .eq('status', 'active');
+
+      if (empErr) throw empErr;
+      if (!employments || employments.length === 0) {
+        throw new Error('Nincs aktív jogviszony ehhez a céghez.');
+      }
+
+      // 2. Fetch tax parameters
+      const { data: paramRows, error: paramErr } = await supabase
+        .from('accounty_tax_parameters')
+        .select('parameter_key, parameter_value')
+        .eq('tax_year', input.year);
+
+      if (paramErr) throw paramErr;
+      const taxParams = paramsToTaxParams(
+        Object.fromEntries((paramRows || []).map((r: any) => [r.parameter_key, r.parameter_value]))
+      );
+
+      // 3. Fetch payroll items for this cycle
+      const { data: items, error: itemErr } = await supabase
+        .from('accounty_payroll_items')
+        .select('*')
+        .eq('cycle_id', input.cycleId);
+
+      if (itemErr) throw itemErr;
+
+      // 4. Run calculations per employment
+      const results: Array<Record<string, unknown>> = [];
+
+      for (const employment of (employments as any[])) {
+        const employee = employment.accounty_employees;
+        const empItems = ((items || []) as any[]).filter(i => i.employment_id === employment.id);
+
+        // Base salary from employment or items
+        const baseSalary = empItems.find((i: any) => i.item_type === 'base_salary')?.amount
+          || employment.base_salary || 0;
+
+        // Sum extras
+        const extras = empItems
+          .filter((i: any) => !i.is_deduction && i.item_type !== 'base_salary')
+          .reduce((s: number, i: any) => s + (i.amount || 0), 0);
+
+        // Sum deductions from items
+        const itemDeductions = empItems
+          .filter((i: any) => i.is_deduction)
+          .reduce((s: number, i: any) => s + (i.amount || 0), 0);
+
+        // Fetch declarations for this employee
+        const { data: declRows } = await supabase
+          .from('accounty_declarations')
+          .select('*')
+          .eq('employee_id', employee.id)
+          .eq('status', 'active');
+
+        const declarations: EmployeeDeclarations = {
+          dependents_1_child: false,
+          dependents_2_children: false,
+          dependents_3plus: false,
+          is_under_25: false,
+          is_new_mother_under_30: false,
+          is_first_married: false,
+          has_personal_disability: false,
+          netak_eligible: false,
+        };
+
+        // Parse declarations
+        for (const decl of ((declRows || []) as any[])) {
+          if (decl.declaration_type === 'family_credit') {
+            const children = (decl.parameters)?.children_count || 0;
+            if (children === 1) declarations.dependents_1_child = true;
+            else if (children === 2) declarations.dependents_2_children = true;
+            else if (children >= 3) declarations.dependents_3plus = true;
+          }
+          if (decl.declaration_type === 'under_25') declarations.is_under_25 = true;
+          if (decl.declaration_type === 'new_mother') declarations.is_new_mother_under_30 = true;
+          if (decl.declaration_type === 'first_marriage') declarations.is_first_married = true;
+          if (decl.declaration_type === 'personal_disability') declarations.has_personal_disability = true;
+        }
+
+        // Calculate
+        const calcInput: PayrollCalculationInput = {
+          grossSalary: {
+            baseSalary,
+            supplements: extras,
+            bonuses: 0,
+            otherIncome: 0,
+          },
+          declarations,
+          garnishments: [],
+          taxParameters: taxParams,
+        };
+
+        const result = calculatePayroll(calcInput);
+
+        results.push({
+          cycle_id: input.cycleId,
+          employment_id: employment.id,
+          gross_salary: result.grossTotal,
+          szja_base: result.szjaBase,
+          szja_amount: result.szjaAmount,
+          tb_amount: result.tbAmount,
+          szocho_amount: result.szochoAmount,
+          net_salary: result.netSalary,
+          total_deductions: itemDeductions,
+          tax_credits: result.taxCredits || {},
+          szocho_credits: result.szochoCredits || {},
+          deductions: { items: itemDeductions },
+          cafeteria_tax: {},
+          metadata: {
+            employee_id: employee.id,
+            employee_name: `${employee.last_name} ${employee.first_name}`,
+            calculated_at: new Date().toISOString(),
+          },
+        });
+      }
+
+      // 5. Delete old calculations for this cycle
+      await supabase
+        .from('accounty_payroll_calculations')
+        .delete()
+        .eq('cycle_id', input.cycleId);
+
+      // 6. Insert new calculations
+      const { data: savedCalcs, error: saveErr } = await supabase
+        .from('accounty_payroll_calculations')
+        .insert(results)
+        .select();
+
+      if (saveErr) throw saveErr;
+
+      // 7. Calculate totals
+      const typed = (savedCalcs || []) as PayrollCalculation[];
+      return {
+        totalEmployees: typed.length,
+        totalGross: typed.reduce((s, c) => s + (c.gross_salary || 0), 0),
+        totalNet: typed.reduce((s, c) => s + (c.net_salary || 0), 0),
+        totalSzja: typed.reduce((s, c) => s + (c.szja_amount || 0), 0),
+        totalTb: typed.reduce((s, c) => s + (c.tb_amount || 0), 0),
+        totalSzocho: typed.reduce((s, c) => s + (c.szocho_amount || 0), 0),
+        calculations: typed,
+      };
+    },
+    onSuccess: (data, input) => {
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.calculations(input.cycleId) });
+      toast({
+        title: 'Számfejtés kész',
+        description: `${data.totalEmployees} foglalkoztatott feldolgozva. Nettó összesen: ${data.totalNet.toLocaleString('hu-HU')} Ft`,
+      });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Számfejtési hiba', description: err.message });
+    },
+  });
+}

@@ -106,7 +106,7 @@ export default function NewClientPage() {
             // Create new company
             const { data: newCompany, error: compErr } = await supabase
               .from('companies')
-              .insert({ name, tax_number: tax } as any)
+              .insert({ name, tax_number: tax })
               .select('id')
               .single();
             if (compErr) throw compErr;
@@ -115,7 +115,7 @@ export default function NewClientPage() {
 
           // 2. Create assignment
           const { error: assignErr } = await supabase
-            .from('accounty_assignments' as any)
+            .from('accounty_assignments')
             .upsert({
               accountant_user_id: user.id,
               company_id: companyId,

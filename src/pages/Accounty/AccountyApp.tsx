@@ -183,7 +183,7 @@ function MissingItemsTooltip({ companyId }: { companyId: string }) {
     queryKey: ['missing-top3', companyId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('accounty_missing_items' as any)
+        .from('accounty_missing_items')
         .select('title, amount, priority')
         .eq('company_id', companyId)
         .in('status', ['open', 'notified'])

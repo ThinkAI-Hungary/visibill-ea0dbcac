@@ -18,9 +18,15 @@ import {
   User,
   LogOut,
   ChevronDown,
+  ChevronRight,
   AlertTriangle,
   Clock,
-  MailCheck
+  MailCheck,
+  Calculator,
+  FileText,
+  TrendingUp,
+  Building2,
+  Users
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -72,6 +78,30 @@ export default function AccountyLayout() {
   const [cmdOpen, setCmdOpen] = useState(false);
   const [cmdQuery, setCmdQuery] = useState('');
   const { data: allClients } = useAccountyClients();
+  const [expandedPayroll, setExpandedPayroll] = useState<Set<string>>(new Set());
+  const [payrollInitialized, setPayrollInitialized] = useState(false);
+
+  // Auto-expand the active client's submenu on first render
+  useEffect(() => {
+    if (payrollInitialized || !allClients) return;
+    const activeClient = allClients.find(c => location.pathname.startsWith(`/accounty/payroll/${c.companyId}`));
+    if (activeClient) {
+      setExpandedPayroll(new Set([activeClient.companyId]));
+    }
+    setPayrollInitialized(true);
+  }, [allClients, location.pathname, payrollInitialized]);
+
+  const togglePayrollClient = (companyId: string) => {
+    setExpandedPayroll(prev => {
+      const next = new Set(prev);
+      if (next.has(companyId)) {
+        next.delete(companyId);
+      } else {
+        next.add(companyId);
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -194,6 +224,66 @@ export default function AccountyLayout() {
                 <span className="truncate">Jóváhagyó rendszer</span>
               </Link>
             </li>
+          </ul>
+
+          {/* Bérszámfejtés section */}
+          <div className="flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 mt-4 mb-1">
+            Bérszámfejtés
+          </div>
+          <ul className="flex w-full min-w-0 flex-col gap-1">
+            {(allClients || []).map((client) => {
+              const basePath = `/accounty/payroll/${client.companyId}`;
+              const isPayrollActive = location.pathname.startsWith(basePath);
+              const isExpanded = expandedPayroll.has(client.companyId);
+              return (
+                <li key={`payroll-${client.id}`}>
+                  <div
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8 cursor-pointer",
+                      isPayrollActive ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                    )}
+                    onClick={() => togglePayrollClient(client.companyId)}
+                  >
+                    <Link to={basePath} className="flex items-center gap-2 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+                      <Calculator className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{client.name}</span>
+                    </Link>
+                    <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform duration-200", isExpanded ? "rotate-0" : "-rotate-90")} />
+                  </div>
+                  {isExpanded && (
+                    <ul className="ml-6 mt-0.5 flex flex-col gap-0.5 border-l border-border pl-2 animate-in slide-in-from-top-1 duration-200">
+                      {[
+                        { to: `${basePath}/employees`, icon: Users, label: 'Foglalkoztatottak' },
+                        { to: `${basePath}/reports`, icon: TrendingUp, label: 'Riportok' },
+                        { to: `${basePath}/filings`, icon: FileText, label: 'NAV bevallások' },
+                        { to: `${basePath}/portal`, icon: Building2, label: 'Ügyfélportál' },
+                        { to: `${basePath}/tax-params`, icon: Settings, label: 'Paraméterek' },
+                      ].map((sub) => (
+                        <li key={sub.to}>
+                          <Link
+                            to={sub.to}
+                            className={cn(
+                              "flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs transition-colors",
+                              isActive(sub.to) ? "font-semibold text-primary" : "text-sidebar-foreground/60 hover:text-primary"
+                            )}
+                          >
+                            <sub.icon className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{sub.label}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Adminisztráció */}
+          <div className="flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 mt-4 mb-1">
+            Adminisztráció
+          </div>
+          <ul className="flex w-full min-w-0 flex-col gap-1">
             <li>
               <Link 
                 to="/accounty/settings" 
