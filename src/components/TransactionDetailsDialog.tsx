@@ -967,10 +967,6 @@ export const TransactionDetailsDialog = ({
                       const cleanPartnerName = partnerName.replace(/\b(kft|zrt|bt|s\.r\.o\.|ev\.)\b/g, '').trim();
                       const hasPartnerMatch = cleanPartnerName.length > 2 && txDesc.includes(cleanPartnerName);
 
-                      const partnerName = invoice.elado_nev?.toLowerCase() || '';
-                      const txDesc = transaction.description?.toLowerCase() || '';
-                      const cleanPartnerName = partnerName.replace(/\b(kft|zrt|bt|s\.r\.o\.|ev\.)\b/g, '').trim();
-                      const hasPartnerMatch = cleanPartnerName.length > 2 && txDesc.includes(cleanPartnerName);
 
                       return (
                         <div
