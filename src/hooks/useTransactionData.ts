@@ -195,7 +195,10 @@ export function useTransactionData() {
     const exportData = filteredTransactions.map(transaction => {
       const matchStatus = computeMatchStatus(transaction);
       const statusText = matchStatus === 'matched' ? 'Párosított'
-        : matchStatus === 'suggested' ? 'Javasolt' : 'Párosítatlan';
+        : matchStatus === 'suggested' ? 'Javasolt'
+        : matchStatus === 'no_invoice' ? 'Nincs hozzá számla'
+        : matchStatus === 'invoice_missing' ? 'Számla nincs feltöltve'
+        : 'Párosítatlan';
       return [
         transaction.transaction_date || '',
         transaction.description || '',
