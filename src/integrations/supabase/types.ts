@@ -14,111 +14,533 @@ export type Database = {
   }
   public: {
     Tables: {
-      annual_report_notes_templates: {
+      accounty_assignments: {
         Row: {
+          accountant_user_id: string
+          accounting_firm_id: string | null
+          assigned_at: string | null
+          company_id: string
+          created_at: string | null
           id: string
-          section_key: string
-          section_title: string
-          default_text: string
-          order_num: number
-          is_required: boolean
-          category: string
+          is_primary: boolean | null
+          kanban_status: string | null
+          role: string
+          updated_at: string | null
         }
         Insert: {
+          accountant_user_id: string
+          accounting_firm_id?: string | null
+          assigned_at?: string | null
+          company_id: string
+          created_at?: string | null
           id?: string
-          section_key: string
-          section_title: string
-          default_text: string
-          order_num: number
-          is_required?: boolean
-          category: string
+          is_primary?: boolean | null
+          kanban_status?: string | null
+          role?: string
+          updated_at?: string | null
         }
         Update: {
+          accountant_user_id?: string
+          accounting_firm_id?: string | null
+          assigned_at?: string | null
+          company_id?: string
+          created_at?: string | null
           id?: string
+          is_primary?: boolean | null
+          kanban_status?: string | null
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_assignments_accounting_firm_id_fkey"
+            columns: ["accounting_firm_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounty_assignments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounty_audit_log: {
+        Row: {
+          action: string
+          company_id: string | null
+          company_name: string | null
+          created_at: string | null
+          details: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          action: string
+          company_id?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          action?: string
+          company_id?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_audit_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounty_communication_preferences: {
+        Row: {
+          auto_reminder: boolean | null
+          channel_email: boolean | null
+          channel_phone: boolean | null
+          channel_sms: boolean | null
+          channel_viber: boolean | null
+          company_id: string
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string | null
+          gdpr_opted_in: boolean | null
+          gdpr_opted_in_at: string | null
+          id: string
+          preferred_language: string | null
+          reminder_frequency: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_reminder?: boolean | null
+          channel_email?: boolean | null
+          channel_phone?: boolean | null
+          channel_sms?: boolean | null
+          channel_viber?: boolean | null
+          company_id: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          gdpr_opted_in?: boolean | null
+          gdpr_opted_in_at?: string | null
+          id?: string
+          preferred_language?: string | null
+          reminder_frequency?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_reminder?: boolean | null
+          channel_email?: boolean | null
+          channel_phone?: boolean | null
+          channel_sms?: boolean | null
+          channel_viber?: boolean | null
+          company_id?: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          gdpr_opted_in?: boolean | null
+          gdpr_opted_in_at?: string | null
+          id?: string
+          preferred_language?: string | null
+          reminder_frequency?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_communication_preferences_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounty_deadlines: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string | null
+          deadline_type: string
+          due_date: string
+          id: string
+          is_manual_override: boolean | null
+          notes: string | null
+          status: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          deadline_type: string
+          due_date: string
+          id?: string
+          is_manual_override?: boolean | null
+          notes?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          deadline_type?: string
+          due_date?: string
+          id?: string
+          is_manual_override?: boolean | null
+          notes?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_deadlines_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounty_missing_items: {
+        Row: {
+          amount: number | null
+          category: string
+          company_id: string
+          created_at: string | null
+          details: string | null
+          escalation_level: number | null
+          id: string
+          ignored_at: string | null
+          ignored_by: string | null
+          invoice_number: string | null
+          is_ignored: boolean | null
+          item_date: string | null
+          last_notified_at: string | null
+          nav_invoice_id: string | null
+          notification_count: number | null
+          priority: string | null
+          resolve_route: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          source: string
+          status: string | null
+          subtitle: string | null
+          title: string
+          transaction_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number | null
+          category: string
+          company_id: string
+          created_at?: string | null
+          details?: string | null
+          escalation_level?: number | null
+          id?: string
+          ignored_at?: string | null
+          ignored_by?: string | null
+          invoice_number?: string | null
+          is_ignored?: boolean | null
+          item_date?: string | null
+          last_notified_at?: string | null
+          nav_invoice_id?: string | null
+          notification_count?: number | null
+          priority?: string | null
+          resolve_route?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source: string
+          status?: string | null
+          subtitle?: string | null
+          title: string
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number | null
+          category?: string
+          company_id?: string
+          created_at?: string | null
+          details?: string | null
+          escalation_level?: number | null
+          id?: string
+          ignored_at?: string | null
+          ignored_by?: string | null
+          invoice_number?: string | null
+          is_ignored?: boolean | null
+          item_date?: string | null
+          last_notified_at?: string | null
+          nav_invoice_id?: string | null
+          notification_count?: number | null
+          priority?: string | null
+          resolve_route?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source?: string
+          status?: string | null
+          subtitle?: string | null
+          title?: string
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_missing_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounty_missing_items_nav_invoice_id_fkey"
+            columns: ["nav_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "nav_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounty_missing_items_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounty_portal_tokens: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          created_by: string
+          expires_at: string
+          id: string
+          is_active: boolean | null
+          last_accessed_at: string | null
+          last_used_at: string | null
+          token: string
+          visit_count: number | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          created_by: string
+          expires_at: string
+          id?: string
+          is_active?: boolean | null
+          last_accessed_at?: string | null
+          last_used_at?: string | null
+          token: string
+          visit_count?: number | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          created_by?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_accessed_at?: string | null
+          last_used_at?: string | null
+          token?: string
+          visit_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_portal_tokens_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounty_tax_profiles: {
+        Row: {
+          company_id: string
+          contribution_frequency: string | null
+          created_at: string | null
+          id: string
+          is_kata: boolean | null
+          is_kiva: boolean | null
+          last_nav_sync_at: string | null
+          nav_synced: boolean | null
+          tax_group: string | null
+          updated_at: string | null
+          vat_frequency: string | null
+        }
+        Insert: {
+          company_id: string
+          contribution_frequency?: string | null
+          created_at?: string | null
+          id?: string
+          is_kata?: boolean | null
+          is_kiva?: boolean | null
+          last_nav_sync_at?: string | null
+          nav_synced?: boolean | null
+          tax_group?: string | null
+          updated_at?: string | null
+          vat_frequency?: string | null
+        }
+        Update: {
+          company_id?: string
+          contribution_frequency?: string | null
+          created_at?: string | null
+          id?: string
+          is_kata?: boolean | null
+          is_kiva?: boolean | null
+          last_nav_sync_at?: string | null
+          nav_synced?: boolean | null
+          tax_group?: string | null
+          updated_at?: string | null
+          vat_frequency?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_tax_profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      annual_report_notes_templates: {
+        Row: {
+          category: string
+          default_text: string
+          id: string
+          is_required: boolean | null
+          order_num: number
+          section_key: string
+          section_title: string
+        }
+        Insert: {
+          category: string
+          default_text: string
+          id?: string
+          is_required?: boolean | null
+          order_num: number
+          section_key: string
+          section_title: string
+        }
+        Update: {
+          category?: string
+          default_text?: string
+          id?: string
+          is_required?: boolean | null
+          order_num?: number
           section_key?: string
           section_title?: string
-          default_text?: string
-          order_num?: number
-          is_required?: boolean
-          category?: string
         }
         Relationships: []
       }
       annual_reports: {
         Row: {
-          id: string
-          company_id: string
-          preset_id: string
-          fiscal_year: number
-          status: string
-          representative_name: string | null
-          representative_role: string | null
-          report_date: string | null
           accounting_method: string | null
-          frozen_bs_data: Json | null
-          frozen_pnl_data: Json | null
-          frozen_at: string | null
-          validation_results: Json
-          validated_at: string | null
-          notes_sections: Json
-          net_income: number
-          dividend_amount: number
-          retained_earnings: number
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          dividend_amount: number | null
           dividend_resolution_date: string | null
           dividend_resolution_number: string | null
-          created_at: string | null
+          fiscal_year: number
+          frozen_at: string | null
+          frozen_bs_data: Json | null
+          frozen_pnl_data: Json | null
+          id: string
+          net_income: number | null
+          notes_sections: Json | null
+          preset_id: string
+          report_date: string | null
+          representative_name: string | null
+          representative_role: string | null
+          retained_earnings: number | null
+          status: string
           updated_at: string | null
-          created_by: string | null
+          validated_at: string | null
+          validation_results: Json | null
         }
         Insert: {
-          id?: string
-          company_id: string
-          preset_id: string
-          fiscal_year: number
-          status?: string
-          representative_name?: string | null
-          representative_role?: string | null
-          report_date?: string | null
           accounting_method?: string | null
-          frozen_bs_data?: Json | null
-          frozen_pnl_data?: Json | null
-          frozen_at?: string | null
-          validation_results?: Json
-          validated_at?: string | null
-          notes_sections?: Json
-          net_income?: number
-          dividend_amount?: number
-          retained_earnings?: number
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          dividend_amount?: number | null
           dividend_resolution_date?: string | null
           dividend_resolution_number?: string | null
-          created_at?: string | null
+          fiscal_year: number
+          frozen_at?: string | null
+          frozen_bs_data?: Json | null
+          frozen_pnl_data?: Json | null
+          id?: string
+          net_income?: number | null
+          notes_sections?: Json | null
+          preset_id: string
+          report_date?: string | null
+          representative_name?: string | null
+          representative_role?: string | null
+          retained_earnings?: number | null
+          status?: string
           updated_at?: string | null
-          created_by?: string | null
+          validated_at?: string | null
+          validation_results?: Json | null
         }
         Update: {
-          id?: string
-          company_id?: string
-          preset_id?: string
-          fiscal_year?: number
-          status?: string
-          representative_name?: string | null
-          representative_role?: string | null
-          report_date?: string | null
           accounting_method?: string | null
-          frozen_bs_data?: Json | null
-          frozen_pnl_data?: Json | null
-          frozen_at?: string | null
-          validation_results?: Json
-          validated_at?: string | null
-          notes_sections?: Json
-          net_income?: number
-          dividend_amount?: number
-          retained_earnings?: number
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          dividend_amount?: number | null
           dividend_resolution_date?: string | null
           dividend_resolution_number?: string | null
-          created_at?: string | null
+          fiscal_year?: number
+          frozen_at?: string | null
+          frozen_bs_data?: Json | null
+          frozen_pnl_data?: Json | null
+          id?: string
+          net_income?: number | null
+          notes_sections?: Json | null
+          preset_id?: string
+          report_date?: string | null
+          representative_name?: string | null
+          representative_role?: string | null
+          retained_earnings?: number | null
+          status?: string
           updated_at?: string | null
-          created_by?: string | null
+          validated_at?: string | null
+          validation_results?: Json | null
         }
         Relationships: [
           {
@@ -2209,6 +2631,57 @@ export type Database = {
         }
         Relationships: []
       }
+      outgoing_emails: {
+        Row: {
+          category: string
+          company_id: string
+          company_name: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          message_id: string | null
+          missing_item_ids: Json | null
+          portal_link: string | null
+          recipient_email: string
+          resend_id: string | null
+          status: string
+          subject: string
+          user_id: string | null
+        }
+        Insert: {
+          category?: string
+          company_id: string
+          company_name: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          missing_item_ids?: Json | null
+          portal_link?: string | null
+          recipient_email: string
+          resend_id?: string | null
+          status?: string
+          subject: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          company_id?: string
+          company_name?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message_id?: string | null
+          missing_item_ids?: Json | null
+          portal_link?: string | null
+          recipient_email?: string
+          resend_id?: string | null
+          status?: string
+          subject?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       partners: {
         Row: {
           address: string | null
@@ -3299,6 +3772,297 @@ export type Database = {
         }
         Relationships: []
       }
+      vat_codes: {
+        Row: {
+          code: string
+          company_id: string
+          created_at: string
+          direction: string
+          id: string
+          is_deductible: boolean
+          is_eu: boolean
+          is_reverse_charge: boolean
+          label: string
+          sort_order: number
+          target_rows: Json
+          updated_at: string
+          vat_percent: number
+        }
+        Insert: {
+          code: string
+          company_id: string
+          created_at?: string
+          direction: string
+          id?: string
+          is_deductible?: boolean
+          is_eu?: boolean
+          is_reverse_charge?: boolean
+          label: string
+          sort_order?: number
+          target_rows?: Json
+          updated_at?: string
+          vat_percent?: number
+        }
+        Update: {
+          code?: string
+          company_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          is_deductible?: boolean
+          is_eu?: boolean
+          is_reverse_charge?: boolean
+          label?: string
+          sort_order?: number
+          target_rows?: Json
+          updated_at?: string
+          vat_percent?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vat_codes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vat_form_rows: {
+        Row: {
+          has_base: boolean | null
+          has_tax: boolean | null
+          is_summary: boolean | null
+          label: string
+          page: string
+          row_number: string
+          section: string
+          sort_order: number
+        }
+        Insert: {
+          has_base?: boolean | null
+          has_tax?: boolean | null
+          is_summary?: boolean | null
+          label: string
+          page: string
+          row_number: string
+          section: string
+          sort_order?: number
+        }
+        Update: {
+          has_base?: boolean | null
+          has_tax?: boolean | null
+          is_summary?: boolean | null
+          label?: string
+          page?: string
+          row_number?: string
+          section?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      vat_return_lines: {
+        Row: {
+          base_amount: number | null
+          base_amount_rounded: number | null
+          id: string
+          is_calculated: boolean | null
+          row_number: string
+          source_vat_codes: string[] | null
+          tax_amount: number | null
+          tax_amount_rounded: number | null
+          vat_return_id: string
+        }
+        Insert: {
+          base_amount?: number | null
+          base_amount_rounded?: number | null
+          id?: string
+          is_calculated?: boolean | null
+          row_number: string
+          source_vat_codes?: string[] | null
+          tax_amount?: number | null
+          tax_amount_rounded?: number | null
+          vat_return_id: string
+        }
+        Update: {
+          base_amount?: number | null
+          base_amount_rounded?: number | null
+          id?: string
+          is_calculated?: boolean | null
+          row_number?: string
+          source_vat_codes?: string[] | null
+          tax_amount?: number | null
+          tax_amount_rounded?: number | null
+          vat_return_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vat_return_lines_vat_return_id_fkey"
+            columns: ["vat_return_id"]
+            isOneToOne: false
+            referencedRelation: "vat_returns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vat_return_m_lines: {
+        Row: {
+          base_amount: number | null
+          base_amount_rounded: number | null
+          id: string
+          invoice_count: number
+          invoice_details: Json | null
+          partner_id: string | null
+          partner_name: string
+          partner_tax_number: string
+          tax_18_amount: number | null
+          tax_27_amount: number | null
+          tax_5_amount: number | null
+          tax_amount: number | null
+          tax_amount_rounded: number | null
+          tax_prorated: number | null
+          vat_return_id: string
+        }
+        Insert: {
+          base_amount?: number | null
+          base_amount_rounded?: number | null
+          id?: string
+          invoice_count?: number
+          invoice_details?: Json | null
+          partner_id?: string | null
+          partner_name: string
+          partner_tax_number: string
+          tax_18_amount?: number | null
+          tax_27_amount?: number | null
+          tax_5_amount?: number | null
+          tax_amount?: number | null
+          tax_amount_rounded?: number | null
+          tax_prorated?: number | null
+          vat_return_id: string
+        }
+        Update: {
+          base_amount?: number | null
+          base_amount_rounded?: number | null
+          id?: string
+          invoice_count?: number
+          invoice_details?: Json | null
+          partner_id?: string | null
+          partner_name?: string
+          partner_tax_number?: string
+          tax_18_amount?: number | null
+          tax_27_amount?: number | null
+          tax_5_amount?: number | null
+          tax_amount?: number | null
+          tax_amount_rounded?: number | null
+          tax_prorated?: number | null
+          vat_return_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vat_return_m_lines_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vat_return_m_lines_vat_return_id_fkey"
+            columns: ["vat_return_id"]
+            isOneToOne: false
+            referencedRelation: "vat_returns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vat_returns: {
+        Row: {
+          amount_carryforward: number | null
+          amount_reclaimable: number | null
+          amount_to_pay: number | null
+          company_id: string
+          created_at: string
+          finalized_at: string | null
+          frequency: string
+          id: string
+          m_sheet_summary: Json | null
+          net_result: number | null
+          period_month: number | null
+          period_quarter: number | null
+          period_year: number
+          prev_period_carryforward: number | null
+          row_data: Json | null
+          status: string
+          total_deductible_base: number | null
+          total_deductible_tax: number | null
+          total_payable_base: number | null
+          total_payable_tax: number | null
+          updated_at: string
+          user_id: string | null
+          validated_at: string | null
+          validation_errors: Json | null
+        }
+        Insert: {
+          amount_carryforward?: number | null
+          amount_reclaimable?: number | null
+          amount_to_pay?: number | null
+          company_id: string
+          created_at?: string
+          finalized_at?: string | null
+          frequency?: string
+          id?: string
+          m_sheet_summary?: Json | null
+          net_result?: number | null
+          period_month?: number | null
+          period_quarter?: number | null
+          period_year: number
+          prev_period_carryforward?: number | null
+          row_data?: Json | null
+          status?: string
+          total_deductible_base?: number | null
+          total_deductible_tax?: number | null
+          total_payable_base?: number | null
+          total_payable_tax?: number | null
+          updated_at?: string
+          user_id?: string | null
+          validated_at?: string | null
+          validation_errors?: Json | null
+        }
+        Update: {
+          amount_carryforward?: number | null
+          amount_reclaimable?: number | null
+          amount_to_pay?: number | null
+          company_id?: string
+          created_at?: string
+          finalized_at?: string | null
+          frequency?: string
+          id?: string
+          m_sheet_summary?: Json | null
+          net_result?: number | null
+          period_month?: number | null
+          period_quarter?: number | null
+          period_year?: number
+          prev_period_carryforward?: number | null
+          row_data?: Json | null
+          status?: string
+          total_deductible_base?: number | null
+          total_deductible_tax?: number | null
+          total_payable_base?: number | null
+          total_payable_tax?: number | null
+          updated_at?: string
+          user_id?: string | null
+          validated_at?: string | null
+          validation_errors?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vat_returns_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vegszamla_backup: {
         Row: {
           adoalap_osszesen: number | null
@@ -3397,37 +4161,6 @@ export type Database = {
       }
     }
     Functions: {
-      calculate_vat_return: {
-        Args: {
-          p_company_id: string
-          p_year: number
-          p_month: number
-          p_frequency?: string
-        }
-        Returns: string
-      }
-      freeze_annual_data: {
-        Args: {
-          p_report_id: string
-          p_company_id: string
-          p_preset_id: string
-          p_fiscal_year: number
-          p_exchange_rates?: Json
-        }
-        Returns: Json
-      }
-      seed_default_vat_codes: {
-        Args: {
-          p_company_id: string
-        }
-        Returns: unknown
-      }
-      validate_annual_report: {
-        Args: {
-          p_report_id: string
-        }
-        Returns: Json
-      }
       assign_supplier_default_projects: {
         Args: { p_company_id: string }
         Returns: number
@@ -3436,6 +4169,16 @@ export type Database = {
         Args: { p_base_salary: number; p_monthly_hours?: number }
         Returns: number
       }
+      calculate_vat_return: {
+        Args: {
+          p_company_id: string
+          p_frequency?: string
+          p_month: number
+          p_year: number
+        }
+        Returns: string
+      }
+      check_request: { Args: never; Returns: undefined }
       claim_gl_jobs: {
         Args: { p_batch_size?: number }
         Returns: {
@@ -3506,13 +4249,44 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      freeze_annual_data: {
+        Args: {
+          p_company_id: string
+          p_exchange_rates?: Json
+          p_fiscal_year: number
+          p_preset_id: string
+          p_report_id: string
+        }
+        Returns: Json
+      }
+      get_accounty_company_names: {
+        Args: { p_company_ids: string[] }
+        Returns: {
+          id: string
+          name: string
+          tax_number: string
+        }[]
+      }
+      get_accounty_company_summary: {
+        Args: { p_user_id: string }
+        Returns: {
+          company_id: string
+          company_name: string
+          company_tax_number: string
+          critical_count: number
+          last_notified_at: string
+          max_notification_count: number
+          missing_count: number
+          total_notified: number
+        }[]
+      }
       get_bs_report: {
         Args: {
           p_company_id: string
           p_date_to?: string
+          p_exchange_rates?: Json
           p_fiscal_year?: number
           p_preset_id: string
-          p_exchange_rates?: Json
         }
         Returns: {
           bs_structure_id: string
@@ -3728,8 +4502,8 @@ export type Database = {
           p_company_id: string
           p_date_from?: string
           p_date_to?: string
-          p_preset_id: string
           p_exchange_rates?: Json
+          p_preset_id: string
         }
         Returns: {
           balance: number
@@ -3834,6 +4608,10 @@ export type Database = {
         Args: { p_company_id: string; p_mappings: Json; p_preset_id: string }
         Returns: undefined
       }
+      seed_default_vat_codes: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
       sync_sandbox_from_taxology: { Args: never; Returns: undefined }
       user_has_company_access: {
         Args: { p_company_id: string }
@@ -3843,6 +4621,7 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: boolean
       }
+      validate_annual_report: { Args: { p_report_id: string }; Returns: Json }
     }
     Enums: {
       audit_action_type:
