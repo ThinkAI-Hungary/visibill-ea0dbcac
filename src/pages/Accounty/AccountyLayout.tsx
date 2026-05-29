@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AccountyRoleProvider } from './AccountyRoleContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { FeedbackFab } from '@/components/FeedbackFab';
 import { useAccountyKpis, useAccountyClients } from '@/hooks/useAccountyData';
 import { 
   Briefcase, 
@@ -515,6 +516,7 @@ export default function AccountyLayout() {
           </div>
         </DialogContent>
       </Dialog>
+      <FeedbackFab />
     </>
   );
 }
