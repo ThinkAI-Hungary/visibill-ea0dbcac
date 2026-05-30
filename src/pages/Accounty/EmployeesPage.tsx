@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Users, UserPlus, Search, Filter, ChevronRight, ArrowLeft,
-  Download, MoreVertical, Mail, Phone, Building2, Shield
+  Download, MoreVertical, Mail, Phone, Building2, Shield,
+  ChevronLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,8 @@ export default function EmployeesPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 20;
 
   const { data: employees = [], isLoading } = usePayrollEmployees(companyId || '');
 
@@ -90,9 +93,31 @@ export default function EmployeesPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="flex items-center gap-2 text-sm">
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 text-sm"
+            onClick={() => {
+              const headers = ['Név', 'TAJ-szám', 'Adóazonosító', 'E-mail', 'Telefon', 'Státusz'];
+              const rows = filtered.map(e => [
+                `${e.last_name} ${e.first_name}`,
+                e.taj_number || '',
+                e.tax_id || '',
+                e.email || '',
+                e.phone || '',
+                statusLabels[e.status] || e.status,
+              ]);
+              const csv = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+              const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `foglalkoztatottak_${new Date().toISOString().slice(0,10)}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
             <Download className="w-4 h-4" />
-            Export
+            Export CSV
           </Button>
           <Button
             onClick={() => navigate(`/accounty/payroll/${companyId}/employees/new`)}
@@ -154,6 +179,7 @@ export default function EmployeesPage() {
             )}
           </div>
         ) : (
+          <>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -167,7 +193,7 @@ export default function EmployeesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {filtered.map((emp) => (
+                {filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((emp) => (
                   <tr
                     key={emp.id}
                     onClick={() => navigate(`/accounty/payroll/${companyId}/employees/${emp.id}`)}
@@ -227,6 +253,38 @@ export default function EmployeesPage() {
               </tbody>
             </table>
           </div>
+          {/* Pagination */}
+          {filtered.length > PAGE_SIZE && (
+            <div className="px-5 py-3 border-t border-border/50 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/30">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} / {filtered.length} fő
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={page === 0}
+                  onClick={() => setPage(p => p - 1)}
+                  className="h-8 px-2 text-xs"
+                >
+                  <ChevronLeft className="w-4 h-4" /> Előző
+                </Button>
+                <span className="text-xs text-slate-600 dark:text-slate-400 px-2">
+                  {page + 1} / {Math.ceil(filtered.length / PAGE_SIZE)}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={(page + 1) * PAGE_SIZE >= filtered.length}
+                  onClick={() => setPage(p => p + 1)}
+                  className="h-8 px-2 text-xs"
+                >
+                  Következő <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+          </>
         )}
       </div>
     </div>

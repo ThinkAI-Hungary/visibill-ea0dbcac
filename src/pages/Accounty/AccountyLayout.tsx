@@ -29,6 +29,7 @@ import {
   Building2,
   Users
 } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,6 +82,10 @@ export default function AccountyLayout() {
   const { data: allClients } = useAccountyClients();
   const [expandedPayroll, setExpandedPayroll] = useState<Set<string>>(new Set());
   const [payrollInitialized, setPayrollInitialized] = useState(false);
+  const [payrollSearch, setPayrollSearch] = useState('');
+  const [showAllPayroll, setShowAllPayroll] = useState(false);
+  const [notifDismissed, setNotifDismissed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Auto-expand the active client's submenu on first render
   useEffect(() => {
@@ -132,8 +137,16 @@ export default function AccountyLayout() {
   return (
     <>
     <div className="flex h-screen w-full bg-background text-foreground overflow-hidden font-sans">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
       {/* Sidebar */}
-      <aside className="w-64 flex flex-col bg-sidebar text-sidebar-foreground">
+      <aside className={cn(
+        "w-64 flex flex-col bg-sidebar text-sidebar-foreground transition-transform duration-300 z-50",
+        "fixed inset-y-0 left-0 lg:static lg:translate-x-0",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
         {/* Logo Area */}
         <div className="p-4 border-b border-primary/30 shrink-0">
           <div className="flex items-center gap-2">
@@ -230,54 +243,93 @@ export default function AccountyLayout() {
           {/* Bérszámfejtés section */}
           <div className="flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 mt-4 mb-1">
             Bérszámfejtés
+            <span className="text-[10px] text-sidebar-foreground/40">{(allClients || []).length}</span>
           </div>
-          <ul className="flex w-full min-w-0 flex-col gap-1">
-            {(allClients || []).map((client) => {
-              const basePath = `/accounty/payroll/${client.companyId}`;
-              const isPayrollActive = location.pathname.startsWith(basePath);
-              const isExpanded = expandedPayroll.has(client.companyId);
+          {(allClients || []).length > 5 && (
+            <div className="px-2 mb-1">
+              <input
+                type="text"
+                placeholder="Cég keresés..."
+                value={payrollSearch}
+                onChange={(e) => setPayrollSearch(e.target.value)}
+                className="w-full h-7 px-2 text-xs bg-sidebar-foreground/5 border border-sidebar-foreground/10 rounded-md text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              />
+            </div>
+          )}
+          <ul className="flex w-full min-w-0 flex-col gap-1 max-h-[280px] overflow-y-auto scrollbar-thin">
+            {(() => {
+              const clients = allClients || [];
+              const filtered = payrollSearch
+                ? clients.filter(c => c.name.toLowerCase().includes(payrollSearch.toLowerCase()))
+                : clients;
+              const activeClientId = clients.find(c => location.pathname.startsWith(`/accounty/payroll/${c.companyId}`))?.companyId;
+              const shown = showAllPayroll ? filtered : filtered.slice(0, 5);
+              // Always include active client
+              const activeInShown = shown.some(c => c.companyId === activeClientId);
+              const activeClient = !activeInShown && activeClientId ? clients.find(c => c.companyId === activeClientId) : null;
+              const finalList = activeClient ? [activeClient, ...shown] : shown;
+              
               return (
-                <li key={`payroll-${client.id}`}>
-                  <div
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8 cursor-pointer",
-                      isPayrollActive ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                    )}
-                    onClick={() => togglePayrollClient(client.companyId)}
-                  >
-                    <Link to={basePath} className="flex items-center gap-2 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
-                      <Calculator className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{client.name}</span>
-                    </Link>
-                    <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform duration-200", isExpanded ? "rotate-0" : "-rotate-90")} />
-                  </div>
-                  {isExpanded && (
-                    <ul className="ml-6 mt-0.5 flex flex-col gap-0.5 border-l border-border pl-2 animate-in slide-in-from-top-1 duration-200">
-                      {[
-                        { to: `${basePath}/employees`, icon: Users, label: 'Foglalkoztatottak' },
-                        { to: `${basePath}/reports`, icon: TrendingUp, label: 'Riportok' },
-                        { to: `${basePath}/filings`, icon: FileText, label: 'NAV bevallások' },
-                        { to: `${basePath}/portal`, icon: Building2, label: 'Ügyfélportál' },
-                        { to: `${basePath}/tax-params`, icon: Settings, label: 'Paraméterek' },
-                      ].map((sub) => (
-                        <li key={sub.to}>
-                          <Link
-                            to={sub.to}
-                            className={cn(
-                              "flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs transition-colors",
-                              isActive(sub.to) ? "font-semibold text-primary" : "text-sidebar-foreground/60 hover:text-primary"
-                            )}
-                          >
-                            <sub.icon className="h-3.5 w-3.5 shrink-0" />
-                            <span className="truncate">{sub.label}</span>
+                <>
+                  {finalList.map((client) => {
+                    const basePath = `/accounty/payroll/${client.companyId}`;
+                    const isPayrollActive = location.pathname.startsWith(basePath);
+                    const isExpanded = expandedPayroll.has(client.companyId);
+                    return (
+                      <li key={`payroll-${client.id}`}>
+                        <div
+                          className={cn(
+                            "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8 cursor-pointer",
+                            isPayrollActive ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                          )}
+                          onClick={() => togglePayrollClient(client.companyId)}
+                        >
+                          <Link to={basePath} className="flex items-center gap-2 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+                            <Calculator className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{client.name}</span>
                           </Link>
-                        </li>
-                      ))}
-                    </ul>
+                          <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform duration-200", isExpanded ? "rotate-0" : "-rotate-90")} />
+                        </div>
+                        {isExpanded && (
+                          <ul className="ml-6 mt-0.5 flex flex-col gap-0.5 border-l border-border pl-2 animate-in slide-in-from-top-1 duration-200">
+                            {[
+                              { to: `${basePath}/employees`, icon: Users, label: 'Foglalkoztatottak' },
+                              { to: `${basePath}/reports`, icon: TrendingUp, label: 'Riportok' },
+                              { to: `${basePath}/filings`, icon: FileText, label: 'NAV bevallások' },
+                              { to: `${basePath}/portal`, icon: Building2, label: 'Ügyfélportál' },
+                              { to: `${basePath}/tax-params`, icon: Settings, label: 'Paraméterek' },
+                            ].map((sub) => (
+                              <li key={sub.to}>
+                                <Link
+                                  to={sub.to}
+                                  className={cn(
+                                    "flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs transition-colors",
+                                    isActive(sub.to) ? "font-semibold text-primary" : "text-sidebar-foreground/60 hover:text-primary"
+                                  )}
+                                >
+                                  <sub.icon className="h-3.5 w-3.5 shrink-0" />
+                                  <span className="truncate">{sub.label}</span>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    );
+                  })}
+                  {!showAllPayroll && filtered.length > 5 && !payrollSearch && (
+                    <li>
+                      <button
+                        onClick={() => setShowAllPayroll(true)}
+                        className="w-full flex items-center justify-center gap-1 py-1.5 text-[11px] text-sidebar-foreground/50 hover:text-primary transition-colors"
+                      >
+                        + {filtered.length - 5} további cég
+                      </button>
+                    </li>
                   )}
-                </li>
+                </>
               );
-            })}
+            })()}
           </ul>
 
           {/* Adminisztráció */}
@@ -371,26 +423,42 @@ export default function AccountyLayout() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-8 shrink-0 relative z-10">
-          <div className="flex-1">
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              Szia, <span className="font-semibold text-slate-900 dark:text-slate-100">{user?.user_metadata?.name?.split(' ')[0] || 'Könyvelő'}</span>! 👋
-            </p>
-            <p className="text-xs text-slate-400 dark:text-slate-500">{new Date().toLocaleDateString('hu-HU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-8 shrink-0 relative z-10">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 rounded-md"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div>
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Szia, <span className="font-semibold text-slate-900 dark:text-slate-100">{user?.user_metadata?.name?.split(' ')[0] || 'Könyvelő'}</span>! 👋
+              </p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">{new Date().toLocaleDateString('hu-HU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <Popover>
               <PopoverTrigger asChild>
                 <button className="relative p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-md">
                   <Bell className="w-5 h-5" />
-                  {((kpis?.criticalClients ?? 0) > 0 || (kpis?.missingItems ?? 0) > 0 || (kpis?.todayDeadlines ?? 0) > 0 || (kpis?.upcomingDeadlines ?? 0) > 0) && (
+                  {!notifDismissed && ((kpis?.criticalClients ?? 0) > 0 || (kpis?.missingItems ?? 0) > 0 || (kpis?.todayDeadlines ?? 0) > 0 || (kpis?.upcomingDeadlines ?? 0) > 0) && (
                     <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-slate-900"></span>
                   )}
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-80 p-0 mt-2 border-border shadow-lg rounded-xl overflow-hidden dark:bg-card" align="end" sideOffset={8}>
-                <div className="px-4 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="px-4 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
                   <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Értesítések</h3>
+                  {((kpis?.criticalClients ?? 0) > 0 || (kpis?.missingItems ?? 0) > 0 || (kpis?.todayDeadlines ?? 0) > 0 || (kpis?.upcomingDeadlines ?? 0) > 0) && (
+                    <button
+                      onClick={() => setNotifDismissed(true)}
+                      className="text-[10px] font-medium text-primary hover:text-primary/80 transition-colors"
+                    >
+                      Mind olvasott
+                    </button>
+                  )}
                 </div>
                 {(kpis?.criticalClients ?? 0) > 0 || (kpis?.missingItems ?? 0) > 0 || (kpis?.todayDeadlines ?? 0) > 0 || (kpis?.upcomingDeadlines ?? 0) > 0 ? (
                   <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-64 overflow-y-auto">

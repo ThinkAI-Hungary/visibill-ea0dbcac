@@ -37,7 +37,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { ClientData } from './mockData';
+import { ClientData } from './types';
 import { useAccountyClients, useAccountyKpis, useUpdateKanbanStatus, useAccountyAccountants, useAccountyMonthlyTrend, useAccountyColleagueStats, useAccountyAuditLog, useAccountyPortalStats } from '@/hooks/useAccountyData';
 import { useAccountyRole } from './AccountyRoleContext';
 import { seedAccountyAssignments } from '@/utils/seedAccounty';

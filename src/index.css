@@ -442,6 +442,30 @@ All colors MUST be HSL.
   }
 }
 
+/* ── Global native select styling — consistent chevron + focus ring ── */
+@layer base {
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m2 4 4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 12px;
+    padding-right: 2.25rem !important;
+    cursor: pointer;
+  }
+
+  .dark select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m2 4 4 4 4-4'/%3E%3C/svg%3E");
+  }
+
+  select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.3);
+    border-color: hsl(var(--ring));
+  }
+}
+
 /* Custom Scrollbar Styling - Global */
 @layer base {
 
@@ -734,4 +758,28 @@ All colors MUST be HSL.
     hsl(var(--foreground) / 0.04) 60%,
     transparent 100%
   );
+}
+
+/* ── Thin scrollbar for sidebar ── */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.15);
+  border-radius: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.4);
+}
+
+/* ── Tab content animation ── */
+.tab-content-animate {
+  animation: tabFadeSlide 0.3s ease-out both;
+}
+@keyframes tabFadeSlide {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }

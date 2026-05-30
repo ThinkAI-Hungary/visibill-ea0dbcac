@@ -2,17 +2,33 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, User, Briefcase, CreditCard, Calendar, FileText,
-  Shield, Clock, ChevronRight, Edit3, Trash2, Plus, Check,
+  Shield, Clock, ChevronRight, Edit3, Trash2, Plus, Check, X,
   Mail, Phone, MapPin, Banknote, AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   usePayrollEmployee, usePayrollEmployments, usePayrollDeclarations,
-  usePayrollLeaves, usePayrollGarnishments, useEmployeeSalaryHistory
+  usePayrollLeaves, usePayrollGarnishments, useEmployeeSalaryHistory,
+  useAddDeclaration, useUpdateDeclaration, useRevokeDeclaration,
+  type PayrollDeclaration
 } from '@/hooks/usePayrollData';
 import { formatTajNumber, formatBankAccount, formatAmount } from '@/lib/payroll/validators';
 import { calculateLeaveBalance, type EmployeeLeaveInput } from '@/lib/payroll/leaveCalculator';
+
+// ── Declaration types (must match DB CHECK constraint) ──
+const DECLARATION_TYPES = [
+  { value: 'family', label: 'Családi kedvezmény' },
+  { value: 'first_marriage', label: 'Első házasok kedvezménye' },
+  { value: 'young_25', label: '25 év alattiak SZJA mentessége' },
+  { value: 'young_mother_30', label: '30 év alatti anyák kedvezménye' },
+  { value: 'netak', label: 'Négy vagy több gyermekes anyák (NÉTAK)' },
+  { value: 'anyak_3', label: '3 gyermekes anyák kedvezménye' },
+  { value: 'anyak_2', label: '2 gyermekes anyák kedvezménye (40 év alatt)' },
+  { value: 'anyacska', label: 'Összevont anyák + családi (2026)' },
+  { value: 'personal', label: 'Személyi kedvezmény (fogyatékosság)' },
+  { value: 'ekho', label: 'EKHO nyilatkozat' },
+] as const;
 
 // ── Tab définíciók ──
 const TABS = [
@@ -29,6 +45,9 @@ export default function EmployeeDetailsPage() {
   const { id: companyId, empId } = useParams<{ id: string; empId: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [showNewDeclaration, setShowNewDeclaration] = useState(false);
+  const [editingDeclaration, setEditingDeclaration] = useState<PayrollDeclaration | null>(null);
+  const revokeDeclaration = useRevokeDeclaration();
 
   const { data: employee, isLoading: empLoading } = usePayrollEmployee(empId || '');
   const { data: employments = [] } = usePayrollEmployments(empId || '');
@@ -136,7 +155,7 @@ export default function EmployeeDetailsPage() {
       </div>
 
       {/* Tab content */}
-      <div className="bg-card rounded-xl border border-border shadow-soft">
+      <div key={activeTab} className="bg-card rounded-xl border border-border shadow-soft tab-content-animate">
         {/* Overview */}
         {activeTab === 'overview' && (
           <div className="p-6 space-y-6">
@@ -214,28 +233,87 @@ export default function EmployeeDetailsPage() {
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Adóelőleg-nyilatkozatok</h3>
-              <Button variant="outline" size="sm" className="flex items-center gap-1">
+              <Button variant="outline" size="sm" className="flex items-center gap-1" onClick={() => setShowNewDeclaration(true)}>
                 <Plus className="w-3 h-3" /> Új nyilatkozat
               </Button>
             </div>
+
+            {/* New Declaration Dialog */}
+            {showNewDeclaration && (
+              <NewDeclarationDialog
+                employeeId={empId || ''}
+                onClose={() => setShowNewDeclaration(false)}
+              />
+            )}
+
+            {/* Edit Declaration Dialog */}
+            {editingDeclaration && (
+              <EditDeclarationDialog
+                declaration={editingDeclaration}
+                employeeId={empId || ''}
+                onClose={() => setEditingDeclaration(null)}
+              />
+            )}
+
             {declarations.length === 0 ? (
               <div className="py-8 text-center text-sm text-slate-500">Nincs rögzített nyilatkozat</div>
             ) : (
               <div className="space-y-2">
                 {declarations.map((d) => (
-                  <div key={d.id} className="p-3 rounded-lg border border-border flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 capitalize">
-                        {d.declaration_type.replace(/_/g, ' ')}
+                  <div key={d.id} className={cn(
+                    'p-4 rounded-lg border flex items-center justify-between transition-colors',
+                    d.status === 'revoked'
+                      ? 'border-border/50 opacity-60'
+                      : 'border-border hover:border-primary/30'
+                  )}>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          {DECLARATION_TYPES.find(t => t.value === d.declaration_type)?.label || d.declaration_type.replace(/_/g, ' ')}
+                        </p>
+                        <span className={cn(
+                          'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase',
+                          d.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' :
+                          d.status === 'revoked' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' :
+                          'bg-slate-100 text-slate-600 dark:bg-slate-800'
+                        )}>
+                          {d.status === 'active' ? 'Aktív' : d.status === 'revoked' ? 'Visszavont' : d.status === 'expired' ? 'Lejárt' : d.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Érvényes: {d.valid_from}{d.valid_until ? ` – ${d.valid_until}` : ' –'}
+                        {d.declaration_type === 'family' && (d.parameters as any)?.children_count && (
+                          <span className="ml-2">· {(d.parameters as any).children_count} eltartott</span>
+                        )}
                       </p>
-                      <p className="text-xs text-slate-500">Érvényes: {d.valid_from}{d.valid_until ? ` – ${d.valid_until}` : ''}</p>
                     </div>
-                    <span className={cn(
-                      'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase',
-                      d.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/40' : 'bg-slate-100 text-slate-600 dark:bg-slate-800'
-                    )}>
-                      {d.status}
-                    </span>
+                    {d.status === 'active' && (
+                      <div className="flex items-center gap-1 ml-3">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-400 hover:text-primary"
+                          title="Szerkesztés"
+                          onClick={() => setEditingDeclaration(d)}
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-400 hover:text-red-500"
+                          title="Visszavonás"
+                          disabled={revokeDeclaration.isPending}
+                          onClick={() => {
+                            if (window.confirm('Biztosan visszavonod ezt a nyilatkozatot?')) {
+                              revokeDeclaration.mutate({ id: d.id, employee_id: empId || '' });
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -474,6 +552,229 @@ function SalaryHistoryTab({ employmentId }: { employmentId: string }) {
           />
         </div>
       )}
+    </div>
+  );
+}
+
+// ── New Declaration Dialog ──
+
+function NewDeclarationDialog({ employeeId, onClose }: { employeeId: string; onClose: () => void }) {
+  const addDeclaration = useAddDeclaration();
+  const [type, setType] = useState('family');
+  const [validFrom, setValidFrom] = useState(new Date().toISOString().split('T')[0]);
+  const [validUntil, setValidUntil] = useState('');
+  const [childrenCount, setChildrenCount] = useState(1);
+
+  const handleSubmit = () => {
+    const params: Record<string, unknown> = {};
+    if (type === 'family') {
+      params.children_count = childrenCount;
+    }
+
+    addDeclaration.mutate({
+      employee_id: employeeId,
+      declaration_type: type,
+      valid_from: validFrom,
+      valid_until: validUntil || undefined,
+      parameters: params,
+    }, {
+      onSuccess: () => onClose(),
+    });
+  };
+
+  return (
+    <div className="mb-6 p-5 rounded-xl border-2 border-primary/30 bg-primary/5 dark:bg-primary/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">Új adóelőleg-nyilatkozat</h4>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Declaration type */}
+        <div className="md:col-span-2">
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Nyilatkozat típusa</label>
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none bg-[length:16px_16px] bg-[right_10px_center] bg-no-repeat"
+            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
+          >
+            {DECLARATION_TYPES.map((dt) => (
+              <option key={dt.value} value={dt.value}>{dt.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Children count (only for family credit) */}
+        {type === 'family' && (
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Eltartottak száma</label>
+            <select
+              value={childrenCount}
+              onChange={(e) => setChildrenCount(Number(e.target.value))}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none bg-[length:16px_16px] bg-[right_10px_center] bg-no-repeat"
+            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
+            >
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
+                <option key={n} value={n}>{n} {n === 1 ? 'gyermek' : 'gyermek'}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Valid from */}
+        <div>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Érvényes ettől</label>
+          <input
+            type="date"
+            value={validFrom}
+            onChange={(e) => setValidFrom(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+          />
+        </div>
+
+        {/* Valid until */}
+        <div>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Érvényes eddig (opcionális)</label>
+          <input
+            type="date"
+            value={validUntil}
+            onChange={(e) => setValidUntil(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="ghost" size="sm" onClick={onClose}>
+          Mégse
+        </Button>
+        <Button
+          size="sm"
+          onClick={handleSubmit}
+          disabled={addDeclaration.isPending || !validFrom}
+          className="flex items-center gap-1"
+        >
+          <Check className="w-3 h-3" />
+          {addDeclaration.isPending ? 'Mentés...' : 'Mentés'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ── Edit Declaration Dialog ──
+
+const selectClassName = "w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none bg-[length:16px_16px] bg-[right_10px_center] bg-no-repeat";
+const selectStyle = { backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` };
+
+function EditDeclarationDialog({
+  declaration,
+  employeeId,
+  onClose,
+}: {
+  declaration: PayrollDeclaration;
+  employeeId: string;
+  onClose: () => void;
+}) {
+  const updateDeclaration = useUpdateDeclaration();
+  const [type, setType] = useState(declaration.declaration_type);
+  const [validFrom, setValidFrom] = useState(declaration.valid_from);
+  const [validUntil, setValidUntil] = useState(declaration.valid_until || '');
+  const [childrenCount, setChildrenCount] = useState(
+    (declaration.parameters as any)?.children_count || 1
+  );
+
+  const handleSubmit = () => {
+    const params: Record<string, unknown> = { ...(declaration.parameters as Record<string, unknown>) };
+    if (type === 'family') {
+      params.children_count = childrenCount;
+    }
+
+    updateDeclaration.mutate({
+      id: declaration.id,
+      employee_id: employeeId,
+      declaration_type: type,
+      valid_from: validFrom,
+      valid_until: validUntil || null,
+      parameters: params,
+    }, {
+      onSuccess: () => onClose(),
+    });
+  };
+
+  return (
+    <div className="mb-6 p-5 rounded-xl border-2 border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <Edit3 className="w-4 h-4 text-amber-500" />
+          Nyilatkozat szerkesztése
+        </h4>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Declaration type (read-only) */}
+        <div className="md:col-span-2">
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Nyilatkozat típusa</label>
+          <div className="w-full px-3 py-2 rounded-lg border border-border bg-slate-100 dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-300 cursor-not-allowed">
+            {DECLARATION_TYPES.find(t => t.value === type)?.label || type}
+          </div>
+        </div>
+
+        {/* Children count (only for family credit) */}
+        {type === 'family' && (
+          <div>
+            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Eltartottak száma</label>
+            <select value={childrenCount} onChange={(e) => setChildrenCount(Number(e.target.value))} className={selectClassName} style={selectStyle}>
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
+                <option key={n} value={n}>{n} gyermek</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Valid from */}
+        <div>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Érvényes ettől</label>
+          <input
+            type="date"
+            value={validFrom}
+            onChange={(e) => setValidFrom(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+          />
+        </div>
+
+        {/* Valid until */}
+        <div>
+          <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Érvényes eddig (opcionális)</label>
+          <input
+            type="date"
+            value={validUntil}
+            onChange={(e) => setValidUntil(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="ghost" size="sm" onClick={onClose}>
+          Mégse
+        </Button>
+        <Button
+          size="sm"
+          onClick={handleSubmit}
+          disabled={updateDeclaration.isPending || !validFrom}
+          className="flex items-center gap-1 bg-amber-600 hover:bg-amber-700"
+        >
+          <Check className="w-3 h-3" />
+          {updateDeclaration.isPending ? 'Mentés...' : 'Módosítás mentése'}
+        </Button>
+      </div>
     </div>
   );
 }

@@ -419,7 +419,12 @@ export function useCreateCycle() {
       toast({ title: 'Siker', description: `${data.year}/${String(data.month).padStart(2, '0')} havi ciklus létrehozva.` });
     },
     onError: (err: Error) => {
-      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+      const msg = err.message?.includes('duplicate key') || err.message?.includes('unique')
+        ? 'Ez a havi ciklus már létezik ennél a cégnél.'
+        : err.message?.includes('policy')
+        ? 'Nincs jogosultságod ciklust létrehozni ennél a cégnél.'
+        : err.message;
+      toast({ variant: 'destructive', title: 'Hiba', description: msg });
     },
   });
 }
@@ -570,6 +575,100 @@ export function usePayrollDeclarations(employeeId: string) {
       return (data || []) as PayrollDeclaration[];
     },
     enabled: !!employeeId,
+  });
+}
+
+export function useAddDeclaration() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (decl: {
+      employee_id: string;
+      declaration_type: string;
+      valid_from: string;
+      valid_until?: string;
+      parameters?: Record<string, unknown>;
+    }) => {
+      const { data, error } = await supabase
+        .from('accounty_declarations')
+        .insert({
+          employee_id: decl.employee_id,
+          declaration_type: decl.declaration_type,
+          valid_from: decl.valid_from,
+          valid_until: decl.valid_until || null,
+          parameters: decl.parameters || {},
+          status: 'active',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as PayrollDeclaration;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.declarations(data.employee_id) });
+      toast({ title: 'Siker', description: 'Nyilatkozat sikeresen rögzítve.' });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    },
+  });
+}
+
+export function useUpdateDeclaration() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, employee_id, ...updates }: {
+      id: string;
+      employee_id: string;
+      declaration_type?: string;
+      valid_from?: string;
+      valid_until?: string | null;
+      parameters?: Record<string, unknown>;
+    }) => {
+      const { data, error } = await supabase
+        .from('accounty_declarations')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { ...(data as PayrollDeclaration), employee_id };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.declarations(data.employee_id) });
+      toast({ title: 'Siker', description: 'Nyilatkozat frissítve.' });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    },
+  });
+}
+
+export function useRevokeDeclaration() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, employee_id }: { id: string; employee_id: string }) => {
+      const { data, error } = await supabase
+        .from('accounty_declarations')
+        .update({ status: 'revoked', valid_until: new Date().toISOString().split('T')[0] })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { ...(data as PayrollDeclaration), employee_id };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: payrollQueryKeys.declarations(data.employee_id) });
+      toast({ title: 'Visszavonva', description: 'Nyilatkozat sikeresen visszavonva.' });
+    },
+    onError: (err: Error) => {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    },
   });
 }
 

@@ -301,8 +301,28 @@ export default function FilingsPage() {
       <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
         {filteredFilings.length === 0 ? (
           <div className="py-16 text-center">
-            <FileText className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-            <p className="text-sm text-slate-500">Nincs bevallás{filterType !== 'all' || filterStatus !== 'all' ? ' a szűrési feltételeknek' : ''}</p>
+            <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+            </div>
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              {filterType !== 'all' || filterStatus !== 'all' || searchQuery
+                ? 'Nincs bevallás a szűrési feltételeknek'
+                : 'Még nincsenek bevallások'}
+            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">
+              {filterType !== 'all' || filterStatus !== 'all' || searchQuery
+                ? 'Próbáld módosítani a szűrőket, vagy töröld a keresést.'
+                : 'A 08-as bevallást a számfejtett ciklus alapján generálhatod.'}
+            </p>
+            {!(filterType !== 'all' || filterStatus !== 'all' || searchQuery) && (
+              <Button
+                onClick={() => setShowGenPanel(true)}
+                className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Első bevallás generálása
+              </Button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">

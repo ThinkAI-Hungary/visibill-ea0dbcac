@@ -213,14 +213,27 @@ export function generatePayslipHtml(data: PayslipData): string {
  */
 export function printPayslip(data: PayslipData): void {
   const html = generatePayslipHtml(data);
-  const printWindow = window.open('', '_blank', 'width=800,height=1100');
-  if (!printWindow) return;
-  printWindow.document.write(html);
-  printWindow.document.close();
-  // Wait for rendering, then trigger print
-  printWindow.onload = () => {
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+
+  // Use hidden iframe to avoid popup blockers
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = 'none';
+  iframe.style.opacity = '0';
+  document.body.appendChild(iframe);
+
+  iframe.src = url;
+  iframe.onload = () => {
     setTimeout(() => {
-      printWindow.print();
+      iframe.contentWindow?.print();
+      // Cleanup after print dialog closes
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+        URL.revokeObjectURL(url);
+      }, 1000);
     }, 300);
   };
 }

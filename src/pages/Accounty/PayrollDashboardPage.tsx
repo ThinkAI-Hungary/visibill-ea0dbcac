@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { usePayrollEmployees, usePayrollCycles, usePayrollFilings, useTaxParameters } from '@/hooks/usePayrollData';
 import { formatAmount } from '@/lib/payroll/validators';
+import { Breadcrumb } from '@/components/accounty/SharedComponents';
+import { useAccountyClients } from '@/hooks/useAccountyData';
 
 // ── Animated number component ──
 function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
@@ -117,6 +119,8 @@ export default function PayrollDashboardPage() {
   const { data: cycles = [], isLoading: cyclesLoading } = usePayrollCycles(companyId || '');
   const { data: filings = [], isLoading: filingsLoading } = usePayrollFilings(companyId || '');
   const { data: taxParams } = useTaxParameters(2026);
+  const { data: allClients } = useAccountyClients();
+  const currentClientName = allClients?.find(c => c.companyId === companyId)?.name || 'Cég';
 
   const isLoading = empLoading || cyclesLoading || filingsLoading;
 
@@ -166,6 +170,15 @@ export default function PayrollDashboardPage() {
 
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-500">
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: 'Portfólió', href: '/accounty' },
+          { label: currentClientName, href: `/accounty/client/${companyId}` },
+          { label: 'Bérszámfejtés' },
+        ]}
+        onNavigate={navigate}
+      />
       {/* Header */}
       <div className="flex items-end justify-between">
         <div>

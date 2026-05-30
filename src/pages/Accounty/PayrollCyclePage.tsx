@@ -38,7 +38,7 @@ export default function PayrollCyclePage() {
   const { id: companyId, cycleId } = useParams<{ id: string; cycleId: string }>();
   const navigate = useNavigate();
 
-  const isNewCycle = cycleId === 'new';
+  const isNewCycle = !cycleId || cycleId === 'new';
   const { data: cycle, isLoading: cycleLoading } = usePayrollCycle(isNewCycle ? '' : cycleId || '');
   const { data: employees = [] } = usePayrollEmployees(companyId || '');
   const { data: items = [] } = usePayrollItems(cycle?.id || '');
@@ -1034,6 +1034,12 @@ export default function PayrollCyclePage() {
           <Button
             className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
             disabled={updateStep.isPending}
+            onClick={async () => {
+              if (!cycle?.id) return;
+              await supabase.from('payroll_cycles').update({ status: 'closed', current_step: 8 } as any).eq('id', cycle.id);
+              toast({ title: '✅ Ciklus lezárva', description: `${cycle.year}. ${MONTHS[cycle.month - 1]} bérszámfejtés lezárva.` });
+              navigate(`/accounty/payroll/${companyId}`);
+            }}
           >
             <Check className="w-4 h-4" />
             Ciklus lezárása
