@@ -25,6 +25,16 @@ import { useUrlTab } from '@/lib/navigation';
 // ── Inline sub-components (CompanyAccessCard, CompanyMembersCard) kept here for simplicity ──
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 function CompanyAccessCard({ companyId, toast }: { companyId: string; toast: any }) {
   const [shareToken, setShareToken] = useState<string | null>(null);
@@ -116,6 +126,7 @@ function CompanyAccessCard({ companyId, toast }: { companyId: string; toast: any
 function CompanyMembersCard({ companyId, companyName, ownerId, isOwnerOrAdmin, toast }: { companyId: string; companyName: string; ownerId: string; isOwnerOrAdmin: boolean; toast: any }) {
   const queryClient = useQueryClient();
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; userId: string; name: string } | null>(null);
   const { data: members = [], isLoading: loading } = useQuery({
     queryKey: queryKeys.settingsMembers(companyId),
     queryFn: async () => {
@@ -173,7 +184,15 @@ function CompanyMembersCard({ companyId, companyName, ownerId, isOwnerOrAdmin, t
                   <p className="text-sm text-muted-foreground">Csatlakozott: {new Date(member.created_at).toLocaleDateString('hu-HU')}</p>
                 </div>
                 {isOwnerOrAdmin && member.user_id !== ownerId && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeMember(member.id, member.user_id)} title="Tag eltávolítása"><X className="h-4 w-4" /></Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive"
+                    onClick={() => setDeleteTarget({ id: member.id, userId: member.user_id, name: member.profile?.name || 'Névtelen felhasználó' })}
+                    title="Tag eltávolítása"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 )}
               </div>
             ))}
@@ -189,6 +208,32 @@ function CompanyMembersCard({ companyId, companyName, ownerId, isOwnerOrAdmin, t
         onSuccess={() => queryClient.invalidateQueries({ queryKey: queryKeys.settingsMembers(companyId) })}
         toast={toast}
       />
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tag eltávolítása</AlertDialogTitle>
+            <AlertDialogDescription>
+              Biztosan el szeretné távolítani **{deleteTarget?.name}** felhasználót a(z) **{companyName}** cég tagjai közül?
+              Ezzel a művelettel a felhasználó elveszíti hozzáférését a cég adataihoz, de a fiókja nem törlődik.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Mégsem</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) {
+                  removeMember(deleteTarget.id, deleteTarget.userId);
+                  setDeleteTarget(null);
+                }
+              }}
+            >
+              Eltávolítás
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
