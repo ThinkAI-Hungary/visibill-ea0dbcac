@@ -515,7 +515,7 @@ const InvoicesPage = () => {
   }, [matchedInvoiceIds, submittedInvoices, submittedToNavMap, submittedIdToTransactionsMap]);
 
   return (
-    <div className="h-full bg-background">
+    <div className="h-full bg-background page-animate">
       <main className="w-full max-w-none px-4 py-4">
         <Card>
           <CardHeader>

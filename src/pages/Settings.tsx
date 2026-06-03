@@ -12,12 +12,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { UnsavedChangesDialog } from "@/components/UnsavedChangesDialog";
-import { Building2, Bell, User, Palette, Shield, Info, Users, Copy, RefreshCw, X } from "lucide-react";
+import { Building2, Bell, User, Palette, Shield, Info, Users, Copy, RefreshCw, X, UserPlus } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProfileSection } from '@/components/settings/ProfileSection';
 import { BusinessSection } from '@/components/settings/BusinessSection';
 import { SystemSection } from '@/components/settings/SystemSection';
 import { SecuritySection } from '@/components/settings/SecuritySection';
+import { InviteUserDialog } from '@/components/settings/InviteUserDialog';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useUrlTab } from '@/lib/navigation';
 
 // ── Inline sub-components (CompanyAccessCard, CompanyMembersCard) kept here for simplicity ──
@@ -111,8 +113,9 @@ function CompanyAccessCard({ companyId, toast }: { companyId: string; toast: any
   );
 }
 
-function CompanyMembersCard({ companyId, ownerId, isOwner, toast }: { companyId: string; ownerId: string; isOwner: boolean; toast: any }) {
+function CompanyMembersCard({ companyId, companyName, ownerId, isOwnerOrAdmin, toast }: { companyId: string; companyName: string; ownerId: string; isOwnerOrAdmin: boolean; toast: any }) {
   const queryClient = useQueryClient();
+  const [inviteOpen, setInviteOpen] = useState(false);
   const { data: members = [], isLoading: loading } = useQuery({
     queryKey: queryKeys.settingsMembers(companyId),
     queryFn: async () => {
@@ -138,8 +141,18 @@ function CompanyMembersCard({ companyId, ownerId, isOwner, toast }: { companyId:
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" />Tagok</CardTitle>
-        <CardDescription>A céghez hozzáféréssel rendelkező felhasználók</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" />Tagok</CardTitle>
+            <CardDescription>A céghez hozzáféréssel rendelkező felhasználók</CardDescription>
+          </div>
+          {isOwnerOrAdmin && (
+            <Button size="sm" onClick={() => setInviteOpen(true)} className="gap-1.5">
+              <UserPlus className="h-4 w-4" />
+              Tag hozzáadása
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {loading ? <p className="text-sm text-muted-foreground">Betöltés...</p> : members.length === 0 ? <p className="text-sm text-muted-foreground">Nincsenek tagok.</p> : (
@@ -159,7 +172,7 @@ function CompanyMembersCard({ companyId, ownerId, isOwner, toast }: { companyId:
                   </p>
                   <p className="text-sm text-muted-foreground">Csatlakozott: {new Date(member.created_at).toLocaleDateString('hu-HU')}</p>
                 </div>
-                {isOwner && member.user_id !== ownerId && (
+                {isOwnerOrAdmin && member.user_id !== ownerId && (
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeMember(member.id, member.user_id)} title="Tag eltávolítása"><X className="h-4 w-4" /></Button>
                 )}
               </div>
@@ -167,6 +180,15 @@ function CompanyMembersCard({ companyId, ownerId, isOwner, toast }: { companyId:
           </div>
         )}
       </CardContent>
+
+      <InviteUserDialog
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        companyId={companyId}
+        companyName={companyName}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: queryKeys.settingsMembers(companyId) })}
+        toast={toast}
+      />
     </Card>
   );
 }
@@ -182,6 +204,7 @@ export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
+  const { isAdmin } = useUserRole();
   const { companies, selectedCompany, setSelectedCompany, refreshCompanies, loading: companiesLoading } = useCompany();
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -314,7 +337,7 @@ export default function Settings() {
   if (!initialDataLoaded || companiesLoading) return <ContentSkeleton />;
 
   return (
-    <div className="container mx-auto py-8 px-6">
+    <div className="container mx-auto py-8 px-6 page-animate">
       <div className="mb-8">
         <div className="flex items-center gap-2">
           <h1 className="text-3xl font-bold">Beállítások</h1>
@@ -360,7 +383,7 @@ export default function Settings() {
               <CompanyAccessCard companyId={selectedCompany.id} toast={toast} />
             )}
             {selectedCompany && (
-              <CompanyMembersCard companyId={selectedCompany.id} ownerId={selectedCompany.owner_id} isOwner={selectedCompany.owner_id === user?.id} toast={toast} />
+              <CompanyMembersCard companyId={selectedCompany.id} companyName={selectedCompany.name} ownerId={selectedCompany.owner_id} isOwnerOrAdmin={isAdmin} toast={toast} />
             )}
           </BusinessSection>
         </TabsContent>

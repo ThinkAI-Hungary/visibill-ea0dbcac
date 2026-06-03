@@ -347,7 +347,7 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
       Beosztás: ${data.representativeRole}<br>
       Kelt: ${data.reportDate}
     </div>
-    <div class="cover-badge">Generálta: Visibill</div>
+    <div class="cover-badge">Generálta: eaisybill</div>
   </div>
 
   <!-- BALANCE SHEET -->

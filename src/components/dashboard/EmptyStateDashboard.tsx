@@ -404,7 +404,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
 
       await refreshCompanies();
       setSelectedCompany(companyData);
-      toast({ title: 'Beállítás sikeres! Üdvözöljük a Visibillben!' });
+      toast({ title: 'Beállítás sikeres! Üdvözöljük a eaisybill-ben!' });
       
       // Trigger the product tour after successful onboarding
       onOnboardingComplete?.();
@@ -1007,7 +1007,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                   <Building2 className="h-8 w-8 text-primary" />
                 </div>
                 <DialogHeader className="items-center">
-                  <DialogTitle className="text-2xl">Üdvözöljük a Visibillben!</DialogTitle>
+                  <DialogTitle className="text-2xl">Üdvözöljük a eaisybill-ben!</DialogTitle>
                   <DialogDescription className="text-base mt-2">
                     Kezdjük el a vállalkozásod pénzügyi áttekintését néhány egyszerű lépésben.
                   </DialogDescription>

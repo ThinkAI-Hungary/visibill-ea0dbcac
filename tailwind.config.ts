@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Montserrat', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono: ['ui-monospace', 'SFMono-Regular', 'Consolas', 'monospace'],
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Consolas', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -87,7 +87,9 @@ export default {
         },
       },
       boxShadow: {
-        'soft': '0 2px 8px -2px rgba(0, 0, 0, 0.1), 0 4px 16px -4px rgba(0, 0, 0, 0.06)',
+        'soft': 'rgba(0,0,0,0.4) 0px 2px 4px 0px',
+        'card-inset': 'inset 0 0 0 1px hsl(var(--border))',
+        'subtle': '0 0 0 1px hsl(var(--border))',
         'premium': '0 8px 30px -12px rgba(0, 0, 0, 0.25)',
       },
       borderRadius: {

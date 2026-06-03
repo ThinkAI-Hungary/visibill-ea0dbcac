@@ -31,7 +31,7 @@ export function PageHeader({ companyName, breadcrumb, title, description, action
       {/* Title row */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground/90">{title}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
           {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
         </div>
         {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}

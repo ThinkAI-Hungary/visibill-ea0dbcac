@@ -743,7 +743,7 @@ const ManualUpload = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 py-8 max-w-4xl page-animate">
       <div className="mb-8">
         <div className="flex items-center gap-2">
           <h1 className="text-3xl font-bold tracking-tight">Dokumentum feltöltés</h1>

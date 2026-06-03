@@ -189,8 +189,11 @@ export default function EmployeeRegister() {
       <div className="w-full max-w-md space-y-8">
         {/* Logo */}
         <div className="text-center">
-          <span className="text-4xl font-black bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight">
-            Visibill
+          <span className="text-4xl tracking-tight select-none">
+            <span className="font-medium text-foreground/80">e</span>
+            <span className="font-bold text-primary">ai</span>
+            <span className="font-medium text-foreground/80">sy</span>
+            <span className="font-medium text-primary">bill</span>
           </span>
         </div>
 

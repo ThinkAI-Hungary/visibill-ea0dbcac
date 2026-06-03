@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import { STORAGE_KEYS } from '@/lib/constants';
 import { safeStorage } from '@/lib/storage';
 
@@ -27,33 +27,33 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.classList.add(newTheme);
   };
 
-  const setTheme = (newTheme: Theme) => {
+  const setTheme = useCallback((newTheme: Theme) => {
     const body = document.body;
 
-    const commit = () => {
-      // Suppress per-element transitions so colors snap instantly
-      body.classList.add('no-transitions');
-      setThemeState(newTheme);
-      safeStorage.setItem(STORAGE_KEYS.THEME, newTheme);
-      applyTheme(newTheme);
-      // Re-enable transitions after a single frame
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          body.classList.remove('no-transitions');
-        });
-      });
-    };
+    // Suppress per-element transitions AND animations so nothing replays
+    body.classList.add('no-transitions');
+    body.style.setProperty('--theme-switching', '1');
+    document.documentElement.style.animationPlayState = 'paused';
+    document.documentElement.classList.add('theme-switching');
 
-    // Use View Transitions API for a clean full-page crossfade
-    if ((document as any).startViewTransition) {
-      (document as any).startViewTransition(commit);
-    } else {
-      commit();
-    }
-  };
+    setThemeState(newTheme);
+    safeStorage.setItem(STORAGE_KEYS.THEME, newTheme);
+    applyTheme(newTheme);
+
+    // Re-enable transitions and animations after paint
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        body.classList.remove('no-transitions');
+        document.documentElement.style.animationPlayState = '';
+        document.documentElement.classList.remove('theme-switching');
+      });
+    });
+  }, []);
+
+  const value = useMemo(() => ({ theme, setTheme }), [theme, setTheme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

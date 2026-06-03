@@ -10,8 +10,8 @@
 
     <!-- 1. CSS variables – applied INSTANTLY before any paint -->
     <style>
-      :root { --initial-bg: #ffffff; --initial-text: #64748b; }
-      .dark { --initial-bg: #030712; --initial-text: #94a3b8; }
+      :root { --initial-bg: #f5f6f7; --initial-text: #62666d; }
+      .dark { --initial-bg: #08090a; --initial-text: #8a8f98; }
       html, body {
         background-color: var(--initial-bg) !important;
         color: var(--initial-text) !important;
@@ -31,21 +31,20 @@
       })();
     </script>
 
-    <!-- Montserrat Font (non-render-blocking) -->
+    <!-- Inter + JetBrains Mono Font (non-render-blocking) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"></noscript>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap"></noscript>
 
     <meta property="og:title" content="Visibill" />
     <meta property="og:description" content="Modern invoice and financial management system" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:image" content="/og-image.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:image" content="/og-image.png" />
 
     <!-- 3. Loader styles – use CSS variables for color-correct rendering -->
     <style>

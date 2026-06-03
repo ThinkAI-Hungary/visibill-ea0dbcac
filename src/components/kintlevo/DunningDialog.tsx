@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -243,7 +243,7 @@ export function DunningDialog({
           </div>
 
           <div className="rounded-lg bg-muted/30 border p-3 text-xs text-muted-foreground space-y-1">
-            <p>📧 A levelek a <strong>Visibill rendszeréből</strong> mennek ki — a partner Önnek tud visszaírni.</p>
+            <p>📧 A levelek a <strong>eaisybill rendszeréből</strong> mennek ki — a partner Önnek tud visszaírni.</p>
             <p>📎 Manuálisan feltöltött számlákhoz PDF melléklet is kerül a levélbe.</p>
           </div>
         </div>

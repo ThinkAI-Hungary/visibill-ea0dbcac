@@ -1,0 +1,2799 @@
+<!DOCTYPE html>
+<html lang="hu" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visibill — Linear Design Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════
+   DESIGN TOKENS — Linear-inspired Visibill
+   ══════════════════════════════════════════════════════════════ */
+
+:root {
+  --font-inter: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Spacing */
+  --sp-4: 4px; --sp-8: 8px; --sp-12: 12px; --sp-16: 16px;
+  --sp-20: 20px; --sp-24: 24px; --sp-32: 32px; --sp-48: 48px;
+
+  /* Radius */
+  --r-sm: 2px; --r-md: 6px; --r-xl: 12px; --r-pill: 9999px;
+}
+
+/* ── DARK THEME ── */
+[data-theme="dark"] {
+  --canvas: #08090a;
+  --nav-bg: #0f1011;
+  --card: #161718;
+  --input-bg: #383b3f;
+  --border-hairline: #23252a;
+  --border-medium: #323334;
+  --border-input: #383b3f;
+
+  --text-primary: #f7f8f8;
+  --text-secondary: #8a8f98;
+  --text-muted: #62666d;
+  --text-tertiary: #d0d6e0;
+
+  /* Visibill Fintech Teal — replaces acid-lime as primary action */
+  --accent-lime: #14D4B8;
+  --accent-lime-text: #08090a;
+  --accent-indigo: #5e6ad2;
+  --accent-emerald: #27a644;
+  --accent-crimson: #eb5757;
+  --accent-cyan: #02b8cc;
+  --accent-warning: #e4a822;
+
+  --shadow-card: rgba(0,0,0,0.4) 0px 2px 4px 0px;
+  --shadow-card-inset: inset 0 0 0 1px #23252a;
+  --shadow-subtle: rgb(35,37,42) 0px 0px 0px 1px inset;
+
+  --sidebar-hover: rgba(255,255,255,0.04);
+  --sidebar-active-bg: rgba(20,212,184,0.10);
+  --sidebar-active-border: rgba(20,212,184,0.4);
+
+  --metric-positive: #27a644;
+  --metric-negative: #eb5757;
+
+  --row-hover: rgba(255,255,255,0.02);
+  --badge-bg: rgba(255,255,255,0.06);
+}
+
+/* ── LIGHT THEME ── */
+[data-theme="light"] {
+  --canvas: #f5f6f7;
+  --nav-bg: #ffffff;
+  --card: #ffffff;
+  --input-bg: #f0f1f3;
+  --border-hairline: #e2e4e8;
+  --border-medium: #d0d3d9;
+  --border-input: #d0d3d9;
+
+  --text-primary: #08090a;
+  --text-secondary: #62666d;
+  --text-muted: #8a8f98;
+  --text-tertiary: #323334;
+
+  /* Visibill Fintech Teal — slightly darker for light bg readability */
+  --accent-lime: #0D9488;
+  --accent-lime-text: #ffffff;
+  --accent-indigo: #5e6ad2;
+  --accent-emerald: #1d8c38;
+  --accent-crimson: #d94444;
+  --accent-cyan: #0299ad;
+  --accent-warning: #9a6700;
+
+  --shadow-card: rgba(0,0,0,0.06) 0px 2px 8px 0px;
+  --shadow-card-inset: inset 0 0 0 1px #e2e4e8;
+  --shadow-subtle: rgba(0,0,0,0.06) 0px 0px 0px 1px inset;
+
+  --sidebar-hover: rgba(0,0,0,0.04);
+  --sidebar-active-bg: rgba(13,148,136,0.08);
+  --sidebar-active-border: rgba(13,148,136,0.4);
+
+  --metric-positive: #1d8c38;
+  --metric-negative: #d94444;
+
+  --row-hover: rgba(0,0,0,0.02);
+  --badge-bg: rgba(0,0,0,0.05);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BASE STYLES
+   ══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: var(--font-inter);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv01" on, "ss03" on;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   APP SHELL
+   ══════════════════════════════════════════════════════════════ */
+
+.app-shell {
+  display: flex;
+  height: 100vh;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: var(--nav-bg);
+  border-right: 1px solid var(--border-hairline);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-medium) transparent;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.sidebar-brand {
+  padding: 20px 20px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.sidebar-brand svg {
+  width: 28px;
+  height: 28px;
+}
+
+.sidebar-brand-text {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  color: var(--text-primary);
+}
+
+.sidebar-brand-text span {
+  color: var(--accent-lime);
+}
+
+.sidebar-company {
+  padding: 12px 12px 8px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.sidebar-company-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.sidebar-company-btn:hover { border-color: var(--accent-lime); }
+
+.sidebar-company-btn .chevron {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.sidebar-section-label {
+  padding: 16px 20px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.sidebar-nav { padding: 4px 8px; flex: 1; }
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-radius: var(--r-md);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  margin-bottom: 1px;
+  user-select: none;
+}
+
+.sidebar-item:hover {
+  background: var(--sidebar-hover);
+  color: var(--text-primary);
+}
+
+.sidebar-item.active {
+  background: var(--sidebar-active-bg);
+  color: var(--accent-lime);
+  font-weight: 500;
+  border-left-color: var(--sidebar-active-border);
+}
+
+.sidebar-item .icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.sidebar-item.active .icon { opacity: 1; }
+
+.sidebar-footer {
+  padding: 12px;
+  border-top: 1px solid var(--border-hairline);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-lime);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.sidebar-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-user-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user-email {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-footer-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.sidebar-footer-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+  font-size: 14px;
+}
+
+.sidebar-footer-btn:hover {
+  background: var(--sidebar-hover);
+  color: var(--text-primary);
+}
+
+.nav-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+/* ── MAIN AREA ── */
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  height: 48px;
+  min-height: 48px;
+  background: var(--nav-bg);
+  border-bottom: 1px solid var(--border-hairline);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 12px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.topbar-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.topbar-preset {
+  padding: 4px 12px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-hairline);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-inter);
+  transition: all 0.12s;
+}
+
+.topbar-preset:hover {
+  border-color: var(--accent-lime);
+  color: var(--text-primary);
+}
+
+.topbar-preset.active {
+  background: var(--accent-lime);
+  color: var(--accent-lime-text);
+  border-color: transparent;
+}
+
+.topbar-date {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  letter-spacing: -0.5px;
+}
+
+.topbar-spacer { flex: 1; }
+
+.topbar-theme-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-hairline);
+  background: transparent;
+  border-radius: var(--r-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.topbar-theme-btn:hover {
+  border-color: var(--accent-lime);
+  color: var(--text-primary);
+}
+
+/* ── CONTENT ── */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-medium) transparent;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DASHBOARD PAGE
+   ══════════════════════════════════════════════════════════════ */
+
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 300;
+  letter-spacing: -0.264px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.page-title strong {
+  font-weight: 500;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* ── METRICS GRID ── */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.metric-card {
+  background: var(--card);
+  border-radius: var(--r-xl);
+  padding: 20px;
+  box-shadow: var(--shadow-card-inset), var(--shadow-card);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metric-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.metric-label .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+  font-feature-settings: "tnum" 1;
+  margin-bottom: 8px;
+}
+
+.metric-change {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.metric-change.positive { color: var(--metric-positive); }
+.metric-change.negative { color: var(--metric-negative); }
+
+.metric-period {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: 8px;
+  font-family: var(--font-inter);
+}
+
+/* ── CHART AREA ── */
+.chart-card {
+  background: var(--card);
+  border-radius: var(--r-xl);
+  padding: 24px;
+  box-shadow: var(--shadow-card-inset), var(--shadow-card);
+  margin-bottom: 24px;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.chart-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.chart-legend {
+  display: flex;
+  gap: 16px;
+}
+
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.chart-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.chart-placeholder {
+  height: 200px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 48px,
+    var(--border-hairline) 48px,
+    var(--border-hairline) 49px
+  );
+  border-radius: var(--r-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-line {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 100%;
+}
+
+.chart-line svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── BOTTOM GRID ── */
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+/* ── TABLE CARD ── */
+.table-card {
+  background: var(--card);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-card-inset), var(--shadow-card);
+  overflow: hidden;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.table-card-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.table-card-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.table-card-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--badge-bg);
+  padding: 2px 8px;
+  border-radius: var(--r-sm);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  text-align: left;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+td {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-hairline);
+  transition: background-color 0.1s;
+}
+
+tr:hover td { background: var(--row-hover); }
+
+td:last-child, th:last-child { text-align: right; }
+
+.amount {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-feature-settings: "tnum" 1;
+  color: var(--text-primary);
+}
+
+.amount.negative { color: var(--accent-crimson); }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--r-sm);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-paid { color: var(--accent-emerald); }
+.status-paid .status-dot { background: var(--accent-emerald); }
+.status-open { color: var(--accent-cyan); }
+.status-open .status-dot { background: var(--accent-cyan); }
+.status-overdue { color: var(--accent-crimson); }
+.status-overdue .status-dot { background: var(--accent-crimson); }
+.status-pending { color: #e4a822; }
+.status-pending .status-dot { background: #e4a822; }
+
+/* ── SIDE CARDS ── */
+.side-card {
+  background: var(--card);
+  border-radius: var(--r-xl);
+  padding: 20px;
+  box-shadow: var(--shadow-card-inset), var(--shadow-card);
+  margin-bottom: 16px;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.side-card-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.progress-row {
+  margin-bottom: 12px;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.progress-bar {
+  height: 4px;
+  background: var(--border-hairline);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+
+.quick-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.12s;
+  border: 1px solid transparent;
+}
+
+.quick-action:hover {
+  background: var(--sidebar-hover);
+  border-color: var(--border-hairline);
+  color: var(--text-primary);
+}
+
+.quick-action .qa-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-md);
+  background: var(--badge-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   INVOICES PAGE
+   ══════════════════════════════════════════════════════════════ */
+
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border-hairline);
+  margin-bottom: 24px;
+}
+
+.tab {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.12s;
+  user-select: none;
+}
+
+.tab:hover { color: var(--text-secondary); }
+
+.tab.active {
+  color: var(--text-primary);
+  font-weight: 500;
+  border-bottom-color: var(--accent-lime);
+}
+
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filter-input {
+  padding: 6px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-inter);
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 200px;
+}
+
+.filter-input::placeholder { color: var(--text-muted); }
+.filter-input:focus { border-color: var(--accent-lime); }
+
+.filter-select {
+  padding: 6px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: var(--font-inter);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+  appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2362666d' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+.filter-select:focus { border-color: var(--accent-lime); }
+
+.filter-btn {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: var(--font-inter);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.filter-btn:hover {
+  border-color: var(--accent-lime);
+  color: var(--text-primary);
+}
+
+.invoice-id {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent-lime);
+  letter-spacing: -0.3px;
+}
+
+.partner-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-hairline);
+}
+
+.pagination-info {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.pagination-pages {
+  display: flex;
+  gap: 2px;
+}
+
+.page-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-md);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: var(--font-inter);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.page-btn:hover { background: var(--sidebar-hover); color: var(--text-primary); }
+
+.page-btn.active {
+  background: var(--accent-lime);
+  color: var(--accent-lime-text);
+  font-weight: 500;
+}
+
+/* ── PAGE SELECTOR ── */
+.page-selector {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  background: var(--nav-bg);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-pill);
+  padding: 4px;
+  box-shadow: var(--shadow-card);
+  z-index: 1000;
+}
+
+.page-selector-btn {
+  padding: 6px 16px;
+  border-radius: var(--r-pill);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-inter);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.page-selector-btn:hover { color: var(--text-primary); }
+
+.page-selector-btn.active {
+  background: var(--accent-lime);
+  color: var(--accent-lime-text);
+}
+
+/* ── HIDDEN ── */
+.hidden { display: none !important; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-medium);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1200px) {
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .bottom-grid { grid-template-columns: 1fr; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   OVERLAY & MODAL SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── DIALOG ── */
+.dialog {
+  background: var(--card);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-card-inset), rgba(0,0,0,0.6) 0px 4px 32px 0px;
+  width: 480px;
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow: hidden;
+  transform: scale(0.96) translateY(8px);
+  transition: transform 0.2s ease;
+}
+
+.overlay.open .dialog { transform: scale(1) translateY(0); }
+
+.dialog-header {
+  padding: 20px 24px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.dialog-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.dialog-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+}
+
+.dialog-close:hover {
+  background: var(--sidebar-hover);
+  color: var(--text-primary);
+}
+
+.dialog-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  max-height: 50vh;
+}
+
+.dialog-footer {
+  padding: 16px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid var(--border-hairline);
+}
+
+/* ── BUTTONS ── */
+.btn {
+  padding: 7px 16px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-inter);
+  cursor: pointer;
+  transition: all 0.12s;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-primary {
+  background: var(--accent-lime);
+  color: var(--accent-lime-text);
+  border-color: transparent;
+}
+
+.btn-primary:hover { opacity: 0.9; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: var(--border-hairline);
+}
+
+.btn-ghost:hover {
+  border-color: var(--accent-lime);
+  color: var(--text-primary);
+}
+
+.btn-destructive {
+  background: var(--accent-crimson);
+  color: #fff;
+  border-color: transparent;
+}
+
+.btn-destructive:hover { opacity: 0.9; }
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+/* ── FORM GROUP ── */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.form-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-inter);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-input::placeholder { color: var(--text-muted); }
+.form-input:focus { border-color: var(--accent-lime); box-shadow: 0 0 0 2px rgba(20,212,184,0.15); }
+
+.form-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-inter);
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.15s;
+}
+
+.form-textarea:focus { border-color: var(--accent-lime); box-shadow: 0 0 0 2px rgba(20,212,184,0.15); }
+
+.form-select {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-inter);
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2362666d' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: border-color 0.15s;
+}
+
+.form-select:focus { border-color: var(--accent-lime); }
+
+.form-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.form-error {
+  font-size: 11px;
+  color: var(--accent-crimson);
+  margin-top: 4px;
+}
+
+/* ── WIDE DIALOG ── */
+.dialog-wide { width: 640px; }
+
+/* ── SHEET (side panel) ── */
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.sheet-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sheet {
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 400px;
+  height: 100vh;
+  background: var(--card);
+  border-left: 1px solid var(--border-hairline);
+  box-shadow: rgba(0,0,0,0.6) -4px 0px 32px 0px;
+  z-index: 2001;
+  display: flex;
+  flex-direction: column;
+  transition: right 0.25s ease;
+}
+
+.sheet-overlay.open + .sheet,
+.sheet.open { right: 0; }
+
+/* ── TOAST ── */
+.toast-container {
+  position: fixed;
+  bottom: 80px;
+  right: 24px;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+  box-shadow: rgba(0,0,0,0.5) 0px 4px 24px 0px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 300px;
+  max-width: 400px;
+  pointer-events: auto;
+  transform: translateX(120%);
+  transition: transform 0.3s ease;
+  opacity: 0;
+}
+
+.toast.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.toast-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.toast-content { flex: 1; }
+
+.toast-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.toast-message {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.toast-close {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: color 0.12s;
+}
+
+.toast-close:hover { color: var(--text-primary); }
+
+/* ── COMMAND PALETTE ── */
+.cmd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  z-index: 4000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 20vh;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.cmd-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cmd-palette {
+  background: var(--card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-xl);
+  box-shadow: rgba(0,0,0,0.6) 0px 8px 48px 0px;
+  width: 560px;
+  max-width: 90vw;
+  overflow: hidden;
+  transform: scale(0.98) translateY(-8px);
+  transition: transform 0.15s ease;
+}
+
+.cmd-overlay.open .cmd-palette { transform: scale(1) translateY(0); }
+
+.cmd-input-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.cmd-input-icon { color: var(--text-muted); font-size: 16px; flex-shrink: 0; }
+
+.cmd-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-family: var(--font-inter);
+  outline: none;
+}
+
+.cmd-input::placeholder { color: var(--text-muted); }
+
+.cmd-kbd {
+  padding: 2px 6px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  background: var(--badge-bg);
+  color: var(--text-muted);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-hairline);
+}
+
+.cmd-section-label {
+  padding: 8px 16px 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cmd-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.08s;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.cmd-item:hover {
+  background: var(--sidebar-hover);
+  color: var(--text-primary);
+}
+
+.cmd-item.highlighted {
+  background: var(--sidebar-active-bg);
+  color: var(--text-primary);
+}
+
+.cmd-item .cmd-icon { width: 16px; height: 16px; opacity: 0.6; flex-shrink: 0; }
+.cmd-item:hover .cmd-icon { opacity: 1; }
+
+.cmd-item-shortcut {
+  margin-left: auto;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.cmd-footer {
+  padding: 8px 16px;
+  border-top: 1px solid var(--border-hairline);
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.cmd-footer span { display: flex; align-items: center; gap: 4px; }
+
+/* ── DROPDOWN MENU ── */
+.dropdown-menu {
+  position: absolute;
+  background: var(--card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-md);
+  box-shadow: rgba(0,0,0,0.5) 0px 4px 24px 0px;
+  min-width: 180px;
+  padding: 4px;
+  z-index: 2500;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: all 0.12s;
+}
+
+.dropdown-menu.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.08s;
+}
+
+.dropdown-item:hover {
+  background: var(--sidebar-hover);
+  color: var(--text-primary);
+}
+
+.dropdown-item.destructive { color: var(--accent-crimson); }
+.dropdown-item.destructive:hover { background: rgba(235,87,87,0.08); }
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-hairline);
+  margin: 4px 0;
+}
+
+.dropdown-item .di-icon { width: 14px; height: 14px; opacity: 0.6; }
+
+/* ── TOOLTIP ── */
+.tooltip-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip-text {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.95);
+  padding: 4px 10px;
+  background: var(--text-primary);
+  color: var(--canvas);
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.12s;
+  z-index: 5000;
+}
+
+.tooltip-wrap:hover .tooltip-text {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+/* ── POPOVER ── */
+.popover {
+  position: absolute;
+  background: var(--card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--r-xl);
+  box-shadow: rgba(0,0,0,0.5) 0px 4px 24px 0px;
+  padding: 16px;
+  width: 280px;
+  z-index: 2500;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: all 0.15s;
+}
+
+.popover.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* ── BADGE VARIANTS ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.badge-default { background: var(--badge-bg); color: var(--text-secondary); }
+.badge-teal { background: rgba(20,212,184,0.12); color: var(--accent-lime); }
+.badge-indigo { background: rgba(94,106,210,0.12); color: var(--accent-indigo); }
+.badge-emerald { background: rgba(39,166,68,0.12); color: var(--accent-emerald); }
+.badge-crimson { background: rgba(235,87,87,0.12); color: var(--accent-crimson); }
+.badge-cyan { background: rgba(2,184,204,0.12); color: var(--accent-cyan); }
+
+/* ── SWITCH ── */
+.switch {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--border-medium);
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.switch.on { background: var(--accent-lime); }
+
+.switch-knob {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.switch.on .switch-knob { left: 18px; }
+
+/* ── AVATAR GROUP ── */
+.avatar-group {
+  display: flex;
+}
+
+.avatar-group .sidebar-avatar {
+  margin-left: -8px;
+  border: 2px solid var(--card);
+}
+
+.avatar-group .sidebar-avatar:first-child { margin-left: 0; }
+
+/* ── UI COMPONENTS GRID ── */
+.components-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.component-showcase {
+  background: var(--card);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-card-inset), var(--shadow-card);
+  overflow: hidden;
+}
+
+.component-showcase-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-hairline);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.component-showcase-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.component-showcase-body {
+  padding: 20px;
+}
+
+.component-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.component-row:last-child { margin-bottom: 0; }
+
+.component-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  width: 100%;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+/* ── INLINE ALERT ── */
+.inline-alert {
+  padding: 12px 16px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid;
+}
+
+.inline-alert-info {
+  background: rgba(94,106,210,0.06);
+  border-color: rgba(94,106,210,0.2);
+  color: var(--accent-indigo);
+}
+
+.inline-alert-warning {
+  background: rgba(228,168,34,0.06);
+  border-color: rgba(228,168,34,0.2);
+  color: var(--accent-warning);
+}
+
+.inline-alert-error {
+  background: rgba(235,87,87,0.06);
+  border-color: rgba(235,87,87,0.2);
+  color: var(--accent-crimson);
+}
+
+.inline-alert-success {
+  background: rgba(39,166,68,0.06);
+  border-color: rgba(39,166,68,0.2);
+  color: var(--accent-emerald);
+}
+
+.inline-alert-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── SKELETON LOADER ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--border-hairline) 25%, var(--border-medium) 50%, var(--border-hairline) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--r-sm);
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- ════════════════ SIDEBAR ════════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <svg viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="6" fill="var(--accent-lime)"/><path d="M8 14h12M14 8v12" stroke="var(--accent-lime-text)" stroke-width="2.5" stroke-linecap="round"/></svg>
+      <div class="sidebar-brand-text">Visi<span>bill</span></div>
+    </div>
+
+    <div class="sidebar-company">
+      <button class="sidebar-company-btn">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M2 3h5v10H2zM9 1h5v12H9z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/></svg>
+        TechStart Kft.
+        <span class="chevron">▾</span>
+      </button>
+    </div>
+
+    <div class="sidebar-section-label">Navigáció</div>
+
+    <nav class="sidebar-nav">
+      <a class="sidebar-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+        <svg class="nav-icon" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3" fill="none"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3" fill="none"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3" fill="none"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3" fill="none"/></svg>
+        Irányítópult
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="13" cy="8" r="1.5" stroke="currentColor" stroke-width="1.3" fill="none"/></svg>
+        Kategóriák
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M2 2h4v5H2zM8 2h6v3H8zM8 7h6v7H8zM2 9h4v5H2z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/></svg>
+        Projektek
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg>
+        Partnertörzs
+      </a>
+      <a class="sidebar-item" onclick="showPage('invoices')" id="nav-invoices">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M4 1h6l3 3v11H3V1z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M6 7h4M6 10h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Számlák
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M3 2h10v12H3z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M6 6h4M6 9h3M6 12h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Kintlévőség
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M1 13h14M3 13V7M6 13V5M9 13V8M12 13V3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Tranzakciók
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M2 2h12v12H2z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M2 6h12M6 6v8" stroke="currentColor" stroke-width="1.3"/></svg>
+        Főkönyv
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M2 12l4-4 3 2 5-7" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Eredménykimutatás
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M8 2v12M3 8h10M5 4l6 8M11 4l-6 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Mérleg
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M3 2h10v12H3z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M6 5h4M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M11 5l1 1-2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Beszámoló
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M4 1h8l1 3H3zM3 4h10v11H3z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M6 8h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        ÁFA Bevallás
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M8 1v8M4 5l4 4 4-4M2 11v3h12v-3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Feltöltés
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M2 3h12v10H2z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M8 7v4M6 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Bérek/járulékok
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M8 4v4l3 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Munkaidő
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M5 7h6M5 10h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Házipénztár
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M3 3h10v10H3z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M3 7h10M7 3v10" stroke="currentColor" stroke-width="1.3"/></svg>
+        TENY
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="5" cy="8" r="2" stroke="currentColor" stroke-width="1.3" fill="none"/><circle cx="11" cy="8" r="2" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M7 8h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Integrációk
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M2 12l4-4-2-3 5-3 5 3-2 3 4 4" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Árfolyamok
+      </a>
+      <a class="sidebar-item" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/><path d="M5 10h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Előfizetés
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-avatar">KP</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">Kovács Péter</div>
+        <div class="sidebar-user-email">peter@techstart.hu</div>
+      </div>
+      <div class="sidebar-footer-actions">
+        <button class="sidebar-footer-btn" onclick="toggleTheme()" title="Téma váltás" id="theme-btn">
+          <svg class="nav-icon" viewBox="0 0 16 16" id="theme-icon-sidebar"><circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M12.5 3.5l-1.4 1.4M4.9 11.1l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </button>
+        <button class="sidebar-footer-btn" title="Beállítások">
+          <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M13 3l-1.5 1.5M4.5 11.5L3 13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ════════════════ MAIN AREA ════════════════ -->
+  <div class="main-area">
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <span class="topbar-label">Időszak:</span>
+      <button class="topbar-preset">Ez a hónap</button>
+      <button class="topbar-preset">Előző hónap</button>
+      <button class="topbar-preset active">Ez az év</button>
+      <span class="topbar-date">2026.01.01 – 2026.06.03</span>
+      <div class="topbar-spacer"></div>
+      <button class="topbar-theme-btn" onclick="toggleTheme()" id="theme-btn-top">
+        <svg class="nav-icon" viewBox="0 0 16 16" id="theme-icon-topbar"><path d="M13 9a5 5 0 1 1-6-6 4 4 0 0 0 6 6z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/></svg>
+      </button>
+    </header>
+
+    <!-- ═══════════ DASHBOARD PAGE ═══════════ -->
+    <div class="content" id="page-dashboard">
+      <div class="page-header">
+        <h1 class="page-title">Üdvözöljük, <strong>Kovács Péter</strong></h1>
+        <p class="page-subtitle">TechStart Kft. · 2026. január – június</p>
+      </div>
+
+      <!-- METRIC CARDS -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">
+            <span class="dot" style="background:var(--accent-emerald)"></span>
+            Bevétel
+          </div>
+          <div class="metric-value">24 850 000 Ft</div>
+          <div class="metric-change positive">
+            ↑ +12.4%
+            <span class="metric-period">előző időszakhoz</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">
+            <span class="dot" style="background:var(--accent-crimson)"></span>
+            Kiadás
+          </div>
+          <div class="metric-value">18 320 000 Ft</div>
+          <div class="metric-change negative">
+            ↑ +8.2%
+            <span class="metric-period">előző időszakhoz</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">
+            <span class="dot" style="background:var(--accent-cyan)"></span>
+            Eredmény
+          </div>
+          <div class="metric-value">6 530 000 Ft</div>
+          <div class="metric-change positive">
+            ↑ +24.1%
+            <span class="metric-period">előző időszakhoz</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">
+            <span class="dot" style="background:var(--accent-indigo)"></span>
+            Nyitott számlák
+          </div>
+          <div class="metric-value">12</div>
+          <div class="metric-change negative">
+            ↑ +3
+            <span class="metric-period">új számla</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHART -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">Bevétel vs Kiadás</span>
+          <div class="chart-legend">
+            <span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--accent-emerald)"></span> Bevétel</span>
+            <span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--accent-crimson)"></span> Kiadás</span>
+            <span class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--accent-cyan)"></span> Eredmény</span>
+          </div>
+        </div>
+        <div class="chart-placeholder">
+          <div class="chart-line">
+            <svg viewBox="0 0 800 200" preserveAspectRatio="none">
+              <polyline fill="none" stroke="var(--accent-emerald)" stroke-width="2" points="0,140 80,120 160,90 240,100 320,70 400,85 480,60 560,50 640,65 720,40 800,30" opacity="0.8"/>
+              <polyline fill="none" stroke="var(--accent-crimson)" stroke-width="2" points="0,160 80,155 160,140 240,150 320,130 400,145 480,120 560,135 640,125 720,115 800,110" opacity="0.8"/>
+              <polyline fill="none" stroke="var(--accent-cyan)" stroke-width="1.5" stroke-dasharray="4,4" points="0,180 80,175 160,150 240,160 320,130 400,140 480,100 560,105 640,110 720,85 800,60" opacity="0.5"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM GRID -->
+      <div class="bottom-grid">
+        <!-- Recent Invoices -->
+        <div class="table-card">
+          <div class="table-card-header">
+            <span class="table-card-title">Legutóbbi számlák</span>
+            <span class="table-card-badge">5 új</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Szám</th>
+                <th>Partner</th>
+                <th>Státusz</th>
+                <th>Összeg</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="invoice-id">INV-2026-0847</span></td>
+                <td><span class="partner-name">Digital Solutions Kft.</span></td>
+                <td><span class="status-badge status-paid"><span class="status-dot"></span> Fizetve</span></td>
+                <td class="amount">1 250 000 Ft</td>
+              </tr>
+              <tr>
+                <td><span class="invoice-id">INV-2026-0846</span></td>
+                <td><span class="partner-name">CloudTech Zrt.</span></td>
+                <td><span class="status-badge status-open"><span class="status-dot"></span> Nyitott</span></td>
+                <td class="amount">890 000 Ft</td>
+              </tr>
+              <tr>
+                <td><span class="invoice-id">INV-2026-0845</span></td>
+                <td><span class="partner-name">Magyar Posta Zrt.</span></td>
+                <td><span class="status-badge status-overdue"><span class="status-dot"></span> Lejárt</span></td>
+                <td class="amount negative">-45 000 Ft</td>
+              </tr>
+              <tr>
+                <td><span class="invoice-id">INV-2026-0844</span></td>
+                <td><span class="partner-name">Webshop Pro Bt.</span></td>
+                <td><span class="status-badge status-pending"><span class="status-dot"></span> Feldolgozás</span></td>
+                <td class="amount">2 340 000 Ft</td>
+              </tr>
+              <tr>
+                <td><span class="invoice-id">INV-2026-0843</span></td>
+                <td><span class="partner-name">DataSync Kft.</span></td>
+                <td><span class="status-badge status-paid"><span class="status-dot"></span> Fizetve</span></td>
+                <td class="amount">780 000 Ft</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Side panel -->
+        <div>
+          <div class="side-card">
+            <div class="side-card-title">Előfizetés használat</div>
+            <div class="progress-row">
+              <div class="progress-label">
+                <span>Számlák</span>
+                <span style="font-family:var(--font-mono);font-size:11px">847 / 1000</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width:84.7%;background:var(--accent-indigo)"></div>
+              </div>
+            </div>
+            <div class="progress-row">
+              <div class="progress-label">
+                <span>Tranzakciók</span>
+                <span style="font-family:var(--font-mono);font-size:11px">2 340 / 5000</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width:46.8%;background:var(--accent-emerald)"></div>
+              </div>
+            </div>
+            <div class="progress-row">
+              <div class="progress-label">
+                <span>Tárhely</span>
+                <span style="font-family:var(--font-mono);font-size:11px">1.2 GB / 5 GB</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width:24%;background:var(--accent-cyan)"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="side-card">
+            <div class="side-card-title">Gyors műveletek</div>
+            <div class="quick-action"><span class="qa-icon"><svg class="nav-icon" viewBox="0 0 16 16"><path d="M8 1v8M4 5l4 4 4-4M2 11v3h12v-3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Számla feltöltés</div>
+            <div class="quick-action"><span class="qa-icon"><svg class="nav-icon" viewBox="0 0 16 16"><path d="M1 13h14M3 13V7M6 13V5M9 13V8M12 13V3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span> Bankkivonat import</div>
+            <div class="quick-action"><span class="qa-icon"><svg class="nav-icon" viewBox="0 0 16 16"><path d="M4 1h8l1 3H3zM3 4h10v11H3z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M6 8h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span> ÁFA bevallás</div>
+            <div class="quick-action"><span class="qa-icon"><svg class="nav-icon" viewBox="0 0 16 16"><path d="M3 2h10v12H3z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M6 5h4M6 8h4M6 11h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span> Éves beszámoló</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ INVOICES PAGE ═══════════ -->
+    <div class="content hidden" id="page-invoices">
+      <div class="page-header">
+        <h1 class="page-title">Számlák</h1>
+        <p class="page-subtitle">Bejövő és kimenő számlák kezelése</p>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs">
+        <div class="tab active">NAV bejövő <span class="table-card-badge" style="margin-left:6px">342</span></div>
+        <div class="tab">NAV kimenő <span class="table-card-badge" style="margin-left:6px">128</span></div>
+        <div class="tab">Feltöltött <span class="table-card-badge" style="margin-left:6px">89</span></div>
+        <div class="tab">Párosítatlan <span class="table-card-badge" style="margin-left:6px;color:var(--accent-crimson)">7</span></div>
+      </div>
+
+      <!-- FILTERS -->
+      <div class="filter-bar">
+        <input class="filter-input" placeholder="Keresés partner, számla szám..." />
+        <select class="filter-select">
+          <option>Minden státusz</option>
+          <option>Fizetve</option>
+          <option>Nyitott</option>
+          <option>Lejárt</option>
+        </select>
+        <select class="filter-select">
+          <option>Minden típus</option>
+          <option>Bejövő</option>
+          <option>Kimenő</option>
+        </select>
+        <button class="filter-btn">Szűrők törlése</button>
+      </div>
+
+      <!-- INVOICE TABLE -->
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Számla szám</th>
+              <th>Partner</th>
+              <th>Dátum</th>
+              <th>Fizetési határidő</th>
+              <th>Státusz</th>
+              <th>Nettó</th>
+              <th>ÁFA</th>
+              <th>Bruttó</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="invoice-id">NAV-2026-048291</span></td>
+              <td><span class="partner-name">Digital Solutions Kft.</span></td>
+              <td>2026.06.01</td>
+              <td>2026.06.30</td>
+              <td><span class="status-badge status-paid"><span class="status-dot"></span> Fizetve</span></td>
+              <td class="amount">984 252 Ft</td>
+              <td class="amount" style="color:var(--text-muted)">265 948 Ft</td>
+              <td class="amount">1 250 200 Ft</td>
+            </tr>
+            <tr>
+              <td><span class="invoice-id">NAV-2026-048290</span></td>
+              <td><span class="partner-name">CloudTech Zrt.</span></td>
+              <td>2026.05.28</td>
+              <td>2026.06.28</td>
+              <td><span class="status-badge status-open"><span class="status-dot"></span> Nyitott</span></td>
+              <td class="amount">700 787 Ft</td>
+              <td class="amount" style="color:var(--text-muted)">189 213 Ft</td>
+              <td class="amount">890 000 Ft</td>
+            </tr>
+            <tr>
+              <td><span class="invoice-id">NAV-2026-048289</span></td>
+              <td><span class="partner-name">Apex Marketing Kft.</span></td>
+              <td>2026.05.25</td>
+              <td>2026.06.10</td>
+              <td><span class="status-badge status-overdue"><span class="status-dot"></span> Lejárt</span></td>
+              <td class="amount">1 653 543 Ft</td>
+              <td class="amount" style="color:var(--text-muted)">446 457 Ft</td>
+              <td class="amount">2 100 000 Ft</td>
+            </tr>
+            <tr>
+              <td><span class="invoice-id">NAV-2026-048288</span></td>
+              <td><span class="partner-name">Magyar Telekom Nyrt.</span></td>
+              <td>2026.05.20</td>
+              <td>2026.06.20</td>
+              <td><span class="status-badge status-paid"><span class="status-dot"></span> Fizetve</span></td>
+              <td class="amount">35 433 Ft</td>
+              <td class="amount" style="color:var(--text-muted)">9 567 Ft</td>
+              <td class="amount">45 000 Ft</td>
+            </tr>
+            <tr>
+              <td><span class="invoice-id">NAV-2026-048287</span></td>
+              <td><span class="partner-name">Webshop Pro Bt.</span></td>
+              <td>2026.05.18</td>
+              <td>2026.06.18</td>
+              <td><span class="status-badge status-pending"><span class="status-dot"></span> Feldolgozás</span></td>
+              <td class="amount">1 842 520 Ft</td>
+              <td class="amount" style="color:var(--text-muted)">497 480 Ft</td>
+              <td class="amount">2 340 000 Ft</td>
+            </tr>
+            <tr>
+              <td><span class="invoice-id">NAV-2026-048286</span></td>
+              <td><span class="partner-name">DataSync Kft.</span></td>
+              <td>2026.05.15</td>
+              <td>2026.06.15</td>
+              <td><span class="status-badge status-paid"><span class="status-dot"></span> Fizetve</span></td>
+              <td class="amount">614 173 Ft</td>
+              <td class="amount" style="color:var(--text-muted)">165 827 Ft</td>
+              <td class="amount">780 000 Ft</td>
+            </tr>
+            <tr>
+              <td><span class="invoice-id">NAV-2026-048285</span></td>
+              <td><span class="partner-name">Green Energy Zrt.</span></td>
+              <td>2026.05.12</td>
+              <td>2026.06.12</td>
+              <td><span class="status-badge status-open"><span class="status-dot"></span> Nyitott</span></td>
+              <td class="amount">433 071 Ft</td>
+              <td class="amount" style="color:var(--text-muted)">116 929 Ft</td>
+              <td class="amount">550 000 Ft</td>
+            </tr>
+            <tr>
+              <td><span class="invoice-id">NAV-2026-048284</span></td>
+              <td><span class="partner-name">Office Depot Kft.</span></td>
+              <td>2026.05.10</td>
+              <td>2026.05.25</td>
+              <td><span class="status-badge status-overdue"><span class="status-dot"></span> Lejárt</span></td>
+              <td class="amount">88 189 Ft</td>
+              <td class="amount" style="color:var(--text-muted)">23 811 Ft</td>
+              <td class="amount">112 000 Ft</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <span class="pagination-info">Találatok: 342</span>
+          <div class="pagination-pages">
+            <button class="page-btn">‹</button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn">4</button>
+            <button class="page-btn">5</button>
+            <button class="page-btn">›</button>
+          </div>
+          <span class="pagination-info" style="font-family:var(--font-mono)">50 / oldal</span>
+        </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="content hidden" id="page-components">
+      <div class="page-header">
+        <h1 class="page-title">UI <strong>Elemek</strong></h1>
+        <p class="page-subtitle">Gombok, badge-ek, modal-ok, toast-ok, form elemek — design showcase</p>
+      </div>
+
+      <div class="components-grid">
+
+        <!-- BUTTONS -->
+        <div class="component-showcase">
+          <div class="component-showcase-header">
+            <div class="component-showcase-title">Gombok</div>
+            <span class="badge badge-teal">Interactive</span>
+          </div>
+          <div class="component-showcase-body">
+            <div class="component-label">Variánsok</div>
+            <div class="component-row">
+              <button class="btn btn-primary">Primary</button>
+              <button class="btn btn-ghost">Ghost</button>
+              <button class="btn btn-destructive">Destructive</button>
+            </div>
+            <div class="component-label">Méret</div>
+            <div class="component-row">
+              <button class="btn btn-primary btn-sm">Small</button>
+              <button class="btn btn-primary">Normal</button>
+            </div>
+            <div class="component-label">Ikonnal</div>
+            <div class="component-row">
+              <button class="btn btn-primary"><svg class="nav-icon" viewBox="0 0 16 16"><path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Új számla</button>
+              <button class="btn btn-ghost"><svg class="nav-icon" viewBox="0 0 16 16"><path d="M8 1v8M4 5l4 4 4-4M2 11v3h12v-3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Letöltés</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- BADGES -->
+        <div class="component-showcase">
+          <div class="component-showcase-header">
+            <div class="component-showcase-title">Badge-ek & Státuszok</div>
+          </div>
+          <div class="component-showcase-body">
+            <div class="component-label">Szín variánsok</div>
+            <div class="component-row">
+              <span class="badge badge-default">Default</span>
+              <span class="badge badge-teal">Teal</span>
+              <span class="badge badge-indigo">Indigo</span>
+              <span class="badge badge-emerald">Emerald</span>
+              <span class="badge badge-crimson">Crimson</span>
+              <span class="badge badge-cyan">Cyan</span>
+            </div>
+            <div class="component-label">Státusz badge-ek</div>
+            <div class="component-row">
+              <span class="status-badge status-paid"><span class="status-dot"></span>Fizetve</span>
+              <span class="status-badge status-open"><span class="status-dot"></span>Nyitott</span>
+              <span class="status-badge status-overdue"><span class="status-dot"></span>Lejárt</span>
+              <span class="status-badge status-pending"><span class="status-dot"></span>Feldolgozás</span>
+            </div>
+            <div class="component-label">Avatar csoport</div>
+            <div class="component-row">
+              <div class="avatar-group">
+                <div class="sidebar-avatar" style="background:var(--accent-indigo);font-size:11px">KP</div>
+                <div class="sidebar-avatar" style="background:var(--accent-emerald);font-size:11px">NB</div>
+                <div class="sidebar-avatar" style="background:var(--accent-crimson);font-size:11px">TG</div>
+                <div class="sidebar-avatar" style="background:var(--accent-cyan);font-size:11px">+3</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SWITCHES & TOGGLES -->
+        <div class="component-showcase">
+          <div class="component-showcase-header">
+            <div class="component-showcase-title">Kapcsolók & Toggle-ök</div>
+          </div>
+          <div class="component-showcase-body">
+            <div class="component-label">Switch</div>
+            <div class="component-row" style="gap:24px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="switch on" onclick="this.classList.toggle('on')"><div class="switch-knob"></div></div>
+                <span style="font-size:13px;color:var(--text-secondary)">Aktív</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="switch" onclick="this.classList.toggle('on')"><div class="switch-knob"></div></div>
+                <span style="font-size:13px;color:var(--text-secondary)">Inaktív</span>
+              </div>
+            </div>
+            <div class="component-label">Tooltipek</div>
+            <div class="component-row" style="gap:16px">
+              <div class="tooltip-wrap">
+                <button class="btn btn-ghost btn-sm">Hover me</button>
+                <span class="tooltip-text">Ez egy tooltip szöveg</span>
+              </div>
+              <div class="tooltip-wrap">
+                <button class="btn btn-primary btn-sm">Mentés</button>
+                <span class="tooltip-text">⌘S — Gyors mentés</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INLINE ALERTS -->
+        <div class="component-showcase">
+          <div class="component-showcase-header">
+            <div class="component-showcase-title">Inline Alert-ek</div>
+          </div>
+          <div class="component-showcase-body" style="display:flex;flex-direction:column;gap:8px">
+            <div class="inline-alert inline-alert-info">
+              <svg class="inline-alert-icon" viewBox="0 0 16 16" style="width:16px;height:16px"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M8 7v4M8 5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <span>Az új NAV XML szabvány 2026.07.01-től lép érvénybe.</span>
+            </div>
+            <div class="inline-alert inline-alert-success">
+              <svg class="inline-alert-icon" viewBox="0 0 16 16" style="width:16px;height:16px"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M5.5 8l2 2 3-4" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>3 számla sikeresen feldolgozva és párosítva.</span>
+            </div>
+            <div class="inline-alert inline-alert-warning">
+              <svg class="inline-alert-icon" viewBox="0 0 16 16" style="width:16px;height:16px"><path d="M8 2L1 14h14L8 2z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M8 7v3M8 12v.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              <span>Lejárt 5 kimenő számla — összeg: 1.2M Ft</span>
+            </div>
+            <div class="inline-alert inline-alert-error">
+              <svg class="inline-alert-icon" viewBox="0 0 16 16" style="width:16px;height:16px"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M6 6l4 4M10 6l-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              <span>Sikertelen API kapcsolat — NAV szerver nem elérhető.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- FORM ELEMENTS -->
+        <div class="component-showcase">
+          <div class="component-showcase-header">
+            <div class="component-showcase-title">Form elemek</div>
+          </div>
+          <div class="component-showcase-body">
+            <div class="form-group">
+              <label class="form-label">Partner neve</label>
+              <input class="form-input" type="text" placeholder="pl. Digital Solutions Kft.">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Kategória</label>
+              <select class="form-select">
+                <option>Válasszon kategóriát...</option>
+                <option>Bevétel — Szolgáltatás</option>
+                <option>Bevétel — Termékértékesítés</option>
+                <option>Kiadás — Irodabérlet</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Megjegyzés</label>
+              <textarea class="form-textarea" placeholder="Számla megjegyzés..."></textarea>
+              <div class="form-hint">Opcionális — max 500 karakter</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SKELETON LOADERS -->
+        <div class="component-showcase">
+          <div class="component-showcase-header">
+            <div class="component-showcase-title">Skeleton Loader-ek</div>
+            <span class="badge badge-indigo">Animált</span>
+          </div>
+          <div class="component-showcase-body">
+            <div class="component-label">Kártya betöltés</div>
+            <div style="display:flex;gap:12px;margin-bottom:16px">
+              <div class="skeleton" style="width:40px;height:40px;border-radius:50%"></div>
+              <div style="flex:1">
+                <div class="skeleton" style="width:60%;height:12px;margin-bottom:8px"></div>
+                <div class="skeleton" style="width:40%;height:10px"></div>
+              </div>
+            </div>
+            <div class="component-label">Táblázat betöltés</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div class="skeleton" style="width:100%;height:14px"></div>
+              <div class="skeleton" style="width:90%;height:14px"></div>
+              <div class="skeleton" style="width:95%;height:14px"></div>
+              <div class="skeleton" style="width:80%;height:14px"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- INTERACTIVE TRIGGERS -->
+      <div style="margin-top:32px">
+        <h2 style="font-size:18px;font-weight:400;color:var(--text-primary);margin-bottom:16px">Interaktív <strong>Elemek</strong></h2>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:24px">Kattints a gombokra a modálok, toast-ok és overlayok megnyitásához</p>
+
+        <div class="component-row" style="gap:12px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="openModal('modal-form')">
+            <svg class="nav-icon" viewBox="0 0 16 16"><path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Új számla (Form Modal)
+          </button>
+          <button class="btn btn-ghost" onclick="openModal('modal-detail')">
+            <svg class="nav-icon" viewBox="0 0 16 16"><path d="M4 1h6l3 3v11H3V1z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M6 7h4M6 10h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Számla részletek (Detail Modal)
+          </button>
+          <button class="btn btn-destructive" onclick="openModal('modal-confirm')">
+            <svg class="nav-icon" viewBox="0 0 16 16"><path d="M3 4h10M6 2h4M5 4v9h6V4" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Törlés megerősítése
+          </button>
+          <button class="btn btn-ghost" onclick="openSheet()">
+            <svg class="nav-icon" viewBox="0 0 16 16"><path d="M10 2h4v12h-4M2 2h6v12H2z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/></svg>
+            Oldalsó panel (Sheet)
+          </button>
+          <button class="btn btn-ghost" onclick="openCmdPalette()">
+            <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Parancs Paletta (⌘K)
+          </button>
+          <button class="btn btn-ghost" onclick="showToast('success')">
+            <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M5.5 8l2 2 3-4" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Siker Toast
+          </button>
+          <button class="btn btn-ghost" onclick="showToast('error')">
+            <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M6 6l4 4M10 6l-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Hiba Toast
+          </button>
+          <button class="btn btn-ghost" onclick="showToast('info')">
+            <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M8 7v4M8 5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Info Toast
+          </button>
+        </div>
+      </div>
+
+      <!-- DROPDOWN DEMO (inline, always visible) -->
+      <div style="margin-top:32px;position:relative">
+        <h2 style="font-size:18px;font-weight:400;color:var(--text-primary);margin-bottom:16px">Dropdown <strong>Menü</strong></h2>
+        <div style="display:flex;gap:24px;align-items:flex-start">
+          <div style="position:relative">
+            <button class="btn btn-ghost" onclick="toggleDropdown(event)" id="demo-dropdown-btn">
+              <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="3" r="1.5" fill="currentColor"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="13" r="1.5" fill="currentColor"/></svg>
+              Műveletek
+            </button>
+            <div class="dropdown-menu" id="demo-dropdown" style="top:100%;left:0;margin-top:4px">
+              <div class="dropdown-item"><svg class="di-icon" viewBox="0 0 16 16"><path d="M4 1h6l3 3v11H3V1z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/></svg> Megnyitás</div>
+              <div class="dropdown-item"><svg class="di-icon" viewBox="0 0 16 16"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Szerkesztés</div>
+              <div class="dropdown-item"><svg class="di-icon" viewBox="0 0 16 16"><path d="M4 4h8v8H4z" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.3"/></svg> Másolás</div>
+              <div class="dropdown-item"><svg class="di-icon" viewBox="0 0 16 16"><path d="M8 1v8M4 5l4 4 4-4M2 11v3h12v-3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Exportálás</div>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-item"><svg class="di-icon" viewBox="0 0 16 16"><path d="M2 2h12v12H2z" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M5 7h6M5 10h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Archiválás</div>
+              <div class="dropdown-item destructive"><svg class="di-icon" viewBox="0 0 16 16"><path d="M3 4h10M6 2h4M5 4v9h6V4" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Törlés</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MODALS & OVERLAYS (outside app-shell)
+     ═══════════════════════════════════════════════════════════ -->
+
+<!-- FORM MODAL — Új számla -->
+<div class="overlay" id="modal-form" onclick="if(event.target===this)closeModal(this.id)">
+  <div class="dialog dialog-wide">
+    <div class="dialog-header">
+      <div class="dialog-title">Új számla létrehozása</div>
+      <button class="dialog-close" onclick="closeModal('modal-form')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="dialog-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label class="form-label">Partner</label>
+          <input class="form-input" type="text" placeholder="Keresés név vagy adószám...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Számla szám</label>
+          <input class="form-input" type="text" value="NAV-2026-048292" style="font-family:var(--font-mono);color:var(--accent-lime)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kelt</label>
+          <input class="form-input" type="date" value="2026-06-03">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fizetési határidő</label>
+          <input class="form-input" type="date" value="2026-07-03">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nettó összeg</label>
+          <input class="form-input" type="text" placeholder="0 Ft" style="font-family:var(--font-mono)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ÁFA kulcs</label>
+          <select class="form-select">
+            <option>27%</option>
+            <option>18%</option>
+            <option>5%</option>
+            <option>0% (ÁFA mentes)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kategória</label>
+        <select class="form-select">
+          <option>Automatikus besorolás</option>
+          <option>Bevétel — Szolgáltatás</option>
+          <option>Bevétel — Termékértékesítés</option>
+          <option>Kiadás — Irodabérlet</option>
+          <option>Kiadás — Szoftverlicenc</option>
+        </select>
+        <div class="form-hint">AI automatikusan besorolja a partner és tétel alapján</div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Megjegyzés</label>
+        <textarea class="form-textarea" placeholder="Opcionális belső megjegyzés..."></textarea>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-form')">Mégse</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-form');showToast('success')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M5.5 8l2 2 3-4" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Számla mentése
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL — Számla részletek -->
+<div class="overlay" id="modal-detail" onclick="if(event.target===this)closeModal(this.id)">
+  <div class="dialog dialog-wide">
+    <div class="dialog-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="dialog-title">Számla részletek</div>
+        <span class="badge badge-teal">NAV szinkronizált</span>
+      </div>
+      <button class="dialog-close" onclick="closeModal('modal-detail')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="dialog-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">Számla szám</div>
+          <div style="font-family:var(--font-mono);font-size:14px;color:var(--accent-lime)">NAV-2026-048291</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">Státusz</div>
+          <span class="status-badge status-paid"><span class="status-dot"></span>Fizetve</span>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">Partner</div>
+          <div style="font-size:14px;color:var(--text-primary)">Digital Solutions Kft.</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">Adószám</div>
+          <div style="font-family:var(--font-mono);font-size:13px;color:var(--text-secondary)">12345678-2-42</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">Kelt</div>
+          <div style="font-family:var(--font-mono);font-size:13px;color:var(--text-secondary)">2026.06.01</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">Határidő</div>
+          <div style="font-family:var(--font-mono);font-size:13px;color:var(--text-secondary)">2026.06.30</div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--border-hairline);padding-top:16px">
+        <div style="font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.04em">Tételek</div>
+        <table>
+          <tr><th style="text-align:left">Megnevezés</th><th>Mennyiség</th><th>Egységár</th><th>Összeg</th></tr>
+          <tr><td style="color:var(--text-primary)">Webfejlesztési szolgáltatás</td><td style="text-align:right">1</td><td style="text-align:right"><span class="amount">780 000 Ft</span></td><td style="text-align:right"><span class="amount">780 000 Ft</span></td></tr>
+          <tr><td style="color:var(--text-primary)">UX konzultáció</td><td style="text-align:right">4</td><td style="text-align:right"><span class="amount">51 063 Ft</span></td><td style="text-align:right"><span class="amount">204 252 Ft</span></td></tr>
+        </table>
+      </div>
+      <div style="border-top:1px solid var(--border-hairline);padding-top:16px;margin-top:16px;display:flex;justify-content:flex-end;gap:32px">
+        <div><span style="font-size:12px;color:var(--text-muted)">Nettó</span><div class="amount" style="font-size:16px">984 252 Ft</div></div>
+        <div><span style="font-size:12px;color:var(--text-muted)">ÁFA (27%)</span><div class="amount" style="font-size:16px">265 948 Ft</div></div>
+        <div><span style="font-size:12px;color:var(--accent-lime);font-weight:500">Bruttó</span><div class="amount" style="font-size:20px;color:var(--text-primary);font-weight:500">1 250 200 Ft</div></div>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-detail')">Bezárás</button>
+      <button class="btn btn-ghost">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M8 1v8M4 5l4 4 4-4M2 11v3h12v-3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        PDF letöltés
+      </button>
+      <button class="btn btn-primary">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Szerkesztés
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL — Törlés megerősítés -->
+<div class="overlay" id="modal-confirm" onclick="if(event.target===this)closeModal(this.id)">
+  <div class="dialog" style="width:400px">
+    <div class="dialog-header">
+      <div class="dialog-title" style="color:var(--accent-crimson)">Számla törlése</div>
+      <button class="dialog-close" onclick="closeModal('modal-confirm')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="dialog-body">
+      <div class="inline-alert inline-alert-error" style="margin-bottom:16px">
+        <svg class="inline-alert-icon" viewBox="0 0 16 16" style="width:16px;height:16px"><path d="M8 2L1 14h14L8 2z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M8 7v3M8 12v.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <span>Ez a művelet nem visszavonható!</span>
+      </div>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">
+        Biztosan törölni szeretné a <strong style="color:var(--text-primary)">NAV-2026-048291</strong> számú számlát?
+      </p>
+      <p style="font-size:12px;color:var(--text-muted)">
+        Partner: Digital Solutions Kft.<br>
+        Összeg: 1 250 200 Ft
+      </p>
+    </div>
+    <div class="dialog-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-confirm')">Mégse</button>
+      <button class="btn btn-destructive" onclick="closeModal('modal-confirm');showToast('error')">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M3 4h10M6 2h4M5 4v9h6V4" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Végleges törlés
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- SHEET — Beállítások oldalsó panel -->
+<div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet-panel">
+  <div class="dialog-header">
+    <div class="dialog-title">Beállítások</div>
+    <button class="dialog-close" onclick="closeSheet()">
+      <svg class="nav-icon" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="dialog-body" style="flex:1;max-height:none">
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-hairline)">
+      <div class="sidebar-avatar" style="width:40px;height:40px;font-size:15px">KP</div>
+      <div>
+        <div style="font-size:14px;font-weight:500;color:var(--text-primary)">Kovács Péter</div>
+        <div style="font-size:12px;color:var(--text-muted)">peter@techstart.hu · Admin</div>
+      </div>
+    </div>
+    <div style="padding:16px 0;border-bottom:1px solid var(--border-hairline)">
+      <div class="form-label">Megjelenés</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
+        <span style="font-size:13px;color:var(--text-secondary)">Sötét mód</span>
+        <div class="switch on" onclick="this.classList.toggle('on');toggleTheme()"><div class="switch-knob"></div></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
+        <span style="font-size:13px;color:var(--text-secondary)">Kompakt nézet</span>
+        <div class="switch" onclick="this.classList.toggle('on')"><div class="switch-knob"></div></div>
+      </div>
+    </div>
+    <div style="padding:16px 0;border-bottom:1px solid var(--border-hairline)">
+      <div class="form-label">Értesítések</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
+        <span style="font-size:13px;color:var(--text-secondary)">Email értesítések</span>
+        <div class="switch on" onclick="this.classList.toggle('on')"><div class="switch-knob"></div></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
+        <span style="font-size:13px;color:var(--text-secondary)">Lejárt számlák figyelmeztetés</span>
+        <div class="switch on" onclick="this.classList.toggle('on')"><div class="switch-knob"></div></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
+        <span style="font-size:13px;color:var(--text-secondary)">NAV szinkron státusz</span>
+        <div class="switch" onclick="this.classList.toggle('on')"><div class="switch-knob"></div></div>
+      </div>
+    </div>
+    <div style="padding:16px 0">
+      <div class="form-label">Veszélyes zóna</div>
+      <button class="btn btn-destructive btn-sm" style="margin-top:8px">
+        <svg class="nav-icon" viewBox="0 0 16 16"><path d="M3 4h10M6 2h4M5 4v9h6V4" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Fiók törlése
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- COMMAND PALETTE -->
+<div class="cmd-overlay" id="cmd-palette-overlay" onclick="if(event.target===this)closeCmdPalette()">
+  <div class="cmd-palette">
+    <div class="cmd-input-row">
+      <svg class="cmd-input-icon nav-icon" viewBox="0 0 16 16" style="width:18px;height:18px"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <input class="cmd-input" type="text" placeholder="Keresés vagy parancs futtatás..." autofocus>
+      <span class="cmd-kbd">ESC</span>
+    </div>
+    <div class="cmd-section-label">Gyors műveletek</div>
+    <div class="cmd-item highlighted">
+      <svg class="cmd-icon" viewBox="0 0 16 16"><path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Új számla létrehozása
+      <span class="cmd-item-shortcut">⌘N</span>
+    </div>
+    <div class="cmd-item">
+      <svg class="cmd-icon" viewBox="0 0 16 16"><path d="M8 1v8M4 5l4 4 4-4M2 11v3h12v-3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Számla feltöltés
+      <span class="cmd-item-shortcut">⌘U</span>
+    </div>
+    <div class="cmd-item">
+      <svg class="cmd-icon" viewBox="0 0 16 16"><path d="M1 13h14M3 13V7M6 13V5M9 13V8M12 13V3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Bankkivonat importálás
+      <span class="cmd-item-shortcut">⌘I</span>
+    </div>
+    <div class="cmd-section-label">Navigáció</div>
+    <div class="cmd-item">
+      <svg class="cmd-icon" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3" fill="none"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3" fill="none"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3" fill="none"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3" fill="none"/></svg>
+      Irányítópult
+      <span class="cmd-item-shortcut">⌘1</span>
+    </div>
+    <div class="cmd-item">
+      <svg class="cmd-icon" viewBox="0 0 16 16"><path d="M4 1h6l3 3v11H3V1z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M6 7h4M6 10h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Számlák
+      <span class="cmd-item-shortcut">⌘2</span>
+    </div>
+    <div class="cmd-item">
+      <svg class="cmd-icon" viewBox="0 0 16 16"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg>
+      Partnertörzs
+      <span class="cmd-item-shortcut">⌘3</span>
+    </div>
+    <div class="cmd-section-label">Keresés</div>
+    <div class="cmd-item">
+      <svg class="cmd-icon" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Számla keresés számla szám alapján...
+    </div>
+    <div class="cmd-item">
+      <svg class="cmd-icon" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Partner keresés név vagy adószám...
+    </div>
+    <div class="cmd-footer">
+      <span><span class="cmd-kbd">↑↓</span> navigáció</span>
+      <span><span class="cmd-kbd">↵</span> kiválasztás</span>
+      <span><span class="cmd-kbd">ESC</span> bezárás</span>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ════════════════ PAGE SELECTOR (floating pill) ════════════════ -->
+<div class="page-selector">
+  <button class="page-selector-btn active" onclick="showPage('dashboard')" id="sel-dashboard">Irányítópult</button>
+  <button class="page-selector-btn" onclick="showPage('invoices')" id="sel-invoices">Számlák</button>
+  <button class="page-selector-btn" onclick="showPage('components')" id="sel-components">Elemek</button>
+</div>
+
+<script>
+function showPage(page) {
+  document.getElementById('page-dashboard').classList.toggle('hidden', page !== 'dashboard');
+  document.getElementById('page-invoices').classList.toggle('hidden', page !== 'invoices');
+  document.getElementById('page-components').classList.toggle('hidden', page !== 'components');
+
+  document.getElementById('sel-dashboard').classList.toggle('active', page === 'dashboard');
+  document.getElementById('sel-invoices').classList.toggle('active', page === 'invoices');
+  document.getElementById('sel-components').classList.toggle('active', page === 'components');
+
+  // Sidebar active state
+  document.querySelectorAll('.sidebar-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  if (page === 'dashboard') document.getElementById('nav-dashboard').classList.add('active');
+  if (page === 'invoices') document.getElementById('nav-invoices').classList.add('active');
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+
+  // Swap SVG icons
+  const sunSVG = '<svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M12.5 3.5l-1.4 1.4M4.9 11.1l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
+  const moonSVG = '<svg class="nav-icon" viewBox="0 0 16 16"><path d="M13 9a5 5 0 1 1-6-6 4 4 0 0 0 6 6z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"/></svg>';
+
+  document.getElementById('theme-btn').innerHTML = isDark ? moonSVG : sunSVG;
+  document.getElementById('theme-btn-top').innerHTML = isDark ? sunSVG : moonSVG;
+}
+
+// Tab switching on invoices page
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+
+// ── MODAL FUNCTIONS ──
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ── SHEET FUNCTIONS ──
+function openSheet() {
+  document.getElementById('sheet-overlay').classList.add('open');
+  document.getElementById('sheet-panel').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSheet() {
+  document.getElementById('sheet-overlay').classList.remove('open');
+  document.getElementById('sheet-panel').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ── COMMAND PALETTE ──
+function openCmdPalette() {
+  document.getElementById('cmd-palette-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => {
+    document.querySelector('.cmd-input').focus();
+  }, 100);
+}
+
+function closeCmdPalette() {
+  document.getElementById('cmd-palette-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ⌘K keyboard shortcut
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    const overlay = document.getElementById('cmd-palette-overlay');
+    if (overlay.classList.contains('open')) {
+      closeCmdPalette();
+    } else {
+      openCmdPalette();
+    }
+  }
+  if (e.key === 'Escape') {
+    closeCmdPalette();
+    document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
+    closeSheet();
+    document.body.style.overflow = '';
+  }
+});
+
+// ── TOAST FUNCTIONS ──
+let toastCounter = 0;
+function showToast(type) {
+  const container = document.getElementById('toast-container');
+  const id = 'toast-' + (++toastCounter);
+
+  const configs = {
+    success: {
+      title: 'Sikeres mentés',
+      message: 'A számla sikeresen rögzítve és szinkronizálva a NAV-val.',
+      icon: '<svg viewBox="0 0 16 16" style="color:var(--accent-emerald)"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M5.5 8l2 2 3-4" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    },
+    error: {
+      title: 'Törlés sikeres',
+      message: 'A számla véglegesen eltávolítva a rendszerből.',
+      icon: '<svg viewBox="0 0 16 16" style="color:var(--accent-crimson)"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M6 6l4 4M10 6l-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
+    },
+    info: {
+      title: 'NAV szinkronizáció',
+      message: '3 új bejövő számla érkezett — automatikus feldolgozás folyamatban.',
+      icon: '<svg viewBox="0 0 16 16" style="color:var(--accent-indigo)"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M8 7v4M8 5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+    }
+  };
+
+  const cfg = configs[type] || configs.info;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.id = id;
+  toast.innerHTML = `
+    <div class="toast-icon">${cfg.icon}</div>
+    <div class="toast-content">
+      <div class="toast-title">${cfg.title}</div>
+      <div class="toast-message">${cfg.message}</div>
+    </div>
+    <button class="toast-close" onclick="dismissToast('${id}')">
+      <svg viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    </button>
+  `;
+
+  container.appendChild(toast);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => toast.classList.add('show'));
+  });
+
+  setTimeout(() => dismissToast(id), 5000);
+}
+
+function dismissToast(id) {
+  const toast = document.getElementById(id);
+  if (!toast) return;
+  toast.classList.remove('show');
+  setTimeout(() => toast.remove(), 300);
+}
+
+// ── DROPDOWN ──
+function toggleDropdown(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('demo-dropdown');
+  dd.classList.toggle('open');
+}
+
+document.addEventListener('click', () => {
+  document.getElementById('demo-dropdown')?.classList.remove('open');
+});
+</script>
+
+</body>
+</html>

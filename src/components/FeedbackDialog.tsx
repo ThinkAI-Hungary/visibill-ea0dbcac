@@ -109,7 +109,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
             Visszajelzés küldése
           </DialogTitle>
           <DialogDescription>
-            Segítsen nekünk jobbá tenni a Visibill-t! Jelezzen hibákat vagy ossza meg
+            Segítsen nekünk jobbá tenni a eaisybill-t! Jelezzen hibákat vagy ossza meg
             véleményét.
           </DialogDescription>
         </DialogHeader>

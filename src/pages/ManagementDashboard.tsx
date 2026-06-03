@@ -478,7 +478,7 @@ export default function ManagementDashboard() {
       : (selectedUserObj?.name || 'Felhasználó részletek');
 
   const subtitle = view === 'overview'
-    ? 'Visibill platform áttekintés'
+    ? 'eaisybill platform áttekintés'
     : view === 'company'
       ? 'Cég részletes adatai'
       : (selectedUserObj?.email || '');
@@ -501,10 +501,10 @@ export default function ManagementDashboard() {
               <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
             </div>
           </div>
-          <span className="absolute left-1/2 -translate-x-1/2 text-xl font-bold tracking-[0.25em] uppercase
-                           bg-gradient-to-r from-primary/80 to-primary bg-clip-text text-transparent
+          <span className="absolute left-1/2 -translate-x-1/2 text-xl font-semibold tracking-[0.25em] uppercase
+                           text-primary
                            select-none pointer-events-none hidden md:block"
-            aria-hidden="true">VISIBILL</span>
+            aria-hidden="true">EAISYBILL</span>
           <div className="flex items-center gap-1 shrink-0">
             <Button variant="ghost" size="icon" aria-label="Téma váltás"
               className="text-muted-foreground hover:text-foreground transition-colors duration-150"
@@ -525,7 +525,7 @@ export default function ManagementDashboard() {
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* ═══ OVERVIEW ═══ */}
         {view === 'overview' && (
-          <div className="space-y-8 animate-in fade-in duration-300">
+          <div className="space-y-8 page-animate">
             {/* Stat cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard icon={Users} label="Felhasználók"

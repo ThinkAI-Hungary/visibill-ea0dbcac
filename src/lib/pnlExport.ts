@@ -7,7 +7,7 @@ export const exportPnlExcel = async (
   companyName: string = 'Vállalkozás'
 ) => {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'Visibill';
+  workbook.creator = 'eaisybill';
   workbook.created = new Date();
 
   const worksheet = workbook.addWorksheet('Eredménykimutatás', {

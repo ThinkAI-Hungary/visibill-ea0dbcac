@@ -143,7 +143,7 @@ export default function ExchangeRates() {
   }
 
   return (
-    <div className="container mx-auto py-4 px-4 space-y-4 relative">
+    <div className="container mx-auto py-4 px-4 space-y-4 relative page-animate">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

@@ -19,7 +19,7 @@ const TOUR_STEPS: Step[] = [
   {
     target: 'body',
     content: 'Ez egy gyors bemutató, hogy megismerje a rendszer főbb funkcióit.',
-    title: 'Üdvözöljük a Visibill-ben!',
+    title: 'Üdvözöljük a eaisybill-ben!',
     placement: 'center',
     disableBeacon: true,
   },
@@ -91,7 +91,7 @@ const TOUR_STEPS: Step[] = [
   },
   {
     target: 'body',
-    content: 'Köszönjük hogy időt szánt a Visibill funkcióinak megismerésére. Jó munkát!',
+    content: 'Köszönjük hogy időt szánt a eaisybill funkcióinak megismerésére. Jó munkát!',
     title: 'Készen is vagyunk!',
     placement: 'center',
     disableBeacon: true,

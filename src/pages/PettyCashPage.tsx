@@ -298,7 +298,7 @@ const PettyCashPage = () => {
   }
 
   return (
-    <div className="h-full bg-background">
+    <div className="h-full bg-background page-animate">
       <main className="w-full max-w-none px-4 py-4 space-y-6">
         {/* Header with balance */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

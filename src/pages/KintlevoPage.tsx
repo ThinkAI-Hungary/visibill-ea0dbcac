@@ -12,7 +12,7 @@ import { DunningDialog } from '@/components/kintlevo/DunningDialog';
 
 function KintlevoSkeleton() {
   return (
-    <div className="h-full space-y-4 px-4 pt-4 pb-6 animate-in fade-in duration-200">
+    <div className="h-full space-y-4 px-4 pt-4 pb-6 page-animate">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Kintlévőség</h1>
         <p className="text-muted-foreground text-sm">Kifizetetlen kimenő számlák cégenként csoportosítva</p>
@@ -73,7 +73,7 @@ export default function KintlevoPage() {
 
   return (
     <TooltipProvider>
-      <div className="h-full space-y-4 px-4 pt-4 pb-6">
+      <div className="h-full space-y-4 px-4 pt-4 pb-6 page-animate">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>

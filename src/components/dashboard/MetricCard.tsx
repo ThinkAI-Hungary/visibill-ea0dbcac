@@ -41,20 +41,20 @@ const MetricCard = ({
   };
 
   return (
-    <Card className={cn('relative overflow-hidden h-[180px] flex flex-col justify-center', variantStyles[variant], onClick && 'cursor-pointer hover:scale-[1.02] hover:shadow-lg transition-all duration-200')} onClick={onClick}>
+    <Card className={cn('relative overflow-hidden h-[160px] flex flex-col justify-center', variantStyles[variant], onClick && 'cursor-pointer hover:bg-muted/30 transition-colors duration-200')} onClick={onClick}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-0">
-        <CardTitle className="text-sm font-medium leading-tight pr-2">{title}</CardTitle>
+        <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground leading-tight pr-2">{title}</CardTitle>
         <Icon className={cn('h-4 w-4 shrink-0', iconStyles[variant])} />
       </CardHeader>
       <CardContent className="pb-0">
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-2xl font-semibold tabular-nums tracking-tight">{value}</div>
         {description && (
           <p className="text-xs text-muted-foreground mt-2">{description}</p>
         )}
         {trend && (
           <div className="flex items-center mt-2">
             <span className={cn(
-              'text-xs font-medium',
+              'text-xs font-medium tabular-nums',
               trend.isPositive ? 'text-success' : 'text-destructive'
             )}>
               {trend.isPositive ? '+' : ''}{trend.value}%

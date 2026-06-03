@@ -118,7 +118,7 @@ export function KintlevoCompanyTable({ filteredGroups, expanded, setExpanded }: 
                           <TableCell className="text-xs">{inv.dueDate.replace(/-/g, '.')}</TableCell>
                           <TableCell className="text-xs">
                             {inv.daysOverdue <= 0
-                              ? <span className="text-emerald-400">Nem lejárt</span>
+                              ? <span className="text-emerald-700 dark:text-emerald-400">Nem lejárt</span>
                               : <span className={ic.text}>{inv.daysOverdue} nap</span>
                             }
                           </TableCell>

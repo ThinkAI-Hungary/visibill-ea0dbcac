@@ -324,7 +324,7 @@ export default function PartnersPage() {
 
 
   return (
-    <div className="h-full space-y-2 px-2 pt-0 pb-0">
+    <div className="h-full space-y-2 px-2 pt-0 pb-0 page-animate">
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Partnertörzs</h1>

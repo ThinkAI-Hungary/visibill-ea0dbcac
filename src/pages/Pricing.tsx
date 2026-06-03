@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -179,7 +179,7 @@ const Pricing: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 page-animate">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold mb-4">Válassza ki az Ön számára megfelelő csomagot</h1>
         <p className="text-xl text-muted-foreground mb-6">

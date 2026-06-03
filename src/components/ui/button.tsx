@@ -5,23 +5,23 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium select-none transition-colors duration-200 outline-none focus:ring-0 focus-visible:ring-0 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium select-none transition-colors duration-200 outline-none focus:ring-0 focus-visible:ring-0 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-primary/10 dark:text-primary dark:hover:bg-primary/20 dark:border dark:border-primary/20",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-soft",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline: "border border-border bg-background hover:bg-primary/10 hover:text-primary hover:border-primary/30",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-soft",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent/50 hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        premium: "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-soft",
+        premium: "bg-gradient-to-r from-primary to-accent text-primary-foreground",
       },
       size: {
-        default: "h-11 px-6 py-2.5",
-        sm: "h-9 rounded-lg px-4 text-xs",
-        lg: "h-12 rounded-lg px-8 text-base",
-        icon: "h-11 w-11",
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-10 rounded-md px-6 text-sm",
+        icon: "h-9 w-9",
       },
     },
     defaultVariants: {

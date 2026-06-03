@@ -806,7 +806,7 @@ export default function BalanceSheet() {
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10 page-animate">
       {/* Print-only header */}
       <div className="hidden print:flex flex-col items-center justify-center mb-8 w-full border-b-2 border-primary/20 pb-6">
-        <h1 className="text-5xl font-black bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent tracking-tight print:text-black mb-2">Visibill</h1>
+        <h1 className="text-5xl font-semibold text-primary tracking-tight print:text-black mb-2">eaisybill</h1>
         <h2 className="text-2xl font-bold uppercase tracking-widest text-foreground mt-2">Mérleg</h2>
         <p className="text-sm text-muted-foreground mt-1">Sztv. "A" változat szerinti mérleg</p>
         <div className="mt-4 flex items-center gap-4 text-sm font-medium text-muted-foreground">

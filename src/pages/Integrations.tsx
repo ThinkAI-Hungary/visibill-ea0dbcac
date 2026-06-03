@@ -95,7 +95,7 @@ const Integrations = () => {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="container mx-auto px-6 pt-6 pb-2 space-y-6">
+      <div className="container mx-auto px-6 pt-6 pb-2 space-y-6 page-animate">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

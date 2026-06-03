@@ -275,7 +275,7 @@ const Projects = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 page-animate">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

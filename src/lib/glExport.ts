@@ -20,7 +20,7 @@ export const exportGlExcel = async (
   footerTotal: number = 0
 ) => {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'Visibill';
+  workbook.creator = 'eaisybill';
   workbook.created = new Date();
 
   const worksheet = workbook.addWorksheet('Főkönyvi Kivonat', {

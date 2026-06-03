@@ -224,7 +224,7 @@ const Onboarding = () => {
   }
 
   return (
-    <div className="flex justify-center p-8">
+    <div className="flex justify-center p-8 page-animate">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Kategória kezelő</CardTitle>

@@ -630,7 +630,7 @@ function VatReturnViewTab() {
   ]);
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-300">
+    <div className="space-y-5 page-animate">
       {/* Period Selector + Actions */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 bg-card p-3 rounded-xl border border-border shadow-sm animate-in slide-in-from-top-2 duration-300">
         <div className="flex items-center gap-3">
@@ -1232,7 +1232,7 @@ export default function VatReturnPage() {
   }
 
   return (
-    <div className="container max-w-7xl py-6 space-y-6 print:py-0 animate-in fade-in duration-300">
+    <div className="container max-w-7xl py-6 space-y-6 print:py-0 page-animate">
       <PageHeader
         companyName={selectedCompany?.name}
         breadcrumb="ÁFA Bevallás (2665)"

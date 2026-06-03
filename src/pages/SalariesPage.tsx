@@ -95,7 +95,7 @@ export default function SalariesPage() {
   if (loading && salaryItems.length === 0) return <SalaryPageSkeleton />;
 
   return (
-    <div className="h-full space-y-4 px-2 py-2">
+    <div className="h-full space-y-4 px-2 py-2 page-animate">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

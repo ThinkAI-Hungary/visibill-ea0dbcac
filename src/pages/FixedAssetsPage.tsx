@@ -79,7 +79,7 @@ export default function FixedAssetsPage() {
   const activeCount = assets.filter(a => a.status === 'active').length;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col page-animate">
       {/* Header */}
       <div className="px-6 py-4 border-b border-border/50 flex-shrink-0">
         <div className="flex items-center justify-between">

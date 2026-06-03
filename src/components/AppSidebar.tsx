@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -6,11 +6,15 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useScopedBasePath, extractPageSegment } from "@/lib/navigation";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -32,7 +36,7 @@ import {
   LogOut, 
   FolderKanban,
   Plug,
-  CreditCard,
+  // CreditCard,
   Tags,
   TrendingUp,
   Wallet,
@@ -48,7 +52,9 @@ import {
   BarChart3,
   Scale,
   ClipboardCheck,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ChevronRight,
+  Wrench,
 } from "lucide-react";
 import CompanySelector from "./CompanySelector";
 
@@ -60,27 +66,69 @@ interface NavItem {
   employeeVisible?: boolean;
 }
 
-const navigationItems: NavItem[] = [
-  { title: "Irányítópult", url: "/", icon: LayoutDashboard, tourId: "dashboard" },
-  { title: "Kategóriák", url: "/categories", icon: Tags, tourId: "categories" },
-  { title: "Projektek", url: "/projects", icon: FolderKanban, tourId: "projects" },
-  { title: "Partnertörzs", url: "/partners", icon: Users, tourId: "partners" },
-  { title: "Számlák", url: "/invoices", icon: FileText, tourId: "invoices" },
-  { title: "Kintlévőség", url: "/kintlevo", icon: ReceiptText, tourId: "kintlevo" },
-  { title: "Tranzakciók", url: "/transactions", icon: Landmark, tourId: "transactions" },
-  { title: "Főkönyv", url: "/general-ledger", icon: BookOpen, tourId: "general-ledger" },
-  { title: "Eredménykimutatás", url: "/profit-and-loss", icon: BarChart3, tourId: "profit-and-loss" },
-  { title: "Mérleg", url: "/balance-sheet", icon: Scale, tourId: "balance-sheet" },
-  { title: "Beszámoló", url: "/annual-report", icon: ClipboardCheck, tourId: "annual-report" },
-  { title: "ÁFA Bevallás", url: "/vat-return", icon: FileSpreadsheet, tourId: "vat-return" },
-  { title: "Feltöltés", url: "/upload", icon: Upload, tourId: "upload" },
-  { title: "Bérek/járulékok", url: "/salaries", icon: Wallet, tourId: "salaries" },
-  { title: "Munkaidő", url: "/working-time", icon: Clock, tourId: "working-time", employeeVisible: true },
-  { title: "Házipénztár", url: "/petty-cash", icon: Banknote, tourId: "petty-cash" },
-  { title: "TENY", url: "/teny", icon: Package2, tourId: "teny" },
-  { title: "Integrációk", url: "/integrations", icon: Plug, tourId: "integrations" },
-  { title: "Árfolyamok", url: "/exchange-rates", icon: TrendingUp, tourId: "exchange-rates" },
-  { title: "Előfizetés", url: "/pricing", icon: CreditCard, tourId: "subscription" },
+interface NavGroup {
+  key: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  items: NavItem[];
+}
+
+const navigationGroups: NavGroup[] = [
+  {
+    key: 'overview',
+    label: 'Áttekintés',
+    icon: LayoutDashboard,
+    items: [
+      { title: "Irányítópult", url: "/", icon: LayoutDashboard, tourId: "dashboard" },
+      { title: "Kategóriák", url: "/categories", icon: Tags, tourId: "categories" },
+      { title: "Projektek", url: "/projects", icon: FolderKanban, tourId: "projects" },
+      { title: "Partnertörzs", url: "/partners", icon: Users, tourId: "partners" },
+    ],
+  },
+  {
+    key: 'finance',
+    label: 'Pénzügyek',
+    icon: Landmark,
+    items: [
+      { title: "Számlák", url: "/invoices", icon: FileText, tourId: "invoices" },
+      { title: "Kintlévőség", url: "/kintlevo", icon: ReceiptText, tourId: "kintlevo" },
+      { title: "Tranzakciók", url: "/transactions", icon: Landmark, tourId: "transactions" },
+      { title: "Házipénztár", url: "/petty-cash", icon: Banknote, tourId: "petty-cash" },
+    ],
+  },
+  {
+    key: 'accounting',
+    label: 'Könyvelés',
+    icon: BookOpen,
+    items: [
+      { title: "Főkönyv", url: "/general-ledger", icon: BookOpen, tourId: "general-ledger" },
+      { title: "Eredménykimutatás", url: "/profit-and-loss", icon: BarChart3, tourId: "profit-and-loss" },
+      { title: "Mérleg", url: "/balance-sheet", icon: Scale, tourId: "balance-sheet" },
+      { title: "Beszámoló", url: "/annual-report", icon: ClipboardCheck, tourId: "annual-report" },
+      { title: "ÁFA Bevallás", url: "/vat-return", icon: FileSpreadsheet, tourId: "vat-return" },
+    ],
+  },
+  {
+    key: 'hr',
+    label: 'HR & Eszközök',
+    icon: Users,
+    items: [
+      { title: "Feltöltés", url: "/upload", icon: Upload, tourId: "upload" },
+      { title: "Bérek/járulékok", url: "/salaries", icon: Wallet, tourId: "salaries" },
+      { title: "Munkaidő", url: "/working-time", icon: Clock, tourId: "working-time", employeeVisible: true },
+      { title: "TENY", url: "/teny", icon: Package2, tourId: "teny" },
+    ],
+  },
+  {
+    key: 'system',
+    label: 'Rendszer',
+    icon: Wrench,
+    items: [
+      { title: "Integrációk", url: "/integrations", icon: Plug, tourId: "integrations" },
+      { title: "Árfolyamok", url: "/exchange-rates", icon: TrendingUp, tourId: "exchange-rates" },
+      // { title: "Előfizetés", url: "/pricing", icon: CreditCard, tourId: "subscription" },
+    ],
+  },
 ];
 
 /**
@@ -108,8 +156,20 @@ const prefetchMap: Record<string, () => Promise<unknown>> = {
   "/teny": () => import("@/pages/FixedAssetsPage"),
   "/integrations": () => import("@/pages/Integrations"),
   "/exchange-rates": () => import("@/pages/ExchangeRates"),
-  "/pricing": () => import("@/pages/Pricing"),
+  // "/pricing": () => import("@/pages/Pricing"),
 };
+
+const STORAGE_KEY = "visibill:sidebar-groups";
+
+/** Find which group key contains a given URL */
+function findGroupForUrl(url: string): string | null {
+  for (const group of navigationGroups) {
+    if (group.items.some(item => item.url === url)) {
+      return group.key;
+    }
+  }
+  return null;
+}
 
 /**
  * AppSidebar — Static Shell.
@@ -137,16 +197,67 @@ export const AppSidebar = React.memo(function AppSidebar() {
   const hasNoCompany = !selectedCompany;
   const isDark = theme === "dark";
 
-  // Role is already resolved — direct filter, no loading state.
-  // Memoized with resolved `to` paths so <Link> props stay referentially stable.
-  const visibleNavItems = useMemo(() => {
-    const items = isEmployee
-      ? navigationItems.filter((item) => item.employeeVisible)
-      : navigationItems;
-    return items.map((item) => ({
-      ...item,
-      to: item.url === "/" ? basePath : `${basePath}${item.url}`,
-    }));
+  // ── Open/closed state for collapsible groups ──
+  // Initialize from localStorage, fallback to opening the active group
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return new Set(parsed);
+        }
+      }
+    } catch { /* ignore */ }
+    // Default: open the group containing the current page
+    const activeGroup = findGroupForUrl(pageSegment);
+    return new Set(activeGroup ? [activeGroup] : ['overview']);
+  });
+
+  // Persist open groups to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([...openGroups]));
+    } catch { /* ignore */ }
+  }, [openGroups]);
+
+  // Auto-open the group containing the active page on navigation
+  useEffect(() => {
+    const activeGroup = findGroupForUrl(pageSegment);
+    if (activeGroup && !openGroups.has(activeGroup)) {
+      setOpenGroups(prev => new Set([...prev, activeGroup]));
+    }
+  }, [pageSegment]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleGroup = useCallback((key: string) => {
+    setOpenGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }, []);
+
+  // Role-based filtering: for employees, only show groups that have visible items
+  const visibleGroups = useMemo(() => {
+    return navigationGroups
+      .map(group => {
+        const items = isEmployee
+          ? group.items.filter(item => item.employeeVisible)
+          : group.items;
+        return { ...group, items };
+      })
+      .filter(group => group.items.length > 0)
+      .map(group => ({
+        ...group,
+        items: group.items.map(item => ({
+          ...item,
+          to: item.url === "/" ? basePath : `${basePath}${item.url}`,
+        })),
+      }));
   }, [isEmployee, basePath]);
 
   const handlePrefetch = useCallback((url: string) => {
@@ -180,17 +291,21 @@ export const AppSidebar = React.memo(function AppSidebar() {
     <Sidebar collapsible="icon" className="print:hidden">
       <SidebarContent className="select-none">
         {/* Header */}
-        <div className={`p-4 border-b border-primary/30 ${isCollapsed ? 'flex justify-center' : ''}`}>
+        <div className={`p-4 border-b border-border ${isCollapsed ? 'flex justify-center' : ''}`}>
           {!isCollapsed ? (
             <div className="flex items-center gap-3">
-              <span className="text-2xl font-black bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent tracking-tight">
-                Visibill
+              <span className="text-2xl tracking-tight select-none">
+                <span className="font-medium text-foreground/80">e</span>
+                <span className="font-bold text-primary">ai</span>
+                <span className="font-medium text-foreground/80">sy</span>
+                <span className="font-medium text-primary">bill</span>
               </span>
             </div>
           ) : (
             <div className="flex items-center justify-center">
-              <span className="text-2xl font-black bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent tracking-tight">
-                V
+              <span className="text-2xl tracking-tight select-none">
+                <span className="font-medium text-foreground/80">e</span>
+                <span className="font-bold text-primary">ai</span>
               </span>
             </div>
           )}
@@ -198,55 +313,130 @@ export const AppSidebar = React.memo(function AppSidebar() {
 
         {/* Company Selector — hidden for employees */}
         {!isCollapsed && !isEmployee && (
-          <div className="p-3 border-b border-primary/30" data-tour="company-selector">
+          <div className="p-3 border-b border-border" data-tour="company-selector">
             <CompanySelector />
           </div>
         )}
 
-        {/* Navigation */}
+        {/* Navigation — Collapsible Groups */}
         <SidebarGroup>
-          {!isCollapsed && <SidebarGroupLabel>Navigáció</SidebarGroupLabel>}
           <SidebarGroupContent>
-            <SidebarMenu className="select-none">
-              {visibleNavItems.map((item) => {
-                const isDisabled = hasNoCompany;
-                const active = isActive(item.url);
-
-                return (
-                  <SidebarMenuItem key={item.title} data-tour={item.tourId}>
-                    <SidebarMenuButton
-                      asChild={!isDisabled}
-                      isActive={active}
-                      tooltip={item.title}
-                      className={isDisabled ? 'grayscale opacity-50 cursor-not-allowed' : ''}
-                    >
-                      {isDisabled ? (
-                        <div className="flex items-center gap-2 w-full">
-                          <item.icon className="h-4 w-4 shrink-0" />
-                          <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
-                        </div>
-                      ) : (
-                        <Link
-                          to={item.to}
-                          onMouseEnter={() => handlePrefetch(item.url)}
-                          onFocus={() => handlePrefetch(item.url)}
-                          onTouchStart={() => handlePrefetch(item.url)}
-                          className="flex items-center gap-2 w-full"
+            {isCollapsed ? (
+              /* ── Collapsed mode: flat icon-only list ── */
+              <SidebarMenu className="select-none">
+                {visibleGroups.flatMap(group =>
+                  group.items.map(item => {
+                    const isDisabled = hasNoCompany;
+                    const active = isActive(item.url);
+                    return (
+                      <SidebarMenuItem key={item.title} data-tour={item.tourId}>
+                        <SidebarMenuButton
+                          asChild={!isDisabled}
+                          isActive={active}
+                          tooltip={item.title}
+                          className={isDisabled ? 'grayscale opacity-50 cursor-not-allowed' : ''}
                         >
-                          <item.icon className="h-4 w-4 shrink-0" />
-                          <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
-                        </Link>
-                      )}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+                          {isDisabled ? (
+                            <div className="flex items-center gap-2 w-full">
+                              <item.icon className="h-4 w-4 shrink-0" />
+                              <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                            </div>
+                          ) : (
+                            <Link
+                              to={item.to}
+                              onMouseEnter={() => handlePrefetch(item.url)}
+                              onFocus={() => handlePrefetch(item.url)}
+                              onTouchStart={() => handlePrefetch(item.url)}
+                              className="flex items-center gap-2 w-full"
+                            >
+                              <item.icon className="h-4 w-4 shrink-0" />
+                              <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                            </Link>
+                          )}
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })
+                )}
+              </SidebarMenu>
+            ) : (
+              /* ── Expanded mode: collapsible groups ── */
+              <div className="flex flex-col gap-1">
+                {visibleGroups.map(group => {
+                  const isOpen = openGroups.has(group.key);
+                  const groupHasActive = group.items.some(item => isActive(item.url));
+
+                  return (
+                    <Collapsible
+                      key={group.key}
+                      open={isOpen}
+                      onOpenChange={() => toggleGroup(group.key)}
+                    >
+                      {/* Group header trigger */}
+                      <CollapsibleTrigger className="relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary transition-colors select-none group/trigger">
+                        <group.icon className="h-4 w-4 shrink-0 text-muted-foreground group-hover/trigger:text-primary transition-colors" />
+                        <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
+                          {group.label}
+                        </span>
+                        <ChevronRight
+                          className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${
+                            isOpen ? 'rotate-90' : ''
+                          }`}
+                        />
+                        {/* Active indicator line when group is collapsed but contains active page */}
+                        {!isOpen && groupHasActive && (
+                          <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-primary/60" />
+                        )}
+                      </CollapsibleTrigger>
+
+                      {/* Collapsible content with animation */}
+                      <CollapsibleContent className="nav-collapsible-content pb-1.5">
+                        <SidebarMenu className="mt-0.5 select-none">
+                          {group.items.map(item => {
+                            const isDisabled = hasNoCompany;
+                            const active = isActive(item.url);
+
+                            return (
+                              <SidebarMenuItem key={item.title} data-tour={item.tourId}>
+                                <SidebarMenuButton
+                                  asChild={!isDisabled}
+                                  isActive={active}
+                                  tooltip={item.title}
+                                  className={isDisabled ? 'grayscale opacity-50 cursor-not-allowed' : ''}
+                                >
+                                  {isDisabled ? (
+                                    <div className="flex items-center gap-2 w-full pl-2">
+                                      <item.icon className="h-4 w-4 shrink-0" />
+                                      <span>{item.title}</span>
+                                    </div>
+                                  ) : (
+                                    <Link
+                                      to={item.to}
+                                      onMouseEnter={() => handlePrefetch(item.url)}
+                                      onFocus={() => handlePrefetch(item.url)}
+                                      onTouchStart={() => handlePrefetch(item.url)}
+                                      className="flex items-center gap-2 w-full pl-2"
+                                    >
+                                      <item.icon className="h-4 w-4 shrink-0" />
+                                      <span>{item.title}</span>
+                                    </Link>
+                                  )}
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            );
+                          })}
+                        </SidebarMenu>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                })}
+              </div>
+            )}
           </SidebarGroupContent>
         </SidebarGroup>
 
         {/* User Section */}
-        <div className="mt-auto border-t border-primary/30">
+        <div className="mt-auto border-t border-border">
           {!isCollapsed ? (
             <div className="p-4 space-y-3">
               <div className="flex items-center gap-3">
@@ -337,7 +527,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
           )}
           
           {/* Sidebar Toggle */}
-          <div className={`p-2 border-t border-primary/30 ${isCollapsed ? 'flex justify-center' : ''}`}>
+          <div className={`p-2 border-t border-border ${isCollapsed ? 'flex justify-center' : ''}`}>
             <SidebarTrigger className={`hover:bg-primary/10 hover:text-primary ${isCollapsed ? '' : 'w-full'}`} />
           </div>
         </div>

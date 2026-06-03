@@ -41,6 +41,6 @@ export const SIGNOUT_KEEP_KEYS: string[] = [
 ];
 
 /**
- * Prefix for all Visibill-specific keys.
+ * Prefix for all eaisybill-specific keys (kept as 'visibill_' for backward compatibility).
  */
 export const VISIBILL_PREFIX = 'visibill_';

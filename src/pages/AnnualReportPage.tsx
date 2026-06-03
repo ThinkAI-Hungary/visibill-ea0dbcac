@@ -385,7 +385,7 @@ export default function AnnualReportPage() {
   // ── No report yet → show create ──
   if (!report) {
     return (
-      <div className="max-w-2xl mx-auto py-12">
+      <div className="max-w-2xl mx-auto py-12 page-animate">
         <Card className="border-border/60 shadow-lg">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto bg-primary/10 text-primary p-4 rounded-2xl w-fit mb-4">
@@ -449,7 +449,7 @@ export default function AnnualReportPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-animate">
       {/* Stepper */}
       <div className="bg-muted/30 p-2 rounded-xl border border-border/50 print:hidden overflow-hidden">
         <div className="flex items-center gap-1">
