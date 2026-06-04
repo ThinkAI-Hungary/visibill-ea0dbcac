@@ -46,6 +46,30 @@ const ProfitAndLoss = lazy(() => import("./pages/ProfitAndLoss"));
 const BalanceSheet = lazy(() => import("./pages/BalanceSheet"));
 const AnnualReportPage = lazy(() => import("./pages/AnnualReportPage"));
 const ManagementDashboard = lazy(() => import("./pages/ManagementDashboard"));
+const AccountyApp = lazy(() => import("./pages/Accounty/AccountyApp"));
+const AccountyLayout = lazy(() => import("./pages/Accounty/AccountyLayout"));
+const NewClientPage = lazy(() => import("./pages/Accounty/NewClientPage"));
+const MissingInvoicesPage = lazy(() => import("./pages/Accounty/MissingInvoicesPage"));
+const ReportsPage = lazy(() => import("./pages/Accounty/ReportsPage"));
+const MissingInvoicesReportPage = lazy(() => import("./pages/Accounty/MissingInvoicesReportPage"));
+const ClientDetailsPage = lazy(() => import("./pages/Accounty/ClientDetailsPage"));
+const ClientMissingInvoicesPage = lazy(() => import("./pages/Accounty/ClientMissingInvoicesPage"));
+const ClientReportsPage = lazy(() => import("./pages/Accounty/ClientReportsPage"));
+const ClientMissingInvoicesReportPage = lazy(() => import("./pages/Accounty/ClientMissingInvoicesReportPage"));
+const TaxCalendarPage = lazy(() => import("./pages/Accounty/TaxCalendarPage"));
+const ClientInvoicesPage = lazy(() => import("./pages/Accounty/ClientInvoicesPage"));
+const ClientPortalPage = lazy(() => import("./pages/Accounty/ClientPortalPage"));
+const SettingsPage = lazy(() => import("./pages/Accounty/SettingsPage"));
+const HelpPage = lazy(() => import("./pages/Accounty/HelpPage"));
+const ApprovalQueuePage = lazy(() => import("./pages/Accounty/ApprovalQueuePage"));
+const PayrollDashboardPage = lazy(() => import("./pages/Accounty/PayrollDashboardPage"));
+const PayrollEmployeesPage = lazy(() => import("./pages/Accounty/EmployeesPage"));
+const PayrollEmployeeWizardPage = lazy(() => import("./pages/Accounty/EmployeeWizardPage"));
+const PayrollCyclePage = lazy(() => import("./pages/Accounty/PayrollCyclePage"));
+const PayrollEmployeeDetailsPage = lazy(() => import("./pages/Accounty/EmployeeDetailsPage"));
+const PayrollTaxParametersPage = lazy(() => import("./pages/Accounty/TaxParametersPage"));
+const PayrollFilingsPage = lazy(() => import("./pages/Accounty/FilingsPage"));
+const PayrollReportsPage = lazy(() => import("./pages/Accounty/PayrollReportsPage"));
 const VatReturnPage = lazy(() => import("./pages/VatReturnPage"));
 
 const queryClient = new QueryClient({
@@ -204,6 +228,54 @@ const App = () => (
                         </Suspense>
                       </ProtectedPage>
                     } />
+
+                    {/* Client Portal – standalone, no auth (magic link) */}
+                    <Route path="/portal/:token" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RemoveInitialLoader /><ClientPortalPage /></Suspense>} />
+
+                    {/* Accounty New Client Wizard (No Layout) */}
+                    <Route path="/accounty/new-client" element={
+                      <ProtectedPage>
+                        <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+                          <RemoveInitialLoader />
+                          <NewClientPage />
+                        </Suspense>
+                      </ProtectedPage>
+                    } />
+
+                    {/* Accounty frontend – standalone layout */}
+                    <Route path="/accounty" element={
+                      <ProtectedPage>
+                        <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
+                          <RemoveInitialLoader />
+                          <AccountyLayout />
+                        </Suspense>
+                      </ProtectedPage>
+                    }>
+                      <Route index element={<AccountyApp />} />
+                      <Route path="client/:id" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientDetailsPage /></Suspense>} />
+                      <Route path="missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MissingInvoicesPage /></Suspense>} />
+                      <Route path="missing-invoices/:id" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientMissingInvoicesPage /></Suspense>} />
+                      <Route path="client/:id/reports" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientReportsPage /></Suspense>} />
+                      <Route path="client/:id/reports/missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientMissingInvoicesReportPage /></Suspense>} />
+                      <Route path="client/:id/invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientInvoicesPage /></Suspense>} />
+                      <Route path="reports" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ReportsPage /></Suspense>} />
+                      <Route path="reports/missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MissingInvoicesReportPage /></Suspense>} />
+                      <Route path="tax-calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaxCalendarPage /></Suspense>} />
+                      <Route path="settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><SettingsPage /></Suspense>} />
+                      <Route path="help" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><HelpPage /></Suspense>} />
+                      <Route path="approval-queue" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ApprovalQueuePage /></Suspense>} />
+                      <Route path="payroll/:id" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollDashboardPage /></Suspense>} />
+                      <Route path="payroll/:id/employees" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollEmployeesPage /></Suspense>} />
+                      <Route path="payroll/:id/employees/new" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollEmployeeWizardPage /></Suspense>} />
+                      <Route path="payroll/:id/employees/:empId" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollEmployeeDetailsPage /></Suspense>} />
+                      <Route path="payroll/:id/cycle/new" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollCyclePage /></Suspense>} />
+                      <Route path="payroll/:id/cycle/:cycleId" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollCyclePage /></Suspense>} />
+                      <Route path="payroll/:id/filings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollFilingsPage /></Suspense>} />
+                      <Route path="payroll/:id/reports" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollReportsPage /></Suspense>} />
+                      <Route path="payroll/:id/portal" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientPortalPage /></Suspense>} />
+                      <Route path="payroll/:id/tax-params" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollTaxParametersPage /></Suspense>} />
+                      <Route path="new-client" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NewClientPage /></Suspense>} />
+                    </Route>
 
                     {/* Protected routes with persistent sidebar */}
                     <Route element={<ProtectedLayout />}>

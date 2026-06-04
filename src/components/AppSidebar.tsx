@@ -293,20 +293,28 @@ export const AppSidebar = React.memo(function AppSidebar() {
         {/* Header */}
         <div className={`p-4 border-b border-border ${isCollapsed ? 'flex justify-center' : ''}`}>
           {!isCollapsed ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <span className="text-2xl tracking-tight select-none">
                 <span className="font-medium text-foreground/80">e</span>
                 <span className="font-bold text-primary">ai</span>
                 <span className="font-medium text-foreground/80">sy</span>
                 <span className="font-medium text-primary">bill</span>
               </span>
+              <span className="text-xl font-light text-muted-foreground">|</span>
+              <Link to="/accounty" className="text-2xl font-black bg-gradient-to-br from-red-500 via-red-600 to-red-700 bg-clip-text text-transparent tracking-tight hover:opacity-80 transition-opacity">
+                Accounty
+              </Link>
             </div>
           ) : (
-            <div className="flex items-center justify-center">
+            <div className="flex flex-col items-center justify-center gap-2">
               <span className="text-2xl tracking-tight select-none">
                 <span className="font-medium text-foreground/80">e</span>
                 <span className="font-bold text-primary">ai</span>
               </span>
+              <div className="w-4 h-px bg-muted-foreground/30 rounded-full" />
+              <Link to="/accounty" className="text-2xl font-black bg-gradient-to-br from-red-500 via-red-600 to-red-700 bg-clip-text text-transparent tracking-tight hover:opacity-80 transition-opacity" title="Accounty">
+                A
+              </Link>
             </div>
           )}
         </div>

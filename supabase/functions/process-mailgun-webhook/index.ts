@@ -313,6 +313,43 @@ serve(async (req) => {
       }
     }
 
+    // ── Accounty NLP: Auto-resolve missing_items based on reply text ──
+    if (bodyPlain && alias.company_id) {
+      const replyText = bodyPlain.toLowerCase();
+
+      // Keywords that indicate the issue has been resolved
+      const resolveKeywords = [
+        'megtörtént', 'elküldtem', 'feltöltöttem', 'csatolom', 'mellékelem',
+        'utalás megtörtént', 'átutaltam', 'kifizettük', 'megcsináltam',
+        'elintéztük', 'rendben van', 'rendben', 'kész van', 'megoldottam',
+        'küldöm', 'küldtem', 'postáztam', 'feladtam',
+      ];
+
+      const hasResolveIntent = resolveKeywords.some(kw => replyText.includes(kw));
+
+      if (hasResolveIntent || attachments.length > 0) {
+        console.log('[ACCOUNTY-NLP] Resolve intent detected or attachments present. Auto-resolving missing items for company:', alias.company_id);
+
+        const { data: resolved, error: resolveError } = await supabase
+          .from('accounty_missing_items')
+          .update({
+            status: 'resolved',
+            resolved_at: new Date().toISOString(),
+          })
+          .eq('company_id', alias.company_id)
+          .in('status', ['open', 'notified'])
+          .select('id');
+
+        if (resolveError) {
+          console.error('[ACCOUNTY-NLP] Resolve error:', resolveError);
+        } else {
+          console.log(`[ACCOUNTY-NLP] Auto-resolved ${resolved?.length || 0} missing items`);
+        }
+      } else {
+        console.log('[ACCOUNTY-NLP] No resolve intent detected in reply text.');
+      }
+    }
+
     console.log('=== Webhook processing completed successfully ===');
 
     return new Response(JSON.stringify({ 

@@ -138,4 +138,22 @@ export const queryKeys = {
     ['projectLaborCosts', companyId] as const,
   projectList: (companyId: string) =>
     ['projectList', companyId] as const,
+
+  // ── Accounty ──
+  accountyClients: (userId: string) =>
+    ['accounty-clients', userId] as const,
+  accountyMissingItems: (companyId: string) =>
+    ['accounty-missing-items', companyId] as const,
+  accountyAllMissingItems: (userId: string) =>
+    ['accounty-all-missing-items', userId] as const,
+  accountyDeadlines: (userId: string) =>
+    ['accounty-deadlines', userId] as const,
+  accountyTaxProfile: (companyId: string) =>
+    ['accounty-tax-profile', companyId] as const,
+  accountyKpis: (userId: string) =>
+    ['accounty-kpis', userId] as const,
+  accountyPortalTokens: (companyId: string) =>
+    ['accounty-portal-tokens', companyId] as const,
+  accountyCommunicationPrefs: (companyId: string) =>
+    ['accounty-communication-prefs', companyId] as const,
 };

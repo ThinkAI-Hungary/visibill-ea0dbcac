@@ -1,0 +1,1669 @@
+Accounty 2026 - Teljes Körű 
+Bérszámfejtési és AI-Applikációs 
+Rendszerspecifikáció 
+Ez a dokumentum a magyarországi bérszámfejtési AI-applikáció teljes körű fejlesztési és 
+domain-specifikációja. Tartalmazza az összes szükséges képernyő (screen) leírását, üzleti 
+logikáját, adatmodell-követelményeit, valamint a 2026. január 1-jén hatályos jogszabályi 
+hátteret, amelyet az Antigravity fejlesztőcsapatának adunk át implementációra. 
+1. Általános Rendszerszabványok és UI/UX Előírások 
+Az alkalmazásban az alábbi egységesített adatmegjelenítési és felületi szabályokat kell 
+mereven alkalmazni: 
+●​ Pénzösszegek megjelenítése: Mindig „Ft" pénznemjelöléssel, ezres csoportosítással 
+(szóköz elválasztó). A negatív értékeket kötelező piros színnel kiemelni (Példa: „322 800 
+Ft"). 
+●​ Dátumformátumok: Egységes ISO formátum (YYYY.MM.DD). Minden dátumbeviteli 
+mezőhöz naptári választó (date picker) tartozik. Határidők esetén dinamikus sürgősségi 
+színkódolást kell alkalmazni. 
+●​ Jogviszonysorszám: 4-jegyű numerikus mező, alapértelmezett értéke „1". Kizárólag a 
+2026.01.01. után kezdődő jogviszonyok esetén szerkeszthető, vezető nullák használata 
+nem szükséges. 
+●​ TAJ-szám: „000-000-000" formátum-validáció beépített CDV ellenőrző számjegy 
+algoritmussal. 
+●​ Adóazonosító jel: Szigorú 10 jegyű numerikus validáció ellenőrző számjegy vizsgálattal. 
+●​ Wizard / Stepper komponens: Többlépéses folyamatoknál vízszintes lépéssor 
+használandó, az aktuális lépés kiemelésével. A már elvégzett lépések 
+visszanavigálhatók, a letiltott fázisok szürkítettek. 
+●​ Tömeges műveletek: Minden listanézetben az első oszlop egy jelölőnégyzet (checkbox). 
+Legalább egy tétel kijelölése után egy alulról felúszó, ragadós tömeges-akció sáv jelenik 
+meg. 
+●​ Dokumentum-előnézet: Beépített PDF inline viewer vagy kép lightbox letöltési 
+funkcióval. 
+●​ Automatikus folyamatok (RPA / AI): Automatikus háttérműveletek futásakor egy 
+„Folyamatban (automatikus)" feliratú banner jelenik meg, amely mellett mindig biztosítani 
+kell a manuális beavatkozás lehetőségét. 
+Egységes Státuszjelölők (Status Badges) 
+Színkód 
+Jelentés 
+Példa 
+  
+Zöld 
+Kész / Sikeres / Aktív 
+„Bevallás elfogadva", „Aktív 
+munkavállaló" 
+Sárga 
+Folyamatban / 
+Figyelmeztetés 
+„Adatbekérés folyamatban", 
+„Közelgő határidő" 
+Piros 
+Hiányzó / Hibás / Lejárt 
+„Hiányzó dokumentum", 
+„Lejárt határidő" 
+Szürke 
+Inaktív / Lezárt / Kilépett 
+„Kilépett munkavállaló", 
+„Archivált ciklus" 
+Kék 
+Információs 
+„Új belépő bejelentésre vár" 
+Minden képernyőleírásnak szigorúan követnie kell a következő struktúrát: 1. Screen route (URL 
+séma), 2. Üzleti cél, 3. Fő elemek, 4. Interakciók, 5. Integrációk, 6. Jogszabályi háttér. 
+2. Portfólió- és Dashboard-szintű Képernyők (Fejezet 
+1) 
+1.1 Könyvelőiroda főoldal — Globális dashboard 
+Route: 
+/dashboard 
+ 
+Cél: A könyvelő bejelentkezés utáni első felülete, amely portfólió-szintű állapotot, feladatokat és 
+AI anomália-riasztásokat összesít. 
+Fő elemek: Header logóval, globális hónap-választóval, keresővel és értesítési haranggal. 
+Összefoglaló kártyák (Aktív ügyfelek bérszámfejtési aránya, Foglalkoztatottak száma, Lezárt 
+ciklusok, Hiányzó adatok linkkel, Közelgő NAV-határidő számlálóval). Két oszlopos fő tartalom: 
+Sürgősség szerint rendezett feladatlista és egy 30 napos esemény-idővonal (NAV-határidők, 
+kifizetések, KIVA, rehab, kamarai). Alul egy kontextusos AI-asszisztens panel kap helyet. 
+Interakciók: Kártyákra kattintva részletes listák nyílnak; a feladatoknál található „Megnyitás" 
+gomb az érintett cég vagy bevallás oldalára navigál; az AI-riasztásoknál modális ablak mutatja a 
+konkrét jogszabályi hatásokat. 
+Integrációk: NAV-tárhely (nyugta visszaolvasás, hibakód-feldolgozás), napi szintű 
+Közlönyfigyelés és jogszabály-scrape. 
+Jogszabályi háttér: Nem releváns. 
+ 
+1.2 Bérszámfejtés portfólió-áttekintés 
+Route: 
+/dashboard/payroll 
+ 
+Cél: Az összes ügyfél bérszámfejtési státuszának egyidejű követése és tömeges akciók 
+kezelése. 
+Fő elemek: Header „Bérszámfejtés áttekintés" címmel, időszak-választóval és „Tömeges 
+adatbekérés" gombbal. Felső összefoglaló kártyák (Összes létszám, Ciklus progress bar, 
+Becsült összes utalandó SZJA+TB+SZOCHO). Ügyféllista táblázat: Ügyfél neve, 
+Foglalkoztatotti létszám, Ciklus státusz badge (pl. Számfejtés, Lezárt), Bevallás státusza, 
+Bér-utalási státusz, Határidők és műveleti gombok. Szűrősáv állapottípusokra. 
+Interakciók: Sorra kattintva az adott ügyfél bérszámfejtési főoldala (2.2) nyílik meg. Tömeges 
+kijelöléssel indítható adatbekérési wizard, bérpapír továbbküldés vagy validált 
+bevallás-beküldés. 
+Integrációk: NAV-tárhely valós idejű szinkron, többcsatornás üzenetküldés (E-mail, Viber, 
+Telegram). 
+Jogszabályi háttér: Nem releváns. 
+ 
+1.3 Határidő- és feladatnaptár 
+Route: 
+/dashboard/calendar 
+ 
+Cél: Minden hivatali, kifizetési és belső határidő naptár-nézetű nyomon követése. 
+Fő elemek: Hónap/Hét/Lista nézet-kapcsoló. Színkódolt naptárcellák: Piros = NAV-bevallási 
+határidő (hó 12. és 20.), Narancs = bér-utalási határidő (hó 10.), Lila = adónaptári hibridek 
+(KIVA, rehab, kamarai), Kék = belső munkafolyamati mérföldkő. Jobb oldali részletpanel a 
+kiválasztott nap tételeivel cégbontásban. 
+Interakciók: Eseményre kattintva frissül a részletpanel, a „Megnyitás" gomb a vonatkozó 
+szakmai screenre vezet. A belső feladatok drag & drop módszerrel átütemezhetők (a hivatali 
+határidők zároltak). 
+Integrációk: Kétirányú Office365 és Google Calendar szinkronizáció, éves NAV adónaptár API 
+frissítés. 
+Jogszabályi háttér: Nem releváns. 
+ 
+1.4 NAV-bejelentési és bevallási központi naptár 
+Route: 
+/dashboard/nav-deadlines 
+ 
+Cél: A NAV-specifikus adatszolgáltatások elkülönített, részletes kezelőfelülete. 
+Fő elemek: Havi (08-as, EFO, T1041/08E), Negyedéves (2658 EV), Éves (M30, KIVA, KATA, 
+rehab) és Ad-hoc (8/15 napos változások) tabok. Központi táblázat: Ügyfél, Bevallás típusa, 
+Tervezet státusz, Beküldve, NAV-nyugta állapota (Elfogadva, Hibás PRN/FOG kóddal, 
+Várakozás). Felül egy piros hiba-kezelési sáv összesíti a javítandó bizonylatokat. 
+Interakciók: Állapotjelzőre kattintva a 6.x bevallási screen nyílik meg. A „Hibás" jelzésre 
+kattintva felugrik a hiba részleteit és a javítási linket tartalmazó modális ablak. 
+Integrációk: NAV-tárhely automatikus polling (15 perces gyakorisággal), NAV adónaptár API. 
+Jogszabályi háttér: Art. 31. § (2) szerinti havi és negyedéves bevallási kötelezettségek. 
+ 
+1.5 Riasztások és figyelmeztetések központja 
+Route: 
+/dashboard/alerts 
+ 
+Cél: A teljes portfólióban felmerülő összes kritikus hiba, elmaradás és AI anomália egyetlen 
+listában történő kezelése. 
+Fő elemek: Szűrősáv súlyosság (Kritikus, Magas, Közepes, Alacsony) és típus (Adatigénylés, 
+Határidő, Jogszabály, Anomália) szerint. Riasztási kártyák listája: Színes súlyossági csík, cím, 
+leírás, érintett entitás, létrejövetel ideje. Akciógombok: „Megoldás" és „Elnémítás" 
+(audit-naplózott művelet). 
+Interakciók: A „Megoldás" gomb közvetlenül a problémát elhárító screenre (pl. hiányzó 
+TAJ-szám pótlása a 3.3-as felületen) navigál. 
+Integrációk: Desktop és mobil Push notification integráció, opcionális napi összefoglaló e-mail 
+digest. 
+Jogszabályi háttér: Nem releváns. 
+ 
+1.6 AI-asszisztens panel (Globális komponens) 
+Route: Globális oldalsó drawer komponens. 
+Cél: Környezetérzékeny (kontextusos) támogatás nyújtása a könyvelőnek a képernyő aktuális 
+tartalma alapján. 
+Fő elemek: Jobbról becsúszó panel chat-felülettel a természetes nyelvű kérdésekhez. 
+Gyors-akció gombok kontextustól függően (pl. bevallási screenen: „Bevallás előellenőrzés"). 
+Mindig látható hivatkozás-panel a válaszok alatt, amely megjeleníti a forrás-paragrafusokat. 
+Interakciók: Az AI-javaslatok elfogadásával automatikus adatkitöltés indítható. A 
+beállításokban GDPR-megfelelőségi toggle található az AI-tanulásban való részvétel 
+szabályozására. 
+Integrációk: Nagy nyelvi modell (LLM) backend, belső jogszabályi vektoradatbázis (Mt., Szja, 
+Tbj, Szocho, Art szövegeiből). 
+Jogszabályi háttér: GDPR 22. cikk (automatizált döntéshozatal szabályai). 
+3. Ügyfél- és Cég-szintű Képernyők (Fejezet 2) 
+2.1 Cégadatok / Törzsadatok 
+Route: 
+/client/[id]/profile 
+ 
+Cél: Az ügyfél alapvető cégtörzs-adatainak és hatósági azonosítóinak nyilvántartása. 
+Fő elemek: Header cégnévvel és státusz badge-dzsel (Aktív, Inaktív, Felszámolás alatt). Tabos 
+navigáció: Alapadatok (Székhely, adószám, cégjegyzékszám, TEÁOR kódok, gazdasági forma), 
+NAV-azonosítók (Cégkapu/KÜNY tárhely azonosító, képviselő adatai, UJEGYKE link), 
+TB-kifizetőhely tab (kifizetőhelyi engedélyszám, NEAK kapcsolat), Számlaszámok tab 
+(cégbankszámlák, cafeteria provider számlák), Iparűzési tab (önkormányzati bontás), Kollektív 
+szerződés tab (KSZ pótlékok és szerződés feltöltés). 
+Interakciók: Inline szerkesztési lehetőség automatikus audit-naplózás mellett. A 
+Cégkapu-azonosító mezőnél azonnali hivatali érvényesség-ellenőrzés indítható. 
+Integrációk: Központi NAV cégtörzs lekérdezés adószám alapján, KSH TEÁOR adatbázis. 
+Jogszabályi háttér: Ebtv. 73/A. § (100 fő felett kötelező TB-kifizetőhely), hivatali 
+tárhely-kötelezettséget előíró e-ügyintézési törvény. 
+ 
+2.2 Bérszámfejtés főoldal (Ügyfél szint) 
+Route: 
+/client/[id]/payroll 
+ 
+Cél: Egy konkrét cég bérszámfejtési moduljának operatív irányítópultja. 
+Fő elemek: Breadcrumb navigáció, „Új ciklus indítása" elsődleges gomb. Felső kártyák 
+(Foglalkoztatottak státuszbontásban, Aktuális hónap állapota, Hiányzó adatok száma). Alsó 
+áttekintő tab: Kiemelt aktuális hónap kártya progress bar-ral és „Folytatás" gombbal. Gyors 
+műveletek panel (Adatbekérés, Számfejtés indítása, Új belépő). Legutóbbi tevékenységek 
+idővonala és célzott figyelmeztetések. 
+Interakciók: Tabváltások a foglalkoztatottak, ciklusok és bevallások között. A „Folytatás" gomb 
+az aktuális havi bérszámfejtési stepper lépésre navigál. 
+Integrációk: Belső AI modul (anomália-detekció és kedvezmény-optimalizálási javaslatok). 
+ 
+2.3 Bérszámfejtési beállítások 
+Route: 
+/client/[id]/payroll/settings 
+ 
+Cél: Ügyfélszintű bérszámfejtési és szabályrendszerbeli paraméterezés. 
+Fő elemek: Checkboxok a havonta kötelezően bekérendő dokumentumokhoz (jelenléti ív, 
+szabadság, telefonszámla stb.). Bérszámfejtési motor paraméterei (Bérkerekítés pontossága, 
+munkanapok forrása, pótlék-szabályrendszer választó). Telefonszám-fejtés szekció 
+(alapértelmezett magánhasználati arány input mezője). Cafeteria paraméterek (éves 
+keretösszeg/fő, SZÉP-kártya szolgáltatók kijelölése, speciális juttatások engedélyezése). 
+Kommunikációs időzítő szekció (bekérés napja és csatornái). NAV-bevallás csatornaválasztó 
+(ONYA, ÁNYK, M2M) és aláírási mód konfiguráció. Integrációs toggle gombok. 
+Interakciók: Értékek módosítása és mentése, amely azonnal felülírja a számfejtő motor és az 
+adatbekérő modul futásidejű viselkedését. 
+Integrációk: Külső rendszerek kapcsolói (Banki API-k, HR-szoftverek, számlázók, iktatók, OCR 
+modul). 
+ 
+2.4 Cégkapu / Ügyfélkapu+ / KÜNY-tárhely kapcsolat beállítás 
+Route: 
+/client/[id]/integrations/government-portal 
+ 
+Cél: A hivatalos állami tárhelyek és a beküldéshez szükséges KAÜ azonosítás technikai 
+konfigurációja. 
+Fő elemek: Rádiógombok a tárhely típusának kiválasztásához (Cégkapu gazdasági 
+társaságnak vagy KÜNY-tárhely egyéni vállalkozónak/magánszemélynek). Tárhely-azonosító 
+(10 jegyű numerikus mező) ellenőrzött státusz badge-dzsel és a Központi Rendszerből 
+visszaolvasott címzett-cég névvel. Tárhely-kapacitás kijelző csík. Aláíró személy szekció (Aláíró 
+neve, KAÜ-azonosító típusa: Ügyfélkapu+, DÁP, e-SZIG) „Aláíró tesztelése" gombbal. 
+Tárhely-figyelő polling gyakoriság beállítása (15 p, 30 p, óránként) és automatikus 
+nyugta-feldolgozás toggle. 
+Interakciók: Az „Aláíró tesztelése" gombra kattintva a rendszer egy KAÜ teszt-hitelesítést 
+kezdeményez. Mentéskor az adatok az integrációs kliens futtató környezetébe kerülnek. 
+Integrációk: Állami KAÜ modul, NISZ Cégkapu-érvényesítő API. 
+Jogszabályi háttér: Az elektronikus ügyintézésről szóló törvény előírásai. 
+ 
+2.5 NAV-meghatalmazás kezelése (UJEGYKE) 
+Route: 
+/client/[id]/representation 
+ 
+Cél: A könyvelőiroda állandó meghatalmazásainak karbantartása és ellenőrzése. 
+Fő elemek: Aktív meghatalmazások táblázata: Meghatalmazott neve, Kezdő dátum, Záró 
+dátum, Hatáskör (Mindenre, Csak bérszámfejtésre, Egyedi), Státusz badge és műveleti gombok 
+(pl. Visszavonás). „Új meghatalmazás bejelentése" gomb, amely egy 5-lépéses wizardot nyit 
+meg (1. Meghatalmazott típus választó, 2. Hatáskör részletezése checkboxokkal, 3. Időtartam 
+megadása, 4. UJEGYKE-űrlap sémakép előnézet, 5. AVDH aláírás és beküldés). 
+Interakciók: Az aktív tételeknél elérhető „Visszavonás" gombra kattintva a rendszer 
+automatikusan legenerálja az UJEGYKE revíziós formot. 
+Integrációk: NAV ONYA API (űrlap közvetlen feladása), ÁNYK XML-export (átmeneti 
+időszakra). 
+Jogszabályi háttér: Air. 17. § (1) g) pontja, amely lehetővé teszi, hogy 2025.02.01-től magát a 
+könyvelőiroda szervezetet jegyezzék be állandó meghatalmazottként. 
+ 
+2.6 Iratkezelési és GDPR-szabályzat 
+Route: 
+/client/[id]/data-retention 
+ 
+Cél: A céghez kapcsolódó szenzitív dokumentumok jogszabályban rögzített megőrzési idejének 
+kezelése és a GDPR megfelelőség biztosítása. 
+Fő elemek: Megőrzési idő-táblázat (Dokumentumtípus, Megőrzési idő, Jogalap, Automatikus 
+törlés státusza). Adatfeldolgozó szerződés szekció (Szerződés feltöltési zóna és érvényességi 
+badge). Érintetti kérelmek blokk (link a rendszerszintű GDPR modulra) és az Ügyfélszintű 
+audit-napló kivonata. 
+Interakciók: Új szerződésváltozat feltöltése drag & drop zónában. Az adatváltozási listában 
+soronként részletes metaadat-tükör nyitható. 
+Integrációk: Belső dokumentumtár és megsemmisítési modul. 
+Jogszabályi háttér: GDPR 28. cikk (kötelező írásos adatfeldolgozói szerződés), Sztv. 169. § 
+(bizonylatok 8 éves megőrzése), Mt. 286. § (munkaügyi igények 3 éves elévülése), Tny. törvény 
+(nyugdíj-releváns iratok hosszú távú megőrzése). 
+ 
+2.7 Bérezési struktúra: telephelyek, költséghelyek, részlegek 
+Route: 
+/client/[id]/structure 
+ 
+Cél: A vállalat belső szervezeti struktúrájának leképezése a bérköltségek analitikus 
+megbontásához. 
+Fő elemek: Telephelyek listája táblázatban (Telephely-kód, megnevezés, cím, főtevékenység, 
+létszám) „Új telephely" gombbal. Költséghelyek (Cost Center) szekció hierarchikus struktúrájú 
+fa-nézetben (Vállalat → Divízió → Részleg → Projekt) kódokkal és felelősök megjelölésével. 
+Részlegek és Csoportok szekció létszámadatokkal. Munkavállaló-besorolási mátrix. 
+Interakciók: Szervezeti egységek létrehozása, szerkesztése vagy áthúzása (drag & drop) a 
+fában. Munkavállalók tömeges hozzárendelése egységekhez checkboxok segítségével. 
+Integrációk: Belső riport-generáló motor (11.2 bérköltség-riport megbontási tengelyei). 
+ 
+4. Foglalkoztatotti és Jogviszony-szintű Képernyők 
+(Fejezet 3) 
+3.1 Foglalkoztatottak lista (Ügyfélen belül) 
+Route: 
+/client/[id]/payroll/employees 
+ 
+Cél: A cég összes munkavállalójának központi adminisztrációs felülete. 
+Fő elemek: Header „Foglalkoztatottak" címmel, „Új foglalkoztatott" és „Importálás Excel-ből" 
+gombokkal. Keresősáv (név, TAJ, adóazonosító). Szűrősáv: státusz (Aktív, Kilépett, 
+Bejelentésre vár, Szünetelő), jogviszony-típus multi-select dropdown (pl. TM munkaviszony, 
+Tartós megbízás 1115, Társas vállalkozó) és szervezeti egység szűrők. Központi táblázat: 
+Checkbox, Avatar, Név, Jogviszonykód (1101, 1115, 1452 stb.), Munkakör (FEOR), Belépés 
+dátuma, Státusz badge, Havi adat badge (Kész, Hiányos, Nincs) és 3-pontos műveleti menü. 
+Összesítő footer. 
+Interakciók: Sorra kattintva a részletes profil (3.4) nyílik meg. Tömeges kijelölés esetén 
+elérhető a tömeges bejelentés, nyilatkozat-bekérés és sablon-export. 
+Integrációk: Excel-importőr modul (SheetJS), NAV biztosítotti kliens. 
+ 
+3.2 Jogviszony típus választó wizard (Új belépő első lépése) 
+Route: 
+/client/[id]/payroll/employees/add (1. lépés) 
+ 
+Cél: Interaktív döntési fa segítségével a pontos hivatali jogviszonykód meghatározása, 
+megakadályozva a könyvelői tévesztéseket. 
+Fő elemek: Wizard-kérdéssor (Decision Tree): 1. Nyugdíjas? (Ha igen, saját jogú ág), 2. 
+Munkaviszony vagy polgári jogi szerződés? (Munkaviszonynál standard ág, polgárinál 
+következő lépés), 3. Szerződés jellege? (Megbízás esetén: hagyományos vagy tartós 1115), 4. 
+Alkalmi vagy idénymunka? (EFO típusok kiválasztása), 5. Speciális státuszok (Diák, 
+szakképzési, társas vállalkozó, EKHO, külföldi). Jobb oldali Eredmény-előnézet panel: javasolt 
+jogviszonykód, biztosítási elbírálás leírása, minimum járulékalap szabálya. „Nem vagyok biztos" 
+segédlink. 
+Interakciók: A gombokra kattintva a logikai fa dinamikusan változtatja a következő kérdést. A 
+„Folytatás" gomb a megállapított jogviszonynak megfelelő státusz-specifikus űrlapra navigál. 
+Integrációk: Kontextusos AI-segéd (belső szakmai chatbot javaslatokkal). 
+ 
+3.3 Új foglalkoztatott — közös adatok (Wizard 2-3. lépés) 
+Route: 
+/client/[id]/payroll/employees/add/personal 
+ 
+Cél: Jogviszonytól független személyes törzsadatok és igazolványok rögzítése. 
+Fő elemek: 2. lépés űrlapja szekcionálva: Alapadatok (Vezetéknév, keresztnév, születési név, 
+hely, idő, anyja neve, nem, állampolgárság), Azonosítók (TAJ-szám mező, Adóazonosító mező, 
+Személyi igazolvány szám), Elérhetőségek (Lakcím, tartózkodási hely, e-mail, telefonszám), 
+Pénzügyi adatok (Bankszámlaszám 3x8 jegyű tagolásban). Drag & drop dokumentum-feltöltési 
+zóna azonnali OCR visszajelző sávval. 3. lépésként a 3.2-ben kiválasztott jogviszonynak 
+megfelelő egyedi szakmai adatűrlap töltődik be. 
+Interakciók: TAJ-szám és adóazonosító gépelésekor élő CDV ellenőrzés fut, hiba esetén piros 
+keret és validációs üzenet jelenik meg. Bankszámlaszámnál automatikus GIRO 
+formátumellenőrzés és IBAN konverzió történik. Az OCR feltöltéskor az AI azonnal jelzi az 
+olvashatóságot. 
+Integrációk: Opcionális online NAV adóazonosító validátor, beépített OCR/AI 
+dokumentum-olvasó modul. 
+ 
+3.4 Foglalkoztatott részletek 
+Route: 
+/client/[id]/payroll/employees/[emp-id] 
+ 
+Cél: Egyetlen munkavállaló teljes történelmi és aktuális adatprofiljának kezelése, többes 
+jogviszony támogatásával. 
+Fő elemek: Header névvel, monogramos avatarral, hivatali státusz badge-dzsel és műveleti 
+dropdown menüvel (Szerkesztés, Kijelentés, Új jogviszony, Nyilatkozatok). Tabos elrendezés: 
+Alapadatok (inline szerkeszthető személyes blokk), Jogviszonyok (táblázat a párhuzamos vagy 
+egymást követő jogviszonyokról sorszámmal, kóddal, kezdő és záró dátummal), Béradatok tab 
+(bértörténet táblázat), Adóelőleg-nyilatkozatok tab (aktív adóalap-csökkentők listája), 
+Dokumentumok tab, Történet tab (audit napló), e-TB kiskönyv tab (NEAK lekérdezési adatok). 
+Interakciók: Inline szerkesztés mezőre kattintással, mentéskor azonnali háttér-validáció és 
+audit naplózás fut. Új jogviszony gombra kattintva új jogviszony-kártyát fűz az emberhez. 
+Integrációk: NEAK e-TB kiskönyv API (pénzbeli ellátások és múltbeli adatok szinkronizálása). 
+ 
+3.5 - 3.7 Speciális jogviszony-kezelő képernyők 
+●​ 3.5 Foglalkoztatottak importálása Excel-ből (​
+/payroll/employees/import): Sablon letöltési funkció validációs szabályzat leírással. 
+Drag & drop feltöltési zóna .xlsx és .csv fájlokhoz. Feltöltés után sorszintű hibalista 
+előnézeti táblázat jelenik meg (pl. „4. sor: érvénytelen TAJ-szám"). Csak a hibátlan sorok 
+importálhatók egy toggle segítségével. Sikeres importálás után opció nyílik automatikus 
+08E bejelentési tervezetek generálására. 
+●​ 3.6 Jogviszony módosítása (​
+/job/[job-id]/edit): Változás-típus választó (Munkaidő-változás, FEOR-módosítás, 
+Bérváltozás, Szüneteltetés, Újraindítás). Két oszlopos vizuális diff (diff-nézet) a régi és az 
+új adatok összehasonlítására. Alul automatikus 08E nyomtatvány-előnézet generálódik a 
+törvényi határidők (8 vagy 15 nap) kijelzésével és „Beküldés most" gombbal. (Határidők: 
+Art. 16. §). 
+●​ 3.7 Több jogviszony egy emberhez (​
+/employees/[emp-id]/jobs): Egymás alatti kártyás elrendezés a párhuzamos 
+jogviszonyok kezelésére. Tartalmaz egy beépített AI biztosítási elbíráló panelt (pl. „Csak a 
+munkaviszony biztosított, a megbízási díj nem éri el a 30%-os küszöböt") és egy 
+minimum járulékalap-kalkulátort, amely automatikusan érvényesíti a Tbj. 39. § szerinti 
+minimum-mentesülést, ha heti 36 órás munkaviszony áll fenn a társas vállalkozói 
+jogviszony mellett. Kezeli a január 31-ig leadandó többszörös társas vállalkozói 
+nyilatkozatokat. 
+5. Státusz-specifikus Jogviszony Űrlapok (Wizard 3. 
+lépések) 
+Az alábbi specifikus felületek a 3.3-as wizard 3. lépéseként töltődnek be a kiválasztott 
+jogviszonykód alapján, egyedi validációs és számítási szabályokkal: 
+3.8 Teljes munkaidős / részmunkaidős munkaviszony (1101) 
+Route: 
+/.../add/job?type=munkaviszony 
+ 
+Szakmai mezők: Munkaviszony típusa (Teljes / Részmunkaidő rádiógombok), Heti munkaidő 
+(óra input), Belépés dátuma (kötelező date picker), Próbaidő vége naptár, Határozott idejű 
+toggle (ha aktív: vége dátum mező, max 5 év), FEOR-szám (4 jegyű kereshető dropdown), 
+Munkakör megnevezése, Telephely/Költséghely választó, Jogviszonysorszám mező (4 jegyű, 
+kötelező). Bérezési szekció: Alapbér típusa (Havibér, Órabér stb.), Alapbér összege (Ft). 
+Bérpótlékok multi-select (műszakpótlék 30%, éjszakai 30%, vasárnapi 50%, munkaszüneti 
+100%, túlóra 50%). Juttatások szakasz (Cafeteria toggle, céges telefon, lakhatás 35 év alatt, 
+munkábajárás). 
+Üzleti logika & Validáció: Az Alapbér összege mezőnél valós idejű validációs motor fut: a 
+FEOR kód alapján ellenőrzi a 2026-os törvényi minimumokat. Ha szakképzettséget nem 
+igényel, a minimum 322 800 Ft, ha igényel, a garantált bérminimum 373 200 Ft. Ettől eltérni 
+csak részmunkaidő esetén lehet, ekkor az időarányos minimumot számítja ki a rendszer (pl. 4 
+óránál 161 400 Ft). Alul bejelentési jelölő található: „Bejelentés most" (automatikus 08E-tervezet 
+generálás) vagy „Mentés, később jelentem". 
+Jogszabályi háttér: Mt. 192. § (határozott idő max 5 év), 426/2025. Korm. rendelet a kötelező 
+bérminimumokról. 
+ 
+3.9 Határozott idejű munkaviszony 
+Route: 
+/.../add/job?type=hatarozott 
+ 
+Eltérések a 3.8-tól: A Határozott idő vége mező kitöltése kötelező. Beépített visszamenőleges 
+meghosszabbítás-figyelő logika: ha ugyanazon felek között 5 éven belül újabb határozott 
+szerződés jön létre, az AI figyelmeztető bannert jelenít meg („Visszaélés-gyanú, a jogviszony 
+határozatlanná alakulhat"). A lejárati dátum előtt 30, 14 és 5 nappal automatikus push-értesítést 
+küld a könyvelőnek. A megszűnés napján automatikusan legenerálja a 08E-megszüntetési 
+állományt és a kilépő csomagot. 
+ 
+3.10 Távmunka / otthoni munkavégzés konfiguráció 
+Route: 
+/.../add/job?type=munkaviszony&tavmunka=true 
+ 
+Eltérések a 3.8-tól: Munkavégzési forma választó (Teljes távmunka, Hibrid, Alkalmi otthoni 
+rádiógombok). Hibrid esetén kötelező megadni a heti távmunkanapok számát. Költségtérítés 
+szekció: adómentes átalány költségtérítés mező, amely 2026-ban fixen legfeljebb havi 32 280 
+Ft (a minimálbér 10%-a). Ha a felhasználó kevesebb távmunka-napot jelöl meg, a rendszer 
+automatikusan arányosítja az összeget. Tartalmaz egy „Egyéb tételes költségtérítés" toggle-t, 
+amelynek aktiválása automatikusan zárolja és kizárja az adómentes átalány használatát. 
+Jogszabályi háttér: Mt. 196. §, Szja tv. 3. számú melléklet II/11. pont. 
+ 
+3.11 - 3.14 Egyszerűsített foglalkoztatási (EFO) űrlapok 
+Közös jellemzők: Szigorú bejelentés-vezérelt felületek. A T1042E nyomtatvány vagy az ONYA 
+EFO modul közvetlen előkészítése. A bejelentésnek kötelezően meg kell előznie a 
+munkavégzés kezdetét. 
+●​ 3.11 EFO — Alkalmi munka (​
+/.../type=efo&kind=alkalmi): Típus badge: „Alkalmi munka — 4 800 Ft/nap közteher". 
+Naptári többes választó a munkavégzés napjainak kijelöléséhez. Munkakezdés és 
+-végzés pontos órája. FEOR-szám szakképzettségi toggle gombbal. Napi bér input mező. 
+Élő validáció: a minimális órabér 2026-ban szakképzettség nélkül 1 578 Ft/óra, 
+szakképzettnél 1 866 Ft/óra. Maximális napi bér korlát: 29 700 Ft (e felett túlfizetési 
+riasztás). Megjeleníti a napi mentesített keretet (19 305 Ft vagy 22 308 Ft). Azonos felek 
+között beépített korlát-figyelő: max 120 nap/év folyamatos számlálóval. 
+●​ 3.12 EFO — Mezőgazdasági idénymunka (​
+/.../kind=mezo): Típus badge sávos közteher-kijelzővel: 0–120 nap között 2 400 Ft/nap, 
+121–210 nap között 3 600 Ft/nap. Élő kijelző mutatja a felhasznált napokat (pl. „Eddig 80 
+nap, még 41 nap van a magasabb sávig"). Azonos felek között a maximum 2026-ban 210 
+nap/év. A tevékenység-azonosító mező kizárólag az Efo tv. szerinti mezőgazdasági 
+TEÁOR kódokat engedélyezi. 
+●​ 3.13 EFO — Turisztikai idénymunka (​
+/.../kind=turisztikai): Típus badge: „Turisztikai idénymunka — 2 400 Ft/nap". 
+Tevékenység-azonosító szűrt listája (szálláshely, vendéglátás TEÁOR kódok). Cég 
+szinten konfigurálható az idény-időszak (pl. május-szeptember). 
+●​ 3.14 EFO — Filmipari statiszta (​
+/.../kind=film): Típus badge: „Filmipari statiszta — 9 700 Ft/nap közteher". Kötelező 
+egyedi mezők: Produkció azonosítója, Film címe, Forgatási helyszín. Magasabb 
+bérkeretek validációja: maximális napi bér 38 700 Ft. 
+3.15 Megbízási jogviszony (Ptk.) 
+Route: 
+/.../add/job?type=megbizas 
+ 
+Szakmai mezők: Szerződés azonosító/sorszám, Megbízás tárgya (szabad szöveg), Időtartam 
+(Határozott/Határozatlan), Megbízási díj összege és típusa (fix, órabér, projekt-alapú), Kifizetési 
+ütemezés (havi, projekt végén, részletfizetés). Költségelszámolási mód rádiógombok: 10% 
+általános költségátalány vagy Tételes költségelszámolás (max 50% bizonylat-feltöltéssel). 
+Üzleti logika & Validáció: Beépített élő biztosítási elbíráló motor: a havi várható nettó díj 
+alapján kalkulál. Ha a díj eléri a 2026-os minimálbér 30%-át (havi 96 840 Ft, napi 3 228 Ft), a 
+rendszer átvált „Biztosított (1300-as kódcsoport)" státuszra, és jelzi, hogy a kifizetés napjáig 
+08E bejelentés szükséges. Ha nem éri el, a státusz „Nem biztosított", és csak 15% 
+SZJA-előleget von le. Bejelentés-késleltetési figyelmeztetés: „A hagyományos megbízásnál 
+utólag kell jelenteni, ne most küldd a 08E-t!" toggle automatizált későbbi indítással. 
+Jogszabályi háttér: Tbj. 6. § (1) f) pontja. 
+ 
+3.16 Tartós megbízási jogviszony (ÚJ 2026.01.01-től) 
+Route: 
+/.../add/job?type=tartos-megbizas 
+ 
+Szakmai mezők: Mezőkészlete megegyezik a 3.15-tel, de kiegészül a kötelezően kitöltendő 
+hivatali Jogviszonysorszám mezővel (4 jegyű, alapértelmezett értéke „1"). A Megbízási díj mező 
+értéke engedélyezetten lehet 0 Ft is. 
+Üzleti logika & Validáció: Felül egy fix sárga figyelmeztető banner jelenik meg: „A tartós 
+megbízás a foglalkoztató döntésén alapul. Előzetesen — a megbízás első napjáig — be kell 
+jelenteni a 08E-n az 1115-ös jogviszonykóddal. A bejelentés napjától folyamatos biztosítás áll 
+fenn akár 0 Ft díj esetén is." A rendszer automatikusan keményen beépíti a minimum 
+járulékalap és SZOCHO-alap szabályt: a kifizetett összegtől függetlenül a TB- és Szocho-alap 
+legalább a minimálbér 30%-a (96 840 Ft/hó, tört hónapnál 30-ad rész/nap). Az 08E-bejelentés 
+elküldése azonnal kötelezővé válik, a megbízás kezdetét utólagosan nem engedi rögzíteni a 
+rendszer. 
+Jogszabályi háttér: 2025. évi LXXXIII. törvény a Tbj. módosításáról (Tbj. 4. § 23. és 6. § (1) l) 
+pontjai). 
+ 
+3.17 - 3.20 Vállalkozói és Vezetői űrlapok 
+●​ 3.17 Vezető tisztségviselő (ügyvezető) (​
+/.../type=vezeto-tisztsegviselo): Három al-forma választó rádiógomb: (A) 
+Munkaviszonyban (átirányít a 3.8-as űrlapra - 1101 kód), (B) Megbízással nem tag 
+(1300-as kód, biztosítás 30% felett), (C) Megbízással tag is (automatizáltan átvált a 
+3.18-as társas vállalkozói logikára). Pozíció mezők: Tisztség megnevezése, Mandátum 
+kezdete és lejárata, Cégjegyzéki szereplés toggle. Tagi pozíciónál üzletrész nagysága 
+(%) és személyes közreműködés kötelező toggle-je. 
+●​ 3.18 Társas vállalkozó (​
+/.../type=tarsas-vallalkozo): Cégadatok auto-complete, üzletrész (%) és tagi jogviszony 
+kezdete. Kötelező személyes közreműködési jelölő a hivatali 1452-es jogviszonykód 
+aktiválásához. Minimum járulékalap-kalkulátor panel: kijelzi a 2026-os fix 
+kötelezettségeket: alapbérnél TB 18,5% x 322 800 Ft = 59 718 Ft és SZOCHO 13% x 322 
+800 Ft = 41 964 Ft; garantált bérminimumnál (ha a főtevékenység végzettséghez kötött) 
+373 200 Ft az alap. Explicit tájékoztató felirat: „A 112,5%-os szocho-szorzó 2026-tól 
+megszűnt, az alap 100%". Tartalmaz egy „Heti 36 órás munkaviszony fennáll" 
+minimum-mentesítési toggle-t és a január 31-i többes jogviszony választási nyilatkozat 
+rögzítőjét. 
+●​ 3.19 Egyéni vállalkozó (VSZJA / Átalányadó) (​
+/.../type=ev): Adózási forma választó (VSZJA, Átalányadó - a KATA átirányít a 3.20-ra). 
+EVNY-szám (nyilvántartási szám) kötelező mező, ÖVTJ-kódok kereshető listája 
+főtevékenység megjelöléssel. Jogviszony jellege rádiógombok (Főállás, 
+Melléktevékenység heti 36 órás munkaviszony mellett, Nyugdíj-kiegészítő). Átalányadó 
+esetén költséghányad választó (40%, 80%, 90%). Dinamikus adómentes határ kijelző: 
+2026-ban fixen 1 936 800 Ft jövedelemig (éves minimálbér fele). Főállás esetén a 
+3.18-cal megegyező minimum járulékalap fut. Negyedéves bevallás-figyelő banner: 
+„2658-as bevallás negyedévente, a negyedévet követő hó 12-ig". Figyelmeztetés: „A 
+jogviszony kezdetét a NAV 2026.01.01-től hivatalból jelenti be az EVNY alapján, manuális 
+T1041 kezdés nem indítható!". 
+●​ 3.20 KATA (​
+/.../type=kata): Előfeltétel ellenőrző motor: kizárólag főállású minősítést engedélyez, 
+mellékállású jelölésnél letiltja a mentést. Felugró hivatali figyelmeztetés: „Kizárólag 
+magánszemély vevőknek számlázhat!". Paraméter kijelzők: Havi tételes adó: 50 000 Ft, 
+Éves bevételi plafon: 18 000 000 Ft (felette 40% adó riasztási küszöbbel). Alanyi 
+áfamentesség sávos kijelzője 2026-os emelt 20 000 000 Ft-os értékkel. Éves bevallási 
+határidő figyelmeztetés (február 25.). 
+3.21 - 3.27 Egyéb speciális státuszú űrlapok 
+●​ 3.21 Diákmunka — Iskolaszövetkezeten keresztül (​
+/.../type=diak-iskolaszov): Hallgatói jogviszony igazolás feltöltési zóna diákigazolvány 
+másolathoz. Igazolás érvényességi naptár, hallgatói státusz választó (Aktív, Szüneteltetett 
+- 25 év alatt a szünetelő is engedélyezett). Szövetkezet neve, azonosítója és a megbízási 
+díj összege. Az adózási motor automatikusan zárolja a járulékokat és 0 Ft-ra állítja a TB-t 
+és SZOCHO-t (Tbj. 6. § (3)). Csak a 15% SZJA-t hagyja aktívan, amelynél automatikusan 
+érvényesíti a 25 év alattiak kedvezményét havi 715 765 Ft-ig, így a nettó megegyezik a 
+bruttóval. 
+●​ 3.22 Diákmunka — Munkaviszony / megbízás / EFO formában (​
+/.../type=diak-mas): Tájékoztató banner: „Iskolaszövetkezeten kívüli foglalkoztatás 
+esetén a rendszer átirányít a választott forma szerinti standard felületre (3.8, 3.11 vagy 
+3.15)". A háttérben automatikusan aktiválja a születési idő alapján a 25 év alattiak 
+kedvezményét, és megjeleníti a kedvezmény-mellőzési nyilatkozat feltöltő gombját. 
+●​ 3.23 Saját jogú nyugdíjas foglalkoztatása (​
+/.../type=nyugdijas): Nyugellátás adatai szekció: Nyugdíj típusa (Öregségi, „Nők 40", 
+Özvegyi, Egyéb), törzsszám, határozat feltöltés, folyósítási állapot toggle. Munkavégzés 
+formája (Munkaviszony, megbízás, kiegészítő vállalkozói). A rendszer automatikusan 
+0%-ra írja át a TB-t és a SZOCHO-t, kizárólag a 15% SZJA marad aktív. Speciális 
+2026.01.01-es adómotor szabály: ha a nyugdíjas anyák kedvezményét érvényesít, a 
+rendszer figyeli az éves kifizetői kedvezményalapot. Ha az átlépi az éves átlagkereset 
+négyszeresét (2026-ban fixen 34 356 720 Ft), a felettes részre automatikusan kiszámítja 
+és kiveti a 13% SZOCHO kötelezettséget. 
+●​ 3.24 Szakképzési munkaszerződés / Tanulószerződés (1131) (​
+/.../type=szakkep): Hivatali jogviszonykód 1131. Szakképző intézmény adatai 
+(OM-azonosító, név, évfolyam, tanév). Szerződésszám, időtartam. Adózási szabály: a 
+szakképzési munkabér havi 168 000 Ft-ig automatikusan SZJA-mentes, felette 
+adóköteles; járulékköteles, de SZOCHO alól mentes. Beépített duális képzési 
+SZOCHO-kedvezmény kalkulátor: az adómotor lekéri az alap önköltséget (2026-ban fixen 
+1 200 000 Ft), összeszorozza a szakmaszorzóval, évfolyam-szorzóval és arányosítja a 
+duális képzőhelyen ténylegesen teljesített és igazolt képzési napok számával. Kezeli a 
+sikeres vizsga után járó +20%-os sikerdíj paramétert (legalább 6 hónapos egybefüggő 
+jogviszonynál). Automatikus adatkapcsolat a 2608-as bevallás 11-es lapjával. (Törvényi 
+háttér: Szkt.). 
+●​ 3.25 Közfoglalkoztatás (​
+/.../type=kozfoglalkoztatas): Közfoglalkoztató szerv adatai, programkód és időtartam. 
+Bér rögzítése: automatikus validáció a 2026-os közfoglalkoztatási bérre (a minimálbér 
+50%-a: 161 400 Ft). Szocho-kedvezmény kalkulátor panel: a közfoglalkoztatási garantált 
+bér 130%-áig fizetett bérrészre kiszámítja a 13%-os adó 50%-os kedvezményét. 
+●​ 3.26 EKHO — Egyszerűsített közteherviselési hozzájárulás (​
+/.../type=ekho): Jogosultság ellenőrző mező: kizárólag az EKHO törvényben rögzített 
+FEOR kódokat engedélyezi a dropdownban. Éves minimálbér-figyelő: kötelező megadni 
+az adóévben általános közterhekkel leadózott összeget (2026-ban minimum az éves 
+minimálbér összege: 3 873 600 Ft). Jövedelem mező beépített felső korlát validációval: 
+maximum 60 000 000 Ft/év. Az adómotor fixen 15% magánszemélyi és 13% kifizetői 
+EKHO kulccsal számol. 
+●​ 3.27 Külföldi munkavállaló / kiküldetés (​
+/.../type=kulfoldi): Állampolgárság besorolási rádiógombok (Magyar, EGT, Harmadik 
+országbeli). Harmadik országbeli jelölésnél kötelező kitölteni a Huzamos tartózkodási 
+engedély toggle-t, amely aktiválja a 2608M főlap új hivatali jelölőjét. Engedélyek száma 
+és lejárati dátumai automatikus 30, 14, 5 napos push riasztásokkal. EGT állampolgár 
+kiküldetése esetén kötelező az A1 igazolás számának és az illetőségigazolás adatainak 
+rögzítése. Külföldi munkáltató toggle aktiválásakor a rendszer zárolja a hazai 08E-t és 
+átvált a T1041INT bejelentő formátumára, valamint felületet ad a 
+Foglalkoztatás-felügyeleti hatósági bejelentés dokumentálásához. (Törvényi háttér: 
+Btátv.). 
+6. Kedvezmény- és Adóelőleg-nyilatkozat Képernyők 
+(Fejezet 4) 
+Az alkalmazásnak dedikált felületeket kell biztosítania a 2026-os SZJA-rendszerben létező 9 
+különböző adóalap-csökkentő kedvezményhez, és támogatnia kell az ONYA formátumú 
+kétirányú XML importot/exportot. 
+4.1 Adóelőleg-nyilatkozatok áttekintő (Foglalkoztatottanként) 
+Route: 
+/client/[id]/payroll/employees/[emp-id]/declarations 
+ 
+Cél: Egy munkavállaló összes leadott, aktív és történelmi adóelőleg-nyilatkozatának központi 
+kezelése. 
+Fő elemek: Munkavállaló neve, „Új nyilatkozat" elsődleges gomb (9 típusból álló modal 
+választóval). Aktív nyilatkozatok kártyalistája hatályossági dátumokkal, konkrét paraméterekkel 
+(pl. „Családi kedvezmény: 2 gyermek - 40 000 Ft/hó/gyermek adómegtakarítás") és 
+részletlinkekkel. Alul összecsukott történelmi/visszavont ívek archívuma (5 éves hivatali 
+megőrzési idővel). Központi Kedvezmény-érvényesítési sorrend kalkulátor panel. 
+Üzleti logika (Hardcoded számítási sorrend): Az adómotorba szigorúan az alábbi jogszabályi 
+sorrendet kell beprogramozni, a kedvezmények egymás után vonódnak le az összevont 
+adóalapból, amíg az el nem fogy: 
+1. Négy vagy több gyermekes anyák kedvezménye (NÉTAK) → 2. Három gyermekes anyák 
+kedvezménye → 3. Két gyermekes anyák kedvezménye (40 év alattiak) → 4. 25 év alatti 
+fiatalok kedvezménye / 30 év alatti anyák kedvezménye → 5. Személyi kedvezmény (súlyos 
+fogyatékosság) → 6. Első házasok kedvezménye → 7. Családi kedvezmény → 8. Családi 
+járulékkedvezmény (a 18,5%-os TB terhére). Az áttekintő panelen egy élő vizuális csík mutatja, 
+melyik kedvezmény mennyivel csökkentette az SZJA-alapot. 
+Interakciók: Az „Új nyilatkozat" gomb megnyitásakor választható ki a rögzítendő típus, amely a 
+4.2-4.8 screenek egyikére navigál. 
+ 
+4.2 Családi kedvezmény nyilatkozat 
+Route: 
+/client/[id]/payroll/employees/[emp-id]/declarations/family 
+ 
+Fő elemek: Eltartottak száma számláló-mező. Eltartottak dinamikus táblázata: Név, Születési 
+idő, Adóazonosító jel, Eltartott típusa dropdown (Vér szerinti, Örökbefogadott, Nevelt, Magzat a 
+terhesség 91. napjától), Tartósan beteg / súlyosan fogyatékos toggle. Megosztás 
+házastárssal/élettárssal toggle (ha aktív: Házastárs neve, adóazonosítója, megosztás aránya 
+%-ban vagy gyermekek szerint). Hatálybalépési naptár és automatikus számított lejárat 
+(gyermek 18. vagy 25. életéve). „ONYA-ra küldés" és „PDF letöltése aláíráshoz" gombok. 
+Üzleti logika & Validáció: Az adómotor a 2026. január 1-jétől hatályos megduplázott törvényi 
+összegekkel számol: 1 eltartott esetén a havi adóalap-csökkentés 133 340 Ft (20 000 Ft 
+adómegtakarítás); 2 eltartott esetén eltartottanként 266 660 Ft (40 000 Ft/gyermek, összesen 
+havi 80 000 Ft megtakarítás); 3 vagy több eltartott esetén eltartottanként 440 000 Ft (66 000 
+Ft/gyermek). Ha a Tartósan beteg toggle aktív, a rendszer gyermekenként automatikusan 
+hozzáad +133 340 Ft adóalap-csökkentést (+10 000 Ft adómegtakarítás). Szigorú 
+kereszt-validáció: ha megosztás van érvényben, kötelező mindkét fél digitális aláírásának vagy 
+a papíralapú aláírt nyilatkozat szkennelt képének csatolása. 
+Jogszabályi háttér: Szja tv. 29/A-29/B. §. 
+ 
+4.3 - 4.5 Anyasági kedvezmény-kezelő felületek 
+●​ 4.3 Négy vagy több gyermekes anyák kedvezménye (NÉTAK) (​
+/.../declarations/netak): Legalább 4 gyermek adatainak (név, születési idő, 
+adóazonosító) kötelező rögzítése. Aktiválásakor a rendszer egy fix zöld „Teljes 
+SZJA-mentesség a munkából származó jövedelemre" jelölést helyez a profilra, és a 
+számfejtés során az SZJA-alapot automatikusan nullázza. 
+●​ 4.4 Három / két gyermekes anyák kedvezménye (​
+/.../declarations/anyak): Rádiógombos választó a 3 gyermekes anyák (2025. évi XV. tv. 
+szerinti teljes SZJA-mentesség) és a 2 gyermekes anyák kedvezménye között. A 2 
+gyermekes anyák tab aktiválásakor a rendszer életkor-szűrést végez: az anya 
+életkorának 40 év alattinak kell lennie (2025. évi XIV. tv., 2026.01.01-es első lépcső). 
+Tartalmaz egy paramétertáblát a 2027-2029 közötti felmenő rendszerű életkor-emelkedés 
+kezelésére. Beépített figyelmeztetés: ha egyidejűleg családi kedvezmény is érvényesül, 
+piros banner jelzi, hogy a jogszabályilag kötelező ANYÁCSKA összevont formot kell 
+alkalmazni. 
+●​ 4.5 ANYÁCSKA — Összevont adóelőleg-nyilatkozat anyáknak (​
+/.../declarations/anyacska): Új 2026-os összevont felület. Fix kék információs banner: 
+„Az ANYÁCSKA-nyilatkozat egy összevont hivatali űrlap. Ha egyszerre érvényesíted az 
+anyák kedvezményét ÉS a családi kedvezményt, ezt használd a két külön nyilatkozat 
+helyett!". Anya életkora és gyermekei adatai (családi kedvezmény eltartotti logikával 
+megegyezően). Számítás-előnézeti mérleg grafikon: vizuálisan mutatja, hogyan oszlik 
+meg a két kedvezmény (az anyák kedvezménye nullázza a béralapot, a családi 
+kedvezmény pedig a fennmaradó egyéb összevont adóalapokat csökkenti, vagy átfordul 
+családi járulékkedvezménybe). 
+4.6 - 4.9 Fiatalok, házasok, személyi kedvezmények és archívum 
+●​ 4.6 25 év alattiak / 30 év alatti anyák kedvezménye (​
+/.../declarations/young): A 25 év alattiak füle automatikusan aktiválódik a születési 
+dátum alapján, nem igényel külön bevitelt. Megjeleníti a 2026-os törvényi felső korlátokat: 
+a havi adóalap-csökkentés legfeljebb 715 765 Ft (évi 8.589.180 Ft, ami havi 107 365 Ft 
+nettó megtakarítás). Tartalmaz egy „Mellőzés-nyilatkozat" toggle-t, ha a fiatal 
+munkavállaló más kifizetőnél érvényesíti az összeget. A 30 év alatti anyák füle a családi 
+pótlékra jogosító gyermek adatainak megadásával aktiválható, keretösszege megegyezik 
+a 25 év alattiakéval. 
+●​ 4.7 Első házasok kedvezménye (​
+/.../declarations/first-marriage): Házasságkötés időpontja (date picker), házastárs neve 
+és adóazonosítója. Az adómotor fixen havi 33 335 Ft adóalap-csökkentéssel számol (havi 
+5 000 Ft tiszta adómegtakarítás). A rendszer automatikus lejárati számlálót indít: a 
+házasságkötést követő hónaptól számított 24 hónapig érvényesíti az összeget, az utolsó 
+3 hónapban sárga figyelmeztető jelzést mutat a felületen. Kötelező mindkét fél digitális 
+vagy papíralapú nyilatkozatának csatolása. 
+●​ 4.8 Személyi kedvezmény (Súlyosan fogyatékos) (​
+/.../declarations/personal): Orvosi igazolás feltöltési zóna (335/2009. Korm. rendelet 
+szerinti kódokkal). Fogyatékosság kezdő napja mező és hatály időtartama (határozott 
+vagy visszavonásig érvényes). Az adómotor a 2026-os jogszabályi képlet alapján számol: 
+a minimálbér egyharmada 100 forintra kerekítve, azaz fixen havi 107 600 Ft 
+adóalap-csökkentés (havi 16 140 Ft tiszta adómegtakarítás). 
+●​ 4.9 Nyilatkozat-archívum és audit (​
+/.../declarations/history): Időrendi hivatali lista az összes leadott, módosított vagy 
+hivatali úton visszavont nyilatkozatról. Megjeleníti a letölthető PDF állományokat és a 
+NAV-tól érkező elektronikus visszaigazoló nyugtákat. Megőrzési idő korlát: 5 év. 
+7. Havi Bérszámfejtési Ciklus Képernyők (Fejezet 5) 
+A havi operatív könyvelési munkafolyamatot egy szigorú, 8-lépéses progresszív stepper 
+komponenssel kell vezérelni. 
+5.1 Havi ciklus áttekintő (Stepper) 
+Route: 
+/client/[id]/payroll/cycle/[year-month] 
+ 
+Cél: A tárgyhónap bérszámfejtési folyamatának központi indítása, nyomon követése és 
+lezárása. 
+Fő elemek: Header „[Hónap] [Év] bérszámfejtés" címmel és státusz badge-dzsel. Központi 
+Vízszintes Progress Stepper az alábbi fix lépésekkel: 
+1. Adatbekérés → 2. Adatok ellenőrzése → 3. Jelenléti ív feldolgozás → 4. Telefon és 
+juttatás-fejtés → 5. Bruttó bér / pótlék kalkuláció → 6. Adó- és járulékszámítás → 7. Nettó bér / 
+számfejtés futtatása → 8. Dokumentumok / Kiküldés hivatali csatornákon. Oldalsáv a 
+foglalkoztatottak gyorslistájával és feldolgozottsági ikonjaival (Kész, Hibás). Ragadós footer 
+„Előző lépés" és „Következő lépés" gombokkal. 
+Interakciók: A stepper lépéseire kattintva vagy a footer gombokkal történik a navigáció. Az 
+oldalsávban lévő munkavállalóra kattintva felugrik az egyéni havi adatlap. 
+ 
+5.2 - 5.5 Adatbekérés, ellenőrzés és hiánypótlás 
+●​ 5.2 1. lépés: Adatbekérés (​
+/cycle/[year-month]/request): Az ügyféltől bekérendő dokumentumok listája (a 2.3-as 
+profilbeállításokból örökölve). Üzenet-előnézet panel sablon-választóval, amely 
+automatikusan behelyettesíti a [Cég neve], [Hónap], [Határidő] változókat. Küldési 
+csatorna checkboxok (E-mail, Viber, Telegram, SMS). Beérkezett és feltöltött állományok 
+listája munkavállalói bontásban. „Tovább az ellenőrzésre" gomb. 
+●​ 5.3 2. lépés: Adatok ellenőrzése (​
+/cycle/[year-month]/review): Foglalkoztatotti ellenőrző mátrix táblázat: Munkavállaló 
+neve, Jelenléti, Szabadság, Táppénz, Telefon, Cafeteria oszlopok egységes vizuális 
+jelölőkkel (Zöld pipa, Sárga felkiáltójel, Piros kereszt). Automatikus 
+konzisztencia-ellenőrző motor panel: kiírja a logikai hibákat (pl. „Konzisztencia-hiba: 
+Szabadság és munkavégzés van rögzítve ugyanazon a napon Kiss Jánosnál!") és az AI 
+túlóra anomáliákat. „Tömeges hiánypótlás kérése" gomb. 
+●​ 5.4 Foglalkoztatott havi adatok részletei (​
+/employee/[emp-id]): Egy munkavállaló havi dokumentum- és adatbontása (Jelenléti ív 
+óraszámai, szabadság napjai, táppénzes igazolások képei, telefonszámla összege). 
+Bruttó/Nettó/Levonások előzetes összesítő kártyája. Piros hibalista „Pótlás kérése" egyéni 
+akciógombbal. 
+●​ 5.5 Tömeges hiánypótlás kérése (​
+/request-missing): Az összes hiányos adatú munkavállaló automatikusan generált 
+hibalistája. Egyetlen gombbal kiküldhető többcsatornás sablonüzenet a hiányzó elemek 
+(pl. „TAJ-szám hiányzik", „Telefonszámla nincs feltöltve") változóival. 
+5.6 - 5.10 Jelenléti ív, távollétek és cafeteria feldolgozása 
+●​ 5.6 Jelenléti ív feldolgozás (OCR / AI) (​
+/cycle/[year-month]/timesheets): Kétosztatú felület. Bal oldalon: a feltöltött jelenléti ív 
+kép vagy PDF inline előnézete. Jobb oldalon: az AI által kinyert strukturált táblázat 
+(Napok, munkaóra, túlóra, távollét kódok). Sárga színkiemeléssel jelöli azokat a mezőket, 
+ahol a confidence-score a beállított küszöbérték (alapértelmezett: 0.85) alatt van. Inline 
+korrekciós lehetőség. Támogatja az Mt. 134. § szerinti hivatalos munkaidő-nyilvántartás 
+automatikus PDF generálását. 
+●​ 5.7 Szabadság / távollét kezelés (​
+/cycle/[year-month]/leaves): Foglalkoztatottankénti szabadság-mérleg: alap-szabadság 
+(Mt. 117. §) + életkori, gyermek, fogyatékossági pótszabadságok összege, felhasznált és 
+fennmaradó napok száma. Külön modul az apasági szabadság (fix 10 munkanap, a 
+születést követő 4 hónapban), a szülői szabadság és a betegszabadság (évi 15 
+munkanap, 70%-os távolléti díjjal) kezelésére. Összekapcsolva az 5.8-as e-TB 
+egészségbiztosítási modullal. 
+●​ 5.8 Táppénz / CSED / GYED kezelés (e-TB integrációval) (​
+/cycle/[year-month]/health-benefits): NEAK élő lekérdezési panel kifizetőhelyek 
+számára: megjeleníti az aktív hivatali ellátásokat (CSED, GYED, Táppénz), az időszakot 
+és a díjbázist. Orvosi keresőképtelenségi igazolások feltöltési zónája. Jövedelemigazolás 
+blokk: az Ebtv. Vhr. 37/A. § előírásai szerinti hivatalos nyomtatvány automatikus 
+generálása letölthető PDF-ben. TB-kifizetőhely esetén megjeleníti a munkáltatói kifizetési 
+rész számítását. 
+●​ 5.9 Telefonszám-fejtés (​
+/cycle/[year-month]/phone-expenses): Számlafeldolgozó táblázat: Munkavállaló, 
+Telefonszám, Bruttó számlaösszeg, Céges rész (80% adómentes), Magánhasználati rész 
+(20% adóköteles). Az összegeket az AI automatikusan kinyeri a számlaképből. Egyéni 
+magánhasználati arány szabályozó csúszka (slider) vagy százalékos input mező. Számla 
+nélküli munkavállalók hibalistája. 
+●​ 5.10 Cafeteria-elszámolás (​
+/cycle/[year-month]/cafeteria): SZÉP-kártya feltöltési modul munkavállalói bontásban 
+(összeg, dátum, kibocsátó: OTP, K&H, MBH). Beépített éves keret-figyelő motor: 
+rekreációs keret max 450 000 Ft/év, Aktív Magyarok keret max 120 000 Ft/év, együttesen 
+szigorúan max 570 000 Ft/év törvényi plafonnal. Kezeli az átmeneti hideg élelmiszer 
+paramétert. Lakhatási támogatás szekció (35 év alattiak, havi max 150 000 Ft, évi 1 800 
+000 Ft élő életkor-ellenőrzéssel). Csekély értékű ajándék modul (évi 3 alkalommal, 
+alkalmanként max a 2026-os minimálbér 10%-a: 32 280 Ft). Adómentes juttatások 
+rögzítése (kerékpár max 300W, munkábajárás max 30 Ft/km, távmunka átalány 32 280 
+Ft). Alsó Közteher-számítási táblázat: béren kívüli SZÉP-kártyára fixen 28%-os, egyes 
+meghatározott juttatásokra fixen 33,04%-os adókulcsot számol ki az adóalapra vetítve. 
+5.11 - 5.17 Bruttó, adóalap, járulékszámítás és futtatás 
+●​ 5.11 3. lépés: Bruttó bér megállapítása (​
+/cycle/[year-month]/gross): Összesítő bruttó-számítás táblázat: Név, Alapbér, Pótlékok, 
+Bónuszok, Cafeteria-bruttósítás, Bruttó összesen. Sorvégi részlet-ikonra kattintva felugrik 
+a részletes modális ablak az időbér/teljesítménybér számítás menetével, a távolléti díjak 
+bontásával (szabadság, betegszabadság 70%). Élő törvényi minimum ellenőrzés: ha a 
+bruttó bér nem éri el a minimálbért vagy a FEOR szerinti garantált bérminimumot, piros 
+hibaüzenettel letiltja a továbblépést. 
+●​ 5.12 4. lépés: Bérpótlékok és túlóra kalkuláció (​
+/cycle/[year-month]/premiums): Automatizált pótlékszámítási részletező: Műszakpótlék 
+30% (18:00-06:00 közötti munkavégzés éjszakai részére), éjszakai pótlék 30%, vasárnapi 
+pótlék 50%, munkaszüneti napi 100%, túlóra pótlék 50% vagy 100%. Kollektív szerződés 
+esetén az egyedi magasabb százalékokat alkalmazza. Túlóra-keret figyelmeztető panel: 
+méri az éves ledolgozott túlórákat az Mt. szerinti 250 órás (vagy KSZ szerinti 400 órás) 
+plafonhoz képest élő hátralévő óra kijelzéssel. 
+●​ 5.13 5. lépés: Adóalap és kedvezmény-számítás (​
+/cycle/[year-month]/tax-base): Az összevont adóalap meghatározása és a 4.1-es 
+pontban rögzített 9 kedvezmény szigorú hivatali sorrendben történő levonása. Megjeleníti 
+a maradék adóalapot és az arra vetett 15% SZJA összegét, valamint a maradékból 
+érvényesített családi járulékkedvezményt. AI kedvezmény-optimalizálási javaslat modal 
+(pl. megosztás módosítása a házastárssal a magasabb nettó érdekében). 
+●​ 5.14 6. lépés: Járulékok (TB 18,5% + SZOCHO 13%) (​
+/cycle/[year-month]/contributions): Foglalkoztatottankénti TB-járulék (bruttó 18,5%-a a 
+családi járulékkedvezmény levonásával) és a munkáltatót terhelő 13% SZOCHO 
+számítása. SZOCHO-kedvezmények analitikus listája (mikrovállalkozói 150% max 10 
+főig, megváltozott munkaképességű, anyák munkaerőpiacra lépése, szakképzés, 
+közfoglalkoztatás, kutatók). Vállalkozói minimum-szabály blokk egyéni és társas 
+vállalkozóknak: a járulékalap fixen a minimálbér/garantált bérminimum 100%-a (a 
+112,5%-os szorzó törölve az adómotorból). 
+●​ 5.15 7. lépés: Levonások (Letiltás, önkéntes pénztár) (​
+/cycle/[year-month]/deductions): Aktív bér-letiltások táblázata: Letiltás típusa (tartásdíj, 
+közjogi, magánjogi), Jogosult számlaszáma, határozat száma, fennmaradó tartozás és a 
+levonandó összeg. A rendszer keményen beépíti a Vht. 65. § szerinti letiltási korlátokat 
+(főszabályként max 33%, tartásdíjnál max 50% vonható le a nettóból) és kezeli a 
+jogszabályi kielégítési sorrendet több letiltás esetén. Önkéntes nyugdíj- és 
+egészségpénztári munkavállalói levonások és a céges bérelőleg törlesztések ütemezése. 
+●​ 5.16 8. lépés: Számfejtés futtatása (​
+/cycle/[year-month]/calculation): Végső ellenőrző checklist panel (checklist): minden 
+havi adat validálva, telefonszám-fejtés lezárva, új belépők és kilépők hivatali jelentése 
+kész, nyilatkozatok feldolgozva. „Számfejtés indítása" elsődleges gomb körkörös progress 
+kijelzővel. Lefutás után záró összefoglaló kártyák jelennek meg: Összes Bruttó, Összes 
+Nettó, Járulékok összege, Létszám és a Munkáltatói összes közteher. „Újraszámítás" 
+(korrekció) gomb. 
+●​ 5.17 Foglalkoztatott béreredmény részletek (​
+/employee/[emp-id]/result): Egy munkavállaló egyéni havi részletes bérlapja. Bevételek 
+és pótlékok tételes listája, bruttó jövedelem, adóalap, levont SZJA, TB, magántelefon 
+levonás, nettó bér és az alkalmazott kedvezmények. Vizuális összehasonlító modul az 
+előző hónap béradatival (+/- változás százalékban és összegben, AI magyarázó 
+szöveggel, pl. „A nettó bér növekedését 4 nap szabadság távolléti díja és 12 óra túlóra 
+okozta"). „Bérpapír előnézet" PDF gomb. 
+8. NAV Bejelentési és Bevallási Képernyők (Fejezet 6) 
+A bevallási és bejelentési modulnak teljes mértékben támogatnia kell a 2026-os hivatali 
+átmeneti időszakot, felkészülve az ÁNYK szoftver 2026.12.31-es végleges kivezetésére. Az 
+alkalmazásnak kettős export képességet kell biztosítania: ÁNYK-kompatibilis XML és az új 
+hivatali ONYA / M2M struktúra. 
+6.1 Bejelentések és bevallások központja 
+Route: 
+/client/[id]/payroll/declarations 
+ 
+Cél: Az ügyfél összes NAV felé irányuló adatszolgáltatásának központi vezérlőpultja. 
+Fő elemek: Header „Bevallások és bejelentések" címmel, „Új bevallás" dropdown típusválasztó 
+gombbal és időszak-szűrővel (hónap, negyedév, év). Tabos elrendezés: Biztosítotti bejelentések 
+(08E/T1041, T1042E, T1041INT), Havi járulékbevallás (2608), EV negyedéves (2658), Éves 
+bevallások (M30, KIVA, KATA, rehab) és Egyéb (NY, ATVUT, UJEGYKE stb.). Központi táblázat: 
+Checkbox, Bevallás típusa, Időszak, Tervezet státusza (Üres, Generálva, Validálva, Aláírva), 
+Beküldés dátuma, NAV-nyugta állapota (Zölden elfogadva, Pirosan hibás PRN/FOG kóddal, 
+Várakozás, Nincs beküldve) és műveleti gombok (Megnyitás, Letöltés, Aláírás, Beküldés). 
+„Lejárt határidők" szűrő piros badge-dzsel. 
+Interakciók: Sorra kattintva a specifikus bevallási screen nyílik meg. Tömeges kijelölés után 
+indítható a tömeges AVDH aláírás vagy a tömeges hivatali beküldés egyetlen 
+tárhely-azonosítással. 
+ 
+6.2 - 6.7 Biztosítotti és adóbejelentő felületek 
+●​ 6.2 Biztosítotti bejelentő (08E / T1041) (​
+/declarations/08e/[id]): Az új hivatali „08E" specifikáció szerinti felület (az ÁNYK fájlnév 
+továbbra is T1041 marad). Mezők: Munkáltató adatai (címadatsorok automatikusan 
+elhagyva, mivel a NAV eléri), Munkavállaló személyes adatai, TAJ-szám (ha hiányzik és 
+folyamatban van, a főlap C blokkjában jelöli). Jogviszony adatai: jogviszonykód (1101, 
+1115 stb.), kezdő dátum, heti munkaóra, FEOR. Szigorú kötelező mező a hivatali 
+Jogviszonysorszám (max 4 jegyű szám a 13. és 26. pótlapokon felmenő rendszerben a 
+2026.01.01. után induló jogviszonyoknál). Kezeli a több munkáltatós jogviszony 
+összevont nyilatkozatát. Új egyéni vállalkozóknál a felület zárolt, mivel a NAV 
+2026.01.01-től hivatalból jelenti be az EVNY alapján a jogviszonyt automatikus 1-es 
+sorszámmal. Határidők: új belépőnél a munkavégzés megkezdése előtt; megszüntetésnél 
+8 napon belül; munkaidő/FEOR változásnál 15 napon belül. 
+●​ 6.3 T1042E — EFO bejelentés (​
+/declarations/t1042e/[id]): Egyszerűsített foglalkoztatottak gyorsbejelentője. Felül fix 
+piros hivatali figyelmeztetés: „Az EFO bejelentés a munkavégzés MEGKEZDÉSE ELŐTT 
+jogszabályilag kötelező. Utólagos beküldést a rendszer nem engedélyez!". Típus választó 
+(Alkalmi, Mezőgazdasági, Turisztikai, Filmipari). TAJ, adóazonosító, név, munkavégzés 
+kijelölt napjai, napi bér és munkaórák. Csatorna választó (ONYA EFO API, ÁNYK XML, 
+185 hivatali telefon, mobil). Támogatja a tömeges azonos napi feldolgozást (több személy 
+egyidejű feladása). 
+●​ 6.4 T1041INT — Külföldi munkáltató bejelentés (​
+/declarations/t1041int/[id]): Külföldi cég magyarországi foglalkoztatottjának bejelentője. 
+Külföldi munkáltató azonosítói (cégnév, ország, adószám), magyar képviselő adatai, 
+munkavállaló adatai, A1 igazolás száma és illetőségigazolás csatolása. Tartalmaz egy 
+Foglalkoztatás-felügyeleti hatósági értesítő toggle-t. 
+●​ 6.5 T101E — Egyéni vállalkozó adat-bejelentés (​
+/declarations/t101e/[id]): EV adatváltozás vagy megszűnés formája. Név, adóazonosító, 
+EVNY-szám, ÖVTJ körök változása, adózási forma módosítása (VSZJA, Átalány, KATA). 
+Megszűnés gombra kattintva a záró dátum mező kötelezővé válik. Figyelmeztetés: a 
+jogviszony kezdetét a NAV hivatalból kezeli, a felületen induló bejelentés nem 
+kezdeményezhető. 
+●​ 6.6 T34 — Adóazonosító jel igénylés (​
+/declarations/t34/[id]): Adószámmal nem rendelkező (jellemzően külföldi) új belépők 
+hivatali igénylőlapja. Személyes adatok, anyja neve, születési adatok, külföldi 
+állampolgárság és tartózkodási engedély száma, lakcím. Tájékoztató szöveg: „A NAV a 
+kéréstől számított 30 napon belül adja ki az adókártyát, addig a foglalkoztatás a kérelem 
+iktatószámával szabályosan folytatható". 
+●​ 6.7 UJEGYKE — Képviseleti meghatalmazás (​
+/declarations/ujegyke/[id]): A 2.5-ös felületen megtervezett állandó meghatalmazás 
+hivatalos NAV nyomtatványi formája. Meghatalmazó cég adatai. Meghatalmazott típusa 
+(Magánszemély könyvelő vagy Könyvelőiroda mint szervezet - Air. 17. § (1) g) alapján). 
+Meghatalmazás hatásköre (adónemekCheckbox listája vagy „minden adóügyre kiterjedő" 
+rádiógomb). Visszavonás esetén hivatkozási mező a korábbi iktatószámra. 
+6.8 - 6.9 Havi járulékbevallás (2608 / 2508) specifikáció 
+A havi adó- és járulékbevallás felülete két fő részre oszlik szigorú kereszt-validációs 
+kapcsolatban: 
+●​ 6.8 2608 — Havi járulékbevallás, A-lap (​
+/declarations/2608/[year-month]/a): Az adózószintű hivatali összesítő felület (2026-os 
+évszámú verzió). Header címmel, időszakkal és tervezet állapottal. Központi 
+Adónemenkénti összesítő táblázat, amely az M-lapokból automatikusan összesíti a 
+hivatali kerekítési szabályok szerint (ezer Ft-ra kerekítve) a fizetendő összegeket, fixen 
+megjelenítve a hivatalos NAV célszámlákat:​
+- 290-es adónem (Magánszemélytől levont SZJA előleg) → Számlaszám: 
+10032000-06055950​
+- 407-es adónem (TB-járulék biztosítottak után) → Számlaszám: 10032000-06055819​
+- 258-as adónem (Szociális hozzájárulási adó) → Számlaszám: 10032000-06055912​
+- 182-es adónem (Szakképzési hozzájárulás - ha releváns) → Számlaszám: 
+10032000-06056061​
+A felületen folyamatos élő validáció fut az M-lapok összegével való egyezőségre, eltérés 
+esetén piros hibalistát mutat. Megjeleníti a törvényi fizetési határidőt (tárgyhónapot követő 
+hó 12.) és egy élő visszaszámlálót. Műveletek: Mentés, Validálás, AVDH aláírás, 
+Beküldés. (Törvényi háttér: Art. 31. § (2)). 
+●​ 6.9 2608 — Magánszemélyenkénti M-lapok (​
+/declarations/2608/[year-month]/m): A bevallás személyenkénti és jogviszonyonkénti 
+részletes analitikus lapjai. Bal oldalon a foglalkoztatottak listája: Név, Jogviszony kód, 
+Bruttó bér, SZJA, TB, Kedvezmények és az M-lap egyedi státusza (Generálva, Hibás, 
+Üres). Jobb oldalon az M-lap részletes hivatali szerkesztője nyílik meg: jövedelmek 
+jogcímenként (bér, cafeteria, természetbeni), levont adóelőleg, járulékok és az 
+érvényesített kedvezményalapok. Külön szekció a 11-es lapnak (SZOCHO-csökkentő 
+tételek): szakképzési munkaszerződés duális képzési mezői, anyák kedvezménye, 
+mikrovállalkozói kedvezmény (max 10 főig, 150%-os érvényesítési értékkel 2026-tól). 
+Tömeges művelet gomb: „Adatok automatikus átemelése a havi bérszámfejtési ciklusból 
+(5.x)" és „Mind újragenerálás". 
+6.10 - 6.17 Negyedéves, éves és egyéb NAV nyomtatványok 
+●​ 6.10 2658 (2558) — EV negyedéves járulékbevallás (​
+/declarations/2658/[year-quarter]): Az egyéni vállalkozók saját járulékbevallásának 
+képernyője. 2026.01.01-től jogszabályilag minden EV számára kötelezően negyedéves 
+gyakoriságú (2026.Q1-Q4). Határidő: tárgynegyedévet követő hó 12. Az űrlap 
+dinamikusan változik az adózási forma alapján: VSZJA esetén vállalkozói jövedelem és 
+kivét mezők; Átalányadónál bevétel és költséghányad szerinti adóalap számítás 
+folyamatos göngyölítéssel. Beépített minimum járulékalap-kalkulátor (alapbér 322 800 Ft 
+vagy garantált bér 373 200 Ft, a 112,5% szorzat törlésével). Heti 36 órás munkaviszony 
+vagy nyugdíjas státusz esetén automatikusan mentesíti a vállalkozót a minimum-fizetés 
+alól, nullás értéket generálva a jövedelemmentes időszakokra. Műveletek: Tervezet, 
+Aláírás, Beküldés. 
+●​ 6.11 26M30 — Munkáltatói éves összesített igazolás (​
+/declarations/m30/[year]): Az adóévben kifizetett összes jövedelem, levont SZJA-előleg 
+és a 9 érvényesített kedvezmény munkavállalónkénti éves hivatali összesítője. 
+Munkavállalói lista jövedelmi adatokkal és M30 egyéni státusszal. Egyéni szinten 
+részletezi a bér, cafeteria, EKHO jövedelmeket és kedvezményeket. Élő törvényi kiállítási 
+határidő figyelmeztetés: tárgyévet követő január 31. (Art. 46. §). Átvétel-igazolási 
+rendszer: digitális AVDH aláírás vagy papíralapú aláírási jegyzőkönyv csatolása. 
+Elektronikus M30 kibocsátási opció naplózott, jelszóval védett hozzáférhetővé tétellel. 
+Figyelmeztető bejegyzés: „Év közben kilépett munkavállalónak külön M30 kiállítása nem 
+szükséges, ha a kilépő Adatlap a 8.1-es folyamatban kiadásra került!". 
+●​ 6.12 NY — Nullás bevallás kiváltása (​
+/declarations/ny/[year]): Hivatali nyilatkozat-bevallás felülete olyan 
+hónapokra/időszakokra, amikor a cégnek vagy vállalkozónak nem keletkezett adóköteles 
+kifizetése, így mentesül a 2608-as havi benyújtás alól. Időszak-választó naptár 
+(visszamenőleges érvényesítéssel is). Fix hivatali nyilatkozat szöveg jelölőnégyzettel. 
+Szigorú záró-validáció: ha az adott időszakra a rendszer már tartalmaz lefutott és 
+beküldött 2608-as bizonylatot, az NY tervezet mentését hibaüzenettel letiltja. 
+●​ 6.13 ATVUT — Átvezetési és kiutalási kérelem (​
+/declarations/atvut/[id]): NAV folyószámla-kezelő felület. Megjeleníti az adónemenkénti 
+túlfizetéseket és tartozásokat. Művelet típusa választó: Átvezetés (egyik NAV adónem 
+számlájáról a másikra, pl. SZJA túlfizetés átvezetése SZOCHO tartozásra) vagy Kiutalás 
+(visszaigénylés cégbankszámlára bankszámlaszám megadásával). Forrás adónem, cél 
+adónem és összeg mezők. 
+●​ 6.14 AUTRESZ — Automatikus részletfizetési kérelem (​
+/declarations/autresz/[id]): Magánszemélyek és egyéni vállalkozók hivatali 
+részletfizetési kérelme. Automatikusan beemeli a tartozás összegét a folyószámláról. 
+Választható részletszám csúszka (maximum 12 hónap). Jogszabályi korlát validáció: 
+legfeljebb 200 000 Ft teljes tartozásig engedélyezi a hivatali benyújtást. Havi 
+törlesztőrészlet és hivatali késedelmi kamat kalkulátor panel. 
+●​ 6.15 2529 — KIVA bevallás (​
+/declarations/kiva/[year]): Kisvállalati adó éves bevallásának felülete. KIVA-választás 
+hatályossági dátuma. KIVA-alap számítási táblázat: személyi jellegű kifizetések összege, 
+tőkeműveletek egyenlege, adóalap-növelő és -csökkentő hivatali tételek. Az adómotor 
+fixen 10%-os KIVA adókulccsal számolja ki a kötelezettséget. Negyedéves és havi 
+előleg-befizetések egyeztetése. 
+●​ 6.16 2501 — Rehabilitációs hozzájárulás éves elszámolás (​
+/declarations/rehab/[year]): Éves bevallási felület 25 fő feletti statisztikai létszámú 
+cégeknek. Beépített hivatali kvóta-kalkulátor: kiszámítja az éves átlagos statisztikai 
+állományi létszámot, meghatározza az 5%-os kötelező megváltozott munkaképességű 
+foglalkoztatotti kvótát. Ha elmaradás van, a hiányzó létszámot megszorozza a 2026-os fix 
+hivatali büntetési tétellel: a minimálbér 9-szeresével, azaz fixen évi 2 905 200 Ft/fő 
+összeggel. Megjeleníti a negyedéves előlegeket és a fizetendő záróegyenleget a fix 
+hivatali számlaszámra (119-es adónem: 10032000-06056281). 
+●​ 6.17 KATA — Éves bevallás (​
+/declarations/kata/[year]): Kisadózók éves elszámolási felülete. Határidő: tárgyévet 
+követő február 25. EV törzsadatok, megfizetett tételes adók összege (hónapok száma x 
+50 000 Ft, max 600 000 Ft/év). Bevétel önbevallási mező. Vállalati korlát ellenőrző motor: 
+folyamatosan méri az összeget a 18 000 000 Ft-os éves plafonhoz képest, túllépés 
+esetén az adómotor automatikusan kiszámítja a felettes részre eső 40%-os különadót. 
+Szigorú figyelmeztetés a kizárólagos magánszemélyi számlázás ellenőrzésére. 
+6.18 - 6.21 Visszajelzés, aláírás és hibakezelés 
+●​ 6.18 Bevallás-előnézet és validáció (​
+/declarations/[id]/preview): Három fülből álló ellenőrző felület: PDF-előnézet (az 
+ÁNYK/ONYA hivatalos nyomtatványképével megegyező vizuális leképezés kattintható, 
+mezőszintű navigációval), XML-előnézet (technikai nézet szintaxis-kiemeléssel és 
+letöltési gombbal), Validációs eredmények fül. A validációs motor a NAV hivatali xsd 
+sémái és logikai szabályai alapján fut le, hibalistát generálva: Hibák (piros - pl. „Eltérés a 
+2608A és M-lapok összesen értéke között: 5 200 Ft", letiltja a beküldést), 
+Figyelmeztetések (sárga), Információk (kék). Sorvégi „Javítás" link közvetlenül az érintett 
+hibás mezőre navigál az űrlapon. „Validáció ismétlése" és „Aláírás folytatása" gombok. 
+●​ 6.19 Bevallás-aláírás (AVDH / DÁP) (​
+/declarations/[id]/sign): Hitelesítési felület hivatali beküldés előtt. Aláírási mód választó 
+rádiógombok: AVDH (kormányzati központi azonosítás alapú), DÁP (Digitális 
+Állampolgárság Program API), Minősített kereskedelmi elektronikus aláírás 
+(e-tanúsítvány). Aláíró személy KAÜ azonosítása (Ügyfélkapu+, e-SZIG, DÁP 
+átirányítással). A háttérben a rendszer elvégzi a bevallás XML hash-elését, hozzáfűzi a 
+hivatali tanúsítványt, majd visszatérve az applikációba „Aláírva" badge-dzsel zárja le a 
+bizonylatot, rögzítve az aláíró nevét és az időbélyeget. Az aláírt hivatali XML letölthető. 
+●​ 6.20 Bevallás-beküldés (ONYA / ÁNYK / M2M) (​
+/declarations/[id]/submit): Átviteli modul. Csatorna választó (ONYA web API, ÁNYK 
+XML export, gép-gép M2M interfész). Tárhely választó dropdown (a 2.4-es beállításokból 
+beemelt Cégkapu vagy KÜNY-tárhely). Beküldés gombra kattintva a titkosított állomány 
+feladásra kerül. Első fázis: megvárja és kijelzi a hivatali Azonnali Átvételi Nyugtát a 
+hivatali iktatószámmal, a státusz „Beküldve" állapotra vált. Második fázis: elindítja az 
+automatikus háttér-pollingot a NAV hivatali feldolgozási nyugtájának beérkezéséig. Push 
+értesítés siker vagy hiba esetén. 
+●​ 6.21 Tárhely-nyugta és hibakezelés (PRN, FOG) (​
+/declarations/[id]/receipt): A NAV-tól visszaérkező hivatalos Feldolgozási Nyugta 
+megjelenítő felülete. Status badge: Elfogadva (zöld), Hibás (piros), Várakozás (sárga). 
+Sikeres feldolgozásnál kiírja a NAV hivatali iktatószámát, érkezési idejét és a „Bevallás 
+hivatali úton elfogadva, a közterhek megfizetése esedékes" záróüzenetet. Hibás hivatali 
+nyugta esetén a rendszer beolvassa a hivatali hibakódot (pl. PRN03, PRN17, FOG02), 
+megjeleníti a hivatali szöveges magyarázatot, és a beépített belső hibakód-fordító szótár 
+segítségével kontextusos magyar nyelvű súgót és közvetlen „Javítás" akciógombot 
+biztosít az érintett mezőhöz. Külön státusz-tracker követi a 08E adatok automatikus 
+hivatali továbbítását a NEAK és a Munkaügyi hatóság felé. 
+9. Kimeneti Dokumentumok és Bérjegyzék Képernyők 
+(Fejezet 7) 
+7.1 Dokumentum-központ (Havi) 
+Route: 
+/client/[id]/payroll/cycle/[year-month]/documents 
+ 
+Cél: A lefutott havi számfejtés kimeneti állományainak és hatósági igazolásainak központi 
+elérése. 
+Fő elemek: „Mind generálása" elsődleges tömeges gomb, „Minden letöltése (ZIP)" gomb. 
+Generálandó dokumentumok kártyarácsa: Bérjegyzékek, Utalási lista, Készpénzes kifizetési 
+lista, Letiltások jegyzéke, Cafeteria feltöltési fájlok, Munkáltatói összesítő, bevallás PDF-ek, 
+Jövedelem- és foglalkoztatási igazolások. Minden kártyán látható a generálás hivatali státusza, 
+az érintett munkavállalók száma, a fájlméret és az egyedi akciók (Újragenerálás, Előnézet, 
+Letöltés). 
+Interakciók: A tömeges gomb elindítja az összes háttérben futó PDF/XML generálási 
+folyamatot. 
+ 
+7.2 Bérjegyzék generálás (Mt. 155. §) 
+Route: 
+/client/[id]/payroll/cycle/[year-month]/payslips 
+ 
+Cél: Az Mt. 155. § előírásainak szigorúan megfelelő, ellenőrizhető havi egyéni bérjegyzékek 
+tömeges előállítása. 
+Fő elemek: Sablon-választó (Hivatali alap sablon vagy Egyedi logózott céges sablon). 
+Generálási opciók panel: egyedi PDF-ek vagy tömeges ZIP, AVDH hitelesítési toggle, 
+nyelvválasztó (magyar vagy angol a külföldi munkavállalóknak). Reprezentatív minta előnézeti 
+ablak az adatok tükrözésével. Törvényi határidő-jelző óra (tárgyhót követő hó 10.). 
+Üzleti logika (Kötelező hivatali tartalom): A generált PDF-nek szigorúan tartalmaznia kell az 
+alábbi blokkokat az Mt. 155. § (2) bek. alapján, hogy a munkavállaló a számítást ellenőrizni 
+tudja: 
+1. Azonosítók (Munkáltató cégadatok, munkavállaló neve, adóazonosítója, TAJ-száma), 2. 
+Időadatok (ledolgozott órák, fizetett és fizetetlen távollétek, betegszabadság napjai, táppénzes 
+napok), 3. Bruttó elemek jövedelem-jogcímenként analitikusan megbontva (időbér, túlóra, 
+pótlékok típus szerint, prémiumok, betegszabadság 70%-os összege, szabadság távolléti díja), 
+4. Levonások jogcím és fix összeg szerint (SZJA-előleg, TB-járulék, bérletiltások, telefonszámla 
+levonás, előlegek), 5. Nettó kifizetett összeg kiemelve, 6. Munkáltatói közterhek tájékoztató 
+blokkja (fizetett 13% SZOCHO összege), 7. Éves szabadságkeret állása (alap, 
+pótszabadságok, tárgyhónapban kivett, fennmaradó napok). 
+Jogszabályi háttér: Mt. 155. § és Mt. 157. § (határidők). 
+ 
+7.3 Bérjegyzék hozzáférhetővé tétel (E-bérjegyzék) 
+Route: 
+/client/[id]/payroll/cycle/[year-month]/payslips/deliver 
+ 
+Cél: Az AVDH-aláírt elektronikus okiratok biztonságos, GDPR-megfelelő eljuttatása a 
+munkavállalókhoz és az átvétel hivatali bizonyítása. 
+Fő elemek: Hozzáférési csatorna választó mátrix munkavállalónként: E-mail (jelszóval védett 
+titkosított ZIP vagy egyedi tokenes biztonságos link), Foglalkoztatotti önkiszolgáló portál 
+hozzáférés, Cégkapu KKK-üzenet (hivatali közvetlen feladás), Papíralapú nyomtatás. Központi 
+Hozzáférési és Átvételi hivatali napló táblázat: Munkavállaló, Csatorna, Küldés időpontja, 
+Megnyitás/Letöltés igazolt időbélyege, Átvétel digitális igazolása (AVDH-val vagy egyedi kódos 
+megerősítéssel). 
+Integrációk: Belső biztonságos levelező és SMS szerver, Állami Cégkapu KKK kliens. 
+Jogszabályi háttér: Pp. 196. § (elektronikus magánokirat formai bizonyító erejének 
+követelményei), NAIH munkahelyi adatkezelési irányelvek. 
+ 
+7.4 Bér utalási lista (Banki formátumok) 
+Route: 
+/client/[id]/payroll/cycle/[year-month]/transfers 
+ 
+Cél: A nettó bérek tömeges banki átutalásához szükséges hivatalos hálózati fájlok generálása 
+és API küldése. 
+Fő elemek: Utalási táblázat: Checkbox, Munkavállaló neve, Bankszámlaszám / IBAN kód, Nettó 
+utandó összeg, Hivatkozás/Közlemény szövege. Formátum-választó rádiógombok: Magyar 
+GIRO XML (szabványos belföldi), ISO 20022 pain.001 (európai SEPA formátum), MT940 
+(SWIFT nemzetközi kivonat), CGI (Common Global Implementation), egyszerű CSV sablon 
+vagy specifikus magyar nagybanki struktúrák (OTP, K&H, MBH, Erste, Raiffeisen előre definiált 
+formátumai). „Közvetlen utalás indítása" elsődleges gomb banki API integráció esetén, aláíró 
+személy KAÜ hitelesítő mezőjével. Összesítő footer (Összes utandó összeg, Munkavállalók 
+száma, Cég bankszámla egyenlegének kijelzése). 
+Integrációk: Magyar GIRO hálózat, SEPA kliens, PSD2 Open Banking API-k a magyar piacon 
+lévő bankokkal (OTP, K&H, MBH, Erste, Raiffeisen, Unicredit). 
+ 
+7.5 - 7.9 További kimeneti és riportálási felületek 
+●​ 7.5 Készpénzes kifizetési lista (​
+/cash-payments): Azon munkavállalók szűrt listája, akik készpénzben kapják a 
+munkabért (Név, nettó összeg, fizikai aláírás helye). Házi pénztár egyenleg-hatás 
+ellenőrző panel: lekéri a cég aktuális pénztár egyenlegét, levonja a kifizetendő KP 
+összeget, és megmutatja a záró egyenleget. Szigorú Tagi kölcsön figyelmeztetés: ha a 
+tervezett kifizetés miatt a házi pénztár egyenlege negatívba fordulna, piros tiltó riasztást 
+ad, kijelzi a szükséges tagi kölcsön összegét, és közvetlen linket biztosít a könyvelőiroda 
+fő könyvelési moduljához. Generálja a hivatalos kifizetési bizonylati PDF-et. 
+●​ 7.6 Bérpapírok tömeges előnézet és letöltés (​
+/payslips/preview): Gyors görgethető felület az összes legenerált egyéni bérjegyzék 
+áttekintésére nyitható részletfülekkel. Egyenkénti vagy csoportos ZIP letöltés, tömeges 
+nyomtatási sorba küldés és sürgős „Javításra jelölés" flag, amely zárolja a továbbküldést 
+az adott személynél. 
+●​ 7.7 Letiltások és végrehajtások kifizetése (​
+/garnishments): A végrehajtói vagy tartásdíjas határozatok jogosultjainak utalandó 
+összegek listája (Végrehajtó/számlaszám, munkavállaló neve, levont összeg, fennmaradó 
+teljes tartozás). Önálló banki utalási állományt generál a letiltások közvetlen 
+rendezéséhez, biztosítva az 5.15-ös lépésben visszatartott összegek hivatali átutalását. 
+●​ 7.8 Cafeteria / SZÉP-kártya elszámolás kimenete (​
+/cafeteria-output): A cafeteria elemek kibocsátók felé történő elszámolási állományai. 
+SZÉP-kártya feltöltési táblázat szolgáltatónként (OTP, K&H, MBH): Munkavállaló, 
+kártyaszám, alszámla feltöltendő összege. Gomb a közvetlen provider-API feltöltés 
+indításához vagy a hivatali formátumú átutalási/adatfájl letöltéséhez. Önkéntes pénztárak 
+szerinti utalási összesítők és lakhatási/ajándék dokumentációk letöltése. (Integráció: 
+SZÉP-kártya provider API-k). 
+●​ 7.9 Munkáltatói összesítő / Bérköltség kimutatás (​
+/employer-summary): A vállalat vezetése számára készülő havi záró pénzügyi összesítő 
+képernyő. Strukturált költségtáblázat: Kifizetett Nettó bér, Levont SZJA-előleg, Levont 
+TB-járulék, Bruttó bér összesen, Fizetendő 13% SZOCHO, Szakképzési hozzájárulás, 
+Cafeteria közterhek, Munkáltatói összes bérköltség. Az összegek gombokkal felbonthatók 
+a 2.7-es pontban rögzített telephely, költséghely és részleg tengelyek mentén. 
+Összehasonlító grafikon az előző havi költségekkel. Export gombok: PDF (vezetői riport) 
+és Excel (pénzügyi analitika). 
+10. Kilépés és Jogviszony-megszűnés Képernyők 
+(Fejezet 8) 
+Az Mt. 80. § (2) bek. alapján a munkaviszony megszűnésekor a munkabért és az összes 
+hivatali igazolást legkésőbb a megszűnéstől számított 5. munkanapon (munkáltatói 
+felmondásnál az utolsó munkában töltött napon) kötelező kiadni. Az alkalmazásnak 
+automatikusan le kell generálnia a teljes hivatali 8-dokumentumos kilépő csomagot. 
+8.1 Foglalkoztatott kijelentés (Kibővítve) 
+Route: 
+/client/[id]/payroll/employees/[emp-id]/termination 
+ 
+Cél: A munkavállaló jogviszonyának hivatali lezárása, elszámolása és a kötelező igazolások 
+előállítása. 
+Fő elemek: Kijelentési alapadatok űrlap: Utolsó munkanap (date picker), Kilépés oka dropdown 
+(Munkáltatói felmondás, Munkavállalói felmondás, Közös megegyezés, Próbaidő alatti azonnali, 
+Határozott idő lejárata, Elhalálozás, Egyéb), Felmondási idő hossza. Automatikus Elszámolási 
+kártya: fel nem vett időarányos szabadság napjai és megváltási összege (8.10), végkielégítés 
+összege (8.9). Alsó Dokumentum-csomag generáló ellenőrző lista checkboxokkal a 8 kötelező 
+hivatali dokumentumhoz. Átvétel-igazolási nyilatkozat blokk. 
+Interakciók: Az adatok mentése lezárja a munkavállaló aktív státuszát, legenerálja az összes 
+kijelölt PDF igazolást, és automatikusan beemeli a 08E-bejelentő sorba a megszüntetési kódot 
+(8 napos hivatali határidővel). 
+Jogszabályi háttér: Mt. 80. § (2) bek. (5 munkanapos szabály). 
+ 
+8.2 - 8.11 A 8 kötelező hivatali kilépő papír felületei 
+A 
+/termination/papers 
+központi route-ról elérhető egyedi hivatali nyomtatvány képernyők: 
+ 
+●​ 8.2 Kilépő papírok központi kezelője: Vizuális rács az összes igazolás állapotával 
+(Generálva, Aláírt, Letöltött). Tartalmazza a hivatalos Átadási-átvételi jegyzőkönyvet, 
+amely felsorolja mind a 8 dokumentumot és a cég eszköz-visszaadási tételeit a 
+munkavállaló fizikai vagy digitális aláírási mezőjével. 
+●​ 8.3 Adatlap a tárgyévi adóelőleg-megállapításhoz: Az évközi kilépéshez használt 
+hivatali formátum (M30 analógia). Tartalmazza a kilépés napjáig kifizetett összes 
+összevont jövedelmet, a levont SZJA-előlegeket, a felhasznált és érvényesített 
+kedvezményalapokat és a béren kívüli juttatások értékét. Aláírási blokk. (Jogalap: Szja tv. 
+és Art. 46. § (5)). 
+●​ 8.4 Jövedelemigazolás egészségbiztosítási pénzbeli ellátáshoz: Az Ebtv. Vhr. 37/A. § 
+szerinti hivatalos formátum. Megjeleníti a kilépést megelőző 180 napos pénzbeli ellátási 
+alapot képező jövedelmet, a megszerzett hivatali szolgálati időt és az év közbeni 
+CSED/GYED/táppénz folyósítások időszakait. Kitöltése kérésre kötelező, átvételét külön 
+naplózni kell. 
+●​ 8.5 Tartozásigazolás: A Vht. 78. § szerinti kötelező igazolás. Ha a munkavállalónak 
+nincs aktív letiltása, a felület automatikusan legenerálja a hivatalos „Tartozás-mentes" 
+szöveges nyilatkozatot. Aktív letiltás esetén kötelezően listázza a letiltás jogosultját, 
+bankszámlaszámát, a határozat számát és a még fennmaradó teljes tartozás összeget, 
+amelyet az új foglalkoztató jogszabályilag köteles folytatni. 
+●​ 8.6 Igazolólap álláskeresési járadékhoz: A hivatali Flt. (foglalkoztatási törvény) szerinti 
+kötelező nyomtatvány. Tartalmazza a munkaviszony pontos hivatali időtartamát, a 
+megszűnés hivatali kódját/okát (kritikus az állami ellátás elbírálásához) és az utolsó 12 
+hónap átlagos jövedelmét, amely az állami járadék alapját képezi. Rögzíti a 
+munkaerő-piaci járulékalapot képező időszakokat. 
+●​ 8.7 Foglalkoztatási igazolás: A hivatali rendszerben kötelező új igazolás. Részletesen 
+és strukturáltan tartalmazza a munkavállaló teljes belső foglalkoztatási történetét: az 
+összes betöltött munkakört FEOR kódokkal, a munkaidő-változások időpontjait, az éves 
+szabadságok felhasználási adatait és a kollektív szerződés szerinti juttatásokat. 
+●​ 8.8 Igazolás a munkaviszonyról: A klasszikus hivatali munkaviszony-igazolás az Mt. 80. 
+§ (2) alapján. Mezők: Munkaviszony kezdete, vége, utolsó betöltött munkakör 
+megnevezése, a munkaviszony megszűnésének pontos Mt. szerinti módja (pl. 
+munkavállalói felmondás), a felmondási idő hossza és a munkáltató hivatalos cégszerű 
+aláírási blokkja. 
+●​ 8.9 Végkielégítés-kalkulátor (​
+/severance): Az Mt. 77. § hivatali szabályait beépítő automatikus számfejtő felület. 
+Ellenőrzi a jogviszony tényleges hosszát és a kilépés okát. Jogosultság esetén az 
+adómotor alkalmazza a törvényi lépcsőket: 3-5 évnél 1 havi; 5-10 évnél 2 havi; 10-15 
+évnél 3 havi; 15-20 évnél 4 havi; 20-25 évnél 5 havi; 25+ évnél 6 havi átlagkereset jár. 
+Életkori korrekció: ha a munkavállaló az öregségi nyugdíjkorhatár előtt 5 éven belül van, a 
+törvényi végkielégítés összege automatikusan +3 hónappal növekszik. Az összeget 
+bérjellegű jövedelemként adóztatja le, de riasztást ad, ha az összeg átlépi a 12-szeres 
+felső plafont. 
+●​ 8.10 Fel nem vett szabadság megváltása (​
+/leave-payout): A kilépés napjára eső időarányos szabadság-mérleg lezáró felülete. 
+Kiszámítja az adóévre járó időarányos keretet, levonja a kivett napokat, és meghatározza 
+a megváltandó napok számát. Az adómotor a szabadság-megváltás értékét az utolsó 
+munkanapon érvényes egyéni távolléti díj alapulvételével számítja ki (napok száma x 
+távolléti díj). Általános bérjellegű közterhekkel adóztatja le (15% SZJA, 18,5% TB, 13% 
+SZOCHO). Banner szöveg: „Szabadság pénzbeli megváltása jogszabályilag kizárólag a 
+munkaviszony megszűnésekor engedélyezett!" (Mt. 125. §). 
+●​ 8.11 e-TB kiskönyv jogviszony-zárás (NEAK) (​
+/termination/etb): A hivatali elektronikus egészségbiztosítási nyilvántartás lezáró felülete. 
+Megjeleníti a NEAK kapcsolat állapotát. TB-kifizetőhely esetén közvetlen API hívással 
+rögzíti a hivatali rendszerben a jogviszony lezárásának tényét, kezdő-záró dátumát és a 
+záró ok hivatali kódját. Nem-kifizetőhely esetén jelzi, hogy a záró adatokat a rendszer a 
+08E megszüntetési állomány feladásával küldi át a NAV-NEAK hálózaton. Ellenőrzi a 
+folyamatban lévő hivatali ellátásokat (pl. passzív táppénz, GYED) és kezeli a folyósítási 
+jog hivatali átörökítését. 
+11. Év Végi Feladatok és Zárási Dashboard (Fejezet 9) 
+9.1 Év végi feladatok dashboard 
+Route: 
+/client/[id]/year-end/[year] 
+ 
+Cél: A cég éves hivatali zárási kötelezettségeinek és adatszolgáltatásainak központi 
+irányítópultja. 
+Fő elements: Header „[Év] év végi feladatok" címmel és év-választóval. Központi hivatali zárási 
+feladat-checklist szigorú hivatali határidők és linkek párosításával: 
+1. M30 munkáltatói összesített igazolások kiadása (Határidő: január 31. → link a 9.2-re) 
+2. Havi béradatok és a NAV állami SZJA-bevallási tervezeteinek összevetése (→ link a 9.3-ra) 
+3. Éves szabadság-mérlegek lezárása és áthozatali számítások (→ link a 9.4-re) 
+4. Cafeteria éves keretek és törvényi közteher-plafonok zárása (→ link a 9.5-re) 
+5. Kötelező kamarai hozzájárulás rendezése (5 000 Ft, Határidő: március 31. → link a 9.6-ra) 
+6. Éves KIVA bevallás összeállítása (2529-es, Határidő: február 25. → link a 9.7-re) 
+7. Éves KATA kisadózói nyilatkozat leadása (Határidő: február 25. → link a 9.8-re) 
+8. Társasági adó (TAO) éves átlagos statisztikai létszám adatszolgáltatás (→ link a 9.9-re) 
+9. Rehabilitációs hozzájárulás éves elszámolása és bevallása (2501-es, Határidő: február 25. → 
+link a 9.10-re) 
+10. Iparűzési adó (HIPA) bérköltség- és telephelyi adatszolgáltatás (→ link a 9.11-re) 
+Központi progress sáv hivatali állapotjelzőkkel (Kész, Folyamatban, Esedékes, Lejárt piros 
+badge-dzsel). 
+Interakciók: A checklist elemeire kattintva közvetlenül az adott év végi szakmai screen nyílik 
+meg. 
+ 
+9.2 - 9.11 Egyedi zárási és ellenőrző felületek 
+●​ 9.2 M30 munkáltatói összesítő (​
+/year-end/[year]/m30): Az év végi kontextusú 6.11-es felület. Élő hivatali határidő-óra 
+(január 31.). Tartalmazza a „Tömeges kiküldés a munkavállalóknak" funkciót az 
+e-bérjegyzéknél leírt biztonságos, jelszóval védett és naplózott e-bérjegyzék (7.3) 
+technológiával. 
+●​ 9.3 SZJA-bevallási tervezet ellenőrzés (​
+/year-end/[year]/szja-draft): A NAV eSZJA felületén legenerált állami tervezetek és a 
+belső M30-as adatok összevetési képernyője. Munkavállalói lista az állami tervezet 
+hivatali státuszával (NAV által lezárt, Módosított). Élő hivatali Eltérés-jelző motor: ha az 
+egyéni M30-as adatsor és a NAV központi XML állomány értékei között akár 1 Ft eltérés 
+van, a sort piros jelzéssel flageli. A sorvégi részlet-modal mezőről mezőre egymás mellé 
+teszi a belső és a hivatali adatokat a hiba gyors felderítéséhez. Generálható egy egyéni 
+elektronikus útmutató PDF a munkavállaló számára az eSZJA felületen történő hivatali 
+jóváhagyás lépéseiről (törvényi határidő: május 20.). 
+●​ 9.4 Éves szabadság-elszámolás (​
+/year-end/[year]/leaves): Munkavállalónkénti éves záró szabadságmátrix. Kijelzi az 
+adóévben megszerzett teljes keretet, a ténylegesen kivett napokat és a törvényesen 
+következő évre áthozható napok számát (hivatali korlát: kollektív szerződés vagy 
+megállapodás alapján max 60 nap vihető át). Külön piros színnel listázza a jogszabályilag 
+áthozhatatlan, elvesző napokat. Egy gombbal legenerálja az új adóév induló 
+szabadság-mérleg kártyáit. 
+●​ 9.5 Cafeteria éves keret kihasználás (​
+/year-end/[year]/cafeteria-summary): Éves cafeteria audit felület. Munkavállalónként 
+összesíti a SZÉP-kártya juttatásokat alszámlánként (rekreáció max 450k, aktív magyarok 
+max 120k, összesen max 570k). Ellenőrzi a juttatások hivatali közterheit (béren kívüli 
+SZÉP 28%, egyes meghatározott 33,04%) és kigyűjti a 2508-as havi bevallásokban 
+lejelentett adók éves egyenlegét. Ellenőrzi a 35 év alattiak lakhatási támogatásának éves 
+korlátját (max 1.800.000 Ft/év). 
+●​ 9.6 Kamarai hozzájárulás (​
+/year-end/[year]/chamber): Az iparkamarai kötelező tagság és fizetés ellenőrző felülete. 
+Megjeleníti, hogy a cég melyik területileg illetékes iparkamarához van bejegyezve. Fixen 
+rögzíti a törvényi évi 5 000 Ft-os összeget és a március 31-i hivatali fizetési határidőt. 
+Lehetőséget ad a banki bizonylat vagy hivatali igazolás PDF csatolására és a fizetettségi 
+státusz manuális vagy API alapú lezárására. 
+●​ 9.7 - 9.11 További hivatali adatszolgáltatások év végi felületei: A 9.7 (KIVA 2529-es), 
+a 9.8 (KATA kisadózói) és a 9.10 (Rehabilitációs hozzájárulás 2501-es) felületek 
+közvetlen átjárást (gyorslinket) biztosítanak a 6.x fejezetben részletezett hivatali bevallási 
+screenekre, az év végi záró dashboard kontextusában futtatva a validációs és generálási 
+állományokat. A 9.9 TAO létszám adatszolgáltatás (​
+/year-end/[year]/tao-headcount) kiszámítja a társasági adóbevalláshoz jogszabályilag 
+kötelező éves átlagos statisztikai állományi létszámot havi és éves átlagbontásban, 
+megbontva adminisztratív, fizikai és vezetői hivatali kategóriák szerint, és exportálható 
+fájlt ad a TAO-bevallásba történő beépítéshez. A 9.11 Iparűzési adó (HIPA) támogatás (​
+/year-end/[year]/hipa) kigyűjti a helyi iparűzési adó bevallásához kötelező éves teljes 
+bérköltség adatokat, elkészíti a foglalkoztatottak telephelyek szerinti megoszlási mátrixát, 
+és legenerálja a Magyar Államkincstár önkormányzati ASP ASP-rendszere szerinti 
+hivatalos XML/CSV export állományt (összekapcsolva a 10.11-es önkormányzati 
+integrációs modullal). 
+12. Integrációs és Interfész Beállítások (Fejezet 10) 
+Az alkalmazásnak rendszerszinten 19 különböző külső állami, banki és üzleti 
+hálózattal/szabvánnyal kell integrálódnia. Az adminisztrációs konfigurációs felületek leírása: 
+10.1 Integrációk áttekintő (Admin) 
+Route: 
+/admin/integrations 
+ 
+Cél: Az alkalmazásban futó összes külső hálózati kapcsolat állapotának, API kulcsainak és 
+hibanaplóinak központi adminisztrációja. 
+Fő elemek: Integrációs kártyák hálózati csoportosításban (Állami, Banki, Cafeteria, Üzleti 
+szoftverek, Belső rendszerek). Minden kártyán szerepel a logó, a kapcsolat élő státusza (Aktív 
+zöld, Hiba piros, Tesztüzem sárga) és a „Beállítás" gomb. Alsó panel: az elmúlt 30 nap 
+összesített hibanaplója dinamikus hiba-arány diagrammal (sikeres/sikertelen hívások 
+százaléka). 
+Interakciók: A „Beállítás" gombra kattintva megnyílik a specifikus integrációs screen 
+(10.2-10.19). 
+ 
+10.2 - 10.6 Állami és hivatali integrációk 
+●​ 10.2 NAV ONYA integráció (​
+/admin/integrations/onya): Konfigurálja az Online Nyomtatványkitöltő felület közvetlen 
+elérését. Fix hivatali cél URL:​
+https://onya.nav.gov.hu. Élő hálózati státusz kijelző (Elérhető, Időszakos hiba, Nem 
+elérhető) az utolsó sikeres kommunikáció időbélyegével. Megjeleníti a közvetlenül 
+beküldhető 14 hivatali nyomtatvány listáját (eSZJA, KATA, 2608, T1041/08E, T1042E, 
+T1011U, UJEGYKE, Nyilatkozatok, NY, ATVUT, AUTRESZ, T34, T101E). Havi 
+sikeres/sikertelen statisztikai számláló. Integrálja a KAÜ-átirányítási modult az aláíró 
+személy azonosításához. 
+●​ 10.3 NAV ÁNYK XML import/export (​
+/admin/integrations/anyk): Az ÁNYK keretprogramhoz szükséges offline fájlgenerátor 
+beállításai. Felül fix sárga hivatali kivezetés-figyelmeztetés: „Az ÁNYK vastagkliens 
+program 2026.december 31-én hivatali úton végleg megszűnik! 2027.január 1-től 
+kizárólag közvetlen ONYA web API vagy M2M gép-gép interfész használható!". XML 
+export és import zóna a múltbeli adatok migrációjához. Sémakezelő modul: 
+automatikusan letölti és frissíti a NAV által publikált legfrissebb XSD sémafájlokat a 
+verziókövetés biztosításához. 
+●​ 10.4 NAV M2M (Gép-gép) interfész (​
+/admin/integrations/m2m): A 2027.01.01-től kötelező közvetlen szerver-szerver hálózati 
+kapcsolat előkészítő képernyője. Fejlesztési mérföldkő kijelzők rögzített hivatali 
+dátumokkal: „NAV műszaki segédlet publikálva: 2025.10.30.", „Példaprogramok kiadása: 
+2026.01.31.". Kapcsolat-konfigurációs mezők: API végpont éles és sandbox URL címei, 
+Hitelesítési mTLS ügyféltanúsítvány feltöltési zónája, OAuth 2.0 tokenkezelő és titkosítási 
+kulcsok mezői. Sandbox teszt-beküldési gomb terheléses load-test funkcióval (1, 100, 
+1000 bevallás szimulált feladása). Készenléti checklist a 2027-es élesítéshez. 
+●​ 10.5 Tárhely és Polling adminisztráció (Government portal): A 2.4-es ügyféloldali 
+beállítások globális adminisztrációs párja. Globális polling-gyakoriság csúszka 
+(alapértelmezett: 15 perc). Hibás hivatali küldések automatikus újrapróbálkozási 
+szabályzata (Retry-policy exponential backoff késleltetéssel). KAÜ központi csatlakozási 
+modul állapota és tárhely-kapacitási riasztási küszöbök beállítása. 
+●​ 10.6 NEAK e-TB kiskönyv integráció (​
+/admin/integrations/neak): Az új, 2026.01.01-től kötelező elektronikus 
+egészségbiztosítási nyilvántartás hálózati beállításai. Csatlakozási mezők: NEAK API 
+központi hálózati végpont címe, mTLS biztonsági ügyféltanúsítvány. Engedélyezett 
+hivatali funkciók toggle gombjai: Jogviszony-lekérdezés TAJ alapján, Pénzbeli ellátások 
+(CSED, GYED, táppénz) szinkronizálása, Jogviszony-záró bejegyzések közvetlen 
+beküldése kifizetőhelyeknek. Támogatja az eseti (munkavállalói adatlapból futó) és a 
+tömeges (havi zárás előtti portfólió-szintű) hivatali lekérdezéseket. 
+10.7 - 10.12 Banki, juttatási és üzleti szoftver integrációk 
+●​ 10.7 Banki integráció (ISO 20022, GIRO, MT940, CGI) (​
+/admin/integrations/banking): A bérutalási állományok hálózati átviteli beállításai. 
+Támogatott hálózati szabványok checkboxai: Magyar GIRO (hagyományos belföldi 
+bérutalás), ISO 20022 pain.001 (európai SEPA), MT940 (SWIFT), CGI (Common Global 
+Implementation). Közvetlen banki API-integrációs modulok a magyar piac vezető 
+bankjaihoz: OTP Bank API, K&H Bank API, MBH Bank Open Banking, Erste Bank B2B, 
+Raiffeisen Corporate API, Unicredit Open Banking. PSD2 engedélyezési kulcsok 
+számlaegyenleg lekérdezéshez. Cégbiztos hitelesítési és kétfaktoros aláírási (2FA) modul 
+konfigurációja a közvetlen utalásindításhoz. 
+●​ 10.8 SZÉP-kártya provider integráció (​
+/admin/integrations/szep-card): A cafeteria juttatások közvetlen hálózati feltöltési 
+beállításai. Három független szolgáltatói blokk: OTP SZÉP-kártya (API-kulcs, hivatali 
+szerződésszám mezők), K&H SZÉP-kártya (B2B API-kulcs), MBH SZÉP-kártya (API 
+azonosítók). Tömeges feltöltési funkció engedélyezése közvetlen hálózati 
+visszaigazolás-feldolgozással. Tartalmazza a 2025.12.01.-2026.04.30. közötti átmeneti 
+hideg élelmiszer vásárlási engedély hivatali rendszerparaméterét. 
+●​ 10.9 Számlázó szoftver integráció (​
+/admin/integrations/invoicing): Külső számlázó rendszerek API összekötése. 
+Támogatott szoftverek checkboxai: Billingo API, Számlázz.hu Agent, MiniCRM számlázó 
+modul, KBOSS.hu, egyedi vállalati ERP rendszer kapcsolat. Funkció toggle gombok: 
+Számla-import bérkifizetések egyeztetéséhez, Megbízási díj-számlák automatikus 
+beolvasása és könyvelése, egyéni vállalkozók kimenő számláinak valós idejű 
+szinkronizálása a NAV Online Számla hálózaton keresztül. 
+●​ 10.10 HR rendszer integráció (​
+/admin/integrations/hr): Vállalati HR szoftverek adatkapcsolati felülete. Támogatott 
+globális rendszerek: SAP SuccessFactors, Workday Corporate, BambooHR, Personio 
+API. Támogatott speciális magyar piac-specifikus HR szoftverek: Nexon HR modul, 
+Magbest rendszer. Szinkronizációs adattípusok checkboxai: Foglalkoztatotti törzsadatok 
+kétirányú szinkronizálása, Havi szabadságkeret és távollét-adatok átemelése, Jelenléti 
+ívek munkaidő-adatai, Szervezeti bérváltozások automatikus importja. 
+●​ 10.11 Iparűzési adó (HIPA) önkormányzati portál (​
+/admin/integrations/hipa): A Magyar Államkincstár kötelező önkormányzati ASP 
+ASP-rendszerének és az egyedi helyi önkormányzati digitális felületek integrációs 
+konfigurációja. Regisztrált önkormányzatok listája, ahol az ügyfélkör telephelyekkel 
+rendelkezik. ASP API tanúsítvány feltöltés és hitelesítési kulcsok kezelése az éves 
+bérköltség- és létszám-adatok strukturált hálózati XML/CSV exportjához. 
+●​ 10.12 Iktatórendszer integráció (​
+/admin/integrations/document-management): A legenerált kimeneti dokumentumok 
+(bérjegyzékek, 8 hivatali kilépő papír, igazolások) rendezett és archivált tárolásának 
+beállításai. Külső támogatott rendszerek: KÉRELEMNET, egyedi vállalati ERP 
+dokumentumtár. Belső iktatási modul konfigurációja automatikus iktatószám-generátor 
+szabályozásával. GDPR-szabályos hosszú távú, titkosított megőrzési tárhely beállításai. 
+10.13 - 10.19 Adatbeviteli, AI és egyéb interfészek 
+●​ 10.13 E-mail / Viber / Telegram bekérési csatorna (​
+/admin/integrations/messaging): Az 5.2-es havi adatbekérő modul technikai átviteli 
+beállításai. E-mail szolgáltató választó (Postmark API, Sendgrid B2B, Mailgun Corporate) 
+API kulcsokkal és domain hitelesítési mezőkkel (DKIM, SPF, DMARC rekordok 
+ellenőrzése). Viber Business csatorna (hivatalos Bot-token, csatorna-azonosító). 
+Telegram hálózat (Bot-token). SMS átjáró (magyar piaci B2B szolgáltatók: Magyar 
+Telekom, Vodafone, Yettel vállalati SMS API). Visual WYSIWYG sablon-szerkesztő modul 
+az üzenetek egyedi formázásához a hivatali [Cég], [Hónap], [Határidő], [Hiányzó 
+dokumentumok] változók beépítésével. 
+●​ 10.14 OCR / AI dokumentum-feldolgozás (​
+/admin/integrations/ocr-ai): A feltöltött igazolások és jelenléti ívek AI alapú 
+karakterfelismerésének és adatmodellbe illesztésének beállításai. OCR motor szolgáltató 
+választó (Google Document AI bérszámfejtési modul, AWS Textract, egyedi belső gépi 
+tanulási ML-pipeline). Szigorú magyar specifikus nyelvi és táblázat-reprezentációs modell 
+támogatás. Engedélyezett dokumentum-típusok sémái: Jelenléti ív (5.6), Telefonszámla 
+(5.9), Orvosi keresőképtelenségi igazolás (5.8), Személyi/lakcímkártya (3.3), Banki 
+kivonatok táblázatai. Confidence-score (AI megbízhatósági) küszöbérték szabályozó 
+mező (alapértelmezett érték: 0.85, amely felett a rendszer automatikusan jóváhagyja az 
+adatot, alatta kötelező manuális ellenőrzési sorba irányítja). 
+●​ 10.15 Bejövő dokumentum-feldolgozás API (​
+/admin/integrations/inbound-docs): Az ügyfelek és munkavállalók által e-mailben vagy 
+chat-csatornákon beküldött dokumentum-mellékletek automatikus fogadó szervere. 
+Egyedi dedikált e-mail bejövő cím generálása a bekérésekhez. Beépített AI osztályozó 
+motor: automatikusan felismeri a dokumentum típusát (pl. felismeri, hogy a csatolt kép 
+egy adókártya vagy egy jelenléti ív) és a munkavállaló neve vagy TAJ-száma alapján 
+automatikusan besorolja a megfelelő havi mappába. Hibás vagy bizonytalan besorolás 
+esetére manuális rendezési munkafolyamat felületet biztosít. 
+●​ 10.16 Audit napló és export (​
+/admin/integrations/audit-export): A rendszerszintű audit adatok biztonságos 
+továbbításának konfigurációja. Külső export csatorna választó (Webhook küldés, Syslog 
+hálózati protokoll, ütemezett automatikus CSV export). Esemény-szűrő toggle (kizárólag a 
+kritikus biztonsági események vagy az összes adatmódosítási napló átvitele). Megfelel a 
+GDPR hosszú távú, elkülönített és módosíthatatlan naplótárolási követelményeinek (5+ 
+év hivatali megőrzés). 
+●​ 10.17 RLB-bér integráció (​
+/admin/integrations/rlb-ber): A piacon elterjedt RLB-bér számfejtő szoftver és az 
+alkalmazás közötti kétirányú adatcsere felülete. Kapcsolati státusz badge. Kétirányú 
+szinkronizációs motor: béradatok, törzsadatok és bevallási állományok 
+kereszt-szinkronizálása. Ütemezett automatikus éjszakai szinkron beállítási időzítője 
+részletes hiba-logolási panellel. 
+●​ 10.18 Office 365 / Google Workspace SSO és naptár (​
+/admin/integrations/sso-calendar): A vállalati identitás- és naptárkezelés konfigurációja. 
+Egyszeri bejelentkezési (SSO) modulok: Microsoft Entra ID (Azure AD) vállalati 
+integráció, Google Workspace SAML protokoll kapcsolat. Naptár szinkronizáció 
+konfigurációja: Office 365 Calendar API és Google Calendar API összeköttetés az 1.3-as 
+naptár naptárcelláinak kétirányú frissítéséhez (a hivatali NAV határidők és belső feladatok 
+automatikus beírása a könyvelők naptárába). Felhőalapú tárhely integráció: OneDrive 
+vállalati és Google Drive mappák hozzárendelése a kimeneti dokumentumok automatikus 
+mentéséhez. 
+●​ 10.19 Webhook-ok és esemény-rendszer (​
+/admin/integrations/webhooks): Külső hálózati rendszerek valós idejű értesítése az 
+alkalmazásban lezajló eseményekről. Webhook végpont URL mező, titkos HMAC-aláírási 
+kulcs mező a biztonságos adatátvitelhez. Kiválasztható rendszer-események checkboxai 
+(32 előre definiált esemény, pl. Új belépő rögzítése, havi számfejtés lefutása, NAV 
+bevallás hivatali elfogadása). Újrapróbálkozási retry-policy konfiguráció és „Test-küldés" 
+gomb azonnali hálózati válaszkód kijelzéssel. Logtáblázat az elküldött webhook 
+hívásokról. 
+13. Riportok, Adminisztráció és Rendszerszintű 
+Funkciók (Fejezetek 11-12) 
+11. Riportok és elemzések modulja 
+A 
+/client/[id]/reports 
+útvonalon elérhető 11.1 Riport-katalógus kártyás elrendezésben összesíti az elérhető 11 
+analitikus jelentést. Minden riport közös szűrőpanellel rendelkezik (időszak, cég, munkavállaló, 
+telephely, költséghely) és támogatja a PDF és Excel exportot. A specifikus riportfelületek 
+követelményei: 
+ 
+●​ 11.2 Bérköltség riport: Havi és éves bérköltségek mélyreható elemzése. Grafikonok: 
+időbeli alakulás vonaldiagramja, költséghelyi oszlopdiagram és egy interaktív hőtérkép 
+(heatmap) a Költséghely x Hónap tengelyek mentén. 
+●​ 11.3 Létszám riport: Statisztikai állományi létszám követése hónapról hónapra, 
+belépő/kilépő fluktuációs ráták és demográfiai (életkor, nem) megoszlási grafikonok. 
+Biztosítja a 9.9-es TAO-kompatibilis adatsorokat. 
+●​ 11.4 Cafeteria riport: SZÉP-kártya keretfelhasználás és az adómentes/adóköteles 
+juttatások megoszlási diagramjai egyéni és vállalati szinten. 
+●​ 11.5 Adó- és járulékriport: A lejelentett SZJA, TB és SZOCHO összegek havi alakulása. 
+Vizuális összehasonlító grafikon: „Kedvezmények nélkül fizetendő közteher" vs. 
+„Érvényesített kedvezményekkel csökkentett tényleges hivatali befizetés", bemutatva a 
+cég effektív adóterhelését. 
+●​ 11.6 Munkavállalói évi összesítő: Egyetlen választott munkavállaló teljes adóéves 
+jövedelmi, kedvezmény, cafeteria, szabadság és egészségbiztosítási története egyetlen 
+strukturált, a munkavállalónak hivatalosan átadható aláírt PDF riportban. 
+●​ 11.7 Kedvezmény-érvényesítési statisztika: A 9 különböző SZJA kedvezmény 
+igénybevételi rátái a cégcsoporton belül, az összesített megtakarított adó összege és AI 
+javaslatok a még kiaknázatlan dolgozói kedvezményekre. 
+●​ 11.8 Bevallási megfelelési riport: A hivatali bevallások beküldési időbeliségének 
+statisztikája, a hivatali PRN/FOG hibakódok gyakorisági grafikonja és egy mulasztási 
+hivatali bírság kockázati pontszám (kockázat-pontszám) kijelzője. 
+●​ 11.9 Pénzügyi hatás / pénztár riport: A készpénzes bérkifizetések havi házi pénztári 
+hatásai, a tagi kölcsönök alakulása és a banki utalás vs. KP kifizetések arányának 
+strukturált idővonala. 
+●​ 11.10 AI-anomália riport: Az AI által észlelt rendellenességek havi hivatali összesítő 
+jegyzéke (szokatlan egyéni béreltérések, kiugró túlórák, szabadság és munkaidő 
+konzisztencia-hibák listája). 
+●​ 11.11 Egyedi riport-építő: Drag & drop felület 200-nál több bérszámfejtési és törzsadat 
+mezőből álló palettával. Szabad csoportosítás, szűrés, élő táblázat előnézet és 
+sablonként történő mentés ütemezett heti/havi e-mail küldési opcióval. 
+12. Rendszerszintű és adminisztrációs felületek 
+A szoftver belső működését, jogosultságait és hivatali paramétereit az alábbi felületek vezérlik: 
+●​ 12.1 Felhasználó-kezelés (​
+/admin/users): A könyvelőiroda saját belső munkatársainak listája (Név, e-mail, 
+szerepkör, hozzárendelt ügyfél-portfólió kártyák, utolsó belépés, státusz). CSV alapú 
+tömeges felhasználói import és azonnali szoftveres aktiválás/deaktiválás. 
+●​ 12.2 Szerepkörök és jogosultságok (​
+/admin/roles): Granuláris szerepkör-alapú hozzáférés-szabályozás (RBAC). Előre 
+definiált hivatali szerepkörök: Vezető könyvelő (teljes jogkör), Könyvelő (hozzáférés a 
+saját kijelölt ügyfél-portfóliójához), Könyvelőasszisztens (kizárólag adatfelvitel és 
+bekérés), Bér-előkészítő (kizárólag a bérszámfejtési modul elérése), Csak olvasó/Audit 
+megfigyelő. Egyedi szerepkör-építő mátrix: modulonként kapcsolható Checkboxok 
+(Olvasás, Írás, NAV beküldés, Aláírás). 
+●​ 12.3 Audit napló (​
+/admin/audit): Megmásíthatatlan, időrendi rendszernapló. Minden adatmódosítást, 
+belépést és hivatali feladást rögzít: Dátum/idő, felhasználó, esemény típusa, érintett 
+entitás, Régi érték → Új érték vizuális diff, IP cím. Szűrők és export külső biztonsági SIEM 
+rendszerekbe. Megőrzési idő: GDPR konform módon fixen minimum 5 év. 
+●​ 12.4 GDPR-modul (Érintetti kérelmek) (​
+/admin/gdpr): Munkavállalói hivatali adatjogok felülete. Kezeli a Hozzáférési, 
+Helyesbítési, Korlátozási és Törlési kérelmeket (a hivatali törvényi megőrzési 
+kötelezettségek automatikus prioritásos figyelembevételével, pl. adóadat törlése 5 éven 
+belül tiltott). Adatkivonat funkció: egy munkavállaló összes róla tárolt adatának azonnali 
+strukturált PDF/JSON exportja. Automatikus háttér-archiválási feladatok futtatása a 
+megőrzési idők lejárata után. 
+●​ 12.5 Sablonok és üzenet-template-ek (​
+/admin/templates): Központi WYSIWYG és Markdown sablonszerkesztő a 10.13-as 
+modulhoz. Kategóriák: Adatbekérők, Hiánypótlók, Bérjegyzék-küldők, Év végi M30 
+értesítők. Verziótörténeti és visszaállítási funkciók. 
+●​ 12.6 Jogviszonykódok master tábla (​
+/admin/job-codes): Paraméter-vezérelt hivatali kódkarbantartó. Kód száma (pl. 1101, 
+1115), hivatalos megnevezése, biztosítási toggle, egyedi minimum járulékalap-szabály 
+képlete, hivatali évszám-érvényességi korlátok (mikor lépett hatályba, mikor szűnik meg) 
+közvetlen NAV közlemények linkjeivel. Az új 1115-ös kód 2026.01.01-től automatikusan 
+aktívként van flagelve. 
+●​ 12.7 Adómértékek és küszöbök (Központi paramétertábla) (​
+/admin/tax-parameters): Az alkalmazás adómotorjának szíve. Tartalmazza a 2026-os fix 
+jogszabályi értékeket, amelyeket az alábbiakban hivatali táblázatban rögzítünk. Tartalmaz 
+egy központi „Évszámfrissítés" gombot, amelyre kattintva az adminisztrátor előkészítheti 
+és beviheti a következő adóév (2027) jogszabályi paramétereit és hatálybalépési 
+dátumait, amely átvezeti az értékeket az összes hivatali formon és képernyőn. 
+●​ 12.8 - 12.12 Rendszerszintű háttérmodulok: A 12.8 (Jogszabály-frissítések naplója) 
+méri a Közlönyfigyelő integráció (10.14) alapján észlelt új hivatali törvényeket és naplózza 
+a szoftverfrissítések fejlesztési állapotát (Tervezett, Élesítve) automatikus felhasználói 
+tájékoztató bannerek kihelyezésével. A 12.9 (Felhasználói beállítások) kezeli a könyvelő 
+egyéni nyelv, időzóna, sötét/világos téma, értesítési és kötelező kétfaktoros (2FA) 
+biztonsági beállításait, valamint az egyéni AVDH aláíró tanúsítványát. A 12.10 
+(Onboarding és Empty State) vezérli az új cégek regisztrációjának 7-lépéses folyamatát 
+(Cégadatok → Tárhely → Meghatalmazás → Beállítások → Dolgozók → Nyilatkozatok → 
+Ciklus indítása) és az üres képernyők CTA gombjait. A 12.11 (Dokumentáció) egy 
+kontextusérzékeny kereshető súgót, videó-tutorialokat és egy teljes jogszabályi rövidítés 
+glosszáriumot (SZJA, TB, SZOCHO, EFO, NEAK, KAÜ, AVDH, DÁP, ONYA, M2M, CSED, 
+GYED stb.) tartalmaz. A 12.12 (AI-asszisztens képernyő) az oldalsó panel (1.6) teljes 
+monitor-szintű verziója, ahol a könyvelő mélyebb jogszabályi szövegelemzéseket, 
+szerződés-felülvizsgálatokat és anonimizált családi adóoptimalizálási modelleket futtathat 
+le fix GDPR adatvédelmi figyelmeztetés mellett. 
+14. Központi Jogszabályi és Számítási Paramétertábla 
+(2026.01.01. Hatályos állapot) 
+Az adómotorba és a validációs modulokba fixen beprogramozandó 2026-os jogszabályi értékek 
+törvényi hivatkozásokkal: 
+Paraméter megnevezése 
+Hivatalos Érték (2026) 
+Törvényi Jogalap 
+  
+Minimálbér 
+322 800 Ft / hó 
+426/2025. Korm. rendelet 
+Garantált bérminimum 
+373 200 Ft / hó 
+426/2025. Korm. rendelet 
+Személyi Jövedelemadó 
+(SZJA) 
+15% 
+Szja tv. 
+Társadalombiztosítási 
+járulék (TB) 
+18,5% 
+Tbj. 
+Szociális hozzájárulási adó 
+(SZOCHO) 
+13% 
+Szocho tv. 
+Vállalkozói minimumalap 
+szorzója 
+100% (a 112,5%-os szorzó 
+megszűnt) 
+Szocho tv. 2026-os 
+módosítás 
+Családi kedvezmény - 1 
+gyermek 
+133 340 Ft 
+adóalap-csökkentés (20 000 
+Ft megtakarítás) 
+Szja tv. (2026-os duplázás) 
+Családi kedvezmény - 2 
+gyermek 
+266 660 Ft 
+adóalap-csökkentés / 
+gyermek (40 000 
+Ft/gyermek) 
+Szja tv. (2026-os duplázás) 
+Családi kedvezmény - 3 
+vagy több gyermek 
+440 000 Ft 
+adóalap-csökkentés / 
+gyermek (66 000 
+Ft/gyermek) 
+Szja tv. (2026-os duplázás) 
+Paraméter megnevezése 
+Hivatalos Érték (2026) 
+Törvényi Jogalap 
+  
+25 év alatti fiatalok 
+kedvezmény plafonja 
+Legfeljebb havi 715 765 Ft 
+adóalap-csökkentés 
+Szja tv. 29/F. § 
+Személyi kedvezmény 
+összege 
+Havi 107 600 Ft 
+adóalap-csökkentés (16 140 
+Ft megtakarítás) 
+Szja tv. 29/E. § 
+Első házasok kedvezménye 
+Havi 33 335 Ft 
+adóalap-csökkentés (5 000 
+Ft megtakarítás) 
+Szja tv. 29/C. § 
+Egészségügyi szolgáltatási 
+járulék 
+12 300 Ft / hó (410 Ft / nap) 
+Tbj. 
+EFO alkalmi munkáltatói 
+közteher 
+4 800 Ft / fő / nap 
+Efo tv. 
+Minimális órabér EFO 
+(szakképzettség nélkül) 
+1 578 Ft / óra (minimálbér 
+85%-a) 
+Efo tv. szabályzat 
+Minimális órabér EFO 
+(szakképzett pozíció) 
+1 866 Ft / óra (garantált 
+bérminimum 87%-a) 
+Efo tv. szabályzat 
+Távmunka adómentes 
+átalány összege 
+Legfeljebb havi 32 280 Ft 
+(minimálbér 10%-a) 
+Szja tv. 3. számú melléklet 
+SZÉP-kártya rekreációs 
+éves keret 
+450 000 Ft / év (arányosítva 
+a munkaviszony napjaival) 
+Szja tv. 
+SZÉP-kártya Aktív 
+120 000 Ft / év (félévente 
+Szja tv. 2025-ös kiegészítés 
+Paraméter megnevezése 
+Hivatalos Érték (2026) 
+Törvényi Jogalap 
+  
+Magyarok éves keret 
+legfeljebb 60 000 Ft) 
+Lakhatási támogatás 35 év 
+alattiaknak 
+Max havi 150 000 Ft (évi 1 
+800 000 Ft, 28%-os 
+közteherrel) 
+Szja tv. új juttatási forma 
+Rehabilitációs hozzájárulás 
+büntetési tétel 
+Évi 2 905 200 Ft / hiányzó 
+kvóta-fő (minimálbér 
+9-szerese) 
+Szocho és Rehab törvény 
+SZOCHO felső határa 
+tőkejövedelmeknél 
+Évi 7 747 200 Ft (minimálbér 
+24-szerese) 
+Szocho tv. plafon szabály 
+15. Fejlesztési Ütemterv és Implementációs Ajánlások 
+(Antigravity Részére) 
+A szoftver bonyolultságára és a hivatali határidőkre való tekintettel az Antigravity 
+fejlesztőcsapatának az alábbi háromfázisú ütemtervet határozzuk meg: 
+Rövid távú fázis (MVP, 0–6 hónap implementáció) 
+Központi entitás-adatmodell kiépítése hivatali logika alapján: (a) Munkáltató/Cég, (b) 
+Munkavállaló/Foglalkoztatott, (c) Jogviszony (egy emberhez több párhuzamos jogviszony 
+támogatása hivatali Jogviszonysorszám mezővel és FEOR kódokkal), (d) Bérelszámolás (havi 
+szinten jogviszonyonként bontva), (e) Bérelem (jövedelem-jogcímenként), (f) Hivatali bevallás 
+állományok (08, 2558, M30, T1041/08E külön modellekként). A hivatali Jogviszonykódok teljes 
+master táblájának és a biztosítási elbírálás logikájának lefejlesztése (1101, 1115 új tartós 
+megbízás, 1131, 1300, 1452). Az Adómotor implementálása a fenti 2026-os paramétertábla 
+alapján, keményen beprogramozva a 9 SZJA-kedvezmény jogszabályi számítási sorrendjét. Az 
+ÁNYK XML és az ONYA XML formátumok kettős exportőrének elkészítése, kötelezővé téve a 
+2508/2608 hivatali ÁNYK-import képességét az MVP fázisban. 
+Közép távú fázis (6–12 hónap implementáció) 
+A GDPR biztonsági modul lefejlesztése szerepkör-alapú hozzáférés-szabályozással (RBAC), 
+megmásíthatatlan adatmódosítási audit-naplóval (12.3) és automatizált hivatali dokumentum 
+megsemmisítési logikával (3 év, 8 év, 50 év hivatali időtartamok). Az adóelőleg-nyilatkozatok 
+automatizált beolvasása az állami ONYA felületről letöltött lakossági XML állományok 
+visszafejtésével (ANYÁCSKA, családi, első házasok elektronikus importja). A NEAK hálózati 
+kliens és az e-TB kiskönyv API integráció elindítása kifizetőhelyek számára. Az Mt. 155. § 
+szerinti biztonságos, AVDH-aláírt e-bérjegyzék generáló és hozzáférhetővé tévő modul (7.3) 
+lefejlesztése átvételi naplózással. Az AI-asszisztens funkciók első ütemű aktiválása: 
+bérszámfejtési anomália-detekció, hivatali határidő push-értesítések, Közlönyfigyelő 
+jogszabály-értesítések és a családi adóoptimalizáló kalkulátor. 
+A hivatali gép-gép szerver kapcsolat, azaz a közvetlen NAV M2M 
+interfész teljes körű kiépítése a NAV által 2025.10.30-án kiadott 
+műszaki segédlet és a 2026.01.31-i hivatali példaprogramok kódja 
+alapján, felkészülve a 2027.01.01-es kötelező hivatali átállásra. Az 
+ÁNYK offline program teljes elhagyása a szoftverből az állami 
+2026.12.31-es kivezetési határidő napján; ettől kezdve minden 
+adatszolgáltatás kizárólag éles ONYA API és M2M csatornákon futhat. 
+Iparág-specifikus modulok mélyítése: duális képzési és szakképzési 
+munkaszerződés szocho-kedvezmény kalkulátor, EFO modul a 210 
+napos sávos limitek követésével és az EKHO-bérszámfejtés 
+automatizálása. 
+ 

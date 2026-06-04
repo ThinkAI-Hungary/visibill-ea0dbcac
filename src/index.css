@@ -148,8 +148,13 @@ All colors MUST be HSL.
     --success-row-text: 142 75% 10%;
     --error-row-bg: 0 70% 92%;
     --error-row-text: 0 85% 20%;
-    --warning-row-bg: 41 80% 90%;
-    --warning-row-text: 41 92% 15%;
+    --warning-row-bg: 38 80% 90%;
+    --warning-row-text: 38 92% 15%;
+
+    /* Recharts tooltip variables */
+    --tooltip-bg: white;
+    --tooltip-text: #1e293b;
+    --tooltip-cursor: #f8fafc;
   }
 
 
@@ -265,8 +270,13 @@ All colors MUST be HSL.
     --success-row-text: 142 71% 65%;
     --error-row-bg: 0 84% 8%;
     --error-row-text: 0 84% 70%;
-    --warning-row-bg: 41 85% 8%;
-    --warning-row-text: 41 85% 65%;
+    --warning-row-bg: 38 92% 8%;
+    --warning-row-text: 38 92% 65%;
+
+    /* Recharts tooltip variables */
+    --tooltip-bg: #1e293b;
+    --tooltip-text: #e2e8f0;
+    --tooltip-cursor: rgba(255, 255, 255, 0.05);
   }
 }
 
@@ -446,6 +456,30 @@ All colors MUST be HSL.
 
   .dark input[type="date"]::-webkit-calendar-picker-indicator:hover {
     filter: invert(0.9) sepia(1) saturate(4) hue-rotate(130deg);
+  }
+}
+
+/* ── Global native select styling — consistent chevron + focus ring ── */
+@layer base {
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m2 4 4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 12px;
+    padding-right: 2.25rem !important;
+    cursor: pointer;
+  }
+
+  .dark select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m2 4 4 4 4-4'/%3E%3C/svg%3E");
+  }
+
+  select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.3);
+    border-color: hsl(var(--ring));
   }
 }
 
@@ -675,4 +709,110 @@ All colors MUST be HSL.
 }
 .nav-collapsible-content > * {
   overflow: hidden;
+}
+
+/* ── Staggered Animation Delays ── */
+.stagger-1 { animation: stepFadeIn 0.4s ease-out 0.05s both; }
+.stagger-2 { animation: stepFadeIn 0.4s ease-out 0.1s both; }
+.stagger-3 { animation: stepFadeIn 0.4s ease-out 0.15s both; }
+.stagger-4 { animation: stepFadeIn 0.4s ease-out 0.2s both; }
+.stagger-5 { animation: stepFadeIn 0.4s ease-out 0.25s both; }
+.stagger-6 { animation: stepFadeIn 0.4s ease-out 0.3s both; }
+.stagger-7 { animation: stepFadeIn 0.4s ease-out 0.35s both; }
+.stagger-8 { animation: stepFadeIn 0.4s ease-out 0.4s both; }
+
+/* ── Card Ripple Effect ── */
+.card-ripple {
+  position: relative;
+  overflow: hidden;
+}
+.card-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), hsl(var(--primary) / 0.08) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.card-ripple:hover::after {
+  opacity: 1;
+}
+
+/* ── Settings / Tab Content Transition ── */
+.tab-content-enter {
+  animation: tabSlide 0.25s ease-out both;
+}
+@keyframes tabSlide {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Skeleton Card ── */
+.skeleton-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: hsl(var(--muted));
+}
+.skeleton-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  animation: shimmer 1.8s infinite ease-in-out;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--foreground) / 0.04) 40%,
+    hsl(var(--foreground) / 0.06) 50%,
+    hsl(var(--foreground) / 0.04) 60%,
+    transparent 100%
+  );
+}
+.skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  background: hsl(var(--muted));
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  animation: shimmer 1.8s infinite ease-in-out;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--foreground) / 0.04) 40%,
+    hsl(var(--foreground) / 0.06) 50%,
+    hsl(var(--foreground) / 0.04) 60%,
+    transparent 100%
+  );
+}
+
+/* ── Thin scrollbar for sidebar ── */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.15);
+  border-radius: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.4);
+}
+
+/* ── Tab content animation ── */
+.tab-content-animate {
+  animation: tabFadeSlide 0.3s ease-out both;
+}
+@keyframes tabFadeSlide {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
