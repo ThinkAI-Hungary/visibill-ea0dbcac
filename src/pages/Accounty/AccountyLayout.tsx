@@ -54,8 +54,8 @@ export default function AccountyLayout() {
   // #16 Favicon badge — show missing items count in browser tab
   useEffect(() => {
     const count = kpis?.missingItems ?? 0;
-    document.title = count > 0 ? `(${count}) Accounty — Visibill` : 'Accounty — Visibill';
-    return () => { document.title = 'Visibill'; };
+    document.title = count > 0 ? `(${count}) Accounty — eaisybill` : 'Accounty — eaisybill';
+    return () => { document.title = 'eaisybill'; };
   }, [kpis?.missingItems]);
 
   const getUserInitials = () => {
@@ -150,8 +150,11 @@ export default function AccountyLayout() {
         {/* Logo Area */}
         <div className="p-4 border-b border-primary/30 shrink-0">
           <div className="flex items-center gap-2">
-            <Link to="/" className="text-2xl font-black bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent tracking-tight hover:opacity-80 transition-opacity" title="Vissza a Visibillbe">
-              Visibill
+            <Link to="/" className="text-2xl tracking-tight select-none hover:opacity-80 transition-opacity" title="Vissza az eaisybillbe">
+              <span className="font-medium text-foreground/80">e</span>
+              <span className="font-bold text-primary">ai</span>
+              <span className="font-medium text-foreground/80">sy</span>
+              <span className="font-medium text-primary">bill</span>
             </Link>
             <span className="text-xl font-light text-muted-foreground">|</span>
             <Link to="/accounty" className="text-2xl font-black bg-gradient-to-br from-red-500 via-red-600 to-red-700 bg-clip-text text-transparent tracking-tight hover:opacity-80 transition-opacity">
