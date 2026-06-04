@@ -93,12 +93,12 @@ const PettyCashPage = () => {
         const all: T[] = [];
         let from = 0;
         while (true) {
-          let q = supabase.from(tableName).select(selectStr);
+          let q: any = (supabase as any).from(tableName).select(selectStr);
           q = buildQuery(q);
           q = q.range(from, from + PAGE_SIZE - 1);
           const { data, error } = await q;
           if (error) throw error;
-          all.push(...(data || []));
+          all.push(...((data as T[]) || []));
           if (!data || data.length < PAGE_SIZE) break;
           from += PAGE_SIZE;
         }
