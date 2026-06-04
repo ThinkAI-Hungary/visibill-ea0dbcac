@@ -495,7 +495,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
               const isRoman = row.type === 'roman';
               const isCapital = row.type === 'capital';
 
-              if (hideZeroRows && !isCapital && row.displayBalance === 0 && (Number(row.previous_year) || 0) === 0) {
+              if (hideZeroRows && !isCapital && row.displayBalance === 0 && (Number((row as any).previous_year) || 0) === 0) {
                 return null;
               }
               const glAccounts = (row.gl_accounts as any[]) || [];
@@ -534,7 +534,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                     )}>
                       {formatValue(row.displayBalance)}
                       {(() => {
-                        const prev = Number(row.previous_year) || 0;
+                        const prev = Number((row as any).previous_year) || 0;
                         const curr = row.displayBalance || 0;
                         if (prev === 0 || curr === prev) return null;
                         const pctChange = Math.round(((curr - prev) / Math.abs(prev)) * 100);
@@ -648,7 +648,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
           <ContextMenuItem onClick={collapseAllPnl} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem className="gap-2" onClick={() => {
-            const csv = 'Sor;Megnevezés;Előző év;Tárgyév\n' + processedData.map(r => `${r.row_code};${r.name};${r.previous_year || 0};${r.displayBalance || 0}`).join('\n');
+            const csv = 'Sor;Megnevezés;Előző év;Tárgyév\n' + processedData.map(r => `${r.row_code};${r.name};${(r as any).previous_year || 0};${r.displayBalance || 0}`).join('\n');
             navigator.clipboard.writeText(csv);
           }}><ClipboardCopy className="w-4 h-4" /> Másolás CSV-ként</ContextMenuItem>
         </ContextMenuContent>
