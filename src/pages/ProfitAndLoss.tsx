@@ -534,7 +534,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                     )}>
                       {formatValue(row.displayBalance)}
                       {(() => {
-                        const prev = Number(row.previous_year) || 0;
+                        const prev = Number((row as any).previous_year) || 0;
                         const curr = row.displayBalance || 0;
                         if (prev === 0 || curr === prev) return null;
                         const pctChange = Math.round(((curr - prev) / Math.abs(prev)) * 100);
