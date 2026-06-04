@@ -514,6 +514,23 @@ const InvoicesPage = () => {
     return ids;
   }, [matchedInvoiceIds, submittedInvoices, submittedToNavMap, submittedIdToTransactionsMap]);
 
+  // Identify invoices that ONLY have suggested (not confirmed) matches → amber row
+  const suggestedOnlyIds = useMemo(() => {
+    const ids = new Set<string>();
+    allTransactions.forEach(tx => {
+      if (!tx.matched_invoice_id) return;
+      const score = tx.confidence_score ?? 1;
+      if (score < 0.9) ids.add(tx.matched_invoice_id);
+    });
+    // Remove any that also have a confirmed match (>= 0.9)
+    allTransactions.forEach(tx => {
+      if (!tx.matched_invoice_id) return;
+      const score = tx.confidence_score ?? 1;
+      if (score >= 0.9) ids.delete(tx.matched_invoice_id);
+    });
+    return ids;
+  }, [allTransactions]);
+
   return (
     <div className="h-full bg-background page-animate">
       <main className="w-full max-w-none px-4 py-4">
@@ -857,8 +874,9 @@ const InvoicesPage = () => {
                                 <TableRow className={cn(
                                   "group cursor-pointer",
                                   selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
-                                  !selectedInvoiceIds.has(invoice.id) && isPaid && "bg-emerald-100/70 dark:bg-emerald-950/40 border-l-2 border-l-emerald-500/60 border-b border-border/40",
-                                  !selectedInvoiceIds.has(invoice.id) && !isPaid && "bg-rose-100/60 dark:bg-rose-950/30 border-l-2 border-l-rose-400/50 border-b border-border/40",
+                                  !selectedInvoiceIds.has(invoice.id) && isPaid && !suggestedOnlyIds.has(invoice.id) && "bg-emerald-100/70 dark:bg-emerald-950/40 border-l-2 border-l-emerald-500/60 border-b border-border/40",
+                                  !selectedInvoiceIds.has(invoice.id) && suggestedOnlyIds.has(invoice.id) && "bg-amber-100/70 dark:bg-amber-950/40 border-l-2 border-l-amber-500/60 border-b border-border/40",
+                                  !selectedInvoiceIds.has(invoice.id) && !isPaid && !suggestedOnlyIds.has(invoice.id) && "bg-rose-100/60 dark:bg-rose-950/30 border-l-2 border-l-rose-400/50 border-b border-border/40",
                                   expandedRowIds.has(invoice.id) && "border-b-0"
                                 )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                   <TableCell className="pl-6">
@@ -1152,8 +1170,9 @@ const InvoicesPage = () => {
                               <TableRow className={cn(
                                 "group cursor-pointer",
                                 selectedSubmittedIds.has(invoice.id) && "bg-primary/5",
-                                !selectedSubmittedIds.has(invoice.id) && extendedMatchedIds.has(invoice.id) && "bg-emerald-100/70 dark:bg-emerald-950/40 border-l-2 border-l-emerald-500/60 border-b border-border/40",
-                                !selectedSubmittedIds.has(invoice.id) && !extendedMatchedIds.has(invoice.id) && "bg-rose-100/60 dark:bg-rose-950/30 border-l-2 border-l-rose-400/50 border-b border-border/40",
+                                !selectedSubmittedIds.has(invoice.id) && extendedMatchedIds.has(invoice.id) && !suggestedOnlyIds.has(invoice.id) && "bg-emerald-100/70 dark:bg-emerald-950/40 border-l-2 border-l-emerald-500/60 border-b border-border/40",
+                                !selectedSubmittedIds.has(invoice.id) && suggestedOnlyIds.has(invoice.id) && "bg-amber-100/70 dark:bg-amber-950/40 border-l-2 border-l-amber-500/60 border-b border-border/40",
+                                !selectedSubmittedIds.has(invoice.id) && !extendedMatchedIds.has(invoice.id) && !suggestedOnlyIds.has(invoice.id) && "bg-rose-100/60 dark:bg-rose-950/30 border-l-2 border-l-rose-400/50 border-b border-border/40",
                                 expandedRowIds.has(invoice.id) && "border-b-0"
                               )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                 <TableCell className="pl-6">
