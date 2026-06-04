@@ -826,7 +826,7 @@ const Auth = () => {
             </h1>
             <p className="text-sm text-muted-foreground">
               {activeTab === 'signin'
-                ? 'Jelentkezz be a fiókodba a folytatáshoz'
+                ? 'Jelentkezz be a fiókodba a folytatáshoz.'
                 : 'Hozd létre a fiókodat néhány egyszerű lépésben'}
             </p>
           </div>
