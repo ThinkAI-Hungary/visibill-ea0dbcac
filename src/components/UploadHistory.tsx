@@ -138,7 +138,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           error_message: null,
         }));
       } else {
-        let query = supabase
+        let query: any = (supabase as any)
           .from(tableName)
           .select('id, file_name, file_size, file_type, file_url, user_id, upload_status, processing_status, created_at, error_message, metadata')
           .gte('created_at', uploadDateFrom)
