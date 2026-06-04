@@ -495,7 +495,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
               const isRoman = row.type === 'roman';
               const isCapital = row.type === 'capital';
 
-              if (hideZeroRows && !isCapital && row.displayBalance === 0 && (Number(row.previous_year) || 0) === 0) {
+              if (hideZeroRows && !isCapital && row.displayBalance === 0 && (Number((row as any).previous_year) || 0) === 0) {
                 return null;
               }
               const glAccounts = (row.gl_accounts as any[]) || [];
