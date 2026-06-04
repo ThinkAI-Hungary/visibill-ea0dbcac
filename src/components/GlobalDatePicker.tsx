@@ -22,7 +22,7 @@ export function GlobalDatePicker() {
   const isCustom = !isThisMonth && !isPreviousMonth && !isThisYear;
 
   return (
-    <div className="flex items-center gap-2 flex-wrap px-6 py-2 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="flex items-center gap-2 flex-wrap px-6 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <span className="text-sm font-medium text-muted-foreground mr-1">Időszak:</span>
       
       {/* Preset buttons */}

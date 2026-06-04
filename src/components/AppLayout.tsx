@@ -17,7 +17,7 @@ const TopBar = memo(function TopBar() {
   const { isEmployee } = useUserRole();
   if (isEmployee) return null;
   return (
-    <div className="print:hidden">
+    <div className="print:hidden border-b border-border">
       <GlobalDatePicker />
     </div>
   );
