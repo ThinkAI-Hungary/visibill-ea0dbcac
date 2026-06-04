@@ -421,23 +421,18 @@ export default function AccountyLayout() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Header */}
-        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-8 shrink-0 relative z-10">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 rounded-md"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <div>
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Szia, <span className="font-semibold text-slate-900 dark:text-slate-100">{user?.user_metadata?.name?.split(' ')[0] || 'Könyvelő'}</span>! 👋
-              </p>
-              <p className="text-xs text-slate-400 dark:text-slate-500">{new Date().toLocaleDateString('hu-HU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-            </div>
+        {/* Date Range Picker + Notifications bar */}
+        <div className="flex items-center bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 relative z-10">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden p-2 ml-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 rounded-md"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="flex-1">
+            <GlobalDatePicker />
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center pr-4 lg:pr-6">
             <Popover>
               <PopoverTrigger asChild>
                 <button className="relative p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-md">
@@ -514,10 +509,7 @@ export default function AccountyLayout() {
               </PopoverContent>
             </Popover>
           </div>
-        </header>
-
-        {/* Date Range Picker — same as eaisybill */}
-        <GlobalDatePicker />
+        </div>
 
         {/* Page Content */}
         <div className="flex-1 overflow-auto p-8">
