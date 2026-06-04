@@ -193,17 +193,17 @@ const TransactionTable = React.memo(function TransactionTable({
   const { data: exchangeRates } = useExchangeRates();
 
   return (
-    <div className="rounded-lg border border-border/50">
+    <div className="rounded-xl border border-border/50 overflow-hidden">
       <table className="w-full caption-bottom text-sm compact-table" style={{ tableLayout: 'fixed' }}>
         <colgroup>
           <col style={{ width: '8%' }} />
-          <col style={{ width: '34%' }} />
+          <col style={{ width: '32%' }} />
           <col style={{ width: '11%' }} />
-          <col style={{ width: '6%' }} />
+          <col style={{ width: '5%' }} />
           <col style={{ width: '14%' }} />
           <col style={{ width: '9%' }} />
-          <col style={{ width: '13%' }} />
-          <col style={{ width: '5%' }} />
+          <col style={{ width: '14%' }} />
+          <col style={{ width: '7%' }} />
         </colgroup>
         <TableHeader>
           <TableRow className="bg-muted hover:bg-muted">

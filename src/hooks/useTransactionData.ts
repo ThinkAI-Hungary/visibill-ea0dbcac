@@ -65,7 +65,8 @@ export function useTransactionData() {
     currency: filters.currency,
     type: filters.type,
     search: filters.search,
-  }), [filters.currency, filters.type, filters.search]);
+    matchStatus: filters.matchStatus,
+  }), [filters.currency, filters.type, filters.search, filters.matchStatus]);
 
   // Filter options (currencies + types) — uses server-side DISTINCT via RPC
   const { data: filterOptions } = useQuery({
@@ -116,6 +117,37 @@ export function useTransactionData() {
       if (filters.search) {
         query = query.or(`description.ilike.%${filters.search}%,type.ilike.%${filters.search}%`);
       }
+
+      // Server-side match status filtering
+      if (filters.matchStatus !== 'all') {
+        if (filters.matchStatus === 'matched') {
+          // matched = no_match_category OR verified+matched OR cash/bank types
+          query = query.or(
+            'match_type.eq.no_match_category,' +
+            'and(is_verified.eq.true,matched_invoice_id.not.is.null),' +
+            'type.in.("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség")'
+          );
+        } else if (filters.matchStatus === 'suggested') {
+          query = query
+            .not('matched_invoice_id', 'is', null)
+            .or('is_verified.is.null,is_verified.eq.false')
+            .not('match_type', 'eq', 'no_match_category')
+            .not('match_type', 'eq', 'no_invoice')
+            .not('match_type', 'eq', 'invoice_missing');
+        } else if (filters.matchStatus === 'unmatched') {
+          query = query
+            .is('matched_invoice_id', null)
+            .not('match_type', 'eq', 'no_match_category')
+            .not('match_type', 'eq', 'no_invoice')
+            .not('match_type', 'eq', 'invoice_missing')
+            .not('type', 'in', '("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség")');
+        } else if (filters.matchStatus === 'no_invoice') {
+          query = query.eq('match_type', 'no_invoice');
+        } else if (filters.matchStatus === 'invoice_missing') {
+          query = query.eq('match_type', 'invoice_missing');
+        }
+      }
+
       query = query.range(from, to);
 
       const { data, error, count } = await query;
@@ -129,7 +161,7 @@ export function useTransactionData() {
   const transactions = queryResult?.rows ?? [];
   const totalCount = queryResult?.totalCount ?? 0;
 
-  // Client-side post-filters
+  // Client-side post-filters (amount range only — matchStatus moved to server)
   const filteredTransactions = useMemo(() => {
     let result = [...transactions];
     if (filters.amountMin) {
@@ -140,11 +172,8 @@ export function useTransactionData() {
       const max = parseFloat(filters.amountMax);
       if (!isNaN(max)) result = result.filter(t => Math.abs(t.amount) <= max);
     }
-    if (filters.matchStatus !== 'all') {
-      result = result.filter(t => computeMatchStatus(t) === filters.matchStatus);
-    }
     return result;
-  }, [transactions, filters.amountMin, filters.amountMax, filters.matchStatus]);
+  }, [transactions, filters.amountMin, filters.amountMax]);
 
   const totalPages = Math.ceil(totalCount / pageSize);
 
