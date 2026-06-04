@@ -13,6 +13,7 @@ export interface TransactionRecord {
   description: string | null;
   currency: string | null;
   type: string | null;
+  confidence_score: number | null;
 }
 
 export interface NavInvoice {
@@ -191,7 +192,7 @@ export function useInvoiceData(
     queryFn: async () => {
       const { data } = await supabase
         .from('transactions')
-        .select('id, matched_invoice_id, transaction_date, amount, description, currency, type')
+        .select('id, matched_invoice_id, transaction_date, amount, description, currency, type, confidence_score')
         .eq('company_id', companyId)
         .not('matched_invoice_id', 'is', null)
         .gte('transaction_date', dateFromFormatted)

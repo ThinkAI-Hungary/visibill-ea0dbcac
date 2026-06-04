@@ -40,6 +40,7 @@ interface MatchedTransaction {
   description: string | null;
   currency: string | null;
   type: string | null;
+  confidence_score: number | null;
 }
 
 interface LinkedInvoice {
@@ -382,19 +383,31 @@ const ExpandedInvoiceRow = ({
             )}
 
             {/* Matched transactions */}
-            {matchedTransactions.map((tx) => (
-              <Card key={tx.id} className="bg-muted/30 border-border/50 expand-stagger-4">
+            {matchedTransactions.map((tx) => {
+              const isSuggested = (tx.confidence_score ?? 1) < 0.9;
+              return (
+              <Card key={tx.id} className={cn(
+                "bg-muted/30 border-border/50 expand-stagger-4",
+                isSuggested && "border-l-2 border-l-amber-500/70"
+              )}>
                 <CardHeader className="py-2 px-3">
                   <CardTitle className="text-xs font-medium flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
                       <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
-                      Párosított tranzakció
+                      {isSuggested ? 'Javasolt tranzakció' : 'Párosított tranzakció'}
                     </span>
                     <div className="flex items-center gap-2">
-                      <Badge variant="success" className="gap-1 text-[10px] h-5">
-                        <CheckCircle2 className="h-2.5 w-2.5" />
-                        Párosított
-                      </Badge>
+                      {isSuggested ? (
+                        <Badge className="gap-1 text-[10px] h-5 bg-amber-500/15 text-amber-500 border-amber-500/30 hover:bg-amber-500/20">
+                          <AlertTriangle className="h-2.5 w-2.5" />
+                          Javasolt
+                        </Badge>
+                      ) : (
+                        <Badge variant="success" className="gap-1 text-[10px] h-5">
+                          <CheckCircle2 className="h-2.5 w-2.5" />
+                          Párosított
+                        </Badge>
+                      )}
                       {tx.type && (
                         <Badge variant="outline" className="text-[10px] h-5">{tx.type}</Badge>
                       )}
@@ -425,7 +438,8 @@ const ExpandedInvoiceRow = ({
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
 
             {/* Separator between transactions and courier reports */}
             {((matchedSubmittedInvoices.length > 0 || matchedNavInvoices.length > 0 || matchedTransactions.length > 0) && matchedCourierReports.length > 0) && (
