@@ -22,6 +22,9 @@ interface AnnualReportData {
 
 const fmt = (val: number) => new Intl.NumberFormat('hu-HU').format(Math.round(val / 1000));
 const fmtFull = (val: number) => new Intl.NumberFormat('hu-HU').format(val);
+const esc = (s: unknown): string => String(s ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 /**
  * Smart filter: only keep rows that have non-zero balance, plus their parent letter/roman rows.
@@ -151,13 +154,13 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
     const liquidityEval = Number(liquidity) >= 1.3 ? 'biztonsággal fedezik' : Number(liquidity) >= 1.0 ? 'éppen fedezik' : 'nem fedezik';
 
     const vars: Record<string, string> = {
-      '[Cégnév]': data.companyName || '___',
-      '[Székhely]': data.companyAddress || '___',
-      '[Adószám]': data.companyTaxNumber || '___',
+      '[Cégnév]': esc(data.companyName || '___'),
+      '[Székhely]': esc(data.companyAddress || '___'),
+      '[Adószám]': esc(data.companyTaxNumber || '___'),
       '[Tárgyév]': String(data.fiscalYear),
       '[Tárgyév+1]': String(data.fiscalYear + 1),
-      '[Képviselő neve]': data.representativeName || '___',
-      '[Képviselő beosztása]': data.representativeRole || 'ügyvezető',
+      '[Képviselő neve]': esc(data.representativeName || '___'),
+      '[Képviselő beosztása]': esc(data.representativeRole || 'ügyvezető'),
       '[Saját tőke]': fmt(equityTotal),
       '[Saját tőke változás]': equityTotal >= equityPrior ? 'növekedett' : 'csökkent',
       '[Mérlegfőösszeg]': fmt(totalAssetVal),
@@ -168,9 +171,12 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
       '[Osztalék]': fmt(data.dividendAmount || 0),
       '[Eredménytartalék]': fmt(data.retainedEarnings || 0),
     };
-    let result = text;
+    // Escape raw user text first, then substitute placeholders (vars are already escaped).
+    let result = esc(text);
     for (const [key, val] of Object.entries(vars)) {
-      result = result.split(key).join(val);
+      // Match the escaped form of [Key] since we escaped the text above.
+      const escapedKey = esc(key);
+      result = result.split(escapedKey).join(val);
     }
     return result;
   };
@@ -249,8 +255,8 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
 
       return `
         <div style="margin-bottom:18px;page-break-inside:avoid;">
-          <h3 style="margin:0 0 4px;color:#1f2937;font-size:12px;border-left:3px solid #10b981;padding-left:8px;">${tmpl.section_title}</h3>
-          <p style="margin:0;font-size:9.5px;line-height:1.6;color:#374151;padding-left:11px;">${cleanText}</p>
+          <h3 style="margin:0 0 4px;color:#1f2937;font-size:12px;border-left:3px solid #10b981;padding-left:8px;">${esc(tmpl.section_title)}</h3>
+          <p style="margin:0;font-size:9.5px;line-height:1.6;color:#374151;padding-left:11px;">${cleanText.replace(/\n/g, '<br>')}</p>
           ${dynamicTableHtml}
         </div>`;
     }).join('');
@@ -261,7 +267,7 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
       const text = replaceVars(s.text || '').replace(/\n/g, '<br>');
       return `
         <div style="margin-bottom:18px;page-break-inside:avoid;">
-          <h3 style="margin:0 0 4px;color:#1f2937;font-size:12px;border-left:3px solid #6366f1;padding-left:8px;">${(s as any).title || 'Egyéni szekció'}</h3>
+          <h3 style="margin:0 0 4px;color:#1f2937;font-size:12px;border-left:3px solid #6366f1;padding-left:8px;">${esc((s as any).title || 'Egyéni szekció')}</h3>
           <p style="margin:0;font-size:9.5px;line-height:1.6;color:#374151;padding-left:11px;">${text}</p>
         </div>`;
     }).join('');
@@ -301,7 +307,7 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
 <html lang="hu">
 <head>
   <meta charset="UTF-8">
-  <title>Beszámoló — ${data.companyName} — ${data.fiscalYear}</title>
+  <title>Beszámoló — ${esc(data.companyName)} — ${data.fiscalYear}</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     @page { size: A4; margin: 18mm 16mm; }
@@ -341,11 +347,11 @@ function buildAnnualReportHtml(data: AnnualReportData): string {
     <div class="cover-title">Éves Beszámoló</div>
     <div class="cover-year">${data.fiscalYear}. üzleti év</div>
     <div class="cover-divider"></div>
-    <div class="cover-company">${data.companyName}</div>
+    <div class="cover-company">${esc(data.companyName)}</div>
     <div class="cover-meta">
-      Készítette: ${data.representativeName}<br>
-      Beosztás: ${data.representativeRole}<br>
-      Kelt: ${data.reportDate}
+      Készítette: ${esc(data.representativeName)}<br>
+      Beosztás: ${esc(data.representativeRole)}<br>
+      Kelt: ${esc(data.reportDate)}
     </div>
     <div class="cover-badge">Generálta: eaisybill</div>
   </div>
