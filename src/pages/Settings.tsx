@@ -75,9 +75,12 @@ function CompanyAccessCard({ companyId, toast }: { companyId: string; toast: any
 
   const generateToken = async () => {
     setGenerating(true);
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    // Cryptographically secure 6-char token (Crockford-style, no ambiguous chars).
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const bytes = new Uint8Array(6);
+    crypto.getRandomValues(bytes);
     let token = '';
-    for (let i = 0; i < 6; i++) token += chars[Math.floor(Math.random() * chars.length)];
+    for (let i = 0; i < 6; i++) token += chars[bytes[i] % chars.length];
     const now = new Date().toISOString();
     const { error } = await supabase.from('companies').update({ share_token: token, share_token_created_at: now } as any).eq('id', companyId);
     if (error) toast({ title: "Hiba", description: "Nem sikerült a kód generálása.", variant: "destructive" });

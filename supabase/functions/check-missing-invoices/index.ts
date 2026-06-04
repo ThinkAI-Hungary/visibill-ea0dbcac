@@ -11,6 +11,13 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // Require shared cron secret to prevent unauthenticated triggering / email spam.
+    const cronSecret = Deno.env.get('CRON_SECRET')
+    const provided = req.headers.get('x-cron-secret')
+    if (!cronSecret || provided !== cronSecret) {
+      return new Response('Forbidden', { status: 403, headers: corsHeaders })
+    }
+
     console.log('[missing-invoices] Starting weekly check...')
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!

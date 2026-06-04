@@ -11,6 +11,12 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    const cronSecret = Deno.env.get('CRON_SECRET')
+    const provided = req.headers.get('x-cron-secret')
+    if (!cronSecret || provided !== cronSecret) {
+      return new Response('Forbidden', { status: 403, headers: corsHeaders })
+    }
+
     console.log('[payment-deadlines] Starting daily check...')
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!

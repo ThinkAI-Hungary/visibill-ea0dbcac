@@ -77,3 +77,6 @@ verify_jwt = true
 
 [functions.management-stats]
 verify_jwt = false
+
+[functions.validate-employee-token]
+verify_jwt = false

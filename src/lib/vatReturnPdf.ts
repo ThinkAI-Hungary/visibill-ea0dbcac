@@ -21,6 +21,10 @@ const fmtEft = (v: number | null | undefined): string => {
   return new Intl.NumberFormat('hu-HU').format(v);
 };
 
+const esc = (s: unknown): string => String(s ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
 const MONTHS = ['január','február','március','április','május','június','július','augusztus','szeptember','október','november','december'];
 
 const SECTIONS = [
@@ -48,8 +52,8 @@ function buildVatReturnHtml(data: VatReturnPdfData): string {
       const isSummary = row.is_summary;
 
       return `<tr class="${isSummary ? 'summary-row' : ''} ${!line ? 'empty-row' : ''}">
-        <td class="row-num">${row.row_number}.</td>
-        <td class="row-label">${row.label}</td>
+        <td class="row-num">${esc(row.row_number)}.</td>
+        <td class="row-label">${esc(row.label)}</td>
         <td class="row-val">${row.has_base ? fmtEft(baseVal) : ''}</td>
         <td class="row-val">${row.has_tax ? fmtEft(taxVal) : ''}</td>
       </tr>`;
@@ -72,8 +76,8 @@ function buildVatReturnHtml(data: VatReturnPdfData): string {
         <tbody>
           ${data.mLines.map(ml => `
             <tr>
-              <td>${ml.partner_name}</td>
-              <td class="mono">${ml.partner_tax_number}</td>
+              <td>${esc(ml.partner_name)}</td>
+              <td class="mono">${esc(ml.partner_tax_number)}</td>
               <td class="num">${ml.invoice_count}</td>
               <td class="num">${fmtEft(ml.base_amount_rounded)}</td>
               <td class="num">${fmtEft(ml.tax_amount_rounded)}</td>
@@ -87,7 +91,7 @@ function buildVatReturnHtml(data: VatReturnPdfData): string {
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>ÁFA Bevallás 2665 — ${periodLabel}</title>
+<title>ÁFA Bevallás 2665 — ${esc(periodLabel)}</title>
 <style>
   @page { size: A4; margin: 15mm 12mm; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -253,7 +257,7 @@ function buildVatReturnHtml(data: VatReturnPdfData): string {
   <div class="form-header">
     <div>
       <h1>ÁLTALÁNOS FORGALMI ADÓ BEVALLÁS</h1>
-      <div class="period-info">Bevallási időszak: <strong>${periodLabel}</strong></div>
+      <div class="period-info">Bevallási időszak: <strong>${esc(periodLabel)}</strong></div>
     </div>
     <div style="text-align:right;">
       <div class="form-number">2665</div>
@@ -262,14 +266,14 @@ function buildVatReturnHtml(data: VatReturnPdfData): string {
   </div>
 
   <div class="company-info">
-    <div><span class="label">Adózó neve:</span> <span class="value">${data.companyName}</span></div>
-    <div><span class="label">Adószám:</span> <span class="value">${data.companyTaxNumber || '—'}</span></div>
-    <div><span class="label">Székhely:</span> <span class="value">${data.companyAddress || '—'}</span></div>
+    <div><span class="label">Adózó neve:</span> <span class="value">${esc(data.companyName)}</span></div>
+    <div><span class="label">Adószám:</span> <span class="value">${esc(data.companyTaxNumber || '—')}</span></div>
+    <div><span class="label">Székhely:</span> <span class="value">${esc(data.companyAddress || '—')}</span></div>
     <div><span class="label">Bevallás típusa:</span> <span class="value">${data.frequency === 'H' ? 'Havi' : 'Negyedéves'}</span></div>
   </div>
 
   ${SECTIONS.filter(s => s.key === 'payable').map(sec => `
-    <div class="section-header">${sec.title}</div>
+    <div class="section-header">${esc(sec.title)}</div>
     <table class="main-table">
       <thead>
         <tr><th style="width:36px;">Sor</th><th>Megnevezés</th><th style="width:80px;">Adóalap (eFt)</th><th style="width:80px;">Adó (eFt)</th></tr>
