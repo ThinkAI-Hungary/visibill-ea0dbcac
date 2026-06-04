@@ -4,7 +4,15 @@ import { AccountyRoleProvider } from './AccountyRoleContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { FeedbackFab } from '@/components/FeedbackFab';
+import { GlobalDatePicker } from '@/components/GlobalDatePicker';
 import { useAccountyKpis, useAccountyClients } from '@/hooks/useAccountyData';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   Briefcase, 
   FileWarning, 
@@ -27,17 +35,10 @@ import {
   FileText,
   TrendingUp,
   Building2,
-  Users
+  Users,
+  X,
+  Menu,
 } from 'lucide-react';
-import { Menu } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -157,8 +158,9 @@ export default function AccountyLayout() {
               <span className="font-medium text-primary">bill</span>
             </Link>
             <span className="text-xl font-light text-muted-foreground">|</span>
-            <Link to="/accounty" className="text-2xl font-black bg-gradient-to-br from-red-500 via-red-600 to-red-700 bg-clip-text text-transparent tracking-tight hover:opacity-80 transition-opacity">
+            <Link to="/accounty" className="relative text-2xl font-black bg-gradient-to-br from-red-500 via-red-600 to-red-700 bg-clip-text text-transparent tracking-tight hover:opacity-80 transition-opacity">
               Accounty
+              <span className="absolute -bottom-1.5 left-0 right-0 h-[2px] rounded-full bg-gradient-to-r from-red-500 via-red-600 to-red-700" />
             </Link>
           </div>
         </div>
@@ -367,59 +369,53 @@ export default function AccountyLayout() {
           </ul>
         </nav>
 
-        {/* User Profile Footer */}
-        <div className="border-t border-primary/30 shrink-0">
+        {/* User Profile Footer — matching eaisybill sidebar style */}
+        <div className="mt-auto border-t border-border">
           <div className="p-4 space-y-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-3 cursor-pointer hover:bg-primary/10 p-2 rounded-md transition-colors group">
-                  <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">
-                    {getUserInitials()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {user?.user_metadata?.name || 'Felhasználó'}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-                  </div>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.user_metadata?.avatar_url} />
+                <AvatarFallback className="text-xs">{getUserInitials()}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {user?.user_metadata?.name || 'Felhasználó'}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+              >
+                <div className="relative h-4 w-4">
+                  <Sun className={`h-4 w-4 absolute transition-all ${theme === 'dark' ? 'animate-rotate-out' : 'animate-rotate-in'}`} />
+                  <Moon className={`h-4 w-4 absolute transition-all ${theme === 'dark' ? 'animate-rotate-in' : 'animate-rotate-out'}`} />
                 </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 mb-2" align="start" side="top">
-                <DropdownMenuLabel className="font-semibold">Fiókom</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  <span>Profil</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="cursor-pointer flex items-center gap-2"
-                  onClick={() => navigate('/accounty/settings')}
-                >
-                  <Settings className="w-4 h-4" />
-                  <span>Beállítások</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="cursor-pointer flex items-center gap-2"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setTheme(theme === 'dark' ? 'light' : 'dark');
-                  }}
-                >
-                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                  <span>{theme === 'dark' ? 'Világos mód' : 'Sötét mód'}</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  className="cursor-pointer flex items-center gap-2 text-red-600 dark:text-red-500 focus:bg-red-50 dark:focus:bg-red-950 focus:text-red-700 dark:focus:text-red-400"
-                  onClick={async () => { await signOut(); navigate('/auth'); }}
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Kijelentkezés</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-2 w-full">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" asChild className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
+                    <Link to="/accounty/settings">
+                      <Settings className="h-5 w-5" />
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Beállítások</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" onClick={async () => { await signOut(); navigate('/auth'); }} className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Kilépés</TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
         </div>
       </aside>
 
@@ -520,6 +516,9 @@ export default function AccountyLayout() {
           </div>
         </header>
 
+        {/* Date Range Picker — same as eaisybill */}
+        <GlobalDatePicker />
+
         {/* Page Content */}
         <div className="flex-1 overflow-auto p-8">
           <AccountyRoleProvider>
@@ -544,6 +543,12 @@ export default function AccountyLayout() {
                 if (e.key === 'Escape') setCmdOpen(false);
               }}
             />
+            <button
+              onClick={() => { setCmdOpen(false); setCmdQuery(''); }}
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
           <div className="max-h-[320px] overflow-y-auto p-2">
             {filteredPages.length > 0 && (
