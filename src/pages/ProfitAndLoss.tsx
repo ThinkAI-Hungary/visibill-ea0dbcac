@@ -648,7 +648,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
           <ContextMenuItem onClick={collapseAllPnl} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem className="gap-2" onClick={() => {
-            const csv = 'Sor;Megnevezés;Előző év;Tárgyév\n' + processedData.map(r => `${r.row_code};${r.name};${r.previous_year || 0};${r.displayBalance || 0}`).join('\n');
+            const csv = 'Sor;Megnevezés;Előző év;Tárgyév\n' + processedData.map(r => `${r.row_code};${r.name};${(r as any).previous_year || 0};${r.displayBalance || 0}`).join('\n');
             navigator.clipboard.writeText(csv);
           }}><ClipboardCopy className="w-4 h-4" /> Másolás CSV-ként</ContextMenuItem>
         </ContextMenuContent>
