@@ -89,12 +89,13 @@ const TransactionsPage = () => {
         .lte('transaction_date', dateToStr);
       if (error) throw error;
       const rows = data || [];
-      let matched = 0, suggested = 0, unmatched = 0, inflow = 0, outflow = 0;
+      let matched = 0, suggested = 0, unmatched = 0, autoSettled = 0, inflow = 0, outflow = 0;
       for (const t of rows) {
         const status = computeMatchStatus(t);
         if (status === 'matched') matched++;
         else if (status === 'suggested') suggested++;
-        else unmatched++;
+        else if (status === 'auto_settled') autoSettled++;
+        else unmatched++;  // includes no_invoice, invoice_missing, unmatched
         
         const currency = t.currency || 'HUF';
         const rate = exchangeRates?.[currency] ?? 1;
@@ -103,13 +104,13 @@ const TransactionsPage = () => {
         if (hufAmount > 0) inflow += hufAmount;
         else outflow += Math.abs(hufAmount);
       }
-      return { matched, suggested, unmatched, inflow, outflow, total: rows.length };
+      return { matched, suggested, unmatched, autoSettled, inflow, outflow, total: rows.length };
     },
     enabled: !!selectedCompany?.id && !!dateFromStr && !!dateToStr && !!exchangeRates,
     staleTime: 30_000,
   });
 
-  const safeKpis = kpis || { matched: 0, suggested: 0, unmatched: 0, inflow: 0, outflow: 0, total: 0 };
+  const safeKpis = kpis || { matched: 0, suggested: 0, unmatched: 0, autoSettled: 0, inflow: 0, outflow: 0, total: 0 };
 
   // Details dialog state
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -208,7 +209,7 @@ const TransactionsPage = () => {
 
           {/* ── KPI Summary Bar (T1) ── */}
           {activeTab === 'general' && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 print:hidden">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4 print:hidden">
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-primary/10 text-primary p-2 rounded-lg"><FileText className="w-4 h-4" /></div>
               <div><div className="text-lg font-bold tabular-nums">{safeKpis.total.toLocaleString('hu-HU')}</div><div className="text-[11px] text-muted-foreground">Összes tranzakció</div></div>
@@ -225,6 +226,10 @@ const TransactionsPage = () => {
                 </div>
                 <div className="text-[11px] text-muted-foreground">Párosított / Javasolt / Nincs</div>
               </div>
+            </div>
+            <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
+              <div className="bg-blue-500/10 text-blue-500 p-2 rounded-lg"><Settings className="w-4 h-4" /></div>
+              <div><div className="text-lg font-bold tabular-nums text-blue-500">{safeKpis.autoSettled}</div><div className="text-[11px] text-muted-foreground">Rendezett (nincs számla)</div></div>
             </div>
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-emerald-500/10 text-emerald-600 p-2 rounded-lg"><ArrowUpRight className="w-4 h-4" /></div>

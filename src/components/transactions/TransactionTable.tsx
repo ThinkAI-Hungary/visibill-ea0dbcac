@@ -24,6 +24,9 @@ const getRowBackgroundClass = (transaction: Transaction): string => {
   if (status === 'suggested') {
     return 'bg-amber-100/60 dark:bg-amber-950/40 border-l-2 border-l-amber-500/60 border-b border-border/40';
   }
+  if (status === 'auto_settled') {
+    return 'bg-blue-100/50 dark:bg-blue-950/30 border-l-2 border-l-blue-500/50 border-b border-border/40';
+  }
   if (status === 'no_invoice') {
     return 'bg-purple-100/60 dark:bg-purple-950/40 border-l-2 border-l-purple-500/60 border-b border-border/40';
   }
@@ -128,6 +131,7 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
               <div className="flex items-center justify-center gap-1">
                 {matchStatus === 'matched' && <><CheckCircle2 className="h-3.5 w-3.5 text-success" /><span className="text-[10px] font-medium text-emerald-600">Párosított</span></>}
                 {matchStatus === 'suggested' && <><AlertCircle className="h-3.5 w-3.5 text-warning" /><span className="text-[10px] font-medium text-amber-600">Javasolt</span></>}
+                {matchStatus === 'auto_settled' && <><Settings className="h-3.5 w-3.5 text-blue-500" /><span className="text-[10px] font-medium text-blue-600 dark:text-blue-400">Rendezett</span></>}
                 {matchStatus === 'unmatched' && <><HelpCircle className="h-3.5 w-3.5 text-destructive" /><span className="text-[10px] font-medium text-rose-500">Nincs</span></>}
                 {matchStatus === 'no_invoice' && <><Ban className="h-3.5 w-3.5 text-purple-500" /><span className="text-[10px] font-medium text-purple-600 dark:text-purple-400">Nincs számla</span></>}
                 {matchStatus === 'invoice_missing' && <><UploadCloud className="h-3.5 w-3.5 text-sky-500" /><span className="text-[10px] font-medium text-sky-600 dark:text-sky-400">Feltöltendő</span></>}
@@ -138,6 +142,7 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
               {matchStatus === 'matched' && transaction.match_type === 'auto' && 'Automatikusan jóváhagyva (≥97%)'}
               {matchStatus === 'matched' && transaction.match_type !== 'auto' && 'Párosított és jóváhagyott'}
               {matchStatus === 'suggested' && `Javasolt párosítás ${transaction.confidence_score ? `(${Math.round(transaction.confidence_score * 100)}%)` : ''}`}
+              {matchStatus === 'auto_settled' && 'Rendezett — nem igényel számlát (bankköltség, ATM, stb.)'}
               {matchStatus === 'unmatched' && 'Nincs párosítva'}
               {matchStatus === 'no_invoice' && 'Nincs hozzá számla — könyvelő feladata'}
               {matchStatus === 'invoice_missing' && 'Számla nincs feltöltve — fel kell tölteni'}

@@ -29,7 +29,7 @@ export function getPaymentStatusBadge(transactionId: string | null | undefined) 
 
 // ── Transactions ─────────────────────────────────────────────────────
 
-export type MatchStatus = 'matched' | 'suggested' | 'unmatched' | 'no_invoice' | 'invoice_missing';
+export type MatchStatus = 'matched' | 'suggested' | 'unmatched' | 'no_invoice' | 'invoice_missing' | 'auto_settled';
 
 interface TransactionLike {
   matched_invoice_id: string | null;
@@ -53,13 +53,13 @@ export function computeMatchStatus(transaction: TransactionLike): MatchStatus {
   if (transaction.match_type === 'no_invoice') return 'no_invoice';
   if (transaction.match_type === 'invoice_missing') return 'invoice_missing';
 
-  // Special cases always count as matched
+  // Auto-settled: categories that don't need an invoice
   if (
     transaction.match_type === 'no_match_category' ||
     CASH_TYPES.includes(t) ||
     t === 'bankköltség'
   ) {
-    return 'matched';
+    return 'auto_settled';
   }
 
   if (transaction.is_verified && transaction.matched_invoice_id) {

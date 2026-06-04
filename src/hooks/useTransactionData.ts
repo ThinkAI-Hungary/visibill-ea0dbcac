@@ -121,10 +121,14 @@ export function useTransactionData() {
       // Server-side match status filtering
       if (filters.matchStatus !== 'all') {
         if (filters.matchStatus === 'matched') {
-          // matched = no_match_category OR verified+matched OR cash/bank types
+          // matched = verified + has invoice (actual pairing only)
+          query = query
+            .eq('is_verified', true)
+            .not('matched_invoice_id', 'is', null);
+        } else if (filters.matchStatus === 'auto_settled') {
+          // auto_settled = no_match_category OR cash/bank types
           query = query.or(
             'match_type.eq.no_match_category,' +
-            'and(is_verified.eq.true,matched_invoice_id.not.is.null),' +
             'type.in.("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség")'
           );
         } else if (filters.matchStatus === 'suggested') {
@@ -225,6 +229,7 @@ export function useTransactionData() {
       const matchStatus = computeMatchStatus(transaction);
       const statusText = matchStatus === 'matched' ? 'Párosított'
         : matchStatus === 'suggested' ? 'Javasolt'
+        : matchStatus === 'auto_settled' ? 'Rendezett'
         : matchStatus === 'no_invoice' ? 'Nincs hozzá számla'
         : matchStatus === 'invoice_missing' ? 'Számla nincs feltöltve'
         : 'Párosítatlan';
