@@ -115,6 +115,60 @@ export type Database = {
           },
         ]
       }
+      accounty_cafeteria: {
+        Row: {
+          amount: number
+          benefit_type: string
+          card_number: string | null
+          created_at: string | null
+          cycle_id: string | null
+          employment_id: string
+          id: string
+          provider: string | null
+          status: string | null
+          tax_rate: number | null
+        }
+        Insert: {
+          amount: number
+          benefit_type: string
+          card_number?: string | null
+          created_at?: string | null
+          cycle_id?: string | null
+          employment_id: string
+          id?: string
+          provider?: string | null
+          status?: string | null
+          tax_rate?: number | null
+        }
+        Update: {
+          amount?: number
+          benefit_type?: string
+          card_number?: string | null
+          created_at?: string | null
+          cycle_id?: string | null
+          employment_id?: string
+          id?: string
+          provider?: string | null
+          status?: string | null
+          tax_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_cafeteria_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "accounty_payroll_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounty_cafeteria_employment_id_fkey"
+            columns: ["employment_id"]
+            isOneToOne: false
+            referencedRelation: "accounty_employments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accounty_communication_preferences: {
         Row: {
           auto_reminder: boolean | null
@@ -233,6 +287,493 @@ export type Database = {
           },
         ]
       }
+      accounty_declarations: {
+        Row: {
+          created_at: string | null
+          declaration_type: string
+          document_url: string | null
+          employee_id: string
+          id: string
+          nav_receipt_id: string | null
+          parameters: Json
+          status: string | null
+          updated_at: string | null
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          declaration_type: string
+          document_url?: string | null
+          employee_id: string
+          id?: string
+          nav_receipt_id?: string | null
+          parameters?: Json
+          status?: string | null
+          updated_at?: string | null
+          valid_from: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          declaration_type?: string
+          document_url?: string | null
+          employee_id?: string
+          id?: string
+          nav_receipt_id?: string | null
+          parameters?: Json
+          status?: string | null
+          updated_at?: string | null
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_declarations_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "accounty_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounty_employees: {
+        Row: {
+          address: Json | null
+          avatar_url: string | null
+          bank_account: string | null
+          birth_date: string | null
+          birth_name: string | null
+          birth_place: string | null
+          company_id: string
+          created_at: string | null
+          email: string | null
+          first_name: string
+          gender: string | null
+          iban: string | null
+          id: string
+          id_card_number: string | null
+          last_name: string
+          mothers_name: string | null
+          nationality: string | null
+          phone: string | null
+          status: string | null
+          taj_number: string | null
+          tax_id: string | null
+          temp_address: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: Json | null
+          avatar_url?: string | null
+          bank_account?: string | null
+          birth_date?: string | null
+          birth_name?: string | null
+          birth_place?: string | null
+          company_id: string
+          created_at?: string | null
+          email?: string | null
+          first_name: string
+          gender?: string | null
+          iban?: string | null
+          id?: string
+          id_card_number?: string | null
+          last_name: string
+          mothers_name?: string | null
+          nationality?: string | null
+          phone?: string | null
+          status?: string | null
+          taj_number?: string | null
+          tax_id?: string | null
+          temp_address?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: Json | null
+          avatar_url?: string | null
+          bank_account?: string | null
+          birth_date?: string | null
+          birth_name?: string | null
+          birth_place?: string | null
+          company_id?: string
+          created_at?: string | null
+          email?: string | null
+          first_name?: string
+          gender?: string | null
+          iban?: string | null
+          id?: string
+          id_card_number?: string | null
+          last_name?: string
+          mothers_name?: string | null
+          nationality?: string | null
+          phone?: string | null
+          status?: string | null
+          taj_number?: string | null
+          tax_id?: string | null
+          temp_address?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_employees_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounty_employments: {
+        Row: {
+          base_salary: number | null
+          company_id: string
+          cost_center: string | null
+          created_at: string | null
+          department: string | null
+          employee_id: string
+          employment_type: string
+          end_date: string | null
+          feor_code: string | null
+          id: string
+          is_fixed_term: boolean | null
+          is_insured: boolean | null
+          job_code: string
+          job_serial_number: number | null
+          job_title: string | null
+          location_id: string | null
+          metadata: Json | null
+          probation_end: string | null
+          remote_work_days_per_week: number | null
+          remote_work_type: string | null
+          salary_type: string | null
+          start_date: string
+          status: string | null
+          updated_at: string | null
+          weekly_hours: number | null
+        }
+        Insert: {
+          base_salary?: number | null
+          company_id: string
+          cost_center?: string | null
+          created_at?: string | null
+          department?: string | null
+          employee_id: string
+          employment_type: string
+          end_date?: string | null
+          feor_code?: string | null
+          id?: string
+          is_fixed_term?: boolean | null
+          is_insured?: boolean | null
+          job_code: string
+          job_serial_number?: number | null
+          job_title?: string | null
+          location_id?: string | null
+          metadata?: Json | null
+          probation_end?: string | null
+          remote_work_days_per_week?: number | null
+          remote_work_type?: string | null
+          salary_type?: string | null
+          start_date: string
+          status?: string | null
+          updated_at?: string | null
+          weekly_hours?: number | null
+        }
+        Update: {
+          base_salary?: number | null
+          company_id?: string
+          cost_center?: string | null
+          created_at?: string | null
+          department?: string | null
+          employee_id?: string
+          employment_type?: string
+          end_date?: string | null
+          feor_code?: string | null
+          id?: string
+          is_fixed_term?: boolean | null
+          is_insured?: boolean | null
+          job_code?: string
+          job_serial_number?: number | null
+          job_title?: string | null
+          location_id?: string | null
+          metadata?: Json | null
+          probation_end?: string | null
+          remote_work_days_per_week?: number | null
+          remote_work_type?: string | null
+          salary_type?: string | null
+          start_date?: string
+          status?: string | null
+          updated_at?: string | null
+          weekly_hours?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_employments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounty_employments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "accounty_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounty_filings: {
+        Row: {
+          channel: string | null
+          company_id: string
+          created_at: string | null
+          error_codes: Json | null
+          filing_type: string
+          id: string
+          nav_receipt_id: string | null
+          nav_receipt_status: string | null
+          period_month: number | null
+          period_quarter: number | null
+          period_year: number | null
+          signed_at: string | null
+          signed_by: string | null
+          status: string | null
+          submitted_at: string | null
+          updated_at: string | null
+          xml_data: string | null
+        }
+        Insert: {
+          channel?: string | null
+          company_id: string
+          created_at?: string | null
+          error_codes?: Json | null
+          filing_type: string
+          id?: string
+          nav_receipt_id?: string | null
+          nav_receipt_status?: string | null
+          period_month?: number | null
+          period_quarter?: number | null
+          period_year?: number | null
+          signed_at?: string | null
+          signed_by?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          xml_data?: string | null
+        }
+        Update: {
+          channel?: string | null
+          company_id?: string
+          created_at?: string | null
+          error_codes?: Json | null
+          filing_type?: string
+          id?: string
+          nav_receipt_id?: string | null
+          nav_receipt_status?: string | null
+          period_month?: number | null
+          period_quarter?: number | null
+          period_year?: number | null
+          signed_at?: string | null
+          signed_by?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          xml_data?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_filings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounty_garnishments: {
+        Row: {
+          created_at: string | null
+          creditor_account: string | null
+          creditor_name: string | null
+          decree_number: string | null
+          employee_id: string
+          garnishment_type: string
+          id: string
+          is_active: boolean | null
+          max_deduction_pct: number | null
+          monthly_deduction: number | null
+          original_amount: number | null
+          priority: number | null
+          remaining_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          creditor_account?: string | null
+          creditor_name?: string | null
+          decree_number?: string | null
+          employee_id: string
+          garnishment_type: string
+          id?: string
+          is_active?: boolean | null
+          max_deduction_pct?: number | null
+          monthly_deduction?: number | null
+          original_amount?: number | null
+          priority?: number | null
+          remaining_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          creditor_account?: string | null
+          creditor_name?: string | null
+          decree_number?: string | null
+          employee_id?: string
+          garnishment_type?: string
+          id?: string
+          is_active?: boolean | null
+          max_deduction_pct?: number | null
+          monthly_deduction?: number | null
+          original_amount?: number | null
+          priority?: number | null
+          remaining_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_garnishments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "accounty_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounty_job_codes: {
+        Row: {
+          code: string
+          description: string | null
+          is_insured: boolean | null
+          min_contribution_base_rule: string | null
+          name: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          code: string
+          description?: string | null
+          is_insured?: boolean | null
+          min_contribution_base_rule?: string | null
+          name: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          code?: string
+          description?: string | null
+          is_insured?: boolean | null
+          min_contribution_base_rule?: string | null
+          name?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
+      accounty_leaves: {
+        Row: {
+          created_at: string | null
+          cycle_id: string | null
+          daily_rate: number | null
+          days: number
+          employment_id: string
+          end_date: string
+          id: string
+          leave_type: string
+          metadata: Json | null
+          start_date: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          cycle_id?: string | null
+          daily_rate?: number | null
+          days: number
+          employment_id: string
+          end_date: string
+          id?: string
+          leave_type: string
+          metadata?: Json | null
+          start_date: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          cycle_id?: string | null
+          daily_rate?: number | null
+          days?: number
+          employment_id?: string
+          end_date?: string
+          id?: string
+          leave_type?: string
+          metadata?: Json | null
+          start_date?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_leaves_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "accounty_payroll_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounty_leaves_employment_id_fkey"
+            columns: ["employment_id"]
+            isOneToOne: false
+            referencedRelation: "accounty_employments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounty_messages: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          is_from_client: boolean | null
+          message: string
+          sender_name: string
+          sender_user_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          is_from_client?: boolean | null
+          message: string
+          sender_name: string
+          sender_user_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          is_from_client?: boolean | null
+          message?: string
+          sender_name?: string
+          sender_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_messages_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accounty_missing_items: {
         Row: {
           amount: number | null
@@ -339,6 +880,182 @@ export type Database = {
           },
         ]
       }
+      accounty_payroll_calculations: {
+        Row: {
+          cafeteria_tax: Json | null
+          created_at: string | null
+          cycle_id: string
+          deductions: Json | null
+          employment_id: string
+          gross_salary: number | null
+          id: string
+          metadata: Json | null
+          net_salary: number | null
+          szja_amount: number | null
+          szja_base: number | null
+          szocho_amount: number | null
+          szocho_credits: Json | null
+          tax_credits: Json | null
+          tb_amount: number | null
+        }
+        Insert: {
+          cafeteria_tax?: Json | null
+          created_at?: string | null
+          cycle_id: string
+          deductions?: Json | null
+          employment_id: string
+          gross_salary?: number | null
+          id?: string
+          metadata?: Json | null
+          net_salary?: number | null
+          szja_amount?: number | null
+          szja_base?: number | null
+          szocho_amount?: number | null
+          szocho_credits?: Json | null
+          tax_credits?: Json | null
+          tb_amount?: number | null
+        }
+        Update: {
+          cafeteria_tax?: Json | null
+          created_at?: string | null
+          cycle_id?: string
+          deductions?: Json | null
+          employment_id?: string
+          gross_salary?: number | null
+          id?: string
+          metadata?: Json | null
+          net_salary?: number | null
+          szja_amount?: number | null
+          szja_base?: number | null
+          szocho_amount?: number | null
+          szocho_credits?: Json | null
+          tax_credits?: Json | null
+          tb_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_payroll_calculations_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "accounty_payroll_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounty_payroll_calculations_employment_id_fkey"
+            columns: ["employment_id"]
+            isOneToOne: false
+            referencedRelation: "accounty_employments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounty_payroll_cycles: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          company_id: string
+          created_at: string | null
+          current_step: number | null
+          id: string
+          month: number
+          notes: string | null
+          status: string | null
+          updated_at: string | null
+          year: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id: string
+          created_at?: string | null
+          current_step?: number | null
+          id?: string
+          month: number
+          notes?: string | null
+          status?: string | null
+          updated_at?: string | null
+          year: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          company_id?: string
+          created_at?: string | null
+          current_step?: number | null
+          id?: string
+          month?: number
+          notes?: string | null
+          status?: string | null
+          updated_at?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_payroll_cycles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounty_payroll_items: {
+        Row: {
+          amount: number
+          created_at: string | null
+          cycle_id: string
+          days: number | null
+          description: string | null
+          employment_id: string
+          hours: number | null
+          id: string
+          is_deduction: boolean | null
+          item_type: string
+          rate_pct: number | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          cycle_id: string
+          days?: number | null
+          description?: string | null
+          employment_id: string
+          hours?: number | null
+          id?: string
+          is_deduction?: boolean | null
+          item_type: string
+          rate_pct?: number | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          cycle_id?: string
+          days?: number | null
+          description?: string | null
+          employment_id?: string
+          hours?: number | null
+          id?: string
+          is_deduction?: boolean | null
+          item_type?: string
+          rate_pct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_payroll_items_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "accounty_payroll_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounty_payroll_items_employment_id_fkey"
+            columns: ["employment_id"]
+            isOneToOne: false
+            referencedRelation: "accounty_employments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accounty_portal_tokens: {
         Row: {
           company_id: string
@@ -386,16 +1103,45 @@ export type Database = {
           },
         ]
       }
+      accounty_tax_parameters: {
+        Row: {
+          description: string | null
+          id: string
+          legal_reference: string | null
+          parameter_key: string
+          parameter_value: number
+          tax_year: number
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          legal_reference?: string | null
+          parameter_key: string
+          parameter_value: number
+          tax_year: number
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          legal_reference?: string | null
+          parameter_key?: string
+          parameter_value?: number
+          tax_year?: number
+        }
+        Relationships: []
+      }
       accounty_tax_profiles: {
         Row: {
           company_id: string
           contribution_frequency: string | null
           created_at: string | null
+          has_payroll: boolean | null
           id: string
           is_kata: boolean | null
           is_kiva: boolean | null
           last_nav_sync_at: string | null
           nav_synced: boolean | null
+          payroll_settings: Json | null
           tax_group: string | null
           updated_at: string | null
           vat_frequency: string | null
@@ -404,11 +1150,13 @@ export type Database = {
           company_id: string
           contribution_frequency?: string | null
           created_at?: string | null
+          has_payroll?: boolean | null
           id?: string
           is_kata?: boolean | null
           is_kiva?: boolean | null
           last_nav_sync_at?: string | null
           nav_synced?: boolean | null
+          payroll_settings?: Json | null
           tax_group?: string | null
           updated_at?: string | null
           vat_frequency?: string | null
@@ -417,11 +1165,13 @@ export type Database = {
           company_id?: string
           contribution_frequency?: string | null
           created_at?: string | null
+          has_payroll?: boolean | null
           id?: string
           is_kata?: boolean | null
           is_kiva?: boolean | null
           last_nav_sync_at?: string | null
           nav_synced?: boolean | null
+          payroll_settings?: Json | null
           tax_group?: string | null
           updated_at?: string | null
           vat_frequency?: string | null
@@ -432,6 +1182,60 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: true
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounty_timesheets: {
+        Row: {
+          created_at: string | null
+          cycle_id: string
+          document_url: string | null
+          employment_id: string
+          id: string
+          is_verified: boolean | null
+          ocr_confidence: number | null
+          ocr_data: Json | null
+          updated_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          cycle_id: string
+          document_url?: string | null
+          employment_id: string
+          id?: string
+          is_verified?: boolean | null
+          ocr_confidence?: number | null
+          ocr_data?: Json | null
+          updated_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          cycle_id?: string
+          document_url?: string | null
+          employment_id?: string
+          id?: string
+          is_verified?: boolean | null
+          ocr_confidence?: number | null
+          ocr_data?: Json | null
+          updated_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounty_timesheets_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "accounty_payroll_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounty_timesheets_employment_id_fkey"
+            columns: ["employment_id"]
+            isOneToOne: false
+            referencedRelation: "accounty_employments"
             referencedColumns: ["id"]
           },
         ]
