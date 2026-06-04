@@ -51,30 +51,24 @@ export default function EmployeeRegister() {
 
     const validateToken = async () => {
       try {
-        // Look up the employee_rates record by token, join company name
-        const { data, error } = await supabase
-          .from('employee_rates')
-          .select('id, employee_name, company_id, employee_type')
-          .eq('registration_token', token)
-          .is('user_id', null) // Only valid if not already linked
-          .maybeSingle();
+        // Token validation happens server-side via secure edge function — anon
+        // clients can no longer read employee_rates or companies directly.
+        const { data, error } = await supabase.functions.invoke('validate-employee-token', {
+          body: { token },
+        });
 
-        if (error || !data) {
+        if (error || !data?.valid || !data?.data) {
           setPageState('invalid');
           return;
         }
 
-        // Get company name
-        const { data: company } = await supabase
-          .from('companies')
-          .select('name')
-          .eq('id', data.company_id)
-          .single();
-
+        const emp = data.data;
         setTokenData({
-          ...data,
-          employee_type: data.employee_type as TokenData['employee_type'],
-          company_name: company?.name || 'Ismeretlen cég',
+          id: emp.id,
+          employee_name: emp.employee_name,
+          company_id: emp.company_id,
+          employee_type: emp.employee_type as TokenData['employee_type'],
+          company_name: emp.company_name || 'Ismeretlen cég',
         });
         setPageState('valid');
       } catch {
