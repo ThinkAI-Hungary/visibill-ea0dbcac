@@ -645,25 +645,11 @@ export default function ClientDetailsPage() {
                                           if (!id) return;
                                           const contactEmail = notifPrefs.contactEmail || 'nincs-megadva@example.com';
 
-                                          // Generate real portal token
+                                          // Generate real portal token using the hook (with specific item IDs)
                                           let portalLink = `${window.location.origin}/portal/demo-fallback`;
                                           try {
-                                            const { data: { user } } = await supabase.auth.getUser();
-                                            const token = crypto.randomUUID();
-                                            const expiresAt = new Date();
-                                            expiresAt.setDate(expiresAt.getDate() + 30);
-                                            const { error: tokenError } = await supabase
-                                              .from('accounty_portal_tokens')
-                                              .insert({
-                                                company_id: id,
-                                                token,
-                                                created_by: user?.id,
-                                                expires_at: expiresAt.toISOString(),
-                                                is_active: true,
-                                              });
-                                            if (!tokenError) {
-                                              portalLink = `${window.location.origin}/portal/${token}`;
-                                            }
+                                            const result = await generateToken.mutateAsync({ companyId: id, requestedItemIds: [item.id] });
+                                            portalLink = `${window.location.origin}/portal/${result.token}`;
                                           } catch (err) {
                                             console.error('Portal token creation failed:', err);
                                           }
@@ -1035,7 +1021,7 @@ export default function ClientDetailsPage() {
       )}
 
       {/* Bérszámfejtés Tab */}
-      {activeTab === tabs[2] && (
+      {activeTab === 'Bérszámfejtés' && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Quick actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1105,7 +1091,7 @@ export default function ClientDetailsPage() {
       )}
 
       {/* Beállítások Tab */}
-      {activeTab === tabs[4] && (
+      {activeTab === 'Beállítások' && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
           {/* Értesítési Preferenciák */}

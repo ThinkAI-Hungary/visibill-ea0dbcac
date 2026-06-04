@@ -712,7 +712,7 @@ export default function ApprovalQueuePage() {
                   <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-border">
                     <ExternalLink className="w-4 h-4 text-primary shrink-0" />
                     <span className="text-xs text-slate-500 dark:text-slate-400">Magic Link:</span>
-                    <span className="text-xs text-primary font-mono truncate flex-1">{selectedMessage.portalLink}</span>
+                    <a href={selectedMessage.portalLink} target="_blank" rel="noopener noreferrer" className="text-xs text-primary font-mono truncate flex-1 hover:underline cursor-pointer">{selectedMessage.portalLink}</a>
                   </div>
                 )}
               </div>

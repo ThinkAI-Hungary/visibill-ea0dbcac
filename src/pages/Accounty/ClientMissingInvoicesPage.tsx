@@ -15,7 +15,8 @@ import {
   XCircle,
   MoreVertical,
   Trash2,
-  Loader2
+  Loader2,
+  FileText
 } from 'lucide-react';
 import {
   Dialog,
@@ -33,8 +34,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAccountyMissingItems, useAddMissingItem, useIgnoreMissingItem, useResolveMissingItem, useAccountyCommunicationPrefs } from '@/hooks/useAccountyData';
-import { useQuery } from '@tanstack/react-query';
+import { useAccountyMissingItems, useAddMissingItem, useIgnoreMissingItem, useResolveMissingItem, useAccountyCommunicationPrefs, useGeneratePortalToken } from '@/hooks/useAccountyData';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -59,12 +60,20 @@ interface InvoiceItem {
   notificationCount: number;
   itemDate: string | null;
   amountRaw: number | null;
+  uploadedFiles: string[];
+  createdAt: string | null;
+  navInvoiceId: string | null;
+  invoiceNumber: string | null;
+  lastNotifiedAt: string | null;
+  escalationLevel: number;
+  details: string | null;
 }
 
 export default function ClientMissingInvoicesPage() {
   const { id: companyId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch company name
   const { data: companyData } = useQuery({
@@ -91,6 +100,7 @@ export default function ClientMissingInvoicesPage() {
 
   // Communication preferences for contact email
   const { data: commPrefs } = useAccountyCommunicationPrefs(companyId || '');
+  const generateTokenMutation = useGeneratePortalToken();
 
   // ── Handler: send request to approval queue ──
   const handleSendToApprovalQueue = async (items: InvoiceItem[]) => {
@@ -103,29 +113,11 @@ export default function ClientMissingInvoicesPage() {
       deadline: item.itemDate ? new Date(item.itemDate).toLocaleDateString('hu-HU') : undefined,
     }));
 
-    // Generate real portal token
+    // Generate real portal token using the hook (with specific item IDs)
     let portalLink = `${window.location.origin}/portal/demo-fallback`;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const token = crypto.randomUUID();
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 30); // 30 day expiry
-
-      const { error: tokenError } = await supabase
-        .from('accounty_portal_tokens')
-        .insert({
-          company_id: companyId,
-          token,
-          created_by: user?.id,
-          expires_at: expiresAt.toISOString(),
-          is_active: true,
-        });
-
-      if (!tokenError) {
-        portalLink = `${window.location.origin}/portal/${token}`;
-      } else {
-        console.error('Portal token creation error:', tokenError);
-      }
+      const result = await generateTokenMutation.mutateAsync({ companyId, requestedItemIds: items.map(i => i.id) });
+      portalLink = `${window.location.origin}/portal/${result.token}`;
     } catch (err) {
       console.error('Portal token creation failed:', err);
     }
@@ -173,9 +165,16 @@ export default function ClientMissingInvoicesPage() {
       const priorityLabel = mi.priority === 'urgent' ? 'Sürgős' 
         : mi.priority === 'medium' ? 'Közepes' 
         : 'Alacsony';
-      const statusLabel = mi.notificationCount > 0 
-        ? `Bekérve (${mi.notificationCount}x)` 
-        : 'Bekérésre vár';
+      const statusLabel = mi.status === 'resolved'
+        ? 'Feltöltve'
+        : mi.notificationCount > 0 
+          ? `Bekérve (${mi.notificationCount}x)` 
+          : 'Bekérésre vár';
+      const statusVariant = mi.status === 'resolved' 
+        ? 'success' 
+        : mi.notificationCount > 0 
+          ? 'warning' 
+          : 'neutral';
       return {
         id: mi.id,
         vendor: mi.title,
@@ -185,11 +184,18 @@ export default function ClientMissingInvoicesPage() {
         source: sourceLabel,
         priority: priorityLabel,
         status: statusLabel,
-        statusVariant: mi.notificationCount > 0 ? 'warning' : 'neutral',
+        statusVariant: statusVariant,
         category: mi.category,
         notificationCount: mi.notificationCount,
         itemDate: mi.itemDate,
         amountRaw: mi.amount,
+        uploadedFiles: (mi as any).uploaded_files || [],
+        createdAt: mi.createdAt || null,
+        navInvoiceId: mi.navInvoiceId || null,
+        invoiceNumber: mi.invoiceNumber || null,
+        lastNotifiedAt: mi.lastNotifiedAt || null,
+        escalationLevel: mi.escalationLevel || 0,
+        details: mi.details || null,
       };
     });
   }, [supabaseMissing]);
@@ -258,6 +264,40 @@ export default function ClientMissingInvoicesPage() {
     }
   };
 
+  const handleUnresolveInvoice = async (idToUnresolve: string) => {
+    if (!confirm('Biztosan eltávolítod a feltöltött fájl(oka)t? A tétel visszaáll "Bekérésre vár" státuszra.')) return;
+    try {
+      // Find the invoice to get its uploaded files
+      const inv = invoices.find(i => i.id === idToUnresolve);
+      const filesToDelete = inv?.uploadedFiles || [];
+
+      // Delete files from storage
+      if (filesToDelete.length > 0) {
+        const { error: storageErr } = await supabase.storage
+          .from('accounty_uploads')
+          .remove(filesToDelete);
+        if (storageErr) console.error('Storage delete error:', storageErr.message);
+      }
+
+      // Reset status and clear uploaded_files
+      const { error } = await supabase
+        .from('accounty_missing_items' as any)
+        .update({
+          status: 'open',
+          resolved_at: null,
+          resolved_by: null,
+          uploaded_files: [],
+        } as any)
+        .eq('id', idToUnresolve);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['accounty-missing-items'] });
+      toast({ title: 'Eltávolítva', description: 'A feltöltött fájl(ok) törölve, a tétel visszaállt "Bekérésre vár" státuszra.' });
+    } catch (err) {
+      console.error('Unresolve failed:', err);
+      toast({ variant: 'destructive', title: 'Hiba', description: 'Nem sikerült eltávolítani.' });
+    }
+  };
+
   const [showHistoryView, setShowHistoryView] = useState(false);
   const [historySearchTerm, setHistorySearchTerm] = useState('');
   const [historyChannelFilter, setHistoryChannelFilter] = useState('Minden');
@@ -278,10 +318,13 @@ export default function ClientMissingInvoicesPage() {
   };
 
   const getStatusBadge = (status: string, variant: string) => {
-    if (variant === 'warning') {
-      return <span className="text-xs font-semibold text-amber-500 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/40 px-2.5 py-1 rounded-md border border-amber-100/50 dark:border-amber-800">{status}</span>;
+    if (variant === 'success') {
+      return <span className="text-xs font-semibold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/40 px-2.5 py-1 rounded-full border border-green-200 dark:border-green-800 whitespace-nowrap">{status}</span>;
     }
-    return <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 px-2.5 py-1 rounded-md border border-border">{status}</span>;
+    if (variant === 'warning') {
+      return <span className="text-xs font-semibold text-amber-500 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/40 px-2.5 py-1 rounded-full border border-amber-100/50 dark:border-amber-800 whitespace-nowrap">{status}</span>;
+    }
+    return <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 px-2.5 py-1 rounded-full border border-border whitespace-nowrap">{status}</span>;
   };
 
   const filteredInvoices = invoices.filter(invoice => {
@@ -581,7 +624,7 @@ export default function ClientMissingInvoicesPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Összes hiányzó</p>
-          <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{invoices.length}</h3>
+          <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{invoices.filter(i => i.statusVariant !== 'success').length}</h3>
         </div>
         
         <div className="bg-red-50/50 dark:bg-red-900/20 p-5 rounded-xl border-2 border-red-200 dark:border-red-900/50 shadow-soft flex flex-col justify-between relative overflow-hidden">
@@ -658,7 +701,7 @@ export default function ClientMissingInvoicesPage() {
                 <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Becsült összeg</th>
                 <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Forrás</th>
                 <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Prioritás</th>
-                <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Státusz</th>
+                <th className="py-4 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider min-w-[130px]">Státusz</th>
                 <th className="py-4 px-4 w-12 text-center"></th>
               </tr>
             </thead>
@@ -686,7 +729,7 @@ export default function ClientMissingInvoicesPage() {
                     <td className="py-4 px-4 text-center" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 dark:text-slate-400 p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 transition-all outline-none">
+                          <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 dark:text-slate-400 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all outline-none">
                             <MoreVertical className="w-5 h-5" />
                           </button>
                         </DropdownMenuTrigger>
@@ -699,13 +742,23 @@ export default function ClientMissingInvoicesPage() {
                             <span className="font-medium text-sm">Részletek</span>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
-                          <DropdownMenuItem 
-                            className="gap-2.5 cursor-pointer text-slate-700 dark:text-slate-300 py-2"
-                            onClick={() => handleResolveInvoice(invoice.id)}
-                          >
-                            <CheckCircle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                            <span className="font-medium text-sm">Megérkezettnek jelöl</span>
-                          </DropdownMenuItem>
+                          {invoice.statusVariant === 'success' ? (
+                            <DropdownMenuItem 
+                              className="gap-2.5 cursor-pointer text-red-500 dark:text-red-400 py-2"
+                              onClick={() => handleUnresolveInvoice(invoice.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              <span className="font-medium text-sm">Feltöltött file eltávolítása</span>
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem 
+                              className="gap-2.5 cursor-pointer text-slate-700 dark:text-slate-300 py-2"
+                              onClick={() => handleResolveInvoice(invoice.id)}
+                            >
+                              <CheckCircle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                              <span className="font-medium text-sm">Megérkezettnek jelöl</span>
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem 
                             className="gap-2.5 cursor-pointer text-slate-700 dark:text-slate-300 py-2"
                             onClick={() => handleDeleteInvoice(invoice.id)}
@@ -842,7 +895,7 @@ export default function ClientMissingInvoicesPage() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Hozzáadva</p>
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">2024-01-10</p>
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{selectedInvoiceForDetails.createdAt ? new Date(selectedInvoiceForDetails.createdAt).toLocaleDateString('hu-HU') : '-'}</p>
                 </div>
               </div>
 
@@ -851,48 +904,106 @@ export default function ClientMissingInvoicesPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">NAV számla azonosító</p>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">N/A</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{selectedInvoiceForDetails.navInvoiceId || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Szállító adószáma</p>
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">N/A</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Számla szám</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{selectedInvoiceForDetails.invoiceNumber || '-'}</p>
                   </div>
                 </div>
               </div>
 
               <div className="px-6 py-5 border-t border-border">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">Bekérési előzmények</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded-xl shadow-soft">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 border border-border">
-                        <Mail className="w-4 h-4" />
+                {selectedInvoiceForDetails.notificationCount > 0 ? (
+                  <div className="space-y-3">
+                    {selectedInvoiceForDetails.lastNotifiedAt && (
+                      <div className="flex items-center justify-between p-3 bg-card border border-border rounded-xl shadow-soft">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 border border-border">
+                            <Mail className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                              {new Date(selectedInvoiceForDetails.lastNotifiedAt).toLocaleString('hu-HU')}
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Email – {selectedInvoiceForDetails.notificationCount}. bekérés</p>
+                          </div>
+                        </div>
+                        <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full">
+                          Elküldve
+                        </span>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">2024-02-10 14:30</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Email</p>
-                      </div>
-                    </div>
-                    <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full">
-                      Megnyitva
-                    </span>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-card border border-border rounded-xl shadow-soft">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-400 border border-border">
-                        <Mail className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">2024-02-05 09:15</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Email</p>
-                      </div>
-                    </div>
-                    <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold rounded-full border border-border">
-                      Elküldve
-                    </span>
+                ) : (
+                  <p className="text-sm text-slate-400 italic">Még nem lett bekérve.</p>
+                )}
+              </div>
+
+              {/* Uploaded files section */}
+              {selectedInvoiceForDetails.uploadedFiles.length > 0 && (
+                <div className="px-6 py-5 border-t border-border">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-3">Feltöltött dokumentumok</h3>
+                  <div className="space-y-2">
+                    {selectedInvoiceForDetails.uploadedFiles.map((filePath, idx) => {
+                      const fileName = filePath.split('/').pop() || filePath;
+                      const displayName = fileName.replace(/^\d+_/, '');
+                      return (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-card border border-border rounded-xl shadow-soft">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="p-2 bg-green-50 dark:bg-green-900/30 rounded-lg text-green-600 border border-green-100 dark:border-green-800">
+                              <FileText className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{displayName}</p>
+                              <p className="text-[10px] text-slate-400">Portálon keresztül feltöltve</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={`https://vxxgvdlqvvchtlmqnrqf.supabase.co/storage/v1/object/public/accounty_uploads/${filePath}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 bg-primary/10 text-primary text-xs font-semibold rounded-full hover:bg-primary/20 transition-colors"
+                            >
+                              Megnyitás
+                            </a>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!confirm('Biztosan törölni szeretnéd ezt a fájlt?')) return;
+                                try {
+                                  // Remove from storage
+                                  await supabase.storage.from('accounty_uploads').remove([filePath]);
+                                  // Remove from DB array
+                                  const newFiles = selectedInvoiceForDetails.uploadedFiles.filter((_, i) => i !== idx);
+                                  await supabase.from('accounty_missing_items' as any)
+                                    .update({
+                                      uploaded_files: newFiles,
+                                      ...(newFiles.length === 0 ? { status: 'open', resolved_at: null, resolved_by: null } : {}),
+                                    } as any)
+                                    .eq('id', selectedInvoiceForDetails.id);
+                                  queryClient.invalidateQueries({ queryKey: ['accounty-missing-items'] });
+                                  setSelectedInvoiceForDetails({ ...selectedInvoiceForDetails, uploadedFiles: newFiles });
+                                  toast({ title: 'Fájl törölve' });
+                                } catch (err) {
+                                  console.error('File delete error:', err);
+                                  toast({ variant: 'destructive', title: 'Törlés sikertelen' });
+                                }
+                              }}
+                              className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors"
+                              title="Fájl törlése"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              </div>
+              )}
 
               <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/80 border-t border-border flex items-center justify-between">
                 <button 

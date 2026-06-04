@@ -8,7 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { usePayrollCycles, usePayrollEmployees } from '@/hooks/usePayrollData';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useAccountyClients, useAccountyMissingItems } from '@/hooks/useAccountyData';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,11 +18,12 @@ const MONTHS = ['Január', 'Február', 'Március', 'Április', 'Május', 'Júniu
 
 interface PortalRequest {
   id: string;
-  type: 'attendance' | 'changes' | 'new_employee' | 'termination' | 'documents';
+  type: 'bejovo' | 'kimeno' | 'bank' | 'ber';
   title: string;
   description: string;
   status: 'pending' | 'submitted' | 'approved' | 'rejected';
   dueDate: string;
+  category: string;
   submittedAt?: string;
   files?: string[];
 }
@@ -45,18 +46,46 @@ function generateToken(): string {
 }
 
 export default function ClientPortalPage() {
-  const { id: companyId } = useParams<{ id: string }>();
+  const params = useParams<{ id?: string; token?: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [generatingLink, setGeneratingLink] = useState(false);
   const [chatInput, setChatInput] = useState('');
+  const [dragActive, setDragActive] = useState(false);
+  const [stagedFiles, setStagedFiles] = useState<Record<string, File[]>>({});
+  const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set());
+  const [uploadedIds, setUploadedIds] = useState<Set<string>>(new Set());
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Determine if we're in magic-link mode (/portal/:token) or admin mode (/accounty/payroll/:id/portal)
+  const isMagicLink = !!params.token;
+  const directCompanyId = params.id || '';
+
+  // Resolve token → company_id for magic link mode
+  const { data: tokenData } = useQuery({
+    queryKey: ['portal-token-resolve', params.token],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('accounty_portal_tokens' as any)
+        .select('company_id, token, expires_at, is_active, requested_item_ids')
+        .eq('token', params.token)
+        .single();
+      if (error) throw error;
+      return data as any;
+    },
+    enabled: isMagicLink && !!params.token,
+    staleTime: 60_000,
+  });
+
+  const companyId = isMagicLink ? (tokenData?.company_id || '') : directCompanyId;
 
   const { data: clients } = useAccountyClients();
   const { data: cycles = [] } = usePayrollCycles(companyId || '');
   const { data: employees = [] } = usePayrollEmployees(companyId || '');
+  const { data: missingItems = [] } = useAccountyMissingItems(companyId || '');
 
   // ── Fetch active portal tokens ──
   const { data: portalTokens = [] } = useQuery({
@@ -203,91 +232,140 @@ export default function ClientPortalPage() {
     }
   };
 
-  // File upload handler with auto-resolve
-  const handleFileUpload = async (files: FileList, requestTitle: string) => {
+  // File upload handler — resolves a specific missing item, logs to accounty_uploads
+  const handleFileUpload = async (files: FileList, requestTitle: string, missingItemId?: string) => {
     if (!companyId || !files.length) return;
 
+    const portalToken = isMagicLink ? params.token || null : null;
+
     try {
+      const uploadedPaths: string[] = [];
+
       for (const file of Array.from(files)) {
         const filePath = `accounty-portal/${companyId}/${Date.now()}_${file.name}`;
+
+        // 1. Create audit log entry (pending)
+        const { data: logEntry, error: logErr } = await supabase
+          .from('accounty_uploads' as any)
+          .insert({
+            company_id: companyId,
+            missing_item_id: missingItemId || null,
+            file_name: file.name,
+            file_path: filePath,
+            file_type: file.type || null,
+            file_size_bytes: file.size,
+            upload_source: isMagicLink ? 'portal' : 'admin',
+            status: 'uploading',
+            uploaded_by: user?.id || null,
+            portal_token: portalToken,
+          } as any)
+          .select('id')
+          .single();
+
+        if (logErr) {
+          console.error('[Portal] Upload log insert error:', logErr.message);
+        }
+        const logId = (logEntry as any)?.id;
+
+        // 2. Upload to storage
         const { error: uploadErr } = await supabase.storage
-          .from('uploads')
+          .from('accounty_uploads')
           .upload(filePath, file, { upsert: false });
 
         if (uploadErr) {
-          console.error('Upload error:', uploadErr);
+          console.error('[Portal] Storage upload error:', uploadErr.message);
+          // Update log → error
+          if (logId) {
+            await supabase.from('accounty_uploads' as any)
+              .update({ status: 'error', error_message: uploadErr.message, completed_at: new Date().toISOString() } as any)
+              .eq('id', logId);
+          }
+        } else {
+          uploadedPaths.push(filePath);
+          console.log('[Portal] File uploaded to storage:', filePath);
+          // Update log → success
+          if (logId) {
+            await supabase.from('accounty_uploads' as any)
+              .update({ status: 'success', completed_at: new Date().toISOString() } as any)
+              .eq('id', logId);
+          }
         }
       }
 
-      const { error: resolveErr } = await supabase
-        .from('accounty_missing_items' as any)
-        .update({
-          status: 'resolved',
-          resolved_at: new Date().toISOString(),
-          resolved_by: user?.id || null,
-        } as any)
-        .eq('company_id', companyId)
-        .in('status', ['open', 'notified']);
+      // 3. Only resolve if at least one file was actually uploaded
+      if (missingItemId && uploadedPaths.length > 0) {
+        const { data: existing } = await supabase
+          .from('accounty_missing_items' as any)
+          .select('uploaded_files')
+          .eq('id', missingItemId)
+          .single();
 
-      if (resolveErr) console.error('Auto-resolve error:', resolveErr);
+        const existingFiles: string[] = (existing as any)?.uploaded_files || [];
 
-      queryClient.invalidateQueries({ queryKey: ['accounty-missing-items'] });
+        const { data: updateResult, error: resolveErr } = await supabase
+          .from('accounty_missing_items' as any)
+          .update({
+            status: 'resolved',
+            resolved_at: new Date().toISOString(),
+            resolved_by: user?.id || null,
+            uploaded_files: [...existingFiles, ...uploadedPaths],
+          } as any)
+          .eq('id', missingItemId)
+          .select();
 
-      toast({
-        title: 'Feltöltve ✓',
-        description: `${files.length} fájl a(z) "${requestTitle}" kéréshez. Kapcsolódó hiányzó tételek feloldva.`,
-      });
-    } catch (err) {
-      console.error('Upload error:', err);
-      toast({ variant: 'destructive', title: 'Feltöltési hiba', description: 'A fájl feltöltés sikertelen.' });
+        if (resolveErr) {
+          console.error('[Portal] DB resolve error:', resolveErr.message);
+          toast({ variant: 'destructive', title: 'Hiba', description: `Státusz frissítés sikertelen: ${resolveErr.message}` });
+          return;
+        }
+        console.log('[Portal] DB update result:', updateResult);
+        queryClient.invalidateQueries({ queryKey: ['accounty-missing-items'] });
+
+        toast({
+          title: 'Feltöltve ✓',
+          description: `${uploadedPaths.length} fájl sikeresen feltöltve a(z) "${requestTitle}" tételhez.`,
+        });
+      } else if (missingItemId && uploadedPaths.length === 0) {
+        toast({ variant: 'destructive', title: 'Feltöltés sikertelen', description: 'A fájl nem töltődött fel. Kérjük próbálja újra.' });
+      }
+    } catch (err: any) {
+      console.error('[Portal] Upload error:', err);
+      toast({ variant: 'destructive', title: 'Feltöltési hiba', description: err?.message || 'A fájl feltöltés sikertelen.' });
     }
   };
 
-  // Build dynamic requests from the latest cycle state
-  const latestCycle = cycles
-    .filter(c => c.status !== 'closed')
-    .sort((a, b) => b.year - a.year || b.month - a.month)[0];
+  // Build requests from actual missing items in Supabase
+  // If magic link has specific requested_item_ids, filter to only those
+  const requestedItemIds: string[] = isMagicLink && tokenData?.requested_item_ids ? tokenData.requested_item_ids : [];
 
   const requests: PortalRequest[] = useMemo(() => {
-    if (!latestCycle) return [];
-    const cycleDueDate = new Date(latestCycle.year, latestCycle.month - 1, 5).toISOString();
-    const stepDone = (latestCycle.current_step || 1) > 1;
-    const monthLabel = `${latestCycle.year}. ${MONTHS[latestCycle.month - 1]}`;
+    const itemsToShow = requestedItemIds.length > 0
+      ? missingItems.filter(item => requestedItemIds.includes(item.id))
+      : missingItems;
 
-    return [
-      {
-        id: `${latestCycle.id}-att`, type: 'attendance' as const, title: 'Jelenléti ív',
-        description: `${monthLabel} havi munkaidő-nyilvántartás`,
-        status: stepDone ? 'submitted' : 'pending', dueDate: cycleDueDate,
-      },
-      {
-        id: `${latestCycle.id}-chg`, type: 'changes' as const, title: 'Bérmódosítások',
-        description: 'Béremelések, státuszváltozások a hónapban',
-        status: stepDone ? 'submitted' : 'pending', dueDate: cycleDueDate,
-      },
-      {
-        id: `${latestCycle.id}-new`, type: 'new_employee' as const, title: 'Új belépők',
-        description: 'Új foglalkoztatottak adatai (TAJ, adóazonosító, bankszámla)',
-        status: stepDone ? 'submitted' : 'pending', dueDate: new Date(latestCycle.year, latestCycle.month - 1, 3).toISOString(),
-      },
-      {
-        id: `${latestCycle.id}-caf`, type: 'documents' as const, title: 'Cafeteria igények',
-        description: 'SZÉP kártya, rekreáció, egyéb juttatás igénylések',
-        status: stepDone ? 'submitted' : 'pending', dueDate: new Date(latestCycle.year, latestCycle.month - 1, 10).toISOString(),
-      },
-    ];
-  }, [latestCycle, cycles]);
+    return itemsToShow.map(item => {
+      const categoryLabels: Record<string, string> = {
+        bejovo: 'Bejövő számla', kimeno: 'Kimenő számla', bank: 'Banki tétel', ber: 'Bér dokumentum',
+      };
+      return {
+        id: item.id,
+        type: (item.category || 'bejovo') as PortalRequest['type'],
+        title: `${item.title}${item.subtitle ? ` – ${item.subtitle}` : ''}${item.invoiceNumber ? ` (${item.invoiceNumber})` : ''}`,
+        description: categoryLabels[item.category] || item.category,
+        category: categoryLabels[item.category] || item.category,
+        status: item.notificationCount > 0 ? 'submitted' : 'pending',
+        dueDate: item.itemDate || new Date().toISOString(),
+      };
+    });
+  }, [missingItems, requestedItemIds]);
 
   const statusColors: Record<string, { bg: string; text: string; label: string }> = {
-    pending: { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-400', label: 'Várakozik' },
-    submitted: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-400', label: 'Beküldve' },
-    approved: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400', label: 'Elfogadva' },
+    pending: { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-400', label: 'Bekérésre vár' },
+    submitted: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-400', label: 'Bekérve' },
+    approved: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400', label: 'Beérkezett' },
     rejected: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400', label: 'Elutasítva' },
   };
 
-  const typeIcons: Record<string, React.ElementType> = {
-    attendance: Clock, changes: FileText, new_employee: Users, termination: AlertTriangle, documents: Upload,
-  };
 
   const handleChatSubmit = () => {
     const text = chatInput.trim();
@@ -295,132 +373,338 @@ export default function ClientPortalPage() {
     sendMessage.mutate(text);
   };
 
+  // ── MAGIC LINK MODE: Client-facing document upload portal ──
+  if (isMagicLink) {
+
+    const handleStageFiles = (reqId: string, files: FileList) => {
+      setStagedFiles(prev => ({
+        ...prev,
+        [reqId]: [...(prev[reqId] || []), ...Array.from(files)],
+      }));
+    };
+
+    const handleRemoveFile = (reqId: string, fileIndex: number) => {
+      setStagedFiles(prev => {
+        const current = [...(prev[reqId] || [])];
+        current.splice(fileIndex, 1);
+        return { ...prev, [reqId]: current };
+      });
+    };
+
+    const handleUploadSingle = async (reqId: string, reqTitle: string) => {
+      const files = stagedFiles[reqId];
+      if (!files?.length) return;
+      setUploadingIds(prev => new Set(prev).add(reqId));
+      try {
+        // Create a FileList-like structure from the staged files
+        const dt = new DataTransfer();
+        files.forEach(f => dt.items.add(f));
+        await handleFileUpload(dt.files, reqTitle, reqId);
+        setUploadedIds(prev => new Set(prev).add(reqId));
+        setStagedFiles(prev => { const n = { ...prev }; delete n[reqId]; return n; });
+      } finally {
+        setUploadingIds(prev => { const n = new Set(prev); n.delete(reqId); return n; });
+      }
+    };
+
+    const handleUploadAll = async () => {
+      for (const req of requests) {
+        if (stagedFiles[req.id]?.length && !uploadedIds.has(req.id)) {
+          await handleUploadSingle(req.id, req.title);
+        }
+      }
+    };
+
+    const totalStagedCount = Object.values(stagedFiles).reduce((sum, f) => sum + f.length, 0);
+
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Top header bar */}
+        <div className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
+          <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-sm font-bold text-slate-900 dark:text-slate-100">{company?.name || 'Betöltés...'}</h1>
+                <p className="text-[11px] text-slate-500">Dokumentum feltöltő portál</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
+              <Shield className="w-3.5 h-3.5" />
+              <span className="font-medium">Biztonságos kapcsolat</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Main content */}
+        <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+
+          {/* Welcome card */}
+          <div className="bg-card rounded-xl border border-border shadow-soft p-6">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+              Üdvözöljük! 👋
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              Könyvelője hiányzó dokumentumokat kér Öntől. Kérjük, válassza ki a megfelelő fájlokat 
+              az egyes tételeknél, majd kattintson a feltöltés gombra.
+            </p>
+            <div className="flex items-center gap-2 mt-4">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+                {requests.length} hiányzó dokumentum
+              </span>
+            </div>
+          </div>
+
+          {/* Missing documents list */}
+          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+            <div className="px-6 py-4 border-b border-border flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Hiányzó dokumentumok</h3>
+            </div>
+            {requests.length === 0 ? (
+              <div className="py-10 text-center">
+                <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-3" />
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Minden dokumentum beérkezett!</p>
+                <p className="text-xs text-slate-400 mt-1">Köszönjük a gyors válaszát.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border/50">
+                {requests.map((req) => {
+                  const isOverdue = new Date(req.dueDate) < new Date() && req.status === 'pending';
+                  const staged = stagedFiles[req.id] || [];
+                  const isUploading = uploadingIds.has(req.id);
+                  const isUploaded = uploadedIds.has(req.id);
+
+                  return (
+                    <div key={req.id} className={cn(
+                      'px-6 py-4 transition-colors',
+                      isUploaded ? 'bg-green-50/50 dark:bg-green-900/10' : 'hover:bg-slate-50/50 dark:hover:bg-slate-800/30'
+                    )}>
+                      {/* Document info row */}
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            {isUploaded && <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />}
+                            <p className={cn(
+                              'text-sm font-semibold',
+                              isUploaded ? 'text-green-700 dark:text-green-400' : 'text-slate-900 dark:text-slate-100'
+                            )}>{req.title}</p>
+                          </div>
+                          <div className="flex items-center gap-3 mt-1.5">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary/10 text-primary border border-primary/20">
+                              {req.category}
+                            </span>
+                            <span className={cn('text-xs', isOverdue ? 'text-red-500 font-semibold' : 'text-slate-400')}>
+                              Határidő: {new Date(req.dueDate).toLocaleDateString('hu-HU')}
+                              {isOverdue && ' · LEJÁRT'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {!isUploaded && (
+                          <label className="cursor-pointer shrink-0">
+                            <div className={cn(
+                              'flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors',
+                              staged.length > 0
+                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-border hover:bg-slate-200 dark:hover:bg-slate-700'
+                                : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
+                            )}>
+                              <Upload className="w-3.5 h-3.5" />
+                              {staged.length > 0 ? 'Másik fájl' : 'Fájl kiválasztása'}
+                            </div>
+                            <input type="file" className="hidden" multiple onChange={(e) => {
+                              if (e.target.files?.length) handleStageFiles(req.id, e.target.files);
+                            }} />
+                          </label>
+                        )}
+                        {isUploaded && (
+                          <span className="px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold">
+                            ✓ Feltöltve
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Staged files list */}
+                      {staged.length > 0 && !isUploaded && (
+                        <div className="mt-3 space-y-1.5">
+                          {staged.map((file, idx) => (
+                            <div key={idx} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/5 border border-primary/10">
+                              <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
+                              <span className="text-xs text-slate-700 dark:text-slate-300 truncate flex-1">{file.name}</span>
+                              <span className="text-[10px] text-slate-400 shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
+                              <button
+                                onClick={() => handleRemoveFile(req.id, idx)}
+                                className="p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors shrink-0"
+                              >
+                                <X className="w-3 h-3 text-red-500" />
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            onClick={() => handleUploadSingle(req.id, req.title)}
+                            disabled={isUploading}
+                            className="mt-1 flex items-center gap-1.5 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-semibold transition-colors disabled:opacity-50"
+                          >
+                            {isUploading ? (
+                              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Feltöltés...</>
+                            ) : (
+                              <><Upload className="w-3.5 h-3.5" /> Feltöltés ({staged.length} fájl)</>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Global upload button */}
+            {totalStagedCount > 0 && (
+              <div className="px-6 py-4 border-t border-border bg-slate-50/50 dark:bg-slate-900/30">
+                <button
+                  onClick={handleUploadAll}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold transition-colors shadow-sm"
+                >
+                  <Upload className="w-4 h-4" />
+                  Összes feltöltése ({totalStagedCount} fájl)
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Footer disclaimer */}
+          <div className="text-center pt-4 pb-8 space-y-1">
+            <p className="text-[11px] text-slate-400">
+              Ez a link egyedi az Ön számára. Kérjük, ne ossza meg másokkal.
+            </p>
+            <p className="text-[10px] text-slate-500/60">
+              Powered by Accounty · {new Date().getFullYear()}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/accounty/payroll/${companyId}`)} className="h-9 w-9">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
+          {!isMagicLink && (
+            <Button variant="ghost" size="icon" onClick={() => navigate(`/accounty/payroll/${companyId}`)} className="h-9 w-9">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          )}
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Ügyfélportál</h1>
             <p className="text-sm text-slate-500">{company?.name || '–'} · Adatbekérés és dokumentumkezelés</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleGeneratePortalLink} disabled={generatingLink} className="flex items-center gap-2">
-            {generatingLink ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
-            {generatingLink ? 'Generálás...' : 'Portál link'}
-          </Button>
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
-            onClick={handleSendInvite}>
-            <Mail className="w-4 h-4" /> Meghívó küldése
-          </Button>
-        </div>
+        {!isMagicLink && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleGeneratePortalLink} disabled={generatingLink} className="flex items-center gap-2">
+              {generatingLink ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
+              {generatingLink ? 'Generálás...' : 'Portál link'}
+            </Button>
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
+              onClick={handleSendInvite}>
+              <Mail className="w-4 h-4" /> Meghívó küldése
+            </Button>
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[
-          { icon: Shield, label: 'Portál státusz', value: portalTokens.length > 0 ? 'Aktív' : 'Nincs link', sub: portalTokens.length > 0 ? `${portalTokens.length} aktív link` : 'Generálj linket', color: portalTokens.length > 0 ? 'text-green-600' : 'text-slate-400' },
-          { icon: Clock, label: 'Függő kérések', value: requests.filter(r => r.status === 'pending').length, sub: 'Válaszra vár', color: 'text-amber-600' },
-          { icon: Users, label: 'Foglalkoztatottak', value: activeEmployees.length, sub: 'Aktív', color: 'text-blue-600' },
-          { icon: Calendar, label: 'Aktuális ciklus', value: `${currentYear}/${String(currentMonth).padStart(2, '0')}`, sub: MONTHS[currentMonth - 1], color: 'text-violet-600' },
-        ].map((card) => (
-          <div key={card.label} className="bg-card rounded-xl border border-border shadow-soft p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <card.icon className={cn('w-4 h-4', card.color)} />
-              <span className="text-xs font-medium text-slate-500 uppercase">{card.label}</span>
+      {!isMagicLink && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[
+            { icon: Shield, label: 'Portál státusz', value: portalTokens.length > 0 ? 'Aktív' : 'Nincs link', sub: portalTokens.length > 0 ? `${portalTokens.length} aktív link` : 'Generálj linket', color: portalTokens.length > 0 ? 'text-green-600' : 'text-slate-400' },
+            { icon: Clock, label: 'Függő kérések', value: requests.filter(r => r.status === 'pending').length, sub: 'Válaszra vár', color: 'text-amber-600' },
+            { icon: Users, label: 'Foglalkoztatottak', value: activeEmployees.length, sub: 'Aktív', color: 'text-blue-600' },
+            { icon: Calendar, label: 'Aktuális ciklus', value: `${currentYear}/${String(currentMonth).padStart(2, '0')}`, sub: MONTHS[currentMonth - 1], color: 'text-violet-600' },
+          ].map((card) => (
+            <div key={card.label} className="bg-card rounded-xl border border-border shadow-soft p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <card.icon className={cn('w-4 h-4', card.color)} />
+                <span className="text-xs font-medium text-slate-500 uppercase">{card.label}</span>
+              </div>
+              <p className={cn('text-lg font-bold', card.color)}>{card.value}</p>
+              <p className="text-xs text-slate-500 mt-1">{card.sub}</p>
             </div>
-            <p className={cn('text-lg font-bold', card.color)}>{card.value}</p>
-            <p className="text-xs text-slate-500 mt-1">{card.sub}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Active Portal Links ── */}
-      {portalTokens.length > 0 && (
-        <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-          <div className="p-5 border-b border-border flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <Link2 className="w-4 h-4 text-primary" />
-              Aktív portál linkek
-            </h2>
-            <span className="text-xs text-slate-500">{portalTokens.length} db</span>
-          </div>
-          <div className="divide-y divide-border/50">
-            {portalTokens.map((t: any) => {
-              const link = `${window.location.origin}/portal/${t.token}`;
-              const expiresDate = new Date(t.expires_at);
-              const daysLeft = Math.max(0, Math.ceil((expiresDate.getTime() - Date.now()) / 86400000));
-              return (
-                <div key={t.id} className="px-5 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <ExternalLink className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-mono text-slate-600 dark:text-slate-400 truncate max-w-xs">{link}</p>
-                      <p className="text-[10px] text-slate-400">
-                        Létrehozva: {new Date(t.created_at).toLocaleDateString('hu-HU')} · Lejár: {daysLeft} nap múlva
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center gap-1 text-xs shrink-0"
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(link);
-                      toast({ title: 'Másolva ✓', description: 'A portál link a vágólapra másolva.' });
-                    }}
-                  >
-                    <Copy className="w-3 h-3" /> Másolás
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
+          ))}
         </div>
       )}
 
-      {/* ── Data Requests ── */}
+      {/* ── Data Requests (from actual missing items) ── */}
       <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
         <div className="p-5 border-b border-border flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Adatbekérések — {currentYear}. {MONTHS[currentMonth - 1]}</h2>
-          <span className="text-xs text-slate-500">{requests.length} kérés</span>
+          <span className="text-xs text-slate-500">{requests.length} dokumentum</span>
         </div>
-        <div className="divide-y divide-border/50">
-          {requests.map((req) => {
-            const StatusIcon = typeIcons[req.type] || FileText;
-            const status = statusColors[req.status];
-            const isOverdue = new Date(req.dueDate) < new Date() && req.status === 'pending';
-            return (
-              <div key={req.id} className="px-5 py-4 flex items-center gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', isOverdue ? 'bg-red-100 dark:bg-red-900/30' : 'bg-slate-100 dark:bg-slate-800')}>
-                  <StatusIcon className={cn('w-5 h-5', isOverdue ? 'text-red-600' : 'text-slate-500')} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{req.title}</p>
-                    {isOverdue && <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-[9px] font-bold rounded-full uppercase">Lejárt!</span>}
-                  </div>
-                  <p className="text-xs text-slate-500 mt-0.5">{req.description}</p>
-                  <p className="text-[10px] text-slate-400 mt-1">Határidő: {new Date(req.dueDate).toLocaleDateString('hu-HU')}</p>
-                </div>
-                <span className={cn('px-2.5 py-1 rounded-full text-[10px] font-bold uppercase', status.bg, status.text)}>{status.label}</span>
-                <label className="cursor-pointer">
-                  <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border hover:border-primary/30 hover:bg-primary/5 transition-all">
-                    <Upload className="w-3.5 h-3.5 text-primary" />
-                    <span className="text-xs font-semibold text-primary">Feltöltés</span>
-                  </div>
-                  <input type="file" className="hidden" multiple onChange={(e) => {
-                    if (e.target.files?.length) handleFileUpload(e.target.files, req.title);
-                  }} />
-                </label>
-              </div>
-            );
-          })}
-        </div>
+        {requests.length === 0 ? (
+          <div className="py-12 text-center">
+            <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-3">
+              <CheckCircle2 className="w-7 h-7 text-green-600" />
+            </div>
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Nincs hiányzó dokumentum</p>
+            <p className="text-xs text-slate-400 mt-1">Minden szükséges dokumentum beérkezett.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+                  <th className="px-5 py-3 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Dokumentum</th>
+                  <th className="px-5 py-3 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Kategória</th>
+                  <th className="px-5 py-3 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Határidő</th>
+                  <th className="px-5 py-3 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Státusz</th>
+                  <th className="px-5 py-3 w-24"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {requests.map((req) => {
+                  const status = statusColors[req.status];
+                  const isOverdue = new Date(req.dueDate) < new Date() && req.status === 'pending';
+                  return (
+                    <tr key={req.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="px-5 py-3">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{req.title}</p>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className="px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                          {req.category}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className={cn('text-xs font-medium', isOverdue ? 'text-red-600' : 'text-slate-600 dark:text-slate-400')}>
+                          {new Date(req.dueDate).toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                          {isOverdue && <span className="ml-1 text-[9px] font-bold text-red-600">LEJÁRT</span>}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className={cn('px-2.5 py-1 rounded-full text-[10px] font-bold uppercase', status.bg, status.text)}>{status.label}</span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <label className="cursor-pointer">
+                          <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border hover:border-primary/30 hover:bg-primary/5 transition-all">
+                            <Upload className="w-3.5 h-3.5 text-primary" />
+                            <span className="text-xs font-semibold text-primary">Feltöltés</span>
+                          </div>
+                          <input type="file" className="hidden" multiple onChange={(e) => {
+                            if (e.target.files?.length) handleFileUpload(e.target.files, req.title);
+                          }} />
+                        </label>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* ── Communication (real messages) ── */}

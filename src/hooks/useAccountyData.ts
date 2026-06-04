@@ -197,7 +197,7 @@ export function useAccountyMissingItems(companyId: string) {
         .from('accounty_missing_items')
         .select('*')
         .eq('company_id', companyId)
-        .in('status', ['open', 'notified'])
+        .in('status', ['open', 'notified', 'resolved'])
         .order('priority', { ascending: true })
         .order('created_at', { ascending: false });
 
@@ -225,6 +225,7 @@ export function useAccountyMissingItems(companyId: string) {
         isIgnored: item.is_ignored || false,
         createdAt: item.created_at,
         resolvedAt: item.resolved_at || null,
+        uploaded_files: item.uploaded_files || [],
       }));
     },
     enabled: !!companyId,
@@ -761,19 +762,26 @@ export function useGeneratePortalToken() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (companyId: string) => {
+    mutationFn: async (params: string | { companyId: string; requestedItemIds?: string[] }) => {
+      const companyId = typeof params === 'string' ? params : params.companyId;
+      const requestedItemIds = typeof params === 'string' ? undefined : params.requestedItemIds;
       const token = crypto.randomUUID();
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
 
+      const insertPayload: any = {
+        company_id: companyId,
+        token,
+        created_by: user?.id,
+        expires_at: expiresAt.toISOString(),
+      };
+      if (requestedItemIds && requestedItemIds.length > 0) {
+        insertPayload.requested_item_ids = requestedItemIds;
+      }
+
       const { data, error } = await supabase
         .from('accounty_portal_tokens')
-        .insert({
-          company_id: companyId,
-          token,
-          created_by: user?.id,
-          expires_at: expiresAt.toISOString(),
-        })
+        .insert(insertPayload)
         .select()
         .single();
 
