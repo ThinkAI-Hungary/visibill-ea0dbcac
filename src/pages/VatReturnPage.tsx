@@ -83,7 +83,7 @@ function VatCodeConfigTab() {
         .select('*')
         .order('sort_order');
       if (error) throw error;
-      return (data || []) as FormRow[];
+      return (data || []) as unknown as FormRow[];
     },
   });
 
@@ -353,11 +353,11 @@ function InvoiceItemsDrillDown({ invoiceNumber, companyId }: { invoiceNumber: st
         .eq('invoice_number', invoiceNumber)
         .limit(1)
         .maybeSingle();
-      if (!inv?.id) return [];
+      if (!(inv as any)?.id) return [];
       const { data: items } = await supabase
         .from('nav_invoice_items' as any)
         .select('line_number, line_description, quantity, unit_price, net_amount, vat_amount, vat_rate')
-        .eq('nav_invoice_id', inv.id)
+        .eq('nav_invoice_id', (inv as any).id)
         .order('line_number');
       return (items || []) as any[];
     },
@@ -427,7 +427,7 @@ function VatReturnViewTab() {
         .eq('frequency', frequency)
         .maybeSingle();
       if (error) { console.error('vat_returns query error:', error); return null; }
-      return data;
+      return data as any;
     },
     enabled: !!selectedCompany?.id,
   });
@@ -439,7 +439,7 @@ function VatReturnViewTab() {
       if (!vatReturn?.id) return [];
       const { data, error } = await supabase.from('vat_return_lines' as any).select('*').eq('vat_return_id', vatReturn.id);
       if (error) { console.error('vat_return_lines error:', error); return []; }
-      return (data || []) as ReturnLine[];
+      return (data || []) as unknown as ReturnLine[];
     },
     enabled: !!vatReturn?.id,
   });
@@ -450,7 +450,7 @@ function VatReturnViewTab() {
       if (!vatReturn?.id) return [];
       const { data, error } = await supabase.from('vat_return_m_lines' as any).select('*').eq('vat_return_id', vatReturn.id).order('base_amount_rounded', { ascending: false });
       if (error) { console.error('vat_return_m_lines error:', error); return []; }
-      return (data || []) as MLine[];
+      return (data || []) as unknown as MLine[];
     },
     enabled: !!vatReturn?.id,
   });
@@ -460,7 +460,7 @@ function VatReturnViewTab() {
     queryFn: async () => {
       const { data, error } = await supabase.from('vat_form_rows' as any).select('*').order('sort_order');
       if (error) { console.error('vat_form_rows error:', error); return []; }
-      return (data || []) as FormRow[];
+      return (data || []) as unknown as FormRow[];
     },
   });
 
@@ -478,7 +478,7 @@ function VatReturnViewTab() {
         .eq('period_year', prevYear)
         .eq('period_month', prevMonth)
         .maybeSingle();
-      return data;
+      return data as any;
     },
     enabled: !!selectedCompany?.id,
   });
@@ -488,7 +488,7 @@ function VatReturnViewTab() {
     queryFn: async () => {
       if (!prevReturn?.id) return [];
       const { data } = await supabase.from('vat_return_lines' as any).select('row_number, base_amount_rounded, tax_amount_rounded').eq('vat_return_id', prevReturn.id);
-      return (data || []) as ReturnLine[];
+      return (data || []) as unknown as ReturnLine[];
     },
     enabled: !!prevReturn?.id,
   });
