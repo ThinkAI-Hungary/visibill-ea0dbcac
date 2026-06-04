@@ -70,7 +70,7 @@ function VatCodeConfigTab() {
         .eq('company_id', selectedCompany.id)
         .order('sort_order');
       if (error) throw error;
-      return (data || []) as VatCode[];
+      return (data || []) as unknown as VatCode[];
     },
     enabled: !!selectedCompany?.id,
   });
