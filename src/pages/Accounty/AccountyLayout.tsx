@@ -422,7 +422,7 @@ export default function AccountyLayout() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Date Range Picker + Notifications bar */}
-        <div className="flex items-center bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 relative z-10">
+        <div className="flex items-center border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0 relative z-10">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 ml-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 rounded-md"
