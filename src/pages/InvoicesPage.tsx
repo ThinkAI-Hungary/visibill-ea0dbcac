@@ -437,6 +437,13 @@ const InvoicesPage = () => {
         if (!linkedInvs.some(x => x.id === l.id) && !matchedSubmitted.some(x => x.id === l.id)) linkedInvs.push(l);
       });
     });
+    // Propagate transactions from linked invoices (e.g. DB/416429 → RF/038227/2026)
+    linkedInvs.forEach(linked => {
+      const linkedTxs = submittedIdToTransactionsMap.get(linked.id) || [];
+      linkedTxs.forEach(tx => {
+        if (!matchedTx.some(t => t.id === tx.id)) matchedTx.push(tx);
+      });
+    });
     return { matchedSubmitted, matchedTransactions: matchedTx, matchedNav: [] as NavInvoice[], linkedInvoices: linkedInvs, matchedCourierReports: navIdToCourierReportsMap.get(navInvoice.id) || [] };
   };
 
@@ -452,6 +459,13 @@ const InvoicesPage = () => {
       });
     });
     const linkedInvs = getLinkedInvoices(submitted);
+    // Propagate transactions from linked invoices (e.g. parent/child via reference_number)
+    linkedInvs.forEach(linked => {
+      const linkedTxs = submittedIdToTransactionsMap.get(linked.id) || [];
+      linkedTxs.forEach(tx => {
+        if (!matchedTx.some(t => t.id === tx.id)) matchedTx.push(tx);
+      });
+    });
     return { matchedSubmitted: [] as SubmittedInvoice[], matchedTransactions: matchedTx, matchedNav, linkedInvoices: linkedInvs };
   };
 
@@ -501,18 +515,25 @@ const InvoicesPage = () => {
   };
 
   // Extend matchedInvoiceIds: also mark submitted invoices as "matched" (green)
-  // when their NAV counterpart has a transaction match (i.e. paid)
+  // when their NAV counterpart has a transaction match OR a linked invoice has one
   const extendedMatchedIds = useMemo(() => {
     const ids = new Set(matchedInvoiceIds);
+    const allInvs = [...submittedInvoices, ...linkedInvoicesPool];
     submittedInvoices.forEach(inv => {
       if (ids.has(inv.id)) return; // already matched directly
-      if (!inv.bizonylatsorszam) return;
-      const navMatches = submittedToNavMap.get(normalizeInvNum(inv.bizonylatsorszam)) || [];
-      const hasPaidNav = navMatches.some(nav => submittedIdToTransactionsMap.has(nav.id));
-      if (hasPaidNav) ids.add(inv.id);
+      // Check NAV counterpart
+      if (inv.bizonylatsorszam) {
+        const navMatches = submittedToNavMap.get(normalizeInvNum(inv.bizonylatsorszam)) || [];
+        const hasPaidNav = navMatches.some(nav => submittedIdToTransactionsMap.has(nav.id));
+        if (hasPaidNav) { ids.add(inv.id); return; }
+      }
+      // Check linked invoices (reference_number chain) for transaction matches
+      const linked = getLinkedInvoices(inv);
+      const hasLinkedTx = linked.some(l => submittedIdToTransactionsMap.has(l.id));
+      if (hasLinkedTx) ids.add(inv.id);
     });
     return ids;
-  }, [matchedInvoiceIds, submittedInvoices, submittedToNavMap, submittedIdToTransactionsMap]);
+  }, [matchedInvoiceIds, submittedInvoices, linkedInvoicesPool, submittedToNavMap, submittedIdToTransactionsMap]);
 
   // Identify invoices that ONLY have suggested (not confirmed) matches → amber row
   const suggestedOnlyIds = useMemo(() => {
@@ -868,7 +889,19 @@ const InvoicesPage = () => {
                           paginatedNavInvoices.map((invoice) => {
                             const partnerTaxNumber = getPartnerTaxNumber(invoice);
                             const partnerName = getInvoicePartnerName(invoice);
-                            const isPaid = invoice.paid === true || !!invoice.transaction_id;
+                            // Check paid status from multiple sources:
+                            // 1. nav_invoices.paid / nav_invoices.transaction_id (legacy)
+                            // 2. transactions.matched_invoice_id pointing directly to this NAV invoice
+                            // 3. Indirect: submitted invoice (same bizonylatsorszam) has a matched transaction
+                            // 4. Linked chain: any linked invoice (via reference_number) has a matched transaction
+                            const directlyMatched = matchedInvoiceIds.has(invoice.id);
+                            const submittedMatches = navToSubmittedMap.get(normalizeInvNum(invoice.invoice_number)) || [];
+                            const indirectlyMatched = submittedMatches.some(sub => submittedIdToTransactionsMap.has(sub.id));
+                            const linkedChainMatched = !indirectlyMatched && submittedMatches.some(sub => {
+                              const linked = getLinkedInvoices(sub);
+                              return linked.some(l => submittedIdToTransactionsMap.has(l.id));
+                            });
+                            const isPaid = invoice.paid === true || !!invoice.transaction_id || directlyMatched || indirectlyMatched || linkedChainMatched;
                             return (
                               <React.Fragment key={invoice.id}>
                                 <TableRow className={cn(
