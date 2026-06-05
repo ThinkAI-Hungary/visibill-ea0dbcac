@@ -188,15 +188,16 @@ export function useInvoiceData(
   });
 
   const { data: allTransactions = [], isLoading: txLoading } = useQuery({
-    queryKey: queryKeys.invoiceTransactions(companyId, dateFromFormatted, dateToFormatted),
+    // No date filtering — matched transactions must always be visible
+    // regardless of the invoice date range filter (a May invoice can have
+    // a June transaction match, and vice versa).
+    queryKey: queryKeys.invoiceTransactions(companyId, '', ''),
     queryFn: async () => {
       const { data } = await supabase
         .from('transactions')
         .select('id, matched_invoice_id, transaction_date, amount, description, currency, type, confidence_score')
         .eq('company_id', companyId)
-        .not('matched_invoice_id', 'is', null)
-        .gte('transaction_date', dateFromFormatted)
-        .lte('transaction_date', dateToFormatted);
+        .not('matched_invoice_id', 'is', null);
       return (data || []) as TransactionRecord[];
     },
     enabled,
