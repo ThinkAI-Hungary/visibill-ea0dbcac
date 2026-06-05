@@ -14,7 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn, formatCurrency } from '@/lib/utils';
-import { Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Pencil, Package, RotateCcw, CalendarIcon } from 'lucide-react';
+import { Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Pencil, Package, RotateCcw, CalendarIcon, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { RefreshCw } from 'lucide-react';
@@ -832,7 +833,9 @@ const InvoicesPage = () => {
                   />
 
                   {/* NAV Invoice Table */}
-                  <div className="rounded-lg border border-border/50 overflow-x-auto">
+                  <ContextMenu>
+                    <ContextMenuTrigger asChild>
+                    <div className="rounded-lg border border-border/50 overflow-x-auto">
                     <Table className="compact-table w-full" style={{ tableLayout: 'fixed' }}>
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
@@ -849,14 +852,14 @@ const InvoicesPage = () => {
                           <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold" onClick={() => handleSort('partner_name')}>
                             <div className="flex items-center gap-2">Partner<ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" /></div>
                           </TableHead>
-                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[110px] text-center" onClick={() => handleSort('invoice_issue_date')}>
-                            <div className="flex items-center justify-center gap-2">Kibocsátás<ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" /></div>
+                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[95px] text-center whitespace-nowrap" onClick={() => handleSort('invoice_issue_date')}>
+                            <div className="flex items-center justify-center gap-1">Kiáll.<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
-                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[110px] text-center" onClick={() => handleSort('invoice_delivery_date')}>
-                            <div className="flex items-center justify-center gap-2">Teljesítés<ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" /></div>
+                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[95px] text-center whitespace-nowrap" onClick={() => handleSort('invoice_delivery_date')}>
+                            <div className="flex items-center justify-center gap-1">Telj.<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
-                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold" onClick={() => handleSort('invoice_number')}>
-                            <div className="flex items-center gap-2">Bizonylatsorszám<ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" /></div>
+                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold whitespace-nowrap" onClick={() => handleSort('invoice_number')}>
+                            <div className="flex items-center gap-1">Biz.szám<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
                           <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[100px]" onClick={() => handleSort('invoice_net_amount')}>
                             <div className="flex items-center justify-end gap-2"><ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />Nettó</div>
@@ -874,9 +877,9 @@ const InvoicesPage = () => {
                             </div>
                           </TableHead>
                           {activeTab === 'INBOUND' && (<TableHead className="font-semibold w-[70px] text-center">Beküldve</TableHead>)}
-                          {activeTab === 'INBOUND' && (<TableHead className="font-semibold w-[140px] text-center">Kategória</TableHead>)}
-                          <TableHead className="font-semibold w-[140px] text-center">Projekt</TableHead>
-                          <TableHead className="font-semibold w-[110px] text-center">Fiz. mód</TableHead>
+                          {activeTab === 'INBOUND' && (<TableHead className="font-semibold w-[120px] text-center whitespace-nowrap">Kategória</TableHead>)}
+                          <TableHead className="font-semibold w-[120px] text-center whitespace-nowrap">Projekt</TableHead>
+                          <TableHead className="font-semibold w-[90px] text-center whitespace-nowrap">Fiz. mód</TableHead>
                           <TableHead className="font-semibold w-[60px] text-center">Tételek</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -1010,6 +1013,20 @@ const InvoicesPage = () => {
                       </TableBody>
                     </Table>
                   </div>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent>
+                      <ContextMenuItem onClick={() => {
+                        setExpandedRowIds(new Set(paginatedNavInvoices.map(i => i.id)));
+                      }}>
+                        <ChevronsUpDown className="h-3.5 w-3.5 mr-2" />
+                        Összes lenyitás
+                      </ContextMenuItem>
+                      <ContextMenuItem onClick={() => setExpandedRowIds(new Set())}>
+                        <ChevronsDownUp className="h-3.5 w-3.5 mr-2" />
+                        Összes bezárás
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
 
                   <UnifiedPagination
                     currentPage={navCurrentPage}
@@ -1156,7 +1173,9 @@ const InvoicesPage = () => {
                   />
 
                   {/* Submitted Invoice Table */}
-                  <div className="rounded-lg border border-border/50 overflow-x-auto">
+                  <ContextMenu>
+                    <ContextMenuTrigger asChild>
+                    <div className="rounded-lg border border-border/50 overflow-x-auto">
                     <Table className="compact-table w-full" style={{ tableLayout: 'fixed' }}>
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
@@ -1169,14 +1188,14 @@ const InvoicesPage = () => {
                           <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold" onClick={() => handleSort(activeTab === 'SUBMITTED_INBOUND' ? 'elado_nev' : 'vevo_nev')}>
                             <div className="flex items-center gap-2">Partner<ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" /></div>
                           </TableHead>
-                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[110px] text-center" onClick={() => handleSort('kibocsatas_datuma')}>
-                            <div className="flex items-center justify-center gap-2">Kibocsátás<ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" /></div>
+                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[95px] text-center whitespace-nowrap" onClick={() => handleSort('kibocsatas_datuma')}>
+                            <div className="flex items-center justify-center gap-1">Kiáll.<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
-                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[110px] text-center" onClick={() => handleSort('teljesites_datuma')}>
-                            <div className="flex items-center justify-center gap-2">Teljesítés<ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" /></div>
+                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[95px] text-center whitespace-nowrap" onClick={() => handleSort('teljesites_datuma')}>
+                            <div className="flex items-center justify-center gap-1">Telj.<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
-                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold" onClick={() => handleSort('bizonylatsorszam')}>
-                            <div className="flex items-center gap-2">Bizonylatsorszám<ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" /></div>
+                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold whitespace-nowrap" onClick={() => handleSort('bizonylatsorszam')}>
+                            <div className="flex items-center gap-1">Biz.szám<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
                           <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[100px]" onClick={() => handleSort('adoalap_osszesen')}>
                             <div className="flex items-center justify-end gap-2"><ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />Nettó</div>
@@ -1187,7 +1206,7 @@ const InvoicesPage = () => {
                           <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[100px]" onClick={() => handleSort('afa_osszeg_osszesen')}>
                             <div className="flex items-center justify-end gap-2"><ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />ÁFA</div>
                           </TableHead>
-                          <TableHead className="font-semibold w-[110px] text-center">Fiz. mód</TableHead>
+                          <TableHead className="font-semibold w-[90px] text-center whitespace-nowrap">Fiz. mód</TableHead>
                           <TableHead className="font-semibold w-[60px] text-center">Tételek</TableHead>
                           <TableHead className="text-center font-semibold w-[80px]">Műveletek</TableHead>
                         </TableRow>
@@ -1301,6 +1320,20 @@ const InvoicesPage = () => {
                       </TableBody>
                     </Table>
                   </div>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent>
+                      <ContextMenuItem onClick={() => {
+                        setExpandedRowIds(new Set(paginatedSubmittedInvoices.map(i => i.id)));
+                      }}>
+                        <ChevronsUpDown className="h-3.5 w-3.5 mr-2" />
+                        Összes lenyitás
+                      </ContextMenuItem>
+                      <ContextMenuItem onClick={() => setExpandedRowIds(new Set())}>
+                        <ChevronsDownUp className="h-3.5 w-3.5 mr-2" />
+                        Összes bezárás
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
 
                   <UnifiedPagination
                     currentPage={submittedCurrentPage}

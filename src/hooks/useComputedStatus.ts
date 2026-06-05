@@ -23,7 +23,7 @@ export function getPaymentStatusBadge(transactionId: string | null | undefined) 
   }
   return {
     label: 'Nyitott',
-    className: 'bg-amber-500/15 text-amber-500 border-amber-500/20',
+    className: 'bg-yellow-500/15 text-yellow-600 border-yellow-500/20',
   };
 }
 
@@ -57,7 +57,8 @@ export function computeMatchStatus(transaction: TransactionLike): MatchStatus {
   if (
     transaction.match_type === 'no_match_category' ||
     CASH_TYPES.includes(t) ||
-    t === 'bankköltség'
+    t === 'bankköltség' ||
+    t === 'járulékok/adók'
   ) {
     return 'auto_settled';
   }

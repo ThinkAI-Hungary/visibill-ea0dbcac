@@ -562,7 +562,7 @@ export const TransactionDetailsDialog = ({
                 </Badge>
               )}
               {matchStatus === 'suggested' && (
-                <Badge variant="warning" className="gap-1 text-[10px] h-5">
+                <Badge className="gap-1 text-[10px] h-5 bg-yellow-500/15 text-yellow-600 border-yellow-500/30 hover:bg-yellow-500/15">
                   <AlertTriangle className="h-2.5 w-2.5" />
                   Javasolt
                 </Badge>
@@ -737,6 +737,12 @@ export const TransactionDetailsDialog = ({
                   <span className="flex items-center gap-1.5">
                     {matchedSalary ? <Wallet className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
                     {matchedSalary ? 'Párosított bértétel' : matchedNavInvoice ? 'Párosított NAV számla' : 'Párosított számla'}
+                    {matchedNavInvoice && (
+                      <Badge className="text-[9px] h-4 px-1.5 bg-indigo-500/15 text-indigo-600 border-indigo-500/30">NAV</Badge>
+                    )}
+                    {matchedInvoice && !matchedNavInvoice && (
+                      <Badge className="text-[9px] h-4 px-1.5 bg-teal-500/15 text-teal-600 border-teal-500/30">Beküldött</Badge>
+                    )}
                   </span>
                   {(matchedInvoice || matchedSalary) && (
                     <span className="text-[10px] text-muted-foreground flex items-center gap-1">

@@ -220,7 +220,7 @@ const TransactionsPage = () => {
                 <div className="text-lg font-bold tabular-nums">
                   <span className="text-emerald-600">{safeKpis.matched}</span>
                   <span className="text-xs font-normal text-muted-foreground"> / </span>
-                  <span className="text-amber-500 text-sm">{safeKpis.suggested}</span>
+                  <span className="text-yellow-500 text-sm">{safeKpis.suggested}</span>
                   <span className="text-xs font-normal text-muted-foreground"> / </span>
                   <span className="text-red-400 text-sm">{safeKpis.unmatched}</span>
                 </div>

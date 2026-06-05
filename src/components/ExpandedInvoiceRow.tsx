@@ -19,6 +19,25 @@ interface MatchedSubmittedInvoice {
   penznem: string | null;
   image_url: string | null;
   melleklet_url: string | null;
+  invoice_type?: string | null;
+}
+
+// Human-readable invoice_type labels
+const INVOICE_TYPE_LABELS: Record<string, string> = {
+  sima_szla: 'Számla',
+  dijbekero: 'Díjbekérő',
+  elolegszamla: 'Előlegszámla',
+  garanciajegy: 'Garanciajegy',
+  szallitolevel: 'Szállítólevél',
+  sztorno: 'Sztornó',
+  modosito: 'Módosító',
+  vegszamla: 'Végszámla',
+  proforma: 'Proforma',
+  nyugta: 'Nyugta',
+};
+
+function getInvoiceTypeLabel(rawType: string): string {
+  return INVOICE_TYPE_LABELS[rawType] || rawType.replace(/_/g, ' ');
 }
 
 interface MatchedNavInvoice {
@@ -54,6 +73,7 @@ interface LinkedInvoice {
   image_url?: string | null;
   melleklet_url?: string | null;
   reference_number?: string | null;
+  invoice_type?: string | null;
   relationDirection?: 'parent' | 'child';
 }
 
@@ -210,6 +230,11 @@ const ExpandedInvoiceRow = ({
                             <Link2 className="h-2.5 w-2.5" />
                             {inv.relationDirection === 'parent' ? 'Hivatkozott bizonylat' : inv.relationDirection === 'child' ? 'Hivatkozó bizonylat' : 'Kapcsolt'}
                           </Badge>
+                          {inv.invoice_type && (
+                            <Badge variant="outline" className="text-[10px] h-5 bg-violet-500/10 text-violet-600 border-violet-500/20">
+                              {getInvoiceTypeLabel(inv.invoice_type)}
+                            </Badge>
+                          )}
                           {inv.reference_number && (
                             <Badge variant="outline" className="text-[10px] h-5">
                               → {inv.reference_number}
@@ -279,6 +304,11 @@ const ExpandedInvoiceRow = ({
                     <span className="flex items-center gap-1.5">
                       <FileText className="h-3 w-3 text-muted-foreground" />
                       Párosított beküldött számla
+                      {inv.invoice_type && (
+                        <Badge variant="outline" className="text-[9px] h-4 px-1.5 bg-violet-500/10 text-violet-600 border-violet-500/20">
+                          {getInvoiceTypeLabel(inv.invoice_type)}
+                        </Badge>
+                      )}
                     </span>
                     <div className="flex items-center gap-2">
                       <Badge variant="success" className="gap-1 text-[10px] h-5">
@@ -388,7 +418,7 @@ const ExpandedInvoiceRow = ({
               return (
               <Card key={tx.id} className={cn(
                 "bg-muted/30 border-border/50 expand-stagger-4",
-                isSuggested && "border-l-2 border-l-amber-500/70"
+                isSuggested && "border-l-2 border-l-yellow-500/70"
               )}>
                 <CardHeader className="py-2 px-3">
                   <CardTitle className="text-xs font-medium flex items-center justify-between">
@@ -398,7 +428,7 @@ const ExpandedInvoiceRow = ({
                     </span>
                     <div className="flex items-center gap-2">
                       {isSuggested ? (
-                        <Badge className="gap-1 text-[10px] h-5 bg-amber-500/15 text-amber-500 border-amber-500/30 hover:bg-amber-500/20">
+                        <Badge className="gap-1 text-[10px] h-5 bg-yellow-500/15 text-yellow-600 border-yellow-500/30 hover:bg-yellow-500/20">
                           <AlertTriangle className="h-2.5 w-2.5" />
                           Javasolt
                         </Badge>
