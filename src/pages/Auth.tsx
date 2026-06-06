@@ -678,7 +678,7 @@ const Auth = () => {
     <div className="flex h-screen overflow-hidden auth-root relative bg-background">
       {/* Full-screen wave — theme-dependent SVG */}
       <img
-        src={currentTheme === 'dark' ? '/eaisybill_wave_dark.svg' : '/eaisybill_wave_bright.svg'}
+        src={currentTheme === 'dark' ? '/eaisybill_wave_dark.webp' : '/eaisybill_wave_bright.webp'}
         alt=""
         aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none z-0"
