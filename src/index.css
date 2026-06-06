@@ -546,7 +546,8 @@ All colors MUST be HSL.
 /* Compact Table Styling - strict fixed heights for layout stability */
 @layer components {
   .compact-table {
-    @apply text-sm;
+    @apply text-sm w-full;
+    table-layout: fixed;
   }
 
   .compact-table th {

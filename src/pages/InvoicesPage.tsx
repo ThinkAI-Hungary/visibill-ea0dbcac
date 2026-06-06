@@ -157,6 +157,18 @@ const InvoicesPage = () => {
     isSubmittedTab,
   });
 
+  // ── Toggle "Nem kerül könyvelésre" flag ──
+  const handleToggleExclude = useCallback(async (invoiceId: string, table: 'nav_invoices' | 'invoices', currentValue: boolean) => {
+    const newValue = !currentValue;
+    const { error } = await supabase
+      .from(table)
+      .update({ exclude_from_accounting: newValue })
+      .eq('id', invoiceId);
+    if (!error) {
+      invalidateInvoiceData();
+    }
+  }, [invalidateInvoiceData]);
+
   // Reset pagination, selection, and expanded row when company changes
   useEffect(() => {
     setNavCurrentPage(1);
@@ -836,11 +848,11 @@ const InvoicesPage = () => {
                   <ContextMenu>
                     <ContextMenuTrigger asChild>
                     <div className="rounded-lg border border-border/50 overflow-x-auto">
-                    <Table className="compact-table min-w-[1200px]">
+                    <Table className="compact-table">
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
-                          <TableHead className="w-[60px] pl-6">
-                            <div className="flex items-center gap-3">
+                          <TableHead className="w-[50px] pl-4">
+                            <div className="flex items-center gap-2">
                               <div className="w-3.5" />
                               <Checkbox
                                 checked={allVisibleSelected}
@@ -850,37 +862,37 @@ const InvoicesPage = () => {
                             </div>
                           </TableHead>
                           <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold" onClick={() => handleSort('partner_name')}>
-                            <div className="flex items-center gap-2">Partner<ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" /></div>
+                            <div className="flex items-center gap-1">Partner<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
-                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[95px] text-center whitespace-nowrap" onClick={() => handleSort('invoice_issue_date')}>
+                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold text-center whitespace-nowrap" onClick={() => handleSort('invoice_issue_date')}>
                             <div className="flex items-center justify-center gap-1">Kiáll.<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
-                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[95px] text-center whitespace-nowrap" onClick={() => handleSort('invoice_delivery_date')}>
+                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold text-center whitespace-nowrap" onClick={() => handleSort('invoice_delivery_date')}>
                             <div className="flex items-center justify-center gap-1">Telj.<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
                           <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold whitespace-nowrap" onClick={() => handleSort('invoice_number')}>
                             <div className="flex items-center gap-1">Biz.szám<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
-                          <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[100px]" onClick={() => handleSort('invoice_net_amount')}>
-                            <div className="flex items-center justify-end gap-2"><ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />Nettó</div>
+                          <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold whitespace-nowrap" onClick={() => handleSort('invoice_net_amount')}>
+                            <div className="flex items-center justify-end gap-1"><ArrowUpDown className="h-3 w-3 text-muted-foreground" />Nettó</div>
                           </TableHead>
-                          <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[100px]" onClick={() => handleSort('invoice_gross_amount')}>
-                            <div className="flex items-center justify-end gap-2"><ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />Bruttó</div>
+                          <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold whitespace-nowrap" onClick={() => handleSort('invoice_gross_amount')}>
+                            <div className="flex items-center justify-end gap-1"><ArrowUpDown className="h-3 w-3 text-muted-foreground" />Bruttó</div>
                           </TableHead>
-                          <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[100px]" onClick={() => handleSort('invoice_vat_amount')}>
-                            <div className="flex items-center justify-end gap-2"><ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />ÁFA</div>
+                          <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold whitespace-nowrap" onClick={() => handleSort('invoice_vat_amount')}>
+                            <div className="flex items-center justify-end gap-1"><ArrowUpDown className="h-3 w-3 text-muted-foreground" />ÁFA</div>
                           </TableHead>
-                          <TableHead className="font-semibold w-[80px] text-center">
+                          <TableHead className="font-semibold text-center whitespace-nowrap">
                             <div className="flex items-center justify-center gap-1">
                               Státusz
-                              <TooltipProvider><Tooltip><TooltipTrigger asChild><Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent className="max-w-xs"><p>A számla fizetési állapota automatikusan változik: „Kifizetve" lesz, ha a számlához tartozó tranzakció párosítva van.</p></TooltipContent></Tooltip></TooltipProvider>
+                              <TooltipProvider><Tooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent className="max-w-xs"><p>A számla fizetési állapota automatikusan változik: „Kifizetve" lesz, ha a számlához tartozó tranzakció párosítva van.</p></TooltipContent></Tooltip></TooltipProvider>
                             </div>
                           </TableHead>
-                          {activeTab === 'INBOUND' && (<TableHead className="font-semibold w-[70px] text-center">Beküldve</TableHead>)}
-                          {activeTab === 'INBOUND' && (<TableHead className="font-semibold w-[120px] text-center whitespace-nowrap">Kategória</TableHead>)}
-                          <TableHead className="font-semibold w-[120px] text-center whitespace-nowrap">Projekt</TableHead>
-                          <TableHead className="font-semibold w-[90px] text-center whitespace-nowrap">Fiz. mód</TableHead>
-                          <TableHead className="font-semibold w-[60px] text-center">Tételek</TableHead>
+                          {activeTab === 'INBOUND' && (<TableHead className="font-semibold text-center whitespace-nowrap">Beküldve</TableHead>)}
+                          {activeTab === 'INBOUND' && (<TableHead className="font-semibold text-center whitespace-nowrap">Kategória</TableHead>)}
+                          <TableHead className="font-semibold text-center whitespace-nowrap">Projekt</TableHead>
+                          <TableHead className="font-semibold text-center whitespace-nowrap">Fiz. mód</TableHead>
+                          <TableHead className="font-semibold text-center whitespace-nowrap">Tételek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -915,8 +927,8 @@ const InvoicesPage = () => {
                                   !selectedInvoiceIds.has(invoice.id) && !isPaid && !suggestedOnlyIds.has(invoice.id) && "bg-rose-100/60 dark:bg-rose-950/30 border-l-2 border-l-rose-400/50 border-b border-border/40",
                                   expandedRowIds.has(invoice.id) && "border-b-0"
                                 )} onClick={(e) => handleRowClick(invoice.id, e)}>
-                                  <TableCell className="pl-6">
-                                    <div className="flex items-center gap-3">
+                                  <TableCell className="pl-4">
+                                    <div className="flex items-center gap-2">
                                       <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform duration-200", expandedRowIds.has(invoice.id) && "rotate-180")} />
                                       <Checkbox checked={selectedInvoiceIds.has(invoice.id)} onCheckedChange={(checked) => handleRowSelect(invoice.id, !!checked)} aria-label={`${invoice.invoice_number} kijelölése`} />
                                     </div>
@@ -950,9 +962,16 @@ const InvoicesPage = () => {
                                     <CopyableCell value={(invoice.invoice_vat_amount || 0).toString()} displayValue={formatCurrency(invoice.invoice_vat_amount || 0, invoice.currency || 'HUF')} className="justify-end" align="right" ariaLabel="ÁFA összeg másolása" />
                                   </TableCell>
                                   <TableCell className="text-center">
-                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${isPaid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
-                                      {isPaid ? 'Kifizetve' : 'Nyitott'}
-                                    </span>
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${isPaid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                                        {isPaid ? 'Kifizetve' : 'Nyitott'}
+                                      </span>
+                                      {invoice.exclude_from_accounting && (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-300/40 whitespace-nowrap">
+                                          Nem könyvelt
+                                        </span>
+                                      )}
+                                    </div>
                                   </TableCell>
                                   {activeTab === 'INBOUND' && (
                                     <TableCell className="text-center">
@@ -1002,6 +1021,8 @@ const InvoicesPage = () => {
                                       linkedInvoices={matches.linkedInvoices}
                                       linkedInvoicesLoading={linkedInvoicesLoading}
                                       onViewInvoice={(inv) => { setSelectedInvoice(inv as any); setImageDialogOpen(true); }}
+                                      excludeFromAccounting={!!invoice.exclude_from_accounting}
+                                      onToggleExclude={() => handleToggleExclude(invoice.id, 'nav_invoices', !!invoice.exclude_from_accounting)}
                                     />
                                   );
                                 })()}
@@ -1176,39 +1197,39 @@ const InvoicesPage = () => {
                   <ContextMenu>
                     <ContextMenuTrigger asChild>
                     <div className="rounded-lg border border-border/50 overflow-x-auto">
-                    <Table className="compact-table min-w-[1200px]">
+                    <Table className="compact-table">
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
-                          <TableHead className="w-[60px] pl-6">
-                            <div className="flex items-center gap-3">
+                          <TableHead className="w-[50px] pl-4">
+                            <div className="flex items-center gap-2">
                               <div className="w-3.5" />
                               <Checkbox checked={allVisibleSubmittedSelected} onCheckedChange={(checked) => handleSubmittedSelectAll(!!checked)} aria-label="Összes kijelölése" />
                             </div>
                           </TableHead>
                           <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold" onClick={() => handleSort(activeTab === 'SUBMITTED_INBOUND' ? 'elado_nev' : 'vevo_nev')}>
-                            <div className="flex items-center gap-2">Partner<ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" /></div>
+                            <div className="flex items-center gap-1">Partner<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
-                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[95px] text-center whitespace-nowrap" onClick={() => handleSort('kibocsatas_datuma')}>
+                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[80px] text-center whitespace-nowrap" onClick={() => handleSort('kibocsatas_datuma')}>
                             <div className="flex items-center justify-center gap-1">Kiáll.<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
-                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[95px] text-center whitespace-nowrap" onClick={() => handleSort('teljesites_datuma')}>
+                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[80px] text-center whitespace-nowrap" onClick={() => handleSort('teljesites_datuma')}>
                             <div className="flex items-center justify-center gap-1">Telj.<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
                           <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold whitespace-nowrap" onClick={() => handleSort('bizonylatsorszam')}>
                             <div className="flex items-center gap-1">Biz.szám<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
-                          <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[100px]" onClick={() => handleSort('adoalap_osszesen')}>
-                            <div className="flex items-center justify-end gap-2"><ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />Nettó</div>
+                          <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[90px]" onClick={() => handleSort('adoalap_osszesen')}>
+                            <div className="flex items-center justify-end gap-1"><ArrowUpDown className="h-3 w-3 text-muted-foreground" />Nettó</div>
                           </TableHead>
-                          <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[100px]" onClick={() => handleSort('brutto_vegosszeg')}>
-                            <div className="flex items-center justify-end gap-2"><ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />Bruttó</div>
+                          <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[90px]" onClick={() => handleSort('brutto_vegosszeg')}>
+                            <div className="flex items-center justify-end gap-1"><ArrowUpDown className="h-3 w-3 text-muted-foreground" />Bruttó</div>
                           </TableHead>
-                          <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[100px]" onClick={() => handleSort('afa_osszeg_osszesen')}>
-                            <div className="flex items-center justify-end gap-2"><ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />ÁFA</div>
+                          <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold w-[80px]" onClick={() => handleSort('afa_osszeg_osszesen')}>
+                            <div className="flex items-center justify-end gap-1"><ArrowUpDown className="h-3 w-3 text-muted-foreground" />ÁFA</div>
                           </TableHead>
-                          <TableHead className="font-semibold w-[90px] text-center whitespace-nowrap">Fiz. mód</TableHead>
-                          <TableHead className="font-semibold w-[60px] text-center">Tételek</TableHead>
-                          <TableHead className="text-center font-semibold w-[80px]">Műveletek</TableHead>
+                          <TableHead className="font-semibold w-[80px] text-center whitespace-nowrap">Fiz. mód</TableHead>
+                          <TableHead className="font-semibold w-[55px] text-center whitespace-nowrap">Tételek</TableHead>
+                          <TableHead className="text-center font-semibold w-[75px] whitespace-nowrap">Műveletek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1227,8 +1248,8 @@ const InvoicesPage = () => {
                                 !selectedSubmittedIds.has(invoice.id) && !extendedMatchedIds.has(invoice.id) && !suggestedOnlyIds.has(invoice.id) && "bg-rose-100/60 dark:bg-rose-950/30 border-l-2 border-l-rose-400/50 border-b border-border/40",
                                 expandedRowIds.has(invoice.id) && "border-b-0"
                               )} onClick={(e) => handleRowClick(invoice.id, e)}>
-                                <TableCell className="pl-6">
-                                  <div className="flex items-center gap-3">
+                                <TableCell className="pl-4">
+                                  <div className="flex items-center gap-2">
                                     <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform duration-200", expandedRowIds.has(invoice.id) && "rotate-180")} />
                                     <Checkbox checked={selectedSubmittedIds.has(invoice.id)} onCheckedChange={(checked) => handleSubmittedRowSelect(invoice.id, !!checked)} aria-label={`${invoice.bizonylatsorszam || invoice.id} kijelölése`} />
                                   </div>
@@ -1267,7 +1288,14 @@ const InvoicesPage = () => {
                                   <CopyableCell value={(invoice.afa_osszeg_osszesen || 0).toString()} displayValue={formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || 'HUF')} className="justify-end" align="right" ariaLabel="ÁFA összeg másolása" />
                                 </TableCell>
                                 <TableCell className="text-center">
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground">{invoice.fizetesi_mod || 'Nem megadott'}</span>
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground">{invoice.fizetesi_mod || 'Nem megadott'}</span>
+                                    {invoice.exclude_from_accounting && (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-300/40 whitespace-nowrap">
+                                        Nem könyvelt
+                                      </span>
+                                    )}
+                                  </div>
                                 </TableCell>
                                 <TableCell className="text-center">
                                   <TooltipProvider><Tooltip><TooltipTrigger asChild>
@@ -1310,6 +1338,8 @@ const InvoicesPage = () => {
                                     invoiceReferenceNumber={invoice.reference_number}
                                     linkedInvoicesLoading={linkedInvoicesLoading}
                                     onViewInvoice={(inv) => { setSelectedInvoice(inv as any); setImageDialogOpen(true); }}
+                                    excludeFromAccounting={!!invoice.exclude_from_accounting}
+                                    onToggleExclude={() => handleToggleExclude(invoice.id, 'invoices', !!invoice.exclude_from_accounting)}
                                   />
                                 );
                               })()}

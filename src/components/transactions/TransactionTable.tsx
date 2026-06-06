@@ -67,47 +67,103 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
   matchedInvoiceId,
   transaction,
 }: {
-  matchedInvoiceId: string;
+  matchedInvoiceId: string | null;
   transaction: Transaction;
 }) {
   const [matchedSubmitted, setMatchedSubmitted] = useState<any[]>([]);
   const [matchedNav, setMatchedNav] = useState<any[]>([]);
+  const [siblingTransactions, setSiblingTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      // Try submitted invoices first
-      const { data: submitted } = await supabase
-        .from('invoices')
-        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, image_url, melleklet_url, invoice_type, reference_number, fizetesi_mod')
-        .eq('id', matchedInvoiceId)
-        .maybeSingle();
+      const submittedList: any[] = [];
+      const navList: any[] = [];
+
+      // 1. Fetch primary AI match (from matched_invoice_id)
+      if (matchedInvoiceId) {
+        const { data: submitted } = await supabase
+          .from('invoices')
+          .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, image_url, melleklet_url, invoice_type, reference_number, fizetesi_mod')
+          .eq('id', matchedInvoiceId)
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        if (submitted) {
+          submittedList.push(submitted);
+        } else {
+          const { data: nav } = await supabase
+            .from('nav_invoices')
+            .select('id, invoice_number, invoice_issue_date, invoice_delivery_date, supplier_name, customer_name, supplier_tax_number, customer_tax_number, invoice_net_amount, invoice_gross_amount, invoice_vat_amount, currency, transaction_id, submitted')
+            .eq('id', matchedInvoiceId)
+            .maybeSingle();
+
+          if (cancelled) return;
+          if (nav) navList.push(nav);
+        }
+      }
+
+      // 2. Fetch additional manual matches from join table
+      const { data: extraMatches } = await supabase
+        .from('transaction_invoice_matches')
+        .select('invoice_id, invoice_source')
+        .eq('transaction_id', transaction.id);
 
       if (cancelled) return;
 
-      if (submitted) {
-        setMatchedSubmitted([submitted]);
+      if (extraMatches && extraMatches.length > 0) {
+        // Separate by source, exclude already-fetched primary
+        const extraSubmittedIds = extraMatches
+          .filter(m => m.invoice_source === 'submitted' && m.invoice_id !== matchedInvoiceId)
+          .map(m => m.invoice_id);
+        const extraNavIds = extraMatches
+          .filter(m => m.invoice_source === 'nav' && m.invoice_id !== matchedInvoiceId)
+          .map(m => m.invoice_id);
+
+        if (extraSubmittedIds.length > 0) {
+          const { data } = await supabase
+            .from('invoices')
+            .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, image_url, melleklet_url, invoice_type, reference_number, fizetesi_mod')
+            .in('id', extraSubmittedIds);
+          if (!cancelled && data) submittedList.push(...data);
+        }
+
+        if (extraNavIds.length > 0) {
+          const { data } = await supabase
+            .from('nav_invoices')
+            .select('id, invoice_number, invoice_issue_date, invoice_delivery_date, supplier_name, customer_name, supplier_tax_number, customer_tax_number, invoice_net_amount, invoice_gross_amount, invoice_vat_amount, currency, transaction_id, submitted')
+            .in('id', extraNavIds);
+          if (!cancelled && data) navList.push(...data);
+        }
+      }
+
+      // 3. Fetch sibling transactions matched to the same invoice(s)
+      const allInvoiceIds = [
+        ...submittedList.map(s => s.id),
+        ...navList.map(n => n.id),
+      ];
+
+      if (allInvoiceIds.length > 0) {
+        const { data: siblingTx } = await supabase
+          .from('transactions')
+          .select('id, transaction_date, amount, description, currency, type, confidence_score, match_type, is_verified')
+          .in('matched_invoice_id', allInvoiceIds);
+
+        if (!cancelled && siblingTx) {
+          setSiblingTransactions(siblingTx);
+        }
+      }
+
+      if (!cancelled) {
+        setMatchedSubmitted(submittedList);
+        setMatchedNav(navList);
         setLoading(false);
-        return;
       }
-
-      // Try NAV invoices
-      const { data: nav } = await supabase
-        .from('nav_invoices')
-        .select('id, invoice_number, invoice_issue_date, invoice_delivery_date, supplier_name, customer_name, supplier_tax_number, customer_tax_number, invoice_net_amount, invoice_gross_amount, invoice_vat_amount, currency, transaction_id, submitted')
-        .eq('id', matchedInvoiceId)
-        .maybeSingle();
-
-      if (cancelled) return;
-
-      if (nav) {
-        setMatchedNav([nav]);
-      }
-      setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [matchedInvoiceId]);
+  }, [matchedInvoiceId, transaction.id]);
 
   if (loading) {
     return (
@@ -139,8 +195,9 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
       colSpan={8}
       matchedSubmittedInvoices={matchedSubmitted}
       matchedNavInvoices={matchedNav}
-      matchedTransactions={[]}
+      matchedTransactions={siblingTransactions}
       linkedInvoices={[]}
+      hideStandaloneTransactions
     />
   );
 });
@@ -278,7 +335,7 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
         </TooltipProvider>
       </TableCell>
     </TableRow>
-    {isExpanded && transaction.matched_invoice_id && (
+    {isExpanded && (
       <ExpandedTransactionInvoice
         matchedInvoiceId={transaction.matched_invoice_id}
         transaction={transaction}

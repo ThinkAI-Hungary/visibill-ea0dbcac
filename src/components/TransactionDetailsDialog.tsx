@@ -125,15 +125,20 @@ export const TransactionDetailsDialog = ({
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [invoiceDetailOpen, setInvoiceDetailOpen] = useState(false);
   const [invoiceDetailId, setInvoiceDetailId] = useState<string | null>(null);
+  const [extraMatches, setExtraMatches] = useState<Array<{id: string; invoice_id: string; invoice_source: string; invoice?: MatchedInvoice | null; navInvoice?: MatchedNavInvoice | null}>>([]);
+  const [showAddExtraMatch, setShowAddExtraMatch] = useState(false);
 
   useEffect(() => {
     if (open && transaction) {
       setShowManualMatch(false);
+      setShowAddExtraMatch(false);
       setSearch('');
       setSelectedInvoiceId(null);
       
       // Always fetch courier reports for this transaction
       fetchCourierReports();
+      // Always fetch extra matches from join table
+      fetchExtraMatches();
       
       if (transaction.matched_invoice_id) {
         fetchMatchedInvoice();
@@ -234,11 +239,11 @@ export const TransactionDetailsDialog = ({
     setLoadingAvailable(true);
     try {
       const transactionDate = new Date(transaction.transaction_date);
-      const dateFrom = format(subDays(transactionDate, 60), 'yyyy-MM-dd');
-      const dateTo = format(addDays(transactionDate, 14), 'yyyy-MM-dd');
+      const dateFrom = format(subDays(transactionDate, 180), 'yyyy-MM-dd');
+      const dateTo = format(addDays(transactionDate, 30), 'yyyy-MM-dd');
       const txAmount = Math.abs(transaction.amount);
 
-      // 1. Fetch from invoices table
+      // 1. Fetch from invoices table (wide date range, no match filter)
       const { data: invoices } = await supabase
         .from('invoices')
         .select('id, bizonylatsorszam, brutto_vegosszeg, elado_nev, penznem, kibocsatas_datuma')
@@ -246,32 +251,50 @@ export const TransactionDetailsDialog = ({
         .gte('kibocsatas_datuma', dateFrom)
         .lte('kibocsatas_datuma', dateTo)
         .order('kibocsatas_datuma', { ascending: false })
-        .limit(100);
+        .limit(200);
 
-      // 2. Fetch from nav_invoices table
+      // 2. Fetch from nav_invoices table (no transaction_id filter - allow already matched)
       const { data: navInvoices } = await supabase
         .from('nav_invoices')
         .select('id, invoice_number, invoice_gross_amount, supplier_name, customer_name, currency, invoice_issue_date, invoice_direction')
         .eq('company_id', companyId)
         .gte('invoice_issue_date', dateFrom)
         .lte('invoice_issue_date', dateTo)
-        .is('transaction_id', null)
         .order('invoice_issue_date', { ascending: false })
-        .limit(100);
+        .limit(200);
 
       // 3. Combine into unified list
       const combined: AvailableInvoice[] = [];
 
       for (const inv of (invoices || [])) {
-        // Check already paid amounts
-        const { data: matchedTx } = await supabase
+        let alreadyPaid = 0;
+
+        // 1. Direct match to this submitted invoice ID
+        const { data: directMatchedTx } = await supabase
           .from('transactions')
           .select('amount')
-          .eq('matched_invoice_id', inv.id)
-          .eq('is_verified', true);
+          .eq('matched_invoice_id', inv.id);
 
-        // Skip invoices that are already matched to a verified transaction
-        if (matchedTx && matchedTx.length > 0) continue;
+        alreadyPaid += (directMatchedTx || []).reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
+
+        // 2. Also check matches via corresponding NAV invoice (same invoice number)
+        if (inv.bizonylatsorszam) {
+          const { data: navInv } = await supabase
+            .from('nav_invoices')
+            .select('id')
+            .eq('company_id', companyId)
+            .eq('invoice_number', inv.bizonylatsorszam);
+
+          if (navInv && navInv.length > 0) {
+            const navIds = navInv.map(n => n.id);
+            const { data: navMatchedTx } = await supabase
+              .from('transactions')
+              .select('amount')
+              .in('matched_invoice_id', navIds);
+
+            alreadyPaid += (navMatchedTx || []).reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
+          }
+        }
 
         combined.push({
           id: inv.id,
@@ -280,12 +303,42 @@ export const TransactionDetailsDialog = ({
           elado_nev: inv.elado_nev,
           penznem: inv.penznem,
           kibocsatas_datuma: inv.kibocsatas_datuma,
-          already_paid: 0,
-          remaining: Math.abs(inv.brutto_vegosszeg || 0),
+          already_paid: alreadyPaid,
+          remaining: Math.abs(inv.brutto_vegosszeg || 0) - alreadyPaid,
         });
       }
 
       for (const nav of (navInvoices || [])) {
+        let navAlreadyPaid = 0;
+
+        // 1. Direct match to this NAV invoice ID
+        const { data: navDirectTx } = await supabase
+          .from('transactions')
+          .select('amount')
+          .eq('matched_invoice_id', nav.id);
+
+        navAlreadyPaid += (navDirectTx || []).reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
+
+        // 2. Cross-ref via submitted invoice with same number
+        if (nav.invoice_number) {
+          const { data: subInv } = await supabase
+            .from('invoices')
+            .select('id')
+            .eq('company_id', companyId)
+            .eq('bizonylatsorszam', nav.invoice_number);
+
+          if (subInv && subInv.length > 0) {
+            const subIds = subInv.map(s => s.id);
+            const { data: subMatchedTx } = await supabase
+              .from('transactions')
+              .select('amount')
+              .in('matched_invoice_id', subIds);
+
+            navAlreadyPaid += (subMatchedTx || []).reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
+          }
+        }
+
+        const navBrutto = Math.abs(nav.invoice_gross_amount || 0);
         combined.push({
           id: nav.id,
           bizonylatsorszam: nav.invoice_number,
@@ -293,8 +346,8 @@ export const TransactionDetailsDialog = ({
           elado_nev: nav.supplier_name || nav.customer_name || '',
           penznem: nav.currency,
           kibocsatas_datuma: nav.invoice_issue_date || '',
-          already_paid: 0,
-          remaining: Math.abs(nav.invoice_gross_amount || 0),
+          already_paid: navAlreadyPaid,
+          remaining: navBrutto - navAlreadyPaid,
         });
       }
 
@@ -347,7 +400,8 @@ export const TransactionDetailsDialog = ({
         .update({
           matched_invoice_id: selectedInvoiceId,
           is_verified: true,
-          match_type: 'manual'
+          match_type: 'manual',
+          confidence_score: 1.0
         })
         .eq('id', transaction.id);
 
@@ -465,6 +519,103 @@ export const TransactionDetailsDialog = ({
     } catch (error) {
       console.error('Error reverting status:', error);
       toast({ title: 'Hiba a visszavonás során', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── Extra matches (join table) ──
+  const fetchExtraMatches = async () => {
+    if (!transaction) return;
+    const { data } = await supabase
+      .from('transaction_invoice_matches')
+      .select('id, invoice_id, invoice_source')
+      .eq('transaction_id', transaction.id);
+    
+    if (!data || data.length === 0) {
+      setExtraMatches([]);
+      return;
+    }
+
+    // Fetch invoice details for each extra match
+    const enriched = await Promise.all(data.map(async (m) => {
+      if (m.invoice_source === 'submitted') {
+        const { data: inv } = await supabase
+          .from('invoices')
+          .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, brutto_vegosszeg, penznem, invoice_type')
+          .eq('id', m.invoice_id)
+          .maybeSingle();
+        return { ...m, invoice: inv as MatchedInvoice | null, navInvoice: null };
+      } else {
+        const { data: nav } = await supabase
+          .from('nav_invoices')
+          .select('id, invoice_number, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, invoice_direction, transaction_id, submitted')
+          .eq('id', m.invoice_id)
+          .maybeSingle();
+        return { ...m, invoice: null, navInvoice: nav as MatchedNavInvoice | null };
+      }
+    }));
+    setExtraMatches(enriched);
+  };
+
+  const handleAddExtraMatch = async () => {
+    if (!transaction || !selectedInvoiceId) return;
+    setSaving(true);
+    try {
+      // Determine source: check if it's a submitted invoice or NAV
+      const { data: submittedCheck } = await supabase
+        .from('invoices')
+        .select('id')
+        .eq('id', selectedInvoiceId)
+        .maybeSingle();
+
+      const source = submittedCheck ? 'submitted' : 'nav';
+
+      const { error } = await supabase
+        .from('transaction_invoice_matches')
+        .insert({
+          transaction_id: transaction.id,
+          invoice_id: selectedInvoiceId,
+          invoice_source: source,
+          created_by: 'manual',
+        });
+
+      if (error) throw error;
+
+      toast({ title: 'További számla sikeresen hozzáadva!' });
+      setShowAddExtraMatch(false);
+      setSelectedInvoiceId(null);
+      setSearch('');
+      fetchExtraMatches();
+      onUpdate();
+    } catch (error: any) {
+      if (error?.code === '23505') {
+        toast({ title: 'Ez a számla már hozzá van rendelve ehhez a tranzakcióhoz', variant: 'destructive' });
+      } else {
+        console.error('Error adding extra match:', error);
+        toast({ title: 'Hiba a számla hozzáadásakor', variant: 'destructive' });
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveExtraMatch = async (matchId: string) => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('transaction_invoice_matches')
+        .delete()
+        .eq('id', matchId);
+
+      if (error) throw error;
+
+      toast({ title: 'További számla eltávolítva' });
+      fetchExtraMatches();
+      onUpdate();
+    } catch (error) {
+      console.error('Error removing extra match:', error);
+      toast({ title: 'Hiba az eltávolításkor', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -896,6 +1047,10 @@ export const TransactionDetailsDialog = ({
                 <Link2 className="h-3 w-3 mr-1" />
                 Másik számla
               </Button>
+              <Button variant="outline" size="sm" onClick={() => { setShowAddExtraMatch(true); fetchAvailableInvoices(); }} className="text-xs h-8">
+                <FileText className="h-3 w-3 mr-1" />
+                További számla
+              </Button>
               {matchStatus === 'suggested' && (
                 <Button size="sm" onClick={handleVerify} disabled={saving} className="text-xs h-8">
                   <Check className="h-3 w-3 mr-1" />
@@ -903,6 +1058,51 @@ export const TransactionDetailsDialog = ({
                 </Button>
               )}
             </DialogFooter>
+
+            {/* Extra matches from join table */}
+            {extraMatches.length > 0 && (
+              <div className="space-y-1.5 mt-2">
+                <h4 className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">További párosított számlák</h4>
+                {extraMatches.map((em) => (
+                  <Card key={em.id} className="bg-muted/20 border-border/40">
+                    <CardContent className="p-2 flex items-center justify-between">
+                      <div className="text-xs space-y-0.5">
+                        {em.invoice ? (
+                          <>
+                            <span className="font-mono font-medium">{em.invoice.bizonylatsorszam || '-'}</span>
+                            <span className="text-muted-foreground mx-1">·</span>
+                            <span>{em.invoice.elado_nev}</span>
+                            <span className="text-muted-foreground mx-1">·</span>
+                            <span className="font-mono">{formatCurrency(em.invoice.brutto_vegosszeg, em.invoice.penznem || 'HUF')}</span>
+                            <Badge className="ml-1.5 text-[8px] h-3.5 px-1 bg-teal-500/15 text-teal-600 border-teal-500/30">Beküldött</Badge>
+                          </>
+                        ) : em.navInvoice ? (
+                          <>
+                            <span className="font-mono font-medium">{em.navInvoice.invoice_number || '-'}</span>
+                            <span className="text-muted-foreground mx-1">·</span>
+                            <span>{em.navInvoice.supplier_name || em.navInvoice.customer_name || '-'}</span>
+                            <span className="text-muted-foreground mx-1">·</span>
+                            <span className="font-mono">{formatCurrency(em.navInvoice.invoice_gross_amount || 0, em.navInvoice.currency || 'HUF')}</span>
+                            <Badge className="ml-1.5 text-[8px] h-3.5 px-1 bg-indigo-500/15 text-indigo-600 border-indigo-500/30">NAV</Badge>
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground">Törölt bizonylat</span>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs text-destructive hover:text-destructive"
+                        onClick={() => handleRemoveExtraMatch(em.id)}
+                        disabled={saving}
+                      >
+                        Eltávolítás
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </>
         )}
 
@@ -941,7 +1141,7 @@ export const TransactionDetailsDialog = ({
               {/* Results count */}
               {!loadingAvailable && filteredInvoices.length > 0 && (
                 <div className="flex items-center justify-between text-[10px] text-muted-foreground px-0.5">
-                  <span>{filteredInvoices.length} számla az időszakban (±60 nap)</span>
+                  <span>{filteredInvoices.length} számla az időszakban (±180 nap)</span>
                 </div>
               )}
 
@@ -1003,6 +1203,30 @@ export const TransactionDetailsDialog = ({
                               <p className="text-[10px] text-muted-foreground/70 mt-0.5">
                                 {invoice.kibocsatas_datuma ? format(new Date(invoice.kibocsatas_datuma), 'yyyy.MM.dd') : ''}
                               </p>
+                              {(() => {
+                                const brutto = Math.abs(invoice.brutto_vegosszeg || 0);
+                                const paid = invoice.already_paid || 0;
+                                const rem = brutto - paid;
+                                if (paid >= brutto && brutto > 0) {
+                                  return (
+                                    <Badge className="text-[8px] h-3.5 px-1 mt-0.5 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/10">
+                                      Kifizetve
+                                    </Badge>
+                                  );
+                                } else if (paid > 0) {
+                                  return (
+                                    <Badge className="text-[8px] h-3.5 px-1 mt-0.5 bg-blue-500/10 text-blue-600 border-blue-500/20 hover:bg-blue-500/10">
+                                      Részben fizetve, fennmaradó: {formatCurrency(rem, invoice.penznem || 'HUF')}
+                                    </Badge>
+                                  );
+                                } else {
+                                  return (
+                                    <Badge className="text-[8px] h-3.5 px-1 mt-0.5 bg-rose-500/10 text-rose-500 border-rose-500/20 hover:bg-rose-500/10">
+                                      Nincs fizetve
+                                    </Badge>
+                                  );
+                                }
+                              })()}
                             </div>
                             <div className="text-right shrink-0">
                               <p className="font-mono font-medium text-xs">
@@ -1071,6 +1295,97 @@ export const TransactionDetailsDialog = ({
                   {saving ? 'Mentés...' : 'Párosítás mentése'}
                 </Button>
               </div>
+            </DialogFooter>
+          </>
+        )}
+
+        {/* Add Extra Match Section */}
+        {showAddExtraMatch && (
+          <>
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-medium flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5 text-primary" />
+                    További számla hozzáadása
+                  </h4>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    A kiválasztott számla kiegészítő párosításként kerül a tranzakcióhoz
+                  </p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => { setShowAddExtraMatch(false); setSelectedInvoiceId(null); setSearch(''); }} className="h-6 text-xs">
+                  Vissza
+                </Button>
+              </div>
+
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Keresés számlaszám, partner vagy összeg alapján..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-8 h-8 text-xs"
+                  autoFocus
+                />
+              </div>
+
+              <div className="max-h-[200px] overflow-y-auto border rounded-md">
+                {loadingAvailable ? (
+                  <div className="flex items-center justify-center h-20">
+                    <LoadingSpinner />
+                  </div>
+                ) : filteredInvoices.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-20 text-muted-foreground">
+                    <FileText className="h-5 w-5 mb-1" />
+                    <p className="text-xs">{search ? 'Nincs találat' : 'Nincs elérhető számla'}</p>
+                  </div>
+                ) : (
+                  <div className="p-1.5 space-y-1">
+                    {filteredInvoices.map((invoice) => {
+                      const isSelected = selectedInvoiceId === invoice.id;
+                      const isAlreadyPrimary = transaction.matched_invoice_id === invoice.id;
+                      const isAlreadyExtra = extraMatches.some(em => em.invoice_id === invoice.id);
+
+                      if (isAlreadyPrimary || isAlreadyExtra) return null;
+
+                      return (
+                        <div
+                          key={invoice.id}
+                          className={cn(
+                            "rounded-md border p-2 cursor-pointer transition-all text-xs",
+                            isSelected
+                              ? "border-primary bg-primary/10 ring-1 ring-primary/30"
+                              : "hover:bg-muted/40"
+                          )}
+                          onClick={() => setSelectedInvoiceId(invoice.id)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              {isSelected && <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />}
+                              <span className="font-mono font-medium truncate">{invoice.bizonylatsorszam}</span>
+                              <span className="text-muted-foreground">·</span>
+                              <span className="truncate">{invoice.elado_nev || '-'}</span>
+                            </div>
+                            <span className="font-mono font-medium shrink-0 ml-2">{formatCurrency(invoice.brutto_vegosszeg, invoice.penznem || 'HUF')}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button
+                size="sm"
+                disabled={!selectedInvoiceId || saving}
+                onClick={handleAddExtraMatch}
+                className="text-xs h-8"
+              >
+                <Check className="h-3 w-3 mr-1" />
+                {saving ? 'Mentés...' : 'Hozzáadás'}
+              </Button>
             </DialogFooter>
           </>
         )}

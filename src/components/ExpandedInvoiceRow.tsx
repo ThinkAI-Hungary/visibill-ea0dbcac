@@ -1,7 +1,8 @@
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -60,6 +61,8 @@ interface MatchedTransaction {
   currency: string | null;
   type: string | null;
   confidence_score: number | null;
+  match_type: string | null;
+  is_verified: boolean | null;
 }
 
 interface LinkedInvoice {
@@ -100,6 +103,64 @@ interface ExpandedInvoiceRowProps {
   onViewInvoice?: (invoice: MatchedSubmittedInvoice) => void;
   onViewNavItems?: (invoice: MatchedNavInvoice) => void;
   matchedCourierReports?: MatchedCourierReport[];
+  /** When true, show inline collapsible tx list inside invoice cards instead of standalone cards */
+  hideStandaloneTransactions?: boolean;
+  /** Invoice exclude from accounting state */
+  excludeFromAccounting?: boolean;
+  /** Callback to toggle exclude from accounting */
+  onToggleExclude?: () => void;
+}
+
+// Compact collapsible transaction list inside invoice cards
+function InlineTransactionList({ transactions, invoiceId }: { transactions: MatchedTransaction[]; invoiceId: string }) {
+  const [open, setOpen] = useState(false);
+
+  if (!transactions || transactions.length === 0) return null;
+
+  return (
+    <div className="mt-2 pt-2 border-t border-border/30">
+      <button
+        type="button"
+        onClick={() => setOpen(prev => !prev)}
+        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors w-full"
+      >
+        <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", open && "rotate-180")} />
+        <ArrowRightLeft className="h-2.5 w-2.5" />
+        <span className="font-medium">Párosított tranzakciók ({transactions.length})</span>
+      </button>
+      {open && (
+        <div className="mt-1.5 space-y-1">
+          {transactions.map(tx => (
+            <div key={tx.id} className="flex items-center gap-2 text-[10px] pl-4">
+              <span className="text-muted-foreground whitespace-nowrap">
+                {format(new Date(tx.transaction_date), 'MM.dd', { locale: hu })}
+              </span>
+              <span className={cn(
+                "font-mono font-medium whitespace-nowrap",
+                tx.amount < 0 ? "text-destructive" : "text-success"
+              )}>
+                {formatCurrency(tx.amount, tx.currency || 'HUF')}
+              </span>
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-muted-foreground truncate cursor-default">
+                      {tx.description ? tx.description.substring(0, 60) + (tx.description.length > 60 ? '…' : '') : '-'}
+                    </span>
+                  </TooltipTrigger>
+                  {tx.description && tx.description.length > 60 && (
+                    <TooltipContent side="top" className="max-w-md text-xs">
+                      {tx.description}
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 const ExpandedInvoiceRow = ({
@@ -113,6 +174,9 @@ const ExpandedInvoiceRow = ({
   onViewInvoice,
   onViewNavItems,
   matchedCourierReports = [],
+  hideStandaloneTransactions = false,
+  excludeFromAccounting = false,
+  onToggleExclude,
 }: ExpandedInvoiceRowProps) => {
   // Detect broken chain: reference_number exists but no matching linked invoice found
   const hasBrokenChain = !linkedInvoicesLoading
@@ -162,9 +226,35 @@ const ExpandedInvoiceRow = ({
             <div className="accordion-overflow">
               <div className="py-6 px-8 space-y-4 max-w-3xl ml-4">
             {/* Header */}
-            <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 expand-animate">
-              <Link2 className="h-3.5 w-3.5" />
-              Kapcsolódó tételek
+            <div className="flex items-center justify-between mb-4 expand-animate">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <Link2 className="h-3.5 w-3.5" />
+                Kapcsolódó tételek
+              </div>
+              {onToggleExclude && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onToggleExclude(); }}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all duration-200 border",
+                    excludeFromAccounting
+                      ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-300/40 hover:bg-amber-500/25"
+                      : "bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <div className={cn(
+                    "w-3 h-3 rounded-sm border-2 flex items-center justify-center transition-colors",
+                    excludeFromAccounting ? "border-amber-500 bg-amber-500" : "border-muted-foreground/40"
+                  )}>
+                    {excludeFromAccounting && (
+                      <svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1.5 4L3 5.5L6.5 2" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </div>
+                  Nem kerül könyvelésre
+                </button>
+              )}
             </div>
 
             {!hasAny && (
@@ -351,6 +441,10 @@ const ExpandedInvoiceRow = ({
                       </span>
                     </div>
                   </div>
+                  {/* Inline collapsible transaction list (Transactions page only, 2+ tx) */}
+                  {hideStandaloneTransactions && matchedTransactions.length >= 2 && (
+                    <InlineTransactionList transactions={matchedTransactions} invoiceId={inv.id} />
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -403,18 +497,17 @@ const ExpandedInvoiceRow = ({
                       </span>
                     </div>
                   </div>
+                  {/* Inline collapsible transaction list (Transactions page only, 2+ tx) */}
+                  {hideStandaloneTransactions && matchedTransactions.length >= 2 && (
+                    <InlineTransactionList transactions={matchedTransactions} invoiceId={inv.id} />
+                  )}
                 </CardContent>
               </Card>
             ))}
 
-            {/* Separator between invoices and transactions */}
-            {(matchedSubmittedInvoices.length > 0 || matchedNavInvoices.length > 0) && matchedTransactions.length > 0 && (
-              <Separator className="my-1" />
-            )}
-
-            {/* Matched transactions */}
-            {matchedTransactions.map((tx) => {
-              const isSuggested = (tx.confidence_score ?? 1) < 0.9;
+            {/* Standalone matched transactions (full card style — Invoices page only) */}
+            {!hideStandaloneTransactions && matchedTransactions.map((tx) => {
+              const isSuggested = tx.match_type !== 'manual' && !tx.is_verified && (tx.confidence_score ?? 1) < 0.9;
               return (
               <Card key={tx.id} className={cn(
                 "bg-muted/30 border-border/50 expand-stagger-4",

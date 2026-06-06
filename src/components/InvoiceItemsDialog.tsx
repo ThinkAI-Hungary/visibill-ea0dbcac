@@ -38,6 +38,7 @@ interface InvoiceLineItem {
   gross_amount: number | null;
   product_code: string | null;
   gl_classifications: any | null;
+  exclude_from_accounting?: boolean;
 }
 
 interface InvoiceItemsDialogProps {
@@ -78,7 +79,7 @@ export function InvoiceItemsDialog({
       if (source === 'submitted') {
         const { data, error } = await supabase
           .from('invoice_items')
-          .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications')
+          .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, exclude_from_accounting')
           .eq('invoice_id', invoiceId)
           .order('line_number', { ascending: true });
         if (error) throw error;
@@ -87,7 +88,7 @@ export function InvoiceItemsDialog({
       // Default: NAV source
       const { data, error } = await supabase
         .from('nav_invoice_items')
-        .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications')
+        .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, exclude_from_accounting')
         .eq('nav_invoice_id', invoiceId)
         .order('line_number', { ascending: true });
       if (error) throw error;
@@ -140,6 +141,19 @@ export function InvoiceItemsDialog({
     if (!newOpen) setSelectedIds(new Set());
     onOpenChange(newOpen);
   }, [onOpenChange]);
+
+  // Toggle exclude_from_accounting on a single line item
+  const handleToggleItemExclude = useCallback(async (item: InvoiceLineItem) => {
+    const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+    const newValue = !item.exclude_from_accounting;
+    const { error } = await supabase
+      .from(table)
+      .update({ exclude_from_accounting: newValue })
+      .eq('id', item.id);
+    if (!error) {
+      queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+    }
+  }, [source, invoiceId, queryClient]);
 
   const formatAmount = (amount: number | null) => {
     if (amount === null || amount === undefined) return '-';
@@ -266,6 +280,7 @@ export function InvoiceItemsDialog({
                       <TableHead className="text-right font-semibold">ÁFA összeg</TableHead>
                       <TableHead className="text-right font-semibold">Bruttó</TableHead>
                       <TableHead className="text-center font-semibold">Főkönyv</TableHead>
+                      <TableHead className="text-center font-semibold w-[70px]">Könyv.</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -363,6 +378,21 @@ export function InvoiceItemsDialog({
                               </span>
                             );
                           })()}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleToggleItemExclude(item); }}
+                            className={cn(
+                              "inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold transition-all border cursor-pointer whitespace-nowrap",
+                              item.exclude_from_accounting
+                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-300/40 hover:bg-amber-500/25"
+                                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-300/30 hover:bg-emerald-500/20"
+                            )}
+                            title={item.exclude_from_accounting ? 'Nem kerül könyvelésre — kattints a visszaállításhoz' : 'Könyvelésre kerül — kattints a kizáráshoz'}
+                          >
+                            {item.exclude_from_accounting ? 'Nem' : 'Igen'}
+                          </button>
                         </TableCell>
                       </TableRow>
                     );

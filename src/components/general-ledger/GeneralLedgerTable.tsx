@@ -49,6 +49,7 @@ interface LedgerItem {
   originalGlId?: string | null;
   originalAmount?: number;
   originalCurrency?: string;
+  isExcluded?: boolean;
 }
 
 const formatCurrency = (value: number) => {
@@ -277,11 +278,14 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       });
 
       if (dbItems && dbItems.length > 0) {
+        // Filter out excluded items for the main table
+        const activeItems = dbItems.filter(i => !i.is_excluded);
+
         // Tag GL accounts that have matching items as having children
         rolledUpData = rolledUpData.map(item => {
            const dbRecord = dbData.find(db => cleanId(db.gl_number) === item.cid);
            if (!dbRecord) return item;
-           const hasItemChildren = dbItems.some(i => i.gl_account_id === dbRecord.gl_account_id);
+           const hasItemChildren = activeItems.some(i => i.gl_account_id === dbRecord.gl_account_id);
            return {
               ...item,
               hasChildren: item.hasChildren || hasItemChildren
@@ -291,7 +295,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         // Group items by their parent account's CID
         const itemsByGL = new Map<string, LedgerItem[]>();
 
-        dbItems.forEach(item => {
+        activeItems.forEach(item => {
            const parentDbItem = dbData.find(db => db.gl_account_id === item.gl_account_id);
            if (!parentDbItem) return;
            const parentCid = cleanId(parentDbItem.gl_number);
@@ -344,9 +348,32 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       return rolledUpData;
     }
     return [];
-  }, [dbData, dbItems]);
+   }, [dbData, dbItems]);
 
-  const orphanCount = dbItems?.filter(i => i.gl_account_id === '00000000-0000-0000-0000-000000000000').length || 0;
+  // Separate list of excluded items for the "Nem könyvelt" section
+  const excludedItems = useMemo(() => {
+    if (!dbItems) return [];
+    return dbItems
+      .filter(i => i.is_excluded)
+      .map(item => {
+        let displayDesc = item.description || item.partner || 'Névtelen tétel';
+        if (item.partner && item.description && item.partner !== item.description) {
+          displayDesc = `${item.partner} - ${item.description}`;
+        }
+        return {
+          id: item.item_id,
+          name: displayDesc,
+          amount: Number(item.amount) || 0,
+          itemType: item.item_type,
+          partner: item.partner,
+          date: item.item_date,
+          sourceTable: item.source_table,
+          isExcluded: true
+        };
+      });
+  }, [dbItems]);
+
+  const orphanCount = dbItems?.filter(i => i.gl_account_id === '00000000-0000-0000-0000-000000000000' && !i.is_excluded).length || 0;
 
   // ── Fire stats callback when tableData changes ──
   useEffect(() => {
@@ -726,6 +753,48 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                   );
                 })}
               </div>
+
+              {/* Excluded items section */}
+              {excludedItems.length > 0 && (
+                <div className="border-t-2 border-amber-400/40 bg-amber-500/5 print:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedRowIds(prev => {
+                      const next = new Set(prev);
+                      if (next.has('__excluded__')) next.delete('__excluded__');
+                      else next.add('__excluded__');
+                      return next;
+                    })}
+                    className="w-full px-5 py-2.5 flex items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                  >
+                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", expandedRowIds.has('__excluded__') && "rotate-180")} />
+                    <span>Nem könyvelt tételek ({excludedItems.length})</span>
+                    <span className="ml-auto font-mono tabular-nums">
+                      {formatCurrency(excludedItems.reduce((s, i) => s + i.amount, 0))}
+                    </span>
+                  </button>
+                  {expandedRowIds.has('__excluded__') && (
+                    <div className="divide-y divide-amber-200/30">
+                      {excludedItems.map(item => (
+                        <div key={item.id} className="grid grid-cols-12 px-5 py-1.5 text-xs text-amber-800/70 dark:text-amber-400/70 hover:bg-amber-500/10 transition-colors">
+                          <div className="col-span-2 font-mono tabular-nums text-center">
+                            {item.date ? item.date.substring(0, 10).replace(/-/g, '.') : ''}
+                          </div>
+                          <div className="col-span-7 truncate" title={item.name}>
+                            {item.name}
+                            {item.itemType && (
+                              <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 whitespace-nowrap">{item.itemType}</span>
+                            )}
+                          </div>
+                          <div className="col-span-3 text-right font-mono tabular-nums font-medium">
+                            {item.amount !== 0 ? formatCurrency(item.amount) : ''}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Footer */}
               <div className="sticky bottom-0 z-20 grid grid-cols-12 border-t border-border/60 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] bg-muted/95 backdrop-blur font-bold text-sm">
