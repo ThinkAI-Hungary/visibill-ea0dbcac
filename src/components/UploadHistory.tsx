@@ -114,29 +114,22 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
       let records: UploadRecord[] = [];
 
       if (activeTab === 'salaries') {
-        // BUG #8 FIX: Reordered query to avoid `as any` casting
+        // Payroll uploads are stored in invoice_uploads with document_category = 'payroll'
         const query = supabase
-          .from('salary_files')
-          .select('id, file_name, file_size, file_url, user_id, status, created_at')
-          .eq('company_id', companyId)
+          .from('invoice_uploads')
+          .select('id, file_name, file_size, file_type, file_url, user_id, upload_status, processing_status, created_at, error_message, metadata')
+          .eq('document_category', 'payroll')
           .gte('created_at', uploadDateFrom)
           .lte('created_at', uploadDateTo + 'T23:59:59')
-          .neq('status', 'ignored')
+          .neq('processing_status', 'ignored')
           .order('created_at', { ascending: false })
           .order('id', { ascending: false })
           .limit(50);
 
-        const res = await (query as any);
+        const companyQuery = companyId ? query.eq('company_id', companyId) : query;
+        const res = await companyQuery;
         if (res.error) throw res.error;
-        records = (res.data || []).map((r: any) => ({
-          ...r,
-          file_size: r.file_size || 0,
-          file_type: '',
-          upload_status: r.status || 'pending',
-          // BUG #2 FIX: Map salary status values correctly
-          processing_status: r.status || 'pending',
-          error_message: null,
-        }));
+        records = (res.data as unknown as UploadRecord[]) || [];
       } else {
         let query: any = (supabase as any)
           .from(tableName)
@@ -150,6 +143,11 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
 
         if (companyId) {
           query = query.eq('company_id', companyId);
+        }
+
+        // Exclude payroll uploads from invoice history
+        if (activeTab === 'invoices') {
+          query = query.neq('document_category', 'payroll');
         }
 
         const res = await query;

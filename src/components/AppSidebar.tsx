@@ -297,7 +297,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="print:hidden">
-      <SidebarContent className="select-none">
+      <SidebarContent className="select-none flex flex-col h-full overflow-hidden">
         {/* Header */}
         <div className={`p-4 border-b border-border ${isCollapsed ? 'flex justify-center' : ''}`}>
           {!isCollapsed ? (
@@ -335,8 +335,8 @@ export const AppSidebar = React.memo(function AppSidebar() {
           </div>
         )}
 
-        {/* Navigation — Collapsible Groups */}
-        <SidebarGroup>
+        {/* Navigation — Collapsible Groups — scrollable */}
+        <SidebarGroup className="flex-1 overflow-y-auto min-h-0">
           <SidebarGroupContent>
             {isCollapsed ? (
               /* ── Collapsed mode: Category menu groups with side-flyout dropdowns ── */
@@ -581,8 +581,8 @@ export const AppSidebar = React.memo(function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* User Section */}
-        <div className="mt-auto border-t border-border">
+        {/* User Section — pinned to bottom */}
+        <div className="shrink-0 border-t border-border">
           {!isCollapsed ? (
             <div className="p-4 space-y-3">
               <div className="flex items-center gap-3">

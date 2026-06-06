@@ -836,7 +836,7 @@ const InvoicesPage = () => {
                   <ContextMenu>
                     <ContextMenuTrigger asChild>
                     <div className="rounded-lg border border-border/50 overflow-x-auto">
-                    <Table className="compact-table w-full" style={{ tableLayout: 'fixed' }}>
+                    <Table className="compact-table min-w-[1200px]">
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
                           <TableHead className="w-[60px] pl-6">
@@ -1176,7 +1176,7 @@ const InvoicesPage = () => {
                   <ContextMenu>
                     <ContextMenuTrigger asChild>
                     <div className="rounded-lg border border-border/50 overflow-x-auto">
-                    <Table className="compact-table w-full" style={{ tableLayout: 'fixed' }}>
+                    <Table className="compact-table min-w-[1200px]">
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
                           <TableHead className="w-[60px] pl-6">

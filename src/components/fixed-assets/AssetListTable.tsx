@@ -60,15 +60,15 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
             </p>
           </div>
         ) : (
-          <Table className="compact-table">
+          <Table className="compact-table table-fixed w-full">
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
-                <TableHead className="w-10 font-semibold">#</TableHead>
-                <TableHead className="font-semibold">Leltári Szám</TableHead>
-                <TableHead className="font-semibold">Megnevezés</TableHead>
-                <TableHead className="font-semibold text-center w-[80px]">Státusz</TableHead>
-                <TableHead className="font-semibold">Helyszín</TableHead>
-                <TableHead className="font-semibold">Felelős</TableHead>
+                <TableHead className="w-[30px] font-semibold">#</TableHead>
+                <TableHead className="w-[18%] font-semibold">Leltári Szám</TableHead>
+                <TableHead className="w-[35%] font-semibold">Megnevezés</TableHead>
+                <TableHead className="w-[70px] font-semibold text-center">Státusz</TableHead>
+                <TableHead className="w-[20%] font-semibold">Helyszín</TableHead>
+                <TableHead className="w-[15%] font-semibold">Felelős</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -76,16 +76,16 @@ export function AssetListTable({ assets, loading, selectedAssetId, onSelectAsset
                 <TableRow
                   key={asset.id}
                   className={cn(
-                    'cursor-pointer transition-colors',
+                    'cursor-pointer transition-colors border-l-2',
                     selectedAssetId === asset.id
-                      ? 'bg-primary/10 border-l-2 border-l-primary'
-                      : 'hover:bg-muted/20'
+                      ? 'bg-primary/10 border-l-primary'
+                      : 'border-l-transparent hover:bg-muted/20'
                   )}
                   onClick={() => onSelectAsset(asset.id)}
                 >
                   <TableCell className="font-mono text-muted-foreground text-xs">{index + 1}.</TableCell>
                   <TableCell className="font-mono text-xs">{asset.inventory_number}</TableCell>
-                  <TableCell className="font-medium">{asset.name}</TableCell>
+                  <TableCell className="font-medium max-w-[280px] truncate" title={asset.name}>{asset.name}</TableCell>
                   <TableCell className="text-center">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${ASSET_STATUS_COLORS[asset.status]}`}>
                       {ASSET_STATUS_LABELS[asset.status]}

@@ -5,6 +5,7 @@ import { useFixedAssets, useFixedAssetDetail } from '@/hooks/useFixedAssets';
 import { AssetListTable } from '@/components/fixed-assets/AssetListTable';
 import { AssetDetailPanel } from '@/components/fixed-assets/AssetDetailPanel';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Package2, ShieldCheck } from 'lucide-react';
 
@@ -20,7 +21,7 @@ export default function FixedAssetsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { data: assets = [], isLoading } = useFixedAssets(selectedCompany?.id);
-  const { data: detailData } = useFixedAssetDetail(selectedAssetId);
+  const { data: detailData, isFetching: detailLoading } = useFixedAssetDetail(selectedAssetId);
 
   // ── URL-based asset deep-linking (?asset=<id>) ──
   const setAssetParam = useCallback((assetId: string | null) => {
@@ -112,9 +113,9 @@ export default function FixedAssetsPage() {
       </div>
 
       {/* Master-Detail Layout */}
-      <div className="flex-1 flex min-h-0">
-        {/* Left panel: Asset List (60%) */}
-        <div className="w-[60%] border-r border-border/50 flex flex-col min-h-0">
+      <div className="flex-1 flex min-h-0 overflow-y-auto overflow-x-hidden">
+        {/* Left panel: Asset List (60%) — stays in place */}
+        <div className="w-[60%] shrink-0 grow-0 overflow-hidden border-r border-border/50 flex flex-col sticky top-0 self-start min-h-0 max-h-[calc(100vh-8rem)]">
           <AssetListTable
             assets={assets}
             loading={isLoading}
@@ -123,15 +124,20 @@ export default function FixedAssetsPage() {
           />
         </div>
 
-        {/* Right panel: Asset Detail (40%) */}
-        <div className="w-[40%] flex flex-col min-h-0 overflow-hidden">
+        {/* Right panel: Asset Detail (40%) — full height, no scroll */}
+        <div className="w-[40%] shrink-0 grow-0 overflow-hidden">
           {selectedAssetId && detailData?.asset ? (
             <AssetDetailPanel
               asset={detailData.asset}
               events={detailData.events}
             />
+          ) : selectedAssetId ? (
+            /* Loading state — asset selected but data not yet ready */
+            <div className="flex items-center justify-center min-h-[400px]">
+              <LoadingSpinner fullPage={false} size="md" />
+            </div>
           ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
+            <div className="flex items-center justify-center min-h-[400px] text-muted-foreground">
               <div className="text-center">
                 <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted/30 flex items-center justify-center">
                   <Package2 className="h-10 w-10 opacity-30" />
