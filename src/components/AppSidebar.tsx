@@ -64,7 +64,9 @@ import {
   FileSpreadsheet,
   ChevronRight,
   Wrench,
+  TicketCheck,
 } from "lucide-react";
+import { useUnreadTicketCount } from "@/hooks/useTickets";
 import CompanySelector from "./CompanySelector";
 
 interface NavItem {
@@ -165,6 +167,7 @@ const prefetchMap: Record<string, () => Promise<unknown>> = {
   "/integrations": () => import("@/pages/Integrations"),
   "/exchange-rates": () => import("@/pages/ExchangeRates"),
   // "/pricing": () => import("@/pages/Pricing"),
+  "/tickets": () => import("@/pages/TicketsPage"),
 };
 
 const STORAGE_KEY = "visibill:sidebar-groups";
@@ -195,6 +198,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
   const { selectedCompany } = useCompany();
   const { theme, setTheme } = useTheme();
   const { isEmployee } = useUserRole();
+  const { data: unreadTicketCount = 0 } = useUnreadTicketCount();
 
   const currentPath = location.pathname;
   const basePath = useScopedBasePath();
@@ -452,6 +456,48 @@ export const AppSidebar = React.memo(function AppSidebar() {
                     </Tooltip>
                   </SidebarMenuItem>
                 )}
+                {/* Standalone Hibajegyek in collapsed mode */}
+                {!isEmployee && (
+                  <SidebarMenuItem key="tickets" data-tour="tickets">
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <SidebarMenuButton
+                          isActive={isActive("/tickets")}
+                          disabled={hasNoCompany}
+                          asChild={!hasNoCompany}
+                          className={cn(
+                            "w-8 h-8 p-0 flex items-center justify-center rounded-md transition-all duration-200 relative",
+                            hasNoCompany 
+                              ? 'grayscale opacity-50 cursor-not-allowed' 
+                              : 'hover:bg-primary/10 hover:text-primary'
+                          )}
+                        >
+                          {hasNoCompany ? (
+                            <TicketCheck className="h-4 w-4 shrink-0" />
+                          ) : (
+                            <Link
+                              to={`${basePath}/tickets`}
+                              onMouseEnter={() => handlePrefetch("/tickets")}
+                              onFocus={() => handlePrefetch("/tickets")}
+                              onTouchStart={() => handlePrefetch("/tickets")}
+                              className="flex items-center justify-center w-full h-full"
+                            >
+                              <TicketCheck className="h-4 w-4 shrink-0" />
+                              {unreadTicketCount > 0 && (
+                                <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 flex items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                                  {unreadTicketCount > 9 ? '9+' : unreadTicketCount}
+                                </span>
+                              )}
+                            </Link>
+                          )}
+                        </SidebarMenuButton>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" align="center" className="text-xs">
+                        Hibajegyek{unreadTicketCount > 0 ? ` (${unreadTicketCount})` : ''}
+                      </TooltipContent>
+                    </Tooltip>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             ) : (
               /* ── Expanded mode: collapsible groups ── */
@@ -571,6 +617,51 @@ export const AppSidebar = React.memo(function AppSidebar() {
                       </span>
                       {/* Option 2 style active bar for standalone */}
                       {isActive("/upload") && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />
+                      )}
+                    </Link>
+                  )
+                )}
+                {/* Standalone Hibajegyek in expanded mode */}
+                {!isEmployee && (
+                  hasNoCompany ? (
+                    <div
+                      key="tickets"
+                      className="relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none grayscale opacity-50 cursor-not-allowed"
+                    >
+                      <TicketCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
+                        Hibajegyek
+                      </span>
+                    </div>
+                  ) : (
+                    <Link
+                      key="tickets"
+                      to={`${basePath}/tickets`}
+                      onMouseEnter={() => handlePrefetch("/tickets")}
+                      onFocus={() => handlePrefetch("/tickets")}
+                      onTouchStart={() => handlePrefetch("/tickets")}
+                      className={cn(
+                        "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
+                        isActive("/tickets")
+                          ? "bg-primary/8 text-primary font-semibold"
+                          : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
+                      )}
+                    >
+                      <TicketCheck className={cn(
+                        "h-4 w-4 shrink-0 transition-colors",
+                        isActive("/tickets") ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary"
+                      )} />
+                      <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
+                        Hibajegyek
+                      </span>
+                      {unreadTicketCount > 0 && (
+                        <span className="h-5 min-w-5 px-1 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                          {unreadTicketCount > 9 ? '9+' : unreadTicketCount}
+                        </span>
+                      )}
+                      {/* Active bar */}
+                      {isActive("/tickets") && (
                         <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />
                       )}
                     </Link>

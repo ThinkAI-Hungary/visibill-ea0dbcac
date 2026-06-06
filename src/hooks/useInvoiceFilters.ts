@@ -67,7 +67,7 @@ export function useInvoiceFilters(
   const issueDateFrom = filters.issueDateFrom || null;
   const issueDateTo = filters.issueDateTo || null;
 
-  const { data: navResult = [], isLoading: navLoading } = useQuery({
+  const { data: navResult = [], isLoading: navLoading, isFetching: navFetching } = useQuery({
     queryKey: [
       'filteredNavInvoices', companyId, dateFromFormatted, dateToFormatted,
       navDirection, deferredSearch, filters.currency, filters.paid,
@@ -109,7 +109,7 @@ export function useInvoiceFilters(
   const isSubmittedTab = activeTab === 'SUBMITTED_INBOUND' || activeTab === 'SUBMITTED_OUTBOUND';
   const submittedDirection = activeTab === 'SUBMITTED_OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
 
-  const { data: submittedResult = [], isLoading: submittedFilterLoading } = useQuery({
+  const { data: submittedResult = [], isLoading: submittedFilterLoading, isFetching: submittedFetching } = useQuery({
     queryKey: [
       'filteredSubmittedInvoices', companyId, dateFromFormatted, dateToFormatted,
       submittedDirection, deferredSearch, filters.currency,
@@ -234,7 +234,9 @@ export function useInvoiceFilters(
     submittedTotalPages,
     // Loading
     navLoading,
+    navFetching,
     submittedFilterLoading,
+    submittedFetching,
     // Filtered data (server-side, already paginated)
     filteredAndSortedNavInvoices: paginatedNavInvoices,
     filteredAndSortedSubmittedInvoices: paginatedSubmittedInvoices,

@@ -129,7 +129,7 @@ const InvoicesPage = () => {
     navPageSize, setNavPageSize, submittedPageSize, setSubmittedPageSize,
     navCurrentPage, setNavCurrentPage, submittedCurrentPage, setSubmittedCurrentPage,
     navTotalPages, submittedTotalPages,
-    navLoading, submittedFilterLoading,
+    navLoading, navFetching, submittedFilterLoading, submittedFetching,
     filteredAndSortedNavInvoices, filteredAndSortedSubmittedInvoices,
     paginatedNavInvoices, paginatedSubmittedInvoices,
     navTotalCount, submittedTotalCount,
@@ -137,6 +137,7 @@ const InvoicesPage = () => {
   } = useInvoiceFilters(companyId, enabled, dateFromFormatted, dateToFormatted, partners, categories, projects, activeTab);
 
   const loading = dataLoading || navLoading || submittedFilterLoading;
+  const tabFetching = isSubmittedTab ? submittedFetching : navFetching;
 
   // ── Mutations hook ──
   const {
@@ -523,6 +524,7 @@ const InvoicesPage = () => {
   };
 
   const getResultCount = () => {
+    if (tabFetching) return '–';
     if (isSubmittedTab) return submittedTotalCount;
     return navTotalCount;
   };
@@ -896,7 +898,7 @@ const InvoicesPage = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {loading ? (
+                        {(loading || tabFetching) ? (
                           <TableSkeleton rows={10} columns={activeTab === 'INBOUND' ? 14 : 12} />
                         ) : paginatedNavInvoices.length === 0 ? (
                           <TableEmptyState colSpan={activeTab === 'INBOUND' ? 14 : 12} title="Nincs megjeleníthető számla" description="Próbáld módosítani a szűrőket vagy keresési feltételeket." onClearFilters={clearFilters} />
@@ -1233,7 +1235,7 @@ const InvoicesPage = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {loading ? (
+                        {(loading || tabFetching) ? (
                           <TableSkeleton rows={10} columns={11} />
                         ) : paginatedSubmittedInvoices.length === 0 ? (
                           <TableEmptyState colSpan={11} title="Nincs megjeleníthető számla" description="Próbáld módosítani a szűrőket vagy keresési feltételeket." />
