@@ -675,9 +675,17 @@ const Auth = () => {
   const currentTheme = theme;
 
   return (
-    <div className="flex h-screen overflow-hidden auth-root">
+    <div className="flex h-screen overflow-hidden auth-root relative bg-background">
+      {/* Full-screen wave — theme-dependent SVG */}
+      <img
+        src={currentTheme === 'dark' ? '/eaisybill_wave_dark.svg' : '/eaisybill_wave_bright.svg'}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none z-0"
+      />
+
       {/* Left Side - Form Area */}
-      <div className="relative flex w-full flex-col items-center lg:w-[45%] bg-background h-screen overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+      <div className="relative flex w-full flex-col items-center lg:w-[45%] h-screen overflow-y-auto z-10" style={{ scrollbarWidth: 'none' }}>
         {/* Theme Toggle - Top Left */}
         <button
           onClick={toggleTheme}
@@ -691,8 +699,10 @@ const Auth = () => {
           )}
         </button>
 
-        {/* Centered Content Wrapper — vertically centered with enough min-height for the larger signup form */}
+        {/* Centered Content Wrapper — glassmorphic card frame */}
         <div className="w-full max-w-sm px-8 lg:px-0 py-4 my-auto">
+        <div className="bg-background/90 dark:bg-background/85 backdrop-blur-xl border border-border/50 rounded-xl p-8 shadow-xl shadow-black/5 dark:shadow-black/20 relative overflow-hidden">
+
 
           {/* ── Email Confirmation Screen (after successful signup OR unverified redirect) ── */}
           {/* ── Verification In Progress (loading) ── */}
@@ -884,7 +894,7 @@ const Auth = () => {
                     placeholder="pelda@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-white dark:bg-secondary/30 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                    className="pl-10 bg-white/80 dark:bg-[#111214] border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                     required
                   />
                 </div>
@@ -913,7 +923,7 @@ const Auth = () => {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 bg-white dark:bg-secondary/30 border border-slate-200 dark:border-slate-800 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
+                    className="pl-10 bg-white/80 dark:bg-[#111214] border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                     required
                   />
                 </div>
@@ -1141,98 +1151,12 @@ const Auth = () => {
             </div>
           )}
         </div>
+        </div>
       </div>
 
-      {/* Right Side - Visual Showcase (hidden on mobile) — pinned h-screen so it never shifts */}
-      <div className="hidden lg:flex lg:w-[55%] h-screen bg-gradient-to-br from-primary/5 via-background to-background relative overflow-hidden">
-        {/* Edge Gradient - Smooth transition from left panel */}
-        <div className="absolute left-0 top-0 bottom-0 w-64 bg-gradient-to-r from-background via-background/80 to-transparent z-20 pointer-events-none" />
+      {/* Right Side - Visual Showcase (hidden on mobile) */}
+      <div className="hidden lg:flex lg:w-[55%] h-screen relative overflow-hidden z-10">
 
-        {/* Background Pattern - Subtle glowing orbs */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
-        </div>
-
-        {/* Isometric Dashboard Perspective - Single cohesive tilted dashboard */}
-        <div
-          className="absolute -right-20 top-10 w-[150%] h-[150%] blur-[2px] opacity-30"
-          style={{ transform: 'rotate(-12deg) skewY(12deg) scale(1.1)' }}
-        >
-          {/* Mock App Interface */}
-          <div className="w-full h-full p-8">
-            {/* Sidebar Strip */}
-            <div className="absolute left-0 top-0 bottom-0 w-16 bg-foreground/5 dark:bg-white/5 border-r border-foreground/5 dark:border-white/5">
-              {/* Sidebar icons placeholder */}
-              <div className="flex flex-col items-center gap-4 pt-8">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="w-8 h-8 rounded-lg bg-foreground/10 dark:bg-white/10" />
-                ))}
-              </div>
-            </div>
-
-            {/* Header Strip */}
-            <div className="absolute left-16 top-0 right-0 h-14 bg-foreground/5 dark:bg-white/5 border-b border-foreground/5 dark:border-white/5 flex items-center px-6 gap-4">
-              <div className="w-32 h-6 rounded bg-foreground/10 dark:bg-white/10" />
-              <div className="flex-1" />
-              <div className="w-24 h-6 rounded bg-foreground/10 dark:bg-white/10" />
-              <div className="w-8 h-8 rounded-full bg-foreground/10 dark:bg-white/10" />
-            </div>
-
-            {/* Main Content Area */}
-            <div className="absolute left-20 top-20 right-8 bottom-8 p-6">
-              {/* Top Stats Row */}
-              <div className="grid grid-cols-4 gap-4 mb-6">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="h-24 rounded-xl bg-foreground/5 dark:bg-white/5 border border-foreground/5 dark:border-white/5 p-4">
-                    <div className="w-16 h-3 rounded bg-foreground/10 dark:bg-white/10 mb-3" />
-                    <div className="w-24 h-6 rounded bg-foreground/10 dark:bg-white/10 mb-2" />
-                    <div className="w-12 h-3 rounded bg-primary/20" />
-                  </div>
-                ))}
-              </div>
-
-              {/* Main Chart Card */}
-              <div className="h-64 rounded-xl bg-foreground/5 dark:bg-white/5 border border-foreground/5 dark:border-white/5 p-6 mb-6">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="w-32 h-4 rounded bg-foreground/10 dark:bg-white/10" />
-                  <div className="flex gap-2">
-                    <div className="w-16 h-6 rounded bg-foreground/10 dark:bg-white/10" />
-                    <div className="w-16 h-6 rounded bg-foreground/10 dark:bg-white/10" />
-                  </div>
-                </div>
-                {/* Chart skeleton */}
-                <div className="flex items-end gap-3 h-40 pt-4">
-                  {[40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 95, 80].map((h, i) => (
-                    <div
-                      key={i}
-                      className="flex-1 rounded-t bg-primary/20"
-                      style={{ height: `${h}%` }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Bottom Cards Row */}
-              <div className="grid grid-cols-2 gap-4">
-                {[...Array(2)].map((_, i) => (
-                  <div key={i} className="h-40 rounded-xl bg-foreground/5 dark:bg-white/5 border border-foreground/5 dark:border-white/5 p-4">
-                    <div className="w-24 h-4 rounded bg-foreground/10 dark:bg-white/10 mb-4" />
-                    <div className="space-y-2">
-                      {[...Array(4)].map((_, j) => (
-                        <div key={j} className="flex items-center gap-3">
-                          <div className="w-3 h-3 rounded-full bg-primary/30" />
-                          <div className="flex-1 h-3 rounded bg-foreground/10 dark:bg-white/10" />
-                          <div className="w-12 h-3 rounded bg-foreground/10 dark:bg-white/10" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Content - Above all background layers */}
         <div
@@ -1242,14 +1166,14 @@ const Auth = () => {
           <div ref={wrapperRef} className="relative w-full max-w-[480px]">
 
             {/* Title — static */}
-            <h2 className="text-4xl font-bold text-foreground dark:text-white mb-8">
-              Tartsd kézben a pénzügyeidet
+            <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-foreground dark:text-white mb-4 xl:mb-8">
+              T<span className="text-primary">a</span>rtsd kézben a pénzügye<span className="text-primary">i</span>det
             </h2>
 
             {/* Waterfall tape window */}
             <div
               ref={containerRef}
-              className="relative h-[660px] overflow-hidden cursor-default"
+              className="relative h-[calc(100vh-120px)] max-h-[660px] overflow-hidden cursor-default"
               onClick={e => e.stopPropagation()}
               style={{
                 WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 10%, black 22%, black 78%, rgba(0,0,0,0.6) 90%, transparent 100%)',
