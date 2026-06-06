@@ -50,11 +50,13 @@ import {
   X,
   Menu,
   PanelLeft,
+  TicketCheck,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useUnreadTicketCount } from '@/hooks/useTickets';
 
 export default function AccountyLayout() {
   const { user, signOut } = useAuth();
@@ -63,6 +65,7 @@ export default function AccountyLayout() {
   const pathname = location.pathname;
   const navigate = useNavigate();
   const { data: kpis } = useAccountyKpis();
+  const { data: unreadTicketCount = 0 } = useUnreadTicketCount();
 
   // #16 Favicon badge — show missing items count in browser tab
   useEffect(() => {
@@ -554,6 +557,7 @@ export default function AccountyLayout() {
             <ul className="flex w-full min-w-0 flex-col gap-2 mt-4">
               {[
                 { path: '/accounty/settings', name: 'Beállítások', icon: Settings },
+                { path: '/accounty/tickets', name: 'Hibajegyek', icon: TicketCheck, badge: unreadTicketCount },
                 { path: '/accounty/help', name: 'Segítség', icon: HelpCircle }
               ].map((item) => (
                 <li key={item.path} className="relative flex justify-center">
@@ -567,9 +571,14 @@ export default function AccountyLayout() {
                         )}
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
+                        {item.badge && item.badge > 0 ? (
+                          <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 flex items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                            {item.badge > 9 ? '9+' : item.badge}
+                          </span>
+                        ) : null}
                       </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right">{item.name}</TooltipContent>
+                    <TooltipContent side="right">{item.name}{item.badge && item.badge > 0 ? ` (${item.badge})` : ''}</TooltipContent>
                   </Tooltip>
 
                 </li>
@@ -591,6 +600,23 @@ export default function AccountyLayout() {
                   >
                     <Settings className="h-4 w-4 shrink-0" />
                     <span className="truncate">Beállítások</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/accounty/tickets" 
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
+                      isActive('/accounty/tickets') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                    )}
+                  >
+                    <TicketCheck className="h-4 w-4 shrink-0" />
+                    <span className="truncate flex-1">Hibajegyek</span>
+                    {unreadTicketCount > 0 && (
+                      <span className="h-5 min-w-5 px-1 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                        {unreadTicketCount > 9 ? '9+' : unreadTicketCount}
+                      </span>
+                    )}
                   </Link>
                 </li>
                 <li>

@@ -1,0 +1,183 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Teal/Mint glow gradients -->
+    <radialGradient id="glow1" cx="25%" cy="50%" r="35%" fx="25%" fy="50%">
+      <stop offset="0%" stop-color="#0d9488" stop-opacity="0.4"/>
+      <stop offset="50%" stop-color="#0f766e" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#042f2e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="50%" cy="50%" r="30%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#14b8a6" stop-opacity="0.3"/>
+      <stop offset="60%" stop-color="#0d9488" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#042f2e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow3" cx="75%" cy="50%" r="35%" fx="75%" fy="50%">
+      <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.35"/>
+      <stop offset="50%" stop-color="#14b8a6" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#042f2e" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Sparkle filter -->
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="waveGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark background -->
+  <rect width="1920" height="1080" fill="#030712"/>
+
+  <!-- Background glow orbs -->
+  <rect width="1920" height="1080" fill="url(#glow1)"/>
+  <rect width="1920" height="1080" fill="url(#glow2)"/>
+  <rect width="1920" height="1080" fill="url(#glow3)"/>
+
+  <!-- Wave layer 1 - Deep teal, large amplitude -->
+  <g filter="url(#waveGlow)" opacity="0.6">
+    <path d="M0,540 C120,380 240,320 360,420 C480,520 540,620 660,540 C780,460 840,340 960,400 C1080,460 1140,580 1260,520 C1380,460 1500,380 1620,440 C1740,500 1860,560 1920,500" fill="none" stroke="#0d9488" stroke-width="1.5" opacity="0.7">
+      <animate attributeName="d" dur="8s" repeatCount="indefinite" values="
+        M0,540 C120,380 240,320 360,420 C480,520 540,620 660,540 C780,460 840,340 960,400 C1080,460 1140,580 1260,520 C1380,460 1500,380 1620,440 C1740,500 1860,560 1920,500;
+        M0,520 C120,400 240,360 360,440 C480,540 540,600 660,520 C780,440 840,360 960,420 C1080,480 1140,560 1260,500 C1380,440 1500,400 1620,460 C1740,520 1860,540 1920,480;
+        M0,540 C120,380 240,320 360,420 C480,520 540,620 660,540 C780,460 840,340 960,400 C1080,460 1140,580 1260,520 C1380,460 1500,380 1620,440 C1740,500 1860,560 1920,500"/>
+    </path>
+    <path d="M0,530 C130,370 250,310 370,410 C490,510 550,610 670,530 C790,450 850,330 970,390 C1090,450 1150,570 1270,510 C1390,450 1510,370 1630,430 C1750,490 1870,550 1920,490" fill="none" stroke="#0d9488" stroke-width="1.2" opacity="0.5">
+      <animate attributeName="d" dur="8s" repeatCount="indefinite" values="
+        M0,530 C130,370 250,310 370,410 C490,510 550,610 670,530 C790,450 850,330 970,390 C1090,450 1150,570 1270,510 C1390,450 1510,370 1630,430 C1750,490 1870,550 1920,490;
+        M0,510 C130,390 250,350 370,430 C490,530 550,590 670,510 C790,430 850,350 970,410 C1090,470 1150,550 1270,490 C1390,430 1510,390 1630,450 C1750,510 1870,530 1920,470;
+        M0,530 C130,370 250,310 370,410 C490,510 550,610 670,530 C790,450 850,330 970,390 C1090,450 1150,570 1270,510 C1390,450 1510,370 1630,430 C1750,490 1870,550 1920,490"/>
+    </path>
+  </g>
+
+  <!-- Wave layer 2 - Medium teal, interweaving -->
+  <g filter="url(#waveGlow)" opacity="0.7">
+    <path d="M0,560 C100,420 200,360 340,460 C480,560 560,650 700,560 C840,470 900,350 1040,430 C1180,510 1240,620 1380,540 C1520,460 1620,380 1760,460 C1840,510 1880,540 1920,520" fill="none" stroke="#14b8a6" stroke-width="1.8" opacity="0.8">
+      <animate attributeName="d" dur="7s" repeatCount="indefinite" values="
+        M0,560 C100,420 200,360 340,460 C480,560 560,650 700,560 C840,470 900,350 1040,430 C1180,510 1240,620 1380,540 C1520,460 1620,380 1760,460 C1840,510 1880,540 1920,520;
+        M0,540 C100,440 200,380 340,480 C480,580 560,630 700,540 C840,450 900,370 1040,450 C1180,530 1240,600 1380,520 C1520,440 1620,400 1760,480 C1840,530 1880,520 1920,500;
+        M0,560 C100,420 200,360 340,460 C480,560 560,650 700,560 C840,470 900,350 1040,430 C1180,510 1240,620 1380,540 C1520,460 1620,380 1760,460 C1840,510 1880,540 1920,520"/>
+    </path>
+    <path d="M0,550 C110,410 210,350 350,450 C490,550 570,640 710,550 C850,460 910,340 1050,420 C1190,500 1250,610 1390,530 C1530,450 1630,370 1770,450 C1850,500 1890,530 1920,510" fill="none" stroke="#14b8a6" stroke-width="1.4" opacity="0.6">
+      <animate attributeName="d" dur="7s" repeatCount="indefinite" values="
+        M0,550 C110,410 210,350 350,450 C490,550 570,640 710,550 C850,460 910,340 1050,420 C1190,500 1250,610 1390,530 C1530,450 1630,370 1770,450 C1850,500 1890,530 1920,510;
+        M0,530 C110,430 210,370 350,470 C490,570 570,620 710,530 C850,440 910,360 1050,440 C1190,520 1250,590 1390,510 C1530,430 1630,390 1770,470 C1850,520 1890,510 1920,490;
+        M0,550 C110,410 210,350 350,450 C490,550 570,640 710,550 C850,460 910,340 1050,420 C1190,500 1250,610 1390,530 C1530,450 1630,370 1770,450 C1850,500 1890,530 1920,510"/>
+    </path>
+    <path d="M0,545 C115,405 215,345 355,445 C495,545 575,635 715,545 C855,455 915,335 1055,415 C1195,495 1255,605 1395,525 C1535,445 1635,365 1775,445 C1855,495 1895,525 1920,505" fill="none" stroke="#14b8a6" stroke-width="1" opacity="0.4">
+      <animate attributeName="d" dur="7.5s" repeatCount="indefinite" values="
+        M0,545 C115,405 215,345 355,445 C495,545 575,635 715,545 C855,455 915,335 1055,415 C1195,495 1255,605 1395,525 C1535,445 1635,365 1775,445 C1855,495 1895,525 1920,505;
+        M0,525 C115,425 215,365 355,465 C495,565 575,615 715,525 C855,435 915,355 1055,435 C1195,515 1255,585 1395,505 C1535,425 1635,385 1775,465 C1855,515 1895,505 1920,485;
+        M0,545 C115,405 215,345 355,445 C495,545 575,635 715,545 C855,455 915,335 1055,415 C1195,495 1255,605 1395,525 C1535,445 1635,365 1775,445 C1855,495 1895,525 1920,505"/>
+    </path>
+  </g>
+
+  <!-- Wave layer 3 - Bright cyan/mint, foreground -->
+  <g filter="url(#waveGlow)" opacity="0.8">
+    <path d="M0,520 C140,380 280,300 400,430 C520,560 600,640 740,540 C880,440 960,320 1100,420 C1240,520 1320,640 1460,540 C1600,440 1720,360 1840,460 C1880,490 1920,520 1920,500" fill="none" stroke="#2dd4bf" stroke-width="2" opacity="0.9">
+      <animate attributeName="d" dur="6s" repeatCount="indefinite" values="
+        M0,520 C140,380 280,300 400,430 C520,560 600,640 740,540 C880,440 960,320 1100,420 C1240,520 1320,640 1460,540 C1600,440 1720,360 1840,460 C1880,490 1920,520 1920,500;
+        M0,500 C140,400 280,340 400,450 C520,580 600,620 740,520 C880,420 960,340 1100,440 C1240,540 1320,620 1460,520 C1600,420 1720,380 1840,480 C1880,510 1920,500 1920,480;
+        M0,520 C140,380 280,300 400,430 C520,560 600,640 740,540 C880,440 960,320 1100,420 C1240,520 1320,640 1460,540 C1600,440 1720,360 1840,460 C1880,490 1920,520 1920,500"/>
+    </path>
+    <path d="M0,510 C150,370 290,290 410,420 C530,550 610,630 750,530 C890,430 970,310 1110,410 C1250,510 1330,630 1470,530 C1610,430 1730,350 1850,450 C1890,480 1920,510 1920,490" fill="none" stroke="#2dd4bf" stroke-width="1.5" opacity="0.7">
+      <animate attributeName="d" dur="6s" repeatCount="indefinite" values="
+        M0,510 C150,370 290,290 410,420 C530,550 610,630 750,530 C890,430 970,310 1110,410 C1250,510 1330,630 1470,530 C1610,430 1730,350 1850,450 C1890,480 1920,510 1920,490;
+        M0,490 C150,390 290,330 410,440 C530,570 610,610 750,510 C890,410 970,330 1110,430 C1250,530 1330,610 1470,510 C1610,410 1730,370 1850,470 C1890,500 1920,490 1920,470;
+        M0,510 C150,370 290,290 410,420 C530,550 610,630 750,530 C890,430 970,310 1110,410 C1250,510 1330,630 1470,530 C1610,430 1730,350 1850,450 C1890,480 1920,510 1920,490"/>
+    </path>
+    <path d="M0,515 C155,375 295,295 415,425 C535,555 615,635 755,535 C895,435 975,315 1115,415 C1255,515 1335,635 1475,535 C1615,435 1735,355 1855,455 C1895,485 1920,515 1920,495" fill="none" stroke="#5eead4" stroke-width="1" opacity="0.5">
+      <animate attributeName="d" dur="6.5s" repeatCount="indefinite" values="
+        M0,515 C155,375 295,295 415,425 C535,555 615,635 755,535 C895,435 975,315 1115,415 C1255,515 1335,635 1475,535 C1615,435 1735,355 1855,455 C1895,485 1920,515 1920,495;
+        M0,495 C155,395 295,335 415,445 C535,575 615,615 755,515 C895,415 975,335 1115,435 C1255,535 1335,615 1475,515 C1615,415 1735,375 1855,475 C1895,505 1920,495 1920,475;
+        M0,515 C155,375 295,295 415,425 C535,555 615,635 755,535 C895,435 975,315 1115,415 C1255,515 1335,635 1475,535 C1615,435 1735,355 1855,455 C1895,485 1920,515 1920,495"/>
+    </path>
+  </g>
+
+  <!-- Additional thin wire lines for density -->
+  <g opacity="0.35">
+    <path d="M0,555 C160,395 300,325 430,440 C560,555 640,645 770,545 C900,445 980,325 1120,425 C1260,525 1340,645 1480,545 C1620,445 1740,365 1860,465 C1900,495 1920,525 1920,505" fill="none" stroke="#99f6e4" stroke-width="0.8">
+      <animate attributeName="d" dur="9s" repeatCount="indefinite" values="
+        M0,555 C160,395 300,325 430,440 C560,555 640,645 770,545 C900,445 980,325 1120,425 C1260,525 1340,645 1480,545 C1620,445 1740,365 1860,465 C1900,495 1920,525 1920,505;
+        M0,535 C160,415 300,365 430,460 C560,575 640,625 770,525 C900,425 980,345 1120,445 C1260,545 1340,625 1480,525 C1620,425 1740,385 1860,485 C1900,515 1920,505 1920,485;
+        M0,555 C160,395 300,325 430,440 C560,555 640,645 770,545 C900,445 980,325 1120,425 C1260,525 1340,645 1480,545 C1620,445 1740,365 1860,465 C1900,495 1920,525 1920,505"/>
+    </path>
+    <path d="M0,525 C120,365 260,285 390,415 C520,545 600,625 730,525 C860,425 940,305 1080,405 C1220,505 1300,625 1440,525 C1580,425 1700,345 1820,445 C1860,475 1920,505 1920,485" fill="none" stroke="#99f6e4" stroke-width="0.6">
+      <animate attributeName="d" dur="10s" repeatCount="indefinite" values="
+        M0,525 C120,365 260,285 390,415 C520,545 600,625 730,525 C860,425 940,305 1080,405 C1220,505 1300,625 1440,525 C1580,425 1700,345 1820,445 C1860,475 1920,505 1920,485;
+        M0,505 C120,385 260,325 390,435 C520,565 600,605 730,505 C860,405 940,325 1080,425 C1220,525 1300,605 1440,505 C1580,405 1700,365 1820,465 C1860,495 1920,485 1920,465;
+        M0,525 C120,365 260,285 390,415 C520,545 600,625 730,525 C860,425 940,305 1080,405 C1220,505 1300,625 1440,525 C1580,425 1700,345 1820,445 C1860,475 1920,505 1920,485"/>
+    </path>
+  </g>
+
+  <!-- Sparkle particles scattered along the wave path -->
+  <g filter="url(#softGlow)" opacity="0.7">
+    <circle cx="180" cy="460" r="1.5" fill="#5eead4">
+      <animate attributeName="opacity" dur="3s" repeatCount="indefinite" values="0.3;1;0.3"/>
+    </circle>
+    <circle cx="350" cy="430" r="1" fill="#2dd4bf">
+      <animate attributeName="opacity" dur="2.5s" repeatCount="indefinite" values="0.5;1;0.5"/>
+    </circle>
+    <circle cx="520" cy="550" r="1.8" fill="#99f6e4">
+      <animate attributeName="opacity" dur="4s" repeatCount="indefinite" values="0.2;0.9;0.2"/>
+    </circle>
+    <circle cx="680" cy="540" r="1.2" fill="#14b8a6">
+      <animate attributeName="opacity" dur="3.5s" repeatCount="indefinite" values="0.4;1;0.4"/>
+    </circle>
+    <circle cx="850" cy="430" r="1.5" fill="#5eead4">
+      <animate attributeName="opacity" dur="2.8s" repeatCount="indefinite" values="0.3;0.95;0.3"/>
+    </circle>
+    <circle cx="1020" cy="410" r="1" fill="#2dd4bf">
+      <animate attributeName="opacity" dur="3.2s" repeatCount="indefinite" values="0.5;1;0.5"/>
+    </circle>
+    <circle cx="1180" cy="510" r="1.8" fill="#99f6e4">
+      <animate attributeName="opacity" dur="4.5s" repeatCount="indefinite" values="0.2;0.85;0.2"/>
+    </circle>
+    <circle cx="1350" cy="530" r="1.3" fill="#14b8a6">
+      <animate attributeName="opacity" dur="2.7s" repeatCount="indefinite" values="0.4;1;0.4"/>
+    </circle>
+    <circle cx="1500" cy="440" r="1.5" fill="#5eead4">
+      <animate attributeName="opacity" dur="3.8s" repeatCount="indefinite" values="0.3;0.9;0.3"/>
+    </circle>
+    <circle cx="1680" cy="460" r="1" fill="#2dd4bf">
+      <animate attributeName="opacity" dur="3s" repeatCount="indefinite" values="0.5;1;0.5"/>
+    </circle>
+    <circle cx="1820" cy="480" r="1.2" fill="#99f6e4">
+      <animate attributeName="opacity" dur="4.2s" repeatCount="indefinite" values="0.2;0.85;0.2"/>
+    </circle>
+    <!-- Extra smaller particles -->
+    <circle cx="260" cy="480" r="0.8" fill="#ccfbf1">
+      <animate attributeName="opacity" dur="2s" repeatCount="indefinite" values="0.3;0.8;0.3"/>
+    </circle>
+    <circle cx="440" cy="500" r="0.7" fill="#ccfbf1">
+      <animate attributeName="opacity" dur="2.3s" repeatCount="indefinite" values="0.4;0.9;0.4"/>
+    </circle>
+    <circle cx="760" cy="490" r="0.9" fill="#ccfbf1">
+      <animate attributeName="opacity" dur="3.1s" repeatCount="indefinite" values="0.2;0.7;0.2"/>
+    </circle>
+    <circle cx="950" cy="380" r="0.7" fill="#ccfbf1">
+      <animate attributeName="opacity" dur="2.6s" repeatCount="indefinite" values="0.3;0.85;0.3"/>
+    </circle>
+    <circle cx="1120" cy="440" r="0.8" fill="#ccfbf1">
+      <animate attributeName="opacity" dur="3.4s" repeatCount="indefinite" values="0.4;0.9;0.4"/>
+    </circle>
+    <circle cx="1420" cy="490" r="0.6" fill="#ccfbf1">
+      <animate attributeName="opacity" dur="2.1s" repeatCount="indefinite" values="0.3;0.8;0.3"/>
+    </circle>
+    <circle cx="1600" cy="420" r="0.9" fill="#ccfbf1">
+      <animate attributeName="opacity" dur="3.7s" repeatCount="indefinite" values="0.2;0.7;0.2"/>
+    </circle>
+    <circle cx="1750" cy="450" r="0.7" fill="#ccfbf1">
+      <animate attributeName="opacity" dur="2.9s" repeatCount="indefinite" values="0.4;0.85;0.4"/>
+    </circle>
+  </g>
+</svg>

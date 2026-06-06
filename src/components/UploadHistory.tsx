@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { formatFileSize } from '@/lib/utils';
@@ -8,11 +10,11 @@ import { formatFileSize } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { supabase } from '@/integrations/supabase/client';
-import { History, FileText, Landmark, Banknote, CreditCard, Loader2, Package } from 'lucide-react';
+import { History, FileText, Landmark, Banknote, CreditCard, Loader2, Package, ExternalLink, AlertCircle } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 
 interface UploadRecord {
@@ -78,6 +80,11 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
+
+  // File preview modal state
+  const [previewFile, setPreviewFile] = useState<{ name: string; url: string } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(true);
+  const [previewError, setPreviewError] = useState(false);
 
   // Track previous processing_status per upload ID to detect transitions
   const prevStatusMap = useRef<Map<string, string>>(new Map());
@@ -307,6 +314,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
   }
 
   return (
+    <>
     <Card className="mt-6 max-w-full">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
@@ -342,7 +350,22 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
                   return (
                     <TableRow key={record.id}>
                       <TableCell className="font-medium text-sm max-w-[250px] truncate" title={record.file_name}>
-                        {record.file_name}
+                        {record.file_url ? (
+                          <button
+                            type="button"
+                            className="text-primary hover:underline cursor-pointer text-left truncate max-w-full"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewFile({ name: record.file_name, url: record.file_url });
+                              setPreviewLoading(true);
+                              setPreviewError(false);
+                            }}
+                          >
+                            {record.file_name}
+                          </button>
+                        ) : (
+                          record.file_name
+                        )}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                         {formatFileSize(record.file_size || 0)}
@@ -414,5 +437,89 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
         )}
       </CardContent>
     </Card>
+
+    {/* File Preview Modal */}
+    <Dialog open={!!previewFile} onOpenChange={(open) => { if (!open) setPreviewFile(null); }}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle className="truncate pr-8">{previewFile?.name}</DialogTitle>
+          <DialogDescription>Feltöltött fájl előnézete</DialogDescription>
+        </DialogHeader>
+        <div className="mt-4 overflow-auto max-h-[calc(90vh-120px)]">
+          {previewFile && (() => {
+            const url = previewFile.url;
+            const isPDF = url.toLowerCase().endsWith('.pdf');
+            const isImage = /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(url);
+
+            if (previewError) {
+              return (
+                <div className="text-center py-12 space-y-4">
+                  <AlertCircle className="h-12 w-12 mx-auto text-destructive" />
+                  <p className="text-muted-foreground">Hiba történt a fájl betöltése közben</p>
+                  <Button variant="outline" onClick={() => window.open(url, '_blank')}>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Megnyitás új ablakban
+                  </Button>
+                </div>
+              );
+            }
+
+            return (
+              <>
+                {previewLoading && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                    <p>Betöltés...</p>
+                  </div>
+                )}
+                {isPDF ? (
+                  <div className="space-y-4">
+                    <div className="flex justify-center">
+                      <Button variant="outline" size="sm" onClick={() => window.open(url, '_blank')}>
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Megnyitás új ablakban
+                      </Button>
+                    </div>
+                    <iframe
+                      src={url}
+                      className="w-full h-[60vh] border rounded"
+                      title={previewFile.name}
+                      onLoad={() => setPreviewLoading(false)}
+                      onError={() => { setPreviewError(true); setPreviewLoading(false); }}
+                    />
+                  </div>
+                ) : isImage ? (
+                  <div className="space-y-4">
+                    <div className="flex justify-center">
+                      <Button variant="outline" size="sm" onClick={() => window.open(url, '_blank')}>
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Megnyitás új ablakban
+                      </Button>
+                    </div>
+                    <img
+                      src={url}
+                      alt={previewFile.name}
+                      className="w-full h-auto rounded"
+                      onLoad={() => setPreviewLoading(false)}
+                      onError={() => { setPreviewError(true); setPreviewLoading(false); }}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center py-12 space-y-4">
+                    <FileText className="h-12 w-12 mx-auto text-muted-foreground" />
+                    <p className="text-muted-foreground">Ez a fájltípus nem megjeleníthető előnézetben</p>
+                    <Button variant="default" onClick={() => window.open(url, '_blank')}>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Megnyitás új ablakban
+                    </Button>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

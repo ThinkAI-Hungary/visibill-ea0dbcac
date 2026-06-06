@@ -71,6 +71,7 @@ const PayrollTaxParametersPage = lazy(() => import("./pages/Accounty/TaxParamete
 const PayrollFilingsPage = lazy(() => import("./pages/Accounty/FilingsPage"));
 const PayrollReportsPage = lazy(() => import("./pages/Accounty/PayrollReportsPage"));
 const VatReturnPage = lazy(() => import("./pages/VatReturnPage"));
+const TicketsPage = lazy(() => import("./pages/TicketsPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -263,6 +264,7 @@ const App = () => (
                       <Route path="tax-calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaxCalendarPage /></Suspense>} />
                       <Route path="settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><SettingsPage /></Suspense>} />
                       <Route path="help" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><HelpPage /></Suspense>} />
+                      <Route path="tickets/:ticketId?" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TicketsPage /></Suspense>} />
                       <Route path="approval-queue" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ApprovalQueuePage /></Suspense>} />
                       <Route path="payroll/:id" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollDashboardPage /></Suspense>} />
                       <Route path="payroll/:id/employees" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollEmployeesPage /></Suspense>} />
@@ -284,12 +286,16 @@ const App = () => (
                         <ProtectedPage><Onboarding /></ProtectedPage>
                       } />
 
+                      {/* Standalone tickets route — context-free, directly linkable */}
+                      <Route path="/tickets/:ticketId?" element={<ProtectedPage><TicketsPage /></ProtectedPage>} />
+
                       {/* ═══ Scoped Routes — /:companyId/:dateRange/* ═══ */}
                       <Route path="/:companyId/:dateRange" element={<ScopedLayout />}>
                         <Route index element={<ProtectedPage><Index /></ProtectedPage>} />
                         <Route path="categories" element={<ProtectedPage><Onboarding /></ProtectedPage>} />
                         <Route path="invoices/:tab?" element={<ProtectedPage><InvoicesPage /></ProtectedPage>} />
                         <Route path="upload/:tab?" element={<ProtectedPage><ManualUpload /></ProtectedPage>} />
+                        <Route path="tickets/:ticketId?" element={<ProtectedPage><TicketsPage /></ProtectedPage>} />
                         <Route path="integrations" element={<ProtectedPage><Integrations /></ProtectedPage>} />
                         <Route path="settings/:tab?" element={<ProtectedPage><Settings /></ProtectedPage>} />
                         <Route path="projects" element={<ProtectedPage><Projects /></ProtectedPage>} />
@@ -329,6 +335,7 @@ const App = () => (
                       <Route path="/salaries" element={<LegacyRedirect page="salaries" />} />
                       <Route path="/working-time" element={<LegacyRedirect page="working-time" />} />
                       <Route path="/analytics" element={<LegacyRedirect page="analytics" />} />
+                      <Route path="/tickets" element={<LegacyRedirect page="tickets" />} />
                       <Route path="/onboarding" element={<LegacyRedirect page="categories" />} />
 
                       {/* Root → scoped dashboard */}

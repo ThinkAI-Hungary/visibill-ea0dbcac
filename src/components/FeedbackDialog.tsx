@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
+import { uploadTicketImage } from "@/lib/upload-ticket-image";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
@@ -31,7 +32,15 @@ import {
   CheckCircle2,
   AlertTriangle,
   Lightbulb,
+  ImagePlus,
+  X,
+  Paperclip,
+  MonitorSmartphone,
 } from "lucide-react";
+
+const MAX_ATTACHMENTS = 5;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 interface FeedbackDialogProps {
   open: boolean;
@@ -44,41 +53,130 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
   const { toast } = useToast();
 
   const [companyId, setCompanyId] = useState<string>(selectedCompany?.id || "");
+  const [service, setService] = useState<string>("");
   const [type, setType] = useState<string>("");
   const [message, setMessage] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Reset form when dialog opens
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
       if (isOpen) {
         setCompanyId(selectedCompany?.id || "");
+        setService("");
         setType("");
         setMessage("");
+        setAttachments([]);
         setSubmitted(false);
+        setIsDragOver(false);
       }
       onOpenChange(isOpen);
     },
     [onOpenChange, selectedCompany]
   );
 
+  // ── File handling ──
+  const validateAndAddFiles = useCallback((files: FileList | File[]) => {
+    const newFiles: File[] = [];
+    for (const file of Array.from(files)) {
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        toast({
+          variant: "destructive",
+          title: "Nem támogatott fájltípus",
+          description: `${file.name}: Csak JPEG, PNG, GIF és WebP képek engedélyezettek.`,
+        });
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        toast({
+          variant: "destructive",
+          title: "Túl nagy fájl",
+          description: `${file.name}: Maximum 5 MB engedélyezett.`,
+        });
+        continue;
+      }
+      newFiles.push(file);
+    }
+    setAttachments(prev => {
+      const total = [...prev, ...newFiles];
+      if (total.length > MAX_ATTACHMENTS) {
+        toast({
+          variant: "destructive",
+          title: "Túl sok csatolmány",
+          description: `Maximum ${MAX_ATTACHMENTS} kép csatolható.`,
+        });
+        return total.slice(0, MAX_ATTACHMENTS);
+      }
+      return total;
+    });
+  }, [toast]);
+
+  const removeAttachment = useCallback((index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    if (e.dataTransfer.files.length > 0) {
+      validateAndAddFiles(e.dataTransfer.files);
+    }
+  }, [validateAndAddFiles]);
+
+  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      validateAndAddFiles(e.target.files);
+      e.target.value = ""; // reset to allow re-selecting same file
+    }
+  }, [validateAndAddFiles]);
+
   const selectedCompanyObj = companies.find((c) => c.id === companyId);
-  const canSubmit = companyId && type && message.trim().length >= 10;
+  const canSubmit = companyId && service && type && message.trim().length >= 10;
 
   const handleSubmit = async () => {
     if (!canSubmit || !user) return;
 
     setSubmitting(true);
     try {
+      // Pre-generate ticket ID for structured storage path
+      const ticketId = crypto.randomUUID();
+
+      // Upload attachments to {ticketId}/{userId}/ path
+      let attachmentUrls: string[] = [];
+      if (attachments.length > 0) {
+        const uploadPromises = attachments.map(file => uploadTicketImage(file, user.id, ticketId));
+        attachmentUrls = await Promise.all(uploadPromises);
+      }
+
       const { error } = await supabase.from("feedback" as any).insert({
+        id: ticketId,
         user_id: user.id,
         company_id: companyId,
         company_name: selectedCompanyObj?.name || null,
         type,
+        service,
         message: message.trim(),
         user_email: user.email || null,
         user_name: user.user_metadata?.name || null,
+        page_url: window.location.pathname,
+        ...(attachmentUrls.length > 0 ? { attachments: attachmentUrls } : {}),
       } as any);
 
       if (error) throw error;
@@ -90,10 +188,11 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
       });
     } catch (err: any) {
       console.error("Feedback submit error:", err);
+      const errorMsg = err?.message || err?.error_description || "Ismeretlen hiba";
       toast({
         variant: "destructive",
         title: "Hiba történt",
-        description: "A visszajelzés küldése sikertelen. Kérjük próbálja újra.",
+        description: `A visszajelzés küldése sikertelen: ${errorMsg}`,
       });
     } finally {
       setSubmitting(false);
@@ -152,6 +251,37 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
               </Select>
             </div>
 
+            {/* Service selector */}
+            <div className="space-y-2">
+              <Label htmlFor="feedback-service" className="text-sm font-medium">
+                Szolgáltatás
+              </Label>
+              <Select value={service} onValueChange={setService}>
+                <SelectTrigger id="feedback-service">
+                  <SelectValue placeholder="Válasszon szolgáltatást..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="eaisybill">
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm">
+                        <span className="font-medium text-foreground/80">e</span>
+                        <span className="font-bold text-primary">ai</span>
+                        <span className="font-medium text-foreground/80">sy</span>
+                        <span className="font-medium text-primary">bill</span>
+                      </span>
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="accounty">
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm font-black bg-gradient-to-br from-red-500 via-red-600 to-red-700 bg-clip-text text-transparent">
+                        Accounty
+                      </span>
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Type selector */}
             <div className="space-y-2">
               <Label htmlFor="feedback-type" className="text-sm font-medium">
@@ -201,6 +331,90 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                 }
                 className="min-h-[120px] resize-y"
               />
+            </div>
+
+            {/* Attachments drop zone */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium flex items-center gap-1.5">
+                  <Paperclip className="h-3.5 w-3.5" />
+                  Csatolmányok
+                  <span className="text-xs text-muted-foreground font-normal">(opcionális)</span>
+                </Label>
+                {attachments.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {attachments.length}/{MAX_ATTACHMENTS}
+                  </span>
+                )}
+              </div>
+
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                multiple
+                onChange={handleFileInput}
+                className="hidden"
+              />
+
+              {/* Drop zone */}
+              {attachments.length < MAX_ATTACHMENTS && (
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`
+                    relative flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 cursor-pointer transition-all
+                    ${isDragOver
+                      ? "border-primary bg-primary/5 scale-[1.01]"
+                      : "border-border/60 hover:border-primary/40 hover:bg-muted/30"
+                    }
+                  `}
+                >
+                  <ImagePlus className={`h-6 w-6 transition-colors ${isDragOver ? "text-primary" : "text-muted-foreground"}`} />
+                  <div className="text-center">
+                    <p className={`text-sm font-medium transition-colors ${isDragOver ? "text-primary" : "text-muted-foreground"}`}>
+                      {isDragOver ? "Engedd el a képet" : "Húzz ide képeket"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      vagy <span className="text-primary underline underline-offset-2">kattints a tallózáshoz</span>
+                    </p>
+                    <p className="text-[11px] text-muted-foreground/60 mt-1">
+                      JPEG, PNG, GIF, WebP • max. 5 MB/kép
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Attachment previews */}
+              {attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {attachments.map((file, index) => (
+                    <div key={`${file.name}-${index}`} className="relative group">
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={file.name}
+                        className="h-16 w-16 rounded-md object-cover border border-border/60"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeAttachment(index);
+                        }}
+                        className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                      <p className="text-[10px] text-muted-foreground text-center mt-0.5 max-w-16 truncate">
+                        {file.name}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Guidelines footer */}
