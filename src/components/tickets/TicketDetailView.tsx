@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { TicketTimeline } from "./TicketTimeline";
 import { ImageGalleryModal } from "./ImageGalleryModal";
@@ -41,6 +42,7 @@ import {
   useUpdateTicketStatus,
   useMarkTicketRead,
   useIsSupportAdmin,
+  useTicketEvents,
   type TicketStatus,
 } from "@/hooks/useTickets";
 import { useScopedBasePath } from "@/lib/navigation";
@@ -58,16 +60,18 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
   const eaisybillBasePath = useScopedBasePath();
   const { user } = useAuth();
   const { toast } = useToast();
-  const { data, isLoading } = useTicketDetail(feedbackId);
+  const { data, isLoading: isTicketLoading } = useTicketDetail(feedbackId);
+  const { isLoading: isEventsLoading } = useTicketEvents(feedbackId);
   const { mutate: addComment, isPending: isCommenting } = useAddComment();
   const { mutate: updateStatus, isPending: isUpdating } = useUpdateTicketStatus();
   const { mutate: markRead } = useMarkTicketRead();
-  const { data: isAdmin } = useIsSupportAdmin();
+  const { data: isAdmin, isLoading: isAdminLoading } = useIsSupportAdmin();
   const [comment, setComment] = useState("");
   const [commentFiles, setCommentFiles] = useState<File[]>([]);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
 
   const openGallery = (images: string[], index: number) => {
     setGalleryImages(images);
@@ -176,10 +180,215 @@ export function TicketDetailView({ feedbackId }: TicketDetailViewProps) {
     return imgs;
   }, [data?.ticket?.attachments, data?.comments]);
 
+  // Preload images to avoid half-loaded image pop-in
+  useEffect(() => {
+    if (isTicketLoading || isEventsLoading || isAdminLoading || !data?.ticket) {
+      setImagesLoaded(false);
+      return;
+    }
+
+    if (allImages.length === 0) {
+      setImagesLoaded(true);
+      return;
+    }
+
+    let loadedCount = 0;
+    const urls = allImages;
+    let active = true;
+
+    setImagesLoaded(false);
+
+    urls.forEach((url) => {
+      const img = new Image();
+      img.src = url;
+      img.onload = () => {
+        if (!active) return;
+        loadedCount++;
+        if (loadedCount === urls.length) {
+          setImagesLoaded(true);
+        }
+      };
+      img.onerror = () => {
+        if (!active) return;
+        loadedCount++;
+        if (loadedCount === urls.length) {
+          setImagesLoaded(true);
+        }
+      };
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [allImages, isTicketLoading, isEventsLoading, isAdminLoading, data?.ticket]);
+
+  const isLoading = isTicketLoading || isEventsLoading || isAdminLoading || !imagesLoaded;
+
   if (isLoading || !data?.ticket) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="space-y-6 p-2 sm:p-0 page-animate">
+        {/* Back + ticket header skeleton */}
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-9 w-9 rounded-md shrink-0" />
+          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+            <Skeleton className="h-5 w-5 rounded-full shrink-0" />
+            <Skeleton className="h-7 w-32 rounded-md" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left column: message + comments skeleton */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Original message card skeleton */}
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <Skeleton className="h-4 w-32 rounded" />
+                    <Skeleton className="h-3 w-24 rounded" />
+                  </div>
+                </div>
+                <div className="space-y-2 pt-2">
+                  <Skeleton className="h-4 w-full rounded" />
+                  <Skeleton className="h-4 w-[96%] rounded" />
+                  <Skeleton className="h-4 w-[92%] rounded" />
+                  <Skeleton className="h-4 w-[65%] rounded" />
+                </div>
+                {/* Attachments skeleton */}
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <Skeleton className="h-[120px] w-[180px] rounded-md" />
+                  <Skeleton className="h-[120px] w-[180px] rounded-md" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Comments header skeleton */}
+            <div className="flex items-center gap-2 text-xs px-1">
+              <Skeleton className="h-3.5 w-3.5 rounded-full shrink-0" />
+              <Skeleton className="h-3.5 w-24 rounded" />
+              <div className="flex-1">
+                <Separator />
+              </div>
+            </div>
+
+            {/* Comment card skeleton */}
+            <Card>
+              <CardContent className="pt-4 pb-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <Skeleton className="h-4 w-28 rounded" />
+                    <Skeleton className="h-3 w-20 rounded" />
+                  </div>
+                </div>
+                <div className="space-y-2 pt-1">
+                  <Skeleton className="h-4 w-full rounded" />
+                  <Skeleton className="h-4 w-[85%] rounded" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Comment input card skeleton */}
+            <Card>
+              <CardContent className="pt-4 pb-4 space-y-3">
+                <Skeleton className="h-[80px] w-full rounded-md" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-8 w-8 rounded-md" />
+                  <Skeleton className="h-9 w-20 rounded-md" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right column: ticket info sidebar skeleton */}
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <h3 className="text-sm font-semibold">Részletek</h3>
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4 rounded-full shrink-0" />
+                    <Skeleton className="h-4 w-44 rounded" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4 rounded-full shrink-0" />
+                    <Skeleton className="h-4 w-32 rounded" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4 rounded-full shrink-0" />
+                    <Skeleton className="h-4 w-28 rounded" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4 rounded-full shrink-0" />
+                    <Skeleton className="h-4 w-36 rounded" />
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Típus */}
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-12 rounded" />
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4 rounded-full shrink-0" />
+                    <Skeleton className="h-4 w-20 rounded" />
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Felelős */}
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-12 rounded" />
+                  <div className="flex items-center gap-2.5">
+                    <Skeleton className="h-7 w-7 rounded-full shrink-0" />
+                    <div className="space-y-1">
+                      <Skeleton className="h-3.5 w-24 rounded" />
+                      <Skeleton className="h-3 w-20 rounded" />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+                {/* Admin section skeleton */}
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-28 rounded" />
+                  <Skeleton className="h-9 w-full rounded-md" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Timeline skeleton */}
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4 rounded-full shrink-0" />
+                  <Skeleton className="h-4 w-28 rounded" />
+                </div>
+                <div className="relative pl-6 space-y-6 pt-2">
+                  <div className="absolute left-[15px] top-2 bottom-2 w-px bg-border" />
+                  <div className="relative flex gap-3">
+                    <Skeleton className="absolute -left-[27px] h-6 w-6 rounded-full bg-background border border-border" />
+                    <div className="space-y-1.5 flex-1 pt-0.5 min-w-0">
+                      <Skeleton className="h-3.5 w-40 rounded" />
+                      <Skeleton className="h-3 w-20 rounded" />
+                    </div>
+                  </div>
+                  <div className="relative flex gap-3">
+                    <Skeleton className="absolute -left-[27px] h-6 w-6 rounded-full bg-background border border-border" />
+                    <div className="space-y-1.5 flex-1 pt-0.5 min-w-0">
+                      <Skeleton className="h-3.5 w-44 rounded" />
+                      <Skeleton className="h-3 w-24 rounded" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
