@@ -850,7 +850,7 @@ const InvoicesPage = () => {
                   <ContextMenu>
                     <ContextMenuTrigger asChild>
                     <div className="rounded-lg border border-border/50 overflow-x-auto">
-                    <Table className="compact-table">
+                    <Table className="compact-table min-w-max">
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
                           <TableHead className="w-[50px] pl-4">
@@ -872,7 +872,7 @@ const InvoicesPage = () => {
                           <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold text-center whitespace-nowrap" onClick={() => handleSort('invoice_delivery_date')}>
                             <div className="flex items-center justify-center gap-1">Telj.<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
-                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold whitespace-nowrap" onClick={() => handleSort('invoice_number')}>
+                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold whitespace-nowrap min-w-[200px]" onClick={() => handleSort('invoice_number')}>
                             <div className="flex items-center gap-1">Biz.szám<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
                           <TableHead className="text-right cursor-pointer hover:bg-muted/50 font-semibold whitespace-nowrap" onClick={() => handleSort('invoice_net_amount')}>
@@ -941,7 +941,7 @@ const InvoicesPage = () => {
                                       {partnerName === 'Ismeretlen partner' ? (
                                         <span className="text-xs text-muted-foreground italic">Ismeretlen partner</span>
                                       ) : (
-                                        <CopyableCell value={partnerName} truncate maxWidth="100%" className="font-medium text-xs" ariaLabel={`${partnerName} másolása`} />
+                                        <CopyableCell value={partnerName} displayValue={partnerName.length > 13 ? partnerName.slice(0, 13) + '…' : partnerName} truncate maxWidth="100%" className="font-medium text-xs" ariaLabel={`${partnerName} másolása`} />
                                       )}
                                     </div>
                                   </TableCell>
@@ -951,7 +951,7 @@ const InvoicesPage = () => {
                                   <TableCell className="text-center text-muted-foreground tabular-nums whitespace-nowrap">
                                     {invoice.invoice_delivery_date ? format(new Date(invoice.invoice_delivery_date), 'yyyy. MM. dd.', { locale: hu }) : '-'}
                                   </TableCell>
-                                  <TableCell className="font-medium font-mono">
+                                  <TableCell className="font-medium font-mono whitespace-nowrap">
                                     <CopyableCell value={invoice.invoice_number || '-'} ariaLabel={`${invoice.invoice_number} bizonylatsorszám másolása`} />
                                   </TableCell>
                                   <TableCell className={cn("text-right font-mono tabular-nums", !invoice.invoice_net_amount ? "text-muted-foreground" : activeTab === 'INBOUND' ? "text-destructive" : "text-success")}>
@@ -1199,7 +1199,7 @@ const InvoicesPage = () => {
                   <ContextMenu>
                     <ContextMenuTrigger asChild>
                     <div className="rounded-lg border border-border/50 overflow-x-auto">
-                    <Table className="compact-table">
+                    <Table className="compact-table min-w-max">
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
                           <TableHead className="w-[50px] pl-4">
@@ -1211,10 +1211,10 @@ const InvoicesPage = () => {
                           <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold" onClick={() => handleSort(activeTab === 'SUBMITTED_INBOUND' ? 'elado_nev' : 'vevo_nev')}>
                             <div className="flex items-center gap-1">Partner<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
-                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[80px] text-center whitespace-nowrap" onClick={() => handleSort('kibocsatas_datuma')}>
+                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[100px] text-center whitespace-nowrap" onClick={() => handleSort('kibocsatas_datuma')}>
                             <div className="flex items-center justify-center gap-1">Kiáll.<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
-                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[80px] text-center whitespace-nowrap" onClick={() => handleSort('teljesites_datuma')}>
+                          <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold w-[100px] text-center whitespace-nowrap" onClick={() => handleSort('teljesites_datuma')}>
                             <div className="flex items-center justify-center gap-1">Telj.<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></div>
                           </TableHead>
                           <TableHead className="cursor-pointer hover:bg-muted/50 font-semibold whitespace-nowrap" onClick={() => handleSort('bizonylatsorszam')}>
@@ -1265,7 +1265,7 @@ const InvoicesPage = () => {
                                         {partnerName === '-' || partnerName === 'Ismeretlen partner' ? (
                                           <span className="text-xs text-muted-foreground italic">Ismeretlen partner</span>
                                         ) : (
-                                          <CopyableCell value={partnerName} truncate maxWidth="100%" className="font-medium text-xs" ariaLabel={`${partnerName} másolása`} />
+                                          <CopyableCell value={partnerName} displayValue={partnerName.length > 13 ? partnerName.slice(0, 13) + '…' : partnerName} truncate maxWidth="100%" className="font-medium text-xs" ariaLabel={`${partnerName} másolása`} />
                                         )}
                                       </div>
                                     );

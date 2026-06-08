@@ -547,7 +547,7 @@ All colors MUST be HSL.
 @layer components {
   .compact-table {
     @apply text-sm w-full;
-    table-layout: fixed;
+    table-layout: auto;
   }
 
   .compact-table th {
@@ -555,7 +555,7 @@ All colors MUST be HSL.
   }
 
   .compact-table td {
-    @apply py-1 px-2 h-[45px] max-h-[45px] overflow-hidden;
+    @apply py-1 px-2 h-[45px] max-h-[45px];
   }
 
   .compact-table tr {

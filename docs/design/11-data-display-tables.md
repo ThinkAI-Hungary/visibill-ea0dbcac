@@ -11,6 +11,7 @@
 ```css
 .compact-table {
   font-size: 0.875rem;  /* text-sm */
+  table-layout: auto;   /* tartalom szerinti oszlopszélesség */
 }
 
 .compact-table th {
@@ -27,7 +28,7 @@
   padding-right: 0.5rem;
   height: 45px;
   max-height: 45px;
-  overflow: hidden;
+  /* NE legyen overflow: hidden — a horizontális scroll kezeli */
 }
 
 .compact-table tr {
@@ -39,6 +40,57 @@
 > **Fix 45px sor magasság:** Biztosítja a layout stabilitást — a sorok sosem nőnek a tartalom szerint, ami megakadályozza a layout shift-eket scrollozás közben.
 
 ---
+
+## Standard Tábla Layout Szabályok
+
+> **Döntés (2026-06-08):** A táblák soha nem vághatják le a tartalmat. Keskenyebb felbontáson horizontálisan scrollozhatónak kell lenniük.
+
+### 1. `table-layout: auto` (nem `fixed`)
+
+A `table-layout: fixed` kényszeríti a táblát a konténer szélességébe, ami levágja a tartalmat. Az `auto` mód a tartalom szerint méretezi az oszlopokat.
+
+### 2. Horizontális scroll wrapper
+
+```tsx
+<div className="rounded-lg border border-border/50 overflow-x-auto">
+  <Table className="compact-table min-w-max">
+    {/* ... */}
+  </Table>
+</div>
+```
+
+- `overflow-x-auto` a wrapper `<div>`-en → scrollbar megjelenik ha szükséges
+- `min-w-max` a `<Table>`-ön → a tábla soha nem nyomódik kisebbre a tartalomnál
+
+### 3. Partner név truncálás (13 karakter)
+
+A partner nevek 13 karakter felett `…`-tal levágódnak. A teljes név másolásra és tooltip-ként elérhető marad.
+
+```tsx
+<CopyableCell
+  value={partnerName}
+  displayValue={partnerName.length > 13 ? partnerName.slice(0, 13) + '…' : partnerName}
+  truncate
+  maxWidth="100%"
+  className="font-medium text-xs"
+  ariaLabel={`${partnerName} másolása`}
+/>
+```
+
+### 4. Oszlop szélességek
+
+| Oszlop | Szabály | Megjegyzés |
+|--------|---------|------------|
+| Partner | 13 kar. truncate | `displayValue` JS truncálással |
+| Kiáll. / Telj. (beküldött) | `w-[100px]` | Fix szélesség a `yyyy. MM. dd.` formátumnak |
+| Kiáll. / Telj. (NAV) | `whitespace-nowrap` | Természetes szélesség, nem törik |
+| Biz.szám | `min-w-[200px]` + `whitespace-nowrap` | Fejléc + cella egyaránt |
+| Összeg oszlopok | `whitespace-nowrap` + `tabular-nums` | Számok nem törhetnek |
+
+### 5. NE legyen `overflow: hidden` a cellákon
+
+A `td` elemeken **tilos** az `overflow: hidden` — a horizontális scroll wrapper kezeli a túlcsordulást.
+
 
 ## Sor Elválasztók
 
