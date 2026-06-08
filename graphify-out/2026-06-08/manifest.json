@@ -390,9 +390,9 @@
     "semantic_hash": "4d9c5f5fd296b00b2fb3bc85e93cc88a"
   },
   "src/components/invoices/InvoiceFilesDialog.tsx": {
-    "mtime": 1780695606.3908327,
-    "ast_hash": "76c0f5f1e01ab942f78af26ab3c5a31e",
-    "semantic_hash": "76c0f5f1e01ab942f78af26ab3c5a31e"
+    "mtime": 1780882001.149554,
+    "ast_hash": "f02973fc8c02d02d1fdb573b06bdb60f",
+    "semantic_hash": ""
   },
   "src/components/kintlevo/DunningDialog.tsx": {
     "mtime": 1780695606.3913362,
@@ -2705,7 +2705,7 @@
     "semantic_hash": "eb1b0189aa876d93fca5ec06e33daa9d"
   },
   "test-results/.last-run.json": {
-    "mtime": 1774361425.4064834,
+    "mtime": 1780882015.656747,
     "ast_hash": "f196824657d8858bc7fa44eecbba38b1",
     "semantic_hash": "f196824657d8858bc7fa44eecbba38b1"
   },
@@ -2720,9 +2720,9 @@
     "semantic_hash": "a0d28562c475b742e2109898a5d975c9"
   },
   "tests/helpers.ts": {
-    "mtime": 1774317968.1380558,
-    "ast_hash": "afc7181947328150803ab6742a234b36",
-    "semantic_hash": "afc7181947328150803ab6742a234b36"
+    "mtime": 1780881157.3223233,
+    "ast_hash": "5442e6a960c9263d1dc0820f79dd57f4",
+    "semantic_hash": ""
   },
   "tests/multi-tenancy.spec.ts": {
     "mtime": 1774315850.2298372,
@@ -2835,9 +2835,9 @@
     "semantic_hash": "9a39aa03b20c47f8a96b89fe0bdf340e"
   },
   "playwright-report/index.html": {
-    "mtime": 1774361425.4064834,
-    "ast_hash": "95b627e190e9f941bc0af6bc116ca45b",
-    "semantic_hash": "95b627e190e9f941bc0af6bc116ca45b"
+    "mtime": 1780882015.655915,
+    "ast_hash": "4b32566cc01873b2e97ab67729ac95c0",
+    "semantic_hash": ""
   },
   "public/robots.txt": {
     "mtime": 1772416213.6218038,

@@ -390,8 +390,8 @@
     "semantic_hash": "4d9c5f5fd296b00b2fb3bc85e93cc88a"
   },
   "src/components/invoices/InvoiceFilesDialog.tsx": {
-    "mtime": 1780882001.149554,
-    "ast_hash": "f02973fc8c02d02d1fdb573b06bdb60f",
+    "mtime": 1780882602.562312,
+    "ast_hash": "9f11c9651a9c5065362172b5124ae383",
     "semantic_hash": ""
   },
   "src/components/kintlevo/DunningDialog.tsx": {
@@ -2705,7 +2705,7 @@
     "semantic_hash": "eb1b0189aa876d93fca5ec06e33daa9d"
   },
   "test-results/.last-run.json": {
-    "mtime": 1780882015.656747,
+    "mtime": 1780882676.6869335,
     "ast_hash": "f196824657d8858bc7fa44eecbba38b1",
     "semantic_hash": "f196824657d8858bc7fa44eecbba38b1"
   },
@@ -2835,8 +2835,8 @@
     "semantic_hash": "9a39aa03b20c47f8a96b89fe0bdf340e"
   },
   "playwright-report/index.html": {
-    "mtime": 1780882015.655915,
-    "ast_hash": "4b32566cc01873b2e97ab67729ac95c0",
+    "mtime": 1780882676.6864214,
+    "ast_hash": "fce788a9e1fa9ab1499ee73126f45f1e",
     "semantic_hash": ""
   },
   "public/robots.txt": {
