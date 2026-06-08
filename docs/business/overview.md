@@ -112,24 +112,15 @@ Az év végén a rendszer az összegyűjtött adatokból elkészíti:
 
 ## Üzleti modell
 
-### Előfizetéses modell (SaaS)
-A Visibill havi/éves előfizetéssel működik, amelyet a felhasználó a Stripe-on keresztül fizet.
-
-### Tervezett csomagok
-
-| Csomag | Célcsoport | Fő jellemző |
-|--------|-----------|-------------|
-| **Starter** | Induló vállalkozások | Alapfunkciók, limitált számla szám |
-| **Pro** | Aktív KKV-k | Teljes funkcionalitás, magasabb limit |
-| **Business** | Több céget kezelők | Multi-company, kiemelt support |
-| **Enterprise** | Könyvelő irodák | Korlátlan, egyedi igények |
+### Egyszeri díjas modell
+A Visibill egyszeri vásárlással érhető el. A felhasználó megvásárolja a szoftvert, és korlátlanul használhatja.
 
 > *Az árazás véglegesítése folyamatban — lásd: [004-pricing-model.md](./decisions/004-pricing-model.md)*
 
 ### Bevételi driverek
-- Havi előfizetési díj (recurring revenue)
-- Csomagváltás (upsell magasabb tier-re)
-- Extra cégek hozzáadása (potential add-on)
+- Egyszeri licencdíj (one-time purchase)
+- Accounty modul (könyvelő irodák számára, együtt vásárolható)
+- Jövőbeli prémium funkciók (potential add-on)
 
 ---
 
@@ -146,13 +137,14 @@ A Visibill havi/éves előfizetéssel működik, amelyet a felhasználó a Strip
 - ✅ Futárszolgálat riport feldolgozás (6 szolgáltató)
 - ✅ Bér modul és munkaidő nyilvántartás
 - ✅ Multi-company támogatás
-- ✅ Stripe előfizetés kezelés
 - ✅ Email-alapú automatikus számlafeldolgozás
+- ✅ Accounty modul (könyvelő iroda nézet)
+- ✅ ÁFA bevallás modul
+- ✅ Payroll (bérszámfejtés) modul
 
 ### Amin még dolgozunk
-- 🟡 Árazási modell és csomagok véglegesítése
+- 🟡 Árazási modell véglegesítése (egyszeri díj struktúra)
 - 🟡 Jogosultsági rendszer finomítása (member korlátozások)
-- 🟡 Adó modul scope meghatározása
 - 🟡 GDPR compliance dokumentáció
 
 ### Amit tervezünk

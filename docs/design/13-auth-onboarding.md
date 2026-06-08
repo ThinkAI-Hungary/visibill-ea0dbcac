@@ -132,41 +132,55 @@ A `ProtectedLayout` SEMMIT nem renderel, amíg az összes adat be nem töltődö
 
 ---
 
-## Onboarding
+## Onboarding Folyamat
 
-### Categories (Onboarding Wizard)
+### Kezdeti Átirányítás (App Ready Gate)
 
-**Route:** `/:companyId/:dateRange/categories` (vagy `/categories`)
+**Fájl:** `hooks/useAppReady.ts`
 
-**Fájl:** `pages/Onboarding.tsx` (10KB)
+Az alkalmazás betöltésekor a `useAppReady` hook ellenőrzi a felhasználó állapotát. Amennyiben a felhasználónak még nincs profilja (`no-profile` vagy `incomplete`), a `redirectTarget` értéke `'onboarding'` lesz.
+A `ProtectedLayout.tsx` észleli ezt a státuszt, és átirányítja a felhasználót a `/categories` útvonalra (`pages/Onboarding.tsx`).
+Ha a felhasználónak nincs egyetlen cége sem a rendszerben (`companies.length === 0`), az `App.tsx` az `Index.tsx` főoldal betöltésekor az `EmptyStateDashboard.tsx` komponenst rendereli.
 
-Kategória (számlatípus) kiválasztó — az első bejelentkezés után.
-
-### Empty State Dashboard
+### Onboarding Varázsló (Empty State Dashboard)
 
 **Fájl:** `components/dashboard/EmptyStateDashboard.tsx` (42KB)
 
-Átfogó onboarding wizard ha a usernek még nincs cége:
+A cég nélküli felhasználók számára megjelenő, Grayed-out teaser háttér előtt renderelt modal ablak, amely egy 4-lépéses folyamaton vezeti végig a felhasználót:
 
 ```
-┌─────────────────────────────────┐
-│  Üdvözöljük a eaisybill-ben!     │
-│                                 │
-│  1. [Cég létrehozása]           │
-│  2. [Kategóriák kiválasztása]   │
-│  3. [Első számla feltöltése]    │
-│                                 │
-│  [Tovább →]                     │
-└─────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                 Üdvözöljük a eaisybill-ben!                 │
+│                                                             │
+│  Lépés 1: Cég hozzáadása (Új létrehozása / Csatlakozás kód)  │
+│  Lépés 2: Projektek létrehozása (Opcionális)                │
+│  Lépés 3: Költség kategóriák felvétele (Opcionális)         │
+│  Lépés 4: NAV Online Számla Integráció (Opcionális)         │
+│                                                             │
+│  [Előző]                                   [Tovább / Kész]  │
+└─────────────────────────────────────────────────────────────┘
 ```
+
+- **Step 1 (Cég):** A felhasználó megadhatja az új cég nevét, adószámát és székhelyét, vagy megadhat egy csatlakozási kódot (share token). Új cég létrehozásakor automatikusan létrejön a `company_members` rekord `role = 'owner'` értékkel. Csatlakozás esetén a `join-company` Edge Function hívódik meg, és a felhasználó `member` jogosultságot kap.
+- **Step 2 (Projektek):** Kereskedelmi partnerek és projektek gyors rögzítése.
+- **Step 3 (Kategóriák):** Költség kategóriák rögzítése (a háttérben a `categories` táblába kerülnek).
+- **Step 4 (NAV):** Technikai felhasználói adatok rögzítése és tesztelése. A validáció a `save-credentials` Edge Function-ön keresztül történik, majd a háttérben elindul az elmúlt 90 nap számláinak lekérése 35 napos blokkokban az API korlátok miatt.
+
+A folyamat végén a cégadatok és a beállítások elmentődnek a DB-ben, vagy hiba esetén Rollback fut le (a létrehozott cég törlődik).
+
+### Kategória Kezelő (Categories Page)
+
+**Route:** `/categories`
+**Fájl:** `pages/Onboarding.tsx` (10KB)
+
+A kezdeti onboarding után, vagy ha a felhasználó a Beállításokból navigál ide, ez a felület szolgál a költség kategóriák szerkesztésére, hozzáadására és törlésére. `useUnsavedChanges` hook és `UnsavedChangesDialog` komponens védi a felhasználót a nem mentett adatok elvesztésétől.
 
 ### Product Tour
 
 **Fájl:** `components/ProductTour.tsx` (5KB) + `ProductTourTooltip.tsx` (3KB)
 
-`react-joyride` alapú interaktív walkthrough az alkalmazás fő funkcióinak bemutatásához.
-
-A sidebar elemeken `data-tour` attribútumok:
+Az onboarding wizard befejezése után automatikusan elindul a `react-joyride` alapú interaktív 13-lépéses tour.
+A tour a sidebar és a főoldal meghatározott elemeire fókuszál a HTML-be ágyazott `data-tour` attribútumok segítségével:
 
 ```tsx
 <SidebarMenuItem data-tour="dashboard">

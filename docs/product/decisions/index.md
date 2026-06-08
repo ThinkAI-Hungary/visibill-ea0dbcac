@@ -1,7 +1,7 @@
 # Visibill — Product Requirements: Döntések
 
-> **Utoljára frissítve:** 2026-05-16  
-> **Összesen:** 27 döntés | ✅ Decided: 26 | 🔴 Open: 1
+> **Utoljára frissítve:** 2026-06-08  
+> **Összesen:** 33 döntés | ✅ Decided: 30 | ⛔ Superseded: 2 | 🔴 Open: 1
 
 ---
 
@@ -17,7 +17,7 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 |---|--------|---------|------|
 | P-001 | Regisztrációs flow | ✅ Decided | [P-001](./P-001-registration-flow.md) |
 | P-002 | Product Tour + onboarding checklist | ✅ Decided | [P-002](./P-002-product-tour.md) |
-| P-003 | Empty state dashboard (nincs cég) | ✅ Decided | [P-003](./P-003-empty-state.md) |
+| P-003 | Empty state dashboard & onboarding wizard | ✅ Decided | [P-003](./P-003-empty-state.md) |
 | P-004 | Welcome email & értesítések | ✅ Decided | [P-004](./P-004-welcome-flow.md) |
 
 ## 📊 Dashboard & Navigáció
@@ -73,12 +73,34 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| P-028 | Pricing oldal (kártya layout + Stripe) | ✅ Decided | [P-028](./P-028-pricing-page.md) |
-| P-029 | Limit kezelés (grace period) | ✅ Decided | [P-029](./P-029-limit-handling.md) |
+| P-028 | Pricing oldal | ⛔ Superseded | [P-028](./P-028-pricing-page.md) |
+| P-029 | Limit kezelés | ⛔ Superseded | [P-029](./P-029-limit-handling.md) |
 | P-030 | Trial → fizetős konverzió flow | 🔴 Open | [P-030](./P-030-trial-conversion.md) |
+
+## 💼 Accounty
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| P-031 | Accounty layout & navigáció | ✅ Decided | [P-031](./P-031-accounty-layout.md) |
+| P-032 | ÁFA bevallás workflow | ✅ Decided | [P-032](./P-032-vat-return-workflow.md) |
+| P-033 | Bérszámfejtési ciklus workflow | ✅ Decided | [P-033](./P-033-payroll-cycle.md) |
+| P-034 | Jóváhagyási sor (Approval Queue) | ✅ Decided | [P-034](./P-034-approval-queue.md) |
 
 ## 🔍 Keresés
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | P-039 | Globális keresés (nincs, szűrők elegendőek) | ✅ Decided | [P-039](./P-039-global-search.md) |
+
+## 🎫 Ügyfélszolgálat & Support
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| P-035 | Hibajegy UI és workflow | ✅ Decided | [P-035](./P-035-ticket-system.md) |
+
+## 🛠️ Platform Üzemeltetés
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| P-036 | Management Dashboard UI és navigáció | ✅ Decided | [P-036](./P-036-management-dashboard.md) |
+

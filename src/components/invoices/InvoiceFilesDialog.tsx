@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,6 +50,18 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
   const [deleting, setDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [uploaderFilter, setUploaderFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  const handleUploaderChange = (value: string) => {
+    setUploaderFilter(value);
+    setCurrentPage(1);
+  };
 
   const companyId = selectedCompany?.id;
 
@@ -67,11 +80,11 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
       if (!uploadData || uploadData.length === 0) return [];
 
       // Get invoices linked to these uploads
-      const uploadIds = uploadData.map(u => u.id);
       const { data: invoiceData, error: invoiceError } = await supabase
         .from('invoices')
         .select('invoice_uploads_id, bizonylatsorszam')
-        .in('invoice_uploads_id', uploadIds);
+        .eq('company_id', companyId!)
+        .not('invoice_uploads_id', 'is', null);
       if (invoiceError) throw invoiceError;
 
       // Group invoice numbers by upload id
@@ -146,6 +159,13 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
       return matchesSearch && matchesUploader;
     });
   }, [uploads, searchQuery, uploaderFilter]);
+
+  // Client-side pagination
+  const { paginatedUploads, totalPages } = useMemo(() => {
+    const totalPages = Math.ceil(filteredUploads.length / pageSize);
+    const paginated = filteredUploads.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    return { paginatedUploads: paginated, totalPages };
+  }, [filteredUploads, currentPage, pageSize]);
 
   // Option A: Delete ONLY the uploaded file (keep invoice data)
   const handleDeleteFileOnly = async (upload: UploadWithInvoices) => {
@@ -264,11 +284,11 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
               <Input
                 placeholder="Keresés fájlnév vagy bizonylatszám alapján..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-9 h-9 bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10 focus:border-primary"
               />
             </div>
-            <Select value={uploaderFilter} onValueChange={setUploaderFilter}>
+            <Select value={uploaderFilter} onValueChange={handleUploaderChange}>
               <SelectTrigger className="h-9 w-[220px] bg-white dark:bg-secondary/50 border border-slate-200 dark:border-white/10">
                 <User className="h-3.5 w-3.5 mr-1.5 text-slate-500 dark:text-muted-foreground" />
                 <SelectValue placeholder="Feltöltő" />
@@ -293,50 +313,64 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
               {uploads.length === 0 ? 'Nincs feltöltött dokumentum.' : 'Nincs találat a megadott szűrőkkel.'}
             </div>
           ) : (
-            <div className="rounded-lg border border-border/50 overflow-x-auto">
-              <Table className="compact-table">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[30%]">Fájl neve</TableHead>
-                    <TableHead className="w-[25%]">Bizonylatszám</TableHead>
-                    <TableHead className="w-[18%]">Feltöltés dátuma</TableHead>
-                    <TableHead className="w-[15%]">Feltöltötte</TableHead>
-                    <TableHead className="w-[12%] text-right">Művelet</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUploads.map((upload) => (
-                    <TableRow key={upload.id}>
-                      <TableCell className="font-medium text-sm truncate max-w-[250px]">
-                        {upload.file_name}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {upload.invoiceNumbers.length > 0
-                          ? upload.invoiceNumbers.length <= 2
-                            ? upload.invoiceNumbers.join(', ')
-                            : `${upload.invoiceNumbers.slice(0, 2).join(', ')} +${upload.invoiceNumbers.length - 2}`
-                          : '—'}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(upload.created_at), 'yyyy. MMM dd. HH:mm', { locale: hu })}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {getUserName(upload.user_id)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                          onClick={() => setDeleteTarget(upload)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </TableCell>
+            <div className="space-y-4">
+              <div className="rounded-lg border border-border/50 overflow-x-auto">
+                <Table className="compact-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[30%]">Fájl neve</TableHead>
+                      <TableHead className="w-[25%]">Bizonylatszám</TableHead>
+                      <TableHead className="w-[18%]">Feltöltés dátuma</TableHead>
+                      <TableHead className="w-[15%]">Feltöltötte</TableHead>
+                      <TableHead className="w-[12%] text-right">Művelet</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedUploads.map((upload) => (
+                      <TableRow key={upload.id}>
+                        <TableCell className="font-medium text-sm truncate max-w-[250px]">
+                          {upload.file_name}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {upload.invoiceNumbers.length > 0
+                            ? upload.invoiceNumbers.length <= 2
+                              ? upload.invoiceNumbers.join(', ')
+                              : `${upload.invoiceNumbers.slice(0, 2).join(', ')} +${upload.invoiceNumbers.length - 2}`
+                            : '—'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {format(new Date(upload.created_at), 'yyyy. MMM dd. HH:mm', { locale: hu })}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {getUserName(upload.user_id)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                            onClick={() => setDeleteTarget(upload)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <UnifiedPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredUploads.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setCurrentPage(1);
+                }}
+                pageSizeOptions={[15, 30, 50]}
+              />
             </div>
           )}
         </DialogContent>

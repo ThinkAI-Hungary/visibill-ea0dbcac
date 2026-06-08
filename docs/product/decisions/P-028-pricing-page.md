@@ -1,22 +1,16 @@
 # P-028: Pricing Oldal
 
-**Status:** Decided  
+**Status:** Superseded (2026-06-07)
 **Category:** Előfizetés & Pricing
 
 **Question:** Hogyan jelenjen meg a pricing / csomagválasztó oldal?
 
-**Decision:** 4 tier kártya layout, volume-based pricing, havi/éves toggle, Stripe Checkout redirect.
+**Decision:** ~~4 tier kártya layout, volume-based pricing, havi/éves toggle, Stripe Checkout redirect.~~ **ELTÁVOLÍTVA.**
 
-**Tierek:**
-- **Salmon** (Free) — 3 számla/hó, ingyenes
-- **Tuna** — Kisvállalkozásoknak, 25-500 számla/hó
-- **Shark** — Közepes vállalkozásoknak, 25-500 számla/hó
-- **Orca** — Nagyvállalatok számára, 25-500 számla/hó
+**Változás története:**
+- 2026-05 — Stripe Pricing oldal implementálva (Pricing.tsx, SubscriptionContext, Edge Functions)
+- 2026-06-07 — **Teljes Stripe integráció eltávolítva a kódból.** Törölt fájlok: `Pricing.tsx`, `SubscriptionContext.tsx`, `SubscriptionUsage.tsx`, `check-subscription/`, `create-checkout/`, `customer-portal/` edge functions.
 
-**Volume sávok:** 25, 50, 75, 150, 300, 500 számla/hó
+**Jelenlegi állapot:** Nincs pricing oldal. Az értékesítés egyszeri díjas modellre vált (lásd [004-pricing-model.md](../../business/decisions/004-pricing-model.md)). A jövőbeli vásárlási flow még nem tervezett.
 
-**Fizetés:** Havi / éves toggle (éves = 2 hónap ingyen). Stripe Checkout redirect, Customer Portal link.
-
-**Implementáció:** Pricing.tsx, useSubscription context, create-checkout + customer-portal Edge Functions.
-
-**Rationale:** Kártya layout áttekinthető, a volume-based pricing rugalmas, a Stripe Checkout biztonságos és megbízható.
+**Rationale:** A Stripe subscription modell nem illeszkedett a célpiac igényeihez. A termék egyszeri díjjal lesz eladva.

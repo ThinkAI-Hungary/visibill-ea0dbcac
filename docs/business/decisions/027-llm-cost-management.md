@@ -14,6 +14,10 @@
 - Jelenleg nincs limit — minden felhasználó korlátlanul használhatja az AI funkciókat
 - llm_tracker.py a worker-ben kezeli a naplózást
 
-**Nyitott kérdés:** Kell-e per-user/per-company LLM költség limit? Ha igen, hogyan integrálódjon a subscription tierekbe?
+**Nyitott kérdés:** Kell-e per-user/per-company LLM költség limit? Ha igen, hogyan integrálódjon az egyszeri díjas modellbe?
 
 **Rationale:** A költségek nyomon követése kész, de a limitálás és az üzleti modellbe való beépítés még nyitott.
+
+## Kapcsolódó Architekturális Döntések
+- [A-007: LLM stratégia](../../architecture/decisions/A-007-llm-strategy.md) — LiteLLM, modell történet, cost tracking
+

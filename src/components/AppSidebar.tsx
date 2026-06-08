@@ -45,7 +45,7 @@ import {
   LogOut, 
   FolderKanban,
   Plug,
-  // CreditCard,
+
   Tags,
   TrendingUp,
   Wallet,
@@ -136,7 +136,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { title: "Integrációk", url: "/integrations", icon: Plug, tourId: "integrations" },
       { title: "Árfolyamok", url: "/exchange-rates", icon: TrendingUp, tourId: "exchange-rates" },
-      // { title: "Előfizetés", url: "/pricing", icon: CreditCard, tourId: "subscription" },
+
     ],
   },
 ];
@@ -166,7 +166,7 @@ const prefetchMap: Record<string, () => Promise<unknown>> = {
   "/teny": () => import("@/pages/FixedAssetsPage"),
   "/integrations": () => import("@/pages/Integrations"),
   "/exchange-rates": () => import("@/pages/ExchangeRates"),
-  // "/pricing": () => import("@/pages/Pricing"),
+
   "/tickets": () => import("@/pages/TicketsPage"),
 };
 

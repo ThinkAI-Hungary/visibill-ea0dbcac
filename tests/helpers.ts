@@ -86,11 +86,43 @@ export async function waitForAppReady(page: Page) {
 // ─── Sidebar navigation helper ─────────────────────────
 /**
  * Navigál egy sidebar menüponton keresztül. Használja a getByRole('link')
- * selectort a strict mode violation elkerüléséhez.
+ * selectort a strict mode violation elkerüléséhez. Automatikusan kibontja
+ * a szülő kategóriát, ha az össze van csukva.
  */
 export async function navigateTo(page: Page, linkName: string) {
   await waitForAppReady(page);
-  await page.getByRole("link", { name: linkName }).click();
+  
+  const link = page.getByRole("link", { name: linkName });
+  const isLinkVisible = await link.isVisible();
+  
+  if (!isLinkVisible) {
+    // Határozzuk meg a szülő csoport nevét a link neve alapján
+    let parentGroup = "";
+    if (["Számlák", "Kintlévőség", "Tranzakciók", "Házipénztár"].includes(linkName)) {
+      parentGroup = "Pénzügyek";
+    } else if (["Főkönyv", "Eredménykimutatás", "Mérleg", "Beszámoló", "ÁFA Bevallás"].includes(linkName)) {
+      parentGroup = "Könyvelés";
+    } else if (["Bérek/járulékok", "Munkaidő", "TENY"].includes(linkName)) {
+      parentGroup = "HR & Eszközök";
+    } else if (["Integrációk", "Árfolyamok"].includes(linkName)) {
+      parentGroup = "Rendszer";
+    } else if (["Irányítópult", "Kategóriák", "Projektek", "Partnertörzs"].includes(linkName)) {
+      parentGroup = "Áttekintés";
+    }
+
+    if (parentGroup) {
+      // Megkeressük a csoport kibontó gombját
+      const groupTrigger = page.locator("button, [role='button']").filter({ hasText: new RegExp(`^${parentGroup}$`, "i") });
+      if (await groupTrigger.isVisible()) {
+        await groupTrigger.click();
+        // Várjuk meg az animáció befejeződését
+        await page.waitForTimeout(300);
+      }
+    }
+  }
+
+  await link.click();
   await page.waitForLoadState("networkidle");
   await waitForAppReady(page);
 }
+

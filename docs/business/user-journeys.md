@@ -7,29 +7,38 @@
 ## Journey 1: Új Felhasználó Onboarding
 
 ```mermaid
-graph LR
-    A[Regisztráció] --> B[Email verifikáció]
-    B --> C[Cég létrehozása]
-    C --> D[Product Tour]
-    D --> E[Első számla feltöltés]
-    E --> F[AI feldolgozás]
-    F --> G[Eredmény megtekintés]
+graph TD
+    A[1. Regisztráció] --> B[2. Email verifikáció]
+    B --> C{Főoldal betöltés}
+    C -->|Cég nélkül| D[3. Onboarding Wizard]
+    D --> D1[3.1 Cég regisztráció / Csatlakozás]
+    D1 --> D2[3.2 Projektek - Opcionális]
+    D2 --> D3[3.3 Kategóriák - Opcionális]
+    D3 --> D4[3.4 NAV Integráció - Opcionális]
+    D4 --> D5{Háttér szinkron}
+    D5 --> E[4. Product Tour]
+    E --> F[5. Első számla feltöltés / letöltés]
+    F --> G[6. Feldolgozott számla megtekintése]
 ```
 
-**Szereplő:** Új cégvezető  
+**Szereplő:** Új cégvezető vagy könyvelő (Owner vagy Member szerepkör)  
 **Trigger:** Regisztrációs oldal megnyitása  
 
 | Lépés | Oldal/Komponens | Leírás |
 |-------|----------------|--------|
-| 1 | Auth.tsx | Email + jelszó regisztráció |
-| 2 | verify-email Edge Function | Email cím megerősítése (email_verify_token) |
-| 3 | CompanySelector → Új cég dialógus | Cégnév, adószám megadása |
-| 4 | ProductTour.tsx | Interaktív bemutató (has_completed_tour flag) |
-| 5 | ManualUpload.tsx | Első számla PDF/kép feltöltése |
-| 6 | Worker pipeline | OCR → LLM → DB mentés (aszinkron) |
-| 7 | InvoicesPage.tsx | Feldolgozott számla megtekintése |
+| 1 | Auth.tsx | Email + jelszó regisztráció (social login nélkül) |
+| 2 | verify-email Edge Function | Email cím megerősítése (profiles.email_verified flag) |
+| 3 | EmptyStateDashboard.tsx | Onboarding Wizard modal (mivel `companies.length === 0`): |
+| 3.1 | EmptyStateDashboard | **Cég megadása:** Új cég létrehozása (Owner) vagy csatlakozás meglévőhöz share token alapján (Member) |
+| 3.2 | EmptyStateDashboard | **Projektek:** Kezdeti projektek és partnerek felvétele |
+| 3.3 | EmptyStateDashboard | **Kategóriák:** Költség kategóriák és kulcsszavak megadása |
+| 3.4 | EmptyStateDashboard | **NAV Integráció:** Technikai felhasználó összekötése + validáció a `save-credentials` funkcióval |
+| 3.5 | Edge Functions (NAV sync) | A háttérben elindul az elmúlt 90 nap számláinak lekérdezése 35 napos chunkokban |
+| 4 | ProductTour.tsx | 13-lépéses interaktív bemutató a főoldalon (`react-joyride` segítségével) |
+| 5 | ManualUpload.tsx vagy NAV szinkron | Első számla feltöltése manuálisan vagy szinkronizálása a NAV-ból |
+| 6 | InvoicesPage.tsx | Feldolgozott/letöltött számla megtekintése és jóváhagyása |
 
-**Sikerkritérium:** A felhasználó regisztrált, létrehozta a cégét, feltöltötte és látta az első feldolgozott számláját.
+**Sikerkritérium:** A felhasználó regisztrált, sikeresen elvégezte az onboarding konfigurációt, végigjárta a Product Tour-t, és látta az első feldolgozott számláját a rendszerben.
 
 ---
 
