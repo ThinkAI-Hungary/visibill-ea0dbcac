@@ -51,12 +51,19 @@ import {
   Menu,
   PanelLeft,
   TicketCheck,
+  ShieldCheck,
+  BookOpen,
+  Scale,
+  Sparkles,
+  Rocket,
+  ChevronUp,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useUnreadTicketCount } from '@/hooks/useTickets';
+import { AiAssistantChat as AiDrawerChat } from './AiAssistantPage';
 
 export default function AccountyLayout() {
   const { user, signOut } = useAuth();
@@ -100,6 +107,7 @@ export default function AccountyLayout() {
   const [payrollInitialized, setPayrollInitialized] = useState(false);
   const [payrollSearch, setPayrollSearch] = useState('');
   const [showAllPayroll, setShowAllPayroll] = useState(false);
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
   const [notifDismissed, setNotifDismissed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -170,8 +178,19 @@ export default function AccountyLayout() {
     { name: 'Adó naptár', path: '/accounty/tax-calendar', icon: Calendar },
     { name: 'Riportok', path: '/accounty/reports', icon: BarChart2 },
     { name: 'Jóváhagyó rendszer', path: '/accounty/approval-queue', icon: MailCheck },
+    { name: 'Riasztások', path: '/accounty/alerts', icon: AlertTriangle },
+    { name: 'NAV határidők', path: '/accounty/nav-deadlines', icon: Clock },
+    { name: 'Bérszámfejtés portfólió', path: '/accounty/payroll-portfolio', icon: Calculator },
+    { name: 'Onboarding', path: '/accounty/onboarding', icon: Rocket },
     { name: 'Beállítások', path: '/accounty/settings', icon: Settings },
     { name: 'Segítség', path: '/accounty/help', icon: HelpCircle },
+    { name: 'AI Asszisztens', path: '/accounty/ai-assistant', icon: Sparkles },
+    { name: 'Audit napló', path: '/accounty/admin/audit', icon: ShieldCheck },
+    { name: 'GDPR', path: '/accounty/admin/gdpr', icon: ShieldCheck },
+    { name: 'Sablonok', path: '/accounty/admin/templates', icon: FileText },
+    { name: 'Jogviszonykódok', path: '/accounty/admin/job-codes', icon: BookOpen },
+    { name: 'Adómértékek', path: '/accounty/admin/tax-parameters', icon: Calculator },
+    { name: 'Jogszabály-frissítések', path: '/accounty/admin/legal-updates', icon: Scale },
   ];
 
   const filteredPages = cmdQuery ? cmdPages.filter(p => p.name.toLowerCase().includes(cmdQuery.toLowerCase())) : cmdPages;
@@ -270,7 +289,11 @@ export default function AccountyLayout() {
                 },
                 { path: '/accounty/tax-calendar', name: 'Adó naptár', icon: Calendar },
                 { path: '/accounty/reports', name: 'Riportok', icon: BarChart2 },
-                { path: '/accounty/approval-queue', name: 'Jóváhagyó rendszer', icon: MailCheck }
+                { path: '/accounty/approval-queue', name: 'Jóváhagyó rendszer', icon: MailCheck },
+                { path: '/accounty/alerts', name: 'Riasztások', icon: AlertTriangle },
+                { path: '/accounty/nav-deadlines', name: 'NAV határidők', icon: Clock },
+                { path: '/accounty/payroll-portfolio', name: 'Bérszámfejtés portfólió', icon: Calculator },
+                { path: '/accounty/onboarding', name: 'Onboarding', icon: Rocket },
               ].map((item) => (
                 <li key={item.path} className="relative flex justify-center">
                   <Tooltip delayDuration={0}>
@@ -359,6 +382,60 @@ export default function AccountyLayout() {
                 >
                   <MailCheck className="h-4 w-4 shrink-0" />
                   <span className="truncate">Jóváhagyó rendszer</span>
+                </Link>
+              </li>
+            </ul>
+          )}
+
+          {/* Portfólió kiegészítő menüpontok (expanded only) */}
+          {!isCollapsed && (
+            <ul className="flex w-full min-w-0 flex-col gap-1 mt-1">
+              <li>
+                <Link
+                  to="/accounty/alerts"
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
+                    isActive('/accounty/alerts') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                  )}
+                >
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Riasztások</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/accounty/nav-deadlines"
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
+                    isActive('/accounty/nav-deadlines') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                  )}
+                >
+                  <Clock className="h-4 w-4 shrink-0" />
+                  <span className="truncate">NAV határidők</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/accounty/payroll-portfolio"
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
+                    isActive('/accounty/payroll-portfolio') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                  )}
+                >
+                  <Calculator className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Bérszámfejtés portfólió</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/accounty/onboarding"
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
+                    isActive('/accounty/onboarding') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                  )}
+                >
+                  <Rocket className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Onboarding</span>
                 </Link>
               </li>
             </ul>
@@ -558,7 +635,13 @@ export default function AccountyLayout() {
               {[
                 { path: '/accounty/settings', name: 'Beállítások', icon: Settings },
                 { path: '/accounty/tickets', name: 'Hibajegyek', icon: TicketCheck, badge: unreadTicketCount },
-                { path: '/accounty/help', name: 'Segítség', icon: HelpCircle }
+                { path: '/accounty/help', name: 'Segítség', icon: HelpCircle },
+                { path: '/accounty/admin/audit', name: 'Audit', icon: ShieldCheck },
+                { path: '/accounty/admin/gdpr', name: 'GDPR', icon: ShieldCheck },
+                { path: '/accounty/admin/templates', name: 'Sablonok', icon: FileText },
+                { path: '/accounty/admin/job-codes', name: 'Kódok', icon: BookOpen },
+                { path: '/accounty/admin/tax-parameters', name: 'Paraméterek', icon: Calculator },
+                { path: '/accounty/admin/legal-updates', name: 'Jogszabályok', icon: Scale },
               ].map((item) => (
                 <li key={item.path} className="relative flex justify-center">
                   <Tooltip delayDuration={0}>
@@ -631,6 +714,38 @@ export default function AccountyLayout() {
                     <span className="truncate">Segítség</span>
                   </Link>
                 </li>
+              </ul>
+            </>
+          )}
+
+          {/* Admin szekció (expanded only) */}
+          {!isCollapsed && (
+            <>
+              <div className="flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 mt-4 mb-1">
+                Admin
+              </div>
+              <ul className="flex w-full min-w-0 flex-col gap-1">
+                {[
+                  { to: '/accounty/admin/audit', icon: ShieldCheck, label: 'Audit napló' },
+                  { to: '/accounty/admin/gdpr', icon: ShieldCheck, label: 'GDPR' },
+                  { to: '/accounty/admin/templates', icon: FileText, label: 'Sablonok' },
+                  { to: '/accounty/admin/job-codes', icon: BookOpen, label: 'Jogviszonykódok' },
+                  { to: '/accounty/admin/tax-parameters', icon: Calculator, label: 'Adómértékek' },
+                  { to: '/accounty/admin/legal-updates', icon: Scale, label: 'Jogszabály-frissítések' },
+                ].map(item => (
+                  <li key={item.to}>
+                    <Link
+                      to={item.to}
+                      className={cn(
+                        "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
+                        isActive(item.to) ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                      )}
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </>
           )}
@@ -835,10 +950,49 @@ export default function AccountyLayout() {
         </div>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-auto p-8">
+        <div className="flex-1 overflow-auto p-8 relative">
           <AccountyRoleProvider>
             <Outlet />
           </AccountyRoleProvider>
+
+          {/* AI Assistant FAB */}
+          <button
+            onClick={() => setAiDrawerOpen(v => !v)}
+            className={cn(
+              "fixed bottom-6 right-6 z-40 p-3.5 rounded-2xl shadow-lg transition-all duration-300 hover:scale-105",
+              aiDrawerOpen
+                ? "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-md"
+                : "bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50"
+            )}
+            title="AI Asszisztens"
+          >
+            {aiDrawerOpen ? <X className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
+          </button>
+
+          {/* AI Assistant Drawer */}
+          {aiDrawerOpen && (
+            <div className="fixed top-0 right-0 z-30 h-full w-[420px] bg-card border-l border-border shadow-2xl animate-in slide-in-from-right duration-300">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-violet-500" />
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">AI Asszisztens</h3>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Link
+                    to="/accounty/ai-assistant"
+                    onClick={() => setAiDrawerOpen(false)}
+                    className="text-xs text-primary hover:text-primary/80 px-2 py-1 rounded-md hover:bg-primary/10 transition-colors"
+                  >
+                    Teljes nézet
+                  </Link>
+                  <button onClick={() => setAiDrawerOpen(false)} className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <X className="w-4 h-4 text-slate-400" />
+                  </button>
+                </div>
+              </div>
+              <AiDrawerChat />
+            </div>
+          )}
         </div>
       </main>
     </div>

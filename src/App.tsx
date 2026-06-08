@@ -70,6 +70,21 @@ const PayrollEmployeeDetailsPage = lazy(() => import("./pages/Accounty/EmployeeD
 const PayrollTaxParametersPage = lazy(() => import("./pages/Accounty/TaxParametersPage"));
 const PayrollFilingsPage = lazy(() => import("./pages/Accounty/FilingsPage"));
 const PayrollReportsPage = lazy(() => import("./pages/Accounty/PayrollReportsPage"));
+
+// Admin modules
+const AuditLogPage = lazy(() => import("./pages/Accounty/AuditLogPage"));
+const GdprPage = lazy(() => import("./pages/Accounty/GdprPage"));
+const TemplatesPage = lazy(() => import("./pages/Accounty/TemplatesPage"));
+const JobCodesPage = lazy(() => import("./pages/Accounty/JobCodesPage"));
+const AdminTaxParametersPage = lazy(() => import("./pages/Accounty/AdminTaxParametersPage"));
+const LegalUpdatesPage = lazy(() => import("./pages/Accounty/LegalUpdatesPage"));
+const AccountyOnboardingPage = lazy(() => import("./pages/Accounty/OnboardingPage"));
+const AiAssistantPage = lazy(() => import("./pages/Accounty/AiAssistantPage"));
+
+// Portfolio pages
+const AlertsCenterPage = lazy(() => import("./pages/Accounty/AlertsCenterPage"));
+const NavDeadlinesPage = lazy(() => import("./pages/Accounty/NavDeadlinesPage"));
+const PayrollPortfolioPage = lazy(() => import("./pages/Accounty/PayrollPortfolioPage"));
 const VatReturnPage = lazy(() => import("./pages/VatReturnPage"));
 const TicketsPage = lazy(() => import("./pages/TicketsPage"));
 
@@ -277,6 +292,19 @@ const App = () => (
                       <Route path="payroll/:id/portal" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientPortalPage /></Suspense>} />
                       <Route path="payroll/:id/tax-params" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollTaxParametersPage /></Suspense>} />
                       <Route path="new-client" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NewClientPage /></Suspense>} />
+                      {/* Admin modules */}
+                      <Route path="admin/audit" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AuditLogPage /></Suspense>} />
+                      <Route path="admin/gdpr" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><GdprPage /></Suspense>} />
+                      <Route path="admin/templates" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TemplatesPage /></Suspense>} />
+                      <Route path="admin/job-codes" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><JobCodesPage /></Suspense>} />
+                      <Route path="admin/tax-parameters" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AdminTaxParametersPage /></Suspense>} />
+                      <Route path="admin/legal-updates" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><LegalUpdatesPage /></Suspense>} />
+                      {/* Portfolio pages */}
+                      <Route path="alerts" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AlertsCenterPage /></Suspense>} />
+                      <Route path="nav-deadlines" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NavDeadlinesPage /></Suspense>} />
+                      <Route path="payroll-portfolio" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollPortfolioPage /></Suspense>} />
+                      <Route path="onboarding" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountyOnboardingPage /></Suspense>} />
+                      <Route path="ai-assistant" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AiAssistantPage /></Suspense>} />
                     </Route>
 
                     {/* Protected routes with persistent sidebar */}
