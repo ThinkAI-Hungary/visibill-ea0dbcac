@@ -1,0 +1,1063 @@
+Magyarországi Bérszámfejtés
+2026 — Teljes körű szakmai anyag
+AI-vezérelt könyvelői applikáció fejlesztéséhez
+Tartalmi szempontok:
+1. Jogszabályi előírások
+2. Foglalkoztatási státuszok
+3. Szükséges adatok
+4. Könyvelői tevékenységek és NAV-integráció
+Hatályos: 2026. január 1-jén érvényes jogszabályi állapot
+Tartalomjegyzék
+TL;DR — Vezetői összefoglaló
+5
+Bevezetés és az anyag célja
+5
+Key Findings — A tartalom kulcs-pillérei
+5
+1. Jogszabályi előírások 2026-ban
+7
+1.1 A jogszabályi keret
+7
+1.2 Adó- és járulékmértékek 2026-ban
+8
+1.3 Minimálbér és garantált bérminimum 2026
+8
+1.4 SZJA-adóalap-csökkentő kedvezmények 2026 (érvényesítési sorrend)
+8
+Családi kedvezmény 2026 — duplázott összegek
+9
+1.5 Bevallási és befizetési határidők 2026
+9
+NAV befizetési számlaszámok (2026, válogatás)
+10
+1.6 Megőrzési kötelezettségek
+10
+1.7 GDPR és adatkezelési követelmények
+10
+2. Foglalkoztatási / alkalmazási státuszok 2026
+12
+2.1 Teljes munkaidős munkaviszony (Mt. szerinti)
+12
+2.2 Részmunkaidős munkaviszony
+12
+2.3 Határozott idejű munkaviszony
+12
+2.4 Távmunka / otthoni munkavégzés
+12
+2.5 Egyszerűsített foglalkoztatás (Efo tv.)
+12
+2.6 Megbízási jogviszony (Ptk. szerinti)
+13
+2.7 Tartós megbízási jogviszony (ÚJ 2026.01.01-től)
+13
+2.8 Vállalkozási jogviszony (Ptk.)
+14
+2.9 Vezető tisztségviselő (ügyvezető)
+14
+2.10 Társas vállalkozó
+14
+2.11 Egyéni vállalkozó
+14
+2.12 KATA (kisadózó vállalkozók tételes adója)
+15
+2.13 Diákmunka — iskolaszövetkezet tagjaként
+15
+2.14 Diákmunka — munkaviszony / megbízás / EFO
+15
+2.15 Saját jogú nyugdíjas foglalkoztatása
+15
+2.16 Szakképzési munkaszerződés / tanulószerződés
+15
+2.17 Közfoglalkoztatás
+16
+2.18 Iskolaszövetkezet, nyugdíjas szövetkezet
+16
+2.19 EKHO — Egyszerűsített közteherviselési hozzájárulás
+16
+2.20 Külföldi munkavállaló, kiküldetés
+16
+3. Szükséges adatok — Mit kell összegyűjtenie a könyvelőnek
+17
+3.1 Cégadatok (minden vállalkozásnál egyszer)
+17
+3.2 Munkavállaló alapadatai (KÖTELEZŐ, minden státuszra)
+17
+3.3 Munkaszerződés adatai
+17
+3.4 Munkaidő- és távollét-adatok (havonta)
+18
+3.5 Adóelőleg-nyilatkozatok / Kedvezmény-adatok
+18
+3.6 Levonások
+18
+3.7 Cafeteria / béren kívüli juttatások
+19
+3.8 Státuszfüggő speciális adatigény
+19
+4. Könyvelői tevékenységek — Teljes munkafolyamat
+21
+4.1 Munkaviszony / jogviszony létesítésekor
+21
+4.1.1 Szerződéskötés ellenőrzése
+21
+4.1.2 Biztosítotti bejelentés — T1041 / 2026.01.01-től „08E"
+21
+4.2 Havi bérszámfejtés folyamata
+22
+1. lépés — Adatgyűjtés a tárgyhónapra
+22
+2. lépés — Bruttó bér megállapítása
+22
+3. lépés — Adóalap és kedvezmények
+22
+4. lépés — Járulékok
+22
+5. lépés — Nettó bér és levonások
+23
+6. lépés — Bérjegyzék (Mt. 155. §)
+23
+7. lépés — Bér kifizetése
+23
+4.3 Bevallás — A havi adó- és járulékbevallás (2026-os évszámú „2608" típus)
+23
+4.4 Munkaviszony megszüntetésekor — „Kilépő papírok"
+24
+4.5 e-TB kiskönyv — 2026.01.01-től
+24
+4.6 Év végi feladatok
+25
+M30-as munkáltatói összesített igazolás (25M30 a 2025-ös adóévre, 26M30 a 2026-osra)
+25
+Egyéb év végi feladatok
+25
+4.7 NAV-elektronikus adatszolgáltatás technikai folyamata
+25
+ONYA (Online Nyomtatványkitöltő Alkalmazás)
+25
+ÁNYK (Általános Nyomtatványkitöltő Keretprogram)
+26
+ÁNYK kivezetése — 2026 év végéig
+26
+Ügyfélkapu+ és Cégkapu / Hivatali tárhely használata 2026-ban
+26
+Tárhelyre érkező nyugta
+26
+4.8 Folyamatos kötelezettségek
+27
+Recommendations — Mit építsen a fejlesztőcsapat
+28
+Rövid távú (MVP, 0–6 hónap)
+28
+Közép távú (6–12 hónap)
+28
+Hosszú távú (12+ hónap)
+28
+Triggerek és benchmarkok, amelyek megváltoztatják a fenti utat
+29
+Caveats és jogi figyelmeztetések
+30
+TL;DR
+ — Vezetői összefoglaló
+2026-ban a magyar bérszámfejtésre továbbra is a 15% SZJA + 18,5% TB-járulék + 13% SZOCHO „háromszög" az érvényes; a minimálbér 
+havi 322.800 Ft, a garantált bérminimum 373.200 Ft (426/2025. (XII. 23.) Korm. rendelet), és a családi kedvezmény duplázásának második lépcsője is hatályba lépett.
+A 2026-os legfontosabb technikai változások: a T1041-es biztosítotti bejelentő nyomtatvány „
+08E" névvel folytatódik, új „jogviszonysorszám" mezővel és új 1115-ös jogviszonykóddal a tartós megbízási jogviszonyhoz; a 
+szocho
+-alapnál megszűnik a 112,5%-os szorzó; az egyéni vállalkozóknak negyedéves a járulékbevallás; az ÁNYK keretprogramot 2026.12.31
+-én vezetik ki és helyét teljes egészében az ONYA / e-SZJA / e-ÁFA / M2M veszi át.
+A szoftvernek tizennégynél is több különböző foglalkoztatási státuszt kell 
+paraméterezhetően
+ kezelnie (a teljes/részmunkaidős munkaviszonytól a tartós megbízáson és iskolasz
+övetkezeten át a saját jogú nyugdíjasig), mindegyikhez eltérő adatigénnyel, jogviszonykóddal, biztosítási elbírálással és bevallási logikával.
+Bevezetés és az anyag célja
+Ez a dokumentum egy AI-vezérelt, magyar könyvelőknek készülő bérszámfejtő applikáció 
+fejlesztéséhez ad teljes körű 
+domain
+-térképet. Az anyag a 2026. január 1-jén hatályos magyar jogszabályi állapotot tükrözi, és négy fő szempont szerint épül fel: (1) jogszabályi előírások, (2) foglalkoztatási státuszok, (3) szükséges adatok, (4) könyvelői 
+tevékenységek és NAV-elektronikus adatszolgáltatás. A célja, hogy egy fejlesztőcsapat ennek alapján fel tudja térképezni az applikáció által kezelendő összes entitást, állapotot, üzleti szabályt és integrációt.
+Key 
+Findings
+ — A tartalom kulcs-
+pillérei
+A jo
+gi alapok 
+stabilak
+, de a részletek mozognak. A három fő kulcs (15% SZJA, 18,5% TB, 13% SZOCHO) 2022 óta változatlan, de a minimálbérhez kötött tucatnyi küszöbérték (vállalkozói minimumalap, megbízási 30%-os biztosítási küszöb, EFO napi maximumok, távmunka 
+átalány, csekély értékű ajándék, EKHO-küszöb, rehabilitációs hozzájárulás) évente 
+újraszámolandó
+.
+A „nyomtatványforradalom" 2026–2027-ben zajlik. A T1041 → 08E átnevezés, a 2508 → 2608 évszámfrissítés, a jogviszonysorszám bevezetése, az e-TB kiskönyv és az ÁNYK kivezetése együtt jelentősebb adatmodell-átalakítást kíván, mint amit egy egyszerű évszámfri
+ssítés indokolna.
+A jogviszony-kategorizálás az alkalmazás üzleti logikájának legkritikusabb pontja. Egyetlen helytelen jogviszonykód (pl. 1101 helyett 1115) súlyos bérszámfejtési és 
+bejelentési hibákat okoz, ezért a státuszválasztó 
+wizard
+-kérdéssorral jav
+asolt segíteni a könyvelőt.
+1. Jogszabályi előírások 2026-ban
+1.1 A jogszabályi keret
+A magyar bérszámfejtésre vonatkozó főbb anyagi jogi normák 2026-ban:
+Terület
+Jogszabály
+Funkciója
+Munkajog
+2012. évi I. törvény (Munka Törvénykönyve, Mt.)
+A munkaviszony létesítése, módosítása, megszüntetése, munkabér elszámolása, munkaidő, szabadság, kötelező nyilvántartások.
+Személyi jövedelemadó
+1995. évi CXVII. törvény (Szja tv.)
+Adóalap, adómérték (15%), adóelőleg-megállapítás, adóalap-kedvezmények, bé
+ren kívüli juttatások.
+Társadalombiztosítás
+2019. évi CXXII. törvény (Tbj.)
+Biztosítási jogviszonyok, járulékalap, 18,5%-os TB-járulék, ellátásokra való jogosultság, biztosítotti bejelentés.
+Szociális hozzájárulási adó
+2018. évi LII. törvény (
+Szocho
+ tv.)
+Munkáltatói 13%-os SZOCHO, kedvezmények, plafon, tőkejövedelmek terhelése.
+Adózás rendje
+2017. évi CL. törvény (Art.)
+Bejelentési és bevallási kötelezettségek, határidők, képviselet, mulasztási bírság.
+Adóigazgatás
+2017. évi CLI. törvény (Air.)
+Eljárási szabályok, állandó meghatalmazás.
+Számvitel
+2000. évi C. törvény (Sztv.)
+Bérköltség kezelése, számviteli bizonylatok 8 éves megőrzése.
+Egyszerűsített foglalkoztatás
+2010. évi LXXV. törvény (
+Efo
+ tv.)
+Alkalmi munka, mezőgazdasági és turisztikai idénymunka, filmipari statiszta.
+Egészségbiztosítás
+1997. évi LXXXIII. tv. (
+Ebtv
+.)
+Pénzbeli ellátások (CSED, GYED, táppénz), e-TB kiskönyv.
+Foglalkoztatás felügyelete
+2020. évi CXXXV. tv.
+Munkaügyi hatósági ellenőrzés.
+Speciális jogviszonyok
+2019. évi LXXX. tv. (
+Szkt
+.)
+Szakképzési munkaszerződés, duális képzés.
+Adatvédelem
+GDPR (679/2016 EU r.), 2011. évi CXII. tv. (
+Infotv
+.)
+Munkavállalói adatkezelés, hozzáférési jogok, adatkezelési időtartamok.
+Bérminimum
+426/2025. (XII. 23.) Korm. rendelet
+2026. évi minimálbér / garantált bérminimum.
+Anyák kedvezménye (új)
+2025. évi XIV. (két 
+gy
+.) és 2025. évi XV. (három 
+gy
+.) tv.
+Bővülő SZJA-mentességek.
+Tartós megbízás
+2025. évi LXXXIII. tv.
+A Tbj. és 
+Szocho
+ tv. módosítása a tartós megbízási jogviszony bevezetésével.
+1.2 Adó- és járulékmértékek 2026-ban
+Személyi jövedelemadó (SZJA): 
+15% — egységes egykulcsos adó az összevont adóalapba tartozó és bizonyos 
+elkülönülten
+ adózó jövedelmekre.
+Társadalombiztosítási járulék (TB): 
+18,5% — egységes járulékmérték (magában foglalja a nyugdíj-, az egészségbiztosítási- és a munkaerő-piaci járulékot
+), a munkavállalót terheli, a foglalkoztató vonja és vallja be.
+Szociális hozzájárulási adó (SZOCHO): 
+13% — a kifizetőt/munkáltatót terheli; 2026-tól megszűnt a vállalkozói minimumalap 112,5%-os szorzója, az adóalap legalább a minimálbér 100%-a.
+Egészségüg
+yi szolgáltatási járulék: 
+12.300 Ft/hó (410 Ft/nap) annak, aki más jogcímen nem biztosított.
+SZOCHO felső határa (tőkejövedelmekre): 
+a minimálbér 24-szerese = 7.747.200 Ft/év.
+1.3 Minimálbér és garantált bérminimum 2026
+A 426/2025. (XII. 23.) Korm. rendele
+t alapján:
+Bér típusa
+Havibér
+Hetibér
+Napibér
+Órabér
+Minimálbér
+322.800 Ft
+74.210 Ft
+14.850 Ft
+1.856 Ft
+Garantált bérminimum
+373.200 Ft
+85.800 Ft
+17.160 Ft
+2.145 Ft
+Garantált bérminimum: 
+legalább középfokú iskolai végzettséget vagy középfokú szakképzettséget igénylő munkakör betöltése esetén kötelező, függetlenül attól, hogy a munkavállalónak van-e ilyen végzettsége (a pozíció előírása a meghatározó).
+Részmunkaidős minimálbér 
+időarányosan:
+ 6 órás foglalkoztatás 242.100 Ft, 4 órás 161.400 Ft.
+1.4 SZJA-adóalap-csökkentő kedvezmények 2026 (érvényesítési sorrend)
+Az Szja tv. szerint az alábbi sorrendben érvényesíthetők:
+Négy vagy több gyermeket nevelő anyák kedvezménye (NÉTAK) — teljes SZJA-men
+tesség a munkából származó jövedelemre.
+Három gyermeket nevelő anyák kedvezménye — 2025. október 1-jétől teljes SZJA-mentesség (2025. évi XV. tv.).
+Két gyermeket nevelő anyák kedvezménye — 2026. január 1-jétől fokozatos bevezetés, először a 40 év alatti an
+yák kapnak teljes mentességet (2025. évi XIV. tv.); 2027–2029 között életkor szerint kiterjesztik.
+25 év alatti fiatalok kedvezménye — a NAV hivatalos oldala szerint a havi adóalap-csökkentés legfeljebb 715.765 Ft, évi 8.589.180 Ft, ami 1.288.377 Ft adómeg
+takarítás.
+30 év alatti anyák kedvezménye — családi pótlékra jogosító gyermek esetén, a 25 év alattiak kedvezményével azonos összegig.
+Személyi kedvezmény — a minimálbér egyharmadának 100 forintra kerekített összege: 2026-ban 107.600 Ft/hó (havi 16.140 Ft 
+adómegtakarítás); súlyosan fogyatékos magánszemélyeknek a 335/2009. (XII.29.) Korm. r. szerint.
+Első házasok kedvezménye — havi 33.335 Ft adóalap-csökkentés (havi 5.000 Ft adómegtakarítás), 24 hónapig, házasságkötést követő hónaptól.
+Családi kedvezmény — 2
+026. január 1-jétől megduplázott összegek.
+Családi járulékkedvezmény — ha a családi kedvezmény az SZJA-alapot kimerítette, a maradék a 18,5%-os TB-járulékból érvényesíthető.
+Családi kedvezmény 2026 — duplázott összegek
+Eltartottak száma
+Havi adóalap-csökkentés / gyermek
+Havi adómegtakarítás / gyermek
+1 eltartott
+133.340 Ft
+20.000 Ft
+2 eltartott (eltartottanként)
+266.660 Ft
+40.000 Ft (80.000 Ft/család)
+3+ eltartott (eltartottanként)
+440.000 Ft
+66.000 Ft
+Tartósan beteg / súlyosan fogyatékos eltartott után
++133.340 Ft
++10.000 Ft
+Új nyomtatvány 2026-ra: 
+ANYÁCSKA (összevont adóelőleg-nyilatkozat anyáknak, akik egyszerre veszik igénybe az anyák kedvezményét és a családi kedvezményt).
+1.5 Bevallási és befizetési határidők 2026
+Kötelezettség
+Nyomtatvány
+Határidő
+Havi járulékbevallás (munkáltatói)
+2508 (2026-os adatokra a megfelelő évszámú „2608" típus)
+Tárgyhót követő hó 12-e (Art. 31. § (2))
+Egyéni vállalkozó saját járulékbevallása
+2558 / 2658
+Tárgynegyedévet követő hó 12-e
+Biztosítotti bejelentés
+08E (technikailag T1041 az ÁNYK-ban)
+Legkésőbb a biztosítási jogviszony első napján, munkavégzés megkezdése előtt
+Jogviszony megszűnés, szünetelés
+08E (T1041)
+8 napon belül
+Munkaidő- vagy FEOR-változás
+08E (T1041)
+15 napon belül
+Magánszemély SZJA-bevallás
+25SZJA
+Tárgyévet követő május 20.
+M30 munkáltatói igazolás
+M30
+Tárgyévet követő január 31.
+EFO közteher befizetés
+—
+Tárgyhót követő hó 12.
+NAV befizetési számlaszámok (2026, válogatás)
+Adónem
+Számlaszám
+103 SZJA (magánszemély/őstermelő/EV/kifizető)
+10032000-06056353
+258 SZOCHO
+10032000-06055912
+290 Magánszemélyektől levont SZJA, adóelőleg
+10032000-06055950
+407 TB-járulék (biztosítottak után levont)
+10032000-06055819
+EFO közteher
+10032000-06057763
+182 Szakképzési hozzájárulás
+10032000-06056061
+119 Rehabilitációs hozzájárulás
+10032000-06056281
+1.6 Megőrzési kötelezettségek
+Dokumentumtípus
+Megőrzési idő
+Jogalap
+Számviteli bizonylatok (bérjegyzék, bérelszámolás)
+8 év
+Sztv. 169. §
+Munkaügyi nyilvántartások általában
+Munkajogi igény elévülése: 3 év
+Mt. 286. §
+Nyugdíjmegállapításhoz szükséges iratok (jogviszony-, jövedelem-, járulékadatok)
+gyakorlatilag 50 év (a 2018. dec. 28-án hatályba lépett változás miatt)
+1997. évi LXXXI. tv.
+Munkaidő-nyilvántartás
+a hozzá kapcsolódó követelés/szolgálati idő érdekében hosszú távon
+Mt. 134. §, Kúria 1/2022. JEH
+1.7 GDPR és adatkezelési követelmények
+A bérszámfejtés GDPR-szempontból különleges adatok és tömeges személyes adatok kezelésével jár:
+Jogalap: 
+GDPR 6. cikk (1) 
+bek
+. b) (szerződés teljesítése) és c) (jogi kötelezettség), különleges adatok (pl. egészségügyi: táppénz) esetén a 9. cikk (2) 
+bek
+. b)
+ (foglalkoztatáshoz kapcsolódó kötelezettségek).
+Adatkezelési időtartam: 
+a számviteli, adójogi és nyugdíjbiztosítási megőrzési idők szerint kell meghatározni; nem alkalmazható egy egységes „1 év" kategória.
+Adatfeldolgozó szerződés: 
+a könyvelőiroda mint ad
+atfeldolgozó és a megbízó vállalkozás (adatkezelő) között kötelező 28. cikk szerinti adatfeldolgozási szerződés.
+Érintetti jogok: 
+hozzáférés, helyesbítés, korlátozás (a megőrzési kötelezettségek figyelembevételével); a NAIH 2016. évi munkahelyi adatkezelés
+i ajánlása irányadó.
+Külön kockázat: 
+bérjegyzék hozzáférhetővé tétele AVDH-aláírással elektronikus formában — erre az alkalmazásban biztonsági szabályozást kell építeni.
+2. Foglalkoztatási / alkalmazási státuszok 2026
+Az applikációnak az alábbi jogviszon
+ytípusokat kell 
+paraméterezhetően
+ kezelnie, mindegyikhez saját jogviszonykódot, biztosítási elbírálást, adózási logikát és adatigényt rendelve.
+2.1 Teljes munkaidős munkaviszony (Mt. szerinti)
+Jogviszonykód: 
+1101.
+Biztosított: 
+igen (Tbj. 6. § (1) a).
+Adó és járulékok: 
+15% SZJA + 18,5% TB-járulék (munkavállalótól levonva); 13% SZOCHO (munkáltató fizeti). Adóalap-kedvezmények érvényesíthetők.
+Munkabér: 
+legalább a minimálbér / garantált bérminimum; pótlékok az Mt. szerint (műszakpótlék, vasárnapi pótlék, 
+munkaszüneti napi pótlék, túlóra-pótlék, éjszakai pótlék).
+T1041/08E bejelentés: 
+a munkavégzés megkezdése előtt, legkésőbb az első napon.
+2.2 Részmunkaidős munkaviszony
+Jogviszonykód: 
+1101 (a munkaidő bejelentésével).
+A bér- és pótlékelemek időarányosan; a minimálbér 30%-os járulékalap-szabálya a megbízásokra vonatkozik, részmunkaidős munkaviszonyban a tényleges (időarányos) bér a járulékalap.
+2.3 Határozott idejű munkaviszony
+Az Mt. 192. § szerint maximum 5 évre köthet
+ő; bér- és járulékelszámolása megegyezik a teljes/részmunkaidős munkaviszonyéval.
+2.4 Távmunka / otthoni munkavégzés
+Az Mt. 196. § szerinti távmunka csak írásban (munkaszerződésben) köthető.
+Adómentes átalány költségtérítés 2026: 
+a minimálbér 10%-a = havi 
+32.280 Ft, ha a munkavállaló más költséget nem számol el ugyanazon a jogcímen; arányosítani kell a ténylegesen távmunkában töltött napokra (Szja tv. 3. sz. melléklet II/11.).
+2.5 Egyszerűsített foglalkoztatás (
+Efo
+ tv.)
+Három fő típus:
+Típus
+Napi közteher (
+munkáltatói)
+Napi mentesített keret SZJA alól
+Napi maximum bér
+Alkalmi munka
+4.800 Ft/nap
+19.305 Ft
+29.700 Ft
+Mezőgazdasági idénymunka (0–120 nap)
+2.400 Ft/nap
+19.305 Ft
+29.700 Ft
+Mezőgazdasági idénymunka 121–210 nap
+3.600 Ft/nap
+19.305 Ft
+29.700 Ft
+Turisztikai idénymunka
+2.400 Ft/nap
+19.305 Ft
+29.700 Ft
+Filmipari statiszta
+9.700 Ft/nap
+—
+38.700 Ft
+Minimális órabér 2026: 
+minimálbér 85%-a = 1.578 Ft/óra; szakképzettséget igénylő munkakör: garantált bérminimum 87%-a = 1.866 Ft/óra (napi mentesített keret szakképzettséget igénylő munkakörben: 22.308 Ft).
+2026-os újdonság: 
+mezőgazdasági idénymunka évi 210 napra (120+90) bővült
+; alkalmi munka azonos felek közt évi 120 napra.
+Bejelentés: 
+ÁNYK T1042E nyomtatványon, ONYA „EFO bejelentése" menüpontban, vagy a 185-ös telefonos ügyfélszolgálaton, vagy mobilról. A munkavégzés megkezdése előtt kötelező.
+Biztosítás: 
+korlátozott (csak nyu
+gellátás, baleseti egészségügyi szolgáltatás, álláskeresési ellátás); táppénz nem jár.
+2.6 Megbízási jogviszony (Ptk. szerinti)
+Jogviszonykód: 
+1300-as csoport.
+Biztosítás: 
+csak akkor jön létre, ha a havi járulékalapot képező megbízási díj eléri a minimálbér 30%-át (2026-ban 96.840 Ft/hó, napi 3.228 Ft).
+SZJA-előleg alapja: 
+a megbízási díjból tételes költségelszámolással (
+max
+. 50%) vagy 10% általános költségátalánnyal csökken
+tett összeg.
+Bejelentés a T1041/08E-n: 
+csak utólag, a kifizetést követően, és csak akkor, ha a biztosítás létrejön; legkésőbb a biztosítási jogviszony megállapítását követő napon.
+2.7 Tartós megbízási jogviszony (ÚJ 2026.01.01-től)
+A Tbj. 4. § 23. és 6. § 
+(1) l) pontja vezeti be (2025. évi LXXXIII. tv.).
+Jogviszonykód: 
+1115 (új a 08E nyomtatványon).
+Lényege: 
+olyan megbízás, amelyet a foglalkoztató tartós megbízási jogviszonyként jelent be a NAV-hoz. A felek döntésétől függ, nem a megbízás időtartamától.
+Biz
+tosítás: 
+a bejelentés napjától folyamatos, akár 0 Ft megbízási díj esetén is.
+Minimum járulékalap és SZOCHO-alap: 
+a minimálbér 30%-a = 96.840 Ft/hó (2026), arányosított napokra a 30-ad rész.
+Előzetes bejelentés: 
+a megbízás első napjáig kell megtenni (nem utólagos, mint a hagyományos megbízásnál).
+2.8 Vállalkozási jogviszony (Ptk.)
+Önállóan, vállalkozóként végzett munka eredménykötelemmel; nem keletkeztet biztosítási jogviszonyt a megrendelőnél, a vállalkozó saját 
+jogviszonya alapján adózik (KATA, átalányadó, VSZJA, KIVA).
+2.9 Vezető tisztségviselő (ügyvezető)
+Több alesete van:
+Munkaviszonyban: 
+1101-es kód, mint normál munkaviszony.
+Megbízás alapján, nem tag: 
+„választott tisztségviselő"; biztosított, ha a havi díjaz
+ás eléri a minimálbér 30%-át (96.840 Ft).
+Megbízás alapján, tag is (saját jogú nyugdíjasnak nem minősülő): 
+társas vállalkozó (1452-es kód). Minimum járulékalap és SZOCHO-alap havonta 322.800 Ft (vagy 373.200 Ft, ha a főtevékenység szakképzettséget igényel)
+ — a 112,5%-os szorzó 2026-tól megszűnt.
+Heti 36 órás munkaviszony melletti társas vállalkozó: 
+mentesül a havi minimum járulékfizetés alól, a tényleges jövedelem után fizet.
+2.10 Társas vállalkozó
+Tipikusan Kkt., Bt., 
+Kft.
+ személyesen közreműködő tagja.
+Bi
+ztosított, minimum-fizetési kötelezettséggel. 
+A 2026-os minimum: TB-járulék 18,5% × 322.800 Ft = 59.718 Ft; SZOCHO 13% × 322.800 Ft = 41.964 Ft. Garantált bérminimum esetén 69.042 Ft + 48.516 Ft.
+Több gazdasági társaságban fennálló társas vállalkozói jogvi
+szony: évente egy alkalommal, január 31-ig választható, hogy melyik jogviszonyban teljesíti a minimumot.
+2.11 Egyéni vállalkozó
+Adózási formák 2026-ban: 
+vállalkozói SZJA (VSZJA), átalányadó, KATA.
+VSZJA és átalány: 
+18,5% TB-járulék + 13% SZOCHO (minimumala
+p = minimálbér / garantált bérminimum 100%-a, a 112,5%-os szorzó 2026-tól megszűnt).
+Bevallás: 
+2026-tól minden egyéni vállalkozónak negyedéves a járulékbevallás (2558/2658-as típusú), tárgynegyedévet követő hónap 12-éig.
+Átalányadó 2026-os adómentes határa
+: 
+az éves minimálbér fele = 1.936.800 Ft jövedelemig.
+Bejelentés: 
+2026.01.01-től az egyéni vállalkozói jogviszony kezdetét a NAV hivatalból jelenti be az EVNY (Egyéni Vállalkozók Nyilvántartása) alapján.
+2.12 KATA (kisadózó vállalkozók tételes adója)
+A 202
+2 szeptemberétől élő, szigorított szabályok 2026-ban változatlanok.
+Csak 
+főállású
+ egyéni vállalkozó 
+választhatja, és csak magánszemélyeknek számlázhat.
+Havi tételes adó: 
+50.000 Ft. Éves bevételi plafon: 18 millió Ft; e fölött 40% 
+különadó
+.
+Bevallás: 
+évi eg
+yszer, a tárgyévet követő február 25-ig.
+Az alanyi áfamentesség határa 2026-tól 
+18 → 20 millió Ft (az ÁFA-szabály enyhülése, de a KATA bevételi plafon nem változott).
+2.13 Diákmunka — iskolaszövetkezet tagjaként
+Nappali 
+tagozatos
+ tanuló/hallgató; nem biztosított a Tbj. szerint (25. életévig akár szünetelő hallgatói jogviszonyban is).
+Járulékot nem fizet, 
+a jövedelem után csak SZJA fizetendő, de a 25 év alattiak kedvezménye miatt általában nettóban kapja a bruttót.
+2.14 Diákmunka — munkaviszony / megbízás / EFO
+Az iskolaszövetkezeten kívüli minden formában általános szabályok érvényesek; a 25 év alattiak kedvezménye automatikus.
+2.15 Saját jogú nyugdíjas foglalkoztatása
+Biztosítása nem jön létre, 
+sem TB-járulékot, sem SZOCHO-t nem kell fizetni a munkaviszonyból vagy megbízásból származó jövedelme után (csak 15% SZJA).
+Egyéni/társas vállalkozóként: 
+kiegészítő tevékenységet folytatónak minősül.
+KATA-t nem választhat 
+(csak 
+főállású
+ választhatja).
+Új 2
+026.01.01-től: 
+ha a saját jogú nyugdíjas érvényesíti az anyák kedvezményét, és kifizetőtől származó kedvezményalapja meghaladja az éves átlagkereset négyszeresét (2026-ban 34.356.720 Ft), a felettes részre SZOCHO fizetendő.
+2.16 Szakképzési munkaszerződés 
+/ tanulószerződés
+Jogviszonykód: 
+1131.
+Adózás: 
+a szakképzési munkabér 168.000 Ft/hó-
+ig
+ SZJA-mentes; járulékköteles, de 
+szocho
+ alól mentes (a duális képzéshez kapcsolódó 
+szocho
+-kedvezmény miatt).
+Szocho
+-kedvezmény 2026: 
+önköltség (1.200.000 Ft) × szakmaszor
+zó × évfolyami szorzó, arányosítva a duális képzőhelyen ténylegesen teljesített képzési napokra; sikerdíj (a kedvezmény további 20%-a) sikeres szakmai vizsga esetén, ha legalább 6 hónapos egybefüggő szakképzési munkaszerződés állt fenn.
+Bevallás: 
+a 2026-os
+ 08-as bevallás új mezőkkel jeleníti meg a 11. lapon a duális képzéshez kapcsolódó 
+szocho
+-kedvezményt.
+2.17 Közfoglalkoztatás
+Közfoglalkoztatási bér: 
+a minimálbér 50%-a.
+Speciális 
+szocho
+-kedvezmény: 
+a közfoglalkoztatási garantált bér 130%-
+áig
+ fizetett bérr
+e a 13% adó 50%-a vehető igénybe.
+2.18 Iskolaszövetkezet, nyugdíjas szövetkezet
+Speciális, megbízási jellegű jogviszony (atipikus); biztosítás csak korlátozott körben.
+2.19 EKHO — Egyszerűsített közteherviselési hozzájárulás
+Kifejezetten művészeti, sport-,
+ kulturális tevékenységi körök számára.
+2026: 
+EKHO-jövedelem felső határa 60 millió Ft, feltéve, hogy az adóévben legalább az éves minimálbér (3.873.600 Ft) után megfizetik az általános 
+közterheket
+.
+2.20 Külföldi munkavállaló, kiküldetés
+A szakképzettséget
+ igénylő, harmadik országbeli munkavállalókat a 2023. évi XC. tv. (
+Btátv
+.) szerint kell kezelni; a 2508M 
+főlapon
+ új jelölő a huzamos tartózkodási engedéllyel rendelkezőkre.
+Külföldi munkáltató esetén T1041INT bejelentő használatos.
+3. Szükséges adatok — 
+Mit kell összegyűjtenie a könyvelőnek
+3.1 Cégadatok (minden vállalkozásnál egyszer)
+Cégnév, székhely, telephely(
+ek
+), adószám, adóazonosító jel (egyéni vállalkozónál), cégjegyzékszám / nyilvántartási szám.
+Statisztikai számjel, főtevékenység (TEÁOR/ÖVTJ).
+Bankszámlaszám(ok), pénzforgalmi szolgáltató.
+Cégkapu / KÜNY-tárhely azonosító, NAV-meghatalmazás (UJEGYKE-adatlap).
+Iparűzési adó székhelye, kifizetőhelyi minőség (van-e TB-kifizetőhely).
+Kollektív szerződés van-e, ha igen: melyik.
+Cafeteria
+ szabályzat, 
+c
+afeteria
+-keretösszeg/fő.
+3.2 Munkavállaló alapadatai (KÖTELEZŐ, minden státuszra)
+Családi és utónév, születési név, születési hely, születési idő, anyja neve.
+Adóazonosító jel 
+(10 jegyű).
+TAJ-szám 
+(9 jegyű); ha hiányzik (harmadik országbeli), a kérelem fol
+yamatban: a 2508M 
+főlap
+ C blokkjában jelölni kell.
+Lakcím, tartózkodási hely (lakcímkártya szerint).
+Állampolgárság (magyar / EGT / harmadik országbeli, ezen belül huzamos tartózkodási engedély).
+Bankszámlaszám (a bér utalásához).
+E-mail-cím (az e-bérjegyz
+ék hozzáférhetővé tételéhez), telefonszám.
+Tartózkodási engedély / munkavállalási engedély száma, lejárata (külföldinél).
+3.3 Munkaszerződés adatai
+Munkakör (FEOR-szám, 4 számjegyű KSH-osztály), munkavégzés helye, jellege.
+Munkaviszony típusa (határozott / határozatlan, teljes / részmunkaidős, távmunka).
+Munkaviszony kezdete (a biztosítás kezdő napja), határozott idő esetén vége.
+Próbaidő.
+Heti munkaidő (óra).
+Alapbér: 
+havi, heti, napi, vagy órabér; teljesítménybér esetén no
+rma és teljesítménybér-tényező.
+Jogviszonykód (Tbj./08E szerinti, pl. 1101, 1115, 1452).
+Bérpótlékok (műszakpótlék, vasárnapi pótlék, éjszakai, készenléti, ügyeleti, túlóra-pótlék).
+Bónusz/jutalom-rendszer paraméterei.
+3.4 Munkaidő- és távollét-adatok (hav
+onta)
+Jelenléti ív (ledolgozott munkaidő, túlóra, ünnepnap, hétvégi munka).
+Szabadság (alapszabadság, életkori-, gyermek-, fogyatékossági-, egyéb pótszabadság).
+Apasági szabadság (10 munkanap a gyermek születését követő 4 hónapon belül).
+Szülői szabadság.
+Betegszabadság (évi 15 munkanap, 70%-os távolléti díj).
+Táppénz / baleseti táppénz (CSED, GYED, ÖFD adatai).
+Igazolt és igazolatlan távollét.
+Fizetés nélküli szabadság — ennél a munkaviszony szünetel, T1041/08E-n jelenteni kell.
+3.5 Adóelőleg-nyilatkozatok
+ / Kedvezmény-adatok
+Minden alábbi kedvezményhez külön nyilatkozat (papír vagy ONYA-n keresztül):
+Családi kedvezmény nyilatkozata: 
+eltartottak száma, kedvezményezett eltartottak száma, név, születési idő, adóazonosító jel, megosztás aránya a házastárssal/é
+lettárssal, mindkét fél 
+aláírása
+ ha közös érvényesítés.
+Több gyermeket nevelő anyák / 30 év alatti anyák / ANYÁCSKA 
+nyilatkozat: érintett gyermekek adatai.
+Első házasok kedvezménye: 
+házasságkötés időpontja, házastárs adatai (adóazonosító jel, név).
+Személy
+i kedvezmény: 
+orvosi igazolás (335/2009 Korm. r. szerinti), fogyatékossági kezdő napja.
+25 év alatti fiatalok kedvezménye: 
+automatikus, de mellőzéséről nyilatkozni lehet.
+CSED/GYED/ÖFD adómentesség 
+— kifizető (TB-kifizetőhely vagy MÁK) érvényesíti.
+3.6 Lev
+onások
+Letiltás / végrehajtási hagyomány adatai (
+Vht
+. szerint): kinek, mennyit, milyen jogcímen, határozat száma.
+Tartásdíj-letiltás.
+Önkéntes nyugdíjpénztári befizetés (munkavállalói rész).
+Egészségpénztári befizetés.
+Bérelőleg, munkáltatói előleg.
+3.7 
+Ca
+feteria
+ / béren kívüli juttatások
+SZÉP-kártya: 
+kibocsátó (OTP, K&H, MBH), kártyaszám; rekreációs keretösszeg 2026-ban 450.000 Ft; az Aktív Magyarok keretösszeg évi 120.000 Ft, teljes éves munkaviszony esetén, félévenként maximum 60.000 Ft. Béren kívüli jut
+tatásként éves szinten összesen 570 ezer Ft adható. 2025.12.01.–2026.04.30. között átmenetileg hideg élelmiszer is vásárolható a rekreációs keretből.
+Lakhatási támogatás 35 év alatti munkavállalónak: 
+havi 
+max
+. 150.000 Ft, évi 1.800.000 Ft (béren kívüli jut
+tatásként 28%-os közteher).
+Csekély értékű ajándék: 
+alkalmanként a minimálbér 10%-a (32.280 Ft), évi 3 alkalommal.
+Rendezvényi ajándéktárgy: 
+akár 80.700 Ft/fő.
+Önkéntes pénztári munkáltatói hozzájárulás.
+Munkába járás költségtérítése: 
+a munkáltató köteles legalább 18 Ft/km-t fizetni, és maximum 30 Ft/km összeget adhat adómentesen, a havi 60.886 Ft-os keret figyelembevételével (39/2010. (II. 26.) Korm. r. + Szja tv. 25. §).
+Adómentes: kerékpár-juttatás (kizárólag emberi erővel vagy 
+max
+. 
+300 W-os segédmotorral).
+3.8 Státuszfüggő speciális adatigény
+Státusz
+Speciális adatigény
+Egyszerűsített foglalkoztatás
+Munkavállaló adatai, munkavégzés napi időtartama, munkakör (szakképzettséget igényel-e), naponta munkakezdés-vég, kötelező T1042E bejelentés ideje.
+Megbízási jogviszony
+Megbízási szerződés időszaka, díjazás (összeg és kifizetési ütemezés), költségelszámolási mód (10% vagy tételes), számlák.
+Tartós megbízási jogviszony
+Foglalkoztató döntése a „tartós" minősítésről, megbízás kezdete (előzetes bejelentés!), 1115 jogviszonykód.
+Társas vállalkozó
+Tagi jogviszony típusa (személyesen közreműködő, ügyvezető), főtevékenység végzettség-igénye, többes jogviszony esetén január 31-
+i nyilatkozat.
+Egyéni vállalkozó
+Adózási forma (KATA / átalányadó / VSZJA), 
+főállás
+ vagy melléktevékenység (heti 36 órás munkaviszony?), nyugdíjas?
+Diákmunka (iskolaszövetkezet)
+Diákigazolvány érvényessége, hallgatói jogviszony aktív/passzív/szüneteltető.
+Szakképzési munkaszerződés
+Szakképző intézmény adatai, szakma kódja, súlyszorzó, évfolyam (szorzó), tanév szerinti rendje, sikeres vizsga időpontja (sikerdíjhoz).
+Saját jogú nyugdíjas
+Nyugdíjazás típusa (öregségi, „nők 40", özvegyi), nyugellátás folyósításának státusza, anyák kedvezménye érvényesítés?
+Külföldi munkavállaló
+Tartózkodási engedély, A1 igazolás (EU/EGT), illetőség (kettős adóztatás elkerülése).
+Vezető tisztségviselő
+Munkaviszony / megbízás / tagsági viszony, tag-e a cégben, díjazás mértéke.
+4. Könyvelői tevékenységek — Teljes munkafolyamat
+4.1 Munkaviszony / jogviszony létesítésekor
+4.1.1 Szerződéskötés ellenőrzése
+A munkaszerződés tartalmi mi
+nimuma az Mt. szerint: alapbér, munkakör, munkavégzés helye, munkaviszony kezdete; ezen felül érdemes: heti munkaidő, próbaidő, határozott idő, kollektív szerződés alkalmazása.
+Szakképzési munkaszerződés / megbízási / tartós megbízási / vezető tisztségvise
+lői megállapodás formai felülvizsgálata.
+4.1.2 Biztosítotti bejelentés — T1041 / 2026.01.01-től „08E"
+A NAV 2025. évi közleménye szó szerint kimondja: 
+„A T1041-es bejelentő lap neve megváltozik 2026. január 1-jétől 08E-re… A telepített nyomtatvány azonosít
+ója és a fájl neve az ÁNYK-ban továbbra is T1041 marad (évszám nélkül), az új elnevezés kizárólag az ÁNYK-programban, a nyomtatvány képén fog megjelenni, valamint az internetes nyomtatványkeresőben is 08E-ként lesz látható."
+Új mezők és változások 2026-ban
+Jogviszonysorszám 
+(legfeljebb 4 jegyű szám) a 13. és 26. pótlapon, felmenő rendszerben kizárólag a 2026.01.01-jén vagy azt követően kezdődő jogviszonyoknál kötelező — nem szükséges vezető nullákkal kiegészíteni.
+Új 1115-ös jogviszonykód 
+a tartós megbízási jogviszony jelölésére.
+A bejelentőlap 
+főlapjáról
+ kikerülnek a korábbi címadatsorok, mivel a NAV ezeket már eléri saját adatbázisaiból.
+COVID-hoz és veszélyhelyzethez kapcsolódó nyilatkozatok elhagyva.
+A több munkáltatós jogviszony bejele
+ntéséhez korábbi két nyilatkozat helyett egy maradt.
+2026-tól az egyéni vállalkozói jogviszony kezdetét a NAV jelenti be hivatalból, az Egyéni Vállalkozók Nyilvántartása alapján; a jogviszonysorszám minden ilyen esetben automatikusan 1-es lesz.
+Bejelentési
+ határidők
+Új jogviszony: 
+legkésőbb a biztosítási jogviszony első napján, a munkavégzés megkezdése előtt.
+Tartós megbízási jogviszony: 
+előzetesen, a megbízás kezdete előtt vagy első napján.
+Hagyományos megbízás: 
+utólag, a kifizetés napjától számított 1 nap
+on belül.
+Megszűnés / szünetelés kezdete-vége: 
+8 napon belül.
+Heti munkaóra vagy FEOR változása: 
+15 napon belül.
+Beadási csatorna: 
+ONYA („Új nyomtatvány/bejelentés" → biztosítotti bejelentés), illetve ÁNYK + Cégkapu/Ügyfélkapu+. Saját Cégkapu használata esetén nincs jelentősége, hogy a képviselt adózó Cégkapu vagy KÜNY-tárhely-kötelezett.
+EFO bejelentése: 
+T1042E nyomtatványon vagy ONY
+A-n „EFO bejelentés" menüpontból, vagy a 185-ös telefonos ügyfélszolgálaton; munkavégzés megkezdése előtt.
+4.2 Havi bérszámfejtés folyamata
+1. lépés — Adatgyűjtés a tárgyhónapra
+Jelenléti ív, munkaidő-nyilvántartás.
+Szabadság-igénybevétel, betegszabadság, 
+táppénz (orvosi igazolás).
+Bónusz, jutalom kifizetésére vonatkozó vezetői döntés.
+Adóelőleg-nyilatkozatok frissítései (új házasság, születés, válás, gyermekkor lejárta).
+2. lépés — Bruttó bér megállapítása
+Alapbér (havibér: ledolgozott napokra arányosítva 
+részmunkaidős nem teljes hónapban; órabér: ledolgozott órák × órabér; teljesítménybér: teljesítmény-mutató × bértényező).
+Bérpótlékok 
+(Mt. 139–145. §): vasárnapi 50%, munkaszüneti napi 100%, műszak (18:00–06:00 között teljesített munkaidő legalább 1 órás é
+jszakai része: 30% éjszakai pótlék; több műszakos munkarend 30% műszakpótlék), túlóra 50% / 100% (munkaszüneti napon).
+Távolléti díj 
+(Mt. 148–152.): szabadság, fizetett ünnep, betegszabadság 70%-a.
+Bónusz, jutalom, prémium.
+Nem rendszeres jövedelem (jutalo
+m, év végi prémium).
+Cafeteria
+-juttatások 
+bruttósítása
+ (egyes meghatározott / béren kívüli juttatás kategória).
+3. lépés — Adóalap és kedvezmények
+Adóalap = összevont adóalapba tartozó jövedelem.
+Kedvezmények sorrendben: 4+ gyermekes anyák → 3 gyermekes anyák → 2 gyermekes anyák → 30 év alatti anyák → 25 év alatti fiatalok → személyi kedvezmény → első házasok → családi kedvezmény → családi járulékkedvezmény.
+Az adóalapból a kedvezmények levonása ut
+án jön a 15% SZJA.
+4. lépés — Járulékok
+TB-járulék 18,5% (a teljes bruttó járulékalapot képező jövedelemre); a családi járulékkedvezmény ezt csökkenti.
+SZOCHO 13% (a munkáltatót terheli, a bruttó bér + egyes meghatározott juttatások adóalapjára).
+Speciális
+ 
+szocho
+-kedvezmények: szakképzési munkaszerződés, anyák munkaerőpiacra lépésének kedvezménye, megváltozott munkaképességű, kutatók, közfoglalkoztatás, 
+mikrovállalkozói
+ foglalkoztatói kedvezmény 2026-tól 150% (létszámkorlát 10 fő).
+5. lépés — Nettó bér és l
+evonások
+Nettó bér = Bruttó – SZJA-előleg – TB-járulék – Letiltások – Önkéntes pénztári befizetés (ha van).
+Kifizethető bér: nettó bér + adómentes költségtérítések (pl. távmunka 32.280 Ft, munkába járás).
+6. lépés — Bérjegyzék (Mt. 155. §)
+A bérjegyzéknek 
+olyannak kell lennie, hogy a munkavállaló a számítás helyességét, a levonások jogcímét és összegét ellenőrizni tudja. Kötelező tartalom:
+Azonosítók (munkáltató, munkavállaló, adóazonosító, TAJ).
+Időadatok (ledolgozott idő, fizetett/fizetetlen távollét, bet
+egszabadság, táppénz).
+Időbér, teljesítménybér, prémium, betegszabadság-díjazás, szabadságra járó távolléti díj — bruttó összegekben.
+Levonások jogcím és összeg szerint (SZJA, TB, letiltás, bérelőleg).
+Nettó kifizetett összeg.
+Munkáltató által megfizetett 
+közterhek
+ (SZOCHO — tájékoztató jelleggel).
+Éves szabadságkeret és felhasználása (ajánlott).
+Határidő: 
+a tárgyhónapot követő hónap 10. napjáig kell írásban átadni vagy hozzáférhetővé tenni. Elektronikus bérjegyzék esetén AVDH-hitelesítés ajánlott, és igazo
+lható módon csak az érintett munkavállaló férhessen hozzá.
+7. lépés — Bér kifizetése
+Az Mt. 157. §-a szerint havonta, utólag, a tárgyhónapot követő hó 10-éig.
+Munkaviszony megszűnésekor: az utolsó munkában töltött naptól (felmondásnál), egyébként legkésőbb
+ 5 munkanapon belül.
+4.3 Bevallás — A havi adó- és járulékbevallás (2026-os évszámú „2608" típus)
+A 2508 (illetve a 2026-os évszámú verzió) a kifizetésekkel, juttatásokkal összefüggő adóról, járulékokról és egyéb adatokról szóló havi bevallás. Tartalmazza:
+2508A 
+— „
+adózónkénti
+" összesítő lap (a fizetendő SZJA, TB, SZOCHO 
+adónemenként
+ ezer Ft-ra kerekítve).
+2508M 
+— 
+magánszemélyenkénti
+, 
+jogviszonyonkénti
+ részletes lapok (személyenként minden jövedelem, levont előleg, járulék, kedvezmény).
+A 2508M-11-es lap: 
+szocho
+-csökkentő tételek (szakképzési munkaszerződés, duális képzés stb.).
+Beadási csatorna 2026-ban: 
+ÁNYK + Cégkapu (a 08-as bevallás 2026-ban még az ÁNYK-ban érhető el).
+Határidő: 
+tárgyhót követő hó 12-éig elektronikus úton (Art. 31. § (2) 
+bek
+.).
+Befizet
+és 
+ugyanazon határidővel a megfelelő NAV-számlákra (lásd 1.5 pont). Tipikusan: 290 — Magánszemélyektől levont SZJA; 407 — Levont TB-járulék; 258 — SZOCHO; EFO közteher külön számlára (10032000-06057763).
+4.4 Munkaviszony megszüntetésekor — „Kilépő papírok"
+Az Mt. 80. § (2) 
+bek
+. szerint a munkabért, járandóságokat és igazolásokat legkésőbb a munkaviszony megszűnésétől számított 5. munkanapon kell rendezni (felmondásnál: az utolsó munkában töltött napon). A főbb dokumentumok:
+Dokumentum
+Jogalap
+Időpont
+Igazo
+lás a munkaviszonyról (Mt. 80. § (2))
+Mt.
+Munkaviszony megszűnésekor
+Adatlap a 2026. évi adóelőleg-megállapításhoz
+Szja tv. + Art. 46.§ (5)
+Munkaviszony megszűnésekor
+Igazolvány a biztosítási jogviszonyról és egészségbiztosítási ellátásokról (papír „TB kiskönyv")
+Ebtv
+. Vhr.
+2026.01.01-től megszűnik a kiállítási kötelezettség; helyét az e-TB kiskönyv veszi át
+Jövedelemigazolás egészségbiztosítási pénzbeli ellátáshoz
+Ebtv
+. Vhr. 37/A. §
+Kérésre, az átvétel igazolásával
+Tartozásigazolás (akkor is, ha nincs tartozás)
+Vht
+. 78. §
+Munkaviszony megszűnésekor
+Igazolólap álláskeresési járadékhoz
+Flt
+.
+Munkaviszony megszűnésekor
+Foglalkoztatási igazolás (új, 2024-től)
+Mt. 80. §
+Munkaviszony megszűnésekor
+08E (T1041) jogviszony-megszüntetés
+Tbj./Art.
+8 napon belül
+4.5 e-TB kiskönyv — 2026.01.01-től
+A papíralapú „TB kiskönyv" (Igazolvány a biztosítási jogviszonyról és az egészségbiztosítási ellátásokról) helyébe a NEAK által üzemeltetett, központi elektronikus nyilvántartás lép. A TB-kifizetőhellyel rendelkező foglalkoztatók közvetlenül lekérdezhetik 
+a biztosított jogviszony- és pénzbeli ellátási adatait. A munkáltatóknak minden jogviszony-változást elektronikusan kell rögzíteniük (08E). A NAV–NEAK adatkapcsolat alapja a T1041/08E feldolgozása.
+4.6 Év végi feladatok
+M30-as munkáltatói összesített igazo
+lás (25M30 a 2025-ös adóévre, 26M30 a 2026-osra)
+Tartalom: 
+az adóévben kifizetett bevételek, levont adóelőleg, érvényesített kedvezmények, családi kedvezmény, családi járulékkedvezmény, személyi kedvezmény, anyák kedvezménye, 25/30 év alatti kedvezmény, el
+ső házasok kedvezménye, béren kívüli juttatások, 
+ekho
+-jövedelem stb.
+Kiállítás határideje: 
+tárgyévet követő január 31. (Art. 46. §); átvételt igazoltatni kell.
+Év közben kilépett dolgozónak 
+külön M30 nem szükséges, ha a kilépő Adatlap a kilépéskor kiadásra
+ került — a NAV ezt elfogadja.
+Elektronikus formában is kiadható, AVDH-aláírással, igazolható kizárólagos hozzáférhetővé tétel mellett; kérésre papír alapon is.
+Egyéb év végi feladatok
+SZJA bevallási tervezet: 
+a NAV minden adózónak elkészíti, magánszemélynek 25SZJA-bevallás elfogadási vagy módosítási határideje: 2026. május 20.
+KIVA-bevallás (2529-es).
+Rehabilitációs hozzájárulás 
+elszámoló bevallása (2501-es), tárgyévet követő február 25-ig; az éves összeg 25 fő
+nél több munkavállaló esetén, az 5%-os kvóta elmaradásakor a minimálbér 9-szerese/fő = 2.905.200 Ft/fő/év 2026-ban.
+Kamarai hozzájárulás (5.000 Ft) — március 31-ig.
+4.7 NAV-elektronikus adatszolgáltatás technikai folyamata
+ONYA (Online Nyomtatványkitöltő Alkalmazás)
+Webes felület a https://onya.nav.gov.hu címen.
+KAÜ (Ügyfélkapu+, e-SZIG, DÁP) azonosítás után automatikusan betölti a NAV-nyilvántartásban lévő adatokat.
+Bevallás-/nyomtatvány-feldolgozási hibavizsgálatot a bekül
+dés ELŐTT végez, kiajánl adatokat az ÁNYK-
+val
+ ellentétben.
+Elérhető nyomtatványok: 
+a SZJA-bevallás (e-SZJA), KATA, 2101/2201/2026-os egyes adóbevallások, T1041/08E, T1042E (EFO bejelentés), T1011U (
+eü
+. szolgáltatási járulék), UJEGYKE (képviselet bejelentés
+e), adóelőleg-nyilatkozatok (családi kedvezmény, anyák, első házasok, személyi kedvezmény, ANYÁCSKA), NY (nullás bevallás kiváltása), ATVUT (átvezetési, kiutalási kérelem), AUTRESZ (automatikus részletfizetési kérelem), és számos egyéb.
+A bevallások közvet
+lenül a felületen tölthetők, AVDH-hitelesítés nélkül beküldhetők.
+ÁNYK (Általános Nyomtatványkitöltő Keretprogram)
+Vastagkliens, helyi telepítésű Java-alkalmazás.
+Tipikus nyomtatványok: 
+2508 havi járulékbevallás, T1041/08E (a fájlnév 2026-ban is T1041 mara
+d), 2558, 2658, 2529, 26M30, T1042E, T34 (adóazonosító igénylés), T101E (egyéni vállalkozó adat-bejelentés) stb.
+A bevallás aláírt XML-fájl formájában a NAV ügyfélkapun / cégkapun keresztül kerül feladásra.
+ÁNYK kivezetése — 2026 év végéig
+A NAV az Adókere
+kasztalon hivatalosan bejelentette az ÁNYK kivezetését: 
+„Az Általános Nyomtatványkitöltő Keretprogram (ÁNYK) 2026. december 31-én megszűnik."
+Konkrét ütemezés a 9. Nemzeti Adókonzultáció alapján: 
+„2025. október 30. — A NAV publikálta az átállás felkészülés
+ét segítő műszaki segédletet. 2026. január 31. — Megjelennek a példaprogramok."
+A 2026. júniustól decemberig tartó átmeneti időszakban párhuzamosan használható ONYA és ÁNYK; 2027.01.01-től kizárólag ONYA, e-SZJA, e-ÁFA, illetve gép-gép (M2M) 
+interface
+-en k
+eresztül lesz benyújtható bevallás (az áfabevallás nem az ONYA-n, hanem az e-ÁFA-n vagy M2M-en). A Magyarországi Könyvelők Országos Egyesülete saját 
+blogjában
+ óvatos megfogalmazást használ: nem állítják biztosra a csúszást, de aktívan számolnak vele.
+Ügyfé
+lkapu+ és Cégkapu / Hivatali tárhely használata 2026-ban
+A NAV-bejelentések/-bevallások beküldéséhez a beküldőnek érvényes KAÜ-azonosítása (Ügyfélkapu+, e-SZIG vagy DÁP) szükséges.
+Egyéni vállalkozó / magánszemély: 
+saját KÜNY-tárhelyén keresztül.
+Gazdasági
+ társaság: 
+Cégkapun keresztül.
+Könyvelő képviselőként: 
+UJEGYKE-adatlapon kell a képviseletet bejelenteni (elérhető ONYA-n és ÁNYK-ban is). Saját tárhely használata esetén nincs jelentősége, hogy a képviselt Cégkapu vagy KÜNY-kötelezett; ha a meghatalmazott
+ az adózó tárhelyét használja, az ÁNYK-ban a megfelelő küldési módot kell választani.
+Új szabály 2025.02.01-től 
+(Air. 17. § (1) g)): a könyvelő-, adótanácsadó szervezet maga is lehet meghatalmazott (nem szükséges a szervezet alkalmazottainak külön meghatal
+mazása); a könyvelőirodai alkalmazottak saját Ügyfélkapu+/DÁP-azonosítóval intézhetik az ügyfél adóügyeit.
+Tárhelyre érkező nyugta
+A T1041/08E vagy 2508 bevallás beadása csak akkor sikeres, ha pár órán belül megérkezik az elfogadó nyugta a tárhelyre. Hibás
+ bejelentésnél a NAV hibakód-előtaggal (PRN, FOG) 
+hiánypótlásra hív fel, és továbbítja az adatokat a NEAK és a foglalkoztatás-felügyeleti hatóság felé.
+4.8 Folyamatos kötelezettségek
+Jogviszony-változások bejelentése 
+a 08E-n a megfelelő határidővel.
+Havi 2
+508 bevallás 
+minden hónapban a 12-ig (akkor is, ha nincs kifizetés — nullás NY bevallás).
+Letiltások kezelése 
+a végrehajtói határozatok és a 
+Vht
+. szerint.
+Cafeteria
+-szabályzat évi felülvizsgálata 
+és a juttatások közterhének elszámolása a 2508-on (béren kívüli SZÉP-kártya 28%, egyes meghatározott juttatás 33,04%).
+GDPR-megfelelés 
+folyamatos felügyelete; éves adattisztítás a megőrzési idők szerint.
+Recommendations
+ — Mit építsen a fejlesztőcsapat
+Rö
+vid távú (MVP, 0–6 hónap)
+Entitás-modell: az alkalmazás központi entitásai legyenek (a) Munkáltató/Cég, (b) Munkavállaló/Foglalkoztatott, (c) Jogviszony (egy munkavállalónak több jogviszonya is lehet, mindegyik saját jogviszonykóddal, kezdő- és záródátumma
+l, FEOR-számmal, heti munkaidővel, jogviszonysorszámmal), (d) Bérelszámolás (havi szintű, 
+jogviszonyonként
+), (e) Bérelem (
+jövedelemjogcímenként
+), (f) Bevallás (08, 2558, M30, T1041/08E mind külön). Ez tükrözze a NAV nyilvántartási struktúráját.
+Jogviszonyk
+ódok teljes tábla: legyen 
+master
+ adat 1101, 1115 (új, 2026), 1131, 1300-as csoport, 1451, 1452 stb. + biztosítási elbírálás logikája (Tbj. 6. §).
+Adómotor: minimálbér / garantált bérminimum / kedvezmény-összegek paraméter-
+vezérelten
+ (évenként frissíthetően
+). A számítási sorrend 
+hard-coded
+: 4+ anyák → 3 anyák → 2 anyák → 25 év alatti → 30 év alatti anyák → személyi → első házasok → családi → családi járulékkedvezmény.
+Az ÁNYK XML és az ONYA XML formátumok kettős exportja, mert 2026-ban még az ÁNYK is élő. A 
+2508 ÁNYK-import képessége kötelező.
+T1041/08E nyomtatványkép-támogatás: kezelje az új jogviszonysorszám mezőt, az 1115-ös kódot és a fájlnév-megmaradást.
+Közép távú (6–12 hónap)
+GDPR-modul: szerepkör-alapú jogosultság, audit-napló minden adatmódosításra, automatizált megőrzési idő-számítás 
+dokumentumtípusonként
+ (3 év / 8 év / „nyugdíj-relevánsan" 50 év).
+Kedvezmény-feldolgozás automatizálva: ONYA-
+ból
+ visszafejtett adóelőleg-nyilat
+kozat XML-ek importja; ANYÁCSKA, családi kedvezmény, első házasok adatainak elektronikus beolvasása.
+e-TB kiskönyv integráció: ha lehetséges, NEAK API-csatlakozás a kifizetőhelyek esetén; addig kézi lekérdezés rögzítése.
+AVDH-aláírású e-bérjegyzék generálá
+s és kizárólag az érintettnek hozzáférhetővé tételét naplózó rendszer (Mt. 155. §, Pp. szerinti elektronikus dokumentumkövetelmény).
+AI-asszisztens funkciók: (a) anomália-
+detekció
+ a havi bérelszámolásban (pl. minimálbér alá esett-e a bér), (b) jogszabály-f
+igyelmeztető (közlönyfigyelés alapján), (c) bevallási határidők 
+push
+-értesítője, (d) kedvezmény-optimalizáló (mely családtag érvényesítse a családi kedvezményt nagyobb nettóért).
+Hosszú távú (12+ hónap)
+M2M (gép-gép) interfész készítése a NAV bevallások kö
+zvetlen küldéséhez 2027.01.01-i kötelezőség előtt — a NAV által 2025.10.30-án publikált műszaki segédlet és a 2026.01.31-i példaprogramok alapján indítható a fejlesztés.
+ONYA-elhagyás teljes ÁNYK helyett — a 2026.12.31-i ÁNYK-leállás előtt minden adatszolg
+áltatás ONYA / M2M-en keresztül.
+Iparág-specifikus modulok: szakképzési munkaszerződés/duális képzés 
+szocho
+-kedvezmény-kalkulátor, EFO-modul a 210 napos limittel, EKHO-bérszámfejtés.

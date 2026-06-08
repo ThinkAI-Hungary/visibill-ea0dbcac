@@ -80,6 +80,7 @@ const AdminTaxParametersPage = lazy(() => import("./pages/Accounty/AdminTaxParam
 const LegalUpdatesPage = lazy(() => import("./pages/Accounty/LegalUpdatesPage"));
 const AccountyOnboardingPage = lazy(() => import("./pages/Accounty/OnboardingPage"));
 const AiAssistantPage = lazy(() => import("./pages/Accounty/AiAssistantPage"));
+const ProfileSettingsPage = lazy(() => import("./pages/Accounty/ProfileSettingsPage"));
 
 // Portfolio pages
 const AlertsCenterPage = lazy(() => import("./pages/Accounty/AlertsCenterPage"));
@@ -305,6 +306,7 @@ const App = () => (
                       <Route path="payroll-portfolio" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollPortfolioPage /></Suspense>} />
                       <Route path="onboarding" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountyOnboardingPage /></Suspense>} />
                       <Route path="ai-assistant" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AiAssistantPage /></Suspense>} />
+                      <Route path="profile/settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ProfileSettingsPage /></Suspense>} />
                     </Route>
 
                     {/* Protected routes with persistent sidebar */}

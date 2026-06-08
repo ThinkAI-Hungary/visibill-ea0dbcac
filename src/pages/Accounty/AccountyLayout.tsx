@@ -183,6 +183,7 @@ export default function AccountyLayout() {
     { name: 'Bérszámfejtés portfólió', path: '/accounty/payroll-portfolio', icon: Calculator },
     { name: 'Onboarding', path: '/accounty/onboarding', icon: Rocket },
     { name: 'Beállítások', path: '/accounty/settings', icon: Settings },
+    { name: 'Felhasználói beállítások', path: '/accounty/profile/settings', icon: User },
     { name: 'Segítség', path: '/accounty/help', icon: HelpCircle },
     { name: 'AI Asszisztens', path: '/accounty/ai-assistant', icon: Sparkles },
     { name: 'Audit napló', path: '/accounty/admin/audit', icon: ShieldCheck },
@@ -774,7 +775,7 @@ export default function AccountyLayout() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="outline" asChild className="w-8 h-8 p-0 hover:bg-primary/10 hover:text-primary hover:border-primary/30">
-                    <Link to="/accounty/settings">
+                    <Link to="/accounty/profile/settings">
                       <Settings className="h-4 w-4" />
                     </Link>
                   </Button>
@@ -820,7 +821,7 @@ export default function AccountyLayout() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="outline" asChild className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
-                      <Link to="/accounty/settings">
+                      <Link to="/accounty/profile/settings">
                         <Settings className="h-5 w-5" />
                       </Link>
                     </Button>
