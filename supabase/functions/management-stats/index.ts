@@ -87,6 +87,28 @@ function startOfMonthIso() {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 }
 
+/** Paginate through all auth users (Supabase Admin API returns max 1000/page). */
+async function listAllAuthUsers(admin: ReturnType<typeof createClient>): Promise<Map<string, string>> {
+  const emailByUserId = new Map<string, string>();
+  const PAGE_SIZE = 1000;
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: PAGE_SIZE });
+    if (error || !data?.users?.length) break;
+
+    for (const u of data.users) {
+      emailByUserId.set(u.id, u.email || "");
+    }
+
+    hasMore = data.users.length === PAGE_SIZE;
+    page++;
+  }
+
+  return emailByUserId;
+}
+
 function sortLlmRows(rows: any[], sortBy: string, sortDir: string) {
   const allowed = new Set(["created_at", "input_tokens", "output_tokens", "estimated_cost_usd"]);
   const key = allowed.has(sortBy) ? sortBy : "created_at";
@@ -181,7 +203,7 @@ serve(async (req) => {
 async function buildOverview(admin: ReturnType<typeof createClient>) {
   const monthStart = startOfMonthIso();
 
-  const [companiesRes, membersRes, profilesRes, invoicesRes, navInvoicesRes, txRes, salaryRes, monthlyLlmRes, authUsersRes] = await Promise.all([
+  const [companiesRes, membersRes, profilesRes, invoicesRes, navInvoicesRes, txRes, salaryRes, monthlyLlmRes, emailByUserId] = await Promise.all([
     admin.from("companies").select("id, name, tax_number, created_at").order("created_at", { ascending: false }),
     admin.from("company_members").select("company_id, user_id, role, created_at"),
     admin.from("profiles").select("id, user_id, name, role, created_at"),
@@ -193,16 +215,8 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
       .from("llm_koltsegek")
       .select("company_id, input_tokens, output_tokens, total_tokens, estimated_cost_usd, llm_calls, created_at")
       .gte("created_at", monthStart),
-    admin.auth.admin.listUsers({ perPage: 1000 }),
+    listAllAuthUsers(admin),
   ]);
-
-  // Build email lookup from auth users
-  const emailByUserId = new Map<string, string>();
-  if (authUsersRes?.data?.users) {
-    for (const u of authUsersRes.data.users) {
-      emailByUserId.set(u.id, u.email || "");
-    }
-  }
 
   for (const res of [companiesRes, membersRes, profilesRes, invoicesRes, navInvoicesRes, txRes, salaryRes, monthlyLlmRes]) {
     if (res.error) throw res.error;
@@ -321,7 +335,7 @@ async function buildCompanyDetail(admin: ReturnType<typeof createClient>, compan
   const dateTo = url.searchParams.get("dateTo") || "";
 
   // Phase 1: Fetch non-LLM base data in parallel
-  const [invoicesRes, navInvoicesRes, membersRes, profilesRes, auditRes, authUsersRes] = await Promise.all([
+  const [invoicesRes, navInvoicesRes, membersRes, profilesRes, auditRes, emailByUserId] = await Promise.all([
     admin.from("invoices").select("id").eq("company_id", companyId),
     admin.from("nav_invoices").select("id").eq("company_id", companyId),
     admin.from("company_members").select("company_id, user_id, role, created_at").eq("company_id", companyId),
@@ -332,16 +346,8 @@ async function buildCompanyDetail(admin: ReturnType<typeof createClient>, compan
       .eq("company_id", companyId)
       .order("created_at", { ascending: false })
       .limit(1),
-    admin.auth.admin.listUsers({ perPage: 1000 }),
+    listAllAuthUsers(admin),
   ]);
-
-  // Build email lookup from auth users
-  const emailByUserId = new Map<string, string>();
-  if (authUsersRes?.data?.users) {
-    for (const u of authUsersRes.data.users) {
-      emailByUserId.set(u.id, u.email || "");
-    }
-  }
 
   for (const res of [invoicesRes, navInvoicesRes, membersRes, profilesRes, auditRes]) {
     if (res.error) throw res.error;

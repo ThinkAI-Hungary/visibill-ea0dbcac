@@ -63,7 +63,7 @@ Visibill
 │   ├── /teny/:tab?                Tárgyi eszközök (TENY)
 │   ├── /integrations              Integrációk (NAV, bank)
 │   ├── /exchange-rates            Árfolyamok (MNB)
-│   ├── /pricing                   Előfizetés
+
 │   ├── /settings/:tab?            Beállítások
 │   └── /analytics/:tab?           Analitika
 │
@@ -97,7 +97,7 @@ Visibill
 | 16 | TENY | `/teny` | Package2 | ❌ |
 | 17 | Integrációk | `/integrations` | Plug | ❌ |
 | 18 | Árfolyamok | `/exchange-rates` | TrendingUp | ❌ |
-| 19 | Előfizetés | `/pricing` | CreditCard | ❌ |
+
 
 **Footer elemek** (nem menüpont):
 - Beállítások (`/settings`) — ikon gomb
@@ -145,7 +145,6 @@ Sidebar
 │
 └── ⚙️ Rendszer
     ├── Integrációk
-    ├── Előfizetés
     └── Beállítások
 ```
 

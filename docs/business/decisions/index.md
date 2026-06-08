@@ -1,7 +1,7 @@
 # Visibill — Business Requirement Decisions
 
-> **Utoljára frissítve:** 2026-05-16  
-> **Összesen:** 30 döntés | ✅ Decided: 16 | 🟡 Partially Decided: 5 | 🔴 Open: 9
+> **Utoljára frissítve:** 2026-06-08  
+> **Összesen:** 38 döntés | ✅ Decided: 25 | 🟡 Partially Decided: 4 | ⛔ Superseded: 1 | 🔴 Open: 8
 
 ---
 
@@ -23,8 +23,8 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 001 | Elsődleges célcsoport | 🟡 Partially Decided | [001-primary-audience.md](./001-primary-audience.md) |
 | 002 | Támogatott vállalkozási formák | 🔴 Open | [002-supported-business-types.md](./002-supported-business-types.md) |
 | 003 | Lokalizáció & nyelv | 🟡 Partially Decided | [003-localization-strategy.md](./003-localization-strategy.md) |
-| 004 | Árazási modell & tier nevek | 🔴 Open | [004-pricing-model.md](./004-pricing-model.md) |
-| 005 | Előfizetés scope (user vs. cég) | 🔴 Open | [005-subscription-scope.md](./005-subscription-scope.md) |
+| 004 | Árazási modell (egyszeri díj) | 🟡 Partially Decided | [004-pricing-model.md](./004-pricing-model.md) |
+| 005 | Előfizetés scope | ⛔ Superseded | [005-subscription-scope.md](./005-subscription-scope.md) |
 
 ## 🏗️ Architektúra & Infrastruktúra
 
@@ -41,6 +41,7 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 009 | Multi-company modell | ✅ Decided | [009-multi-company-model.md](./009-multi-company-model.md) |
 | 010 | Felhasználói szerepek (RBAC) | 🟡 Partially Decided | [010-user-roles.md](./010-user-roles.md) |
 | 011 | Member jogosultsági határok | 🔴 Open | [011-member-permissions.md](./011-member-permissions.md) |
+| 038 | Új felhasználó onboarding stratégia | ✅ Decided | [038-user-onboarding-strategy.md](./038-user-onboarding-strategy.md) |
 
 ## 📄 Számla Kezelés
 
@@ -95,3 +96,25 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 |---|--------|---------|------|
 | 029 | Mobil stratégia | 🔴 Open | [029-mobile-strategy.md](./029-mobile-strategy.md) |
 | 030 | API & third-party hozzáférés | 🔴 Open | [030-api-access.md](./030-api-access.md) |
+
+## 💼 Accounty & Integrált Modulok
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| 031 | Accounty modul scope | ✅ Decided | [031-accounty-module.md](./031-accounty-module.md) |
+| 032 | Payroll (bérszámfejtés) modul | ✅ Decided | [032-payroll-module.md](./032-payroll-module.md) |
+| 033 | ÁFA bevallás modul | ✅ Decided | [033-vat-return-module.md](./033-vat-return-module.md) |
+| 034 | Worker pipeline (háttérfeldolgozás) | ✅ Decided | [034-worker-pipeline.md](./034-worker-pipeline.md) |
+| 035 | Accounty ügyfélportál | ✅ Decided | [035-accounty-client-portal.md](./035-accounty-client-portal.md) |
+
+## 🎫 Ügyfélszolgálat & Support
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| 036 | Hibajegy és visszajelzés rendszer | ✅ Decided | [036-ticket-system.md](./036-ticket-system.md) |
+
+## 🛠️ Platform Üzemeltetés
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| 037 | Management Dashboard | ✅ Decided | [037-management-dashboard.md](./037-management-dashboard.md) |

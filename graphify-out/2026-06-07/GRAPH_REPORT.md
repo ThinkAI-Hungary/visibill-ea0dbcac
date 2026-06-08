@@ -1,0 +1,455 @@
+# Graph Report - .  (2026-06-07)
+
+## Corpus Check
+- Large corpus: 605 files · ~1,206,420 words. Semantic extraction will be expensive (many Claude tokens). Consider running on a subfolder.
+
+## Summary
+- 403 nodes · 58 edges · 357 communities (8 shown, 349 thin omitted)
+- Extraction: 71% EXTRACTED · 29% INFERRED · 0% AMBIGUOUS · INFERRED: 17 edges (avg confidence: 0.81)
+- Token cost: 0 input · 0 output
+
+## Community Hubs (Navigation)
+- [[_COMMUNITY_Financial Operations & Banking|Financial Operations & Banking]]
+- [[_COMMUNITY_Core Platform & Infrastructure|Core Platform & Infrastructure]]
+- [[_COMMUNITY_Invoice & Subscription Management|Invoice & Subscription Management]]
+- [[_COMMUNITY_Frontend Technology Stack|Frontend Technology Stack]]
+- [[_COMMUNITY_Auth & Multi-Tenancy Security|Auth & Multi-Tenancy Security]]
+- [[_COMMUNITY_Email Processing Ecosystem|Email Processing Ecosystem]]
+- [[_COMMUNITY_Invoice Type Definitions|Invoice Type Definitions]]
+- [[_COMMUNITY_NAV Tax Authority Integration|NAV Tax Authority Integration]]
+- [[_COMMUNITY_Accounty Accountyrolecontext Accountyroleprovider|Accounty Accountyrolecontext Accountyroleprovider]]
+- [[_COMMUNITY_Accounty Accountyrolecontext Useaccountyrole|Accounty Accountyrolecontext Useaccountyrole]]
+- [[_COMMUNITY_Accounty Clientinvoicespage Clientinvoicespage|Accounty Clientinvoicespage Clientinvoicespage]]
+- [[_COMMUNITY_Accounty Employeedetailspage Employeedetailspage|Accounty Employeedetailspage Employeedetailspage]]
+- [[_COMMUNITY_Accounty Generaterequestemail Addtoapprovalqueue|Accounty Generaterequestemail Addtoapprovalqueue]]
+- [[_COMMUNITY_Accounty Generaterequestemail Generatedemail|Accounty Generaterequestemail Generatedemail]]
+- [[_COMMUNITY_Accounty Generaterequestemail Generateemailparams|Accounty Generaterequestemail Generateemailparams]]
+- [[_COMMUNITY_Accounty Generaterequestemail Generaterequestemail|Accounty Generaterequestemail Generaterequestemail]]
+- [[_COMMUNITY_Accounty Generaterequestemail Getapprovalqueue|Accounty Generaterequestemail Getapprovalqueue]]
+- [[_COMMUNITY_Accounty Generaterequestemail Messagecategory|Accounty Generaterequestemail Messagecategory]]
+- [[_COMMUNITY_Accounty Generaterequestemail Messagestatus|Accounty Generaterequestemail Messagestatus]]
+- [[_COMMUNITY_Accounty Generaterequestemail Missingitemforemail|Accounty Generaterequestemail Missingitemforemail]]
+- [[_COMMUNITY_Accounty Generaterequestemail Outgoingmessage|Accounty Generaterequestemail Outgoingmessage]]
+- [[_COMMUNITY_Accounty Generaterequestemail Saveapprovalqueue|Accounty Generaterequestemail Saveapprovalqueue]]
+- [[_COMMUNITY_Accounty Generaterequestemail Updatemessagebody|Accounty Generaterequestemail Updatemessagebody]]
+- [[_COMMUNITY_Accounty Generaterequestemail Updatemessagestatus|Accounty Generaterequestemail Updatemessagestatus]]
+- [[_COMMUNITY_Accounty Mockdata Blockingcategory|Accounty Mockdata Blockingcategory]]
+- [[_COMMUNITY_Accounty Mockdata Blockingitem|Accounty Mockdata Blockingitem]]
+- [[_COMMUNITY_Accounty Mockdata Clientdata|Accounty Mockdata Clientdata]]
+- [[_COMMUNITY_Accounty Sharedcomponents Animatednumber|Accounty Sharedcomponents Animatednumber]]
+- [[_COMMUNITY_Accounty Taxcalendarpage Taxcalendarpage|Accounty Taxcalendarpage Taxcalendarpage]]
+- [[_COMMUNITY_Accounty Types Blockingcategory|Accounty Types Blockingcategory]]
+- [[_COMMUNITY_Accounty Types Blockingitem|Accounty Types Blockingitem]]
+- [[_COMMUNITY_Accounty Types Clientdata|Accounty Types Clientdata]]
+- [[_COMMUNITY_Components Applayout Applayout|Components Applayout Applayout]]
+- [[_COMMUNITY_Components Emailpreferences Emailpreferences|Components Emailpreferences Emailpreferences]]
+- [[_COMMUNITY_Components Feedbackfab Feedbackfab|Components Feedbackfab Feedbackfab]]
+- [[_COMMUNITY_Components Livenotificationprovider Livenotificati|Components Livenotificationprovider Livenotificati]]
+- [[_COMMUNITY_Components Producttour Producttour|Components Producttour Producttour]]
+- [[_COMMUNITY_Components Scopedlayout Scopedlayout|Components Scopedlayout Scopedlayout]]
+- [[_COMMUNITY_Components Unsavedchangesdialog Unsavedchangesdial|Components Unsavedchangesdialog Unsavedchangesdial]]
+- [[_COMMUNITY_Contexts Companycontext Company|Contexts Companycontext Company]]
+- [[_COMMUNITY_Contexts Daterangecontext Daterangeprovider|Contexts Daterangecontext Daterangeprovider]]
+- [[_COMMUNITY_Contexts Daterangecontext Usedaterange|Contexts Daterangecontext Usedaterange]]
+- [[_COMMUNITY_Contexts Themecontext Themeprovider|Contexts Themecontext Themeprovider]]
+- [[_COMMUNITY_Contexts Themecontext Usetheme|Contexts Themecontext Usetheme]]
+- [[_COMMUNITY_Dashboard Dashboardskeleton Metriccardskeleton|Dashboard Dashboardskeleton Metriccardskeleton]]
+- [[_COMMUNITY_Dashboard Dashboardskeleton Metricsgridskeleton|Dashboard Dashboardskeleton Metricsgridskeleton]]
+- [[_COMMUNITY_Dashboard Useractivitydialog Useractivitydialog|Dashboard Useractivitydialog Useractivitydialog]]
+- [[_COMMUNITY_Eaisybill Prod Ai Instructions|Eaisybill Prod Ai Instructions]]
+- [[_COMMUNITY_Eaisybill Prod Readme|Eaisybill Prod Readme]]
+- [[_COMMUNITY_Fixed Assets Depreciationcards Depreciationcards|Fixed Assets Depreciationcards Depreciationcards]]
+- [[_COMMUNITY_Fixed Assets Inventorycheckdialog Inventorycheckdi|Fixed Assets Inventorycheckdialog Inventorycheckdi]]
+- [[_COMMUNITY_General Ledger Uploadchartofaccountsmodal Uploadch|General Ledger Uploadchartofaccountsmodal Uploadch]]
+- [[_COMMUNITY_Hooks Use Mobile Useismobile|Hooks Use Mobile Useismobile]]
+- [[_COMMUNITY_Hooks Useaccountydata Accountyaccountant|Hooks Useaccountydata Accountyaccountant]]
+- [[_COMMUNITY_Hooks Useaccountydata Accountyclient|Hooks Useaccountydata Accountyclient]]
+- [[_COMMUNITY_Hooks Useaccountydata Accountycommunicationprefs|Hooks Useaccountydata Accountycommunicationprefs]]
+- [[_COMMUNITY_Hooks Useaccountydata Accountycompanysummary|Hooks Useaccountydata Accountycompanysummary]]
+- [[_COMMUNITY_Hooks Useaccountydata Accountydeadline|Hooks Useaccountydata Accountydeadline]]
+- [[_COMMUNITY_Hooks Useaccountydata Accountykpis|Hooks Useaccountydata Accountykpis]]
+- [[_COMMUNITY_Hooks Useaccountydata Accountymissingitem|Hooks Useaccountydata Accountymissingitem]]
+- [[_COMMUNITY_Hooks Useaccountydata Accountytaxprofile|Hooks Useaccountydata Accountytaxprofile]]
+- [[_COMMUNITY_Hooks Useaccountydata Auditlogentry|Hooks Useaccountydata Auditlogentry]]
+- [[_COMMUNITY_Hooks Useaccountydata Colleaguestat|Hooks Useaccountydata Colleaguestat]]
+- [[_COMMUNITY_Hooks Useaccountydata Companyinvoice|Hooks Useaccountydata Companyinvoice]]
+- [[_COMMUNITY_Hooks Useaccountydata Fullreportdata|Hooks Useaccountydata Fullreportdata]]
+- [[_COMMUNITY_Hooks Useaccountydata Invoicereportrow|Hooks Useaccountydata Invoicereportrow]]
+- [[_COMMUNITY_Hooks Useaccountydata Invoicestatus|Hooks Useaccountydata Invoicestatus]]
+- [[_COMMUNITY_Hooks Useaccountydata Monthlytrendpoint|Hooks Useaccountydata Monthlytrendpoint]]
+- [[_COMMUNITY_Hooks Useaccountydata Portalstats|Hooks Useaccountydata Portalstats]]
+- [[_COMMUNITY_Hooks Useaccountydata Reportrow|Hooks Useaccountydata Reportrow]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountyaccountants|Hooks Useaccountydata Useaccountyaccountants]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountyallmissingitems|Hooks Useaccountydata Useaccountyallmissingitems]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountyauditlog|Hooks Useaccountydata Useaccountyauditlog]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountyclients|Hooks Useaccountydata Useaccountyclients]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountycolleaguestats|Hooks Useaccountydata Useaccountycolleaguestats]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountycommunicationpref|Hooks Useaccountydata Useaccountycommunicationpref]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountycompanysummary|Hooks Useaccountydata Useaccountycompanysummary]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountydeadlines|Hooks Useaccountydata Useaccountydeadlines]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountyfullreportdata|Hooks Useaccountydata Useaccountyfullreportdata]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountykpis|Hooks Useaccountydata Useaccountykpis]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountymissingitems|Hooks Useaccountydata Useaccountymissingitems]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountymonthlytrend|Hooks Useaccountydata Useaccountymonthlytrend]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountyportalstats|Hooks Useaccountydata Useaccountyportalstats]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountyportaltokens|Hooks Useaccountydata Useaccountyportaltokens]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountyreportdata|Hooks Useaccountydata Useaccountyreportdata]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaccountytaxprofile|Hooks Useaccountydata Useaccountytaxprofile]]
+- [[_COMMUNITY_Hooks Useaccountydata Useaddmissingitem|Hooks Useaccountydata Useaddmissingitem]]
+- [[_COMMUNITY_Hooks Useaccountydata Usecompanyinvoices|Hooks Useaccountydata Usecompanyinvoices]]
+- [[_COMMUNITY_Hooks Useaccountydata Usecompletedeadline|Hooks Useaccountydata Usecompletedeadline]]
+- [[_COMMUNITY_Hooks Useaccountydata Usegenerateportaltoken|Hooks Useaccountydata Usegenerateportaltoken]]
+- [[_COMMUNITY_Hooks Useaccountydata Useignoremissingitem|Hooks Useaccountydata Useignoremissingitem]]
+- [[_COMMUNITY_Hooks Useaccountydata Uselogauditevent|Hooks Useaccountydata Uselogauditevent]]
+- [[_COMMUNITY_Hooks Useaccountydata Useresolvemissingitem|Hooks Useaccountydata Useresolvemissingitem]]
+- [[_COMMUNITY_Hooks Useaccountydata Useupdatekanbanstatus|Hooks Useaccountydata Useupdatekanbanstatus]]
+- [[_COMMUNITY_Hooks Useaccountydata Useupsertcommunicationprefs|Hooks Useaccountydata Useupsertcommunicationprefs]]
+- [[_COMMUNITY_Hooks Useaccountydata Useupserttaxprofile|Hooks Useaccountydata Useupserttaxprofile]]
+- [[_COMMUNITY_Hooks Useactivepreset Useactivepreset|Hooks Useactivepreset Useactivepreset]]
+- [[_COMMUNITY_Hooks Useappready Redirecttarget|Hooks Useappready Redirecttarget]]
+- [[_COMMUNITY_Hooks Useappready Useappready|Hooks Useappready Useappready]]
+- [[_COMMUNITY_Hooks Usecompanylocations Usecompanylocations|Hooks Usecompanylocations Usecompanylocations]]
+- [[_COMMUNITY_Hooks Usecompanysettings Usecompanysettings|Hooks Usecompanysettings Usecompanysettings]]
+- [[_COMMUNITY_Hooks Usecomputedstatus Computematchstatus|Hooks Usecomputedstatus Computematchstatus]]
+- [[_COMMUNITY_Hooks Usecomputedstatus Computepaymentstatus|Hooks Usecomputedstatus Computepaymentstatus]]
+- [[_COMMUNITY_Hooks Usecomputedstatus Getpaymentstatusbadge|Hooks Usecomputedstatus Getpaymentstatusbadge]]
+- [[_COMMUNITY_Hooks Usecomputedstatus Matchstatus|Hooks Usecomputedstatus Matchstatus]]
+- [[_COMMUNITY_Hooks Usecomputedstatus Paymentstatus|Hooks Usecomputedstatus Paymentstatus]]
+- [[_COMMUNITY_Hooks Usecopytoclipboard Usecopytoclipboard|Hooks Usecopytoclipboard Usecopytoclipboard]]
+- [[_COMMUNITY_Hooks Usecourierreportdata Courierreport|Hooks Usecourierreportdata Courierreport]]
+- [[_COMMUNITY_Hooks Usecourierreportdata Courierreportfilters|Hooks Usecourierreportdata Courierreportfilters]]
+- [[_COMMUNITY_Hooks Usecourierreportdata Usecourierreportdata|Hooks Usecourierreportdata Usecourierreportdata]]
+- [[_COMMUNITY_Hooks Usedashboarddata Dashboardmetrics|Hooks Usedashboarddata Dashboardmetrics]]
+- [[_COMMUNITY_Hooks Usedashboarddata Invoice|Hooks Usedashboarddata Invoice]]
+- [[_COMMUNITY_Hooks Usedashboarddata Monthlydata|Hooks Usedashboarddata Monthlydata]]
+- [[_COMMUNITY_Hooks Usedashboarddata Navvatdata|Hooks Usedashboarddata Navvatdata]]
+- [[_COMMUNITY_Hooks Usedashboarddata Profile|Hooks Usedashboarddata Profile]]
+- [[_COMMUNITY_Hooks Usedashboarddata Usedashboarddata|Hooks Usedashboarddata Usedashboarddata]]
+- [[_COMMUNITY_Hooks Usedashboarddata Vatbreakdownresult|Hooks Usedashboarddata Vatbreakdownresult]]
+- [[_COMMUNITY_Hooks Usedashboarddata Vatcategorydata|Hooks Usedashboarddata Vatcategorydata]]
+- [[_COMMUNITY_Hooks Usedashboardpreferences Chartlineflags|Hooks Usedashboardpreferences Chartlineflags]]
+- [[_COMMUNITY_Hooks Usedashboardpreferences Usedashboardpreferen|Hooks Usedashboardpreferences Usedashboardpreferen]]
+- [[_COMMUNITY_Hooks Usedepreciation Calculatedepreciation|Hooks Usedepreciation Calculatedepreciation]]
+- [[_COMMUNITY_Hooks Useemployeerates Useemployeerates|Hooks Useemployeerates Useemployeerates]]
+- [[_COMMUNITY_Hooks Usefilterpersistence Usefilterpersistence|Hooks Usefilterpersistence Usefilterpersistence]]
+- [[_COMMUNITY_Hooks Usefixedassets Generateinventorynumber|Hooks Usefixedassets Generateinventorynumber]]
+- [[_COMMUNITY_Hooks Usefixedassets Useassetglaccounts|Hooks Usefixedassets Useassetglaccounts]]
+- [[_COMMUNITY_Hooks Usefixedassets Usecreatefixedasset|Hooks Usefixedassets Usecreatefixedasset]]
+- [[_COMMUNITY_Hooks Usefixedassets Usedisposeasset|Hooks Usefixedassets Usedisposeasset]]
+- [[_COMMUNITY_Hooks Usefixedassets Usefixedassetdetail|Hooks Usefixedassets Usefixedassetdetail]]
+- [[_COMMUNITY_Hooks Usefixedassets Usefixedassets|Hooks Usefixedassets Usefixedassets]]
+- [[_COMMUNITY_Hooks Usefixedassets Usereactivateasset|Hooks Usefixedassets Usereactivateasset]]
+- [[_COMMUNITY_Hooks Usefixedassets Usetaotemplates|Hooks Usefixedassets Usetaotemplates]]
+- [[_COMMUNITY_Hooks Usefixedassets Usetransferasset|Hooks Usefixedassets Usetransferasset]]
+- [[_COMMUNITY_Hooks Useidletimeout Useidletimeout|Hooks Useidletimeout Useidletimeout]]
+- [[_COMMUNITY_Hooks Useinvoicedata Category|Hooks Useinvoicedata Category]]
+- [[_COMMUNITY_Hooks Useinvoicedata Courierreportrecord|Hooks Useinvoicedata Courierreportrecord]]
+- [[_COMMUNITY_Hooks Useinvoicedata Navinvoice|Hooks Useinvoicedata Navinvoice]]
+- [[_COMMUNITY_Hooks Useinvoicedata Partner|Hooks Useinvoicedata Partner]]
+- [[_COMMUNITY_Hooks Useinvoicedata Project|Hooks Useinvoicedata Project]]
+- [[_COMMUNITY_Hooks Useinvoicedata Submittedinvoice|Hooks Useinvoicedata Submittedinvoice]]
+- [[_COMMUNITY_Hooks Useinvoicedata Transactionrecord|Hooks Useinvoicedata Transactionrecord]]
+- [[_COMMUNITY_Hooks Useinvoicedata Useinvoicedata|Hooks Useinvoicedata Useinvoicedata]]
+- [[_COMMUNITY_Hooks Useinvoicefilters Invoicefilters|Hooks Useinvoicefilters Invoicefilters]]
+- [[_COMMUNITY_Hooks Useinvoicefilters Invoicetab|Hooks Useinvoicefilters Invoicetab]]
+- [[_COMMUNITY_Hooks Useinvoicefilters Useinvoicefilters|Hooks Useinvoicefilters Useinvoicefilters]]
+- [[_COMMUNITY_Hooks Useinvoicemutations Useinvoicemutations|Hooks Useinvoicemutations Useinvoicemutations]]
+- [[_COMMUNITY_Hooks Usekeyboardshortcuts Usekeyboardshortcuts|Hooks Usekeyboardshortcuts Usekeyboardshortcuts]]
+- [[_COMMUNITY_Hooks Usekintlevodata Usekintlevodata|Hooks Usekintlevodata Usekintlevodata]]
+- [[_COMMUNITY_Hooks Useleaverequests Leaverequest|Hooks Useleaverequests Leaverequest]]
+- [[_COMMUNITY_Hooks Useleaverequests Leavestatus|Hooks Useleaverequests Leavestatus]]
+- [[_COMMUNITY_Hooks Useleaverequests Leavetype|Hooks Useleaverequests Leavetype]]
+- [[_COMMUNITY_Hooks Useleaverequests Useleaverequests|Hooks Useleaverequests Useleaverequests]]
+- [[_COMMUNITY_Hooks Usepayrolldata Batchpayrollinput|Hooks Usepayrolldata Batchpayrollinput]]
+- [[_COMMUNITY_Hooks Usepayrolldata Batchpayrollresult|Hooks Usepayrolldata Batchpayrollresult]]
+- [[_COMMUNITY_Hooks Usepayrolldata Paramstotaxparams|Hooks Usepayrolldata Paramstotaxparams]]
+- [[_COMMUNITY_Hooks Usepayrolldata Payrollcafeteriaitem|Hooks Usepayrolldata Payrollcafeteriaitem]]
+- [[_COMMUNITY_Hooks Usepayrolldata Payrollcalculation|Hooks Usepayrolldata Payrollcalculation]]
+- [[_COMMUNITY_Hooks Usepayrolldata Payrollcycle|Hooks Usepayrolldata Payrollcycle]]
+- [[_COMMUNITY_Hooks Usepayrolldata Payrolldeclaration|Hooks Usepayrolldata Payrolldeclaration]]
+- [[_COMMUNITY_Hooks Usepayrolldata Payrollemployee|Hooks Usepayrolldata Payrollemployee]]
+- [[_COMMUNITY_Hooks Usepayrolldata Payrollemployment|Hooks Usepayrolldata Payrollemployment]]
+- [[_COMMUNITY_Hooks Usepayrolldata Payrollfiling|Hooks Usepayrolldata Payrollfiling]]
+- [[_COMMUNITY_Hooks Usepayrolldata Payrollgarnishment|Hooks Usepayrolldata Payrollgarnishment]]
+- [[_COMMUNITY_Hooks Usepayrolldata Payrollitem|Hooks Usepayrolldata Payrollitem]]
+- [[_COMMUNITY_Hooks Usepayrolldata Payrolljobcode|Hooks Usepayrolldata Payrolljobcode]]
+- [[_COMMUNITY_Hooks Usepayrolldata Payrollleave|Hooks Usepayrolldata Payrollleave]]
+- [[_COMMUNITY_Hooks Usepayrolldata Salaryhistoryentry|Hooks Usepayrolldata Salaryhistoryentry]]
+- [[_COMMUNITY_Hooks Usepayrolldata Useadddeclaration|Hooks Usepayrolldata Useadddeclaration]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usecreatecycle|Hooks Usepayrolldata Usecreatecycle]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usecreateemployee|Hooks Usepayrolldata Usecreateemployee]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usecreateemployment|Hooks Usepayrolldata Usecreateemployment]]
+- [[_COMMUNITY_Hooks Usepayrolldata Useemployeesalaryhistory|Hooks Usepayrolldata Useemployeesalaryhistory]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usejobcodes|Hooks Usepayrolldata Usejobcodes]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usepayrollcafeteria|Hooks Usepayrolldata Usepayrollcafeteria]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usepayrollcalculations|Hooks Usepayrolldata Usepayrollcalculations]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usepayrollcycle|Hooks Usepayrolldata Usepayrollcycle]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usepayrollcycles|Hooks Usepayrolldata Usepayrollcycles]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usepayrolldeclarations|Hooks Usepayrolldata Usepayrolldeclarations]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usepayrollemployee|Hooks Usepayrolldata Usepayrollemployee]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usepayrollemployees|Hooks Usepayrolldata Usepayrollemployees]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usepayrollemployments|Hooks Usepayrolldata Usepayrollemployments]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usepayrollfilings|Hooks Usepayrolldata Usepayrollfilings]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usepayrollgarnishments|Hooks Usepayrolldata Usepayrollgarnishments]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usepayrollitems|Hooks Usepayrolldata Usepayrollitems]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usepayrollleaves|Hooks Usepayrolldata Usepayrollleaves]]
+- [[_COMMUNITY_Hooks Usepayrolldata Userevokedeclaration|Hooks Usepayrolldata Userevokedeclaration]]
+- [[_COMMUNITY_Hooks Usepayrolldata Userunbatchpayroll|Hooks Usepayrolldata Userunbatchpayroll]]
+- [[_COMMUNITY_Hooks Usepayrolldata Usetaxparameters|Hooks Usepayrolldata Usetaxparameters]]
+- [[_COMMUNITY_Hooks Usepayrolldata Useupdatecyclestep|Hooks Usepayrolldata Useupdatecyclestep]]
+- [[_COMMUNITY_Hooks Usepayrolldata Useupdatedeclaration|Hooks Usepayrolldata Useupdatedeclaration]]
+- [[_COMMUNITY_Hooks Usepayrolldata Useupdateemployee|Hooks Usepayrolldata Useupdateemployee]]
+- [[_COMMUNITY_Hooks Usepayrolldata Useupdatetaxparameter|Hooks Usepayrolldata Useupdatetaxparameter]]
+- [[_COMMUNITY_Hooks Useprojectlaborcosts Useprojectlaborcosts|Hooks Useprojectlaborcosts Useprojectlaborcosts]]
+- [[_COMMUNITY_Hooks Useprojectlist Useprojectlist|Hooks Useprojectlist Useprojectlist]]
+- [[_COMMUNITY_Hooks Usesalarydata Usesalarydata|Hooks Usesalarydata Usesalarydata]]
+- [[_COMMUNITY_Hooks Usesessionguard Sessionguardstate|Hooks Usesessionguard Sessionguardstate]]
+- [[_COMMUNITY_Hooks Usesessionguard Usesessionguard|Hooks Usesessionguard Usesessionguard]]
+- [[_COMMUNITY_Hooks Usetickets Ticket|Hooks Usetickets Ticket]]
+- [[_COMMUNITY_Hooks Usetickets Ticketcomment|Hooks Usetickets Ticketcomment]]
+- [[_COMMUNITY_Hooks Usetickets Ticketevent|Hooks Usetickets Ticketevent]]
+- [[_COMMUNITY_Hooks Usetickets Ticketpriority|Hooks Usetickets Ticketpriority]]
+- [[_COMMUNITY_Hooks Usetickets Ticketstatus|Hooks Usetickets Ticketstatus]]
+- [[_COMMUNITY_Hooks Usetickets Tickettype|Hooks Usetickets Tickettype]]
+- [[_COMMUNITY_Hooks Usetickets Useaddcomment|Hooks Usetickets Useaddcomment]]
+- [[_COMMUNITY_Hooks Usetickets Useissupportadmin|Hooks Usetickets Useissupportadmin]]
+- [[_COMMUNITY_Hooks Usetickets Usemarkticketread|Hooks Usetickets Usemarkticketread]]
+- [[_COMMUNITY_Hooks Usetickets Useticketdetail|Hooks Usetickets Useticketdetail]]
+- [[_COMMUNITY_Hooks Usetickets Useticketevents|Hooks Usetickets Useticketevents]]
+- [[_COMMUNITY_Hooks Usetickets Usetickets|Hooks Usetickets Usetickets]]
+- [[_COMMUNITY_Hooks Usetickets Useunreadticketcount|Hooks Usetickets Useunreadticketcount]]
+- [[_COMMUNITY_Hooks Usetickets Useupdateticketstatus|Hooks Usetickets Useupdateticketstatus]]
+- [[_COMMUNITY_Hooks Usetimeentries Usetimeentries|Hooks Usetimeentries Usetimeentries]]
+- [[_COMMUNITY_Hooks Usetransactiondata Transaction|Hooks Usetransactiondata Transaction]]
+- [[_COMMUNITY_Hooks Usetransactiondata Transactionfilters|Hooks Usetransactiondata Transactionfilters]]
+- [[_COMMUNITY_Hooks Usetransactiondata Usetransactiondata|Hooks Usetransactiondata Usetransactiondata]]
+- [[_COMMUNITY_Hooks Useunsavedchanges Useunsavedchanges|Hooks Useunsavedchanges Useunsavedchanges]]
+- [[_COMMUNITY_Hooks Useuserrole Userrole|Hooks Useuserrole Userrole]]
+- [[_COMMUNITY_Hooks Useuserrole Useuserrole|Hooks Useuserrole Useuserrole]]
+- [[_COMMUNITY_Lib Dateutils Getpreviousmonthrange|Lib Dateutils Getpreviousmonthrange]]
+- [[_COMMUNITY_Lib Exportutils Exporttofile|Lib Exportutils Exporttofile]]
+- [[_COMMUNITY_Lib Financeutils Calculatevatposition|Lib Financeutils Calculatevatposition]]
+- [[_COMMUNITY_Lib Financeutils Convertcurrency|Lib Financeutils Convertcurrency]]
+- [[_COMMUNITY_Lib Financeutils Salaryitem|Lib Financeutils Salaryitem]]
+- [[_COMMUNITY_Lib Financeutils Sumnetpayroll|Lib Financeutils Sumnetpayroll]]
+- [[_COMMUNITY_Lib Invoicechainutils Buildinvoicechain|Lib Invoicechainutils Buildinvoicechain]]
+- [[_COMMUNITY_Lib Invoicechainutils Chainableinvoice|Lib Invoicechainutils Chainableinvoice]]
+- [[_COMMUNITY_Lib Invoicechainutils Invoicechainresult|Lib Invoicechainutils Invoicechainresult]]
+- [[_COMMUNITY_Lib Kintlevo Helpers Agingcategory|Lib Kintlevo Helpers Agingcategory]]
+- [[_COMMUNITY_Lib Kintlevo Helpers Companygroup|Lib Kintlevo Helpers Companygroup]]
+- [[_COMMUNITY_Lib Kintlevo Helpers Fmt|Lib Kintlevo Helpers Fmt]]
+- [[_COMMUNITY_Lib Kintlevo Helpers Getcategory|Lib Kintlevo Helpers Getcategory]]
+- [[_COMMUNITY_Lib Kintlevo Helpers Unifiedinvoice|Lib Kintlevo Helpers Unifiedinvoice]]
+- [[_COMMUNITY_Lib Kintlevo Helpers Validateemail|Lib Kintlevo Helpers Validateemail]]
+- [[_COMMUNITY_Lib Kintlevo Helpers Worstof|Lib Kintlevo Helpers Worstof]]
+- [[_COMMUNITY_Lib Navigation Extractpagesegment|Lib Navigation Extractpagesegment]]
+- [[_COMMUNITY_Lib Navigation Generatescopedpath|Lib Navigation Generatescopedpath]]
+- [[_COMMUNITY_Lib Navigation Parsedaterange|Lib Navigation Parsedaterange]]
+- [[_COMMUNITY_Lib Navigation Usescopedbasepath|Lib Navigation Usescopedbasepath]]
+- [[_COMMUNITY_Lib Navigation Usescopednavigate|Lib Navigation Usescopednavigate]]
+- [[_COMMUNITY_Lib Navigation Useurltab|Lib Navigation Useurltab]]
+- [[_COMMUNITY_Lib Payrollutils Calculatehourlycost|Lib Payrollutils Calculatehourlycost]]
+- [[_COMMUNITY_Lib Payrollutils Calculateprojectlaborcost|Lib Payrollutils Calculateprojectlaborcost]]
+- [[_COMMUNITY_Lib Payrollutils Calculatetotalsalarycost|Lib Payrollutils Calculatetotalsalarycost]]
+- [[_COMMUNITY_Lib Payrollutils Companyworksettings|Lib Payrollutils Companyworksettings]]
+- [[_COMMUNITY_Lib Payrollutils Employeerate|Lib Payrollutils Employeerate]]
+- [[_COMMUNITY_Lib Payrollutils Formathourlyrate|Lib Payrollutils Formathourlyrate]]
+- [[_COMMUNITY_Lib Payrollutils Isvalidentrydate|Lib Payrollutils Isvalidentrydate]]
+- [[_COMMUNITY_Lib Payrollutils Salarycostitem|Lib Payrollutils Salarycostitem]]
+- [[_COMMUNITY_Lib Payrollutils Timeentry|Lib Payrollutils Timeentry]]
+- [[_COMMUNITY_Lib Salary Helpers Issalaryitempaid|Lib Salary Helpers Issalaryitempaid]]
+- [[_COMMUNITY_Lib Salary Helpers Salaryitem|Lib Salary Helpers Salaryitem]]
+- [[_COMMUNITY_Lib Statusutils Computepaymentstatus|Lib Statusutils Computepaymentstatus]]
+- [[_COMMUNITY_Lib Supabaseerrors Handleratelimiterror|Lib Supabaseerrors Handleratelimiterror]]
+- [[_COMMUNITY_Lib Supabaseerrors Handlesupabaseerror|Lib Supabaseerrors Handlesupabaseerror]]
+- [[_COMMUNITY_Lib Upload Ticket Image Uploadticketimage|Lib Upload Ticket Image Uploadticketimage]]
+- [[_COMMUNITY_Lib Utils Cn|Lib Utils Cn]]
+- [[_COMMUNITY_Lib Utils Extractstoragepath|Lib Utils Extractstoragepath]]
+- [[_COMMUNITY_Lib Utils Formatcurrency|Lib Utils Formatcurrency]]
+- [[_COMMUNITY_Lib Utils Formatfilesize|Lib Utils Formatfilesize]]
+- [[_COMMUNITY_Lib Validationutils Isnotblank|Lib Validationutils Isnotblank]]
+- [[_COMMUNITY_Lib Validationutils Isvalidamount|Lib Validationutils Isvalidamount]]
+- [[_COMMUNITY_Lib Validationutils Isvalidemail|Lib Validationutils Isvalidemail]]
+- [[_COMMUNITY_Lib Validationutils Isvalidtaxid|Lib Validationutils Isvalidtaxid]]
+- [[_COMMUNITY_Pages Analytics Analytics|Pages Analytics Analytics]]
+- [[_COMMUNITY_Pages Authcallback Authcallback|Pages Authcallback Authcallback]]
+- [[_COMMUNITY_Pages Generalledgerpage Generalledgerpage|Pages Generalledgerpage Generalledgerpage]]
+- [[_COMMUNITY_Payroll Cafeteriacalculator Cafeteriaallocation|Payroll Cafeteriacalculator Cafeteriaallocation]]
+- [[_COMMUNITY_Payroll Cafeteriacalculator Cafeteriataxresult|Payroll Cafeteriacalculator Cafeteriataxresult]]
+- [[_COMMUNITY_Payroll Cafeteriacalculator Cafeteriawarning|Payroll Cafeteriacalculator Cafeteriawarning]]
+- [[_COMMUNITY_Payroll Cafeteriacalculator Calculatecafeteriatax|Payroll Cafeteriacalculator Calculatecafeteriatax]]
+- [[_COMMUNITY_Payroll Cafeteriacalculator Formatcafeteriasummary|Payroll Cafeteriacalculator Formatcafeteriasummary]]
+- [[_COMMUNITY_Payroll Cafeteriacalculator Szepcardlimits|Payroll Cafeteriacalculator Szepcardlimits]]
+- [[_COMMUNITY_Payroll Cafeteriacalculator Ytdusage|Payroll Cafeteriacalculator Ytdusage]]
+- [[_COMMUNITY_Payroll Emailtemplates Generatepayrollreminderemai|Payroll Emailtemplates Generatepayrollreminderemai]]
+- [[_COMMUNITY_Payroll Emailtemplates Generatepayrollrequestemail|Payroll Emailtemplates Generatepayrollrequestemail]]
+- [[_COMMUNITY_Payroll Emailtemplates Payrollrequestemailinput|Payroll Emailtemplates Payrollrequestemailinput]]
+- [[_COMMUNITY_Payroll Emailtemplates Payrollrequestemailresult|Payroll Emailtemplates Payrollrequestemailresult]]
+- [[_COMMUNITY_Payroll Filinggenerator Downloadxml|Payroll Filinggenerator Downloadxml]]
+- [[_COMMUNITY_Payroll Filinggenerator Filing08Data|Payroll Filinggenerator Filing08Data]]
+- [[_COMMUNITY_Payroll Filinggenerator Filing08Employeeline|Payroll Filinggenerator Filing08Employeeline]]
+- [[_COMMUNITY_Payroll Filinggenerator Generatefiling08Xml|Payroll Filinggenerator Generatefiling08Xml]]
+- [[_COMMUNITY_Payroll Filinggenerator Generatem30Xml|Payroll Filinggenerator Generatem30Xml]]
+- [[_COMMUNITY_Payroll Leavecalculator Calculateagesupplement|Payroll Leavecalculator Calculateagesupplement]]
+- [[_COMMUNITY_Payroll Leavecalculator Calculatechildsupplement|Payroll Leavecalculator Calculatechildsupplement]]
+- [[_COMMUNITY_Payroll Leavecalculator Calculatedisabledchildsupp|Payroll Leavecalculator Calculatedisabledchildsupp]]
+- [[_COMMUNITY_Payroll Leavecalculator Calculateleavebalance|Payroll Leavecalculator Calculateleavebalance]]
+- [[_COMMUNITY_Payroll Leavecalculator Calculateleavepayout|Payroll Leavecalculator Calculateleavepayout]]
+- [[_COMMUNITY_Payroll Leavecalculator Calculatesickleave|Payroll Leavecalculator Calculatesickleave]]
+- [[_COMMUNITY_Payroll Leavecalculator Employeeleaveinput|Payroll Leavecalculator Employeeleaveinput]]
+- [[_COMMUNITY_Payroll Leavecalculator Leavebalance|Payroll Leavecalculator Leavebalance]]
+- [[_COMMUNITY_Payroll Leavecalculator Leavepayoutresult|Payroll Leavecalculator Leavepayoutresult]]
+- [[_COMMUNITY_Payroll Leavecalculator Sickleaveresult|Payroll Leavecalculator Sickleaveresult]]
+- [[_COMMUNITY_Payroll Payslipgenerator Downloadpaysliphtml|Payroll Payslipgenerator Downloadpaysliphtml]]
+- [[_COMMUNITY_Payroll Payslipgenerator Generatepaysliphtml|Payroll Payslipgenerator Generatepaysliphtml]]
+- [[_COMMUNITY_Payroll Payslipgenerator Payslipdata|Payroll Payslipgenerator Payslipdata]]
+- [[_COMMUNITY_Payroll Payslipgenerator Printpayslip|Payroll Payslipgenerator Printpayslip]]
+- [[_COMMUNITY_Payroll Premiumcalculator Calculatepremiums|Payroll Premiumcalculator Calculatepremiums]]
+- [[_COMMUNITY_Payroll Premiumcalculator Monthlytohourly|Payroll Premiumcalculator Monthlytohourly]]
+- [[_COMMUNITY_Payroll Premiumcalculator Overtimetrackerresult|Payroll Premiumcalculator Overtimetrackerresult]]
+- [[_COMMUNITY_Payroll Premiumcalculator Premiuminput|Payroll Premiumcalculator Premiuminput]]
+- [[_COMMUNITY_Payroll Premiumcalculator Premiumitem|Payroll Premiumcalculator Premiumitem]]
+- [[_COMMUNITY_Payroll Premiumcalculator Premiumrates|Payroll Premiumcalculator Premiumrates]]
+- [[_COMMUNITY_Payroll Premiumcalculator Premiumresult|Payroll Premiumcalculator Premiumresult]]
+- [[_COMMUNITY_Payroll Premiumcalculator Trackovertime|Payroll Premiumcalculator Trackovertime]]
+- [[_COMMUNITY_Payroll Taxengine Calculategarnishments|Payroll Taxengine Calculategarnishments]]
+- [[_COMMUNITY_Payroll Taxengine Calculategross|Payroll Taxengine Calculategross]]
+- [[_COMMUNITY_Payroll Taxengine Calculatepayroll|Payroll Taxengine Calculatepayroll]]
+- [[_COMMUNITY_Payroll Taxengine Employeedeclarations|Payroll Taxengine Employeedeclarations]]
+- [[_COMMUNITY_Payroll Taxengine Garnishment|Payroll Taxengine Garnishment]]
+- [[_COMMUNITY_Payroll Taxengine Grosssalaryinput|Payroll Taxengine Grosssalaryinput]]
+- [[_COMMUNITY_Payroll Taxengine Payrollcalculationinput|Payroll Taxengine Payrollcalculationinput]]
+- [[_COMMUNITY_Payroll Taxengine Payrollcalculationresult|Payroll Taxengine Payrollcalculationresult]]
+- [[_COMMUNITY_Payroll Taxengine Taxcreditdetail|Payroll Taxengine Taxcreditdetail]]
+- [[_COMMUNITY_Payroll Taxengine Taxparameters|Payroll Taxengine Taxparameters]]
+- [[_COMMUNITY_Payroll Validators Converttoiban|Payroll Validators Converttoiban]]
+- [[_COMMUNITY_Payroll Validators Formatamount|Payroll Validators Formatamount]]
+- [[_COMMUNITY_Payroll Validators Formatbankaccount|Payroll Validators Formatbankaccount]]
+- [[_COMMUNITY_Payroll Validators Formattajnumber|Payroll Validators Formattajnumber]]
+- [[_COMMUNITY_Payroll Validators Isskilled|Payroll Validators Isskilled]]
+- [[_COMMUNITY_Payroll Validators Minwagevalidation|Payroll Validators Minwagevalidation]]
+- [[_COMMUNITY_Payroll Validators Validatebankaccount|Payroll Validators Validatebankaccount]]
+- [[_COMMUNITY_Payroll Validators Validatecompanytaxnumber|Payroll Validators Validatecompanytaxnumber]]
+- [[_COMMUNITY_Payroll Validators Validatefeorcode|Payroll Validators Validatefeorcode]]
+- [[_COMMUNITY_Payroll Validators Validateminimumwage|Payroll Validators Validateminimumwage]]
+- [[_COMMUNITY_Payroll Validators Validatetajnumber|Payroll Validators Validatetajnumber]]
+- [[_COMMUNITY_Payroll Validators Validatetaxid|Payroll Validators Validatetaxid]]
+- [[_COMMUNITY_Salaries Salarykpicards Salarykpicards|Salaries Salarykpicards Salarykpicards]]
+- [[_COMMUNITY_Settings Profilesection Profilesection|Settings Profilesection Profilesection]]
+- [[_COMMUNITY_Settings Securitysection Securitysection|Settings Securitysection Securitysection]]
+- [[_COMMUNITY_Settings Systemsection Systemsection|Settings Systemsection Systemsection]]
+- [[_COMMUNITY_Tests Helpers Login|Tests Helpers Login]]
+- [[_COMMUNITY_Tests Helpers Navigateto|Tests Helpers Navigateto]]
+- [[_COMMUNITY_Tests Helpers Waitforappready|Tests Helpers Waitforappready]]
+- [[_COMMUNITY_Tickets Ticketprioritybadge Ticketprioritybadge|Tickets Ticketprioritybadge Ticketprioritybadge]]
+- [[_COMMUNITY_Tickets Ticketstatusbadge Ticketstatusbadge|Tickets Ticketstatusbadge Ticketstatusbadge]]
+- [[_COMMUNITY_Types Fixed Assets Assetevent|Types Fixed Assets Assetevent]]
+- [[_COMMUNITY_Types Fixed Assets Assetstatus|Types Fixed Assets Assetstatus]]
+- [[_COMMUNITY_Types Fixed Assets Companylocation|Types Fixed Assets Companylocation]]
+- [[_COMMUNITY_Types Fixed Assets Depreciationresult|Types Fixed Assets Depreciationresult]]
+- [[_COMMUNITY_Types Fixed Assets Fixedasset|Types Fixed Assets Fixedasset]]
+- [[_COMMUNITY_Types Fixed Assets Taotemplate|Types Fixed Assets Taotemplate]]
+- [[_COMMUNITY_Types Invoices Invoice|Types Invoices Invoice]]
+- [[_COMMUNITY_Types Invoices Invoicetype|Types Invoices Invoicetype]]
+- [[_COMMUNITY_Ui Badge Badgeprops|Ui Badge Badgeprops]]
+- [[_COMMUNITY_Ui Button Buttonprops|Ui Button Buttonprops]]
+- [[_COMMUNITY_Ui Calendar Calendarprops|Ui Calendar Calendarprops]]
+- [[_COMMUNITY_Ui Chart Chartconfig|Ui Chart Chartconfig]]
+- [[_COMMUNITY_Ui Ios Toggle Iostoggleprops|Ui Ios Toggle Iostoggleprops]]
+- [[_COMMUNITY_Ui Loading Spinner Loadingspinner|Ui Loading Spinner Loadingspinner]]
+- [[_COMMUNITY_Ui Partner Type Filter Partnertypefilter|Ui Partner Type Filter Partnertypefilter]]
+- [[_COMMUNITY_Ui Partner Type Filter Partnertypefiltervalue|Ui Partner Type Filter Partnertypefiltervalue]]
+- [[_COMMUNITY_Ui Table Placeholder Rows Tableplaceholderrows|Ui Table Placeholder Rows Tableplaceholderrows]]
+- [[_COMMUNITY_Ui Textarea Textareaprops|Ui Textarea Textareaprops]]
+- [[_COMMUNITY_Ui Toaster Toaster|Ui Toaster Toaster]]
+- [[_COMMUNITY_Utils Seedaccounty Seedaccountyassignments|Utils Seedaccounty Seedaccountyassignments]]
+- [[_COMMUNITY_Working Time Addemployeedialog Addemployeedialog|Working Time Addemployeedialog Addemployeedialog]]
+- [[_COMMUNITY_Working Time Employeeratespanel Employeeratespanel|Working Time Employeeratespanel Employeeratespanel]]
+- [[_COMMUNITY_Working Time Worksettingsdialog Worksettingsdialog|Working Time Worksettingsdialog Worksettingsdialog]]
+
+## God Nodes (most connected - your core abstractions)
+1. `Invoice Management System` - 10 edges
+2. `React 18 TypeScript Frontend` - 8 edges
+3. `Supabase Auth System` - 7 edges
+4. `Supabase PostgreSQL Backend` - 5 edges
+5. `BaseInvoice` - 4 edges
+6. `VisiBill Application` - 4 edges
+7. `NAV (Hungarian Tax Authority) Integration` - 4 edges
+8. `Mailgun Incoming Email Processing` - 4 edges
+9. `Transaction Matching` - 3 edges
+10. `Multi-Tenancy Architecture` - 3 edges
+
+## Surprising Connections (you probably didn't know these)
+- `Security Audit Report` --references--> `Supabase Auth System`  [INFERRED]
+  audit-report.html → PROJECT_DOCUMENTATION.md
+- `Security Audit Report` --semantically_similar_to--> `Database Audit Report`  [INFERRED] [semantically similar]
+  audit-report.html → database_audit_report.html
+- `Database Audit Report` --references--> `Supabase PostgreSQL Backend`  [INFERRED]
+  database_audit_report.html → PROJECT_DOCUMENTATION.md
+- `Storage Audit Report` --references--> `Supabase PostgreSQL Backend`  [INFERRED]
+  storage_audit_report.html → PROJECT_DOCUMENTATION.md
+- `Dashboard Analysis Report` --references--> `Dashboard Analytics`  [INFERRED]
+  dashboard_analysis_report.html → PROJECT_DOCUMENTATION.md
+
+## Import Cycles
+- None detected.
+
+## Hyperedges (group relationships)
+- **Invoice Processing Pipeline** — eaisybill_prod_invoice_management, eaisybill_prod_nav_integration, eaisybill_prod_transaction_matching, eaisybill_prod_vat_reporting, eaisybill_prod_n8n_automation [INFERRED 0.85]
+- **Security Infrastructure** — eaisybill_prod_auth_system, eaisybill_prod_rls_policies, eaisybill_prod_multi_tenancy, eaisybill_prod_company_management [EXTRACTED 1.00]
+- **Email Processing Ecosystem** — eaisybill_prod_email_system, eaisybill_prod_mailgun_incoming, eaisybill_prod_nylas_sync, eaisybill_prod_resend_outgoing, eaisybill_prod_table_email_aliases [EXTRACTED 1.00]
+
+## Communities (357 total, 349 thin omitted)
+
+### Community 0 - "Financial Operations & Banking"
+Cohesion: 0.22
+Nodes (9): Accounty Module, Bank Statement Integration, Manual Invoice Upload, N8N Webhook Automation, Payroll Pipeline, Project Tracking, Salary Management, bank_transactions Table (+1 more)
+
+### Community 1 - "Core Platform & Infrastructure"
+Cohesion: 0.25
+Nodes (8): Security Audit Report, Database Audit Report, Supabase Edge Functions (Deno), Project Documentation, Storage Audit Report, Supabase PostgreSQL Backend, VisiBill Application, User Guide (Hungarian)
+
+### Community 2 - "Invoice & Subscription Management"
+Cohesion: 0.29
+Nodes (8): Currency Conversion, Dashboard Analytics, Dashboard Analysis Report, Invoice Management System, Stripe Subscription System, invoices Table, user_subscriptions Table, VAT Reporting
+
+### Community 3 - "Frontend Technology Stack"
+Cohesion: 0.25
+Nodes (8): HSL Semantic Design Tokens, React Context API (Auth, Subscription, Theme), React 18 TypeScript Frontend, React Router v6, shadcn/ui (Radix UI) Components, Tailwind CSS Styling, TypeScript Strict Mode, Vite Build System
+
+### Community 4 - "Auth & Multi-Tenancy Security"
+Cohesion: 0.33
+Nodes (7): Supabase Auth System, Company Management, GDPR Data Export, Multi-Tenancy Architecture, User Onboarding Flow, Row Level Security (RLS) Policies, profiles Table
+
+### Community 5 - "Email Processing Ecosystem"
+Cohesion: 0.40
+Nodes (5): Email System (Resend + Mailgun + Nylas), Mailgun Incoming Email Processing, Nylas Email Sync (OAuth), Resend Outgoing Emails, email_aliases Table
+
+### Community 6 - "Invoice Type Definitions"
+Cohesion: 0.40
+Nodes (5): BaseInvoice, EgyszerusitettInvoice, ProformaInvoice, SimaInvoice, VegszamlaInvoice
+
+### Community 7 - "NAV Tax Authority Integration"
+Cohesion: 0.50
+Nodes (4): NAV Authentication (SHA-512/SHA3-512), NAV (Hungarian Tax Authority) Integration, NAV XML Processing, nav_invoices Table
+
+## Knowledge Gaps
+- **372 isolated node(s):** `AppLayout`, `EmailPreferences`, `FeedbackFab`, `LiveNotificationProvider`, `ProductTour` (+367 more)
+  These have ≤1 connection - possible missing edges or undocumented components.
+- **349 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+
+## Suggested Questions
+_Questions this graph is uniquely positioned to answer:_
+
+- **Why does `Supabase Auth System` connect `Auth & Multi-Tenancy Security` to `Core Platform & Infrastructure`, `Email Processing Ecosystem`?**
+  _High betweenness centrality (0.008) - this node is a cross-community bridge._
+- **Why does `Invoice Management System` connect `Invoice & Subscription Management` to `Financial Operations & Banking`, `Email Processing Ecosystem`, `NAV Tax Authority Integration`?**
+  _High betweenness centrality (0.008) - this node is a cross-community bridge._
+- **Are the 5 inferred relationships involving `Invoice Management System` (e.g. with `Accounty Module` and `Currency Conversion`) actually correct?**
+  _`Invoice Management System` has 5 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 3 inferred relationships involving `Supabase Auth System` (e.g. with `Security Audit Report` and `Multi-Tenancy Architecture`) actually correct?**
+  _`Supabase Auth System` has 3 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 2 inferred relationships involving `Supabase PostgreSQL Backend` (e.g. with `Database Audit Report` and `Storage Audit Report`) actually correct?**
+  _`Supabase PostgreSQL Backend` has 2 INFERRED edges - model-reasoned connections that need verification._
+- **What connects `AppLayout`, `EmailPreferences`, `FeedbackFab` to the rest of the system?**
+  _378 weakly-connected nodes found - possible documentation gaps or missing edges._

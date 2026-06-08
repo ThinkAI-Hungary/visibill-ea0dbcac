@@ -67,11 +67,11 @@ export function InvoiceFilesDialog({ open: externalOpen, onOpenChange: externalO
       if (!uploadData || uploadData.length === 0) return [];
 
       // Get invoices linked to these uploads
-      const uploadIds = uploadData.map(u => u.id);
       const { data: invoiceData, error: invoiceError } = await supabase
         .from('invoices')
         .select('invoice_uploads_id, bizonylatsorszam')
-        .in('invoice_uploads_id', uploadIds);
+        .eq('company_id', companyId!)
+        .not('invoice_uploads_id', 'is', null);
       if (invoiceError) throw invoiceError;
 
       // Group invoice numbers by upload id

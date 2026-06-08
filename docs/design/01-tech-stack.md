@@ -95,11 +95,10 @@ src/
 │   ├── ManualUpload.tsx        #    Feltöltés (65KB)
 │   └── ...
 │
-├── contexts/                   # 🌐 5 React Context
+├── contexts/                   # 🌐 4 React Context
 │   ├── AuthContext.tsx          #    Autentikáció
 │   ├── CompanyContext.tsx       #    Cégválasztás
 │   ├── DateRangeContext.tsx     #    Globális dátumszűrő
-│   ├── SubscriptionContext.tsx  #    Előfizetés
 │   └── ThemeContext.tsx         #    Sötét/világos téma
 │
 ├── hooks/                      # 🪝 31 custom hook
@@ -135,10 +134,9 @@ QueryClientProvider          ← React Query cache
     └── AuthProvider         ← Supabase auth session
       └── CompanyProvider    ← Cégválasztás context
         └── DateRangeProvider ← Globális dátum szűrő
-          └── SubscriptionProvider ← Előfizetés limit-ek
-            └── TooltipProvider    ← shadcn tooltip
-              └── BrowserRouter    ← React Router
-                └── Routes         ← Útvonalak
+          └── TooltipProvider    ← shadcn tooltip
+            └── BrowserRouter    ← React Router
+              └── Routes         ← Útvonalak
 ```
 
 ## shadcn/ui Konfiguráció

@@ -15,3 +15,10 @@
 5. **GL osztályozás:** Minden entitáson (számla, NAV számla, tranzakció) AI-alapú főkönyvi szám hozzárendelés
 
 **Rationale:** A PGMQ queue biztosítja a megbízható, skálázható feldolgozást. A Python worker Docker container-ben fut, ami lehetővé teszi a nehéz AI/ML könyvtárak használatát. A feldolgozás aszinkron, így a felhasználó nem vár a hosszú AI műveletre. Az LLM költségeket a llm_koltsegek tábla rögzíti.
+
+## Kapcsolódó Architekturális Döntések
+- [A-004: PGMQ mint aszinkron queue](../../architecture/decisions/A-004-pgmq-queue.md)
+- [A-006: Python Worker architektúra](../../architecture/decisions/A-006-python-worker.md)
+- [A-007: LLM stratégia](../../architecture/decisions/A-007-llm-strategy.md)
+- [A-008: OCR pipeline](../../architecture/decisions/A-008-ocr-pipeline.md)
+- [Worker részletes dokumentáció](../../../worker/docs/ARCHITECTURE.md)

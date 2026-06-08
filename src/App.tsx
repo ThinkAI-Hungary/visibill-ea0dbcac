@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { SubscriptionProvider } from "./contexts/SubscriptionContext";
+
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { CompanyProvider, useCompany } from "./contexts/CompanyContext";
 import { DateRangeProvider, useDateRange } from "./contexts/DateRangeContext";
@@ -28,7 +28,7 @@ const InvoicesPage = lazy(() => import("./pages/InvoicesPage"));
 const Integrations = lazy(() => import("./pages/Integrations"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Projects = lazy(() => import("./pages/Projects"));
-const Pricing = lazy(() => import("./pages/Pricing"));
+
 const ExchangeRates = lazy(() => import("./pages/ExchangeRates"));
 const SalariesPage = lazy(() => import("./pages/SalariesPage"));
 const Analytics = lazy(() => import("./pages/Analytics"));
@@ -207,7 +207,7 @@ const App = () => (
       <AuthProvider>
         <CompanyProvider>
           <DateRangeProvider>
-            <SubscriptionProvider>
+
               <TooltipProvider>
 
                 <Toaster />
@@ -309,7 +309,7 @@ const App = () => (
                         <Route path="kintlevo/:tab?" element={<ProtectedPage><KintlevoPage /></ProtectedPage>} />
                         <Route path="petty-cash/:tab?" element={<ProtectedPage><PettyCashPage /></ProtectedPage>} />
                         <Route path="teny/:tab?" element={<ProtectedPage><FixedAssetsPage /></ProtectedPage>} />
-                        <Route path="pricing" element={<ProtectedPage><Pricing /></ProtectedPage>} />
+
                         <Route path="exchange-rates" element={<ProtectedPage><ExchangeRates /></ProtectedPage>} />
                         <Route path="salaries/:tab?" element={<ProtectedPage><SalariesPage /></ProtectedPage>} />
                         <Route path="working-time/:tab?" element={<ProtectedPage><WorkingTimePage /></ProtectedPage>} />
@@ -330,7 +330,7 @@ const App = () => (
                       <Route path="/kintlevo" element={<LegacyRedirect page="kintlevo" />} />
                       <Route path="/petty-cash" element={<LegacyRedirect page="petty-cash" />} />
                       <Route path="/teny" element={<LegacyRedirect page="teny" />} />
-                      <Route path="/pricing" element={<LegacyRedirect page="pricing" />} />
+
                       <Route path="/exchange-rates" element={<LegacyRedirect page="exchange-rates" />} />
                       <Route path="/salaries" element={<LegacyRedirect page="salaries" />} />
                       <Route path="/working-time" element={<LegacyRedirect page="working-time" />} />
@@ -346,7 +346,7 @@ const App = () => (
                   </Routes>
                 </BrowserRouter>
               </TooltipProvider>
-            </SubscriptionProvider>
+
           </DateRangeProvider>
         </CompanyProvider>
       </AuthProvider>
