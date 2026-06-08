@@ -210,9 +210,11 @@ interface TransactionRowProps {
   isExpanded?: boolean;
   onToggleExpand?: (id: string) => void;
   onOpenDetails: (transaction: Transaction) => void;
+  bankLabel?: string | null;
+  bankBgClass?: string;
 }
 
-const TransactionRow = React.memo(function TransactionRow({ transaction, exchangeRates, isExpanded, onToggleExpand, onOpenDetails }: TransactionRowProps) {
+const TransactionRow = React.memo(function TransactionRow({ transaction, exchangeRates, isExpanded, onToggleExpand, onOpenDetails, bankLabel, bankBgClass }: TransactionRowProps) {
   const matchStatus = computeMatchStatus(transaction);
   const hasMatch = !!transaction.matched_invoice_id;
 
@@ -241,18 +243,28 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
         </div>
       </TableCell>
       <TableCell className="overflow-hidden">
-        <TooltipProvider delayDuration={0}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="block truncate text-xs cursor-default">
-                {transaction.description || '-'}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[500px]">
-              <p className="whitespace-pre-wrap text-sm">{transaction.description}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div className="flex items-center gap-1.5">
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="block truncate text-xs cursor-default flex-1 min-w-0">
+                  {transaction.description || '-'}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[500px]">
+                <p className="whitespace-pre-wrap text-sm">{transaction.description}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          {bankLabel && (
+            <span className={cn(
+              "text-[9px] px-1.5 py-0.5 rounded font-medium shrink-0 border",
+              bankBgClass || 'bg-muted text-muted-foreground'
+            )}>
+              {bankLabel}
+            </span>
+          )}
+        </div>
       </TableCell>
       <TableCell className={cn(
         "text-right font-mono text-xs whitespace-nowrap",
@@ -355,6 +367,8 @@ interface TransactionTableProps {
   onClearFilters: () => void;
   onSort: (field: string) => void;
   onOpenDetails: (transaction: Transaction) => void;
+  uploadBankMap?: Record<string, string>;
+  bankConfig?: Record<string, { label: string; bgClass: string }>;
 }
 
 const TransactionTable = React.memo(function TransactionTable({
@@ -365,6 +379,8 @@ const TransactionTable = React.memo(function TransactionTable({
   onClearFilters,
   onSort,
   onOpenDetails,
+  uploadBankMap,
+  bankConfig,
 }: TransactionTableProps) {
   const { data: exchangeRates } = useExchangeRates();
   const [expandedTxIds, setExpandedTxIds] = useState<Set<string>>(new Set());
@@ -430,16 +446,23 @@ const TransactionTable = React.memo(function TransactionTable({
               onClearFilters={hasActiveFilters ? onClearFilters : undefined}
             />
           ) : (
-            transactions.map((transaction) => (
-              <TransactionRow
-                key={transaction.id}
-                transaction={transaction}
-                exchangeRates={exchangeRates}
-                isExpanded={expandedTxIds.has(transaction.id)}
-                onToggleExpand={toggleExpand}
-                onOpenDetails={onOpenDetails}
-              />
-            ))
+            transactions.map((transaction) => {
+              const txUploadId = (transaction as any).upload_id;
+              const bankKey = uploadBankMap && txUploadId ? uploadBankMap[txUploadId] : undefined;
+              const cfg = bankKey && bankConfig ? bankConfig[bankKey] : undefined;
+              return (
+                <TransactionRow
+                  key={transaction.id}
+                  transaction={transaction}
+                  exchangeRates={exchangeRates}
+                  isExpanded={expandedTxIds.has(transaction.id)}
+                  onToggleExpand={toggleExpand}
+                  onOpenDetails={onOpenDetails}
+                  bankLabel={cfg?.label}
+                  bankBgClass={cfg?.bgClass}
+                />
+              );
+            })
           )}
           <TablePlaceholderRows currentCount={transactions.length} pageSize={pageSize} columns={8} />
         </TableBody>
