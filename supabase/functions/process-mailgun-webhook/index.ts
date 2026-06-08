@@ -196,7 +196,7 @@ serve(async (req) => {
         'youtube', 'banner', 'spacer', 'icon', 'footer', 'pixel', 'tracking',
         'badge', 'visa', 'mastercard', 'paypal', 'amex', 'diners',
         'header', 'button', 'social', 'branding', 'template',
-        'unsubscribe', 'emailbg', 'bg_', 'divider',
+        'unsubscribe', 'emailbg', 'bg_', 'divider', 'receipt',
       ];
       if (junkKeywords.some(keyword => fileName.includes(keyword))) {
         console.log(`Skipping file with junk keyword in name: ${file.name}`);

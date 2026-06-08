@@ -543,7 +543,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                       </CollapsibleTrigger>
 
                       {/* Collapsible content with animation */}
-                      <CollapsibleContent className="nav-collapsible-content pb-1.5">
+                      <CollapsibleContent forceMount className="nav-collapsible-content pb-1.5">
                         <SidebarMenu className="mt-0.5 select-none">
                           {group.items.map(item => {
                             const active = isActive(item.url);
@@ -557,7 +557,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                                   className={isDisabled ? 'grayscale opacity-50 cursor-not-allowed' : ''}
                                 >
                                   {isDisabled ? (
-                                    <div className="flex items-center gap-2 w-full pl-2">
+                                    <div className="flex items-center gap-2 w-full pl-6">
                                       <item.icon className="h-4 w-4 shrink-0" />
                                       <span>{item.title}</span>
                                     </div>
@@ -567,7 +567,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                                       onMouseEnter={() => handlePrefetch(item.url)}
                                       onFocus={() => handlePrefetch(item.url)}
                                       onTouchStart={() => handlePrefetch(item.url)}
-                                      className="flex items-center gap-2 w-full pl-2"
+                                      className="flex items-center gap-2 w-full pl-6"
                                     >
                                       <item.icon className="h-4 w-4 shrink-0" />
                                       <span>{item.title}</span>
