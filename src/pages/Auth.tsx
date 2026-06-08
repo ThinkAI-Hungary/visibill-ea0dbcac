@@ -841,7 +841,7 @@ const Auth = () => {
             </p>
           </div>
 
-          {/* Segmented Control Tabs — commented out, registration disabled for now
+          {/* Segmented Control Tabs */}
           <div className="mb-6">
             <div className="inline-flex rounded-lg bg-slate-100/80 dark:bg-secondary/50 border border-slate-200/60 dark:border-transparent p-1">
               <button
@@ -868,7 +868,6 @@ const Auth = () => {
               </button>
             </div>
           </div>
-          */}
 
           {/* Form — animated tab switch */}
           <div className="relative">
