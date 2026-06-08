@@ -17,7 +17,6 @@
 | OCR | AWS Textract + MarkItDown |
 | AI/LLM | OpenAI GPT modellek |
 | Email | Mailgun (bejövő webhook + kimenő) |
-| Fizetés | Stripe |
 | NAV | NAV Online Számla API v3 |
 | Hosting | Supabase Cloud |
 
@@ -26,4 +25,9 @@ Irányítópult, Kategóriák, Projektek, Partnertörzs, Számlák, Kintlévős�
 
 **Prod support:** FeedbackDialog (FAB gomb) — egyszerű visszajelzési űrlap, NEM teljes ticket rendszer.
 
-**Rationale:** Supabase-t választottuk a gyors fejlesztés, beépített auth, RLS, és realtime képességek miatt. A Python worker külön Docker container-ben fut, mert az AI/ML ökoszisztéma Pythonban a legerősebb. Edge Functions-t használunk a könnyű serverless logikákhoz (NAV sync, email küldés, Stripe webhook-ok).
+**Rationale:** Supabase-t választottuk a gyors fejlesztés, beépített auth, RLS, és realtime képességek miatt. A Python worker külön Docker container-ben fut, mert az AI/ML ökoszisztéma Pythonban a legerősebb. Edge Functions-t használunk a könnyű serverless logikákhoz (NAV sync, email küldés).
+
+## Kapcsolódó Architekturális Döntések
+- [A-001: Három rétegű architektúra](../../architecture/decisions/A-001-system-architecture.md)
+- [A-002: Supabase mint BaaS](../../architecture/decisions/A-002-supabase-baas.md)
+- [A-005: Edge Functions](../../architecture/decisions/A-005-edge-functions.md)

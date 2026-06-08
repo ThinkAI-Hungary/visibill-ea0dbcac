@@ -16,26 +16,34 @@ import { useTransactionData, type Transaction } from '@/hooks/useTransactionData
 import { supabase } from '@/integrations/supabase/client';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import CourierReportTab from '@/components/CourierReportTab';
-import { useUrlTab } from '@/lib/navigation';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
 import { format } from 'date-fns';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { Landmark } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 
-const TAB_VALUES = ['general', 'gls', 'mpl', 'mixpack'] as const;
-type TabValue = typeof TAB_VALUES[number];
+// ── Bank display config ──
+const BANK_CONFIG: Record<string, { label: string; color: string; bgClass: string }> = {
+  otp:        { label: 'OTP',        color: 'bg-emerald-500', bgClass: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' },
+  cib:        { label: 'CIB',        color: 'bg-red-500',     bgClass: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20' },
+  raiffeisen: { label: 'Raiffeisen', color: 'bg-yellow-500',  bgClass: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20' },
+  kh:         { label: 'K&H',        color: 'bg-blue-600',    bgClass: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' },
+  erste:      { label: 'Erste',      color: 'bg-sky-500',     bgClass: 'bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20' },
+  unicredit:  { label: 'UniCredit',  color: 'bg-rose-600',    bgClass: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20' },
+  magnet:     { label: 'MagNet',     color: 'bg-violet-500',  bgClass: 'bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20' },
+  granit:     { label: 'Gránit',     color: 'bg-stone-500',   bgClass: 'bg-stone-500/10 text-stone-700 dark:text-stone-400 border-stone-500/20' },
+  wise:       { label: 'Wise',       color: 'bg-[#9FE870]',   bgClass: 'bg-lime-500/10 text-lime-700 dark:text-lime-400 border-lime-500/20' },
+  revolut:    { label: 'Revolut',    color: 'bg-[#0075EB]',   bgClass: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' },
+};
 
-const TABS: { value: TabValue; label: string; icon: typeof FileText }[] = [
-  { value: 'general', label: 'Általános', icon: FileText },
-  { value: 'gls', label: 'GLS', icon: Truck },
-  { value: 'mpl', label: 'MPL/Posta', icon: Mail },
-  { value: 'mixpack', label: 'Mixpack', icon: Package },
-];
+const FIXED_TABS = ['general', 'gls', 'mpl', 'mixpack'] as const;
+const COURIER_TABS = new Set(['gls', 'mpl', 'mixpack']);
 
 const fmtHuf = (val: number) => new Intl.NumberFormat('hu-HU').format(Math.round(val));
 
 const TransactionsPage = () => {
-  const [activeTab, setActiveTab] = useUrlTab('transactions', 'general' as TabValue, TAB_VALUES);
+  const [activeTab, setActiveTab] = useState('general');
 
   const {
     selectedCompany,
@@ -76,6 +84,80 @@ const TransactionsPage = () => {
   const dateToStr = dateTo ? format(dateTo, 'yyyy-MM-dd') : '';
 
   const { data: exchangeRates } = useExchangeRates();
+
+  // ── Bank tabs: fetch unique detected banks from transaction_uploads ──
+  const { data: detectedBanks = [] } = useQuery({
+    queryKey: ['detected-banks', selectedCompany?.id, dateFromStr, dateToStr],
+    queryFn: async () => {
+      // Get unique detected_bank values that have transactions in the period
+      const { data, error } = await supabase
+        .from('transaction_uploads' as any)
+        .select('id, detected_bank')
+        .eq('company_id', selectedCompany!.id)
+        .not('detected_bank', 'is', null)
+        .eq('processing_status', 'completed');
+      if (error) { console.error('detected_banks query error:', error); return []; }
+      // Get unique bank keys
+      const bankSet = new Set<string>();
+      const uploadBankMap: Record<string, string> = {};
+      for (const row of (data || []) as any[]) {
+        if (row.detected_bank) {
+          bankSet.add(row.detected_bank);
+          uploadBankMap[row.id] = row.detected_bank;
+        }
+      }
+      return Array.from(bankSet).sort();
+    },
+    enabled: !!selectedCompany?.id,
+    staleTime: 60_000,
+  });
+
+  // ── Upload→bank mapping for badge display in general tab ──
+  const { data: uploadBankMap = {} } = useQuery({
+    queryKey: ['upload-bank-map', selectedCompany?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('transaction_uploads' as any)
+        .select('id, detected_bank')
+        .eq('company_id', selectedCompany!.id)
+        .not('detected_bank', 'is', null);
+      const map: Record<string, string> = {};
+      for (const row of (data || []) as any[]) {
+        if (row.detected_bank) map[row.id] = row.detected_bank;
+      }
+      return map;
+    },
+    enabled: !!selectedCompany?.id,
+    staleTime: 60_000,
+  });
+
+  // ── Upload IDs for a specific bank (for bank-tab filtering) ──
+  const { data: bankUploadIds = {} } = useQuery({
+    queryKey: ['bank-upload-ids', selectedCompany?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('transaction_uploads' as any)
+        .select('id, detected_bank')
+        .eq('company_id', selectedCompany!.id)
+        .not('detected_bank', 'is', null)
+        .eq('processing_status', 'completed');
+      const map: Record<string, string[]> = {};
+      for (const row of (data || []) as any[]) {
+        if (row.detected_bank) {
+          if (!map[row.detected_bank]) map[row.detected_bank] = [];
+          map[row.detected_bank].push(row.id);
+        }
+      }
+      return map;
+    },
+    enabled: !!selectedCompany?.id,
+    staleTime: 60_000,
+  });
+
+  // All tab values (fixed + dynamic bank tabs)
+  const allTabValues = useMemo(() => {
+    return [...FIXED_TABS, ...detectedBanks.map(b => `bank_${b}`)];
+  }, [detectedBanks]);
 
   // ── KPI: query ALL transactions (lightweight, no pagination) ──
   const { data: kpis } = useQuery({
@@ -195,13 +277,50 @@ const TransactionsPage = () => {
 
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabValue)}>
-          <TabsList className="mb-4">
-            {TABS.map(t => {
-              const Icon = t.icon;
+          <TabsList className="mb-4 flex-wrap h-auto gap-1">
+            {/* Fixed tabs */}
+            <TabsTrigger value="general" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Általános
+            </TabsTrigger>
+
+            {/* Dynamic bank tabs — emerald green tint */}
+            {detectedBanks.map(bankKey => {
+              const cfg = BANK_CONFIG[bankKey];
+              const label = cfg?.label || bankKey.toUpperCase();
               return (
-                <TabsTrigger key={t.value} value={t.value} className="flex items-center gap-2">
+                <TabsTrigger
+                  key={`bank_${bankKey}`}
+                  value={`bank_${bankKey}`}
+                  className={cn(
+                    "flex items-center gap-1.5",
+                    "data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400",
+                    "data-[state=active]:border-emerald-500/30"
+                  )}
+                >
+                  <Landmark className="h-3.5 w-3.5" />
+                  {label}
+                </TabsTrigger>
+              );
+            })}
+
+            {/* Courier tabs — amber/brown tint */}
+            {(['gls', 'mpl', 'mixpack'] as const).map(key => {
+              const icons = { gls: Truck, mpl: Mail, mixpack: Package };
+              const labels = { gls: 'GLS', mpl: 'MPL/Posta', mixpack: 'Mixpack' };
+              const Icon = icons[key];
+              return (
+                <TabsTrigger
+                  key={key}
+                  value={key}
+                  className={cn(
+                    "flex items-center gap-2",
+                    "data-[state=active]:bg-amber-500/15 data-[state=active]:text-amber-700 dark:data-[state=active]:text-amber-400",
+                    "data-[state=active]:border-amber-500/30"
+                  )}
+                >
                   <Icon className="h-4 w-4" />
-                  {t.label}
+                  {labels[key]}
                 </TabsTrigger>
               );
             })}
@@ -220,7 +339,7 @@ const TransactionsPage = () => {
                 <div className="text-lg font-bold tabular-nums">
                   <span className="text-emerald-600">{safeKpis.matched}</span>
                   <span className="text-xs font-normal text-muted-foreground"> / </span>
-                  <span className="text-amber-500 text-sm">{safeKpis.suggested}</span>
+                  <span className="text-yellow-500 text-sm">{safeKpis.suggested}</span>
                   <span className="text-xs font-normal text-muted-foreground"> / </span>
                   <span className="text-red-400 text-sm">{safeKpis.unmatched}</span>
                 </div>
@@ -327,6 +446,8 @@ const TransactionsPage = () => {
                   onClearFilters={clearFilters}
                   onSort={handleSort}
                   onOpenDetails={handleOpenDetails}
+                  uploadBankMap={uploadBankMap}
+                  bankConfig={BANK_CONFIG}
                 />
 
                 <UnifiedPagination
@@ -342,20 +463,36 @@ const TransactionsPage = () => {
             </Card>
           </TabsContent>
 
-          {/* GLS tab */}
+          {/* Courier tabs */}
           <TabsContent value="gls" className="content-animate">
             <CourierReportTab reportType="gls" />
           </TabsContent>
-
-          {/* MPL/Posta tab */}
           <TabsContent value="mpl" className="content-animate">
             <CourierReportTab reportType="mpl" />
           </TabsContent>
-
-          {/* Mixpack tab */}
           <TabsContent value="mixpack" className="content-animate">
             <CourierReportTab reportType="mixpack" />
           </TabsContent>
+
+          {/* Dynamic bank tabs */}
+          {detectedBanks.map(bankKey => {
+            const cfg = BANK_CONFIG[bankKey];
+            const label = cfg?.label || bankKey.toUpperCase();
+            const uploadIds = bankUploadIds[bankKey] || [];
+            return (
+              <TabsContent key={`bank_${bankKey}`} value={`bank_${bankKey}`} className="content-animate">
+                <BankTransactionTab
+                  bankKey={bankKey}
+                  bankLabel={label}
+                  uploadIds={uploadIds}
+                  companyId={selectedCompany?.id || ''}
+                  dateFromStr={dateFromStr}
+                  dateToStr={dateToStr}
+                  onOpenDetails={handleOpenDetails}
+                />
+              </TabsContent>
+            );
+          })}
         </Tabs>
       </main>
 
@@ -371,5 +508,76 @@ const TransactionsPage = () => {
     </div>
   );
 };
+
+// ── Bank Transaction Tab ──
+// Fetches and displays transactions for a specific detected bank
+
+function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFromStr, dateToStr, onOpenDetails }: {
+  bankKey: string;
+  bankLabel: string;
+  uploadIds: string[];
+  companyId: string;
+  dateFromStr: string;
+  dateToStr: string;
+  onOpenDetails: (tx: Transaction) => void;
+}) {
+  const { data: exchangeRates } = useExchangeRates();
+
+  const { data: transactions = [], isLoading } = useQuery({
+    queryKey: ['bank-transactions', companyId, bankKey, dateFromStr, dateToStr, uploadIds],
+    queryFn: async () => {
+      if (uploadIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('company_id', companyId)
+        .in('upload_id', uploadIds)
+        .gte('transaction_date', dateFromStr)
+        .lte('transaction_date', dateToStr)
+        .order('transaction_date', { ascending: false });
+      if (error) { console.error('bank-tx error:', error); return []; }
+      return (data || []) as unknown as Transaction[];
+    },
+    enabled: uploadIds.length > 0 && !!companyId,
+    staleTime: 30_000,
+  });
+
+  const cfg = BANK_CONFIG[bankKey];
+  const bgClass = cfg?.bgClass || 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400';
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={cn("p-2 rounded-lg", bgClass)}>
+              <Landmark className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-bold">{bankLabel} tranzakciók</CardTitle>
+              <CardDescription>
+                {isLoading ? 'Betöltés...' : `${transactions.length} tranzakció a kiválasztott időszakban`}
+              </CardDescription>
+            </div>
+          </div>
+          <Badge variant="outline" className={cn("text-xs px-2 py-1", bgClass)}>
+            {bankLabel}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <TransactionTable
+          transactions={transactions}
+          loading={isLoading}
+          pageSize={50}
+          hasActiveFilters={false}
+          onClearFilters={() => {}}
+          onSort={() => {}}
+          onOpenDetails={onOpenDetails}
+        />
+      </CardContent>
+    </Card>
+  );
+}
 
 export default TransactionsPage;

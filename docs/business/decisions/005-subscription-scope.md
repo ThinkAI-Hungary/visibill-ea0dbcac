@@ -1,13 +1,17 @@
 # Decision 005: Előfizetés Scope
 
-**Status:** Open
+**Status:** Superseded
 
 **Category:** Célpiac & Üzleti Modell
 
-**Question:** Az előfizetés felhasználó-szintű vagy cég-szintű? Jelenleg a user_subscriptions tábla user_id-hoz kötött. Ha egy felhasználó több céget kezel, egy előfizetés fedi le az összeset? Vagy cégenként külön előfizetés szükséges?
+**Question:** Az előfizetés felhasználó-szintű vagy cég-szintű?
 
-**Decision:**
+**Decision:** Kérdés érvényét vesztette — az üzleti modell egyszeri díjasra változott (lásd [004-pricing-model.md](./004-pricing-model.md)).
 
-**Jelenlegi implementáció:** Az előfizetés felhasználó-szintű (user_subscriptions.user_id). Egy felhasználónak egy subscription-je van, ami az összes általa kezelt cégre vonatkozik. Az invoices_used számláló az összes cég számláit összesíti.
+**Változás története:**
+- 2026-05 — Subscription felhasználó-szintű volt (`user_subscriptions.user_id`)
+- 2026-06-07 — **Stripe integráció eltávolítva.** Egyszeri díjas modellre váltás.
 
-**Rationale:**
+**Jelenlegi állapot:** A `user_subscriptions` tábla még létezik a DB-ben, de a frontend kód nem hivatkozik rá. A jogosultság-kezelés új modellje még kidolgozás alatt.
+
+**Rationale:** Az egyszeri díjas modellben a subscription scope kérdés irreleváns. A hozzáférés-kezelést más mechanizmus (pl. licenckulcs, aktiválás) fogja biztosítani.

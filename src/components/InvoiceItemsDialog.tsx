@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
@@ -18,11 +18,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { formatCurrency } from '@/lib/utils';
-import { Package, Package2 } from 'lucide-react';
+import { formatCurrency, cn } from '@/lib/utils';
+import { Package, Package2, CheckCircle2 } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { AssetActivationDialog } from '@/components/AssetActivationDialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface InvoiceLineItem {
   id: string;
@@ -37,6 +38,7 @@ interface InvoiceLineItem {
   gross_amount: number | null;
   product_code: string | null;
   gl_classifications: any | null;
+  exclude_from_accounting?: boolean;
 }
 
 interface InvoiceItemsDialogProps {
@@ -65,6 +67,7 @@ export function InvoiceItemsDialog({
 }: InvoiceItemsDialogProps) {
   const { selectedCompany } = useCompany();
   const { activePresetId } = useActivePreset(selectedCompany?.id);
+  const queryClient = useQueryClient();
 
   // Selection state for activation
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -76,7 +79,7 @@ export function InvoiceItemsDialog({
       if (source === 'submitted') {
         const { data, error } = await supabase
           .from('invoice_items')
-          .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications')
+          .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, exclude_from_accounting')
           .eq('invoice_id', invoiceId)
           .order('line_number', { ascending: true });
         if (error) throw error;
@@ -85,7 +88,7 @@ export function InvoiceItemsDialog({
       // Default: NAV source
       const { data, error } = await supabase
         .from('nav_invoice_items')
-        .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications')
+        .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications, exclude_from_accounting')
         .eq('nav_invoice_id', invoiceId)
         .order('line_number', { ascending: true });
       if (error) throw error;
@@ -94,11 +97,63 @@ export function InvoiceItemsDialog({
     enabled: open && !!invoiceId,
   });
 
+  // ── Query existing fixed assets linked to this invoice to prevent duplicates ──
+  const { data: existingAssets = [] } = useQuery({
+    queryKey: ['fixedAssetsForInvoice', invoiceId, source],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('fixed_assets')
+        .select('id, name, acquisition_value, source_invoice_id, source_invoice_type')
+        .eq('source_invoice_id', invoiceId)
+        .eq('source_invoice_type', source === 'submitted' ? 'submitted' : 'nav');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: open && !!invoiceId,
+  });
+
+  // Build a Set of already-activated item keys (name + value) for matching
+  const activatedItemKeys = useMemo(() => {
+    // Track how many times each name+value combo appears in existing assets
+    const assetCounts = new Map<string, number>();
+    for (const asset of existingAssets) {
+      const key = `${(asset.name || '').toLowerCase().trim()}|${asset.acquisition_value}`;
+      assetCounts.set(key, (assetCounts.get(key) || 0) + 1);
+    }
+    return { assetCounts };
+  }, [existingAssets]);
+
+  // For each line item, check if it's already activated
+  const isItemAlreadyActivated = useCallback((item: InvoiceLineItem): boolean => {
+    const itemName = (item.line_description || '').toLowerCase().trim();
+    const itemGross = item.gross_amount ?? (item.net_amount != null && item.vat_amount != null ? item.net_amount + item.vat_amount : item.net_amount);
+    const key = `${itemName}|${itemGross}`;
+    return (activatedItemKeys.assetCounts.get(key) || 0) > 0;
+  }, [activatedItemKeys]);
+
+  // Get the list of selectable (non-activated) item IDs
+  const selectableItems = useMemo(() => {
+    return items.filter(item => !isItemAlreadyActivated(item));
+  }, [items, isItemAlreadyActivated]);
+
   // Reset selection when dialog opens/closes
   const handleOpenChange = useCallback((newOpen: boolean) => {
     if (!newOpen) setSelectedIds(new Set());
     onOpenChange(newOpen);
   }, [onOpenChange]);
+
+  // Toggle exclude_from_accounting on a single line item
+  const handleToggleItemExclude = useCallback(async (item: InvoiceLineItem) => {
+    const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+    const newValue = !item.exclude_from_accounting;
+    const { error } = await supabase
+      .from(table)
+      .update({ exclude_from_accounting: newValue })
+      .eq('id', item.id);
+    if (!error) {
+      queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+    }
+  }, [source, invoiceId, queryClient]);
 
   const formatAmount = (amount: number | null) => {
     if (amount === null || amount === undefined) return '-';
@@ -138,15 +193,15 @@ export function InvoiceItemsDialog({
     gross: items.reduce((sum, item) => sum + (getGrossAmount(item) || 0), 0),
   }), [items]);
 
-  // Selection helpers
-  const allSelected = items.length > 0 && selectedIds.size === items.length;
+  // Selection helpers — only count selectable (non-activated) items
+  const allSelected = selectableItems.length > 0 && selectableItems.every(i => selectedIds.has(i.id));
   const someSelected = selectedIds.size > 0;
 
   const toggleAll = () => {
     if (allSelected) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(items.map(i => i.id)));
+      setSelectedIds(new Set(selectableItems.map(i => i.id)));
     }
   };
 
@@ -212,6 +267,7 @@ export function InvoiceItemsDialog({
                         <Checkbox
                           checked={allSelected}
                           onCheckedChange={toggleAll}
+                          disabled={selectableItems.length === 0}
                           aria-label="Összes kijelölése"
                         />
                       </TableHead>
@@ -224,35 +280,62 @@ export function InvoiceItemsDialog({
                       <TableHead className="text-right font-semibold">ÁFA összeg</TableHead>
                       <TableHead className="text-right font-semibold">Bruttó</TableHead>
                       <TableHead className="text-center font-semibold">Főkönyv</TableHead>
+                      <TableHead className="text-center font-semibold w-[70px]">Könyv.</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {items.map((item, index) => (
+                    {items.map((item, index) => {
+                      const alreadyActivated = isItemAlreadyActivated(item);
+                      return (
                       <TableRow 
                         key={item.id}
-                        className={
-                          selectedIds.has(item.id)
+                        className={cn(
+                          'h-12',
+                          alreadyActivated
+                            ? 'bg-success/5 opacity-60'
+                            : selectedIds.has(item.id)
                             ? 'bg-primary/5'
                             : index % 2 === 0 ? 'bg-transparent' : 'bg-muted/10'
-                        }
+                        )}
                       >
                         <TableCell>
-                          <Checkbox
-                            checked={selectedIds.has(item.id)}
-                            onCheckedChange={() => toggleItem(item.id)}
-                            aria-label={`Kijelölés: ${item.line_description || ''}`}
-                          />
+                          {alreadyActivated ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center justify-center">
+                                  <CheckCircle2 className="h-4 w-4 text-success" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="right">
+                                <p>Ez a tétel már aktiválva van a TÉNY-ben</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <Checkbox
+                              checked={selectedIds.has(item.id)}
+                              onCheckedChange={() => toggleItem(item.id)}
+                              aria-label={`Kijelölés: ${item.line_description || ''}`}
+                            />
+                          )}
                         </TableCell>
                         <TableCell className="font-mono text-muted-foreground">
                           {item.line_number}
                         </TableCell>
                         <TableCell>
-                          <div>
-                            <p className="font-medium">{item.line_description || '-'}</p>
-                            {item.product_code && (
-                              <p className="text-xs text-muted-foreground font-mono">
-                                {item.product_code}
-                              </p>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <p className="font-medium">{item.line_description || '-'}</p>
+                              {item.product_code && (
+                                <p className="text-xs text-muted-foreground font-mono">
+                                  {item.product_code}
+                                </p>
+                              )}
+                            </div>
+                            {alreadyActivated && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-success/10 text-success whitespace-nowrap">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Már aktiválva
+                              </span>
                             )}
                           </div>
                         </TableCell>
@@ -296,8 +379,24 @@ export function InvoiceItemsDialog({
                             );
                           })()}
                         </TableCell>
+                        <TableCell className="text-center">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleToggleItemExclude(item); }}
+                            className={cn(
+                              "inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold transition-all border cursor-pointer whitespace-nowrap",
+                              item.exclude_from_accounting
+                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-300/40 hover:bg-amber-500/25"
+                                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-300/30 hover:bg-emerald-500/20"
+                            )}
+                            title={item.exclude_from_accounting ? 'Nem kerül könyvelésre — kattints a visszaállításhoz' : 'Könyvelésre kerül — kattints a kizáráshoz'}
+                          >
+                            {item.exclude_from_accounting ? 'Nem' : 'Igen'}
+                          </button>
+                        </TableCell>
                       </TableRow>
-                    ))}
+                    );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -307,17 +406,15 @@ export function InvoiceItemsDialog({
           {items.length > 0 && (
             <div className="border-t border-border/50 pt-5 mt-4">
               <div className="flex justify-between items-end">
-                {/* Activation button */}
+                {/* Activation button — always rendered to prevent layout shift */}
                 <div>
-                  {someSelected && (
-                    <Button
-                      className="gap-2"
-                      onClick={() => setActivationDialogOpen(true)}
-                    >
-                      <Package2 className="h-4 w-4" />
-                      Aktiválás ({selectedIds.size} tétel)
-                    </Button>
-                  )}
+                  <Button
+                    className={cn("gap-2", !someSelected && "invisible pointer-events-none")}
+                    onClick={() => setActivationDialogOpen(true)}
+                  >
+                    <Package2 className="h-4 w-4" />
+                    Aktiválás ({selectedIds.size || 0} tétel)
+                  </Button>
                 </div>
 
                 {/* Totals */}
@@ -360,6 +457,8 @@ export function InvoiceItemsDialog({
         }}
         onSuccess={() => {
           setSelectedIds(new Set());
+          // Refetch to update the "already activated" badges
+          queryClient.invalidateQueries({ queryKey: ['fixedAssetsForInvoice', invoiceId, source] });
         }}
       />
     </>

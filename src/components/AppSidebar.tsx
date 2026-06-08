@@ -5,11 +5,20 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useScopedBasePath, extractPageSegment } from "@/lib/navigation";
+import { cn } from "@/lib/utils";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -36,7 +45,7 @@ import {
   LogOut, 
   FolderKanban,
   Plug,
-  // CreditCard,
+
   Tags,
   TrendingUp,
   Wallet,
@@ -55,7 +64,9 @@ import {
   FileSpreadsheet,
   ChevronRight,
   Wrench,
+  TicketCheck,
 } from "lucide-react";
+import { useUnreadTicketCount } from "@/hooks/useTickets";
 import CompanySelector from "./CompanySelector";
 
 interface NavItem {
@@ -113,7 +124,6 @@ const navigationGroups: NavGroup[] = [
     label: 'HR & Eszközök',
     icon: Users,
     items: [
-      { title: "Feltöltés", url: "/upload", icon: Upload, tourId: "upload" },
       { title: "Bérek/járulékok", url: "/salaries", icon: Wallet, tourId: "salaries" },
       { title: "Munkaidő", url: "/working-time", icon: Clock, tourId: "working-time", employeeVisible: true },
       { title: "TENY", url: "/teny", icon: Package2, tourId: "teny" },
@@ -126,7 +136,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { title: "Integrációk", url: "/integrations", icon: Plug, tourId: "integrations" },
       { title: "Árfolyamok", url: "/exchange-rates", icon: TrendingUp, tourId: "exchange-rates" },
-      // { title: "Előfizetés", url: "/pricing", icon: CreditCard, tourId: "subscription" },
+
     ],
   },
 ];
@@ -156,7 +166,8 @@ const prefetchMap: Record<string, () => Promise<unknown>> = {
   "/teny": () => import("@/pages/FixedAssetsPage"),
   "/integrations": () => import("@/pages/Integrations"),
   "/exchange-rates": () => import("@/pages/ExchangeRates"),
-  // "/pricing": () => import("@/pages/Pricing"),
+
+  "/tickets": () => import("@/pages/TicketsPage"),
 };
 
 const STORAGE_KEY = "visibill:sidebar-groups";
@@ -187,6 +198,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
   const { selectedCompany } = useCompany();
   const { theme, setTheme } = useTheme();
   const { isEmployee } = useUserRole();
+  const { data: unreadTicketCount = 0 } = useUnreadTicketCount();
 
   const currentPath = location.pathname;
   const basePath = useScopedBasePath();
@@ -289,7 +301,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="print:hidden">
-      <SidebarContent className="select-none">
+      <SidebarContent className="select-none flex flex-col h-full overflow-hidden">
         {/* Header */}
         <div className={`p-4 border-b border-border ${isCollapsed ? 'flex justify-center' : ''}`}>
           {!isCollapsed ? (
@@ -327,45 +339,164 @@ export const AppSidebar = React.memo(function AppSidebar() {
           </div>
         )}
 
-        {/* Navigation — Collapsible Groups */}
-        <SidebarGroup>
+        {/* Navigation — Collapsible Groups — scrollable */}
+        <SidebarGroup className="flex-1 overflow-y-auto min-h-0">
           <SidebarGroupContent>
             {isCollapsed ? (
-              /* ── Collapsed mode: flat icon-only list ── */
-              <SidebarMenu className="select-none">
-                {visibleGroups.flatMap(group =>
-                  group.items.map(item => {
-                    const isDisabled = hasNoCompany;
-                    const active = isActive(item.url);
-                    return (
-                      <SidebarMenuItem key={item.title} data-tour={item.tourId}>
-                        <SidebarMenuButton
-                          asChild={!isDisabled}
-                          isActive={active}
-                          tooltip={item.title}
-                          className={isDisabled ? 'grayscale opacity-50 cursor-not-allowed' : ''}
-                        >
-                          {isDisabled ? (
-                            <div className="flex items-center gap-2 w-full">
-                              <item.icon className="h-4 w-4 shrink-0" />
-                              <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+              /* ── Collapsed mode: Category menu groups with side-flyout dropdowns ── */
+              <SidebarMenu className="select-none flex flex-col gap-2">
+                {visibleGroups.map(group => {
+                  const isDisabled = hasNoCompany;
+                  const active = group.items.some(item => isActive(item.url));
+                  
+                  return (
+                    <SidebarMenuItem key={group.key}>
+                      <DropdownMenu>
+                        <Tooltip delayDuration={0}>
+                          <TooltipTrigger asChild>
+                            <DropdownMenuTrigger asChild>
+                              <SidebarMenuButton
+                                isActive={active}
+                                disabled={isDisabled}
+                                className={cn(
+                                  "w-8 h-8 p-0 flex items-center justify-center rounded-md transition-all duration-200",
+                                  isDisabled 
+                                    ? 'grayscale opacity-50 cursor-not-allowed' 
+                                    : 'hover:bg-primary/10 hover:text-primary data-[state=open]:bg-primary/10 data-[state=open]:text-primary'
+                                )}
+                              >
+                                <group.icon className="h-4 w-4 shrink-0" />
+                                <span className="sr-only">{group.label}</span>
+                              </SidebarMenuButton>
+                            </DropdownMenuTrigger>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" align="center" className="text-xs">
+                            {group.label}
+                          </TooltipContent>
+                        </Tooltip>
+
+                        {!isDisabled && (
+                          <DropdownMenuContent
+                            side="right"
+                            align="start"
+                            sideOffset={8}
+                            className="w-48 bg-popover/95 backdrop-blur-md border border-border/60 shadow-lg shadow-primary/5 select-none p-1.5 animate-in slide-in-from-left-1 fade-in-50 duration-200"
+                          >
+                            <DropdownMenuLabel className="px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+                              {group.label}
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator className="my-1 bg-border/40" />
+                            <div className="flex flex-col gap-0.5">
+                              {group.items.map(item => {
+                                const itemActive = isActive(item.url);
+                                return (
+                                  <DropdownMenuItem
+                                    key={item.title}
+                                    asChild
+                                    className={cn(
+                                      "flex items-center gap-2.5 w-full cursor-pointer select-none py-2 px-2.5 rounded-md text-sm transition-colors",
+                                      itemActive
+                                        ? "bg-primary/15 text-primary font-medium focus:bg-primary/20 focus:text-primary"
+                                        : "text-sidebar-foreground hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary"
+                                    )}
+                                  >
+                                    <Link
+                                      to={item.to}
+                                      onMouseEnter={() => handlePrefetch(item.url)}
+                                      onFocus={() => handlePrefetch(item.url)}
+                                      onTouchStart={() => handlePrefetch(item.url)}
+                                    >
+                                      <item.icon className="h-4 w-4 shrink-0" />
+                                      <span>{item.title}</span>
+                                    </Link>
+                                  </DropdownMenuItem>
+                                );
+                              })}
                             </div>
+                          </DropdownMenuContent>
+                        )}
+                      </DropdownMenu>
+                    </SidebarMenuItem>
+                  );
+                })}
+                {/* Standalone Feltöltés as the very last menu item in collapsed mode */}
+                {!isEmployee && (
+                  <SidebarMenuItem key="upload" data-tour="upload">
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <SidebarMenuButton
+                          isActive={isActive("/upload")}
+                          disabled={hasNoCompany}
+                          asChild={!hasNoCompany}
+                          className={cn(
+                            "w-8 h-8 p-0 flex items-center justify-center rounded-md transition-all duration-200",
+                            hasNoCompany 
+                              ? 'grayscale opacity-50 cursor-not-allowed' 
+                              : 'hover:bg-primary/10 hover:text-primary'
+                          )}
+                        >
+                          {hasNoCompany ? (
+                            <Upload className="h-4 w-4 shrink-0" />
                           ) : (
                             <Link
-                              to={item.to}
-                              onMouseEnter={() => handlePrefetch(item.url)}
-                              onFocus={() => handlePrefetch(item.url)}
-                              onTouchStart={() => handlePrefetch(item.url)}
-                              className="flex items-center gap-2 w-full"
+                              to={`${basePath}/upload`}
+                              onMouseEnter={() => handlePrefetch("/upload")}
+                              onFocus={() => handlePrefetch("/upload")}
+                              onTouchStart={() => handlePrefetch("/upload")}
+                              className="flex items-center justify-center w-full h-full"
                             >
-                              <item.icon className="h-4 w-4 shrink-0" />
-                              <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                              <Upload className="h-4 w-4 shrink-0" />
                             </Link>
                           )}
                         </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })
+                      </TooltipTrigger>
+                      <TooltipContent side="right" align="center" className="text-xs">
+                        Feltöltés
+                      </TooltipContent>
+                    </Tooltip>
+                  </SidebarMenuItem>
+                )}
+                {/* Standalone Hibajegyek in collapsed mode */}
+                {!isEmployee && (
+                  <SidebarMenuItem key="tickets" data-tour="tickets">
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <SidebarMenuButton
+                          isActive={isActive("/tickets")}
+                          disabled={hasNoCompany}
+                          asChild={!hasNoCompany}
+                          className={cn(
+                            "w-8 h-8 p-0 flex items-center justify-center rounded-md transition-all duration-200 relative",
+                            hasNoCompany 
+                              ? 'grayscale opacity-50 cursor-not-allowed' 
+                              : 'hover:bg-primary/10 hover:text-primary'
+                          )}
+                        >
+                          {hasNoCompany ? (
+                            <TicketCheck className="h-4 w-4 shrink-0" />
+                          ) : (
+                            <Link
+                              to={`${basePath}/tickets`}
+                              onMouseEnter={() => handlePrefetch("/tickets")}
+                              onFocus={() => handlePrefetch("/tickets")}
+                              onTouchStart={() => handlePrefetch("/tickets")}
+                              className="flex items-center justify-center w-full h-full"
+                            >
+                              <TicketCheck className="h-4 w-4 shrink-0" />
+                              {unreadTicketCount > 0 && (
+                                <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 flex items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                                  {unreadTicketCount > 9 ? '9+' : unreadTicketCount}
+                                </span>
+                              )}
+                            </Link>
+                          )}
+                        </SidebarMenuButton>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" align="center" className="text-xs">
+                        Hibajegyek{unreadTicketCount > 0 ? ` (${unreadTicketCount})` : ''}
+                      </TooltipContent>
+                    </Tooltip>
+                  </SidebarMenuItem>
                 )}
               </SidebarMenu>
             ) : (
@@ -374,7 +505,8 @@ export const AppSidebar = React.memo(function AppSidebar() {
                 {visibleGroups.map(group => {
                   const isOpen = openGroups.has(group.key);
                   const groupHasActive = group.items.some(item => isActive(item.url));
-
+                  const isDisabled = hasNoCompany;
+                  
                   return (
                     <Collapsible
                       key={group.key}
@@ -382,19 +514,31 @@ export const AppSidebar = React.memo(function AppSidebar() {
                       onOpenChange={() => toggleGroup(group.key)}
                     >
                       {/* Group header trigger */}
-                      <CollapsibleTrigger className="relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary transition-colors select-none group/trigger">
-                        <group.icon className="h-4 w-4 shrink-0 text-muted-foreground group-hover/trigger:text-primary transition-colors" />
+                      <CollapsibleTrigger className={cn(
+                        "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
+                        !isOpen && groupHasActive
+                          ? "bg-primary/8 text-primary font-semibold"
+                          : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
+                      )}>
+                        <group.icon className={cn(
+                          "h-4 w-4 shrink-0 transition-colors",
+                          !isOpen && groupHasActive
+                            ? "text-primary"
+                            : "text-muted-foreground group-hover/trigger:text-primary"
+                        )} />
                         <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
                           {group.label}
                         </span>
                         <ChevronRight
-                          className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${
-                            isOpen ? 'rotate-90' : ''
-                          }`}
+                          className={cn(
+                            "h-3.5 w-3.5 transition-transform duration-200",
+                            isOpen ? 'rotate-90' : '',
+                            !isOpen && groupHasActive ? 'text-primary' : 'text-muted-foreground'
+                          )}
                         />
-                        {/* Active indicator line when group is collapsed but contains active page */}
+                        {/* Option 2: Active left vertical accent line when group is collapsed but contains active page */}
                         {!isOpen && groupHasActive && (
-                          <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-primary/60" />
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />
                         )}
                       </CollapsibleTrigger>
 
@@ -402,7 +546,6 @@ export const AppSidebar = React.memo(function AppSidebar() {
                       <CollapsibleContent className="nav-collapsible-content pb-1.5">
                         <SidebarMenu className="mt-0.5 select-none">
                           {group.items.map(item => {
-                            const isDisabled = hasNoCompany;
                             const active = isActive(item.url);
 
                             return (
@@ -439,13 +582,98 @@ export const AppSidebar = React.memo(function AppSidebar() {
                     </Collapsible>
                   );
                 })}
+                {/* Standalone Feltöltés as the very last menu item in expanded mode */}
+                {!isEmployee && (
+                  hasNoCompany ? (
+                    <div
+                      key="upload"
+                      className="relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none grayscale opacity-50 cursor-not-allowed"
+                    >
+                      <Upload className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
+                        Feltöltés
+                      </span>
+                    </div>
+                  ) : (
+                    <Link
+                      key="upload"
+                      to={`${basePath}/upload`}
+                      onMouseEnter={() => handlePrefetch("/upload")}
+                      onFocus={() => handlePrefetch("/upload")}
+                      onTouchStart={() => handlePrefetch("/upload")}
+                      className={cn(
+                        "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
+                        isActive("/upload")
+                          ? "bg-primary/8 text-primary font-semibold"
+                          : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
+                      )}
+                    >
+                      <Upload className={cn(
+                        "h-4 w-4 shrink-0 transition-colors",
+                        isActive("/upload") ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary"
+                      )} />
+                      <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
+                        Feltöltés
+                      </span>
+                      {/* Option 2 style active bar for standalone */}
+                      {isActive("/upload") && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />
+                      )}
+                    </Link>
+                  )
+                )}
+                {/* Standalone Hibajegyek in expanded mode */}
+                {!isEmployee && (
+                  hasNoCompany ? (
+                    <div
+                      key="tickets"
+                      className="relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none grayscale opacity-50 cursor-not-allowed"
+                    >
+                      <TicketCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
+                        Hibajegyek
+                      </span>
+                    </div>
+                  ) : (
+                    <Link
+                      key="tickets"
+                      to={`${basePath}/tickets`}
+                      onMouseEnter={() => handlePrefetch("/tickets")}
+                      onFocus={() => handlePrefetch("/tickets")}
+                      onTouchStart={() => handlePrefetch("/tickets")}
+                      className={cn(
+                        "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
+                        isActive("/tickets")
+                          ? "bg-primary/8 text-primary font-semibold"
+                          : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
+                      )}
+                    >
+                      <TicketCheck className={cn(
+                        "h-4 w-4 shrink-0 transition-colors",
+                        isActive("/tickets") ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary"
+                      )} />
+                      <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">
+                        Hibajegyek
+                      </span>
+                      {unreadTicketCount > 0 && (
+                        <span className="h-5 min-w-5 px-1 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                          {unreadTicketCount > 9 ? '9+' : unreadTicketCount}
+                        </span>
+                      )}
+                      {/* Active bar */}
+                      {isActive("/tickets") && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />
+                      )}
+                    </Link>
+                  )
+                )}
               </div>
             )}
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* User Section */}
-        <div className="mt-auto border-t border-border">
+        {/* User Section — pinned to bottom */}
+        <div className="shrink-0 border-t border-border">
           {!isCollapsed ? (
             <div className="p-4 space-y-3">
               <div className="flex items-center gap-3">

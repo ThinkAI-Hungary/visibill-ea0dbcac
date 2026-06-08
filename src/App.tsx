@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { SubscriptionProvider } from "./contexts/SubscriptionContext";
+
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { CompanyProvider, useCompany } from "./contexts/CompanyContext";
 import { DateRangeProvider, useDateRange } from "./contexts/DateRangeContext";
@@ -28,7 +28,7 @@ const InvoicesPage = lazy(() => import("./pages/InvoicesPage"));
 const Integrations = lazy(() => import("./pages/Integrations"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Projects = lazy(() => import("./pages/Projects"));
-const Pricing = lazy(() => import("./pages/Pricing"));
+
 const ExchangeRates = lazy(() => import("./pages/ExchangeRates"));
 const SalariesPage = lazy(() => import("./pages/SalariesPage"));
 const Analytics = lazy(() => import("./pages/Analytics"));
@@ -71,6 +71,7 @@ const PayrollTaxParametersPage = lazy(() => import("./pages/Accounty/TaxParamete
 const PayrollFilingsPage = lazy(() => import("./pages/Accounty/FilingsPage"));
 const PayrollReportsPage = lazy(() => import("./pages/Accounty/PayrollReportsPage"));
 const VatReturnPage = lazy(() => import("./pages/VatReturnPage"));
+const TicketsPage = lazy(() => import("./pages/TicketsPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -206,7 +207,7 @@ const App = () => (
       <AuthProvider>
         <CompanyProvider>
           <DateRangeProvider>
-            <SubscriptionProvider>
+
               <TooltipProvider>
 
                 <Toaster />
@@ -263,6 +264,7 @@ const App = () => (
                       <Route path="tax-calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaxCalendarPage /></Suspense>} />
                       <Route path="settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><SettingsPage /></Suspense>} />
                       <Route path="help" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><HelpPage /></Suspense>} />
+                      <Route path="tickets/:ticketId?" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TicketsPage /></Suspense>} />
                       <Route path="approval-queue" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ApprovalQueuePage /></Suspense>} />
                       <Route path="payroll/:id" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollDashboardPage /></Suspense>} />
                       <Route path="payroll/:id/employees" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollEmployeesPage /></Suspense>} />
@@ -284,12 +286,16 @@ const App = () => (
                         <ProtectedPage><Onboarding /></ProtectedPage>
                       } />
 
+                      {/* Standalone tickets route — context-free, directly linkable */}
+                      <Route path="/tickets/:ticketId?" element={<ProtectedPage><TicketsPage /></ProtectedPage>} />
+
                       {/* ═══ Scoped Routes — /:companyId/:dateRange/* ═══ */}
                       <Route path="/:companyId/:dateRange" element={<ScopedLayout />}>
                         <Route index element={<ProtectedPage><Index /></ProtectedPage>} />
                         <Route path="categories" element={<ProtectedPage><Onboarding /></ProtectedPage>} />
                         <Route path="invoices/:tab?" element={<ProtectedPage><InvoicesPage /></ProtectedPage>} />
                         <Route path="upload/:tab?" element={<ProtectedPage><ManualUpload /></ProtectedPage>} />
+                        <Route path="tickets/:ticketId?" element={<ProtectedPage><TicketsPage /></ProtectedPage>} />
                         <Route path="integrations" element={<ProtectedPage><Integrations /></ProtectedPage>} />
                         <Route path="settings/:tab?" element={<ProtectedPage><Settings /></ProtectedPage>} />
                         <Route path="projects" element={<ProtectedPage><Projects /></ProtectedPage>} />
@@ -303,7 +309,7 @@ const App = () => (
                         <Route path="kintlevo/:tab?" element={<ProtectedPage><KintlevoPage /></ProtectedPage>} />
                         <Route path="petty-cash/:tab?" element={<ProtectedPage><PettyCashPage /></ProtectedPage>} />
                         <Route path="teny/:tab?" element={<ProtectedPage><FixedAssetsPage /></ProtectedPage>} />
-                        <Route path="pricing" element={<ProtectedPage><Pricing /></ProtectedPage>} />
+
                         <Route path="exchange-rates" element={<ProtectedPage><ExchangeRates /></ProtectedPage>} />
                         <Route path="salaries/:tab?" element={<ProtectedPage><SalariesPage /></ProtectedPage>} />
                         <Route path="working-time/:tab?" element={<ProtectedPage><WorkingTimePage /></ProtectedPage>} />
@@ -324,11 +330,12 @@ const App = () => (
                       <Route path="/kintlevo" element={<LegacyRedirect page="kintlevo" />} />
                       <Route path="/petty-cash" element={<LegacyRedirect page="petty-cash" />} />
                       <Route path="/teny" element={<LegacyRedirect page="teny" />} />
-                      <Route path="/pricing" element={<LegacyRedirect page="pricing" />} />
+
                       <Route path="/exchange-rates" element={<LegacyRedirect page="exchange-rates" />} />
                       <Route path="/salaries" element={<LegacyRedirect page="salaries" />} />
                       <Route path="/working-time" element={<LegacyRedirect page="working-time" />} />
                       <Route path="/analytics" element={<LegacyRedirect page="analytics" />} />
+                      <Route path="/tickets" element={<LegacyRedirect page="tickets" />} />
                       <Route path="/onboarding" element={<LegacyRedirect page="categories" />} />
 
                       {/* Root → scoped dashboard */}
@@ -339,7 +346,7 @@ const App = () => (
                   </Routes>
                 </BrowserRouter>
               </TooltipProvider>
-            </SubscriptionProvider>
+
           </DateRangeProvider>
         </CompanyProvider>
       </AuthProvider>

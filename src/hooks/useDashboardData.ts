@@ -617,28 +617,58 @@ export function useDashboardData() {
     return result;
   }, [rawInvoices, rawSalaries, exchangeRates]);
 
-  // ── Category breakdown ──
-  const categoryBreakdownData = useMemo(() => {
-    if (!categories.length || !invoices.length) return [];
+  // ── Project breakdown (server-side) ──
+  const { data: categoryBreakdownData = [] } = useQuery({
+    queryKey: ['projectBreakdown', companyId, dateFromFormatted, dateToFormatted],
+    queryFn: async () => {
+      // Fetch projects for this company
+      const { data: projectRows, error: projErr } = await supabase
+        .from('projects')
+        .select('id, name, description')
+        .eq('company_id', companyId);
+      if (projErr) throw projErr;
+      if (!projectRows?.length) return [];
 
-    const allTotal = metrics?.totalAmountByCurrency ? Object.values(metrics.totalAmountByCurrency).reduce((sum, val) => sum + val, 0) : 0;
+      // Fetch nav_invoices with project_id in the date range
+      const { data: navRows, error: navErr } = await supabase
+        .from('nav_invoices')
+        .select('project_id, invoice_gross_amount')
+        .eq('company_id', companyId)
+        .gte('invoice_issue_date', dateFromFormatted)
+        .lte('invoice_issue_date', dateToFormatted)
+        .not('project_id', 'is', null);
+      if (navErr) throw navErr;
 
-    return categories.map(category => {
-      const categoryInvoices = invoices.filter(invoice => invoice.category_id === category.id && !(invoice as any).reference_number);
-      const totalAmount = categoryInvoices.reduce((sum, invoice) => sum + invoice.brutto_vegosszeg, 0);
+      // Aggregate by project
+      const projectMap = new Map<string, { count: number; total: number }>();
+      (navRows || []).forEach((row: any) => {
+        const existing = projectMap.get(row.project_id) || { count: 0, total: 0 };
+        existing.count += 1;
+        existing.total += Number(row.invoice_gross_amount || 0);
+        projectMap.set(row.project_id, existing);
+      });
 
-      return {
-        id: category.id,
-        name: category.name,
-        description: category.description,
-        invoice_count: categoryInvoices.length,
-        total_amount: totalAmount,
-        avg_amount: categoryInvoices.length > 0 ? totalAmount / categoryInvoices.length : 0,
-        percentage: allTotal > 0 ? (totalAmount / allTotal) * 100 : 0
-      };
-    }).filter(category => category.invoice_count > 0)
-      .sort((a, b) => b.total_amount - a.total_amount);
-  }, [categories, invoices, metrics]);
+      const allTotal = Array.from(projectMap.values()).reduce((s, v) => s + v.total, 0);
+
+      return projectRows
+        .filter(p => projectMap.has(p.id))
+        .map(p => {
+          const agg = projectMap.get(p.id)!;
+          return {
+            id: p.id,
+            name: p.name,
+            description: p.description || '',
+            invoice_count: agg.count,
+            total_amount: agg.total,
+            avg_amount: agg.count > 0 ? agg.total / agg.count : 0,
+            percentage: allTotal > 0 ? (agg.total / allTotal) * 100 : 0,
+          };
+        })
+        .sort((a, b) => b.total_amount - a.total_amount);
+    },
+    enabled: !!user && !!companyId,
+    placeholderData: keepPreviousData,
+  });
 
   return {
     // Auth & company

@@ -196,7 +196,7 @@ All colors MUST be HSL.
 
     /* Border: #23252a Graphite (hairline) */
     --border: 225 9% 15%;
-    --input: 210 5% 24%;
+    --input: 220 6% 26%;
     --ring: 170 82% 45%;
 
     /* Semantic status — dark mode */
@@ -440,7 +440,7 @@ All colors MUST be HSL.
   .dark select:-webkit-autofill:hover,
   .dark select:-webkit-autofill:focus,
   .dark select:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px hsl(222 37% 10%) inset !important;
+    -webkit-box-shadow: 0 0 0 1000px hsl(var(--background)) inset !important;
     -webkit-text-fill-color: hsl(var(--foreground)) !important;
     color: hsl(var(--foreground)) !important;
     background-color: transparent !important;
@@ -546,7 +546,8 @@ All colors MUST be HSL.
 /* Compact Table Styling - strict fixed heights for layout stability */
 @layer components {
   .compact-table {
-    @apply text-sm;
+    @apply text-sm w-full;
+    table-layout: fixed;
   }
 
   .compact-table th {

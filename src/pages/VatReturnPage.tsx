@@ -337,6 +337,181 @@ function VatCodeDialog({ open, onOpenChange, code, formRows, onSave, saving }: {
 interface ReturnLine { row_number: string; base_amount: number; tax_amount: number; base_amount_rounded: number; tax_amount_rounded: number; is_calculated: boolean; source_vat_codes: string[] | null; }
 interface MLine { id: string; partner_name: string; partner_tax_number: string; invoice_count: number; base_amount_rounded: number; tax_amount_rounded: number; tax_5_amount: number; tax_18_amount: number; tax_27_amount: number; invoice_details: any[]; }
 
+/** Drill-down: shows which invoices/items make up a given VAT return row */
+function VatRowDrillDown({ sourceVatCodes, companyId, year, month, frequency }: {
+  sourceVatCodes: string[];
+  companyId: string;
+  year: number;
+  month: number;
+  frequency: 'H' | 'N';
+}) {
+  const [expandedInv, setExpandedInv] = useState<string | null>(null);
+
+  // Compute date range same as RPC
+  const dateFrom = useMemo(() => {
+    if (frequency === 'H') return `${year}-${String(month).padStart(2,'0')}-01`;
+    const startMonth = (month - 1) * 3 + 1;
+    return `${year}-${String(startMonth).padStart(2,'0')}-01`;
+  }, [year, month, frequency]);
+
+  const dateTo = useMemo(() => {
+    const d = new Date(dateFrom);
+    if (frequency === 'H') { d.setMonth(d.getMonth() + 1); d.setDate(0); }
+    else { d.setMonth(d.getMonth() + 3); d.setDate(0); }
+    return d.toISOString().split('T')[0];
+  }, [dateFrom, frequency]);
+
+  // Fetch VAT codes config to know which direction/rate to query
+  const { data: vatCodes = [] } = useQuery({
+    queryKey: ['vat_codes', companyId],
+    queryFn: async () => {
+      const { data } = await supabase.from('vat_codes' as any).select('*').eq('company_id', companyId);
+      return (data || []) as unknown as VatCode[];
+    },
+    staleTime: 60_000,
+  });
+
+  // Filter to matching VAT codes
+  const matchingCodes = useMemo(() =>
+    vatCodes.filter(c => sourceVatCodes.includes(c.code)),
+  [vatCodes, sourceVatCodes]);
+
+  // Query invoices matching these VAT codes in the period
+  const { data: invoices = [], isLoading } = useQuery({
+    queryKey: ['vat_row_drill', companyId, dateFrom, dateTo, sourceVatCodes.join(',')],
+    queryFn: async () => {
+      if (matchingCodes.length === 0) return [];
+
+      // Get unique directions and rates
+      const directions = [...new Set(matchingCodes.map(c => c.direction))];
+      const vatPercents = [...new Set(matchingCodes.map(c => c.vat_percent))];
+
+      // Build vat_rate filter values
+      const rateFilters: string[] = [];
+      for (const pct of vatPercents) {
+        if (pct === 27) rateFilters.push('0.27', '27', '27.0', '27.00');
+        else if (pct === 18) rateFilters.push('0.18', '18', '18.0', '18.00');
+        else if (pct === 5) rateFilters.push('0.05', '5', '5.0', '5.00');
+        else if (pct === 0) rateFilters.push('0', '0.0', '0.00', 'TAM', 'AAM', 'DOMESTIC_REVERSE_CHARGE');
+      }
+
+      // Query nav_invoices with their items
+      let query = supabase
+        .from('nav_invoices' as any)
+        .select(`
+          id, invoice_number, supplier_name, customer_name, invoice_direction,
+          invoice_delivery_date, currency,
+          nav_invoice_items!inner(id, line_number, line_description, net_amount, vat_amount, vat_rate, quantity, unit_price)
+        `)
+        .eq('company_id', companyId)
+        .gte('invoice_delivery_date', dateFrom)
+        .lte('invoice_delivery_date', dateTo)
+        .in('invoice_direction', directions)
+        .in('nav_invoice_items.vat_rate', rateFilters)
+        .order('invoice_delivery_date', { ascending: true });
+
+      const { data, error } = await query;
+      if (error) { console.error('drill error:', error); return []; }
+      return (data || []) as any[];
+    },
+    enabled: matchingCodes.length > 0,
+    staleTime: 30_000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 px-6 py-3 text-xs text-muted-foreground">
+        <Loader2 className="w-3 h-3 animate-spin" /> Számlák betöltése...
+      </div>
+    );
+  }
+
+  if (invoices.length === 0) {
+    return (
+      <div className="px-6 py-3 text-xs text-muted-foreground italic">
+        Nincs számla ehhez a sorhoz a kiválasztott időszakban.
+      </div>
+    );
+  }
+
+  const fmtHuf = (v: number) => `${Math.round(v).toLocaleString('hu-HU')} Ft`;
+
+  return (
+    <div className="bg-muted/15 border-t border-b border-border/30 animate-in fade-in slide-in-from-top-1 duration-200">
+      {/* header */}
+      <div className="grid grid-cols-12 gap-2 px-6 py-1.5 text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider bg-muted/10 border-b border-border/10">
+        <div className="col-span-3">Számla</div>
+        <div className="col-span-3">Partner</div>
+        <div className="col-span-2 text-center">Teljesítés</div>
+        <div className="col-span-2 text-right">Nettó</div>
+        <div className="col-span-2 text-right">ÁFA</div>
+      </div>
+      {invoices.map((inv: any) => {
+        const items = inv.nav_invoice_items || [];
+        const isInbound = inv.invoice_direction === 'INBOUND';
+        const partner = isInbound ? inv.supplier_name : inv.customer_name;
+        const totalNet = items.reduce((s: number, i: any) => s + (Number(i.net_amount) || 0), 0);
+        const totalVat = items.reduce((s: number, i: any) => s + (Number(i.vat_amount) || 0), 0);
+        const isExpanded = expandedInv === inv.id;
+
+        return (
+          <React.Fragment key={inv.id}>
+            <div
+              className={cn(
+                "grid grid-cols-12 gap-2 px-6 py-1.5 text-[11px] items-center cursor-pointer transition-colors",
+                isExpanded ? "bg-primary/5" : "hover:bg-muted/20"
+              )}
+              onClick={() => setExpandedInv(isExpanded ? null : inv.id)}
+            >
+              <div className="col-span-3 flex items-center gap-1.5">
+                {isExpanded ? <ChevronDown className="w-3 h-3 shrink-0 text-primary" /> : <ChevronRight className="w-3 h-3 shrink-0 text-muted-foreground" />}
+                <span className="font-mono font-medium truncate">{inv.invoice_number}</span>
+              </div>
+              <div className="col-span-3 truncate text-muted-foreground">{partner || '—'}</div>
+              <div className="col-span-2 text-center tabular-nums text-muted-foreground">
+                {inv.invoice_delivery_date ? new Date(inv.invoice_delivery_date).toLocaleDateString('hu-HU') : '—'}
+              </div>
+              <div className="col-span-2 text-right tabular-nums">{fmtHuf(totalNet)}</div>
+              <div className="col-span-2 text-right tabular-nums font-medium">{fmtHuf(totalVat)}</div>
+            </div>
+            {isExpanded && items.length > 0 && (
+              <div className="bg-background/50 border border-border/20 rounded mx-6 mb-1.5 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className="grid grid-cols-12 gap-2 px-3 py-1 text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-wider bg-muted/10 border-b border-border/10">
+                  <div className="col-span-4">Megnevezés</div>
+                  <div className="col-span-2 text-right">Mennyiség</div>
+                  <div className="col-span-2 text-right">Egységár</div>
+                  <div className="col-span-2 text-right">Nettó</div>
+                  <div className="col-span-2 text-right">ÁFA</div>
+                </div>
+                {items.map((item: any, j: number) => (
+                  <div key={j} className="grid grid-cols-12 gap-2 px-3 py-0.5 text-[10px] text-muted-foreground hover:bg-muted/15 transition-colors">
+                    <div className="col-span-4 truncate" title={item.line_description}>{item.line_description || '—'}</div>
+                    <div className="col-span-2 text-right tabular-nums">{item.quantity != null ? Number(item.quantity).toLocaleString('hu-HU') : '—'}</div>
+                    <div className="col-span-2 text-right tabular-nums">{item.unit_price != null ? Number(item.unit_price).toLocaleString('hu-HU') : '—'}</div>
+                    <div className="col-span-2 text-right tabular-nums">{fmtHuf(Number(item.net_amount || 0))}</div>
+                    <div className="col-span-2 text-right tabular-nums">{fmtHuf(Number(item.vat_amount || 0))}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </React.Fragment>
+        );
+      })}
+      {/* totals */}
+      <div className="grid grid-cols-12 gap-2 px-6 py-1.5 text-[11px] font-semibold border-t border-border/30 bg-muted/10">
+        <div className="col-span-6 text-muted-foreground">Összesen ({invoices.length} számla)</div>
+        <div className="col-span-2" />
+        <div className="col-span-2 text-right tabular-nums">
+          {fmtHuf(invoices.reduce((s: number, inv: any) => s + (inv.nav_invoice_items || []).reduce((is: number, i: any) => is + (Number(i.net_amount) || 0), 0), 0))}
+        </div>
+        <div className="col-span-2 text-right tabular-nums">
+          {fmtHuf(invoices.reduce((s: number, inv: any) => s + (inv.nav_invoice_items || []).reduce((is: number, i: any) => is + (Number(i.vat_amount) || 0), 0), 0))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const MONTHS = ['Január','Február','Március','Április','Május','Június','Július','Augusztus','Szeptember','Október','November','December'];
 const fmtEft = (v: number | null | undefined) => (v === null || v === undefined) ? '—' : `${v.toLocaleString('hu-HU')} eFt`;
 
@@ -408,6 +583,7 @@ function VatReturnViewTab() {
   const [frequency, setFrequency] = useState<'H' | 'N'>('H'); // H=havi, N=negyedéves
   const [expandedPartners, setExpandedPartners] = useState<Set<string>>(new Set());
   const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null);
+  const [expandedFormRow, setExpandedFormRow] = useState<string | null>(null);
   const togglePartner = (id: string) => setExpandedPartners(prev => {
     const next = new Set(prev);
     if (next.has(id)) { next.delete(id); } else { next.add(id); }
@@ -995,16 +1171,30 @@ function VatReturnViewTab() {
                       const curTax = line?.tax_amount_rounded ?? 0;
                       const prevTax = prevLine?.tax_amount_rounded ?? 0;
                       const delta = curTax - prevTax;
+                      const hasDrillData = !!line && !isSummary && !line.is_calculated && line.source_vat_codes && line.source_vat_codes.length > 0;
+                      const isDrillExpanded = expandedFormRow === row.row_number;
                       return (
+                        <React.Fragment key={row.row_number}>
                         <div
-                          key={row.row_number}
                           className={cn(
                             "grid grid-cols-12 gap-2 px-4 py-1.5 text-sm items-center",
                             isSummary ? "bg-primary/5 font-semibold border-t-2 border-primary/20" : "hover:bg-muted/20",
-                            !line && !isEditable && "opacity-40"
+                            !line && !isEditable && "opacity-40",
+                            hasDrillData && "cursor-pointer",
+                            isDrillExpanded && "bg-primary/5 border-l-2 border-l-primary"
                           )}
+                          onClick={() => {
+                            if (hasDrillData) setExpandedFormRow(isDrillExpanded ? null : row.row_number);
+                          }}
                         >
-                          <div className="col-span-1 font-mono text-xs text-muted-foreground">{row.row_number}.</div>
+                          <div className="col-span-1 font-mono text-xs text-muted-foreground flex items-center gap-1">
+                            {hasDrillData && (
+                              isDrillExpanded
+                                ? <ChevronDown className="w-3 h-3 text-primary" />
+                                : <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
+                            )}
+                            {row.row_number}.
+                          </div>
                           <div className={cn("text-xs leading-snug truncate", hasPrevData ? "col-span-3" : "col-span-7")} title={row.label}>{row.label}</div>
                           <div className="col-span-2 text-right tabular-nums text-xs">
                             {isEditable && row.has_base && !isSummary ? (
@@ -1014,6 +1204,7 @@ function VatReturnViewTab() {
                                 placeholder="0"
                                 value={editDrafts[row.row_number]?.base ?? (line?.base_amount_rounded || '')}
                                 onChange={e => handleDetailEdit(row.row_number, 'base', e.target.value)}
+                                onClick={e => e.stopPropagation()}
                               />
                             ) : (
                               row.has_base && line ? fmtEft(line.base_amount_rounded) : ''
@@ -1027,6 +1218,7 @@ function VatReturnViewTab() {
                                 placeholder="0"
                                 value={editDrafts[row.row_number]?.tax ?? (line?.tax_amount_rounded || '')}
                                 onChange={e => handleDetailEdit(row.row_number, 'tax', e.target.value)}
+                                onClick={e => e.stopPropagation()}
                               />
                             ) : (
                               row.has_tax && line ? fmtEft(line.tax_amount_rounded) : ''
@@ -1045,6 +1237,16 @@ function VatReturnViewTab() {
                             </div>
                           )}
                         </div>
+                        {isDrillExpanded && selectedCompany?.id && (
+                          <VatRowDrillDown
+                            sourceVatCodes={line!.source_vat_codes!}
+                            companyId={selectedCompany.id}
+                            year={year}
+                            month={month}
+                            frequency={frequency}
+                          />
+                        )}
+                        </React.Fragment>
                       );
                     })}
                   </div>

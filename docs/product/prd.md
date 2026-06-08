@@ -29,11 +29,11 @@ A felhasználó első élménye a regisztrációtól a produktív használatig.
 | Funkció | Leírás | Ref |
 |---------|--------|-----|
 | Regisztráció | Email + jelszó, email verifikáció, social login nélkül | [P-001](./decisions/P-001-registration-flow.md) |
-| Product Tour | 13 lépéses interaktív tour (üdvözlés → sidebar menüpontok → befejezés) | [P-002](./decisions/P-002-product-tour.md) |
-| Onboarding Checklist | Opcionális feladatlista: "Tölts fel 1 számlát", "Kösd össze a NAV-ot" | [P-002](./decisions/P-002-product-tour.md) |
-| Empty State | Nincs cég → inline cég létrehozás, utána tour indul | [P-003](./decisions/P-003-empty-state.md) |
+| Onboarding Wizard | 4-lépéses modal alapú kezdeti beállító (cég regisztráció/csatlakozás, projektek, kategóriák, NAV integráció + háttér sync) | [P-003](./decisions/P-003-empty-state.md) |
+| Product Tour | 13 lépéses interaktív tour a fő funkciók és oldalak bemutatásához | [P-002](./decisions/P-002-product-tour.md) |
+| Onboarding Checklist | Opcionális feladatlista: "Tölts fel 1 számlát", "Kösd össze a NAV-ot", "Importálj bank kivonatot" | [P-002](./decisions/P-002-product-tour.md) |
 | Welcome Email | Regisztráció utáni üdvözlő email, drip campaign nélkül | [P-004](./decisions/P-004-welcome-flow.md) |
-| Employee Regisztráció | Token-alapú meghívás, korlátozott hozzáféréssel | [P-001](./decisions/P-001-registration-flow.md) |
+| Employee Regisztráció | Token-alapú meghívás (EmployeeRegister.tsx), korlátozott munkaidős hozzáféréssel | [P-001](./decisions/P-001-registration-flow.md) |
 
 **Fejlesztendő:** Onboarding checklist implementálás.
 
@@ -116,20 +116,17 @@ Email és in-app értesítési rendszer.
 
 ---
 
-### 2.7 Beállítások & Előfizetés
+### 2.7 Beállítások
 
-Cég és felhasználói beállítások, csapatkezelés, előfizetési csomagok.
+Cég és felhasználói beállítások, csapatkezelés.
 
 | Funkció | Leírás | Ref |
 |---------|--------|-----|
 | Settings Struktúra | 4 szekció egy oldalon: Business, Profile, Security, System | [P-025](./decisions/P-025-settings-structure.md) |
 | Cégprofil | Cégnév, adószám, cím, email alias kezelés, share token, telephely (HQ/branch) | [P-026](./decisions/P-026-company-profile.md) |
 | Csapattagok | Share token alapú csatlakozás. Nincs email meghívás, nincs tag kezelés panel. | [P-027](./decisions/P-027-team-management.md) |
-| Pricing Oldal | 4 tier (Salmon/Tuna/Shark/Orca) kártyák, volume-based pricing (25-500 számla/hó), havi/éves toggle, Stripe Checkout redirect, Customer Portal link. | [P-028](./decisions/P-028-pricing-page.md) |
-| Limit Kezelés | 80% → figyelmeztetés. 100% → grace period (+10%). Grace lejárt → blokkolás + upgrade CTA. | [P-029](./decisions/P-029-limit-handling.md) |
-| Trial Konverzió | 🔴 **Open** — döntés szükséges | [P-030](./decisions/P-030-trial-conversion.md) |
 
-**Fejlesztendő:** Grace period limit kezelés.
+> **Megjegyzés:** A korábbi Stripe-alapú előfizetés rendszer (Pricing oldal, SubscriptionContext, limit kezelés) eltávolítva 2026-06-07-én. Az értékesítés egyszeri díjas modellre vált — lásd [004-pricing-model.md](../business/decisions/004-pricing-model.md).
 
 ---
 
@@ -138,11 +135,9 @@ Cég és felhasználói beállítások, csapatkezelés, előfizetési csomagok.
 | Funkció | Modul | Döntés |
 |---------|-------|--------|
 | Onboarding checklist | 2.1 Onboarding | P-002 |
-| Sidebar csoportosítás | 2.2 Dashboard | P-006 |
 | Multi-file batch upload | 2.3 Számla | P-013 |
 | Bulk actions (checkbox) | 2.3 Számla | P-015 |
 | CSV + PDF export | 2.5 Riportok | P-021 |
-| Grace period limit | 2.7 Előfizetés | P-029 |
 
 ---
 
@@ -150,4 +145,4 @@ Cég és felhasználói beállítások, csapatkezelés, előfizetési csomagok.
 
 | Döntés | Leírás | Opciók |
 |--------|--------|--------|
-| P-030 | Trial → fizetős konverzió flow | A) Korlátlan teszt + CTA, B) Időkorlátos trial, C) Feature-korlátos freemium |
+| 004 | Egyszeri díj struktúra és összeg | Lásd [004-pricing-model.md](../business/decisions/004-pricing-model.md) |

@@ -30,6 +30,7 @@ const ManualUpload = () => {
   const [selectedBankFiles, setSelectedBankFiles] = useState<File[]>([]);
   const [selectedSalaryFiles, setSelectedSalaryFiles] = useState<File[]>([]);
   const [selectedTransactionFiles, setSelectedTransactionFiles] = useState<File[]>([]);
+  const [selectedBankHint, setSelectedBankHint] = useState<string>('auto');
   const [selectedReportFiles, setSelectedReportFiles] = useState<{file: File; reportType: 'gls' | 'mpl' | 'mixpack'}[]>([]);
   const [reportType, setReportType] = useState<'gls' | 'mpl' | 'mixpack'>('gls');
   const [uploading, setUploading] = useState(false);
@@ -611,6 +612,7 @@ const ManualUpload = () => {
         file_type: r.file.type,
         upload_status: 'uploaded' as const,
         processing_status: 'pending' as const,
+        ...(selectedBankHint !== 'auto' ? { bank_hint: selectedBankHint } : {}),
       }));
 
       const { data: uploadRecords, error: batchError } = await supabase
@@ -639,6 +641,7 @@ const ManualUpload = () => {
       processingToast.dismiss();
       toast({ title: "Feltöltés sikeres!", description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.", duration: 3000 });
       setSelectedTransactionFiles([]);
+      setSelectedBankHint('auto');
       delayedUploadHistoryInvalidation();
     } catch (error) {
       console.error('Transaction upload error:', error);
@@ -1026,6 +1029,116 @@ const ManualUpload = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* Bank selector — premium design */}
+                  <div className="rounded-xl border border-border/60 bg-gradient-to-r from-muted/30 via-transparent to-muted/30 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+                          <Landmark className="h-3.5 w-3.5 text-primary" />
+                        </div>
+                        <span className="text-sm font-semibold">Bank kiválasztása</span>
+                      </div>
+                      {selectedBankHint !== 'auto' && (
+                        <Badge variant="secondary" className="text-[10px] font-semibold bg-primary/10 text-primary border-primary/20 gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                          Manuális
+                        </Badge>
+                      )}
+                    </div>
+                    <Select value={selectedBankHint} onValueChange={setSelectedBankHint}>
+                      <SelectTrigger className="w-full h-10 bg-background/80 border-border/50 hover:border-primary/40 transition-colors">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[320px]">
+                        <SelectItem value="auto">
+                          <span className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="2" fill="white"/><path d="M5 1v2M5 7v2M1 5h2M7 5h2" stroke="white" strokeWidth="0.8" strokeLinecap="round"/></svg>
+                            </span>
+                            <span className="font-medium">Automatikus felismerés</span>
+                            <span className="text-[10px] text-muted-foreground ml-1">(fájlnév alapján)</span>
+                          </span>
+                        </SelectItem>
+
+                        <div className="px-2 py-1.5 mt-1">
+                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Magyar bankok</span>
+                        </div>
+
+                        <SelectItem value="otp">
+                          <span className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-[9px] font-black text-white">O</span>
+                            <span>OTP Bank</span>
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="cib">
+                          <span className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-[9px] font-black text-white">C</span>
+                            <span>CIB Bank</span>
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="raiffeisen">
+                          <span className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-yellow-500 flex items-center justify-center text-[9px] font-black text-white">R</span>
+                            <span>Raiffeisen Bank</span>
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="kh">
+                          <span className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[9px] font-black text-white">K</span>
+                            <span>K&H Bank</span>
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="erste">
+                          <span className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-sky-500 flex items-center justify-center text-[9px] font-black text-white">E</span>
+                            <span>Erste Bank</span>
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="unicredit">
+                          <span className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-rose-600 flex items-center justify-center text-[9px] font-black text-white">U</span>
+                            <span>UniCredit Bank</span>
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="magnet">
+                          <span className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center text-[9px] font-black text-white">M</span>
+                            <span>MagNet Bank</span>
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="granit">
+                          <span className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-stone-500 flex items-center justify-center text-[9px] font-black text-white">G</span>
+                            <span>Gránit Bank</span>
+                          </span>
+                        </SelectItem>
+
+                        <div className="px-2 py-1.5 mt-1 border-t border-border/40">
+                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Fintech</span>
+                        </div>
+
+                        <SelectItem value="wise">
+                          <span className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-[#9FE870] flex items-center justify-center text-[9px] font-black text-black">W</span>
+                            <span>Wise</span>
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="revolut">
+                          <span className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-[#0075EB] flex items-center justify-center text-[9px] font-black text-white">R</span>
+                            <span>Revolut</span>
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground/70 mt-2">
+                      {selectedBankHint === 'auto'
+                        ? 'A rendszer a fájlnév és a tartalom alapján próbálja meghatározni a bank típusát.'
+                        : 'A feldolgozó a kiválasztott bank formátumát használja a tranzakciók kinyeréséhez.'
+                      }
+                    </p>
+                  </div>
+
                   <div
                     className={cn(
                       "flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200",

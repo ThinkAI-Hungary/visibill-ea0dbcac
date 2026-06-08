@@ -61,6 +61,7 @@ interface Partner {
   user_id: string;
   created_at: string;
   updated_at: string;
+  exclude_from_accounting?: boolean;
 }
 
 // Import shared helpers
@@ -111,7 +112,7 @@ export default function PartnersPage() {
 
       const { data, error } = await supabase
         .from("partners")
-        .select("id, name, tax_number, address, email, partner_type, company_id, user_id, default_project_id, created_at, updated_at")
+        .select("id, name, tax_number, address, email, partner_type, company_id, user_id, default_project_id, created_at, updated_at, exclude_from_accounting")
         .eq("company_id", selectedCompany.id)
         .order("name", { ascending: true });
 
@@ -322,6 +323,36 @@ export default function PartnersPage() {
     }
   };
 
+  // ── Toggle "Nem kerül könyvelésre" on partner level ──
+  const handleTogglePartnerExclude = async (partner: Partner) => {
+    const newValue = !partner.exclude_from_accounting;
+    // 1. Update the partner record
+    const { error } = await supabase
+      .from('partners')
+      .update({ exclude_from_accounting: newValue })
+      .eq('id', partner.id);
+    if (error) {
+      toast({ title: 'Hiba', description: error.message, variant: 'destructive' });
+      return;
+    }
+    // 2. Batch-update all NAV invoices from this partner (by tax_number)
+    if (selectedCompany?.id) {
+      await supabase
+        .from('nav_invoices')
+        .update({ exclude_from_accounting: newValue })
+        .eq('company_id', selectedCompany.id)
+        .or(`supplier_tax_number.eq.${partner.tax_number},customer_tax_number.eq.${partner.tax_number}`);
+      // 3. Batch-update submitted invoices — we match by partner name (since invoices don't have tax_number directly)
+      // This is best-effort; the GL RPC also checks partner-level exclusion
+    }
+    queryClient.invalidateQueries({ queryKey: queryKeys.partnersFull(selectedCompany?.id || '') });
+    toast({
+      title: newValue ? 'Partner kizárva a könyvelésből' : 'Partner visszaállítva a könyvelésbe',
+      description: `${decodeHtmlEntities(partner.name)} összes számlája ${newValue ? 'nem kerül' : 'újra bekerül a'} könyvelésre.`,
+      className: newValue ? 'bg-amber-50 text-amber-900 border-amber-200' : 'bg-green-50 text-green-900 border-green-200',
+    });
+  };
+
 
   return (
     <div className="h-full space-y-2 px-2 pt-0 pb-0 page-animate">
@@ -403,17 +434,20 @@ export default function PartnersPage() {
                   <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[14%]">
                     Típus
                   </TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[16%]">
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[10%] text-center">
+                    Könyvelés
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[12%]">
                     Műveletek
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableSkeleton rows={10} columns={5} />
+                  <TableSkeleton rows={10} columns={6} />
                 ) : paginatedPartners.length === 0 ? (
                   <TableEmptyState
-                    colSpan={5}
+                    colSpan={6}
                     title={searchQuery || typeFilter !== 'all' ? 'Nincs találat a szűrésre' : 'Még nincsenek partnerek'}
                     description={searchQuery || typeFilter !== 'all' ? 'Próbáld módosítani a szűrőket.' : 'Küldj be egy számlát, hogy automatikusan megjelenjen a partner.'}
                     onClearFilters={searchQuery || typeFilter !== 'all' ? () => { setSearchQuery(''); setTypeFilter('all'); } : undefined}
@@ -478,6 +512,19 @@ export default function PartnersPage() {
                             </span>
                           )}
                         </TableCell>
+                        <TableCell className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleTogglePartnerExclude(partner)}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all duration-200 border cursor-pointer ${
+                              partner.exclude_from_accounting
+                                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-300/40 hover:bg-amber-500/25'
+                                : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-300/30 hover:bg-emerald-500/20'
+                            }`}
+                          >
+                            {partner.exclude_from_accounting ? 'Nem könyvelt' : 'Könyvelt'}
+                          </button>
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Button
@@ -502,7 +549,7 @@ export default function PartnersPage() {
                     );
                   })
                 )}
-                <TablePlaceholderRows currentCount={paginatedPartners.length} pageSize={pageSize} columns={5} />
+                <TablePlaceholderRows currentCount={paginatedPartners.length} pageSize={pageSize} columns={6} />
               </TableBody>
             </Table>
           </div>

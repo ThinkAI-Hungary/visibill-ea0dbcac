@@ -13,7 +13,7 @@ import VatSection from '@/components/dashboard/VatSection';
 import RevenueExpensesChart from '@/components/dashboard/RevenueExpensesChart';
 import RecentInvoices from '@/components/dashboard/RecentInvoices';
 import ProjectBreakdown from '@/components/dashboard/ProjectBreakdown';
-import SubscriptionUsage from '@/components/SubscriptionUsage';
+
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import InvoiceStatusTables from '@/components/dashboard/InvoiceStatusTables';
 import UnmatchedSection from '@/components/dashboard/UnmatchedItemsModal';
@@ -171,7 +171,7 @@ const Index = () => {
           </TooltipProvider>
 
           <div className="space-y-6">
-            <SubscriptionUsage />
+
             <ProjectBreakdown
               projects={categoryBreakdownData}
               totalAmount={Object.values(metrics?.totalAmountByCurrency || {}).reduce((sum, val) => sum + val, 0)}

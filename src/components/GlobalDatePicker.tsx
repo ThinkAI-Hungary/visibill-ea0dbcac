@@ -30,7 +30,7 @@ export function GlobalDatePicker() {
         <Button
           variant={isThisMonth ? "default" : "outline"}
           size="sm"
-          className="h-7 text-xs px-3"
+          className={cn("h-7 text-xs px-3", !isThisMonth && "text-muted-foreground")}
           onClick={setThisMonth}
         >
           Ez a hónap
@@ -38,7 +38,7 @@ export function GlobalDatePicker() {
         <Button
           variant={isPreviousMonth ? "default" : "outline"}
           size="sm"
-          className="h-7 text-xs px-3"
+          className={cn("h-7 text-xs px-3", !isPreviousMonth && "text-muted-foreground")}
           onClick={setPreviousMonth}
         >
           Előző hónap
@@ -46,7 +46,7 @@ export function GlobalDatePicker() {
         <Button
           variant={isThisYear ? "default" : "outline"}
           size="sm"
-          className="h-7 text-xs px-3"
+          className={cn("h-7 text-xs px-3", !isThisYear && "text-muted-foreground")}
           onClick={setThisYear}
         >
           Ez az év
@@ -64,10 +64,10 @@ export function GlobalDatePicker() {
               size="sm"
               className={cn(
                 "h-7 text-xs px-2.5 justify-start font-normal",
-                isCustom && "bg-primary text-primary-foreground border-primary hover:bg-primary/90 dark:bg-primary/10 dark:border-primary dark:text-primary dark:hover:bg-primary/20"
+                isCustom ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 dark:bg-primary/10 dark:border-primary dark:text-primary dark:hover:bg-primary/20" : "text-muted-foreground"
               )}
             >
-              <CalendarIcon className={cn("mr-1.5 h-3 w-3", isCustom && "text-primary-foreground dark:text-primary")} />
+              <CalendarIcon className={cn("mr-1.5 h-3 w-3", isCustom ? "text-primary-foreground dark:text-primary" : "text-muted-foreground")} />
               {format(dateFrom, "yyyy. MMM dd.", { locale: hu })}
             </Button>
           </PopoverTrigger>
@@ -97,10 +97,10 @@ export function GlobalDatePicker() {
               size="sm"
               className={cn(
                 "h-7 text-xs px-2.5 justify-start font-normal",
-                isCustom && "bg-primary text-primary-foreground border-primary hover:bg-primary/90 dark:bg-primary/10 dark:border-primary dark:text-primary dark:hover:bg-primary/20"
+                isCustom ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 dark:bg-primary/10 dark:border-primary dark:text-primary dark:hover:bg-primary/20" : "text-muted-foreground"
               )}
             >
-              <CalendarIcon className={cn("mr-1.5 h-3 w-3", isCustom && "text-primary-foreground dark:text-primary")} />
+              <CalendarIcon className={cn("mr-1.5 h-3 w-3", isCustom ? "text-primary-foreground dark:text-primary" : "text-muted-foreground")} />
               {format(dateTo, "yyyy. MMM dd.", { locale: hu })}
             </Button>
           </PopoverTrigger>

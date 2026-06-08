@@ -14,6 +14,8 @@ export interface TransactionRecord {
   currency: string | null;
   type: string | null;
   confidence_score: number | null;
+  match_type: string | null;
+  is_verified: boolean | null;
 }
 
 export interface NavInvoice {
@@ -45,6 +47,7 @@ export interface NavInvoice {
   project_id: string | null;
   category_id: string | null;
   transaction_id: string | null;
+  exclude_from_accounting?: boolean;
 }
 
 export interface SubmittedInvoice {
@@ -65,6 +68,8 @@ export interface SubmittedInvoice {
   invoice_direction: string | null;
   reference_number: string | null;
   fizetesi_mod: string | null;
+  invoice_type: string | null;
+  exclude_from_accounting?: boolean;
 }
 
 export interface Partner {
@@ -110,7 +115,7 @@ export function useInvoiceData(
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number, fizetesi_mod')
+        .select('id, bizonylatsorszam, kibocsatas_datuma, teljesites_datuma, elado_nev, vevo_nev, adoalap_osszesen, brutto_vegosszeg, afa_osszeg_osszesen, penznem, category_id, project_id, image_url, melleklet_url, invoice_direction, reference_number, fizetesi_mod, invoice_type, exclude_from_accounting')
         .eq('company_id', companyId)
         .or(`and(teljesites_datuma.gte.${dateFromFormatted},teljesites_datuma.lte.${dateToFormatted}),and(teljesites_datuma.is.null,kibocsatas_datuma.gte.${dateFromFormatted},kibocsatas_datuma.lte.${dateToFormatted})`)
         .order('kibocsatas_datuma', { ascending: false })
@@ -188,15 +193,16 @@ export function useInvoiceData(
   });
 
   const { data: allTransactions = [], isLoading: txLoading } = useQuery({
-    queryKey: queryKeys.invoiceTransactions(companyId, dateFromFormatted, dateToFormatted),
+    // No date filtering — matched transactions must always be visible
+    // regardless of the invoice date range filter (a May invoice can have
+    // a June transaction match, and vice versa).
+    queryKey: queryKeys.invoiceTransactions(companyId, '', ''),
     queryFn: async () => {
       const { data } = await supabase
         .from('transactions')
-        .select('id, matched_invoice_id, transaction_date, amount, description, currency, type, confidence_score')
+        .select('id, matched_invoice_id, transaction_date, amount, description, currency, type, confidence_score, match_type, is_verified')
         .eq('company_id', companyId)
-        .not('matched_invoice_id', 'is', null)
-        .gte('transaction_date', dateFromFormatted)
-        .lte('transaction_date', dateToFormatted);
+        .not('matched_invoice_id', 'is', null);
       return (data || []) as TransactionRecord[];
     },
     enabled,

@@ -73,7 +73,7 @@ export const PAGE_PATHS = {
   projects: 'projects',
   integrations: 'integrations',
   exchangeRates: 'exchange-rates',
-  pricing: 'pricing',
+
   analytics: 'analytics',
   workingTime: 'working-time',
   categories: 'categories',

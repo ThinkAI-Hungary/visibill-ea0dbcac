@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useDeferredValue } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { NavInvoice, SubmittedInvoice, Partner, Category, Project } from './useInvoiceData';
 
@@ -67,7 +67,7 @@ export function useInvoiceFilters(
   const issueDateFrom = filters.issueDateFrom || null;
   const issueDateTo = filters.issueDateTo || null;
 
-  const { data: navResult = [], isLoading: navLoading } = useQuery({
+  const { data: navResult = [], isLoading: navLoading, isFetching: navFetching } = useQuery({
     queryKey: [
       'filteredNavInvoices', companyId, dateFromFormatted, dateToFormatted,
       navDirection, deferredSearch, filters.currency, filters.paid,
@@ -102,13 +102,14 @@ export function useInvoiceFilters(
       return (data || []) as (NavInvoice & { total_count: number })[];
     },
     enabled: enabled && isNavTab,
+    placeholderData: keepPreviousData,
   });
 
   // ── Server-side submitted invoices query ──
   const isSubmittedTab = activeTab === 'SUBMITTED_INBOUND' || activeTab === 'SUBMITTED_OUTBOUND';
   const submittedDirection = activeTab === 'SUBMITTED_OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
 
-  const { data: submittedResult = [], isLoading: submittedFilterLoading } = useQuery({
+  const { data: submittedResult = [], isLoading: submittedFilterLoading, isFetching: submittedFetching } = useQuery({
     queryKey: [
       'filteredSubmittedInvoices', companyId, dateFromFormatted, dateToFormatted,
       submittedDirection, deferredSearch, filters.currency,
@@ -141,6 +142,7 @@ export function useInvoiceFilters(
       return (data || []) as (SubmittedInvoice & { total_count: number })[];
     },
     enabled: enabled && isSubmittedTab,
+    placeholderData: keepPreviousData,
   });
 
   // Extract paginated data and total counts
@@ -232,7 +234,9 @@ export function useInvoiceFilters(
     submittedTotalPages,
     // Loading
     navLoading,
+    navFetching,
     submittedFilterLoading,
+    submittedFetching,
     // Filtered data (server-side, already paginated)
     filteredAndSortedNavInvoices: paginatedNavInvoices,
     filteredAndSortedSubmittedInvoices: paginatedSubmittedInvoices,

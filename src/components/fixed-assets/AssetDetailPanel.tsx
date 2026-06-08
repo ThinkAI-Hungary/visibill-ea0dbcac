@@ -173,17 +173,17 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
   };
 
   return (
-    <div className="h-full overflow-auto p-5 space-y-6">
+    <div className="h-full overflow-y-auto overflow-x-hidden p-5 space-y-6 min-w-0">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-xl font-bold">{asset.name}</h2>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-xl font-bold break-words">{asset.name}</h2>
           <p className="text-sm font-mono text-muted-foreground">({asset.inventory_number})</p>
         </div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => setQrOpen(true)}>
+              <Button variant="outline" size="sm" className="gap-2 shrink-0" onClick={() => setQrOpen(true)}>
                 <QrCode className="h-4 w-4" />
                 Címke QR
               </Button>
