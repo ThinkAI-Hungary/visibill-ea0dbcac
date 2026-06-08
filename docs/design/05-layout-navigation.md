@@ -109,6 +109,7 @@
 | **Animáció** | CSS `grid-template-rows: 0fr/1fr` + `opacity` transition (200ms ease-out) |
 | **forceMount** | `CollapsibleContent forceMount` — tartalom DOM-ban marad bezárva is, hogy a CSS transition le tudjon futni |
 | **Csoportok közötti gap** | `gap-1` (4px) + `pb-1.5` (6px) a nyitott tartalom alján |
+| **Sub-menü elem behúzás** | `pl-9` (2.25rem) — vizuálisan elkülöníti az elemeket a csoport fejléctől |
 
 ### Collapsed (Icon-only) Mód
 
