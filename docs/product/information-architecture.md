@@ -65,7 +65,38 @@ Visibill
 │   ├── /exchange-rates            Árfolyamok (MNB)
 
 │   ├── /settings/:tab?            Beállítások
-│   └── /analytics/:tab?           Analitika
+│   ├── /analytics/:tab?           Analitika
+│   └── /vat-return/:tab?          ÁFA bevallás
+│
+├── Accounty (/accounty/)
+│   ├── /                          Portfólió (Grid/Lista/Kanban nézet)
+│   ├── /client/:id                Ügyfél részletes nézet
+│   ├── /client/:id/invoices       Ügyfél számlái
+│   ├── /client/:id/reports        Ügyfél riportjai
+│   ├── /client/:id/reports/missing-invoices  Hiányzó számlák riport
+│   ├── /missing-invoices          Összes hiányzó számla
+│   ├── /missing-invoices/:id      Ügyfél hiányzó számlái
+│   ├── /tax-calendar              Adó naptár
+│   ├── /reports                   Iroda szintű riportok
+│   ├── /reports/missing-invoices  Hiányzó számlák összesítő riport
+│   ├── /approval-queue            Jóváhagyási sor
+│   ├── /payroll/:id               Bérszámfejtés dashboard (per ügyfél)
+│   ├── /payroll/:id/employees     Alkalmazottak
+│   ├── /payroll/:id/employees/new Új alkalmazott wizard
+│   ├── /payroll/:id/employees/:empId  Alkalmazott részletek
+│   ├── /payroll/:id/cycle/new     Új bérciklus
+│   ├── /payroll/:id/cycle/:cycleId  Bérciklus szerkesztés
+│   ├── /payroll/:id/filings       Bevallások
+│   ├── /payroll/:id/reports       Bérszámfejtési riportok
+│   ├── /payroll/:id/portal        Ügyfélportál preview
+│   ├── /payroll/:id/tax-params    Adóparaméterek
+│   ├── /tickets/:ticketId?        Hibajegyek
+│   ├── /settings                  Accounty beállítások
+│   ├── /help                      Segítség
+│   └── /new-client                Új ügyfél wizard (saját layout)
+│
+├── Ügyfélportál (publikus)
+│   └── /portal/:token             Magic link-es ügyfélportál
 │
 └── Admin
     └── /management                Admin management panel
@@ -215,3 +246,64 @@ Sidebar
 | **Admin** | Mind a 19 (owner alias) | ✅ | ✅ |
 | **Member** | Mind a 19 | ✅ | ✅ |
 | **Employee** | Csak Munkaidő (1) | ❌ | ❌ |
+
+---
+
+## 8. [Accounty] Layout Struktúra
+
+Az Accounty modul **teljesen önálló layout-ot** használ (`AccountyLayout`), amely független a fő app `ProtectedLayout`-jától.
+
+```
+┌─────────────────────────────────────────────┐
+│                  AccountyLayout              │
+│  ┌──────┬──────────────────────────────────┐ │
+│  │      │   Header (search, theme, user)  │ │
+│  │      ├──────────────────────────────────┤ │
+│  │  A   │                                  │ │
+│  │  C   │                                  │ │
+│  │  C   │        <Outlet />                │ │
+│  │  O   │     (page content)               │ │
+│  │  U   │                                  │ │
+│  │  N   │                                  │ │
+│  │  T   │                                  │ │
+│  │  Y   │                                  │ │
+│  │      │                                  │ │
+│  │  S   ├──────────────────────────────────┤ │
+│  │  I   │       FeedbackFab               │ │
+│  │  D   │                                  │ │
+│  │  E   │                                  │ │
+│  │  B   │                                  │ │
+│  │  A   │                                  │ │
+│  │  R   │                                  │ │
+│  └──────┴──────────────────────────────────┘ │
+└─────────────────────────────────────────────┘
+```
+
+**Komponens hierarchia:**
+```
+<App>
+  <AuthProvider>
+    <CompanyProvider>
+      <ProtectedRoute>
+        <AccountyLayout>             ← saját sidebar + header
+          <AccountyRoleProvider>      ← admin/könyvelő role context
+            <Outlet />               ← lazy loaded Accounty page
+          </AccountyRoleProvider>
+          <FeedbackFab />
+        </AccountyLayout>
+      </ProtectedRoute>
+    </CompanyProvider>
+  </AuthProvider>
+</App>
+```
+
+**Különbségek a fő app-tól:**
+| Tulajdonság | Fő app (ProtectedLayout) | Accounty (AccountyLayout) |
+|---|---|---|
+| Sidebar | AppSidebar (19 menüpont) | Saját Accounty sidebar (9 menüpont + payroll submenus) |
+| URL pattern | `/:companyId/:dateRange/page` | `/accounty/page` |
+| Company context | GlobalDatePicker + CompanySelector | Nem használ CompanySelector (multi-client) |
+| Branding | eaisybill | eaisybill \| Accounty (piros gradiens) |
+| Role | Owner/Admin/Member/Employee | admin/könyvelő |
+| Command palette | Nincs | Ctrl+K — oldalak + ügyfelek keresése |
+
