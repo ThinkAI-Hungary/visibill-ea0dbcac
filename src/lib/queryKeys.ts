@@ -156,4 +156,20 @@ export const queryKeys = {
     ['accounty-portal-tokens', companyId] as const,
   accountyCommunicationPrefs: (companyId: string) =>
     ['accounty-communication-prefs', companyId] as const,
+
+  // ── Accounty Admin ──
+  accountyAuditLog: (filters?: Record<string, unknown>) =>
+    ['accounty-audit-log', filters] as const,
+  accountyGdprRequests: () =>
+    ['accounty-gdpr-requests'] as const,
+  accountyTemplates: (category?: string) =>
+    ['accounty-templates', category] as const,
+  accountyTemplateVersions: (templateId?: string) =>
+    ['accounty-template-versions', templateId] as const,
+  accountyJobCodes: (activeOnly?: boolean) =>
+    ['accounty-job-codes', activeOnly] as const,
+  accountyGlobalTaxParams: (year: number) =>
+    ['accounty-global-tax-params', year] as const,
+  accountyLegalUpdates: () =>
+    ['accounty-legal-updates'] as const,
 };
