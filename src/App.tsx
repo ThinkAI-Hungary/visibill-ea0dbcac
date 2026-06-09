@@ -89,6 +89,18 @@ const PayrollPortfolioPage = lazy(() => import("./pages/Accounty/PayrollPortfoli
 const VatReturnPage = lazy(() => import("./pages/VatReturnPage"));
 const TicketsPage = lazy(() => import("./pages/TicketsPage"));
 
+// TAO/KIVA module
+const TaoPortfolioPage = lazy(() => import("./pages/Accounty/Tao/TaoPortfolioPage"));
+const TaoCalendarPage2 = lazy(() => import("./pages/Accounty/Tao/TaoCalendarPage"));
+const TaoTaxpayerTypesPage = lazy(() => import("./pages/Accounty/Tao/TaoTaxpayerTypesPage"));
+const ClientTaoMainPage = lazy(() => import("./pages/Accounty/Tao/ClientTaoMainPage"));
+const TaoSetupWizardPage = lazy(() => import("./pages/Accounty/Tao/TaoSetupWizardPage"));
+const TaoMasterDataPage = lazy(() => import("./pages/Accounty/Tao/TaoMasterDataPage"));
+const TaoLifecyclePage = lazy(() => import("./pages/Accounty/Tao/TaoLifecyclePage"));
+const TaoBusinessYearPage = lazy(() => import("./pages/Accounty/Tao/TaoBusinessYearPage"));
+const TaoAccountingRegimePage = lazy(() => import("./pages/Accounty/Tao/TaoAccountingRegimePage"));
+const TaoCurrencyPage = lazy(() => import("./pages/Accounty/Tao/TaoCurrencyPage"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -307,6 +319,17 @@ const App = () => (
                       <Route path="onboarding" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountyOnboardingPage /></Suspense>} />
                       <Route path="ai-assistant" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AiAssistantPage /></Suspense>} />
                       <Route path="profile/settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ProfileSettingsPage /></Suspense>} />
+                      {/* TAO/KIVA module */}
+                      <Route path="tao" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoPortfolioPage /></Suspense>} />
+                      <Route path="tao/calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoCalendarPage2 /></Suspense>} />
+                      <Route path="tao/taxpayer-types" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoTaxpayerTypesPage /></Suspense>} />
+                      <Route path="client/:id/tao" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientTaoMainPage /></Suspense>} />
+                      <Route path="client/:id/tao/setup" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoSetupWizardPage /></Suspense>} />
+                      <Route path="client/:id/tao/master-data" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoMasterDataPage /></Suspense>} />
+                      <Route path="client/:id/tao/lifecycle" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoLifecyclePage /></Suspense>} />
+                      <Route path="client/:id/tao/business-year" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoBusinessYearPage /></Suspense>} />
+                      <Route path="client/:id/tao/accounting-regime" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoAccountingRegimePage /></Suspense>} />
+                      <Route path="client/:id/tao/currency" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoCurrencyPage /></Suspense>} />
                     </Route>
 
                     {/* Protected routes with persistent sidebar */}

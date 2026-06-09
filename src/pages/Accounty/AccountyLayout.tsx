@@ -57,6 +57,7 @@ import {
   Sparkles,
   Rocket,
   ChevronUp,
+  Landmark,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -96,6 +97,9 @@ export default function AccountyLayout() {
     if (path === '/accounty') {
       return pathname === '/accounty' || pathname.startsWith('/accounty/client');
     }
+    if (path === '/accounty/tao') {
+      return pathname === '/accounty/tao';
+    }
     return pathname.startsWith(path);
   };
 
@@ -107,6 +111,15 @@ export default function AccountyLayout() {
   const [payrollInitialized, setPayrollInitialized] = useState(false);
   const [payrollSearch, setPayrollSearch] = useState('');
   const [showAllPayroll, setShowAllPayroll] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(() => new Set(['portfolio']));
+  const toggleSection = (key: string) => {
+    setExpandedSections(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
   const [notifDismissed, setNotifDismissed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -192,6 +205,9 @@ export default function AccountyLayout() {
     { name: 'Jogviszonykódok', path: '/accounty/admin/job-codes', icon: BookOpen },
     { name: 'Adómértékek', path: '/accounty/admin/tax-parameters', icon: Calculator },
     { name: 'Jogszabály-frissítések', path: '/accounty/admin/legal-updates', icon: Scale },
+    { name: 'TAO Portfólió', path: '/accounty/tao', icon: Landmark },
+    { name: 'TAO Naptár', path: '/accounty/tao/calendar', icon: Calendar },
+    { name: 'TAO Adózói Körök', path: '/accounty/tao/taxpayer-types', icon: Users },
   ];
 
   const filteredPages = cmdQuery ? cmdPages.filter(p => p.name.toLowerCase().includes(cmdQuery.toLowerCase())) : cmdPages;
@@ -245,13 +261,8 @@ export default function AccountyLayout() {
           )}
         </div>
 
-        {/* Navigation */}
+        {/* Navigation — Collapsible groups */}
         <nav className="flex-1 p-2 overflow-y-auto">
-          {!isCollapsed && (
-            <div className="flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 mb-1">
-              Navigáció
-            </div>
-          )}
           {/* Search trigger */}
           {isCollapsed ? (
             <div className="flex justify-center mb-2">
@@ -279,370 +290,26 @@ export default function AccountyLayout() {
           )}
 
           {isCollapsed ? (
-            <ul className="flex w-full min-w-0 flex-col gap-2">
+            /* Collapsed mode: icon-only with tooltip */
+            <ul className="flex w-full min-w-0 flex-col gap-1">
               {[
                 { path: '/accounty', name: 'Portfólió', icon: Briefcase },
-                { 
-                  path: '/accounty/missing-invoices', 
-                  name: 'Hiányzó számlák', 
-                  icon: FileWarning, 
-                  badge: kpis?.missingItems 
-                },
+                { path: '/accounty/missing-invoices', name: 'Hiányzó számlák', icon: FileWarning, badge: kpis?.missingItems },
                 { path: '/accounty/tax-calendar', name: 'Adó naptár', icon: Calendar },
                 { path: '/accounty/reports', name: 'Riportok', icon: BarChart2 },
-                { path: '/accounty/approval-queue', name: 'Jóváhagyó rendszer', icon: MailCheck },
+                { path: '/accounty/approval-queue', name: 'Jóváhagyás', icon: MailCheck },
                 { path: '/accounty/alerts', name: 'Riasztások', icon: AlertTriangle },
                 { path: '/accounty/nav-deadlines', name: 'NAV határidők', icon: Clock },
-                { path: '/accounty/payroll-portfolio', name: 'Bérszámfejtés portfólió', icon: Calculator },
+                { path: '/accounty/payroll-portfolio', name: 'Bérszámfejtés', icon: Calculator },
                 { path: '/accounty/onboarding', name: 'Onboarding', icon: Rocket },
-              ].map((item) => (
-                <li key={item.path} className="relative flex justify-center">
-                  <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      <Link 
-                        to={item.path} 
-                        className={cn(
-                          "relative flex items-center justify-center rounded-md transition-all duration-200 w-8 h-8",
-                          isActive(item.path) ? "bg-primary/15 text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                        )}
-                      >
-                        <item.icon className="h-4 w-4 shrink-0" />
-                        {item.badge && item.badge > 0 ? (
-                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md min-w-4 text-center tabular-nums shadow-sm">
-                            {item.badge}
-                          </span>
-                        ) : null}
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">{item.name}</TooltipContent>
-                  </Tooltip>
-
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <ul className="flex w-full min-w-0 flex-col gap-1">
-              <li>
-                <Link 
-                  to="/accounty" 
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
-                    isActive('/accounty') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                  )}
-                >
-                  <Briefcase className="h-4 w-4 shrink-0" />
-                  <span className="truncate">Portfólió</span>
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/accounty/missing-invoices" 
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
-                    isActive('/accounty/missing-invoices') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                  )}
-                >
-                  <FileWarning className="h-4 w-4 shrink-0" />
-                  <span className="truncate flex-1">Hiányzó számlák</span>
-                  {(kpis?.missingItems ?? 0) > 0 && (
-                    <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md min-w-5 text-center tabular-nums">{kpis?.missingItems}</span>
-                  )}
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/accounty/tax-calendar" 
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
-                    isActive('/accounty/tax-calendar') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                  )}
-                >
-                  <Calendar className="h-4 w-4 shrink-0" />
-                  <span className="truncate">Adó naptár</span>
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/accounty/reports" 
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
-                    isActive('/accounty/reports') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                  )}
-                >
-                  <BarChart2 className="h-4 w-4 shrink-0" />
-                  <span className="truncate">Riportok</span>
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/accounty/approval-queue" 
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
-                    isActive('/accounty/approval-queue') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                  )}
-                >
-                  <MailCheck className="h-4 w-4 shrink-0" />
-                  <span className="truncate">Jóváhagyó rendszer</span>
-                </Link>
-              </li>
-            </ul>
-          )}
-
-          {/* Portfólió kiegészítő menüpontok (expanded only) */}
-          {!isCollapsed && (
-            <ul className="flex w-full min-w-0 flex-col gap-1 mt-1">
-              <li>
-                <Link
-                  to="/accounty/alerts"
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
-                    isActive('/accounty/alerts') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                  )}
-                >
-                  <AlertTriangle className="h-4 w-4 shrink-0" />
-                  <span className="truncate">Riasztások</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/accounty/nav-deadlines"
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
-                    isActive('/accounty/nav-deadlines') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                  )}
-                >
-                  <Clock className="h-4 w-4 shrink-0" />
-                  <span className="truncate">NAV határidők</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/accounty/payroll-portfolio"
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
-                    isActive('/accounty/payroll-portfolio') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                  )}
-                >
-                  <Calculator className="h-4 w-4 shrink-0" />
-                  <span className="truncate">Bérszámfejtés portfólió</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/accounty/onboarding"
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
-                    isActive('/accounty/onboarding') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                  )}
-                >
-                  <Rocket className="h-4 w-4 shrink-0" />
-                  <span className="truncate">Onboarding</span>
-                </Link>
-              </li>
-            </ul>
-          )}
-
-          {/* Bérszámfejtés section */}
-          {isCollapsed ? (
-            <ul className="flex w-full min-w-0 flex-col gap-2 mt-4">
-              <li className="relative flex justify-center">
-                <DropdownMenu>
-                  <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          className={cn(
-                            "w-8 h-8 p-0 flex items-center justify-center rounded-md transition-all duration-200",
-                            location.pathname.includes('/accounty/payroll') 
-                              ? 'bg-primary/15 text-primary' 
-                              : 'hover:bg-primary/10 hover:text-primary text-sidebar-foreground'
-                          )}
-                        >
-                          <Calculator className="h-4 w-4 shrink-0" />
-                          <span className="sr-only">Bérszámfejtés</span>
-                        </button>
-                      </DropdownMenuTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" align="center" className="text-xs">
-                      Bérszámfejtés
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <DropdownMenuContent
-                    side="right"
-                    align="start"
-                    sideOffset={8}
-                    className="w-56 bg-popover/95 backdrop-blur-md border border-border/60 shadow-lg shadow-primary/5 select-none p-1.5 animate-in slide-in-from-left-1 fade-in-50 duration-200"
-                  >
-                    <DropdownMenuLabel className="px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
-                      Bérszámfejtés
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator className="my-1 bg-border/40" />
-                    
-                    <div className="flex flex-col gap-0.5 max-h-[300px] overflow-y-auto">
-                      {(allClients || []).map((client) => {
-                        const basePath = `/accounty/payroll/${client.companyId}`;
-                        const isPayrollActive = location.pathname.startsWith(basePath);
-                        return (
-                          <DropdownMenuSub key={`collapsed-payroll-${client.id}`}>
-                            <DropdownMenuSubTrigger
-                              className={cn(
-                                "flex items-center justify-between w-full cursor-pointer select-none py-2 px-2.5 rounded-md text-sm transition-colors",
-                                isPayrollActive 
-                                  ? "bg-primary/10 text-primary font-medium focus:bg-primary/15" 
-                                  : "text-sidebar-foreground hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary"
-                              )}
-                            >
-                              <div className="flex items-center gap-2 truncate">
-                                <Calculator className="h-4 w-4 shrink-0" />
-                                <span className="truncate">{client.name}</span>
-                              </div>
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent className="w-48 bg-popover border border-border/60 shadow-md p-1">
-                              {[
-                                { to: `${basePath}/employees`, icon: Users, label: 'Foglalkoztatottak' },
-                                { to: `${basePath}/reports`, icon: TrendingUp, label: 'Riportok' },
-                                { to: `${basePath}/filings`, icon: FileText, label: 'NAV bevallások' },
-                                { to: `${basePath}/portal`, icon: Building2, label: 'Ügyfélportál' },
-                                { to: `${basePath}/tax-params`, icon: Settings, label: 'Paraméterek' },
-                              ].map((sub) => {
-                                const isActiveSub = isActive(sub.to);
-                                return (
-                                  <DropdownMenuItem
-                                    key={sub.to}
-                                    asChild
-                                    className={cn(
-                                      "flex items-center gap-2 cursor-pointer py-1.5 px-2 rounded-md text-xs",
-                                      isActiveSub
-                                        ? "bg-primary/15 text-primary font-semibold focus:bg-primary/20"
-                                        : "text-sidebar-foreground/80 hover:bg-primary/10 hover:text-primary"
-                                    )}
-                                  >
-                                    <Link to={sub.to}>
-                                      <sub.icon className="h-3.5 w-3.5 shrink-0" />
-                                      <span className="truncate">{sub.label}</span>
-                                    </Link>
-                                  </DropdownMenuItem>
-                                );
-                              })}
-                            </DropdownMenuSubContent>
-                          </DropdownMenuSub>
-                        );
-                      })}
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-              </li>
-            </ul>
-          ) : (
-            <>
-              <div className="flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 mt-4 mb-1">
-                Bérszámfejtés
-                <span className="text-[10px] text-sidebar-foreground/40">{(allClients || []).length}</span>
-              </div>
-              {(allClients || []).length > 5 && (
-                <div className="px-2 mb-1">
-                  <input
-                    type="text"
-                    placeholder="Cég keresés..."
-                    value={payrollSearch}
-                    onChange={(e) => setPayrollSearch(e.target.value)}
-                    className="w-full h-7 px-2 text-xs bg-sidebar-foreground/5 border border-sidebar-foreground/10 rounded-md text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  />
-                </div>
-              )}
-              <ul className="flex w-full min-w-0 flex-col gap-1 max-h-[280px] overflow-y-auto scrollbar-thin">
-                {(() => {
-                  const clients = allClients || [];
-                  const filtered = payrollSearch
-                    ? clients.filter(c => c.name.toLowerCase().includes(payrollSearch.toLowerCase()))
-                    : clients;
-                  const activeClientId = clients.find(c => location.pathname.startsWith(`/accounty/payroll/${c.companyId}`))?.companyId;
-                  const shown = showAllPayroll ? filtered : filtered.slice(0, 5);
-                  // Always include active client
-                  const activeInShown = shown.some(c => c.companyId === activeClientId);
-                  const activeClient = !activeInShown && activeClientId ? clients.find(c => c.companyId === activeClientId) : null;
-                  const finalList = activeClient ? [activeClient, ...shown] : shown;
-                  
-                  return (
-                    <>
-                      {finalList.map((client) => {
-                        const basePath = `/accounty/payroll/${client.companyId}`;
-                        const isPayrollActive = location.pathname.startsWith(basePath);
-                        const isExpanded = expandedPayroll.has(client.companyId);
-                        return (
-                          <li key={`payroll-${client.id}`}>
-                            <div
-                              className={cn(
-                                "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8 cursor-pointer",
-                                isPayrollActive ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                              )}
-                              onClick={() => togglePayrollClient(client.companyId)}
-                            >
-                              <Link to={basePath} className="flex items-center gap-2 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
-                                <Calculator className="h-4 w-4 shrink-0" />
-                                <span className="truncate">{client.name}</span>
-                              </Link>
-                              <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform duration-200", isExpanded ? "rotate-0" : "-rotate-90")} />
-                            </div>
-                            {isExpanded && (
-                              <ul className="ml-6 mt-0.5 flex flex-col gap-0.5 border-l border-border pl-2 animate-in slide-in-from-top-1 duration-200">
-                                {[
-                                  { to: `${basePath}/employees`, icon: Users, label: 'Foglalkoztatottak' },
-                                  { to: `${basePath}/reports`, icon: TrendingUp, label: 'Riportok' },
-                                  { to: `${basePath}/filings`, icon: FileText, label: 'NAV bevallások' },
-                                  { to: `${basePath}/portal`, icon: Building2, label: 'Ügyfélportál' },
-                                  { to: `${basePath}/tax-params`, icon: Settings, label: 'Paraméterek' },
-                                ].map((sub) => (
-                                  <li key={sub.to}>
-                                    <Link
-                                      to={sub.to}
-                                      className={cn(
-                                        "flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs transition-colors",
-                                        isActive(sub.to) ? "font-semibold text-primary" : "text-sidebar-foreground/60 hover:text-primary"
-                                      )}
-                                    >
-                                      <sub.icon className="h-3.5 w-3.5 shrink-0" />
-                                      <span className="truncate">{sub.label}</span>
-                                    </Link>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </li>
-                        );
-                      })}
-                      {!showAllPayroll && filtered.length > 5 && !payrollSearch && (
-                        <li>
-                          <button
-                            onClick={() => setShowAllPayroll(true)}
-                            className="w-full flex items-center justify-center gap-1 py-1.5 text-[11px] text-sidebar-foreground/50 hover:text-primary transition-colors"
-                          >
-                            + {filtered.length - 5} további cég
-                          </button>
-                        </li>
-                      )}
-                    </>
-                  );
-                })()}
-              </ul>
-            </>
-          )}
-
-          {/* Adminisztráció */}
-          {isCollapsed ? (
-            <ul className="flex w-full min-w-0 flex-col gap-2 mt-4">
-              {[
+                { path: '/accounty/tao', name: 'TAO Portfólió', icon: Landmark },
+                { path: '/accounty/tao/calendar', name: 'TAO Naptár', icon: Calendar },
+                { path: '/accounty/tao/taxpayer-types', name: 'Adózói Körök', icon: Users },
                 { path: '/accounty/settings', name: 'Beállítások', icon: Settings },
                 { path: '/accounty/tickets', name: 'Hibajegyek', icon: TicketCheck, badge: unreadTicketCount },
                 { path: '/accounty/help', name: 'Segítség', icon: HelpCircle },
+                { path: '/accounty/ai-assistant', name: 'AI Asszisztens', icon: Sparkles },
                 { path: '/accounty/admin/audit', name: 'Audit', icon: ShieldCheck },
-                { path: '/accounty/admin/gdpr', name: 'GDPR', icon: ShieldCheck },
-                { path: '/accounty/admin/templates', name: 'Sablonok', icon: FileText },
-                { path: '/accounty/admin/job-codes', name: 'Kódok', icon: BookOpen },
-                { path: '/accounty/admin/tax-parameters', name: 'Paraméterek', icon: Calculator },
-                { path: '/accounty/admin/legal-updates', name: 'Jogszabályok', icon: Scale },
               ].map((item) => (
                 <li key={item.path} className="relative flex justify-center">
                   <Tooltip delayDuration={0}>
@@ -655,100 +322,316 @@ export default function AccountyLayout() {
                         )}
                       >
                         <item.icon className="h-4 w-4 shrink-0" />
-                        {item.badge && item.badge > 0 ? (
+                        {'badge' in item && (item as any).badge > 0 ? (
                           <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 flex items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
-                            {item.badge > 9 ? '9+' : item.badge}
+                            {(item as any).badge > 9 ? '9+' : (item as any).badge}
                           </span>
                         ) : null}
                       </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right">{item.name}{item.badge && item.badge > 0 ? ` (${item.badge})` : ''}</TooltipContent>
+                    <TooltipContent side="right">{item.name}</TooltipContent>
                   </Tooltip>
-
                 </li>
               ))}
             </ul>
           ) : (
-            <>
-              <div className="flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 mt-4 mb-1">
-                Adminisztráció
-              </div>
-              <ul className="flex w-full min-w-0 flex-col gap-1">
-                <li>
-                  <Link 
-                    to="/accounty/settings" 
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
-                      isActive('/accounty/settings') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+            /* Expanded mode: Collapsible groups */
+            <div className="flex flex-col gap-0.5">
+              {/* Portfólió csoport */}
+              {(() => {
+                const groupKey = 'portfolio';
+                const isOpen = expandedSections.has(groupKey);
+                const items = [
+                  { to: '/accounty', icon: Briefcase, label: 'Portfólió', exact: true },
+                  { to: '/accounty/missing-invoices', icon: FileWarning, label: 'Hiányzó számlák', badge: kpis?.missingItems },
+                  { to: '/accounty/tax-calendar', icon: Calendar, label: 'Adó naptár' },
+                  { to: '/accounty/reports', icon: BarChart2, label: 'Riportok' },
+                  { to: '/accounty/approval-queue', icon: MailCheck, label: 'Jóváhagyó rendszer' },
+                  { to: '/accounty/alerts', icon: AlertTriangle, label: 'Riasztások' },
+                  { to: '/accounty/nav-deadlines', icon: Clock, label: 'NAV határidők' },
+                  { to: '/accounty/onboarding', icon: Rocket, label: 'Onboarding' },
+                ];
+                const groupHasActive = items.some(i => i.exact ? pathname === i.to : isActive(i.to));
+                return (
+                  <div>
+                    <button
+                      onClick={() => toggleSection(groupKey)}
+                      className={cn(
+                        "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
+                        !isOpen && groupHasActive
+                          ? "bg-primary/8 text-primary font-semibold"
+                          : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
+                      )}
+                    >
+                      <Briefcase className={cn("h-4 w-4 shrink-0 transition-colors", !isOpen && groupHasActive ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary")} />
+                      <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">Portfólió</span>
+                      <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", isOpen ? 'rotate-90' : '', !isOpen && groupHasActive ? 'text-primary' : 'text-muted-foreground')} />
+                      {!isOpen && groupHasActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />}
+                    </button>
+                    {isOpen && (
+                      <ul className="mt-0.5 flex flex-col gap-0.5 pb-1">
+                        {items.map(item => {
+                          const active = item.exact ? pathname === item.to : isActive(item.to);
+                          return (
+                            <li key={item.to}>
+                              <Link
+                                to={item.to}
+                                className={cn(
+                                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-4 text-left text-sm transition-colors",
+                                  active ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                                )}
+                              >
+                                <item.icon className="h-4 w-4 shrink-0" />
+                                <span className="truncate flex-1">{item.label}</span>
+                                {item.badge && item.badge > 0 ? (
+                                  <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md min-w-5 text-center tabular-nums">{item.badge}</span>
+                                ) : null}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
                     )}
-                  >
-                    <Settings className="h-4 w-4 shrink-0" />
-                    <span className="truncate">Beállítások</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    to="/accounty/tickets" 
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
-                      isActive('/accounty/tickets') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                    )}
-                  >
-                    <TicketCheck className="h-4 w-4 shrink-0" />
-                    <span className="truncate flex-1">Hibajegyek</span>
-                    {unreadTicketCount > 0 && (
-                      <span className="h-5 min-w-5 px-1 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                        {unreadTicketCount > 9 ? '9+' : unreadTicketCount}
-                      </span>
-                    )}
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    to="/accounty/help" 
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
-                      isActive('/accounty/help') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
-                    )}
-                  >
-                    <HelpCircle className="h-4 w-4 shrink-0" />
-                    <span className="truncate">Segítség</span>
-                  </Link>
-                </li>
-              </ul>
-            </>
-          )}
+                  </div>
+                );
+              })()}
 
-          {/* Admin szekció (expanded only) */}
-          {!isCollapsed && (
-            <>
-              <div className="flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 mt-4 mb-1">
-                Admin
-              </div>
-              <ul className="flex w-full min-w-0 flex-col gap-1">
-                {[
+              {/* Bérszámfejtés csoport */}
+              {(() => {
+                const groupKey = 'payroll';
+                const isOpen = expandedSections.has(groupKey);
+                const groupHasActive = pathname.includes('/accounty/payroll');
+                return (
+                  <div>
+                    <button
+                      onClick={() => toggleSection(groupKey)}
+                      className={cn(
+                        "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
+                        !isOpen && groupHasActive
+                          ? "bg-primary/8 text-primary font-semibold"
+                          : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
+                      )}
+                    >
+                      <Calculator className={cn("h-4 w-4 shrink-0 transition-colors", !isOpen && groupHasActive ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary")} />
+                      <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">Bérszámfejtés</span>
+                      <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", isOpen ? 'rotate-90' : '', !isOpen && groupHasActive ? 'text-primary' : 'text-muted-foreground')} />
+                      {!isOpen && groupHasActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />}
+                    </button>
+                    {isOpen && (
+                      <ul className="mt-0.5 flex flex-col gap-0.5 pb-1">
+                        <li>
+                          <Link
+                            to="/accounty/payroll-portfolio"
+                            className={cn(
+                              "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-4 text-left text-sm transition-colors",
+                              isActive('/accounty/payroll-portfolio') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                            )}
+                          >
+                            <BarChart2 className="h-4 w-4 shrink-0" />
+                            <span className="truncate">Áttekintés</span>
+                          </Link>
+                        </li>
+                        {(() => {
+                          const filtered = allClients
+                            ? (payrollSearch
+                                ? allClients.filter((c: any) => c.name.toLowerCase().includes(payrollSearch.toLowerCase()))
+                                : allClients
+                              ).slice(0, showAllPayroll ? undefined : 5)
+                            : [];
+                          return (
+                            <>
+                              {allClients && allClients.length > 3 && (
+                                <li className="px-4 mt-1 mb-0.5">
+                                  <div className="relative">
+                                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+                                    <input
+                                      type="text"
+                                      placeholder="Ügyfél..."
+                                      value={payrollSearch}
+                                      onChange={e => setPayrollSearch(e.target.value)}
+                                      className="w-full text-[11px] pl-6 pr-2 py-1 bg-sidebar-foreground/5 rounded border-0 outline-none focus:ring-1 focus:ring-primary/30 text-sidebar-foreground placeholder:text-sidebar-foreground/30"
+                                    />
+                                  </div>
+                                </li>
+                              )}
+                              {filtered.map((client: any) => {
+                                const basePath = `/accounty/payroll/${client.companyId}`;
+                                const isExpanded = expandedPayroll.has(client.companyId);
+                                const isPayrollActive = pathname.startsWith(basePath);
+                                return (
+                                  <li key={client.id}>
+                                    <button
+                                      onClick={() => togglePayrollClient(client.companyId)}
+                                      className={cn(
+                                        "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-4 text-left text-xs transition-colors",
+                                        isPayrollActive ? "text-primary font-medium" : "text-sidebar-foreground/70 hover:text-primary"
+                                      )}
+                                    >
+                                      <Building2 className="h-3.5 w-3.5 shrink-0" />
+                                      <span className="truncate flex-1">{client.name}</span>
+                                      <ChevronRight className={cn("h-3 w-3 transition-transform duration-200", isExpanded ? 'rotate-90' : '')} />
+                                    </button>
+                                    {isExpanded && (
+                                      <ul className="ml-4 flex flex-col gap-0.5">
+                                        {[
+                                          { to: `${basePath}/employees`, icon: Users, label: 'Foglalkoztatottak' },
+                                          { to: `${basePath}/reports`, icon: TrendingUp, label: 'Riportok' },
+                                          { to: `${basePath}/filings`, icon: FileText, label: 'NAV bevallások' },
+                                          { to: `${basePath}/portal`, icon: Building2, label: 'Ügyfélportál' },
+                                          { to: `${basePath}/tax-params`, icon: Settings, label: 'Paraméterek' },
+                                        ].map(sub => (
+                                          <li key={sub.to}>
+                                            <Link
+                                              to={sub.to}
+                                              className={cn(
+                                                "flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs transition-colors",
+                                                isActive(sub.to) ? "font-semibold text-primary" : "text-sidebar-foreground/60 hover:text-primary"
+                                              )}
+                                            >
+                                              <sub.icon className="h-3.5 w-3.5 shrink-0" />
+                                              <span className="truncate">{sub.label}</span>
+                                            </Link>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    )}
+                                  </li>
+                                );
+                              })}
+                              {!showAllPayroll && allClients && allClients.length > 5 && !payrollSearch && (
+                                <li>
+                                  <button
+                                    onClick={() => setShowAllPayroll(true)}
+                                    className="w-full flex items-center justify-center gap-1 py-1.5 text-[11px] text-sidebar-foreground/50 hover:text-primary transition-colors"
+                                  >
+                                    + {allClients.length - 5} további cég
+                                  </button>
+                                </li>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* TAO / KIVA csoport */}
+              {(() => {
+                const groupKey = 'tao';
+                const isOpen = expandedSections.has(groupKey);
+                const items = [
+                  { to: '/accounty/tao', icon: Landmark, label: 'TAO Portfólió', exact: true },
+                  { to: '/accounty/tao/calendar', icon: Calendar, label: 'TAO Naptár' },
+                  { to: '/accounty/tao/taxpayer-types', icon: Users, label: 'Adózói Körök' },
+                ];
+                const groupHasActive = pathname === '/accounty/tao' || pathname.startsWith('/accounty/tao/') || (pathname.includes('/tao') && pathname.includes('/client/'));
+                return (
+                  <div>
+                    <button
+                      onClick={() => toggleSection(groupKey)}
+                      className={cn(
+                        "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
+                        !isOpen && groupHasActive
+                          ? "bg-emerald-500/8 text-emerald-600 font-semibold"
+                          : "text-sidebar-foreground/70 hover:bg-emerald-500/10 hover:text-emerald-600"
+                      )}
+                    >
+                      <Landmark className={cn("h-4 w-4 shrink-0 transition-colors", !isOpen && groupHasActive ? "text-emerald-600" : "text-muted-foreground group-hover/trigger:text-emerald-600")} />
+                      <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">TAO / KIVA</span>
+                      <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", isOpen ? 'rotate-90' : '', !isOpen && groupHasActive ? 'text-emerald-600' : 'text-muted-foreground')} />
+                      {!isOpen && groupHasActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-emerald-500" />}
+                    </button>
+                    {isOpen && (
+                      <ul className="mt-0.5 flex flex-col gap-0.5 pb-1">
+                        {items.map(item => {
+                          const active = item.exact ? pathname === item.to : isActive(item.to);
+                          return (
+                            <li key={item.to}>
+                              <Link
+                                to={item.to}
+                                className={cn(
+                                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-4 text-left text-sm transition-colors",
+                                  active ? "bg-emerald-500/15 font-medium text-emerald-600" : "hover:bg-emerald-500/10 hover:text-emerald-600 text-sidebar-foreground"
+                                )}
+                              >
+                                <item.icon className="h-4 w-4 shrink-0" />
+                                <span className="truncate">{item.label}</span>
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Adminisztráció csoport */}
+              {(() => {
+                const groupKey = 'admin';
+                const isOpen = expandedSections.has(groupKey);
+                const items = [
+                  { to: '/accounty/settings', icon: Settings, label: 'Beállítások' },
+                  { to: '/accounty/tickets', icon: TicketCheck, label: 'Hibajegyek', badge: unreadTicketCount },
+                  { to: '/accounty/help', icon: HelpCircle, label: 'Segítség' },
+                  { to: '/accounty/ai-assistant', icon: Sparkles, label: 'AI Asszisztens' },
+                  { to: '/accounty/profile/settings', icon: User, label: 'Profilbeállítások' },
                   { to: '/accounty/admin/audit', icon: ShieldCheck, label: 'Audit napló' },
                   { to: '/accounty/admin/gdpr', icon: ShieldCheck, label: 'GDPR' },
                   { to: '/accounty/admin/templates', icon: FileText, label: 'Sablonok' },
                   { to: '/accounty/admin/job-codes', icon: BookOpen, label: 'Jogviszonykódok' },
                   { to: '/accounty/admin/tax-parameters', icon: Calculator, label: 'Adómértékek' },
                   { to: '/accounty/admin/legal-updates', icon: Scale, label: 'Jogszabály-frissítések' },
-                ].map(item => (
-                  <li key={item.to}>
-                    <Link
-                      to={item.to}
+                ];
+                const groupHasActive = items.some(i => isActive(i.to));
+                return (
+                  <div>
+                    <button
+                      onClick={() => toggleSection(groupKey)}
                       className={cn(
-                        "flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8",
-                        isActive(item.to) ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                        "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
+                        !isOpen && groupHasActive
+                          ? "bg-primary/8 text-primary font-semibold"
+                          : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
                       )}
                     >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </>
+                      <Settings className={cn("h-4 w-4 shrink-0 transition-colors", !isOpen && groupHasActive ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary")} />
+                      <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">Adminisztráció</span>
+                      <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", isOpen ? 'rotate-90' : '', !isOpen && groupHasActive ? 'text-primary' : 'text-muted-foreground')} />
+                      {!isOpen && groupHasActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />}
+                    </button>
+                    {isOpen && (
+                      <ul className="mt-0.5 flex flex-col gap-0.5 pb-1">
+                        {items.map(item => {
+                          const active = isActive(item.to);
+                          return (
+                            <li key={item.to}>
+                              <Link
+                                to={item.to}
+                                className={cn(
+                                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-4 text-left text-sm transition-colors",
+                                  active ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                                )}
+                              >
+                                <item.icon className="h-4 w-4 shrink-0" />
+                                <span className="truncate flex-1">{item.label}</span>
+                                {item.badge && item.badge > 0 ? (
+                                  <span className="h-5 min-w-5 px-1 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                                    {item.badge > 9 ? '9+' : item.badge}
+                                  </span>
+                                ) : null}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
           )}
         </nav>
 
