@@ -24,6 +24,7 @@ Mielőtt az audit elkezdődne, az AI asszisztensnek **KÖTELEZŐ** beolvasnia az
    - [A-003-multi-tenancy-rls.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-003-multi-tenancy-rls.md) (Multi-tenancy RLS alapon)
    - [A-016-postgresql-query-strategy.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-016-postgresql-query-strategy.md) (PostgREST vs RPC, SECURITY DEFINER konvenciók)
    - [A-017-security-architecture.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-017-security-architecture.md) (5 rétegű biztonsági architektúra)
+   - [A-020-auth-trigger-chain-incident.md](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-020-auth-trigger-chain-incident.md) (Trigger chain szabályok — signup incident tanulságai)
 
 ---
 
@@ -48,6 +49,27 @@ Az AI asszisztensnek az alábbi lépéseken kell végigmennie a hibák felderít
    - **SECURITY DEFINER jogok:** Ellenőrizd a `public` sémában lévő `SECURITY DEFINER` függvények `EXECUTE` jogosultságait. A kizárólag worker vagy belső triggerek által használt függvényekről le kell tiltani a `PUBLIC`, `anon` és `authenticated` hozzáférést (kizárólag a `service_role` hívhatja őket).
      * **FIGYELEM (Kritikus):** Ha a függvény PostgREST pre-request hook-ként (pl. `pgrst.db_pre_request = 'public.check_request'`) fut a háttérben, akkor az `anon` és `authenticated` szerepköröknek **KÖTELEZŐ** megadni az explicit `EXECUTE` jogosultságot. Ha erről a függvényről letiltjuk a hozzáférést, a teljes REST API megbénul, és minden kliens-oldali hívás (pl. cégadatok lekérdezése) 403 / permission denied hibával elbukik.
    - **Storage bucket listázás:** Győződj meg róla, hogy a storage SELECT szabályok korlátozzák az elérést (pl. cég-azonosító mappa vagy token alapján), megakadályozva a globális listázást (`public_bucket_allows_listing`).
+   - **🔴 Trigger function SECURITY DEFINER (A-020 tanulság):** Ellenőrizd, hogy **MINDEN** trigger function (`RETURNS trigger`) rendelkezik-e `SECURITY DEFINER`-rel, ha más táblába ír. Trigger kontextusban `auth.uid()` NULL → RLS-sel védett táblákba nem tud írni `SECURITY DEFINER` nélkül.
+     ```sql
+     -- Audit query: hiányzó SECURITY DEFINER trigger function-ök
+     SELECT p.proname, t.tgrelid::regclass as trigger_table, t.tgname as trigger_name
+     FROM pg_trigger t
+     JOIN pg_proc p ON t.tgfoid = p.oid
+     WHERE NOT t.tgisinternal
+       AND p.pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+       AND NOT p.prosecdef;  -- prosecdef = false → NEM SECURITY DEFINER
+     ```
+   - **🔴 Trigger function search_path (A-020 tanulság):** Ellenőrizd, hogy a `SECURITY DEFINER` function-ök `search_path`-ja tartalmazza-e az `extensions` sémát, ha bármilyen extension function-t használnak (`gen_random_bytes`, `encode`, `net.http_post`, stb.). Supabase-en az extension-ök az `extensions` sémában vannak, NEM a `public`-ban.
+     ```sql
+     -- Audit query: SECURITY DEFINER function-ök search_path ellenőrzése
+     SELECT p.proname, p.proconfig
+     FROM pg_proc p
+     WHERE p.prosecdef = true  -- SECURITY DEFINER
+       AND p.pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+       AND p.prorettype = (SELECT oid FROM pg_type WHERE typname = 'trigger');
+     -- Vizsgáld: proconfig-ban van-e 'search_path=public, extensions'
+     ```
+   - **🔴 CREATE OR REPLACE attribútum-megőrzés (A-020 tanulság):** Ha `CREATE OR REPLACE FUNCTION` szerepel egy migrációban, ellenőrizd, hogy az **összes** eredeti attribútum (`SECURITY DEFINER`, `SET search_path`, stb.) meg van-e tartva. A `CREATE OR REPLACE` NEM örökli a korábbi attribútumokat — explicit újra meg kell adni!
 
 ---
 

@@ -1,4 +1,4 @@
-﻿import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { sha3_512 } from 'https://esm.sh/@noble/hashes@1.3.0/sha3';
 
 const corsHeaders = {
@@ -193,9 +193,9 @@ Deno.serve(async (req) => {
     const allInvoices: any[] = [];
     let currentPage = 1;
     let availablePage = 1;
-    const maxPages = 3;
+    const MAX_SAFETY_PAGES = 50; // Safety cap to prevent infinite loops
 
-    while (currentPage <= maxPages && currentPage <= availablePage) {
+    while (currentPage <= MAX_SAFETY_PAGES && currentPage <= availablePage) {
       console.log(`[NAV-QUERY-OUTBOUND] Fetching page ${currentPage}/${availablePage}`);
 
       const requestId = generateRequestId();

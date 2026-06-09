@@ -1,12 +1,12 @@
 ---
 name: visibill-codebase-audit
-description: Use when auditing the Visibill codebase for bugs, inconsistent rendering, broken routes, type safety issues, dead code, and architectural problems. Covers React frontend, Supabase integration, auth flows, data consistency, and UI/UX coherence across the full-stack.
+description: Use when auditing the Visibill codebase for bugs, inconsistent rendering, broken routes, type safety issues, dead code, trigger chain problems, and architectural issues. Covers React frontend, Supabase integration, auth flows, DB triggers, Edge Functions, data consistency, and UI/UX coherence across the full-stack. Triggers on "codebase audit", "kód átvizsgálás", "minőség ellenőrzés", "frontend audit", "codebase health", "bug hunt", "code review", "kód audit", "teljes átvizsgálás".
 license: MIT
 metadata:
   author: Visibill Team
-  version: "1.0.0"
-  date: May 2026
-  abstract: Comprehensive codebase quality audit framework for the Visibill platform. Covers 10 audit layers from routing and type safety through data flow, error handling, auth, UI consistency, dead code, and Supabase-specific integration patterns. Includes automated grep/search patterns for each layer and references related skills for deep-dive analysis.
+  version: "1.1.0"
+  date: June 2026
+  abstract: Comprehensive codebase quality audit framework for the Visibill platform. Covers 12 audit layers from routing and type safety through data flow, error handling, auth, UI consistency, dead code, Supabase integration, DB triggers, and Edge Functions. Uses graphify knowledge graph for dependency discovery and references related Visibill-specific skills for deep-dive analysis.
 ---
 
 # Visibill Codebase Audit
@@ -21,19 +21,79 @@ Systematic framework for auditing the entire Visibill codebase for bugs, inconsi
 - Periodic codebase health check (monthly)
 - When onboarding new developers (establishes baseline)
 - When features "work but feel broken" — inconsistent UX, stale data, flash of wrong content
+- After a production incident (post-mortem audit)
 
 ## Prerequisites — Load Related Skills First
 
 Before starting the audit, read these skills for methodology context:
 
-1. **`react-best-practices`** — Component patterns, hook rules, state management
+1. **`vercel-react-best-practices`** — Component patterns, hook rules, state management
 2. **`systematic-debugging`** — Root cause methodology for any bugs found
 3. **`verification-before-completion`** — Verify each fix before marking done
 4. **`webapp-testing`** — What should be tested, testing strategy
 5. **`frontend-design`** — UI/UX consistency baseline
-6. **`composition-patterns`** — Component composition, prop drilling detection
+6. **`vercel-composition-patterns`** — Component composition, prop drilling detection
+
+**Visibill-specifikus skillek (KÖTELEZŐ cross-referencia):**
+
+7. **`visibill-db-audit`** — RLS, indexek, SECURITY DEFINER, trigger audit (→ Layer 11)
+8. **`visibill-db-checklist`** — Migration, RPC, RLS checklist, naming convention (→ Layer 11)
+9. **`visibill-spec-lookup`** — Specifikációk betöltése bármilyen módosítás előtt
 
 **Rule:** Read each skill's SKILL.md before starting the relevant audit layer. Don't skip — each skill has nuances that affect how you evaluate findings.
+
+---
+
+## Graphify Integráció
+
+> **A graphify a codebase audit legfontosabb eszköze.** Mielőtt bármilyen réteget auditálsz, futtasd a releváns graphify lekérdezéseket a komponens-kapcsolatok megértéséhez.
+
+### Használat minden audit layer előtt
+
+```bash
+# Graphify query — szöveges kereséssel releváns node-ok
+graphify query "<audit layer kulcsszavak>"
+
+# Graphify path — két komponens közti kapcsolat
+graphify path "<ComponentA>" "<ComponentB>"
+
+# Graphify explain — egy node összes kapcsolata
+graphify explain "<NodeName>"
+```
+
+### Tipikus audit lekérdezések
+
+```bash
+# Routing audit: összes route és navigáció
+graphify query "Route navigate Link useNavigate App.tsx"
+
+# Auth audit: auth flow komponensek
+graphify query "AuthContext useAuth signUp signIn session"
+
+# Data flow: hook-ok és context-ek
+graphify query "useQuery useMutation useState CompanyContext"
+
+# Supabase: összes DB-interakció
+graphify query "supabase from rpc select insert"
+
+# Dead code: orphan komponensek keresése
+graphify query "pages components unused orphan"
+```
+
+### Community-based audit
+
+A graphify **community detection** algoritmusa csoportosítja az összefüggő komponenseket. Ha két komponens különböző community-be tartozik, de szorosan kapcsolódnak, az **architekturális probléma** jele lehet.
+
+```bash
+# Ellenőrizd, hogy a critical path node-ok azonos community-ben vannak-e
+graphify explain "AuthContext"   # → community: 93
+graphify explain "CompanyContext" # → community: ?
+# Ha eltérő community → potenciális coupling probléma
+```
+
+> **⚠️ Graphify limitáció:** A graphify az AST-t elemzi (frontend kód). A SQL triggerek, Edge Function-ök és migrációk **NEM** részei a gráfnak. Ezekhez a `visibill-db-audit` skill-t és a Supabase MCP tool-okat használd.
+
+---
 
 ## The Audit Layers
 
@@ -49,55 +109,72 @@ Before starting the audit, read these skills for methodology context:
 │  Layer 8:  DEAD CODE & IMPORTS               │
 │  Layer 9:  ENVIRONMENT & CONFIG              │
 │  Layer 10: LOCALIZATION & HARDCODED STRINGS  │
+│  Layer 11: DB TRIGGERS & MIGRATIONS          │
+│  Layer 12: EDGE FUNCTIONS                    │
 └──────────────────────────────────────────────┘
 ```
 
 **Iron Rule:** Don't fix while auditing. Document everything first, then prioritize, then fix. Mixing audit and fix leads to missed issues and half-done repairs.
 
+**Audit eredmény mentése:** Az audit eredményét **artifact-ként** mentsd el (ne a chat-be írd ki az egészet). Használd az Audit Output Template-et.
+
 ## Severity Classification
 
 | Severity | Definition | Examples |
 |----------|-----------|----------|
-| 🔴 **Critical** | App crashes, data loss, security hole | Unprotected route, uncaught promise, data overwrite |
+| 🔴 **Critical** | App crashes, data loss, security hole | Unprotected route, uncaught promise, data overwrite, trigger chain hiba |
 | 🟡 **High** | Feature broken or misleading | Wrong data displayed, stale cache, broken navigation |
-| 🟠 **Medium** | UX degradation, maintenance burden | Inconsistent styling, prop drilling, any types |
+| 🟠 **Medium** | UX degradation, maintenance burden | Inconsistent styling, prop drilling, any types, nagy fájlméret |
 | 🟢 **Low** | Code quality, future risk | Dead code, missing types on internal utils, style nits |
 
 ---
 
 ## Layer 1: Routing & Navigation
 
-**Related skill:** `react-best-practices` (routing patterns)
+**Related skill:** `vercel-react-best-practices` (routing patterns)  
+**Visibill ADR:** [A-013: Scoped URL Routing](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-013-scoped-routing.md)
 
-### 1.1 — Route Definition Audit
-
-Find the main route configuration and verify completeness:
+### 1.0 — Graphify: Routing térkép
 
 ```bash
-# Find route definitions
-grep -rn "path:" src/ --include="*.tsx" --include="*.ts" | grep -i "route\|router"
-grep -rn "<Route" src/ --include="*.tsx"
-grep -rn "createBrowserRouter\|createRoutesFromElements" src/ --include="*.tsx"
+graphify query "Route navigate Link App.tsx ScopedLayout ProtectedRoute ProtectedLayout"
+graphify explain "App.tsx"
+```
+
+### 1.1 — Scoped Routing Pattern (Visibill-specifikus)
+
+A Visibill `/:companyId/:dateRange/*` scoped URL routing pattern-t használ.
+
+**Checklist:**
+- [ ] Minden protected route a `ScopedLayout` wrapperben van
+- [ ] A `CompanyContext` az URL `companyId` paraméteréből töltődik
+- [ ] A `DateRangeContext` az URL `dateRange` paraméteréből töltődik
+- [ ] `useAppReady()` gate blokkolja a renderelést amíg session + company + profile nincs betöltve
+- [ ] Accounty modul saját layout-ot használ (`AccountyLayout.tsx`) — nem a standard `ScopedLayout`-ot
+
+### 1.2 — Route Definition Audit
+
+```bash
+# Használd a grep_search tool-t (Windows-kompatibilis):
+# Route definíciók keresése
+grep_search Query="<Route" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"]
+
+# ProtectedRoute wrapper keresése
+grep_search Query="ProtectedRoute" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"]
 ```
 
 **Checklist:**
-- [ ] Every page in `src/pages/` has a corresponding route
-- [ ] No orphaned pages (files in pages/ with no route)
-- [ ] No duplicate route paths
-- [ ] 404/catch-all route exists
-- [ ] Nested routes have proper `<Outlet />` parents
+- [ ] Minden page fájl `src/pages/`-ben rendelkezik route-tal
+- [ ] Nincs orphan page (fájl route nélkül)
+- [ ] Nincs duplikált route path
+- [ ] 404/catch-all route létezik (`NotFound.tsx`)
+- [ ] Nested route-ok rendelkeznek `<Outlet />` parent-tel
 
-### 1.2 — Lazy Loading & Suspense
+### 1.3 — Lazy Loading & Suspense
 
 ```bash
-# Find lazy-loaded routes
-grep -rn "React.lazy\|lazy(" src/ --include="*.tsx"
-
-# Find Suspense boundaries
-grep -rn "<Suspense" src/ --include="*.tsx"
-
-# Find direct page imports (should be lazy)
-grep -rn "^import.*from.*pages/" src/App.tsx src/main.tsx
+grep_search Query="React.lazy" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"]
+grep_search Query="<Suspense" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"]
 ```
 
 **Red flags:**
@@ -105,49 +182,34 @@ grep -rn "^import.*from.*pages/" src/App.tsx src/main.tsx
 - 🔴 Lazy import without `<Suspense>` wrapper — crashes on slow networks
 - 🟡 No fallback UI in `<Suspense fallback={...}>` — blank screen flash
 
-### 1.3 — Navigation Consistency
-
-```bash
-# Find all navigation calls
-grep -rn "navigate(\|useNavigate\|<Link\|<NavLink\|window.location\|href=" src/ --include="*.tsx"
-
-# Find hardcoded paths (should use constants)
-grep -rn "navigate('/\|to='/\|href='/\|to=\"/" src/ --include="*.tsx" | grep -v "node_modules"
-```
-
-**Red flags:**
-- 🟡 Hardcoded route strings instead of route constants
-- 🔴 `window.location.href` used instead of React Router (full page reload)
-- 🟡 Mix of `<Link>`, `navigate()`, and `window.location` without pattern
-
 ### 1.4 — Protected Route Coverage
 
 ```bash
-# Find auth guard components
-grep -rn "ProtectedRoute\|RequireAuth\|AuthGuard\|PrivateRoute" src/ --include="*.tsx"
-
-# Find routes WITHOUT protection
-grep -rn "<Route" src/ --include="*.tsx" | grep -v "Protected\|Auth\|Guard\|Private\|login\|register\|public"
+grep_search Query="ProtectedRoute" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"]
+grep_search Query="useAuth" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src\pages" Includes=["*.tsx"]
 ```
 
 **Red flags:**
 - 🔴 Page accessible without authentication that should require it
-- 🔴 Admin page without role check
+- 🔴 Admin/Management page without role check
 - 🟡 Inconsistent guard component usage
+- 🔴 Accounty route-ok nem ellenőrzik az accountant role-t
 
 ---
 
 ## Layer 2: Type Safety
 
+### 2.0 — Graphify: Type kapcsolatok
+
+```bash
+graphify query "interface type Database Tables"
+```
+
 ### 2.1 — `any` Usage Audit
 
 ```bash
-# Count total `any` usage
-grep -rn ": any\|as any\|<any>\|any\[\]\|any =" src/ --include="*.ts" --include="*.tsx" | wc -l
-
-# Find the worst offenders
-grep -rn ": any\|as any" src/ --include="*.ts" --include="*.tsx" | \
-  sed 's/:.*//' | sort | uniq -c | sort -rn | head -20
+grep_search Query=": any" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.ts", "*.tsx"]
+grep_search Query="as any" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.ts", "*.tsx"]
 ```
 
 **Severity by location:**
@@ -159,11 +221,8 @@ grep -rn ": any\|as any" src/ --include="*.ts" --include="*.tsx" | \
 ### 2.2 — Supabase Query Types
 
 ```bash
-# Find untyped supabase queries
-grep -rn "\.from(" src/ --include="*.ts" --include="*.tsx" | grep -v "Database\|Tables\|<"
-
-# Find missing generic in createClient
-grep -rn "createClient(" src/ --include="*.ts" --include="*.tsx"
+grep_search Query=".from(" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.ts", "*.tsx"]
+grep_search Query="createClient(" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.ts", "*.tsx"]
 ```
 
 **Red flags:**
@@ -174,13 +233,8 @@ grep -rn "createClient(" src/ --include="*.ts" --include="*.tsx"
 ### 2.3 — Interface Consistency
 
 ```bash
-# Find all interface/type definitions
-grep -rn "^interface \|^type \|^export interface \|^export type " src/ --include="*.ts" --include="*.tsx" | \
-  sed 's/:.*//' | sort
-
-# Find duplicate type names
-grep -rn "^export interface \|^export type " src/ --include="*.ts" --include="*.tsx" | \
-  grep -oP "(?:interface|type)\s+\w+" | sort | uniq -d
+grep_search Query="^export interface " SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.ts", "*.tsx"] IsRegex=true
+grep_search Query="^export type " SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.ts", "*.tsx"] IsRegex=true
 ```
 
 **Red flags:**
@@ -191,11 +245,7 @@ grep -rn "^export interface \|^export type " src/ --include="*.ts" --include="*.
 ### 2.4 — Null/Undefined Handling
 
 ```bash
-# Find non-null assertions (risky)
-grep -rn "!\." src/ --include="*.tsx" --include="*.ts" | grep -v "node_modules\|test\|spec\|!=\|!=="
-
-# Find optional chaining that might hide bugs
-grep -rn "\?\.\[" src/ --include="*.tsx" | head -20
+grep_search Query="!." SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
 ```
 
 **Red flags:**
@@ -206,19 +256,21 @@ grep -rn "\?\.\[" src/ --include="*.tsx" | head -20
 
 ## Layer 3: Data Flow & State Management
 
-**Related skills:** `react-best-practices`, `composition-patterns`
+**Related skills:** `vercel-react-best-practices`, `vercel-composition-patterns`
+
+### 3.0 — Graphify: Data flow térkép
+
+```bash
+graphify query "useState useQuery useMutation CompanyContext DateRangeContext AuthContext"
+graphify query "useDashboardData useInvoiceData useTransactionData useAccountyData"
+```
 
 ### 3.1 — State Location Audit
 
 ```bash
-# Find all useState calls with count per file
-grep -rn "useState" src/ --include="*.tsx" | sed 's/:.*//' | sort | uniq -c | sort -rn | head -20
-
-# Find all useContext calls
-grep -rn "useContext" src/ --include="*.tsx" | sed 's/:.*//' | sort | uniq -c | sort -rn
-
-# Find all React Query/TanStack usage
-grep -rn "useQuery\|useMutation\|useInfiniteQuery" src/ --include="*.tsx" | sed 's/:.*//' | sort | uniq -c | sort -rn
+grep_search Query="useState" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"]
+grep_search Query="useContext" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"]
+grep_search Query="useQuery" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"]
 ```
 
 **Red flags:**
@@ -227,14 +279,24 @@ grep -rn "useQuery\|useMutation\|useInfiniteQuery" src/ --include="*.tsx" | sed 
 - 🔴 Global state (Context) storing data that should be in React Query cache
 - 🟡 Props drilled through > 3 levels
 
-### 3.2 — Data Fetching Consistency
+### 3.2 — Fájlméret audit (Visibill-specifikus)
+
+**Flageld a túlméretezett fájlokat:**
+- 🟠 Hook > 30KB (pl. `useAccountyData.ts` 59KB, `usePayrollData.ts` 37KB)
+- 🟠 Page > 50KB (pl. `InvoicesPage.tsx` 87KB, `VatReturnPage.tsx` 79KB)
+- 🟡 Component > 20KB
 
 ```bash
-# Find direct supabase calls in components (should be in hooks/queries)
-grep -rn "supabase\.from\|supabase\.rpc" src/pages/ src/components/ --include="*.tsx" | head -20
+# Fájlméret listing (PowerShell)
+Get-ChildItem d:\ThinkAI\Visibill\eaisybill-prod\src\pages\*.tsx | Sort-Object Length -Descending | Select-Object Name, @{N='KB';E={[math]::Round($_.Length/1KB)}} | Format-Table
+Get-ChildItem d:\ThinkAI\Visibill\eaisybill-prod\src\hooks\*.ts | Sort-Object Length -Descending | Select-Object Name, @{N='KB';E={[math]::Round($_.Length/1KB)}} | Format-Table
+```
 
-# Find useEffect with fetch patterns
-grep -rn "useEffect.*{" src/ --include="*.tsx" -A3 | grep "supabase\|fetch\|axios"
+### 3.3 — Data Fetching Consistency
+
+```bash
+grep_search Query="supabase.from" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src\pages" Includes=["*.tsx"]
+grep_search Query="supabase.rpc" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src\pages" Includes=["*.tsx"]
 ```
 
 **Red flags:**
@@ -243,29 +305,11 @@ grep -rn "useEffect.*{" src/ --include="*.tsx" -A3 | grep "supabase\|fetch\|axio
 - 🟡 Same query repeated in multiple components without shared queryKey
 - 🔴 Missing loading/error states for async operations
 
-### 3.3 — Race Condition Detection
-
-```bash
-# Find useEffect without cleanup
-grep -rn "useEffect" src/ --include="*.tsx" -A10 | grep -B5 "supabase\|fetch" | grep -v "return\|cleanup\|abort\|unsubscribe"
-
-# Find async useEffect patterns
-grep -rn "useEffect.*async\|useEffect.*=>" src/ --include="*.tsx" -A3 | grep "await"
-```
-
-**Red flags:**
-- 🔴 Async operation in useEffect without abort controller/cleanup
-- 🔴 State update after component unmount (memory leak)
-- 🟡 Multiple rapid re-fetches without debounce
-
 ### 3.4 — Stale Data & Cache Issues
 
 ```bash
-# Find manual cache invalidation
-grep -rn "invalidateQueries\|refetchQueries\|setQueryData" src/ --include="*.tsx" --include="*.ts"
-
-# Find staleTime configurations
-grep -rn "staleTime\|cacheTime\|gcTime" src/ --include="*.tsx" --include="*.ts"
+grep_search Query="invalidateQueries" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
+grep_search Query="staleTime" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
 ```
 
 **Red flags:**
@@ -279,14 +323,11 @@ grep -rn "staleTime\|cacheTime\|gcTime" src/ --include="*.tsx" --include="*.ts"
 
 **Related skill:** `systematic-debugging`
 
-### 4.1 — Try-Catch Coverage
+### 4.1 — Supabase Error Check Coverage
 
 ```bash
-# Find async functions without try-catch
-grep -rn "async " src/ --include="*.tsx" --include="*.ts" -A10 | grep -B5 "await" | grep -v "try\|catch"
-
-# Find Supabase calls without error check
-grep -rn "supabase\.\(from\|rpc\)" src/ --include="*.tsx" --include="*.ts" -A3 | grep -v "error\|catch\|throw"
+grep_search Query="supabase." SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
+# Ellenőrizd: minden supabase hívás után van-e .error check
 ```
 
 **Red flags:**
@@ -297,11 +338,7 @@ grep -rn "supabase\.\(from\|rpc\)" src/ --include="*.tsx" --include="*.ts" -A3 |
 ### 4.2 — Error Boundaries
 
 ```bash
-# Find Error Boundary components
-grep -rn "ErrorBoundary\|componentDidCatch\|getDerivedStateFromError" src/ --include="*.tsx"
-
-# Find top-level error boundaries in layout
-grep -rn "ErrorBoundary" src/App.tsx src/main.tsx src/layouts/ --include="*.tsx"
+grep_search Query="ErrorBoundary" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"]
 ```
 
 **Red flags:**
@@ -312,11 +349,8 @@ grep -rn "ErrorBoundary" src/App.tsx src/main.tsx src/layouts/ --include="*.tsx"
 ### 4.3 — User Feedback Consistency
 
 ```bash
-# Find toast/notification usage
-grep -rn "toast\|useToast\|sonner\|notification" src/ --include="*.tsx" | head -30
-
-# Find console.error usage (should show user-facing message too)
-grep -rn "console\.error\|console\.log" src/ --include="*.tsx" --include="*.ts" | wc -l
+grep_search Query="toast" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"]
+grep_search Query="console.log" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
 ```
 
 **Red flags:**
@@ -328,14 +362,23 @@ grep -rn "console\.error\|console\.log" src/ --include="*.tsx" --include="*.ts" 
 
 ## Layer 5: Auth & Authorization
 
+**Visibill ADR-ek:**
+- [A-009: Auth és RBAC](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-009-auth-rbac.md)
+- [A-020: Auth Trigger Chain Incident](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-020-auth-trigger-chain-incident.md)
+
+### 5.0 — Graphify: Auth flow
+
+```bash
+graphify query "AuthContext useAuth signUp signIn ProtectedRoute ProtectedLayout useSessionGuard"
+graphify path "Auth()" "AuthContext"
+graphify explain "useSessionGuard.ts"
+```
+
 ### 5.1 — Auth State Management
 
 ```bash
-# Find auth state usage
-grep -rn "useAuth\|useUser\|useSession\|supabase\.auth" src/ --include="*.tsx" --include="*.ts" | head -30
-
-# Find role checks
-grep -rn "role\|isAdmin\|isCEO\|isOwner\|useAdmin" src/ --include="*.tsx" | head -20
+grep_search Query="useAuth" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
+grep_search Query="useUserRole" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"]
 ```
 
 **Red flags:**
@@ -344,7 +387,33 @@ grep -rn "role\|isAdmin\|isCEO\|isOwner\|useAdmin" src/ --include="*.tsx" | head
 - 🟡 Auth state duplicated between Context and Supabase client
 - 🔴 JWT token expiry not handled (silent auth failure)
 
-### 5.2 — Frontend ↔ Backend Auth Mismatch
+### 5.2 — Signup Trigger Chain Audit (A-020)
+
+> ⚠️ **Kritikus tanulság:** A regisztráció egy DB trigger chain-t indít el. Ha bármelyik trigger hibázik, az egész tranzakció ROLLBACK-el. Részletek: [A-020](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-020-auth-trigger-chain-incident.md)
+
+```
+auth.users INSERT
+  └── on_auth_user_created → handle_new_user()
+        └── profiles INSERT
+              ├── on_profile_created_init_email_prefs → initialize_email_preferences()
+              └── on_profile_created_initialize_subscription → initialize_user_subscription()
+```
+
+**Checklist (MCP `execute_sql` tool-lal):**
+- [ ] Minden trigger function `SECURITY DEFINER`
+- [ ] `search_path` tartalmazza `'extensions'`-t ha extension function-t hív
+- [ ] Nincs `CREATE OR REPLACE` ami "lenyelte" a `SECURITY DEFINER`-t
+
+```sql
+-- Audit query: trigger function-ök SECURITY DEFINER ellenőrzése
+SELECT p.proname, t.tgrelid::regclass, t.tgname, p.prosecdef
+FROM pg_trigger t
+JOIN pg_proc p ON t.tgfoid = p.oid
+WHERE NOT t.tgisinternal
+  AND p.pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public');
+```
+
+### 5.3 — Frontend ↔ Backend Auth Mismatch
 
 **Checklist:**
 - [ ] Every frontend role gate has a corresponding RLS policy
@@ -352,38 +421,29 @@ grep -rn "role\|isAdmin\|isCEO\|isOwner\|useAdmin" src/ --include="*.tsx" | head
 - [ ] Company member checks use the same logic frontend & backend
 - [ ] Sign-out properly clears all cached data (React Query, Context, localStorage)
 
-### 5.3 — Session Handling
+### 5.4 — Session Handling
 
 ```bash
-# Find session refresh/listener
-grep -rn "onAuthStateChange\|getSession\|refreshSession" src/ --include="*.tsx" --include="*.ts"
-
-# Find localStorage auth artifacts
-grep -rn "localStorage.*token\|localStorage.*auth\|localStorage.*session" src/ --include="*.tsx" --include="*.ts"
+grep_search Query="onAuthStateChange" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
+grep_search Query="localStorage" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
 ```
 
 **Red flags:**
-- 🔴 Token stored in localStorage without httpOnly cookie alternative
 - 🔴 No `onAuthStateChange` listener — tab switching causes stale auth
 - 🟡 Multiple `onAuthStateChange` subscriptions without cleanup
+- 🟡 `useSessionGuard` idle timeout nem szinkronizált tabek között
 
 ---
 
 ## Layer 6: UI Consistency
 
-**Related skills:** `frontend-design`, `composition-patterns`
+**Related skills:** `frontend-design`, `vercel-composition-patterns`
 
 ### 6.1 — Component Library Usage
 
 ```bash
-# Find shadcn/ui imports
-grep -rn "from.*@/components/ui/" src/ --include="*.tsx" | grep -oP "ui/\w+" | sort | uniq -c | sort -rn
-
-# Find inline styles (should use design system)
-grep -rn "style={{" src/ --include="*.tsx" | wc -l
-
-# Find raw HTML elements that should be UI components
-grep -rn "<button\b\|<input\b\|<select\b\|<table\b" src/ --include="*.tsx" | grep -v "components/ui" | head -20
+grep_search Query="from.*@/components/ui/" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"] IsRegex=true
+grep_search Query="style={{" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"]
 ```
 
 **Red flags:**
@@ -392,30 +452,11 @@ grep -rn "<button\b\|<input\b\|<select\b\|<table\b" src/ --include="*.tsx" | gre
 - 🟡 Same visual pattern implemented differently across pages
 - 🟠 Custom component duplicates an existing shadcn/ui component
 
-### 6.2 — Responsive Design
+### 6.2 — Loading & Empty States
 
 ```bash
-# Find responsive classes/media queries
-grep -rn "@media\|sm:\|md:\|lg:\|xl:" src/ --include="*.tsx" --include="*.css" | head -20
-
-# Find fixed widths that might break mobile
-grep -rn "width:\s*[0-9]\+px\|min-width:\s*[0-9]\+px" src/ --include="*.css" --include="*.tsx"
-```
-
-**Red flags:**
-- 🟡 No responsive breakpoints on main layout
-- 🟡 Fixed pixel widths on containers (breaks mobile)
-- 🟡 Tables without horizontal scroll wrapper on mobile
-
-### 6.3 — Loading & Empty States
-
-```bash
-# Find loading state patterns
-grep -rn "isLoading\|isPending\|isFetching\|Skeleton\|Spinner\|Loading" src/ --include="*.tsx" | \
-  sed 's/:.*//' | sort | uniq -c | sort -rn
-
-# Find pages WITHOUT loading states
-# Compare pages list vs loading usage
+grep_search Query="isLoading" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"]
+grep_search Query="Skeleton" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"]
 ```
 
 **Red flags:**
@@ -427,14 +468,19 @@ grep -rn "isLoading\|isPending\|isFetching\|Skeleton\|Spinner\|Loading" src/ --i
 
 ## Layer 7: Supabase Integration
 
+**Visibill ADR:** [A-016: PostgreSQL Query Strategy](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-016-postgresql-query-strategy.md) (77 RPC function katalógus)
+
+### 7.0 — Graphify: Supabase interakciók
+
+```bash
+graphify query "supabase from rpc select insert update delete"
+```
+
 ### 7.1 — Query Pattern Consistency
 
 ```bash
-# Find .single() vs .maybeSingle() usage
-grep -rn "\.single()\|\.maybeSingle()" src/ --include="*.tsx" --include="*.ts"
-
-# Find .select('*') — should specify columns
-grep -rn "\.select(\s*['\"]\\*['\"])\|\.select()" src/ --include="*.tsx" --include="*.ts"
+grep_search Query=".single()" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
+grep_search Query=".select('*')" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
 ```
 
 **Red flags:**
@@ -442,14 +488,23 @@ grep -rn "\.select(\s*['\"]\\*['\"])\|\.select()" src/ --include="*.tsx" --inclu
 - 🟡 `.select('*')` fetches unnecessary data — use specific columns
 - 🟡 `.select()` without column specification (implicit `*`)
 
-### 7.2 — Realtime Subscription Cleanup
+### 7.2 — RPC Function Audit
 
 ```bash
-# Find realtime subscriptions
-grep -rn "\.channel(\|\.on('postgres_changes'\|\.subscribe()" src/ --include="*.tsx" --include="*.ts"
+grep_search Query=".rpc(" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
+```
 
-# Check for unsubscribe in cleanup
-grep -rn "removeChannel\|unsubscribe\|\.channel(" src/ --include="*.tsx" -A10 | grep -B5 "return.*=>"
+**Checklist (cross-reference A-016):**
+- [ ] Minden frontend `.rpc()` hívás létező function-re mutat
+- [ ] Az RPC paraméterek típusa egyezik a function definícióval
+- [ ] Nincs deprecated RPC hívás (A-016-ban "deprecated" jelzéssel)
+- [ ] SECURITY DEFINER function-ök `anon` role-tól REVOKE-olva
+
+### 7.3 — Realtime Subscription Cleanup
+
+```bash
+grep_search Query=".channel(" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
+grep_search Query="removeChannel" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
 ```
 
 **Red flags:**
@@ -457,52 +512,47 @@ grep -rn "removeChannel\|unsubscribe\|\.channel(" src/ --include="*.tsx" -A10 | 
 - 🟡 Subscribing to entire table without filter (performance waste)
 - 🟡 Multiple subscriptions for same data in different components
 
-### 7.3 — RLS Policy ↔ Frontend Mismatch Detection
+### 7.4 — RLS Policy ↔ Frontend Mismatch Detection
 
 **Process:**
 1. List all tables the frontend queries
-2. For each table, check if RLS is enabled
+2. For each table, check if RLS is enabled (MCP `execute_sql`)
 3. Verify frontend assumptions match RLS policy behavior
 4. Check if frontend handles RLS denial gracefully (empty result vs error)
 
 ```bash
-# Find all tables referenced in frontend
-grep -rn "\.from(['\"]" src/ --include="*.tsx" --include="*.ts" | grep -oP "from\(['\"](\w+)['\"]" | sort -u
+grep_search Query=".from('" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
 ```
 
 ---
 
 ## Layer 8: Dead Code & Unused Imports
 
-### 8.1 — Unused Exports
+### 8.0 — Graphify: Orphan keresés
 
 ```bash
-# Find exported functions/components and check usage
-grep -rn "^export " src/ --include="*.tsx" --include="*.ts" | \
-  grep -oP "export (?:default |const |function |class )\s*(\w+)" | \
-  while read -r name; do
-    count=$(grep -rn "$name" src/ --include="*.tsx" --include="*.ts" | wc -l)
-    if [ "$count" -le 1 ]; then echo "UNUSED: $name"; fi
-  done
+# Graphify explain segítségével a low-degree node-ok potenciális dead code
+graphify query "orphan unused dead"
+
+# Ellenőrizd az 1-connection node-okat — potenciális orphan
 ```
 
-### 8.2 — Unused Files
+### 8.1 — Unused Files
 
 ```bash
-# Find files not imported anywhere
-for f in src/components/*.tsx src/pages/*.tsx; do
-  base=$(basename "$f" .tsx)
-  count=$(grep -rn "$base" src/ --include="*.tsx" --include="*.ts" | grep -v "$(basename $f)" | wc -l)
-  if [ "$count" -eq 0 ]; then echo "ORPHAN: $f"; fi
-done
+# PowerShell: pages fájlok, amik nincsenek importálva
+Get-ChildItem d:\ThinkAI\Visibill\eaisybill-prod\src\pages\*.tsx | ForEach-Object {
+  $base = $_.BaseName
+  $count = (grep_search Query="$base" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx","*.ts"]).Count
+  if ($count -le 1) { "ORPHAN: $_" }
+}
 ```
 
-### 8.3 — Console Statements
+### 8.2 — Console Statements
 
 ```bash
-# Find all console.log/warn/error left in production code
-grep -rn "console\.\(log\|warn\|error\|debug\|info\)" src/ --include="*.tsx" --include="*.ts" | \
-  grep -v "// debug\|test\|spec\|__test__" | wc -l
+grep_search Query="console.log" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
+grep_search Query="console.error" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
 ```
 
 **Red flags:**
@@ -517,35 +567,19 @@ grep -rn "console\.\(log\|warn\|error\|debug\|info\)" src/ --include="*.tsx" --i
 ### 9.1 — Environment Variables
 
 ```bash
-# Find all env variable references
-grep -rn "import\.meta\.env\|process\.env\|VITE_" src/ --include="*.tsx" --include="*.ts" | \
-  grep -oP "(?:VITE_|NEXT_PUBLIC_)\w+" | sort -u
-
-# Check .env.example exists and matches
-cat .env.example 2>/dev/null | grep -oP "^\w+" | sort > /tmp/env_example
-grep -rn "import\.meta\.env\." src/ --include="*.tsx" --include="*.ts" | \
-  grep -oP "VITE_\w+" | sort -u > /tmp/env_used
-diff /tmp/env_example /tmp/env_used
+grep_search Query="import.meta.env" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
 ```
 
 **Red flags:**
 - 🔴 Hardcoded API URL or Supabase URL in source code
 - 🔴 API key/secret in source code (should be in env or Vault)
 - 🟡 Env variable used but not in `.env.example`
-- 🟡 No `.env.example` file (onboarding friction)
 
 ### 9.2 — Hardcoded Values
 
 ```bash
-# Find hardcoded URLs
-grep -rn "https://.*supabase\|http://localhost" src/ --include="*.tsx" --include="*.ts" | \
-  grep -v "node_modules\|\.env"
-
-# Find hardcoded UUIDs (likely test data)
-grep -rn "[0-9a-f]\{8\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{4\}-[0-9a-f]\{12\}" src/ --include="*.tsx" --include="*.ts"
-
-# Find magic numbers
-grep -rn "setTimeout.*[0-9]\{4,\}\|setInterval.*[0-9]\{4,\}" src/ --include="*.tsx" --include="*.ts"
+grep_search Query="https://.*supabase" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"] IsRegex=true
+grep_search Query="http://localhost" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
 ```
 
 ---
@@ -555,11 +589,8 @@ grep -rn "setTimeout.*[0-9]\{4,\}\|setInterval.*[0-9]\{4,\}" src/ --include="*.t
 ### 10.1 — Language Consistency
 
 ```bash
-# Find Hungarian strings in JSX
-grep -rn "\"[A-ZÁÉÍÓÖŐÚÜŰ][a-záéíóöőúüű]\+\s" src/ --include="*.tsx" | head -30
-
-# Find English strings in JSX (if app is Hungarian)
-grep -rn "'Loading\|'Error\|'Success\|'Delete\|'Save\|'Cancel" src/ --include="*.tsx" | head -20
+grep_search Query="Loading" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx"]
+grep_search Query="Error" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src\pages" Includes=["*.tsx"]
 ```
 
 **Red flags:**
@@ -571,11 +602,8 @@ grep -rn "'Loading\|'Error\|'Success\|'Delete\|'Save\|'Cancel" src/ --include="*
 ### 10.2 — Date & Number Formatting
 
 ```bash
-# Find date formatting
-grep -rn "toLocaleDateString\|format(\|dayjs\|moment\|date-fns" src/ --include="*.tsx" --include="*.ts"
-
-# Find number formatting
-grep -rn "toLocaleString\|Intl\.NumberFormat\|toFixed" src/ --include="*.tsx" --include="*.ts"
+grep_search Query="toLocaleDateString" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
+grep_search Query="toLocaleString" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
 ```
 
 **Red flags:**
@@ -585,14 +613,113 @@ grep -rn "toLocaleString\|Intl\.NumberFormat\|toFixed" src/ --include="*.tsx" --
 
 ---
 
+## Layer 11: DB Triggers & Migrations (ÚJ)
+
+> **Ez a layer a `visibill-db-audit` és `visibill-db-checklist` skillek kiegészítése.** A codebase audit kontextusban a trigger chain integritásra és a migráció-kód konzisztenciára fókuszál.
+
+**Visibill ADR-ek:**
+- [A-020: Auth Trigger Chain Incident](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-020-auth-trigger-chain-incident.md)
+- [A-003: Multi-tenancy RLS](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-003-multi-tenancy-rls.md)
+- [A-016: PostgreSQL Query Strategy](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-016-postgresql-query-strategy.md)
+
+### 11.1 — Trigger Function Audit
+
+Használd a Supabase MCP `execute_sql` tool-t:
+
+```sql
+-- Összes trigger function SECURITY DEFINER státusza
+SELECT p.proname, p.prosecdef as is_security_definer,
+       t.tgrelid::regclass as trigger_table, t.tgname
+FROM pg_trigger t
+JOIN pg_proc p ON t.tgfoid = p.oid
+WHERE NOT t.tgisinternal
+  AND p.pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+ORDER BY p.proname;
+
+-- Trigger function-ök search_path ellenőrzése
+SELECT p.proname, p.proconfig
+FROM pg_proc p
+WHERE p.prosecdef = true
+  AND p.pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+  AND p.prorettype = (SELECT oid FROM pg_type WHERE typname = 'trigger');
+```
+
+**Red flags:**
+- 🔴 Trigger function `SECURITY DEFINER` nélkül ami más táblába ír
+- 🔴 `search_path` nem tartalmazza `extensions`-t ha extension function-t hív
+- 🔴 `CREATE OR REPLACE` migration ami "lenyelte" a korábbi attribútumokat
+
+### 11.2 — Migráció-kód konzisztencia
+
+```bash
+# Migrációs fájlok naming convention ellenőrzése
+Get-ChildItem d:\ThinkAI\Visibill\eaisybill-prod\supabase\migrations\*.sql | Select-Object Name
+```
+
+**Elvárt naming convention:** `YYYYMMDD_<leíró_snake_case>.sql`  
+Részletek: [visibill-db-checklist](file:///d:/ThinkAI/Visibill/eaisybill-prod/.agents/skills/visibill-db-checklist/SKILL.md)
+
+### 11.3 — Éles DB ↔ Migráció szinkron
+
+```sql
+-- Éles function definíció
+SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname = '<function_name>';
+```
+
+**Red flags:**
+- 🔴 Éles DB-ben más function definíció van mint az utolsó migrációs fájlban
+- 🟡 Migráció fájl létezik a repo-ban de nincs lefuttatva élesben
+
+---
+
+## Layer 12: Edge Functions (ÚJ)
+
+**Visibill ADR:** [A-005: Edge Functions](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-005-edge-functions.md) (46 function katalógus)
+
+### 12.1 — Deployolt ↔ Hivatkozott EF szinkron
+
+```bash
+# Frontend-ből hivatkozott Edge Function-ök
+grep_search Query="functions/v1/" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\src" Includes=["*.tsx", "*.ts"]
+
+# Trigger-ből hivatkozott Edge Function-ök
+grep_search Query="functions/v1/" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\supabase\migrations" Includes=["*.sql"]
+```
+
+Használd az MCP `list_edge_functions` tool-t az élesben deployolt EF-ek listázásához, és hasonlítsd össze.
+
+**Red flags:**
+- 🔴 Hivatkozott EF nincs deployolva (pl. `send-welcome-email` incidens — A-020)
+- 🟡 Deployolt EF nincs hivatkozva sehonnan (dead EF)
+- 🟡 EF kód a repo-ban de nincs deployolva
+
+### 12.2 — EF Auth Middleware
+
+```bash
+grep_search Query="getUser" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\supabase\functions" Includes=["*.ts"]
+grep_search Query="Authorization" SearchPath="d:\ThinkAI\Visibill\eaisybill-prod\supabase\functions" Includes=["*.ts"]
+```
+
+**Red flags:**
+- 🔴 Edge Function auth check nélkül (public endpoint, hacsak nem webhook)
+- 🟡 Inconsistent auth pattern across EF-ek
+- 🟡 CORS headers hiányoznak vagy inkonzisztensek
+
+---
+
 ## Audit Execution Process
 
+### Step 0: Graphify gráf frissítése (5 min)
+
+```bash
+graphify update .
+```
+
 ### Step 1: Automated Scan (30 min)
-Run all grep patterns from each layer. Collect raw findings.
+Futtasd a `grep_search` és `graphify query` mintákat minden layer-re. Gyűjtsd össze a raw eredményeket.
 
 ### Step 2: Triage (15 min)
-Classify each finding by severity using the table above.
-Merge duplicates. Group by layer.
+Classify each finding by severity. Merge duplicates. Group by layer.
 
 ### Step 3: Deep Dive (variable)
 For each 🔴 Critical finding:
@@ -600,73 +727,78 @@ For each 🔴 Critical finding:
 - Apply `verification-before-completion` to confirm the fix
 
 For each 🟡 High finding:
-- Apply `react-best-practices` or `composition-patterns` for correct solution
+- Apply `vercel-react-best-practices` or `vercel-composition-patterns` for correct solution
 - Check if the pattern repeats elsewhere (systemic issue)
 
-### Step 4: Report
-Use the template below.
+### Step 4: Report (artifact)
+Mentsd az audit eredményét **artifact fájlként** — ne a chat-be írd ki. Használd az alábbi template-et.
 
 ---
 
 ## Audit Output Template
 
 ```markdown
-# Codebase Audit Report — Visibill
-## Date: YYYY-MM-DD
-## Auditor: [name/agent]
+# Kódbázis Audit Jelentés — Visibill
+## Dátum: YYYY-MM-DD
+## Auditor: [agent/ember]
 
-### Summary
-| Severity | Count |
-|----------|-------|
-| 🔴 Critical | X |
-| 🟡 High | X |
-| 🟠 Medium | X |
-| 🟢 Low | X |
+### Összefoglaló
+| Súlyosság | Darab |
+|-----------|-------|
+| 🔴 Kritikus | X |
+| 🟡 Magas | X |
+| 🟠 Közepes | X |
+| 🟢 Alacsony | X |
 
-### 🔴 Critical Findings
-| # | Layer | File(s) | Issue | Impact | Fix |
-|---|-------|---------|-------|--------|-----|
+### 🔴 Kritikus Hibák
+| # | Layer | Fájl(ok) | Probléma | Hatás | Javítás |
+|---|-------|----------|----------|-------|---------|
 
-### 🟡 High Findings
-| # | Layer | File(s) | Issue | Impact | Fix |
-|---|-------|---------|-------|--------|-----|
+### 🟡 Magas Hibák
+| # | Layer | Fájl(ok) | Probléma | Hatás | Javítás |
+|---|-------|----------|----------|-------|---------|
 
-### 🟠 Medium Findings
-| # | Layer | File(s) | Issue | Impact | Fix |
-|---|-------|---------|-------|--------|-----|
+### 🟠 Közepes Hibák
+| # | Layer | Fájl(ok) | Probléma | Hatás | Javítás |
+|---|-------|----------|----------|-------|---------|
 
-### 🟢 Low Findings
-| # | Layer | File(s) | Issue | Impact | Fix |
-|---|-------|---------|-------|--------|-----|
+### 🟢 Alacsony Hibák
+| # | Layer | Fájl(ok) | Probléma | Hatás | Javítás |
+|---|-------|----------|----------|-------|---------|
 
-### Metrics
-| Metric | Current | Target |
-|--------|---------|--------|
-| `any` count | X | < 10 |
-| console.log count | X | 0 (prod) |
-| Orphaned pages | X | 0 |
-| Untyped Supabase queries | X | 0 |
-| Missing error boundaries | X | 0 |
-| Hardcoded URLs/keys | X | 0 |
+### Metrikák
+| Metrika | Jelenlegi | Cél |
+|---------|-----------|-----|
+| `any` darabszám | X | < 10 |
+| console.log darabszám | X | 0 (prod) |
+| Orphan oldalak | X | 0 |
+| Típus nélküli Supabase query-k | X | 0 |
+| Hiányzó Error Boundary | X | 0 |
+| Hardcoded URL/key | X | 0 |
+| SECURITY DEFINER nélküli trigger | X | 0 |
+| Nem deployolt Edge Function hivatkozás | X | 0 |
+| 50KB+ fájlok | X | < 5 |
 
-### Recommended Action Priority
-1. Fix all 🔴 Critical immediately
-2. Fix 🟡 High within current sprint
-3. Schedule 🟠 Medium in backlog
-4. Track 🟢 Low for future cleanup
+### Javasolt Prioritás
+1. Fix all 🔴 Kritikus azonnal
+2. Fix 🟡 Magas az aktuális sprintben
+3. 🟠 Közepes beütemezése backlog-ba
+4. 🟢 Alacsony nyomon követése jövőbeli cleanup-hoz
 ```
 
 ## Quick Reference
 
-| Layer | Primary Tool | What to Check | Related Skill |
-|-------|-------------|---------------|---------------|
-| Routing | `grep` route definitions | Orphan pages, missing guards | `react-best-practices` |
-| Types | `grep any` + TS compiler | Type coverage, consistency | — |
-| Data Flow | `grep useState/useQuery` | State location, duplication | `composition-patterns` |
-| Errors | `grep try/catch/error` | Coverage, user feedback | `systematic-debugging` |
-| Auth | `grep useAuth/role` | Guard coverage, RLS match | — |
-| UI | `grep style={{` + visual | Consistency, responsive | `frontend-design` |
-| Supabase | `grep .from/.rpc` | Query patterns, subscriptions | — |
-| Dead Code | `grep export` + import check | Unused files, exports | — |
-| Config | `grep env/hardcoded` | Secrets, magic numbers | — |
-| i18n | `grep` string patterns | Language mix, date format | — |
+| Layer | Eszköz | Mit keres | Kapcsolódó Skill |
+|-------|--------|-----------|------------------|
+| Routing | `grep_search` + graphify | Orphan pages, scoped routing, guards | `vercel-react-best-practices` |
+| Types | `grep_search any` + TS compiler | Type coverage, consistency | — |
+| Data Flow | `grep_search useState/useQuery` + graphify | State location, duplication, fájlméret | `vercel-composition-patterns` |
+| Errors | `grep_search try/catch/error` | Coverage, user feedback | `systematic-debugging` |
+| Auth | `grep_search useAuth/role` + graphify + MCP SQL | Guard coverage, RLS match, trigger chain | `visibill-db-audit` |
+| UI | `grep_search style={{` + visual | Consistency, responsive | `frontend-design` |
+| Supabase | `grep_search .from/.rpc` + MCP SQL | Query patterns, RPC match, subscriptions | `visibill-db-checklist` |
+| Dead Code | `grep_search export` + graphify community | Unused files, exports, orphans | — |
+| Config | `grep_search env/hardcoded` | Secrets, magic numbers | — |
+| i18n | `grep_search` string patterns | Language mix, date format | — |
+| DB Triggers | MCP `execute_sql` | SECURITY DEFINER, search_path, migration sync | `visibill-db-audit` |
+| Edge Functions | MCP `list_edge_functions` + `grep_search` | Deploy sync, auth middleware, CORS | — |

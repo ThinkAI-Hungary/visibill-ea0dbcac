@@ -40,6 +40,9 @@ Az AI **KÖTELES** első lépésként megnyitni és elolvasni:
 | DB-9 | **N+1 query elkerülés** | Nincs loop-ban query | ✅/❌ |
 | DB-10 | **Denormalizáció indokolás** | Dokumentáld miért | ✅/❌ |
 | DB-11 | **Redundáns RLS szabályok** | Kerüljük, vonjuk össze OR-ral | ✅/❌ |
+| DB-12 | **🔴 Trigger SECURITY DEFINER (A-020)** | Minden trigger function ami más táblába ír → SECURITY DEFINER KÖTELEZŐ (auth.uid() NULL trigger kontextusban) | ✅/❌ |
+| DB-13 | **🔴 Trigger search_path extensions (A-020)** | Ha extension function-t hív (gen_random_bytes, net.http_post) → `SET search_path TO 'public', 'extensions'` | ✅/❌ |
+| DB-14 | **🔴 CREATE OR REPLACE attribútum-megőrzés (A-020)** | `CREATE OR REPLACE` NEM örökli SECURITY DEFINER-t — explicit újra kell adni! | ✅/❌ |
 ```
 
 ---
@@ -79,6 +82,7 @@ Az AI **KÖTELES** első lépésként megnyitni és elolvasni:
 | F-6 | Return type: `jsonb` vagy `SETOF record` | Explicit tipizálás |
 | F-7 | Error handling: `RAISE EXCEPTION` | Hibakezelés a function-ben |
 | F-8 | **Pre-request hook kivétele** | Ha PostgREST pre-request hook → `anon` és `authenticated` KÖTELEZŐ EXECUTE jog |
+| F-9 | **🔴 Trigger: SECURITY DEFINER + extensions (A-020)** | Trigger function → SECURITY DEFINER + `SET search_path TO 'public', 'extensions'` ha extension-t használ. Részletek: [A-020](file:///d:/ThinkAI/Visibill/eaisybill-prod/docs/architecture/decisions/A-020-auth-trigger-chain-incident.md) |
 ```
 
 ---
@@ -126,8 +130,63 @@ Az AI **KÖTELES** első lépésként megnyitni és elolvasni:
 | M-2 | Idempotens | `IF NOT EXISTS`, `OR REPLACE` használata |
 | M-3 | Index: nem CONCURRENTLY | Supabase migration transaction-ben fut |
 | M-4 | Test: funkció tesztelése MCP-n | `execute_sql` MCP tool-lal tesztelés |
-| M-5 | Rollback terv | Mi történik ha hibás? Van-e undo? |
+| M-5 | **Rollback terv** | Mi történik ha hibás? Van-e undo? |
+| M-6 | **🔴 CREATE OR REPLACE ellenőrzés (A-020)** | Ha `CREATE OR REPLACE FUNCTION` → ellenőrizd hogy SECURITY DEFINER, search_path, stb. meg van-e tartva az eredeti definícióból! |
 ```
+
+### 📂 Migrációs Fájl Naming Convention
+
+A `supabase/migrations/` mappában **két formátum** létezik:
+
+#### 1. Legacy formátum (Supabase CLI generált) — NE használd manuálisan
+
+```
+YYYYMMDDHHMMSS_<uuid>.sql
+```
+
+Példák:
+```
+20250915221246_fb156f61-8e2a-49cb-aff0-b370531cd9e8.sql
+20260604093846_4bcdf64d-1abe-4552-89f8-5b927a79dfc1.sql
+```
+
+> Ez a formátum a `supabase migration new` CLI parancs által generált. UUID azonosítója van, nem emberi olvasásra szánták. **Manuális migráció íráskor NE használd ezt a formátumot.**
+
+#### 2. Aktuális formátum (manuális / AI agent) — KÖTELEZŐ
+
+```
+YYYYMMDD_<rövid_leíró_snake_case>.sql
+```
+
+Szabályok:
+| # | Szabály | Leírás |
+|---|--------|--------|
+| N-1 | **Prefix:** `YYYYMMDD` | Dátum (UTC), pl. `20260609` — elegendő napi felbontás |
+| N-2 | **Separator:** `_` | Egyetlen alulvonás a dátum után |
+| N-3 | **Leíró rész:** snake_case | Rövid, beszédes angol név — mit csinál a migráció |
+| N-4 | **Hossz:** max ~60 karakter | A teljes fájlnév legyen átlátható `ls`/`dir` kimenetben |
+| N-5 | **Prefix kulcsszavak:** `fix_`, `add_`, `seed_`, `drop_` | Első szó jelezze a szándékot |
+| N-6 | **MANUAL_RUN_ prefix** | Ha NEM a normál migration pipeline-ban kell futtatni, hanem manuálisan |
+
+Példák (helyes):
+```
+20260608_rls_initplan_optimization.sql
+20260608_add_missing_fk_indexes.sql
+20260609_fix_subscription_trigger_security_definer.sql
+20260515100000_balance_sheet_tables.sql        ← HHMMSS opcionális (sorrend)
+20260529_accounty_payroll_schema.sql
+MANUAL_RUN_accounty_pending.sql                ← manuális futtatás
+```
+
+Példák (helytelen):
+```
+❌ fix.sql                          — nincs dátum
+❌ 20260609.sql                     — nincs leíró rész
+❌ migration_v2_final_FINAL.sql     — nem informatív
+❌ 20260609_<uuid>.sql              — ne használj UUID-t manuálisan
+```
+
+> **⚠️ Ha egyazon napon több migráció kell:** Adj HHMMSS-t is a dátum után a sorrend biztosítására (pl. `20260515100000_`, `20260515100100_`, `20260515100200_`). A Supabase a fájlnév szerinti ABC-sorrend alapján futtatja a migrációkat.
 
 > **Referencia:** Részletes magyarázatokhoz: `supabase-postgres-best-practices` skill `references/` mappája (pl. `security-rls-performance.md`, `schema-foreign-key-indexes.md`, `data-pagination.md`).
 
