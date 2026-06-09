@@ -928,42 +928,61 @@ export function useRunBatchPayroll() {
           .eq('employee_id', employee.id)
           .eq('status', 'active');
 
-        const declarations: EmployeeDeclarations = {
-          dependents_1_child: false,
-          dependents_2_children: false,
-          dependents_3plus: false,
-          is_under_25: false,
-          is_new_mother_under_30: false,
-          is_first_married: false,
-          has_personal_disability: false,
-          netak_eligible: false,
-        };
+        const declarations: EmployeeDeclarations = {};
 
-        // Parse declarations
+        // Parse declarations from DB rows into EmployeeDeclarations format
         for (const decl of ((declRows || []) as any[])) {
           if (decl.declaration_type === 'family_credit') {
             const children = (decl.parameters)?.children_count || 0;
-            if (children === 1) declarations.dependents_1_child = true;
-            else if (children === 2) declarations.dependents_2_children = true;
-            else if (children >= 3) declarations.dependents_3plus = true;
+            const sharePct = (decl.parameters)?.share_pct || 100;
+            declarations.family = {
+              dependentCount: children,
+              eligibleChildrenCount: children,
+              sharePct,
+            };
           }
-          if (decl.declaration_type === 'under_25') declarations.is_under_25 = true;
-          if (decl.declaration_type === 'new_mother') declarations.is_new_mother_under_30 = true;
-          if (decl.declaration_type === 'first_marriage') declarations.is_first_married = true;
-          if (decl.declaration_type === 'personal_disability') declarations.has_personal_disability = true;
+          if (decl.declaration_type === 'netak') {
+            declarations.netak = { eligible: true };
+          }
+          if (decl.declaration_type === 'under_25') {
+            declarations.young25 = { eligible: true };
+          }
+          if (decl.declaration_type === 'new_mother') {
+            declarations.youngMother30 = { maxDeduction: 0 };
+          }
+          if (decl.declaration_type === 'first_marriage') {
+            const months = (decl.parameters)?.months_remaining || 24;
+            declarations.firstMarriage = { eligible: true, monthsRemaining: months };
+          }
+          if (decl.declaration_type === 'personal_disability') {
+            declarations.personal = { eligible: true };
+          }
         }
 
         // Calculate
+        const birthDate = employee.birth_date ? new Date(employee.birth_date) : null;
+        const employeeAge = birthDate
+          ? Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 86400000))
+          : 30; // fallback
+
         const calcInput: PayrollCalculationInput = {
-          grossSalary: {
+          grossComponents: {
             baseSalary,
-            supplements: extras,
-            bonuses: 0,
+            overtime: 0,
+            nightShift: 0,
+            sundayPremium: 0,
+            holidayPremium: 0,
+            bonus: extras,
+            sickLeave: 0,
             otherIncome: 0,
           },
           declarations,
-          garnishments: [],
-          taxParameters: taxParams,
+          employeeAge,
+          employeeGender: employee.gender || 'other',
+          isInsured: employment.is_insured ?? true,
+          jobCode: employment.job_code || '',
+          weeklyHours: employment.weekly_hours || 40,
+          params: taxParams,
         };
 
         const result = calculatePayroll(calcInput);
@@ -971,16 +990,15 @@ export function useRunBatchPayroll() {
         results.push({
           cycle_id: input.cycleId,
           employment_id: employment.id,
-          gross_salary: result.grossTotal,
+          gross_salary: result.grossSalary,
           szja_base: result.szjaBase,
           szja_amount: result.szjaAmount,
           tb_amount: result.tbAmount,
           szocho_amount: result.szochoAmount,
           net_salary: result.netSalary,
-          total_deductions: itemDeductions,
           tax_credits: result.taxCredits || {},
-          szocho_credits: result.szochoCredits || {},
-          deductions: { items: itemDeductions },
+          szocho_credits: {},
+          deductions: { items: itemDeductions, total: itemDeductions },
           cafeteria_tax: {},
           metadata: {
             employee_id: employee.id,

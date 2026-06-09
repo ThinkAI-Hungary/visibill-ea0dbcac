@@ -372,3 +372,60 @@ export function useUpdateLegalUpdate() {
     },
   });
 }
+
+
+// ══════════════════════════════════════════════
+// TAO Yearly Data
+// ══════════════════════════════════════════════
+
+export function useTaoYearly(companyId?: string, taxYear?: number) {
+  return useQuery({
+    queryKey: ['accounty-tao-yearly', companyId, taxYear],
+    queryFn: async () => {
+      if (!companyId || !taxYear) return null;
+      const { data, error } = await supabase
+        .from('accounty_tao_yearly' as any)
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('tax_year', taxYear)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+    enabled: !!companyId && !!taxYear,
+  });
+}
+
+export function useSaveTaoYearly() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (record: {
+      company_id: string;
+      tax_year: number;
+      current_step?: number;
+      status?: string;
+      [key: string]: any;
+    }) => {
+      // Upsert by company_id + tax_year
+      const { data, error } = await supabase
+        .from('accounty_tao_yearly' as any)
+        .upsert(
+          { ...record, updated_at: new Date().toISOString() } as any,
+          { onConflict: 'company_id,tax_year' }
+        )
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['accounty-tao-yearly', vars.company_id, vars.tax_year] });
+      toast({ title: 'TAO adatok mentve' });
+    },
+    onError: (err: any) => {
+      toast({ variant: 'destructive', title: 'Mentési hiba', description: err.message });
+    },
+  });
+}

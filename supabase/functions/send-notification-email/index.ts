@@ -1,4 +1,4 @@
-﻿import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { Resend } from 'npm:resend@4.0.0'
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string)
@@ -56,23 +56,34 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Only allow internal calls (service role key)
+    // Allow both service-role key (internal) and user JWT (frontend)
     const authHeader = req.headers.get('Authorization') ?? ''
     const token = authHeader.replace('Bearer ', '')
-    if (token !== serviceRoleKey) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey)
+    let callerUserId: string | null = null
+
+    if (token === serviceRoleKey) {
+      // Internal / server-to-server call — trust user_id from body
+    } else {
+      // Frontend call — validate JWT and extract user
+      const { data: { user: jwtUser }, error: jwtError } = await supabase.auth.getUser(token)
+      if (jwtError || !jwtUser) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+      callerUserId = jwtUser.id
     }
 
-    const { user_id, type, title, body_html, subject } = await req.json()
+    const { user_id: bodyUserId, to_email, type, title, body_html, subject } = await req.json()
+    const user_id = callerUserId || bodyUserId
+
     if (!user_id || !type || !title || !body_html) {
       return new Response(JSON.stringify({ error: 'Missing fields' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
-
-    const supabase = createClient(supabaseUrl, serviceRoleKey)
 
     // 1. Get user email
     const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(user_id)
@@ -82,6 +93,7 @@ Deno.serve(async (req: Request) => {
         status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
+
 
     // 2. Check email preferences
     const prefColumn = PREF_MAP[type]
@@ -100,13 +112,14 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // 3. Send email
+    // 3. Send email — use to_email if provided, otherwise user's auth email
+    const recipientEmail = to_email || user.email
     const html = wrapHtml(title, body_html)
     const emailSubject = subject || `${title} — Visibill`
     
     const { error: sendError } = await resend.emails.send({
       from: 'Visibill <noreply@mail.visibill.hu>',
-      to: [user.email],
+      to: [recipientEmail],
       subject: emailSubject,
       html,
     })

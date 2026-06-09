@@ -100,6 +100,9 @@ const TaoLifecyclePage = lazy(() => import("./pages/Accounty/Tao/TaoLifecyclePag
 const TaoBusinessYearPage = lazy(() => import("./pages/Accounty/Tao/TaoBusinessYearPage"));
 const TaoAccountingRegimePage = lazy(() => import("./pages/Accounty/Tao/TaoAccountingRegimePage"));
 const TaoCurrencyPage = lazy(() => import("./pages/Accounty/Tao/TaoCurrencyPage"));
+const TaoYearEndWizardPage = lazy(() => import("./pages/Accounty/Tao/TaoYearEndWizardPage"));
+const KivaCalculatorPage = lazy(() => import("./pages/Accounty/Tao/KivaCalculatorPage"));
+const TaoKivaComparePage = lazy(() => import("./pages/Accounty/Tao/TaoKivaComparePage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -330,6 +333,9 @@ const App = () => (
                       <Route path="client/:id/tao/business-year" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoBusinessYearPage /></Suspense>} />
                       <Route path="client/:id/tao/accounting-regime" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoAccountingRegimePage /></Suspense>} />
                       <Route path="client/:id/tao/currency" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoCurrencyPage /></Suspense>} />
+                      <Route path="client/:id/tao/year-end/:year" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoYearEndWizardPage /></Suspense>} />
+                      <Route path="client/:id/tao/kiva" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><KivaCalculatorPage /></Suspense>} />
+                      <Route path="client/:id/tao/compare" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoKivaComparePage /></Suspense>} />
                     </Route>
 
                     {/* Protected routes with persistent sidebar */}

@@ -8,6 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useTaoYearly } from '@/hooks/useAdminData';
 
 // 11-step year-end wizard steps
 const WIZARD_STEPS = [
@@ -37,13 +38,16 @@ export default function ClientTaoMainPage() {
   const client = clients.find((c: any) => c.companyId === id);
   const [taxYear] = useState(2025);
 
-  // Mock data
-  const currentStep = 3;
-  const aee = 48_900_000;
-  const taxBase = 41_565_000;
-  const calculatedTax = Math.round(taxBase * 0.09);
-  const payableTax = Math.round(calculatedTax * 0.85);
-  const creditAmount = calculatedTax - payableTax;
+  // Load real data from DB
+  const companyUuid = client?.id;
+  const { data: taoData } = useTaoYearly(companyUuid, taxYear);
+
+  const currentStep = taoData?.current_step || 1;
+  const aee = taoData?.aee || 0;
+  const taxBase = taoData?.tax_base || 0;
+  const calculatedTax = taoData?.calculated_tax || Math.round(taxBase * 0.09);
+  const payableTax = taoData?.payable_tax || 0;
+  const creditAmount = taoData?.tax_credits_total || 0;
 
   const tabs: TaoTab[] = [
     { id: 'overview',  label: 'Áttekintés',     icon: Landmark,    to: `/accounty/client/${id}/tao` },
@@ -138,9 +142,11 @@ export default function ClientTaoMainPage() {
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
             {taxYear}. adóévi TAO-zárás
           </h2>
-          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
-            Folytatás — {currentStep}. lépés
-          </Button>
+          <Link to={`/accounty/client/${id}/tao/year-end/${taxYear}?step=${currentStep}`}>
+            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              Folytatás — {currentStep}. lépés
+            </Button>
+          </Link>
         </div>
 
         {/* 11-step stepper */}
@@ -181,7 +187,7 @@ export default function ClientTaoMainPage() {
       </div>
 
       {/* Quick links */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <Link
           to={`/accounty/client/${id}/tao/master-data`}
           className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-primary/30 transition-all group"
@@ -225,6 +231,36 @@ export default function ClientTaoMainPage() {
               <p className="text-xs text-slate-500">Keletkezés, megszűnés, KIVA-váltás</p>
             </div>
             <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary transition-colors" />
+          </div>
+        </Link>
+        <Link
+          to={`/accounty/client/${id}/tao/kiva`}
+          className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-orange-400/30 transition-all group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+              <Calculator className="w-5 h-5 text-orange-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">KIVA kalkulátor</p>
+              <p className="text-xs text-slate-500">Kisvállalati adó szimuláció (10%)</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-orange-500 transition-colors" />
+          </div>
+        </Link>
+        <Link
+          to={`/accounty/client/${id}/tao/compare`}
+          className="bg-card rounded-xl border border-border p-5 shadow-soft hover:shadow-md hover:border-violet-400/30 transition-all group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-violet-100 dark:bg-violet-900/30 rounded-lg">
+              <BarChart2 className="w-5 h-5 text-violet-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">TAO vs KIVA</p>
+              <p className="text-xs text-slate-500">Összehasonlító elemzés</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-violet-500 transition-colors" />
           </div>
         </Link>
       </div>

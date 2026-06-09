@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, Check, User, Briefcase, CreditCard,
   FileText, Shield, Calendar, Building2, ChevronDown, Loader2,
-  HelpCircle, AlertTriangle
+  HelpCircle, AlertTriangle, Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,16 +21,49 @@ const STEPS = [
   { id: 'review', title: 'Áttekintés', subtitle: 'Ellenőrzés és mentés', icon: Check },
 ];
 
-// ── Employment type cards ──
+// ── Employment type cards — complete list based on Tbj. / NAV 08E ──
 const EMPLOYMENT_TYPES = [
-  { value: 'munkaviszony', label: 'Munkaviszony (Mt.)', code: '1101', desc: 'Klasszikus munkaviszony', icon: '👔' },
-  { value: 'tartos_megbizas', label: 'Tartós megbízás (ÚJ 2026)', code: '1115', desc: 'Előzetes bejelentés, biztosított', icon: '📋', isNew: true },
-  { value: 'megbizas', label: 'Megbízási jogviszony', code: '1300', desc: 'Ptk. szerinti megbízás', icon: '📑' },
-  { value: 'tarsas_vallalkozo', label: 'Társas vállalkozó', code: '1452', desc: 'Személyesen közreműködő tag', icon: '🏢' },
-  { value: 'szakkep', label: 'Szakképzési munkaszerződés', code: '1131', desc: 'Szkt. szerinti jogviszony', icon: '🎓' },
-  { value: 'efo_alkalmi', label: 'Egyszerűsített foglalkoztatás', code: 'EFO', desc: 'Alkalmi munka (EFO)', icon: '⚡' },
-  { value: 'kozfogl', label: 'Közfoglalkoztatás', code: '1600', desc: 'Közfoglalkoztatási jogviszony', icon: '🏛️' },
-  { value: 'ev', label: 'Egyéni vállalkozó', code: '1470', desc: 'Főállású EV', icon: '🧑‍💼' },
+  // ── Magánszféra — munkaviszony alapú ──
+  { value: 'munkaviszony', label: 'Munkaviszony (Mt.)', code: '1101', desc: 'Klasszikus munkaviszony', icon: '👔', group: 'Munkaviszony' },
+  { value: 'munkaviszony_reszido', label: 'Részmunkaidős munkaviszony', code: '1101', desc: 'Mt. szerinti, csökkentett óraszám', icon: '⏰', group: 'Munkaviszony' },
+  { value: 'bedolgozo', label: 'Bedolgozói jogviszony', code: '1101', desc: 'Otthoni munkavégzés, Mt. speciális', icon: '🏠', group: 'Munkaviszony' },
+  { value: 'munkaero_kolcsonzes', label: 'Munkaerő-kölcsönzés', code: '1101', desc: 'Kölcsönbeadó által foglalkoztatott', icon: '🔄', group: 'Munkaviszony' },
+  { value: 'szakkep', label: 'Szakképzési munkaszerződés', code: '1131', desc: 'Szkt. szerinti tanulói jogviszony', icon: '🎓', group: 'Munkaviszony' },
+  { value: 'osztondijas', label: 'Ösztöndíjas foglalkoztatott', code: '1140', desc: 'Gyakornoki / ösztöndíjas jogviszony', icon: '📚', group: 'Munkaviszony' },
+  { value: 'neveloszulo', label: 'Nevelőszülő', code: '1150', desc: 'Nevelőszülői foglalkoztatási jogviszony', icon: '🤱', group: 'Munkaviszony' },
+  { value: 'haztartasi', label: 'Háztartási alkalmazott', code: '1190', desc: 'Háztartási munkára irányuló egyszerűsített fogl.', icon: '🏡', group: 'Munkaviszony' },
+
+  // ── Közszféra ──
+  { value: 'kozalkalmazott', label: 'Közalkalmazott (Kjt.)', code: '1201', desc: 'Önkormányzat, iskola, kórház, kultúra', icon: '🏫', group: 'Közszféra', tag: 'KÖZSZ' },
+  { value: 'kozszolgalati', label: 'Köztisztviselő (Kttv.)', code: '1220', desc: 'Államigazgatási szerv, jegyző', icon: '🏛️', group: 'Közszféra', tag: 'KÖZSZ' },
+  { value: 'kormanytisztviselo', label: 'Kormánytisztviselő (Kit.)', code: '1210', desc: 'Kormányzati igazgatási szerv', icon: '⚖️', group: 'Közszféra', tag: 'KÖZSZ' },
+  { value: 'biro_ugyesz', label: 'Bíró, ügyész, igazságügyi alk.', code: '1120', desc: 'Igazságszolgáltatási jogviszony', icon: '🔨', group: 'Közszféra', tag: 'KÖZSZ' },
+  { value: 'hivatásos_katona', label: 'Hivatásos/szerződéses katona', code: '1130', desc: 'Honvédelmi jogviszony (Hjt.)', icon: '🎖️', group: 'Közszféra', tag: 'KÖZSZ' },
+  { value: 'egyhazi', label: 'Egyházi személy', code: '1500', desc: 'Egyházi szolgálati jogviszony', icon: '⛪', group: 'Közszféra', tag: 'KÖZSZ' },
+  { value: 'kozfogl', label: 'Közfoglalkoztatás', code: '1600', desc: 'Közfoglalkoztatási jogviszony', icon: '🏗️', group: 'Közszféra', tag: 'KÖZSZ' },
+  { value: 'premiumevek', label: 'Prémiumévek program', code: '1240', desc: 'Nyugdíj előtti foglalkoztatási program', icon: '🌅', group: 'Közszféra', tag: 'KÖZSZ' },
+
+  // ── Megbízás / választott ──
+  { value: 'tartos_megbizas', label: 'Tartós megbízás (ÚJ 2026)', code: '1115', desc: 'Előzetes bejelentés, biztosított', icon: '📋', group: 'Megbízás', isNew: true },
+  { value: 'megbizas', label: 'Megbízási jogviszony', code: '1300', desc: 'Ptk. szerinti megbízás (biztosított)', icon: '📑', group: 'Megbízás' },
+  { value: 'megbizas_eseti', label: 'Eseti megbízás (nem biztosított)', code: '1301', desc: 'Ptk. megbízás, nem éri el a bizt. küszöböt', icon: '📄', group: 'Megbízás' },
+  { value: 'valasztott_tisztsegviselo', label: 'Választott tisztségviselő', code: '1350', desc: 'Önkormányzati, társasházi, alapítványi', icon: '🗳️', group: 'Megbízás' },
+
+  // ── Vállalkozók ──
+  { value: 'tarsas_vallalkozo', label: 'Társas vállalkozó (főfogl.)', code: '1451', desc: 'Személyesen közreműködő tag, főállás', icon: '🏢', group: 'Vállalkozó' },
+  { value: 'tarsas_vallalkozo_mellekfogl', label: 'Társas vállalkozó (mellékfogl.)', code: '1452', desc: 'Mellékfoglalkozású társas vállalkozó', icon: '🏢', group: 'Vállalkozó', tag: 'KEDV' },
+  { value: 'ev', label: 'Egyéni vállalkozó (főfogl.)', code: '1470', desc: 'Főállású egyéni vállalkozó', icon: '🧑‍💼', group: 'Vállalkozó' },
+  { value: 'ev_mellekfogl', label: 'Egyéni vállalkozó (mellékfogl.)', code: '1471', desc: 'Mellékfoglalkozású EV', icon: '🧑‍💼', group: 'Vállalkozó', tag: 'KEDV' },
+  { value: 'szovetkezeti_tag', label: 'Szövetkezeti tag', code: '1460', desc: 'Szövetkezetben személyesen közreműködő', icon: '🤝', group: 'Vállalkozó' },
+  { value: 'iskolaszovetkezet', label: 'Iskolaszövetkezeti tag', code: '1464', desc: 'Diákmunka iskolaszövetkezeten keresztül', icon: '🎒', group: 'Vállalkozó' },
+
+  // ── Speciális / kedvezményes ──
+  { value: 'efo_alkalmi', label: 'Egyszerűsített foglalkoztatás (EFO)', code: 'EFO', desc: 'Alkalmi munka, mezőgazdasági idénymunka', icon: '⚡', group: 'Speciális' },
+  { value: 'nyugdijas', label: 'Nyugdíjas munkavállaló', code: '1101', desc: 'Öregségi nyugdíj mellett, SZOCHO/járulék kedv.', icon: '🏖️', group: 'Speciális', tag: 'KEDV' },
+  { value: 'gyes_gyed', label: 'GYES/GYED melletti fogl.', code: '1101', desc: 'Gyermekgondozási ellátás mellett dolgozó', icon: '👶', group: 'Speciális', tag: 'KEDV' },
+  { value: 'kulfold_kikuld', label: 'Külföldi kiküldetés (expat)', code: '1101', desc: 'Kiküldetés EGT/harmadik országba', icon: '✈️', group: 'Speciális' },
+  { value: 'segito_csaladtag', label: 'Segítő családtag', code: '1800', desc: 'Családi gazdaságban segítő rokon', icon: '👨‍👩‍👧', group: 'Speciális' },
+  { value: 'onkentes', label: 'Közérdekű önkéntes', code: '1900', desc: 'Díjazás nélküli önkéntes tevékenység', icon: '🤲', group: 'Speciális' },
 ];
 
 type FormData = {
@@ -93,6 +126,8 @@ export default function EmployeeWizardPage() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [activeGroup, setActiveGroup] = useState('Mind');
+  const [typeSearch, setTypeSearch] = useState('');
 
   const createEmployee = useCreateEmployee();
   const createEmployment = useCreateEmployment();
@@ -258,47 +293,96 @@ export default function EmployeeWizardPage() {
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{STEPS[step].subtitle}</p>
 
         {/* Step 0: Employment type selection */}
-        {step === 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {EMPLOYMENT_TYPES.map((type) => (
-              <button
-                key={type.value}
-                onClick={() => {
-                  update('employment_type', type.value);
-                  update('job_code', type.code);
-                }}
-                className={cn(
-                  'relative flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all duration-200',
-                  form.employment_type === type.value
-                    ? 'border-primary bg-primary/5 shadow-lg'
-                    : 'border-border hover:border-primary/30 hover:shadow-md'
-                )}
-              >
-                <span className="text-2xl">{type.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{type.label}</p>
-                    {type.isNew && (
-                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 rounded-full uppercase">ÚJ</span>
+        {step === 0 && (() => {
+          const groups = ['Mind', ...Array.from(new Set(EMPLOYMENT_TYPES.map(t => (t as any).group).filter(Boolean)))];
+          const filtered = EMPLOYMENT_TYPES.filter(t => {
+            const matchGroup = activeGroup === 'Mind' || (t as any).group === activeGroup;
+            const matchSearch = !typeSearch || t.label.toLowerCase().includes(typeSearch.toLowerCase()) || t.desc.toLowerCase().includes(typeSearch.toLowerCase()) || t.code.toLowerCase().includes(typeSearch.toLowerCase());
+            return matchGroup && matchSearch;
+          });
+          return (
+            <div className="space-y-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Keresés jogviszony neve, kódja alapján..."
+                  value={typeSearch}
+                  onChange={e => setTypeSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-card border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/30 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                />
+              </div>
+              {/* Group tabs */}
+              <div className="flex flex-wrap gap-1.5">
+                {groups.map(g => (
+                  <button
+                    key={g}
+                    onClick={() => setActiveGroup(g)}
+                    className={cn(
+                      'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
+                      activeGroup === g
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary'
                     )}
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{type.desc}</p>
-                  <p className="text-[10px] font-mono text-primary mt-1">Kód: {type.code}</p>
-                </div>
-                {form.employment_type === type.value && (
-                  <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                    <Check className="w-3 h-3 text-white" />
-                  </div>
+                  >
+                    {g} {g !== 'Mind' ? `(${EMPLOYMENT_TYPES.filter(t => (t as any).group === g).length})` : `(${EMPLOYMENT_TYPES.length})`}
+                  </button>
+                ))}
+              </div>
+              {/* Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[420px] overflow-y-auto pr-1">
+                {filtered.map((type) => (
+                  <button
+                    key={type.value}
+                    onClick={() => {
+                      update('employment_type', type.value);
+                      update('job_code', type.code);
+                    }}
+                    className={cn(
+                      'relative flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all duration-200',
+                      form.employment_type === type.value
+                        ? 'border-primary bg-primary/5 shadow-lg'
+                        : 'border-border hover:border-primary/30 hover:shadow-md'
+                    )}
+                  >
+                    <span className="text-2xl">{type.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{type.label}</p>
+                        {type.isNew && (
+                          <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 rounded-full uppercase">ÚJ</span>
+                        )}
+                        {(type as any).tag === 'KEDV' && (
+                          <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 rounded-full uppercase">KEDV</span>
+                        )}
+                        {(type as any).tag === 'KÖZSZ' && (
+                          <span className="px-1.5 py-0.5 text-[9px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 rounded-full uppercase">KÖZSZ</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{type.desc}</p>
+                      <p className="text-[10px] font-mono text-primary mt-1">Kód: {type.code}</p>
+                    </div>
+                    {form.employment_type === type.value && (
+                      <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+                {filtered.length === 0 && (
+                  <p className="col-span-full text-center text-sm text-slate-400 py-8">Nincs találat a keresésre.</p>
                 )}
-              </button>
-            ))}
-            {errors.employment_type && (
-              <p className="col-span-full text-sm text-red-500 flex items-center gap-1">
-                <AlertTriangle className="w-4 h-4" /> {errors.employment_type}
-              </p>
-            )}
-          </div>
-        )}
+              </div>
+              {errors.employment_type && (
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <AlertTriangle className="w-4 h-4" /> {errors.employment_type}
+                </p>
+              )}
+            </div>
+          );
+        })()}
+
 
         {/* Step 1: Personal data */}
         {step === 1 && (

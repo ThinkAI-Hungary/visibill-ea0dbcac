@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Scale, Plus, Edit3, ExternalLink } from 'lucide-react';
+import { Scale, Plus, Edit3, ExternalLink, RefreshCw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useLegalUpdates, useAddLegalUpdate, useUpdateLegalUpdate } from '@/hooks/useAdminData';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 const SOURCE_CONFIG: Record<string, { label: string; color: string }> = {
   kozlony: { label: 'Magyar Közlöny', color: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' },
@@ -31,6 +33,25 @@ export default function LegalUpdatesPage() {
     title: '', source: 'kozlony', published_at: '', affected_modules: [] as string[],
     implementation_status: 'planned', notes: '',
   });
+  const [fetching, setFetching] = useState(false);
+
+  const handleFetchFeed = async () => {
+    setFetching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-legal-updates');
+      if (error) throw error;
+      toast({
+        title: 'Feed frissítve',
+        description: `${data.new_inserted || 0} új bejegyzés · NAV: ${data.nav_found || 0}, Közlöny: ${data.kozlony_found || 0}`,
+      });
+      // Refetch the list
+      window.location.reload();
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    } finally {
+      setFetching(false);
+    }
+  };
 
   const handleCreate = () => {
     addUpdate.mutate(form, {
@@ -63,10 +84,16 @@ export default function LegalUpdatesPage() {
             <p className="text-sm text-slate-500 dark:text-slate-400">Magyar Közlöny és NAV-közlemények napló</p>
           </div>
         </div>
-        <Button className="gap-2" onClick={() => setCreateOpen(true)}>
-          <Plus className="w-4 h-4" />
-          Új bejegyzés
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleFetchFeed} disabled={fetching}>
+            {fetching ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Feed frissítése
+          </Button>
+          <Button className="gap-2" onClick={() => setCreateOpen(true)}>
+            <Plus className="w-4 h-4" />
+            Új bejegyzés
+          </Button>
+        </div>
       </div>
 
       {/* Timeline */}
@@ -103,7 +130,15 @@ export default function LegalUpdatesPage() {
                         ))}
                       </div>
                     )}
-                    {u.notes && <p className="text-xs text-slate-400">{u.notes}</p>}
+                    {u.notes && (
+                      u.notes.startsWith('http') ? (
+                        <a href={u.notes} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
+                          <ExternalLink className="w-3 h-3" /> Forrás megnyitása
+                        </a>
+                      ) : (
+                        <p className="text-xs text-slate-400">{u.notes}</p>
+                      )
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     <select

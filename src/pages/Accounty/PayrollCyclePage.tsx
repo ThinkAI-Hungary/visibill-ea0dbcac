@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Check, ChevronRight, ChevronLeft,
+  ArrowLeft, Check, ChevronRight, ChevronLeft, ChevronDown,
   Mail, ClipboardList, Clock, Phone, Coffee, Calculator,
   Receipt, FileText, Loader2, Users, AlertTriangle,
   CheckCircle2, Send, Download, Play, Printer, Eye
@@ -34,6 +34,41 @@ const CYCLE_STEPS = [
 
 const MONTHS = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
 
+const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
+  munkaviszony: 'Munkaviszony (Mt.)',
+  munkaviszony_reszido: 'Részmunkaidős munkaviszony',
+  bedolgozo: 'Bedolgozói jogviszony',
+  munkaero_kolcsonzes: 'Munkaerő-kölcsönzés',
+  szakkep: 'Szakképzési munkaszerződés',
+  osztondijas: 'Ösztöndíjas foglalkoztatott',
+  neveloszulo: 'Nevelőszülő',
+  haztartasi: 'Háztartási alkalmazott',
+  kozalkalmazott: 'Közalkalmazott (Kjt.)',
+  kozszolgalati: 'Köztisztviselő (Kttv.)',
+  kormanytisztviselo: 'Kormánytisztviselő (Kit.)',
+  biro_ugyesz: 'Bíró, ügyész, igazságügyi alk.',
+  'hivatásos_katona': 'Hivatásos/szerződéses katona',
+  egyhazi: 'Egyházi személy',
+  kozfogl: 'Közfoglalkoztatás',
+  premiumevek: 'Prémiumévek program',
+  tartos_megbizas: 'Tartós megbízás (2026)',
+  megbizas: 'Megbízási jogviszony',
+  megbizas_eseti: 'Eseti megbízás (nem biztosított)',
+  valasztott_tisztsegviselo: 'Választott tisztségviselő',
+  tarsas_vallalkozo: 'Társas vállalkozó (főfogl.)',
+  tarsas_vallalkozo_mellekfogl: 'Társas vállalkozó (mellékfogl.)',
+  ev: 'Egyéni vállalkozó (főfogl.)',
+  ev_mellekfogl: 'Egyéni vállalkozó (mellékfogl.)',
+  szovetkezeti_tag: 'Szövetkezeti tag',
+  iskolaszovetkezet: 'Iskolaszövetkezeti tag',
+  efo_alkalmi: 'Egyszerűsített foglalkoztatás (EFO)',
+  nyugdijas: 'Nyugdíjas munkavállaló',
+  gyes_gyed: 'GYES/GYED melletti fogl.',
+  kulfold_kikuld: 'Külföldi kiküldetés (expat)',
+  segito_csaladtag: 'Segítő családtag',
+  onkentes: 'Közérdekű önkéntes',
+};
+
 export default function PayrollCyclePage() {
   const { id: companyId, cycleId } = useParams<{ id: string; cycleId: string }>();
   const navigate = useNavigate();
@@ -52,8 +87,17 @@ export default function PayrollCyclePage() {
   const [emailPreview, setEmailPreview] = useState<string | null>(null);
   const [emailSending, setEmailSending] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailTo, setEmailTo] = useState('');
+  const [expandedReviewRows, setExpandedReviewRows] = useState<Set<string>>(new Set());
 
-  // Attendance data per employee
+  // Fetch all employments for this company (for step 2 details)
+  const [allEmployments, setAllEmployments] = useState<any[]>([]);
+  React.useEffect(() => {
+    if (!companyId) return;
+    supabase.from('accounty_employments').select('*').eq('company_id', companyId).eq('status', 'active')
+      .then(({ data }) => { if (data) setAllEmployments(data); });
+  }, [companyId]);
   const [attendanceData, setAttendanceData] = useState<Record<string, { workDays: number; overtime: number; sickDays: number; leaveDays: number }>>({});
 
   // CSV validation results
@@ -187,6 +231,10 @@ export default function PayrollCyclePage() {
   // Send email via Supabase Edge Function
   const handleSendEmail = async () => {
     if (!user?.id || !cycle) return;
+    if (!emailTo || !emailTo.includes('@')) {
+      toast({ title: 'Hibás email', description: 'Kérlek adj meg egy érvényes email címet.', variant: 'destructive' });
+      return;
+    }
     const result = getEmailData();
     if (!result) return;
 
@@ -195,6 +243,7 @@ export default function PayrollCyclePage() {
       const { data, error } = await supabase.functions.invoke('send-notification-email', {
         body: {
           user_id: user.id,
+          to_email: emailTo,
           type: 'salary_processed',
           title: result.subject,
           body_html: result.htmlBody,
@@ -208,7 +257,8 @@ export default function PayrollCyclePage() {
       if (responseData?.error) throw new Error(responseData.error);
 
       setEmailSent(true);
-      toast({ title: '✅ E-mail elküldve!', description: `A bérszámfejtési adatbekérő kiküldve a(z) ${company?.name || 'ügyfél'} részére.` });
+      setEmailDialogOpen(false);
+      toast({ title: '✅ E-mail elküldve!', description: `Adatbekérő kiküldve: ${emailTo}` });
     } catch (err: any) {
       console.error('Email send error:', err);
       toast({ title: 'Hiba', description: err?.message || 'Nem sikerült elküldeni az e-mailt.', variant: 'destructive' });
@@ -466,33 +516,63 @@ export default function PayrollCyclePage() {
                 Küldj adatbekérő üzenetet az ügyfélnek a hiányzó bér-adatokról (jelenléti ív, változások, új belépők/kilépők).
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <button
-                  onClick={handleSendEmail}
-                  disabled={emailSending || emailSent}
-                  className={cn(
-                    "flex items-center gap-3 p-4 rounded-lg border transition-all",
-                    emailSent
-                      ? "border-green-300 bg-green-50 dark:bg-green-900/20"
-                      : "border-border hover:border-primary/30 hover:bg-primary/5",
-                    (emailSending || emailSent) && "opacity-80 cursor-not-allowed"
+                <div className="relative">
+                  <button
+                    onClick={() => { if (!emailSent) setEmailDialogOpen(!emailDialogOpen); }}
+                    disabled={emailSending}
+                    className={cn(
+                      "flex items-center gap-3 p-4 rounded-lg border transition-all w-full",
+                      emailSent
+                        ? "border-green-300 bg-green-50 dark:bg-green-900/20"
+                        : emailDialogOpen
+                        ? "border-primary bg-primary/5 shadow-md"
+                        : "border-border hover:border-primary/30 hover:bg-primary/5",
+                      emailSending && "opacity-80 cursor-not-allowed"
+                    )}
+                  >
+                    {emailSending ? (
+                      <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                    ) : emailSent ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <Mail className="w-5 h-5 text-blue-500" />
+                    )}
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {emailSending ? 'Küldés...' : emailSent ? `Elküldve ✓ → ${emailTo}` : 'E-mail küldése'}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {emailSent ? 'Adatbekérő sikeresen kiküldve' : 'Sablon-alapú bekérés'}
+                      </p>
+                    </div>
+                  </button>
+                  {emailDialogOpen && !emailSent && (
+                    <div className="absolute top-full left-0 right-0 mt-2 p-4 bg-card border border-border rounded-xl shadow-xl z-20 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Címzett email cím</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="email"
+                          value={emailTo}
+                          onChange={e => setEmailTo(e.target.value)}
+                          placeholder="pelda@ceg.hu"
+                          className="flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/30 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                          autoFocus
+                          onKeyDown={e => e.key === 'Enter' && handleSendEmail()}
+                        />
+                        <Button
+                          onClick={handleSendEmail}
+                          disabled={emailSending || !emailTo}
+                          size="sm"
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-1.5 px-4"
+                        >
+                          {emailSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                          Küldés
+                        </Button>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1.5">Az adatbekérő email erre a címre lesz kiküldve.</p>
+                    </div>
                   )}
-                >
-                  {emailSending ? (
-                    <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
-                  ) : emailSent ? (
-                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  ) : (
-                    <Mail className="w-5 h-5 text-blue-500" />
-                  )}
-                  <div className="text-left">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {emailSending ? 'Küldés...' : emailSent ? 'Elküldve ✓' : 'E-mail küldése'}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {emailSent ? 'Adatbekérő sikeresen kiküldve' : 'Sablon-alapú bekérés'}
-                    </p>
-                  </div>
-                </button>
+                </div>
                 <button
                   onClick={handleEmailPreview}
                   className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary/30 hover:bg-primary/5 transition-all"
@@ -522,22 +602,118 @@ export default function PayrollCyclePage() {
               </p>
               <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                 <p className="text-sm text-amber-700 dark:text-amber-300">
-                  <strong>{activeEmployees.length}</strong> aktív foglalkoztatott · Ellenőrizd az adatokat, majd lépj tovább.
+                  <strong>{activeEmployees.length}</strong> aktív foglalkoztatott · Kattints egy sorra a részletes adatokért.
                 </p>
               </div>
-              {/* Employee checklist */}
-              <div className="divide-y divide-border/50 rounded-lg border border-border overflow-hidden">
-                {activeEmployees.map((emp) => (
-                  <div key={emp.id} className="px-4 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                        {emp.last_name[0]}{emp.first_name[0]}
-                      </div>
-                      <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{emp.last_name} {emp.first_name}</span>
+              {/* Employee review rows */}
+              <div className="rounded-lg border border-border overflow-hidden">
+                {activeEmployees.map((emp) => {
+                  const isOpen = expandedReviewRows.has(emp.id);
+                  const employment = allEmployments.find((e: any) => e.employee_id === emp.id);
+                  const toggleRow = () => setExpandedReviewRows(prev => {
+                    const next = new Set(prev);
+                    if (next.has(emp.id)) next.delete(emp.id); else next.add(emp.id);
+                    return next;
+                  });
+
+                  return (
+                    <div key={emp.id} className="border-b border-border/50 last:border-b-0">
+                      {/* Collapsed summary row */}
+                      <button
+                        onClick={toggleRow}
+                        className={cn(
+                          'w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors',
+                          isOpen && 'bg-slate-50/50 dark:bg-slate-800/30'
+                        )}
+                      >
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                          {emp.last_name?.[0]}{emp.first_name?.[0]}
+                        </div>
+                        <div className="flex-1 min-w-0 text-left">
+                          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            {emp.last_name} {emp.first_name}
+                          </p>
+                          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                            {employment && (
+                              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                                {EMPLOYMENT_TYPE_LABELS[employment.employment_type] || employment.employment_type} · Kód: {employment.job_code}
+                              </span>
+                            )}
+                            {employment?.base_salary && (
+                              <span className="text-[11px] font-mono text-primary font-semibold">
+                                {Number(employment.base_salary).toLocaleString('hu-HU')} Ft
+                              </span>
+                            )}
+                            {emp.taj_number && (
+                              <span className="text-[11px] font-mono text-slate-400">
+                                TAJ: {emp.taj_number}
+                              </span>
+                            )}
+                            {employment?.start_date && (
+                              <span className="text-[11px] text-slate-400">
+                                {employment.start_date}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          <ChevronDown className={cn('w-4 h-4 text-slate-400 transition-transform duration-200', isOpen && 'rotate-180')} />
+                        </div>
+                      </button>
+
+                      {/* Expanded details */}
+                      {isOpen && (
+                        <div className="px-4 pb-4 pt-1 bg-slate-50/50 dark:bg-slate-800/20 animate-in fade-in slide-in-from-top-1 duration-200">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-12">
+                            {/* Személyes adatok */}
+                            <div className="space-y-2">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Személyes adatok</p>
+                              <DetailRow label="Teljes név" value={`${emp.last_name} ${emp.first_name}`} />
+                              {emp.birth_name && <DetailRow label="Szül. név" value={emp.birth_name} />}
+                              {emp.birth_date && <DetailRow label="Szül. dátum" value={emp.birth_date} />}
+                              {emp.birth_place && <DetailRow label="Szül. hely" value={emp.birth_place} />}
+                              {emp.mothers_name && <DetailRow label="Anyja neve" value={emp.mothers_name} />}
+                              {emp.gender && <DetailRow label="Nem" value={emp.gender === 'male' ? 'Férfi' : emp.gender === 'female' ? 'Nő' : 'Egyéb'} />}
+                              {emp.nationality && <DetailRow label="Állampolgárság" value={emp.nationality} />}
+                            </div>
+                            {/* Azonosítók & elérhetőség */}
+                            <div className="space-y-2">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Azonosítók & elérhetőség</p>
+                              {emp.taj_number && <DetailRow label="TAJ-szám" value={emp.taj_number} mono />}
+                              {emp.tax_id && <DetailRow label="Adóazonosító" value={emp.tax_id} mono />}
+                              {emp.id_card_number && <DetailRow label="Személyi ig." value={emp.id_card_number} mono />}
+                              {emp.email && <DetailRow label="Email" value={emp.email} />}
+                              {emp.phone && <DetailRow label="Telefon" value={emp.phone} />}
+                              {emp.bank_account && <DetailRow label="Bankszámla" value={emp.bank_account} mono />}
+                            </div>
+                            {/* Jogviszony */}
+                            <div className="space-y-2">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Jogviszony</p>
+                              {employment ? (
+                                <>
+                                  <DetailRow label="Típus" value={EMPLOYMENT_TYPE_LABELS[employment.employment_type] || employment.employment_type} />
+                                  <DetailRow label="Jogv. kód" value={employment.job_code} mono />
+                                  <DetailRow label="Belépés" value={employment.start_date} />
+                                  {employment.end_date && <DetailRow label="Kilépés" value={employment.end_date} />}
+                                  {employment.job_title && <DetailRow label="Munkakör" value={employment.job_title} />}
+                                  {employment.feor_code && <DetailRow label="FEOR" value={employment.feor_code} mono />}
+                                  <DetailRow label="Heti óra" value={`${employment.weekly_hours}h`} />
+                                  <DetailRow label="Alapbér" value={employment.base_salary ? `${Number(employment.base_salary).toLocaleString('hu-HU')} Ft` : '–'} mono />
+                                  <DetailRow label="Bérezés" value={employment.salary_type === 'monthly' ? 'Havibér' : employment.salary_type === 'hourly' ? 'Órabér' : employment.salary_type} />
+                                  <DetailRow label="Biztosított" value={employment.is_insured ? '✓ Igen' : '✗ Nem'} />
+                                  {employment.is_fixed_term && <DetailRow label="Határozat" value="Határozott idejű" />}
+                                </>
+                              ) : (
+                                <p className="text-xs text-slate-400 italic">Nincs aktív jogviszony</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1046,6 +1222,15 @@ export default function PayrollCyclePage() {
           </Button>
         )}
       </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-2">
+      <span className="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">{label}</span>
+      <span className={cn('text-[11px] font-medium text-slate-900 dark:text-slate-100 text-right', mono && 'font-mono')}>{value}</span>
     </div>
   );
 }
