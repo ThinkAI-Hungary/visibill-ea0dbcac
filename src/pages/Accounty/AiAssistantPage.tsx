@@ -1,80 +1,177 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Send, Zap, ShieldAlert, ChevronRight, BookOpen, AlertTriangle, BarChart3, FileCheck } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Sparkles, Send, Zap, ShieldAlert, BookOpen, BarChart3, FileCheck, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  sources?: { title: string; ref: string }[];
 }
 
 const QUICK_ACTIONS = [
-  { label: 'Kedvezmény-optimalizáció', icon: Zap, prompt: 'Kérlek elemezd a családon belüli kedvezmény-elosztás optimumát.' },
-  { label: 'Anomália-detekció', icon: BarChart3, prompt: 'Vannak-e anomáliák az utolsó havi bértömeg-adatokban?' },
-  { label: 'Bevallás előellenőrzés', icon: FileCheck, prompt: 'Kérlek ellenőrizd a következő havi bevallás konzisztenciáját.' },
+  { label: 'Kedvezmény-optimalizáció', icon: Zap, prompt: 'Kérlek elemezd a 2026-os családi kedvezmény szabályokat 2 gyermek esetén. Hogyan optimalizálható a szülők között?' },
+  { label: 'Anomália-detekció', icon: BarChart3, prompt: 'Mire figyeljek a havi bértömeg-ellenőrzésnél? Milyen anomáliákat érdemes keresni?' },
+  { label: 'Bevallás előellenőrzés', icon: FileCheck, prompt: 'Milyen gyakori hibákra figyeljek a 2608-as havi bevallás beadása előtt?' },
   { label: 'Jogszabály kérdés', icon: BookOpen, prompt: '' },
 ];
-
-const PLACEHOLDER_RESPONSES: Record<string, { content: string; sources: { title: string; ref: string }[] }> = {
-  'kedvezmény': {
-    content: '**Családi kedvezmény 2026-ban (2 gyermek után):**\n\nA 2026-os duplázás után:\n- 2 eltartott: **40 000 Ft/hó/gyermek** (összesen 80 000 Ft/hó)\n- Adóalap-csökkentés: 80 000 × 15% SZJA + 80 000 × 18,5% TB = **26 800 Ft/hó megtakarítás**\n\n💡 *Optimalizációs javaslat*: Ha mindkét szülő dolgozik, érdemes a magasabb jövedelmű szülőnél érvényesíteni a teljes kedvezményt.',
-    sources: [
-      { title: 'Szja tv. 29/B. § (2026 módosítás)', ref: '2025. évi CXLII. törvény' },
-      { title: 'Családi kedvezmény duplázás', ref: 'Magyar Közlöny 2025/178.' },
-    ],
-  },
-  'anomália': {
-    content: '**Anomália-detekció eredménye:**\n\n✅ Az elmúlt havi bértömeg-adatokból nem észleltem szignifikáns eltérést.\n\n*Ellenőrzött metrikák:*\n- Bértömeg változás: +2.1% (normál sávban)\n- Túlóra arány: 4.3% (előző hó: 3.9%)\n- Új belépők/kilépők: 0/0\n\n⚠️ *Megjegyzés*: Ez egy placeholder válasz. Az éles verzióban a tényleges bérszámfejtési adatokat elemezzük.',
-    sources: [],
-  },
-  'default': {
-    content: '🤖 *Az AI asszisztens jelenleg fejlesztés alatt áll.*\n\nA végleges verzióban az alábbi funkciók lesznek elérhetők:\n\n- Természetes nyelvű jogszabály-keresés\n- Kedvezmény-optimalizáció családon belül\n- Bértömeg anomália-detekció\n- Bevallás-előellenőrzés\n- Dokumentum-mintázat elemzés\n\nA háttérben Anthropic Claude AI-t használunk, az adatok anonimizálva kerülnek feldolgozásra.',
-    sources: [{ title: 'GDPR megfelelőség', ref: 'Belső adatkezelési szabályzat' }],
-  },
-};
-
-function getResponse(input: string) {
-  const lower = input.toLowerCase();
-  if (lower.includes('kedvezmény') || lower.includes('család') || lower.includes('gyermek')) return PLACEHOLDER_RESPONSES['kedvezmény'];
-  if (lower.includes('anomália') || lower.includes('bértömeg') || lower.includes('eltérés')) return PLACEHOLDER_RESPONSES['anomália'];
-  return PLACEHOLDER_RESPONSES['default'];
-}
 
 interface AiAssistantChatProps {
   fullPage?: boolean;
 }
 
 export function AiAssistantChat({ fullPage = false }: AiAssistantChatProps) {
+  const { session } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingContent, setStreamingContent] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, streamingContent]);
 
-  const sendMessage = (text: string) => {
-    if (!text.trim()) return;
+  const stopStreaming = useCallback(() => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
+  }, []);
+
+  const sendMessage = useCallback(async (text: string) => {
+    if (!text.trim() || isStreaming) return;
+
     const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: text, timestamp: new Date() };
-    setMessages(prev => [...prev, userMsg]);
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
     setInput('');
-    setIsTyping(true);
+    setIsStreaming(true);
+    setStreamingContent('');
 
-    // Simulate AI response
-    setTimeout(() => {
-      const resp = getResponse(text);
-      const aiMsg: Message = {
-        id: crypto.randomUUID(), role: 'assistant', content: resp.content,
-        timestamp: new Date(), sources: resp.sources,
-      };
-      setMessages(prev => [...prev, aiMsg]);
-      setIsTyping(false);
-    }, 800 + Math.random() * 1200);
+    const abortController = new AbortController();
+    abortRef.current = abortController;
+
+    try {
+      // Build chat history for API (last 20 messages to limit context)
+      const chatHistory = updatedMessages.slice(-20).map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://vxxgvdlqvvchtlmqnrqf.supabase.co';
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/accounty-ai-chat`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({
+            messages: chatHistory,
+            context: {
+              page: window.location.pathname,
+            },
+          }),
+          signal: abortController.signal,
+        }
+      );
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'Ismeretlen hiba' }));
+        throw new Error(err.error || `HTTP ${response.status}`);
+      }
+
+      // Read streaming response
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith('data: ')) continue;
+          const data = trimmed.slice(6);
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.done) break;
+            if (parsed.content) {
+              accumulated += parsed.content;
+              setStreamingContent(accumulated);
+            }
+          } catch {}
+        }
+      }
+
+      // Finalize the assistant message
+      if (accumulated) {
+        const aiMsg: Message = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: accumulated,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, aiMsg]);
+      }
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        // User cancelled - save partial content
+        if (streamingContent) {
+          setMessages(prev => [...prev, {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: streamingContent + '\n\n*[Megszakítva]*',
+            timestamp: new Date(),
+          }]);
+        }
+      } else {
+        console.error('[AI Chat] Error:', err);
+        setMessages(prev => [...prev, {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: `⚠️ Hiba történt: ${err.message}\n\nKérlek próbáld újra.`,
+          timestamp: new Date(),
+        }]);
+      }
+    } finally {
+      setIsStreaming(false);
+      setStreamingContent('');
+      abortRef.current = null;
+    }
+  }, [messages, isStreaming, session, streamingContent]);
+
+  // Simple markdown-like rendering: **bold**, *italic*, \n, - lists
+  const renderContent = (content: string) => {
+    const lines = content.split('\n');
+    return lines.map((line, i) => {
+      // Process inline formatting
+      let html = line
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`(.+?)`/g, '<code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-xs">$1</code>');
+
+      if (line.startsWith('- ') || line.startsWith('• ')) {
+        return <li key={i} className="ml-4 list-disc" dangerouslySetInnerHTML={{ __html: html.slice(2) }} />;
+      }
+      if (/^\d+\.\s/.test(line)) {
+        return <li key={i} className="ml-4 list-decimal" dangerouslySetInnerHTML={{ __html: html.replace(/^\d+\.\s/, '') }} />;
+      }
+      if (!line.trim()) return <br key={i} />;
+      return <p key={i} dangerouslySetInnerHTML={{ __html: html }} />;
+    });
   };
 
   return (
@@ -83,13 +180,13 @@ export function AiAssistantChat({ fullPage = false }: AiAssistantChatProps) {
       <div className="px-4 py-2.5 bg-amber-50/80 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-800/40 flex items-start gap-2">
         <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
         <p className="text-[10px] text-amber-700 dark:text-amber-400 leading-relaxed">
-          Az AI-asszisztens válaszainak hivatkozási alapja a saját adatbázis. A foglalkoztatottak személyes adatait nem küldjük külső LLM-szolgáltatónak, csak anonimizált formában.
+          Az AI válaszok tájékoztató jellegűek, nem minősülnek jogi tanácsadásnak. A foglalkoztatottak személyes adatait nem küldjük a szolgáltatónak.
         </p>
       </div>
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && (
+        {messages.length === 0 && !isStreaming && (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
             <div className="p-3 bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 rounded-2xl mb-4">
               <Sparkles className="w-8 h-8 text-violet-500" />
@@ -103,7 +200,7 @@ export function AiAssistantChat({ fullPage = false }: AiAssistantChatProps) {
               {QUICK_ACTIONS.map(qa => (
                 <button
                   key={qa.label}
-                  onClick={() => sendMessage(qa.prompt || `${qa.label} – kérlek elemezd.`)}
+                  onClick={() => sendMessage(qa.prompt || `${qa.label} – kérlek adj részletes tájékoztatást.`)}
                   className="flex items-center gap-2 p-3 rounded-xl border border-border bg-card hover:border-primary/30 hover:bg-primary/5 transition-all text-left group"
                 >
                   <qa.icon className="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors" />
@@ -121,34 +218,31 @@ export function AiAssistantChat({ fullPage = false }: AiAssistantChatProps) {
                 ? 'bg-primary text-white rounded-br-md'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-md'
             )}>
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-              {/* Sources */}
-              {msg.sources && msg.sources.length > 0 && (
-                <div className="mt-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Hivatkozások</p>
-                  {msg.sources.map((s, i) => (
-                    <div key={i} className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">
-                      <BookOpen className="w-3 h-3 shrink-0" />
-                      <span className="font-medium">{s.title}</span>
-                      <span className="text-slate-400">— {s.ref}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="text-sm leading-relaxed space-y-1">
+                {renderContent(msg.content)}
+              </div>
               <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-1.5">
                 {msg.timestamp.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
           </div>
         ))}
-        {isTyping && (
+        {/* Streaming message */}
+        {isStreaming && (
           <div className="flex justify-start">
-            <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-bl-md px-4 py-3">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
+            <div className="max-w-[85%] bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl rounded-bl-md px-4 py-3">
+              {streamingContent ? (
+                <div className="text-sm leading-relaxed space-y-1">
+                  {renderContent(streamingContent)}
+                  <span className="inline-block w-2 h-4 bg-violet-500 animate-pulse rounded-sm ml-0.5" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -163,11 +257,19 @@ export function AiAssistantChat({ fullPage = false }: AiAssistantChatProps) {
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input); } }}
             placeholder="Kérdezz a jogszabályokról, kedvezményekről..."
             className="flex-1 bg-card border-border"
+            disabled={isStreaming}
           />
-          <Button size="icon" onClick={() => sendMessage(input)} disabled={!input.trim() || isTyping} className="shrink-0">
-            <Send className="w-4 h-4" />
-          </Button>
+          {isStreaming ? (
+            <Button size="icon" variant="destructive" onClick={stopStreaming} className="shrink-0" title="Leállítás">
+              <Square className="w-4 h-4" />
+            </Button>
+          ) : (
+            <Button size="icon" onClick={() => sendMessage(input)} disabled={!input.trim()} className="shrink-0">
+              <Send className="w-4 h-4" />
+            </Button>
+          )}
         </div>
+        <p className="text-[9px] text-slate-400 mt-1.5 text-center">GPT-4o mini · A válaszok tájékoztató jellegűek</p>
       </div>
     </div>
   );

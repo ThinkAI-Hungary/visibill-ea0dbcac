@@ -956,23 +956,10 @@ export default function AccountyLayout() {
             <Outlet />
           </AccountyRoleProvider>
 
-          {/* AI Assistant FAB */}
-          <button
-            onClick={() => setAiDrawerOpen(v => !v)}
-            className={cn(
-              "fixed bottom-6 right-6 z-40 p-3.5 rounded-2xl shadow-lg transition-all duration-300 hover:scale-105",
-              aiDrawerOpen
-                ? "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-md"
-                : "bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50"
-            )}
-            title="AI Asszisztens"
-          >
-            {aiDrawerOpen ? <X className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
-          </button>
 
           {/* AI Assistant Drawer */}
           {aiDrawerOpen && (
-            <div className="fixed top-0 right-0 z-30 h-full w-[420px] bg-card border-l border-border shadow-2xl animate-in slide-in-from-right duration-300">
+            <div className="fixed inset-y-0 right-0 z-40 w-full max-w-[420px] bg-background/80 backdrop-blur-xl border-l border-border/50 shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col">
               <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-violet-500" />
@@ -991,7 +978,9 @@ export default function AccountyLayout() {
                   </button>
                 </div>
               </div>
-              <AiDrawerChat />
+              <div className="flex-1 overflow-hidden">
+                <AiDrawerChat />
+              </div>
             </div>
           )}
         </div>
@@ -1062,7 +1051,7 @@ export default function AccountyLayout() {
           </div>
         </DialogContent>
       </Dialog>
-      <FeedbackFab />
+      <FeedbackFab onAiOpen={() => setAiDrawerOpen(true)} aiDrawerOpen={aiDrawerOpen} onAiClose={() => setAiDrawerOpen(false)} />
     </>
   );
 }
