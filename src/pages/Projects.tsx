@@ -106,7 +106,7 @@ const Projects = () => {
           financialsMap.set(inv.project_id, { outbound: 0, inbound: 0 });
         }
         const current = financialsMap.get(inv.project_id)!;
-        const amount = inv.invoice_gross_amount || 0;
+        const amount = parseFloat(inv.invoice_gross_amount) || 0;
         if (inv.invoice_direction === 'OUTBOUND') {
           current.outbound += amount;
         } else if (inv.invoice_direction === 'INBOUND') {
