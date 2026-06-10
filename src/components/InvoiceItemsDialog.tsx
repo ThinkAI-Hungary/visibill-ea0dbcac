@@ -38,6 +38,7 @@ interface InvoiceLineItem {
   gross_amount: number | null;
   product_code: string | null;
   gl_classifications: any | null;
+  exclude_from_accounting?: boolean;
 }
 
 interface InvoiceItemsDialogProps {
@@ -75,22 +76,32 @@ export function InvoiceItemsDialog({
   const { data: items = [], isLoading: loading } = useQuery({
     queryKey: ['invoiceItems', source, invoiceId],
     queryFn: async () => {
-      if (source === 'submitted') {
-        const { data, error } = await supabase
-          .from('invoice_items')
-          .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications')
-          .eq('invoice_id', invoiceId)
-          .order('line_number', { ascending: true });
-        if (error) throw error;
-        return (data || []) as InvoiceLineItem[];
-      }
-      // Default: NAV source
+      const baseCols = 'id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications';
+      const fullCols = baseCols + ', exclude_from_accounting';
+      const table = source === 'submitted' ? 'invoice_items' : 'submitted';
+      const fkCol = source === 'submitted' ? 'invoice_id' : 'nav_invoice_id';
+      const fromTable = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+
+      // Try with exclude_from_accounting first; fallback to without if column doesn't exist
       const { data, error } = await supabase
-        .from('nav_invoice_items')
-        .select('id, line_number, line_description, product_code, quantity, unit_of_measure, unit_price, net_amount, vat_rate, vat_amount, gross_amount, gl_classifications')
-        .eq('nav_invoice_id', invoiceId)
+        .from(fromTable)
+        .select(fullCols)
+        .eq(fkCol, invoiceId)
         .order('line_number', { ascending: true });
-      if (error) throw error;
+
+      if (error) {
+        // Column doesn't exist yet (42703) — retry without it
+        if (error.code === '42703' || error.message?.includes('does not exist')) {
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from(fromTable)
+            .select(baseCols)
+            .eq(fkCol, invoiceId)
+            .order('line_number', { ascending: true });
+          if (fallbackError) throw fallbackError;
+          return (fallbackData || []) as InvoiceLineItem[];
+        }
+        throw error;
+      }
       return (data || []) as InvoiceLineItem[];
     },
     enabled: open && !!invoiceId,
@@ -141,7 +152,18 @@ export function InvoiceItemsDialog({
     onOpenChange(newOpen);
   }, [onOpenChange]);
 
-
+  // Toggle exclude_from_accounting on a single line item
+  const handleToggleItemExclude = useCallback(async (item: InvoiceLineItem) => {
+    const table = source === 'submitted' ? 'invoice_items' : 'nav_invoice_items';
+    const newValue = !item.exclude_from_accounting;
+    const { error } = await supabase
+      .from(table)
+      .update({ exclude_from_accounting: newValue })
+      .eq('id', item.id);
+    if (!error) {
+      queryClient.invalidateQueries({ queryKey: ['invoiceItems', source, invoiceId] });
+    }
+  }, [source, invoiceId, queryClient]);
 
   const formatAmount = (amount: number | null) => {
     if (amount === null || amount === undefined) return '-';
@@ -268,7 +290,7 @@ export function InvoiceItemsDialog({
                       <TableHead className="text-right font-semibold">ÁFA összeg</TableHead>
                       <TableHead className="text-right font-semibold">Bruttó</TableHead>
                       <TableHead className="text-center font-semibold">Főkönyv</TableHead>
-
+                      <TableHead className="text-center font-semibold w-[70px]">Könyv.</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -367,7 +389,25 @@ export function InvoiceItemsDialog({
                             );
                           })()}
                         </TableCell>
-
+                        <TableCell className="text-center">
+                          {item.exclude_from_accounting !== undefined ? (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleToggleItemExclude(item); }}
+                              className={cn(
+                                "inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold transition-all border cursor-pointer whitespace-nowrap",
+                                item.exclude_from_accounting
+                                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-300/40 hover:bg-amber-500/25"
+                                  : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-300/30 hover:bg-emerald-500/20"
+                              )}
+                              title={item.exclude_from_accounting ? 'Nem kerül könyvelésre — kattints a visszaállításhoz' : 'Könyvelésre kerül — kattints a kizáráshoz'}
+                            >
+                              {item.exclude_from_accounting ? 'Nem' : 'Igen'}
+                            </button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
                       </TableRow>
                     );
                     })}
