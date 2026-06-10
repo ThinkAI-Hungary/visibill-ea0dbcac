@@ -1,0 +1,181 @@
+import React, { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import {
+  ArrowLeft, Wrench, Plus, Trash2, GripVertical, Download, Eye,
+  Save, Filter, Columns, CheckCircle, Table, BarChart3
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+interface ColumnDef {
+  id: string;
+  label: string;
+  category: string;
+  selected: boolean;
+}
+
+const AVAILABLE_COLUMNS: ColumnDef[] = [
+  // Employee
+  { id: 'name', label: 'Név', category: 'Személyes', selected: true },
+  { id: 'taxId', label: 'Adóazonosító', category: 'Személyes', selected: false },
+  { id: 'tajNumber', label: 'TAJ szám', category: 'Személyes', selected: true },
+  { id: 'birthDate', label: 'Születési dátum', category: 'Személyes', selected: false },
+  { id: 'age', label: 'Életkor', category: 'Személyes', selected: false },
+  // Job
+  { id: 'jobCode', label: 'Jogviszonykód', category: 'Jogviszony', selected: true },
+  { id: 'position', label: 'Munkakör', category: 'Jogviszony', selected: true },
+  { id: 'feor', label: 'FEOR-kód', category: 'Jogviszony', selected: false },
+  { id: 'startDate', label: 'Belépés dátuma', category: 'Jogviszony', selected: false },
+  { id: 'weeklyHours', label: 'Heti munkaidő', category: 'Jogviszony', selected: false },
+  { id: 'site', label: 'Telephely', category: 'Jogviszony', selected: false },
+  { id: 'costCenter', label: 'Költséghely', category: 'Jogviszony', selected: false },
+  // Salary
+  { id: 'grossSalary', label: 'Bruttó bér', category: 'Bér', selected: true },
+  { id: 'netSalary', label: 'Nettó bér', category: 'Bér', selected: true },
+  { id: 'szja', label: 'SZJA', category: 'Bér', selected: false },
+  { id: 'tbJarulék', label: 'TB járulék', category: 'Bér', selected: false },
+  { id: 'szocho', label: 'SZOCHO', category: 'Bér', selected: false },
+  { id: 'familyBenefit', label: 'Családi kedvezmény', category: 'Bér', selected: false },
+  { id: 'totalCost', label: 'Teljes bérköltség', category: 'Bér', selected: false },
+  // Leave
+  { id: 'leaveTotal', label: 'Szabadság keret', category: 'Szabadság', selected: false },
+  { id: 'leaveUsed', label: 'Felhasznált szabadság', category: 'Szabadság', selected: false },
+  { id: 'leaveRemaining', label: 'Maradék szabadság', category: 'Szabadság', selected: false },
+  { id: 'sickDays', label: 'Betegnapok', category: 'Szabadság', selected: false },
+];
+
+const MOCK_DATA = [
+  { name: 'Nagy Anna', tajNumber: '123 456 789', jobCode: '1101', position: 'Pénzügyi elemző', grossSalary: 450000, netSalary: 299250 },
+  { name: 'Kiss Béla', tajNumber: '987 654 321', jobCode: '1101', position: 'Adótanácsadó', grossSalary: 380000, netSalary: 252700 },
+  { name: 'Tóth Éva', tajNumber: '111 222 333', jobCode: '1101', position: 'Asszisztens', grossSalary: 322800, netSalary: 214662 },
+  { name: 'Szabó Péter', tajNumber: '444 555 666', jobCode: '1101', position: 'Könyvelő', grossSalary: 520000, netSalary: 345800 },
+  { name: 'Horváth Dávid', tajNumber: '777 888 999', jobCode: '1101', position: 'Junior asszisztens', grossSalary: 600000, netSalary: 399000 },
+];
+
+interface FilterDef {
+  column: string;
+  operator: 'eq' | 'gt' | 'lt' | 'contains';
+  value: string;
+}
+
+export default function CustomReportBuilderPage() {
+  const { id } = useParams<{ id: string }>();
+  const [columns, setColumns] = useState(AVAILABLE_COLUMNS);
+  const [filters, setFilters] = useState<FilterDef[]>([]);
+  const [reportName, setReportName] = useState('Egyedi riport');
+  const [showColumnPicker, setShowColumnPicker] = useState(true);
+  const [generated, setGenerated] = useState(false);
+
+  const selectedColumns = columns.filter(c => c.selected);
+  const categories = [...new Set(AVAILABLE_COLUMNS.map(c => c.category))];
+
+  const toggleColumn = (colId: string) => setColumns(prev => prev.map(c => c.id === colId ? { ...c, selected: !c.selected } : c));
+
+  const addFilter = () => setFilters(prev => [...prev, { column: columns[0].id, operator: 'eq', value: '' }]);
+  const removeFilter = (idx: number) => setFilters(prev => prev.filter((_, i) => i !== idx));
+
+  const handleGenerate = () => { setGenerated(true); setShowColumnPicker(false); };
+
+  const fmt = (val: any) => typeof val === 'number' ? val.toLocaleString('hu-HU') : String(val || '—');
+
+  return (
+    <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link to={`/accounty/payroll/${id}/advanced-reports`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <div className="p-2.5 bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl shadow-lg"><Wrench className="w-5 h-5 text-white" /></div>
+          <div>
+            <input type="text" value={reportName} onChange={e => setReportName(e.target.value)} className="text-2xl font-bold bg-transparent border-none outline-none focus:underline" />
+            <p className="text-sm text-slate-500">Egyedi mezőválogatás és szűrők</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowColumnPicker(!showColumnPicker)} className="gap-1.5"><Columns className="w-4 h-4" /> Oszlopok ({selectedColumns.length})</Button>
+          {generated && <Button variant="outline" className="gap-1.5"><Download className="w-4 h-4" /> Excel export</Button>}
+          <Button onClick={handleGenerate} className="gap-1.5 bg-slate-900 dark:bg-slate-100 dark:text-slate-900 hover:bg-slate-800">
+            <Table className="w-4 h-4" /> Generálás
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-[1fr,auto] gap-4">
+        {/* Main content */}
+        <div className="space-y-4">
+          {/* Filters */}
+          <div className="bg-card rounded-xl border border-border p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5"><Filter className="w-4 h-4" /> Szűrők</h3>
+              <Button variant="outline" size="sm" onClick={addFilter} className="gap-1 text-xs"><Plus className="w-3 h-3" /> Szűrő</Button>
+            </div>
+            {filters.length === 0 && <p className="text-xs text-slate-400">Nincs szűrő — minden adat megjelenik</p>}
+            {filters.map((f, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <select value={f.column} onChange={e => setFilters(prev => prev.map((ff, ii) => ii === i ? { ...ff, column: e.target.value } : ff))} className="px-2 py-1.5 rounded border border-border bg-background text-xs flex-1">
+                  {columns.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                </select>
+                <select value={f.operator} onChange={e => setFilters(prev => prev.map((ff, ii) => ii === i ? { ...ff, operator: e.target.value as any } : ff))} className="px-2 py-1.5 rounded border border-border bg-background text-xs w-24">
+                  <option value="eq">egyenlő</option>
+                  <option value="gt">nagyobb mint</option>
+                  <option value="lt">kisebb mint</option>
+                  <option value="contains">tartalmazza</option>
+                </select>
+                <input type="text" value={f.value} onChange={e => setFilters(prev => prev.map((ff, ii) => ii === i ? { ...ff, value: e.target.value } : ff))} placeholder="Érték" className="px-2 py-1.5 rounded border border-border bg-background text-xs flex-1" />
+                <Button variant="ghost" size="sm" onClick={() => removeFilter(i)} className="h-7 w-7 p-0 text-red-400"><Trash2 className="w-3 h-3" /></Button>
+              </div>
+            ))}
+          </div>
+
+          {/* Generated table */}
+          {generated && (
+            <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+              <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
+                <h3 className="text-sm font-bold">{reportName} — {MOCK_DATA.length} rekord</h3>
+                <span className="text-xs text-slate-500">{selectedColumns.length} oszlop</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-slate-50/30">
+                      {selectedColumns.map(col => (
+                        <th key={col.id} className="text-left px-4 py-2 text-xs font-bold text-slate-500 whitespace-nowrap">{col.label}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {MOCK_DATA.map((row, ri) => (
+                      <tr key={ri} className="border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        {selectedColumns.map(col => (
+                          <td key={col.id} className={cn('px-4 py-2 whitespace-nowrap', col.category === 'Bér' && 'font-mono text-xs')}>{fmt((row as any)[col.id])}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Column picker */}
+        {showColumnPicker && (
+          <div className="w-64 bg-card rounded-xl border border-border p-4 h-fit sticky top-4 space-y-3">
+            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Oszlopválasztó</h3>
+            {categories.map(cat => (
+              <div key={cat}>
+                <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">{cat}</p>
+                <div className="space-y-0.5">
+                  {columns.filter(c => c.category === cat).map(col => (
+                    <label key={col.id} className="flex items-center gap-2 py-1 px-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer text-xs">
+                      <input type="checkbox" checked={col.selected} onChange={() => toggleColumn(col.id)} className="rounded" />
+                      {col.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

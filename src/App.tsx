@@ -86,6 +86,34 @@ const ProfileSettingsPage = lazy(() => import("./pages/Accounty/ProfileSettingsP
 const AlertsCenterPage = lazy(() => import("./pages/Accounty/AlertsCenterPage"));
 const NavDeadlinesPage = lazy(() => import("./pages/Accounty/NavDeadlinesPage"));
 const PayrollPortfolioPage = lazy(() => import("./pages/Accounty/PayrollPortfolioPage"));
+const CegkapuSettingsPage = lazy(() => import("./pages/Accounty/CegkapuSettingsPage"));
+const RepresentationPage = lazy(() => import("./pages/Accounty/RepresentationPage"));
+const DataRetentionPage = lazy(() => import("./pages/Accounty/DataRetentionPage"));
+const CompanyStructurePage = lazy(() => import("./pages/Accounty/CompanyStructurePage"));
+const EmployeeImportPage = lazy(() => import("./pages/Accounty/EmployeeImportPage"));
+const JobModificationPage = lazy(() => import("./pages/Accounty/JobModificationPage"));
+const MultiJobPage = lazy(() => import("./pages/Accounty/MultiJobPage"));
+const DeclarationsOverviewPage = lazy(() => import("./pages/Accounty/declarations/DeclarationsOverviewPage"));
+const FamilyDeclarationPage = lazy(() => import("./pages/Accounty/declarations/FamilyDeclarationPage"));
+const GenericDeclarationPage = lazy(() => import("./pages/Accounty/declarations/GenericDeclarationPage"));
+const DocumentCenterPage = lazy(() => import("./pages/Accounty/documents/DocumentCenterPage"));
+const PayslipGeneratorPage = lazy(() => import("./pages/Accounty/documents/PayslipGeneratorPage"));
+const EmployeeExitWizardPage = lazy(() => import("./pages/Accounty/EmployeeExitWizardPage"));
+const PayrollAdvancedReportsPage = lazy(() => import("./pages/Accounty/reports/PayrollAdvancedReportsPage"));
+const OfficeSettingsPage = lazy(() => import("./pages/Accounty/admin/OfficeSettingsPage"));
+const SpecialJobFormsPage = lazy(() => import("./pages/Accounty/SpecialJobFormsPage"));
+const Filing08EPage = lazy(() => import("./pages/Accounty/filings/Filing08EPage"));
+const Filing2608Page = lazy(() => import("./pages/Accounty/filings/Filing2608Page"));
+const GenericFilingPage = lazy(() => import("./pages/Accounty/filings/GenericFilingPage"));
+const FilingWorkflowPage = lazy(() => import("./pages/Accounty/filings/FilingWorkflowPage"));
+const TransferListPage = lazy(() => import("./pages/Accounty/documents/TransferListPage"));
+const EPayslipPortalPage = lazy(() => import("./pages/Accounty/documents/EPayslipPortalPage"));
+const OutputDocumentsPage = lazy(() => import("./pages/Accounty/documents/OutputDocumentsPage"));
+const ExitDocumentsPage = lazy(() => import("./pages/Accounty/ExitDocumentsPage"));
+const YearEndDashboardPage = lazy(() => import("./pages/Accounty/YearEndDashboardPage"));
+const AiAnomalyReportPage = lazy(() => import("./pages/Accounty/reports/AiAnomalyReportPage"));
+const CustomReportBuilderPage = lazy(() => import("./pages/Accounty/reports/CustomReportBuilderPage"));
+const DeclarationArchivePage = lazy(() => import("./pages/Accounty/declarations/DeclarationArchivePage"));
 const VatReturnPage = lazy(() => import("./pages/VatReturnPage"));
 const TicketsPage = lazy(() => import("./pages/TicketsPage"));
 
@@ -307,6 +335,44 @@ const App = () => (
                       <Route path="payroll/:id/reports" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollReportsPage /></Suspense>} />
                       <Route path="payroll/:id/portal" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientPortalPage /></Suspense>} />
                       <Route path="payroll/:id/tax-params" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollTaxParametersPage /></Suspense>} />
+                      {/* Client-level settings (WP1) */}
+                      <Route path="client/:id/cegkapu" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CegkapuSettingsPage /></Suspense>} />
+                      <Route path="client/:id/representation" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RepresentationPage /></Suspense>} />
+                      <Route path="client/:id/data-retention" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><DataRetentionPage /></Suspense>} />
+                      <Route path="client/:id/structure" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CompanyStructurePage /></Suspense>} />
+                      {/* Employee extensions (WP2) */}
+                      <Route path="payroll/:id/employees/import" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EmployeeImportPage /></Suspense>} />
+                      <Route path="payroll/:id/employees/:empId/modification" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><JobModificationPage /></Suspense>} />
+                      <Route path="payroll/:id/employees/:empId/multi-job" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MultiJobPage /></Suspense>} />
+                      {/* Declarations (WP3) */}
+                      <Route path="payroll/:id/declarations" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><DeclarationsOverviewPage /></Suspense>} />
+                      <Route path="payroll/:id/declarations/archive" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><DeclarationArchivePage /></Suspense>} />
+                      <Route path="payroll/:id/declarations/family" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><FamilyDeclarationPage /></Suspense>} />
+                      <Route path="payroll/:id/declarations/:type" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><GenericDeclarationPage /></Suspense>} />
+                      {/* Documents (WP5) */}
+                      <Route path="payroll/:id/documents" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><DocumentCenterPage /></Suspense>} />
+                      <Route path="payroll/:id/documents/payslips" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayslipGeneratorPage /></Suspense>} />
+                      <Route path="payroll/:id/documents/transfer" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TransferListPage /></Suspense>} />
+                      <Route path="payroll/:id/documents/e-payslip" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EPayslipPortalPage /></Suspense>} />
+                      <Route path="payroll/:id/documents/all" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OutputDocumentsPage /></Suspense>} />
+                      <Route path="payroll/:id/documents/:docType" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OutputDocumentsPage /></Suspense>} />
+                      {/* Exit (WP6) */}
+                      <Route path="payroll/:id/employees/:empId/exit" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EmployeeExitWizardPage /></Suspense>} />
+                      <Route path="payroll/:id/employees/:empId/exit-docs" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ExitDocumentsPage /></Suspense>} />
+                      {/* Filings */}
+                      <Route path="payroll/:id/filings/08e" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><Filing08EPage /></Suspense>} />
+                      <Route path="payroll/:id/filings/2608" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><Filing2608Page /></Suspense>} />
+                      <Route path="payroll/:id/filings/all" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><GenericFilingPage /></Suspense>} />
+                      <Route path="payroll/:id/filings/:filingType" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><GenericFilingPage /></Suspense>} />
+                      <Route path="payroll/:id/filings/:filingId/workflow" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><FilingWorkflowPage /></Suspense>} />
+                      {/* Special job forms */}
+                      <Route path="payroll/:id/employees/special" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><SpecialJobFormsPage /></Suspense>} />
+                      <Route path="payroll/:id/employees/special/:jobType" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><SpecialJobFormsPage /></Suspense>} />
+                      {/* Year End & Advanced Reports */}
+                      <Route path="payroll/:id/year-end" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><YearEndDashboardPage /></Suspense>} />
+                      <Route path="payroll/:id/advanced-reports" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollAdvancedReportsPage /></Suspense>} />
+                      <Route path="payroll/:id/advanced-reports/anomaly" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AiAnomalyReportPage /></Suspense>} />
+                      <Route path="payroll/:id/advanced-reports/custom" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CustomReportBuilderPage /></Suspense>} />
                       <Route path="new-client" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NewClientPage /></Suspense>} />
                       {/* Admin modules */}
                       <Route path="admin/audit" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AuditLogPage /></Suspense>} />
@@ -315,6 +381,7 @@ const App = () => (
                       <Route path="admin/job-codes" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><JobCodesPage /></Suspense>} />
                       <Route path="admin/tax-parameters" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AdminTaxParametersPage /></Suspense>} />
                       <Route path="admin/legal-updates" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><LegalUpdatesPage /></Suspense>} />
+                      <Route path="admin/office-settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OfficeSettingsPage /></Suspense>} />
                       {/* Portfolio pages */}
                       <Route path="alerts" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AlertsCenterPage /></Suspense>} />
                       <Route path="nav-deadlines" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NavDeadlinesPage /></Suspense>} />
