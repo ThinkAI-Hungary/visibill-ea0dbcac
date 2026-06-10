@@ -138,11 +138,11 @@ const Projects = () => {
   const handleSaveProject = async () => {
     if (!user || !editingProject) return;
 
-    if (!editingProject.name.trim() || !editingProject.client_name.trim()) {
+    if (!editingProject.name.trim()) {
       toast({
         variant: 'destructive',
         title: 'Hiányzó adatok',
-        description: 'A projekt neve és ügyfél neve kötelező!'
+        description: 'A projekt neve kötelező!'
       });
       return;
     }
@@ -331,7 +331,7 @@ const Projects = () => {
 
                 {/* Client selection with PartnerCombobox */}
                 <div className="space-y-2">
-                  <Label htmlFor="client">Ügyfél *</Label>
+                  <Label htmlFor="client">Ügyfél</Label>
                   <PartnerCombobox
                     value={editingProject?.client_name || ''}
                     onChange={(name) => setEditingProject(prev => prev ? { ...prev, client_name: name } : null)}
@@ -512,7 +512,7 @@ const Projects = () => {
                         <CardTitle className="text-lg truncate">{project.name}</CardTitle>
                         <CardDescription className="flex items-center gap-1 mt-1">
                           <Building2 className="h-3 w-3" />
-                          {project.client_name}
+                          {project.client_name || <span className="italic text-muted-foreground/60">Nincs megadva</span>}
                         </CardDescription>
                       </div>
                       <div className="flex flex-col items-end gap-1">
