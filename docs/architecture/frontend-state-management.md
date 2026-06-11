@@ -202,16 +202,19 @@ const invalidate = (...keys: string[]) => {
 };
 ```
 
-### Tab Visibility Reconnect
+### Tab Visibility — Feltételes Cache Invalidáció
 
-```tsx
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    // 1. Reconnect Realtime channel if disconnected
-    // 2. Broad cache invalidation (catch missed events)
-  }
-});
+A `visibilitychange` event-re a provider **feltételesen** invalidálja a cache-t:
+
 ```
+Tab háttérbe kerül (hidden) → timestamp mentése
+Tab visszajön (visible) →
+  ├─ Csatorna leszakadt (state ≠ joined) → Reconnect + MINDIG invalidál
+  ├─ Csatorna aktív ÉS távollét > 2 perc → Invalidál (browser throttle kockázat)
+  └─ Csatorna aktív ÉS távollét ≤ 2 perc → SKIP (nincs felesleges re-render)
+```
+
+> **Fix:** `07a1723` (2026-06-11) — korábban feltétel nélkül invalidált ~30 query-t minden tab visszaváltáskor, ami zavaró UI villanást okozott.
 
 ---
 

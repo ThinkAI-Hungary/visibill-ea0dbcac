@@ -1,6 +1,6 @@
 # Visibill — Architecture Overview
 
-> **Verzió:** 1.0 | **Dátum:** 2026-06-08  
+> **Verzió:** 1.1 | **Dátum:** 2026-06-11  
 > **Kapcsolódó:** [Business Overview](../business/overview.md) · [PRD](../product/prd.md) · [Design System](../design/00-overview.md)
 
 ---
@@ -103,7 +103,10 @@ Frontend (React Query invalidation → friss adat)
 
 | Dokumentum | Tartalom |
 |-----------|----------|
-| [decisions/index.md](./decisions/index.md) | 19 architekturális döntés (ADR-ek) |
-| [../design/01-tech-stack.md](../design/01-tech-stack.md) | Frontend tech stack részletek |
+| [decisions/index.md](./decisions/index.md) | 20 architekturális döntés (ADR-ek) |
+| [frontend-tech-stack.md](./frontend-tech-stack.md) | Frontend tech stack, build, provider hierarchy |
+| [frontend-state-management.md](./frontend-state-management.md) | React Context, React Query, Realtime invalidáció |
+| [frontend-auth-onboarding.md](./frontend-auth-onboarding.md) | Auth flow, session management, onboarding |
+| [frontend-performance.md](./frontend-performance.md) | Code splitting, prefetch, memoizáció |
 | [../business/decisions/034-worker-pipeline.md](../business/decisions/034-worker-pipeline.md) | Worker pipeline üzleti scope |
 | [../business/decisions/006-tech-stack.md](../business/decisions/006-tech-stack.md) | Üzleti tech stack döntés |

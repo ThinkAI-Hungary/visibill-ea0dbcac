@@ -204,7 +204,7 @@ A tour a sidebar és a főoldal meghatározott elemeire fókuszál a HTML-be ág
 
 ### Idle Warning Modal
 
-Részletes leírás: [09-error-handling-feedback.md](./09-error-handling-feedback.md#idle-warning-modal)
+Részletes leírás: [09-error-handling-feedback.md](../design/09-error-handling-feedback.md#idle-warning-modal)
 
 ### Last Active Tracking
 
