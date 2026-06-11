@@ -274,13 +274,6 @@ export function useInvoiceData(
       const ids = new Set(allTransactions.map(t => t.matched_invoice_id).filter(Boolean));
       // Also include invoice IDs from the join table (multi-match)
       joinTableMatches.forEach(m => ids.add(m.invoice_id));
-      // DEBUG: log join table matches
-      if (joinTableMatches.length > 0) {
-        console.log('[DEBUG] joinTableMatches:', joinTableMatches);
-        console.log('[DEBUG] matchedInvoiceIds includes D-THINK-121?', ids.has('dd7460e0-3c06-4871-85bc-0c31efbcfb5c'));
-      } else {
-        console.log('[DEBUG] joinTableMatches is EMPTY, allTransactions.length:', allTransactions.length);
-      }
       return ids;
     },
     [allTransactions, joinTableMatches]
