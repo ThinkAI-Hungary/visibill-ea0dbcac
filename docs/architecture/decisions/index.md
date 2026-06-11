@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
 > **Utoljára frissítve:** 2026-06-11  
-> **Összesen:** 20 döntés | ✅ Decided: 18 | ⛔ Superseded: 1 | 🔴 Open: 1
+> **Összesen:** 20 döntés | ✅ Decided: 19 | ⛔ Superseded: 1
 
 ---
 
@@ -86,3 +86,16 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | A-019 | Management Dashboard architektúra (Edge Function + service_role) | ✅ Decided | [A-019](./A-019-management-dashboard.md) |
+
+---
+
+## 📄 Frontend Referencia Dokumentumok
+
+A `docs/architecture/` mappában az ADR-ek mellett részletes frontend referencia dokumentumok is találhatók (korábban `docs/design/`-ban voltak):
+
+| Dokumentum | Tartalom |
+|-----------|----------|
+| [frontend-tech-stack.md](../frontend-tech-stack.md) | React, Vite, TypeScript, provider hierarchy, projekt struktúra |
+| [frontend-state-management.md](../frontend-state-management.md) | React Context-ek, React Query, Realtime invalidáció, localStorage |
+| [frontend-auth-onboarding.md](../frontend-auth-onboarding.md) | Auth flow, session management, RBAC, onboarding wizard |
+| [frontend-performance.md](../frontend-performance.md) | Code splitting, prefetch, memoizáció, query cache tuning |
