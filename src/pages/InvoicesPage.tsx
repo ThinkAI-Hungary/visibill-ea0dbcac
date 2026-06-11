@@ -117,7 +117,7 @@ const InvoicesPage = () => {
   // ── Data hook ──
   const {
     submittedInvoices, linkedInvoicesPool, linkedInvoicesLoading,
-    partners, categories, projects, allTransactions, navInvoicesLookup,
+    partners, categories, projects, allTransactions, joinTableMatches, navInvoicesLookup,
     matchedInvoiceIds, navIdToCourierReportsMap,
     loading: dataLoading, credentialsExist, invalidateInvoiceData,
   } = useInvoiceData(companyId, enabled, dateFromFormatted, dateToFormatted, selectedCompany?.id);
@@ -373,6 +373,7 @@ const InvoicesPage = () => {
 
   const submittedIdToTransactionsMap = useMemo(() => {
     const map = new Map<string, TransactionRecord[]>();
+    // 1. Primary match (matched_invoice_id)
     allTransactions.forEach(tx => {
       if (tx.matched_invoice_id) {
         const existing = map.get(tx.matched_invoice_id) || [];
@@ -380,8 +381,20 @@ const InvoicesPage = () => {
         map.set(tx.matched_invoice_id, existing);
       }
     });
+    // 2. Multi-match via join table (transaction_invoice_matches)
+    const txById = new Map(allTransactions.map(t => [t.id, t]));
+    joinTableMatches.forEach(m => {
+      const tx = txById.get(m.transaction_id);
+      if (tx) {
+        const existing = map.get(m.invoice_id) || [];
+        if (!existing.some(t => t.id === tx.id)) {
+          existing.push(tx);
+          map.set(m.invoice_id, existing);
+        }
+      }
+    });
     return map;
-  }, [allTransactions]);
+  }, [allTransactions, joinTableMatches]);
 
   const linkedInvoicesMap = useMemo(() => {
     const allInvoices = [...submittedInvoices, ...linkedInvoicesPool];

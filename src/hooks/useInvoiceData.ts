@@ -208,6 +208,31 @@ export function useInvoiceData(
     enabled,
   });
 
+  // Fetch multi-match join table entries so invoices matched via
+  // transaction_invoice_matches (not just matched_invoice_id) are visible.
+  const { data: joinTableMatches = [] } = useQuery({
+    queryKey: ['transactionInvoiceMatches', companyId],
+    queryFn: async () => {
+      // Get all transaction IDs for this company first
+      const txIds = allTransactions.map(t => t.id);
+      if (txIds.length === 0) return [];
+
+      // Batch fetch in chunks of 500 to avoid URL length limits
+      const CHUNK = 500;
+      const all: { transaction_id: string; invoice_id: string; invoice_source: string }[] = [];
+      for (let i = 0; i < txIds.length; i += CHUNK) {
+        const chunk = txIds.slice(i, i + CHUNK);
+        const { data } = await supabase
+          .from('transaction_invoice_matches')
+          .select('transaction_id, invoice_id, invoice_source')
+          .in('transaction_id', chunk);
+        if (data) all.push(...data);
+      }
+      return all;
+    },
+    enabled: enabled && allTransactions.length > 0,
+  });
+
   // Lightweight NAV lookup for cross-tab matching (submitted ↔ NAV by bizonylatsorszam)
   // Paginated fetch to bypass Supabase max_rows limit (default 1000)
   const { data: navInvoicesLookup = [] } = useQuery({
@@ -243,8 +268,13 @@ export function useInvoiceData(
   });
 
   const matchedInvoiceIds = useMemo(
-    () => new Set(allTransactions.map(t => t.matched_invoice_id).filter(Boolean)),
-    [allTransactions]
+    () => {
+      const ids = new Set(allTransactions.map(t => t.matched_invoice_id).filter(Boolean));
+      // Also include invoice IDs from the join table (multi-match)
+      joinTableMatches.forEach(m => ids.add(m.invoice_id));
+      return ids;
+    },
+    [allTransactions, joinTableMatches]
   );
 
   // Fetch courier reports matched to NAV invoices or transactions for this company
@@ -301,6 +331,7 @@ export function useInvoiceData(
     queryClient.invalidateQueries({ queryKey: ['categories', companyId] });
     queryClient.invalidateQueries({ queryKey: ['projectsList', companyId] });
     queryClient.invalidateQueries({ queryKey: ['invoiceTransactions', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['transactionInvoiceMatches', companyId] });
     queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices', companyId] });
   };
@@ -313,6 +344,7 @@ export function useInvoiceData(
     categories,
     projects,
     allTransactions,
+    joinTableMatches,
     navInvoicesLookup,
     matchedInvoiceIds,
     courierReports,
