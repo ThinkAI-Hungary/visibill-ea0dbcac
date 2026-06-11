@@ -8,6 +8,7 @@ import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { FileText, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { INVOICE_TYPE_LABELS } from '@/types/invoices';
 
 interface InvoiceDetailPopupProps {
   open: boolean;
@@ -54,12 +55,7 @@ interface FullInvoice {
   feldolgozva: string | null;
 }
 
-const invoiceTypeLabels: Record<string, string> = {
-  sima_szamla: 'Sima számla',
-  egyszerusitett_szamla: 'Egyszerűsített számla',
-  vegszamla: 'Végszámla',
-  proforma: 'Proforma',
-};
+const invoiceTypeLabels = INVOICE_TYPE_LABELS;
 
 const statusLabels: Record<string, string> = {
   feldolgozas_alatt: 'Feldolgozás alatt',

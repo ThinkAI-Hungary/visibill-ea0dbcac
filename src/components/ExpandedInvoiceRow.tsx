@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { INVOICE_TYPE_LABELS } from '@/types/invoices';
 
 interface MatchedSubmittedInvoice {
   id: string;
@@ -23,20 +24,7 @@ interface MatchedSubmittedInvoice {
   invoice_type?: string | null;
 }
 
-// Human-readable invoice_type labels
-const INVOICE_TYPE_LABELS: Record<string, string> = {
-  sima_szla: 'Számla',
-  dijbekero: 'Díjbekérő',
-  elolegszamla: 'Előlegszámla',
-  garanciajegy: 'Garanciajegy',
-  szallitolevel: 'Szállítólevél',
-  sztorno: 'Sztornó',
-  modosito: 'Módosító',
-  vegszamla: 'Végszámla',
-  proforma: 'Proforma',
-  nyugta: 'Nyugta',
-};
-
+// Human-readable invoice_type labels (uses central map)
 function getInvoiceTypeLabel(rawType: string): string {
   return INVOICE_TYPE_LABELS[rawType] || rawType.replace(/_/g, ' ');
 }
@@ -321,7 +309,7 @@ const ExpandedInvoiceRow = ({
                             {inv.relationDirection === 'parent' ? 'Hivatkozott bizonylat' : inv.relationDirection === 'child' ? 'Hivatkozó bizonylat' : 'Kapcsolt'}
                           </Badge>
                           {inv.invoice_type && (
-                            <Badge variant="outline" className="text-[10px] h-5 bg-violet-500/10 text-violet-600 border-violet-500/20">
+                            <Badge variant="outline" className="text-[10px] h-5 bg-primary/10 text-primary border-primary/20">
                               {getInvoiceTypeLabel(inv.invoice_type)}
                             </Badge>
                           )}
@@ -395,7 +383,7 @@ const ExpandedInvoiceRow = ({
                       <FileText className="h-3 w-3 text-muted-foreground" />
                       Párosított beküldött számla
                       {inv.invoice_type && (
-                        <Badge variant="outline" className="text-[9px] h-4 px-1.5 bg-violet-500/10 text-violet-600 border-violet-500/20">
+                        <Badge variant="outline" className="text-[9px] h-4 px-1.5 bg-primary/10 text-primary border-primary/20">
                           {getInvoiceTypeLabel(inv.invoice_type)}
                         </Badge>
                       )}

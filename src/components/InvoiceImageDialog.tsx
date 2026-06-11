@@ -27,7 +27,7 @@ const InvoiceImageDialog = ({ invoice, open, onClose }: InvoiceImageDialogProps)
   const getInvoiceIdentifier = (invoice: InvoiceForDialog) => {
     if (invoice.bizonylatsorszam) return invoice.bizonylatsorszam;
     if (invoice.dokumentum_azonosito) return invoice.dokumentum_azonosito;
-    if (invoice.invoice_type === 'egyszerusitett_szamla') return 'Egyszerűsített számla';
+    if (invoice.invoice_type) return INVOICE_TYPE_LABELS[invoice.invoice_type] || invoice.invoice_type;
     return 'N/A';
   };
 
