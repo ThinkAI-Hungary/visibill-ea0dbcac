@@ -210,18 +210,20 @@ export function useInvoiceData(
 
   // Fetch multi-match join table entries so invoices matched via
   // transaction_invoice_matches (not just matched_invoice_id) are visible.
+  // We fetch ALL join table rows for the company's matched transactions.
+  const txFingerprint = useMemo(() => allTransactions.length, [allTransactions]);
   const { data: joinTableMatches = [] } = useQuery({
-    queryKey: ['transactionInvoiceMatches', companyId],
+    queryKey: ['transactionInvoiceMatches', companyId, txFingerprint],
     queryFn: async () => {
-      // Get all transaction IDs for this company first
-      const txIds = allTransactions.map(t => t.id);
-      if (txIds.length === 0) return [];
+      // Re-read allTransactions at query time (not from stale closure)
+      const currentTxIds = allTransactions.map(t => t.id);
+      if (currentTxIds.length === 0) return [];
 
       // Batch fetch in chunks of 500 to avoid URL length limits
       const CHUNK = 500;
       const all: { transaction_id: string; invoice_id: string; invoice_source: string }[] = [];
-      for (let i = 0; i < txIds.length; i += CHUNK) {
-        const chunk = txIds.slice(i, i + CHUNK);
+      for (let i = 0; i < currentTxIds.length; i += CHUNK) {
+        const chunk = currentTxIds.slice(i, i + CHUNK);
         const { data } = await supabase
           .from('transaction_invoice_matches')
           .select('transaction_id, invoice_id, invoice_source')
@@ -272,6 +274,13 @@ export function useInvoiceData(
       const ids = new Set(allTransactions.map(t => t.matched_invoice_id).filter(Boolean));
       // Also include invoice IDs from the join table (multi-match)
       joinTableMatches.forEach(m => ids.add(m.invoice_id));
+      // DEBUG: log join table matches
+      if (joinTableMatches.length > 0) {
+        console.log('[DEBUG] joinTableMatches:', joinTableMatches);
+        console.log('[DEBUG] matchedInvoiceIds includes D-THINK-121?', ids.has('dd7460e0-3c06-4871-85bc-0c31efbcfb5c'));
+      } else {
+        console.log('[DEBUG] joinTableMatches is EMPTY, allTransactions.length:', allTransactions.length);
+      }
       return ids;
     },
     [allTransactions, joinTableMatches]
