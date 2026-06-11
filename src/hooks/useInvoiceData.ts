@@ -274,6 +274,13 @@ export function useInvoiceData(
       const ids = new Set(allTransactions.map(t => t.matched_invoice_id).filter(Boolean));
       // Also include invoice IDs from the join table (multi-match)
       joinTableMatches.forEach(m => ids.add(m.invoice_id));
+      // DEBUG — temporary, remove after fix
+      console.log('[MATCH-DEBUG] allTransactions:', allTransactions.length,
+        'joinTableMatches:', joinTableMatches.length,
+        'matchedInvoiceIds size:', ids.size);
+      if (joinTableMatches.length > 0) {
+        console.log('[MATCH-DEBUG] join entries:', JSON.stringify(joinTableMatches));
+      }
       return ids;
     },
     [allTransactions, joinTableMatches]
