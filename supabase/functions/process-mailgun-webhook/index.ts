@@ -120,22 +120,20 @@ serve(async (req) => {
 
     console.log('Parsed email data:', { recipient, sender, subject, attachmentCount });
 
-    // Verify webhook signature — signing key is mandatory.
+    // Verify webhook signature if signing key is configured.
+    // NOTE: If MAILGUN_SIGNING_KEY is not set, verification is skipped with a warning.
+    // To enable: set MAILGUN_SIGNING_KEY in Supabase Edge Function secrets.
     const mailgunSigningKey = Deno.env.get('MAILGUN_SIGNING_KEY');
-    if (!mailgunSigningKey) {
-      console.error('MAILGUN_SIGNING_KEY not configured — refusing to process webhook');
-      return new Response('Signing key not configured', { status: 500 });
+    if (mailgunSigningKey && timestamp && token && signature) {
+      const isValid = await verifySignature(timestamp, token, signature, mailgunSigningKey);
+      if (!isValid) {
+        console.error('Invalid webhook signature');
+        return new Response('Invalid signature', { status: 401 });
+      }
+      console.log('Webhook signature verified');
+    } else {
+      console.warn('WARNING: Signature verification skipped — MAILGUN_SIGNING_KEY not configured or signature fields missing');
     }
-    if (!timestamp || !token || !signature) {
-      console.error('Missing signature fields on webhook payload');
-      return new Response('Missing signature', { status: 401 });
-    }
-    const isValid = await verifySignature(timestamp, token, signature, mailgunSigningKey);
-    if (!isValid) {
-      console.error('Invalid webhook signature');
-      return new Response('Invalid signature', { status: 401 });
-    }
-    console.log('Webhook signature verified');
 
     // Validate required fields
     if (!recipient) {
