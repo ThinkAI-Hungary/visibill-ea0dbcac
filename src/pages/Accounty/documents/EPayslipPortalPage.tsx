@@ -2,59 +2,35 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Download, Eye, CheckCircle, Mail,
-  Send, Users, Lock, Clock, AlertTriangle, Shield, RefreshCw
+  Send, Users, Lock, Clock, AlertTriangle, Shield, RefreshCw, Loader2, Database
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-
-interface EPayslipEmployee {
-  id: string;
-  name: string;
-  email: string;
-  portalAccess: boolean;
-  lastViewed: string | null;
-  payslipReady: boolean;
-  sentDate: string | null;
-}
-
-const MOCK_EMPLOYEES: EPayslipEmployee[] = [
-  { id: '1', name: 'Nagy Anna', email: 'nagy.anna@email.hu', portalAccess: true, lastViewed: '2026-05-15', payslipReady: true, sentDate: '2026-06-10' },
-  { id: '2', name: 'Kiss Béla', email: 'kiss.bela@email.hu', portalAccess: true, lastViewed: null, payslipReady: true, sentDate: '2026-06-10' },
-  { id: '3', name: 'Tóth Éva', email: 'toth.eva@email.hu', portalAccess: false, lastViewed: null, payslipReady: true, sentDate: null },
-  { id: '4', name: 'Szabó Péter', email: 'szabo.peter@email.hu', portalAccess: true, lastViewed: '2026-06-10', payslipReady: true, sentDate: '2026-06-10' },
-  { id: '5', name: 'Horváth Dávid', email: '', portalAccess: false, lastViewed: null, payslipReady: false, sentDate: null },
-];
+import { useAccountyDocuments, type AccountyDocument } from '@/hooks/useAccountyData';
 
 export default function EPayslipPortalPage() {
   const { id } = useParams<{ id: string }>();
-  const [employees, setEmployees] = useState(MOCK_EMPLOYEES);
   const [sending, setSending] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const toggleSelect = (empId: string) => {
+  const { data: docs, isLoading } = useAccountyDocuments(id || '', 'payslip');
+  const slips = docs || [];
+
+  const toggleSelect = (docId: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
-      next.has(empId) ? next.delete(empId) : next.add(empId);
+      next.has(docId) ? next.delete(docId) : next.add(docId);
       return next;
     });
   };
 
   const toggleAll = () => {
-    if (selectedIds.size === employees.length) setSelectedIds(new Set());
-    else setSelectedIds(new Set(employees.map(e => e.id)));
+    if (selectedIds.size === slips.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(slips.map(e => e.id)));
   };
 
-  const readyCount = employees.filter(e => e.payslipReady).length;
-  const sentCount = employees.filter(e => e.sentDate).length;
-  const viewedCount = employees.filter(e => e.lastViewed && e.sentDate).length;
-
-  const handleSendAll = () => {
-    setSending(true);
-    setTimeout(() => {
-      setEmployees(prev => prev.map(e => selectedIds.has(e.id) || selectedIds.size === 0 ? { ...e, sentDate: new Date().toISOString().split('T')[0] } : e));
-      setSending(false);
-    }, 2000);
-  };
+  const sentCount = slips.filter(e => e.status === 'sent').length;
+  const generatedCount = slips.filter(e => e.status === 'generated').length;
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -67,62 +43,66 @@ export default function EPayslipPortalPage() {
             <p className="text-sm text-slate-500">Elektronikus bérjegyzék hozzáférhetővé tétel — Mt. 155. § (3)</p>
           </div>
         </div>
-        <Button onClick={handleSendAll} disabled={sending} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
+        <Button onClick={() => { setSending(true); setTimeout(() => setSending(false), 2000); }} disabled={sending || slips.length === 0} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
           {sending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           {sending ? 'Küldés...' : `Kiküldés (${selectedIds.size || 'mind'})`}
         </Button>
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
-        {[
-          { label: 'Összes', value: employees.length, color: 'text-slate-700' },
-          { label: 'Generálva', value: readyCount, color: 'text-blue-600' },
-          { label: 'Kiküldve', value: sentCount, color: 'text-emerald-600' },
-          { label: 'Megtekintve', value: viewedCount, color: 'text-violet-600' },
-        ].map(s => (
-          <div key={s.label} className="bg-card rounded-xl border border-border p-4 text-center">
-            <p className={cn('text-2xl font-bold', s.color)}>{s.value}</p>
-            <p className="text-xs text-slate-500">{s.label}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300">
-        <Shield className="w-4 h-4 inline mr-1" />
-        <strong>Titkosított hozzáférés:</strong> A bérjegyzékek jelszóval védett PDF formátumban érhetők el a dolgozói portálon. A jelszó alapértelmezetten a TAJ szám utolsó 6 számjegye.
-      </div>
-
-      <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-        <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
-          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Bérjegyzék hozzáférés státusz</h2>
+      {isLoading ? (
+        <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>
+      ) : slips.length === 0 ? (
+        <div className="bg-card rounded-xl border border-border p-12 text-center space-y-3">
+          <Database className="w-10 h-10 mx-auto text-slate-400" />
+          <p className="text-sm text-slate-500">Nincsenek bérjegyzékek a portálon.</p>
+          <p className="text-xs text-slate-400">Először generálja a bérjegyzékeket a Bérjegyzék generálás oldalon.</p>
         </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-slate-50/30">
-              <th className="px-5 py-2"><input type="checkbox" checked={selectedIds.size === employees.length} onChange={toggleAll} className="rounded" /></th>
-              <th className="text-left px-3 py-2 text-xs font-bold text-slate-500">Munkavállaló</th>
-              <th className="text-left px-3 py-2 text-xs font-bold text-slate-500">E-mail</th>
-              <th className="text-center px-3 py-2 text-xs font-bold text-slate-500">Portál</th>
-              <th className="text-center px-3 py-2 text-xs font-bold text-slate-500">Kiküldve</th>
-              <th className="text-center px-3 py-2 text-xs font-bold text-slate-500">Megtekintve</th>
-              <th className="px-3 py-2" />
-            </tr>
-          </thead>
-          <tbody>
-            {employees.map(emp => (
-              <tr key={emp.id} className={cn('border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50', !emp.email && 'bg-yellow-50/30 dark:bg-yellow-500/5')}>
-                <td className="px-5 py-2.5"><input type="checkbox" checked={selectedIds.has(emp.id)} onChange={() => toggleSelect(emp.id)} className="rounded" /></td>
-                <td className="px-3 py-2.5 font-medium">{emp.name}</td>
-                <td className="px-3 py-2.5 text-xs">{emp.email || <span className="text-red-500 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Hiányzik</span>}</td>
-                <td className="px-3 py-2.5 text-center">{emp.portalAccess ? <CheckCircle className="w-4 h-4 text-emerald-500 mx-auto" /> : <Lock className="w-4 h-4 text-slate-300 mx-auto" />}</td>
-                <td className="px-3 py-2.5 text-center text-xs">{emp.sentDate || '—'}</td>
-                <td className="px-3 py-2.5 text-center">{emp.lastViewed ? <span className="text-xs text-emerald-600">{emp.lastViewed}</span> : <Clock className="w-4 h-4 text-slate-300 mx-auto" />}</td>
-                <td className="px-3 py-2.5"><Button variant="ghost" size="sm" className="h-7 w-7 p-0"><Eye className="w-3 h-3" /></Button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-card rounded-xl border border-border p-4 text-center"><p className="text-2xl font-bold text-slate-700">{slips.length}</p><p className="text-xs text-slate-500">Összes</p></div>
+            <div className="bg-card rounded-xl border border-border p-4 text-center"><p className="text-2xl font-bold text-blue-600">{generatedCount}</p><p className="text-xs text-slate-500">Generálva</p></div>
+            <div className="bg-card rounded-xl border border-border p-4 text-center"><p className="text-2xl font-bold text-emerald-600">{sentCount}</p><p className="text-xs text-slate-500">Kiküldve</p></div>
+          </div>
+
+          <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300">
+            <Shield className="w-4 h-4 inline mr-1" />
+            <strong>Titkosított hozzáférés:</strong> A bérjegyzékek jelszóval védett PDF formátumban érhetők el.
+          </div>
+
+          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+            <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+              <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Bérjegyzék hozzáférés státusz</h2>
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-slate-50/30">
+                  <th className="px-5 py-2"><input type="checkbox" checked={selectedIds.size === slips.length} onChange={toggleAll} className="rounded" /></th>
+                  <th className="text-left px-3 py-2 text-xs font-bold text-slate-500">Dokumentum</th>
+                  <th className="text-left px-3 py-2 text-xs font-bold text-slate-500">Időszak</th>
+                  <th className="text-center px-3 py-2 text-xs font-bold text-slate-500">Státusz</th>
+                  <th className="px-3 py-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {slips.map(slip => (
+                  <tr key={slip.id} className="border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="px-5 py-2.5"><input type="checkbox" checked={selectedIds.has(slip.id)} onChange={() => toggleSelect(slip.id)} className="rounded" /></td>
+                    <td className="px-3 py-2.5 font-medium">{slip.title}</td>
+                    <td className="px-3 py-2.5 text-xs text-slate-500">{slip.period}</td>
+                    <td className="px-3 py-2.5 text-center">
+                      {slip.status === 'sent' ? <CheckCircle className="w-4 h-4 text-emerald-500 mx-auto" /> :
+                       slip.status === 'generated' ? <span className="text-xs text-blue-600">Generálva</span> :
+                       <Clock className="w-4 h-4 text-slate-300 mx-auto" />}
+                    </td>
+                    <td className="px-3 py-2.5"><Button variant="ghost" size="sm" className="h-7 w-7 p-0"><Eye className="w-3 h-3" /></Button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -1779,3 +1779,849 @@ export function useRevokeNavRepresentation() {
     },
   });
 }
+
+// ── Retention Rules ──
+
+export interface RetentionRule {
+  id: string;
+  companyId: string;
+  docType: string;
+  retentionYears: number;
+  legalBasis: string;
+  autoDelete: boolean;
+}
+
+const DEFAULT_RETENTION_RULES: Omit<RetentionRule, 'id' | 'companyId'>[] = [
+  { docType: 'Munkaszerződés', retentionYears: 3, legalBasis: 'Mt. 286. §', autoDelete: false },
+  { docType: 'Bérjegyzék', retentionYears: 8, legalBasis: 'Sztv. 169. §', autoDelete: true },
+  { docType: 'TAJ-kártya másolat', retentionYears: 3, legalBasis: 'Mt. 286. §', autoDelete: true },
+  { docType: 'Adóelőleg-nyilatkozat', retentionYears: 5, legalBasis: 'Art. 78. §', autoDelete: true },
+  { docType: 'Bevallási XML', retentionYears: 8, legalBasis: 'Sztv. 169. §', autoDelete: false },
+  { docType: 'Kilépő dokumentumok', retentionYears: 3, legalBasis: 'Mt. 286. §', autoDelete: false },
+  { docType: 'Nyugdíj-releváns iratok', retentionYears: 50, legalBasis: 'Tny. törvény', autoDelete: false },
+  { docType: 'GDPR hozzájárulás', retentionYears: 5, legalBasis: 'GDPR 7. cikk', autoDelete: true },
+];
+
+export function useRetentionRules(companyId: string) {
+  return useQuery({
+    queryKey: ['retention-rules', companyId],
+    queryFn: async (): Promise<RetentionRule[]> => {
+      const { data, error } = await supabase
+        .from('accounty_retention_rules')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('doc_type');
+      if (error) throw error;
+      return (data || []).map(r => ({
+        id: r.id,
+        companyId: r.company_id,
+        docType: r.doc_type,
+        retentionYears: r.retention_years,
+        legalBasis: r.legal_basis || '',
+        autoDelete: r.auto_delete || false,
+      }));
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useSeedRetentionRules() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (companyId: string) => {
+      const rows = DEFAULT_RETENTION_RULES.map(r => ({
+        company_id: companyId,
+        doc_type: r.docType,
+        retention_years: r.retentionYears,
+        legal_basis: r.legalBasis,
+        auto_delete: r.autoDelete,
+      }));
+      const { error } = await supabase
+        .from('accounty_retention_rules')
+        .upsert(rows, { onConflict: 'company_id,doc_type' });
+      if (error) throw error;
+    },
+    onSuccess: (_, companyId) => {
+      qc.invalidateQueries({ queryKey: ['retention-rules', companyId] });
+    },
+  });
+}
+
+export function useUpdateRetentionRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (rule: RetentionRule) => {
+      const { error } = await supabase
+        .from('accounty_retention_rules')
+        .update({
+          retention_years: rule.retentionYears,
+          legal_basis: rule.legalBasis,
+          auto_delete: rule.autoDelete,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', rule.id);
+      if (error) throw error;
+      return rule.companyId;
+    },
+    onSuccess: (companyId) => {
+      qc.invalidateQueries({ queryKey: ['retention-rules', companyId] });
+    },
+  });
+}
+
+export function useAddRetentionRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (rule: Omit<RetentionRule, 'id'>) => {
+      const { error } = await supabase
+        .from('accounty_retention_rules')
+        .insert({
+          company_id: rule.companyId,
+          doc_type: rule.docType,
+          retention_years: rule.retentionYears,
+          legal_basis: rule.legalBasis,
+          auto_delete: rule.autoDelete,
+        });
+      if (error) throw error;
+      return rule.companyId;
+    },
+    onSuccess: (companyId) => {
+      qc.invalidateQueries({ queryKey: ['retention-rules', companyId] });
+    },
+  });
+}
+
+export function useDeleteRetentionRule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, companyId }: { id: string; companyId: string }) => {
+      const { error } = await supabase
+        .from('accounty_retention_rules')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      return companyId;
+    },
+    onSuccess: (companyId) => {
+      qc.invalidateQueries({ queryKey: ['retention-rules', companyId] });
+    },
+  });
+}
+
+// ── Data Contracts ──
+
+export interface DataContract {
+  id: string;
+  companyId: string;
+  partnerName: string;
+  fileName: string;
+  fileUrl: string;
+  uploadDate: string;
+  validUntil: string | null;
+  status: 'active' | 'expired';
+}
+
+export function useDataContracts(companyId: string) {
+  return useQuery({
+    queryKey: ['data-contracts', companyId],
+    queryFn: async (): Promise<DataContract[]> => {
+      const { data, error } = await supabase
+        .from('accounty_data_contracts')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(c => ({
+        id: c.id,
+        companyId: c.company_id,
+        partnerName: c.partner_name,
+        fileName: c.file_name || '',
+        fileUrl: c.file_url || '',
+        uploadDate: c.upload_date,
+        validUntil: c.valid_until,
+        status: c.status,
+      }));
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useAddDataContract() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (contract: Omit<DataContract, 'id'>) => {
+      const { error } = await supabase
+        .from('accounty_data_contracts')
+        .insert({
+          company_id: contract.companyId,
+          partner_name: contract.partnerName,
+          file_name: contract.fileName,
+          file_url: contract.fileUrl,
+          upload_date: contract.uploadDate,
+          valid_until: contract.validUntil,
+          status: contract.status,
+        });
+      if (error) throw error;
+      return contract.companyId;
+    },
+    onSuccess: (companyId) => {
+      qc.invalidateQueries({ queryKey: ['data-contracts', companyId] });
+    },
+  });
+}
+
+export function useDeleteDataContract() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, companyId, fileUrl }: { id: string; companyId: string; fileUrl?: string }) => {
+      // Delete file from storage if exists
+      if (fileUrl) {
+        await supabase.storage.from('accounty_contracts').remove([fileUrl]);
+      }
+      // Delete DB row
+      const { error } = await supabase
+        .from('accounty_data_contracts')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      return companyId;
+    },
+    onSuccess: (companyId) => {
+      qc.invalidateQueries({ queryKey: ['data-contracts', companyId] });
+    },
+  });
+}
+
+// ── Sites ──
+
+export interface Site {
+  id: string;
+  companyId: string;
+  code: string;
+  name: string;
+  address: string;
+  mainActivity: string;
+  headcount: number;
+}
+
+export function useSites(companyId: string) {
+  return useQuery({
+    queryKey: ['sites', companyId],
+    queryFn: async (): Promise<Site[]> => {
+      const { data, error } = await supabase
+        .from('accounty_sites')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('code');
+      if (error) throw error;
+      return (data || []).map(r => ({
+        id: r.id, companyId: r.company_id, code: r.code, name: r.name,
+        address: r.address || '', mainActivity: r.main_activity || '', headcount: r.headcount || 0,
+      }));
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useAddSite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (site: Omit<Site, 'id'>) => {
+      const { error } = await supabase.from('accounty_sites').insert({
+        company_id: site.companyId, code: site.code, name: site.name,
+        address: site.address, main_activity: site.mainActivity, headcount: site.headcount,
+      });
+      if (error) throw error;
+      return site.companyId;
+    },
+    onSuccess: (cid) => { qc.invalidateQueries({ queryKey: ['sites', cid] }); },
+  });
+}
+
+export function useUpdateSite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (site: Site) => {
+      const { error } = await supabase.from('accounty_sites').update({
+        code: site.code, name: site.name, address: site.address,
+        main_activity: site.mainActivity, headcount: site.headcount, updated_at: new Date().toISOString(),
+      }).eq('id', site.id);
+      if (error) throw error;
+      return site.companyId;
+    },
+    onSuccess: (cid) => { qc.invalidateQueries({ queryKey: ['sites', cid] }); },
+  });
+}
+
+export function useDeleteSite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, companyId }: { id: string; companyId: string }) => {
+      const { error } = await supabase.from('accounty_sites').delete().eq('id', id);
+      if (error) throw error;
+      return companyId;
+    },
+    onSuccess: (cid) => { qc.invalidateQueries({ queryKey: ['sites', cid] }); },
+  });
+}
+
+// ── Cost Centers ──
+
+export interface CostCenter {
+  id: string;
+  companyId: string;
+  parentId: string | null;
+  code: string;
+  name: string;
+  responsible: string;
+  headcount: number;
+  children?: CostCenter[];
+}
+
+export function useCostCenters(companyId: string) {
+  return useQuery({
+    queryKey: ['cost-centers', companyId],
+    queryFn: async (): Promise<CostCenter[]> => {
+      const { data, error } = await supabase
+        .from('accounty_cost_centers')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('code');
+      if (error) throw error;
+      const flat = (data || []).map(r => ({
+        id: r.id, companyId: r.company_id, parentId: r.parent_id,
+        code: r.code, name: r.name, responsible: r.responsible || '', headcount: r.headcount || 0,
+      }));
+      // Build tree
+      const map = new Map<string, CostCenter>();
+      flat.forEach(n => map.set(n.id, { ...n, children: [] }));
+      const roots: CostCenter[] = [];
+      flat.forEach(n => {
+        const node = map.get(n.id)!;
+        if (n.parentId && map.has(n.parentId)) {
+          map.get(n.parentId)!.children!.push(node);
+        } else {
+          roots.push(node);
+        }
+      });
+      return roots;
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useAddCostCenter() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (cc: Omit<CostCenter, 'id' | 'children'>) => {
+      const { error } = await supabase.from('accounty_cost_centers').insert({
+        company_id: cc.companyId, parent_id: cc.parentId, code: cc.code,
+        name: cc.name, responsible: cc.responsible, headcount: cc.headcount,
+      });
+      if (error) throw error;
+      return cc.companyId;
+    },
+    onSuccess: (cid) => { qc.invalidateQueries({ queryKey: ['cost-centers', cid] }); },
+  });
+}
+
+export function useUpdateCostCenter() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (cc: CostCenter) => {
+      const { error } = await supabase.from('accounty_cost_centers').update({
+        code: cc.code, name: cc.name, responsible: cc.responsible,
+        headcount: cc.headcount, parent_id: cc.parentId, updated_at: new Date().toISOString(),
+      }).eq('id', cc.id);
+      if (error) throw error;
+      return cc.companyId;
+    },
+    onSuccess: (cid) => { qc.invalidateQueries({ queryKey: ['cost-centers', cid] }); },
+  });
+}
+
+export function useDeleteCostCenter() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, companyId }: { id: string; companyId: string }) => {
+      const { error } = await supabase.from('accounty_cost_centers').delete().eq('id', id);
+      if (error) throw error;
+      return companyId;
+    },
+    onSuccess: (cid) => { qc.invalidateQueries({ queryKey: ['cost-centers', cid] }); },
+  });
+}
+
+// ── Departments ──
+
+export interface Department {
+  id: string;
+  companyId: string;
+  siteId: string | null;
+  name: string;
+  manager: string;
+  headcount: number;
+}
+
+export function useDepartments(companyId: string) {
+  return useQuery({
+    queryKey: ['departments', companyId],
+    queryFn: async (): Promise<Department[]> => {
+      const { data, error } = await supabase
+        .from('accounty_departments')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('name');
+      if (error) throw error;
+      return (data || []).map(r => ({
+        id: r.id, companyId: r.company_id, siteId: r.site_id,
+        name: r.name, manager: r.manager || '', headcount: r.headcount || 0,
+      }));
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useAddDepartment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (dept: Omit<Department, 'id'>) => {
+      const { error } = await supabase.from('accounty_departments').insert({
+        company_id: dept.companyId, site_id: dept.siteId, name: dept.name,
+        manager: dept.manager, headcount: dept.headcount,
+      });
+      if (error) throw error;
+      return dept.companyId;
+    },
+    onSuccess: (cid) => { qc.invalidateQueries({ queryKey: ['departments', cid] }); },
+  });
+}
+
+export function useUpdateDepartment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (dept: Department) => {
+      const { error } = await supabase.from('accounty_departments').update({
+        site_id: dept.siteId, name: dept.name, manager: dept.manager,
+        headcount: dept.headcount, updated_at: new Date().toISOString(),
+      }).eq('id', dept.id);
+      if (error) throw error;
+      return dept.companyId;
+    },
+    onSuccess: (cid) => { qc.invalidateQueries({ queryKey: ['departments', cid] }); },
+  });
+}
+
+export function useDeleteDepartment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, companyId }: { id: string; companyId: string }) => {
+      const { error } = await supabase.from('accounty_departments').delete().eq('id', id);
+      if (error) throw error;
+      return companyId;
+    },
+    onSuccess: (cid) => { qc.invalidateQueries({ queryKey: ['departments', cid] }); },
+  });
+}
+
+// ── Year-End Tasks ──
+
+export interface YearEndTask {
+  id: string;
+  companyId: string;
+  year: number;
+  title: string;
+  subtitle: string;
+  category: string;
+  iconName: string;
+  color: string;
+  deadline: string | null;
+  status: 'done' | 'in_progress' | 'pending' | 'blocked';
+  legalRef: string;
+  checklist: { item: string; done: boolean }[];
+  outputLabel: string;
+  sortOrder: number;
+}
+
+export function useYearEndTasks(companyId: string, year: number) {
+  return useQuery({
+    queryKey: ['year-end-tasks', companyId, year],
+    queryFn: async (): Promise<YearEndTask[]> => {
+      const { data, error } = await supabase
+        .from('accounty_year_end_tasks')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('year', year)
+        .order('sort_order');
+      if (error) throw error;
+      return (data || []).map(r => ({
+        id: r.id, companyId: r.company_id, year: r.year, title: r.title,
+        subtitle: r.subtitle || '', category: r.category || 'general',
+        iconName: r.icon_name || 'FileText', color: r.color || 'from-blue-500 to-indigo-500',
+        deadline: r.deadline, status: r.status, legalRef: r.legal_ref || '',
+        checklist: (r.checklist as any) || [], outputLabel: r.output_label || '', sortOrder: r.sort_order || 0,
+      }));
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useAddYearEndTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (task: Omit<YearEndTask, 'id'>) => {
+      const { error } = await supabase.from('accounty_year_end_tasks').insert({
+        company_id: task.companyId, year: task.year, title: task.title, subtitle: task.subtitle,
+        category: task.category, icon_name: task.iconName, color: task.color,
+        deadline: task.deadline, status: task.status, legal_ref: task.legalRef,
+        checklist: task.checklist, output_label: task.outputLabel, sort_order: task.sortOrder,
+      });
+      if (error) throw error;
+      return { companyId: task.companyId, year: task.year };
+    },
+    onSuccess: (k) => { qc.invalidateQueries({ queryKey: ['year-end-tasks', k.companyId, k.year] }); },
+  });
+}
+
+export function useUpdateYearEndTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (task: YearEndTask) => {
+      const { error } = await supabase.from('accounty_year_end_tasks').update({
+        title: task.title, subtitle: task.subtitle, status: task.status,
+        checklist: task.checklist, updated_at: new Date().toISOString(),
+      }).eq('id', task.id);
+      if (error) throw error;
+      return { companyId: task.companyId, year: task.year };
+    },
+    onSuccess: (k) => { qc.invalidateQueries({ queryKey: ['year-end-tasks', k.companyId, k.year] }); },
+  });
+}
+
+export function useDeleteYearEndTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, companyId, year }: { id: string; companyId: string; year: number }) => {
+      const { error } = await supabase.from('accounty_year_end_tasks').delete().eq('id', id);
+      if (error) throw error;
+      return { companyId, year };
+    },
+    onSuccess: (k) => { qc.invalidateQueries({ queryKey: ['year-end-tasks', k.companyId, k.year] }); },
+  });
+}
+
+export function useSeedYearEndTasks() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ companyId, year }: { companyId: string; year: number }) => {
+      const defaults = [
+        { title: 'M30 Jövedelemigazolás', subtitle: 'Munkáltatói igazolás kiküldése minden dolgozónak', icon_name: 'FileText', color: 'from-blue-500 to-indigo-500', deadline: `${year + 1}-01-31`, legal_ref: 'Szja tv. 46. § (4)', checklist: [{ item: 'Éves jövedelem adatok véglegesítése', done: false }, { item: 'Családi kedvezmény összesítés', done: false }, { item: 'M30 PDF generálás', done: false }], sort_order: 1 },
+        { title: 'Szabadság átvitel', subtitle: 'Ki nem vett szabadságnapok átvezetése', icon_name: 'Calendar', color: 'from-emerald-500 to-teal-500', deadline: `${year + 1}-01-15`, legal_ref: 'Mt. 123. § (5)', checklist: [{ item: 'Maradék szabadságnapok lekérdezése', done: false }, { item: 'Átviteli korlát ellenőrzés', done: false }, { item: 'Szabadságkeret frissítés', done: false }], sort_order: 2 },
+        { title: 'Cafeteria záró rendezés', subtitle: 'SZÉP kártya és juttatások éves zárása', icon_name: 'Gift', color: 'from-pink-500 to-rose-500', deadline: `${year}-12-31`, legal_ref: 'Szja tv. 71. §', checklist: [{ item: 'Cafeteria keret felhasználás ellenőrzése', done: false }, { item: 'SZÉP kártya egyenleg záró kimutatás', done: false }], sort_order: 3 },
+        { title: 'Rehabilitációs hozzájárulás', subtitle: 'Éves rehabilitációs hozzájárulás bevallás', icon_name: 'Shield', color: 'from-amber-500 to-orange-500', deadline: `${year + 1}-03-31`, legal_ref: 'Mmtv. 23. §', checklist: [{ item: 'Stat. létszám kiszámítása', done: false }, { item: 'Kötelező foglalkoztatási arány ellenőrzése', done: false }, { item: 'REHAB bevallás beküldése', done: false }], sort_order: 4 },
+        { title: '2658 Éves összesítő bevallás', subtitle: 'Éves összesítő járulékbevallás', icon_name: 'Briefcase', color: 'from-cyan-500 to-blue-500', deadline: `${year + 1}-02-25`, legal_ref: 'Art. 50. §', checklist: [{ item: 'Havi bevallások egyeztetése', done: false }, { item: 'XML generálás és beküldés', done: false }], sort_order: 5 },
+        { title: 'Minimálbér-emelés előkészítés', subtitle: 'Következő évi minimálbér átvezetés', icon_name: 'TrendingUp', color: 'from-green-500 to-emerald-500', deadline: `${year + 1}-01-01`, legal_ref: 'Mt. 153. §', checklist: [{ item: 'Új minimálbér rögzítése', done: false }, { item: 'Érintett munkavállalók azonosítása', done: false }, { item: 'Szerződésmódosítások előkészítése', done: false }], sort_order: 6 },
+      ];
+      const { error } = await supabase.from('accounty_year_end_tasks').insert(
+        defaults.map(d => ({ ...d, company_id: companyId, year, status: 'pending', output_label: '' }))
+      );
+      if (error) throw error;
+      return { companyId, year };
+    },
+    onSuccess: (k) => { qc.invalidateQueries({ queryKey: ['year-end-tasks', k.companyId, k.year] }); },
+  });
+}
+
+// ── Office Settings ──
+
+export function useOfficeSettings() {
+  return useQuery({
+    queryKey: ['office-settings'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      const { data, error } = await supabase
+        .from('accounty_office_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.settings || {};
+    },
+  });
+}
+
+export function useUpsertOfficeSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (settings: Record<string, any>) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      const { error } = await supabase.from('accounty_office_settings').upsert({
+        user_id: user.id, settings, updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['office-settings'] }); },
+  });
+}
+
+// ── Employee Jobs ──
+
+export interface EmployeeJob {
+  id: string;
+  companyId: string;
+  employeeId: string;
+  jobCode: string;
+  jobCodeLabel: string;
+  seqNum: number;
+  position: string;
+  feor: string;
+  weeklyHours: number;
+  startDate: string;
+  endDate: string | null;
+  baseSalary: number;
+  status: 'active' | 'terminated' | 'suspended';
+  insured: boolean;
+  minimumBase: boolean;
+  employer: string;
+}
+
+export function useEmployeeJobs(companyId: string, employeeId: string) {
+  return useQuery({
+    queryKey: ['employee-jobs', companyId, employeeId],
+    queryFn: async (): Promise<EmployeeJob[]> => {
+      const { data, error } = await supabase
+        .from('accounty_employee_jobs')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('employee_id', employeeId)
+        .order('seq_num');
+      if (error) throw error;
+      return (data || []).map(r => ({
+        id: r.id, companyId: r.company_id, employeeId: r.employee_id,
+        jobCode: r.job_code, jobCodeLabel: r.job_code_label || '', seqNum: r.seq_num || 1,
+        position: r.position || '', feor: r.feor || '', weeklyHours: r.weekly_hours || 40,
+        startDate: r.start_date, endDate: r.end_date, baseSalary: r.base_salary || 0,
+        status: r.status, insured: r.insured ?? true, minimumBase: r.minimum_base ?? false,
+        employer: r.employer || '',
+      }));
+    },
+    enabled: !!companyId && !!employeeId,
+  });
+}
+
+export function useAddEmployeeJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (job: Omit<EmployeeJob, 'id'>) => {
+      const { error } = await supabase.from('accounty_employee_jobs').insert({
+        company_id: job.companyId, employee_id: job.employeeId, job_code: job.jobCode,
+        job_code_label: job.jobCodeLabel, seq_num: job.seqNum, position: job.position,
+        feor: job.feor, weekly_hours: job.weeklyHours, start_date: job.startDate,
+        end_date: job.endDate, base_salary: job.baseSalary, status: job.status,
+        insured: job.insured, minimum_base: job.minimumBase, employer: job.employer,
+      });
+      if (error) throw error;
+      return { companyId: job.companyId, employeeId: job.employeeId };
+    },
+    onSuccess: (k) => { qc.invalidateQueries({ queryKey: ['employee-jobs', k.companyId, k.employeeId] }); },
+  });
+}
+
+export function useDeleteEmployeeJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, companyId, employeeId }: { id: string; companyId: string; employeeId: string }) => {
+      const { error } = await supabase.from('accounty_employee_jobs').delete().eq('id', id);
+      if (error) throw error;
+      return { companyId, employeeId };
+    },
+    onSuccess: (k) => { qc.invalidateQueries({ queryKey: ['employee-jobs', k.companyId, k.employeeId] }); },
+  });
+}
+
+// ── Job Modifications ──
+
+export function useAddJobModification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (mod: { companyId: string; employeeId: string; jobId?: string; changeType: string; effectiveDate: string; oldValue: string; newValue: string; reason: string; generate08e: boolean }) => {
+      const { error } = await supabase.from('accounty_job_modifications').insert({
+        company_id: mod.companyId, employee_id: mod.employeeId, job_id: mod.jobId || null,
+        change_type: mod.changeType, effective_date: mod.effectiveDate,
+        old_value: mod.oldValue, new_value: mod.newValue, reason: mod.reason, generate_08e: mod.generate08e,
+      });
+      if (error) throw error;
+      return mod.companyId;
+    },
+    onSuccess: () => {},
+  });
+}
+
+// ── Declarations ──
+// NOTE: accounty_declarations table (from 20260529_accounty_payroll_schema.sql)
+// uses employee_id (not company_id). We query via employees → company join.
+
+export interface Declaration {
+  id: string;
+  employeeId: string;
+  type: string;
+  status: 'active' | 'expired' | 'revoked';
+  validFrom: string;
+  validUntil: string | null;
+  data: Record<string, any>;
+  filedAt: string | null;
+}
+
+export function useDeclarations(companyId: string) {
+  return useQuery({
+    queryKey: ['declarations', companyId],
+    queryFn: async (): Promise<Declaration[]> => {
+      // First get employee IDs for this company
+      const { data: emps, error: empErr } = await supabase
+        .from('accounty_employees')
+        .select('id')
+        .eq('company_id', companyId);
+      if (empErr) throw empErr;
+      const empIds = (emps || []).map(e => e.id);
+      if (empIds.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from('accounty_declarations')
+        .select('*')
+        .in('employee_id', empIds)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(r => ({
+        id: r.id,
+        employeeId: r.employee_id,
+        type: r.declaration_type,
+        status: r.status,
+        validFrom: r.valid_from,
+        validUntil: r.valid_until,
+        data: r.parameters || {},
+        filedAt: r.created_at,
+      }));
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useAddDeclaration() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (decl: { employeeId: string; type: string; validFrom: string; validUntil?: string; parameters?: Record<string, any>; companyId: string }) => {
+      const { error } = await supabase.from('accounty_declarations').insert({
+        employee_id: decl.employeeId,
+        declaration_type: decl.type,
+        valid_from: decl.validFrom,
+        valid_until: decl.validUntil || null,
+        parameters: decl.parameters || {},
+      });
+      if (error) throw error;
+      return decl.companyId;
+    },
+    onSuccess: (cid) => { qc.invalidateQueries({ queryKey: ['declarations', cid] }); },
+  });
+}
+
+// ── Filings ──
+// NOTE: accounty_filings table (from 20260529_accounty_payroll_schema.sql)
+// uses period_year/period_month, not a single 'period' text field.
+
+export interface Filing {
+  id: string;
+  companyId: string;
+  filingType: string;
+  period: string; // derived: "YYYY-MM"
+  status: string;
+  data: Record<string, any>;
+  submittedAt: string | null;
+}
+
+export function useFilings(companyId: string, filingType?: string) {
+  return useQuery({
+    queryKey: ['filings', companyId, filingType],
+    queryFn: async (): Promise<Filing[]> => {
+      let q = supabase.from('accounty_filings').select('*').eq('company_id', companyId);
+      if (filingType) q = q.ilike('filing_type', filingType);
+      const { data, error } = await q.order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(r => ({
+        id: r.id,
+        companyId: r.company_id,
+        filingType: r.filing_type,
+        period: `${r.period_year}-${String(r.period_month || 1).padStart(2, '0')}`,
+        status: r.status,
+        data: r.xml_data ? { xml: r.xml_data } : {},
+        submittedAt: r.submitted_at,
+      }));
+    },
+    enabled: !!companyId,
+  });
+}
+
+// ── Transfers ──
+
+export interface Transfer {
+  id: string;
+  companyId: string;
+  employeeId: string | null;
+  employeeName: string;
+  bankAccount: string;
+  netSalary: number;
+  period: string;
+  status: 'pending' | 'approved' | 'sent';
+}
+
+export function useTransfers(companyId: string, period?: string) {
+  return useQuery({
+    queryKey: ['transfers', companyId, period],
+    queryFn: async (): Promise<Transfer[]> => {
+      let q = supabase.from('accounty_transfers').select('*').eq('company_id', companyId);
+      if (period) q = q.eq('period', period);
+      const { data, error } = await q.order('employee_name');
+      if (error) throw error;
+      return (data || []).map(r => ({
+        id: r.id, companyId: r.company_id, employeeId: r.employee_id,
+        employeeName: r.employee_name || '', bankAccount: r.bank_account || '',
+        netSalary: r.net_salary || 0, period: r.period, status: r.status,
+      }));
+    },
+    enabled: !!companyId,
+  });
+}
+
+// ── Documents ──
+
+export interface AccountyDocument {
+  id: string;
+  companyId: string;
+  employeeId: string | null;
+  title: string;
+  docType: string;
+  status: 'pending' | 'generated' | 'sent' | 'archived';
+  fileUrl: string;
+  period: string;
+  generatedAt: string | null;
+}
+
+export function useAccountyDocuments(companyId: string, docType?: string) {
+  return useQuery({
+    queryKey: ['accounty-documents', companyId, docType],
+    queryFn: async (): Promise<AccountyDocument[]> => {
+      let q = supabase.from('accounty_documents').select('*').eq('company_id', companyId);
+      if (docType) q = q.eq('doc_type', docType);
+      const { data, error } = await q.order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(r => ({
+        id: r.id, companyId: r.company_id, employeeId: r.employee_id,
+        title: r.title, docType: r.doc_type, status: r.status,
+        fileUrl: r.file_url || '', period: r.period || '',
+        generatedAt: r.generated_at,
+      }));
+    },
+    enabled: !!companyId,
+  });
+}

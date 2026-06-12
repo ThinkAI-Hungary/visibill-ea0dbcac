@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Wrench, Plus, Trash2, GripVertical, Download, Eye,
-  Save, Filter, Columns, CheckCircle, Table, BarChart3
+  Save, Filter, Columns, CheckCircle, Table, BarChart3, Database
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -14,14 +14,13 @@ interface ColumnDef {
   selected: boolean;
 }
 
+// Column definitions are config/schema, not user data — they stay as constants
 const AVAILABLE_COLUMNS: ColumnDef[] = [
-  // Employee
   { id: 'name', label: 'Név', category: 'Személyes', selected: true },
   { id: 'taxId', label: 'Adóazonosító', category: 'Személyes', selected: false },
   { id: 'tajNumber', label: 'TAJ szám', category: 'Személyes', selected: true },
   { id: 'birthDate', label: 'Születési dátum', category: 'Személyes', selected: false },
   { id: 'age', label: 'Életkor', category: 'Személyes', selected: false },
-  // Job
   { id: 'jobCode', label: 'Jogviszonykód', category: 'Jogviszony', selected: true },
   { id: 'position', label: 'Munkakör', category: 'Jogviszony', selected: true },
   { id: 'feor', label: 'FEOR-kód', category: 'Jogviszony', selected: false },
@@ -29,7 +28,6 @@ const AVAILABLE_COLUMNS: ColumnDef[] = [
   { id: 'weeklyHours', label: 'Heti munkaidő', category: 'Jogviszony', selected: false },
   { id: 'site', label: 'Telephely', category: 'Jogviszony', selected: false },
   { id: 'costCenter', label: 'Költséghely', category: 'Jogviszony', selected: false },
-  // Salary
   { id: 'grossSalary', label: 'Bruttó bér', category: 'Bér', selected: true },
   { id: 'netSalary', label: 'Nettó bér', category: 'Bér', selected: true },
   { id: 'szja', label: 'SZJA', category: 'Bér', selected: false },
@@ -37,19 +35,10 @@ const AVAILABLE_COLUMNS: ColumnDef[] = [
   { id: 'szocho', label: 'SZOCHO', category: 'Bér', selected: false },
   { id: 'familyBenefit', label: 'Családi kedvezmény', category: 'Bér', selected: false },
   { id: 'totalCost', label: 'Teljes bérköltség', category: 'Bér', selected: false },
-  // Leave
   { id: 'leaveTotal', label: 'Szabadság keret', category: 'Szabadság', selected: false },
   { id: 'leaveUsed', label: 'Felhasznált szabadság', category: 'Szabadság', selected: false },
   { id: 'leaveRemaining', label: 'Maradék szabadság', category: 'Szabadság', selected: false },
   { id: 'sickDays', label: 'Betegnapok', category: 'Szabadság', selected: false },
-];
-
-const MOCK_DATA = [
-  { name: 'Nagy Anna', tajNumber: '123 456 789', jobCode: '1101', position: 'Pénzügyi elemző', grossSalary: 450000, netSalary: 299250 },
-  { name: 'Kiss Béla', tajNumber: '987 654 321', jobCode: '1101', position: 'Adótanácsadó', grossSalary: 380000, netSalary: 252700 },
-  { name: 'Tóth Éva', tajNumber: '111 222 333', jobCode: '1101', position: 'Asszisztens', grossSalary: 322800, netSalary: 214662 },
-  { name: 'Szabó Péter', tajNumber: '444 555 666', jobCode: '1101', position: 'Könyvelő', grossSalary: 520000, netSalary: 345800 },
-  { name: 'Horváth Dávid', tajNumber: '777 888 999', jobCode: '1101', position: 'Junior asszisztens', grossSalary: 600000, netSalary: 399000 },
 ];
 
 interface FilterDef {
@@ -76,8 +65,6 @@ export default function CustomReportBuilderPage() {
 
   const handleGenerate = () => { setGenerated(true); setShowColumnPicker(false); };
 
-  const fmt = (val: any) => typeof val === 'number' ? val.toLocaleString('hu-HU') : String(val || '—');
-
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
@@ -99,7 +86,6 @@ export default function CustomReportBuilderPage() {
       </div>
 
       <div className="grid grid-cols-[1fr,auto] gap-4">
-        {/* Main content */}
         <div className="space-y-4">
           {/* Filters */}
           <div className="bg-card rounded-xl border border-border p-5 space-y-3">
@@ -114,10 +100,7 @@ export default function CustomReportBuilderPage() {
                   {columns.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                 </select>
                 <select value={f.operator} onChange={e => setFilters(prev => prev.map((ff, ii) => ii === i ? { ...ff, operator: e.target.value as any } : ff))} className="px-2 py-1.5 rounded border border-border bg-background text-xs w-24">
-                  <option value="eq">egyenlő</option>
-                  <option value="gt">nagyobb mint</option>
-                  <option value="lt">kisebb mint</option>
-                  <option value="contains">tartalmazza</option>
+                  <option value="eq">egyenlő</option><option value="gt">nagyobb mint</option><option value="lt">kisebb mint</option><option value="contains">tartalmazza</option>
                 </select>
                 <input type="text" value={f.value} onChange={e => setFilters(prev => prev.map((ff, ii) => ii === i ? { ...ff, value: e.target.value } : ff))} placeholder="Érték" className="px-2 py-1.5 rounded border border-border bg-background text-xs flex-1" />
                 <Button variant="ghost" size="sm" onClick={() => removeFilter(i)} className="h-7 w-7 p-0 text-red-400"><Trash2 className="w-3 h-3" /></Button>
@@ -125,33 +108,13 @@ export default function CustomReportBuilderPage() {
             ))}
           </div>
 
-          {/* Generated table */}
+          {/* Generated report — shows empty state since no payroll data */}
           {generated && (
-            <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-              <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
-                <h3 className="text-sm font-bold">{reportName} — {MOCK_DATA.length} rekord</h3>
-                <span className="text-xs text-slate-500">{selectedColumns.length} oszlop</span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-slate-50/30">
-                      {selectedColumns.map(col => (
-                        <th key={col.id} className="text-left px-4 py-2 text-xs font-bold text-slate-500 whitespace-nowrap">{col.label}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {MOCK_DATA.map((row, ri) => (
-                      <tr key={ri} className="border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                        {selectedColumns.map(col => (
-                          <td key={col.id} className={cn('px-4 py-2 whitespace-nowrap', col.category === 'Bér' && 'font-mono text-xs')}>{fmt((row as any)[col.id])}</td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="bg-card rounded-xl border border-border p-12 text-center space-y-3">
+              <Database className="w-12 h-12 mx-auto text-slate-300" />
+              <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">{reportName}</h3>
+              <p className="text-sm text-slate-400">Nincs riport adat a kiválasztott oszlopokhoz ({selectedColumns.length} oszlop).</p>
+              <p className="text-xs text-slate-400">A riport adatok a bérszámfejtés véglegesítése után állnak rendelkezésre.</p>
             </div>
           )}
         </div>

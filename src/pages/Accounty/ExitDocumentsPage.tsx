@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Download, Printer, CheckCircle, Clock,
-  Eye, Shield, Users, AlertTriangle, Package
+  Eye, Shield, Users, AlertTriangle, Package, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useEmployeeJobs } from '@/hooks/useAccountyData';
 
 interface ExitDocument {
   id: string;
@@ -17,14 +18,13 @@ interface ExitDocument {
   template: string;
 }
 
-const MOCK_EMPLOYEE = { name: 'Kiss Béla', tajNumber: '987 654 321', lastDay: '2026-06-30', reason: 'Közös megegyezés' };
-
-const DOCUMENTS: ExitDocument[] = [
-  { id: 'cert', title: 'Munkáltatói igazolás', legalRef: 'Mt. 80. § (2)', description: 'Foglalkoztatás időtartama, munkakör, bérre vonatkozó adatok', required: true, status: 'generated', template: 'Tartalmazza a jogviszony kezdetét, végét, munkaköri leírást, az utolsó 6 havi bruttó átlagkeresetet.' },
-  { id: 'tb', title: 'TB igazolás (OEP)', legalRef: 'Tbj. 50. §', description: 'Társadalombiztosítási jogviszony záró igazolás', required: true, status: 'generated', template: 'Igazolja a biztosítási jogviszony megszűnését, az utolsó TB járulék befizetés dátumát.' },
+// These are static document TYPES (not data), so they stay as constants
+const DOCUMENT_TEMPLATES: ExitDocument[] = [
+  { id: 'cert', title: 'Munkáltatói igazolás', legalRef: 'Mt. 80. § (2)', description: 'Foglalkoztatás időtartama, munkakör, bérre vonatkozó adatok', required: true, status: 'pending', template: 'Tartalmazza a jogviszony kezdetét, végét, munkaköri leírást, az utolsó 6 havi bruttó átlagkeresetet.' },
+  { id: 'tb', title: 'TB igazolás (OEP)', legalRef: 'Tbj. 50. §', description: 'Társadalombiztosítási jogviszony záró igazolás', required: true, status: 'pending', template: 'Igazolja a biztosítási jogviszony megszűnését, az utolsó TB járulék befizetés dátumát.' },
   { id: 'jövedelemigazolás', title: 'Jövedelemigazolás (M30)', legalRef: 'Szja tv. 46. § (4)', description: 'Éves jövedelem adatok a kilépés napjáig', required: true, status: 'pending', template: 'Az adott évi összes jövedelem, levont adó, járulékok összesítése január 1-től az utolsó napig.' },
-  { id: 'leave', title: 'Szabadság-elszámolás', legalRef: 'Mt. 125. §', description: 'Ki nem vett szabadság megváltás kalkuláció', required: true, status: 'generated', template: 'Éves keret: 22 nap, Felhasznált: 10 nap, Maradék: 12 nap. Napi bér: 17 273 Ft. Megváltás: 207 276 Ft.' },
-  { id: 'severance', title: 'Végkielégítés számfejtés', legalRef: 'Mt. 77. §', description: 'Végkielégítés összegének kiszámítása (ha jár)', required: false, status: 'na', template: 'Közös megegyezés esetén nem kötelező (a felek megállapodhatnak).' },
+  { id: 'leave', title: 'Szabadság-elszámolás', legalRef: 'Mt. 125. §', description: 'Ki nem vett szabadság megváltás kalkuláció', required: true, status: 'pending', template: 'Éves szabadságkeret felhasználtság és megváltás kalkuláció.' },
+  { id: 'severance', title: 'Végkielégítés számfejtés', legalRef: 'Mt. 77. §', description: 'Végkielégítés összegének kiszámítása (ha jár)', required: false, status: 'na', template: 'A felek megállapodhatnak végkielégítésben.' },
   { id: 'final_payslip', title: 'Záró bérjegyzék', legalRef: 'Mt. 155. §', description: 'Az utolsó munkahónap bérjegyzéke', required: true, status: 'pending', template: 'Tartalmazza az arányos bért, szabadság-megváltást, végkielégítést, és a végső nettó összeget.' },
   { id: 'deregister', title: '08E kijelentés', legalRef: 'Art. 50. §', description: 'NAV felé történő biztosítotti kijelentés', required: true, status: 'pending', template: 'Változáskód: 02 (Jogviszony megszűnése). Határidő: utolsó naptól 15 nap.' },
   { id: 'pension', title: 'Szolgálati idő igazolás', legalRef: 'Tny. 96. §', description: 'Nyugdíjszolgáltatáshoz szükséges adatszolgáltatás', required: false, status: 'na', template: 'Tartalmazza a teljes jogviszony alatti biztosításban töltött napokat.' },
@@ -40,12 +40,18 @@ const STATUS_BADGE: Record<string, { label: string; color: string; icon: React.E
 
 export default function ExitDocumentsPage() {
   const { id, empId } = useParams<{ id: string; empId: string }>();
-  const [docs, setDocs] = useState(DOCUMENTS);
+  const { data: jobs, isLoading } = useEmployeeJobs(id || '', empId || '');
+  const [docs, setDocs] = useState(DOCUMENT_TEMPLATES);
   const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
+
+  const activeJob = (jobs || []).find(j => j.status === 'active');
+  const empLabel = activeJob ? `${activeJob.position} — FEOR: ${activeJob.feor}` : 'Munkavállaló';
 
   const generatedCount = docs.filter(d => d.status === 'generated').length;
   const requiredCount = docs.filter(d => d.required).length;
   const requiredDoneCount = docs.filter(d => d.required && d.status === 'generated').length;
+
+  if (isLoading) return <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>;
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -55,7 +61,7 @@ export default function ExitDocumentsPage() {
           <div className="p-2.5 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl shadow-lg shadow-red-500/25"><Package className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">Kilépő dokumentumcsomag</h1>
-            <p className="text-sm text-slate-500">{MOCK_EMPLOYEE.name} — Utolsó nap: {MOCK_EMPLOYEE.lastDay} ({MOCK_EMPLOYEE.reason})</p>
+            <p className="text-sm text-slate-500">{empLabel}</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -64,21 +70,19 @@ export default function ExitDocumentsPage() {
         </div>
       </div>
 
-      {/* Progress */}
       <div className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-500/10 dark:to-pink-500/10 rounded-xl border border-red-200 dark:border-red-500/20 p-5">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-bold text-red-800 dark:text-red-300">Kötelező dokumentumok</h3>
           <span className="text-sm font-bold">{requiredDoneCount}/{requiredCount}</span>
         </div>
         <div className="w-full h-2 bg-red-100 dark:bg-red-500/20 rounded-full overflow-hidden">
-          <div className="h-full bg-red-500 rounded-full transition-all" style={{ width: `${(requiredDoneCount / requiredCount) * 100}%` }} />
+          <div className="h-full bg-red-500 rounded-full transition-all" style={{ width: `${requiredCount > 0 ? (requiredDoneCount / requiredCount) * 100 : 0}%` }} />
         </div>
         {requiredDoneCount < requiredCount && (
           <p className="text-xs text-red-600 mt-2 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> {requiredCount - requiredDoneCount} kötelező dokumentum még hiányzik</p>
         )}
       </div>
 
-      {/* Document list */}
       <div className="space-y-2">
         {docs.map(doc => {
           const badge = STATUS_BADGE[doc.status];

@@ -2,7 +2,8 @@ import React, { useState, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Upload, FileSpreadsheet, Download, CheckCircle, XCircle,
-  AlertTriangle, Loader2, Trash2, Users, Eye, RefreshCw
+  AlertTriangle, Loader2, Trash2, Users, Eye, RefreshCw, ChevronDown,
+  FileText, Table
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -23,15 +24,13 @@ interface ImportRow {
   errors: string[];
 }
 
-const SAMPLE_DATA: ImportRow[] = [
-  { id: 1, surname: 'Nagy', firstName: 'Anna', birthDate: '1985-03-15', tajNumber: '123 456 789', taxId: '8765432109', jobCode: '1101', startDate: '2026-01-02', feor: '2411', weeklyHours: '40', baseSalary: '450000', valid: true, errors: [] },
-  { id: 2, surname: 'Kiss', firstName: 'Béla', birthDate: '1990-07-22', tajNumber: '987 654 321', taxId: '1234567890', jobCode: '1101', startDate: '2026-02-01', feor: '3312', weeklyHours: '40', baseSalary: '380000', valid: true, errors: [] },
-  { id: 3, surname: 'Tóth', firstName: 'Éva', birthDate: '', tajNumber: '111 222 333', taxId: '5555555555', jobCode: '1101', startDate: '2026-03-01', feor: '4110', weeklyHours: '20', baseSalary: '200000', valid: false, errors: ['Születési dátum hiányzik'] },
-  { id: 4, surname: 'Szabó', firstName: 'Péter', birthDate: '1978-11-30', tajNumber: '444 555 666', taxId: '9999888877', jobCode: '1115', startDate: '2026-01-15', feor: '2412', weeklyHours: '36', baseSalary: '520000', valid: true, errors: [] },
-  { id: 5, surname: 'Horváth', firstName: '', birthDate: '1995-05-10', tajNumber: '777 888', taxId: '3334445556', jobCode: '1101', startDate: '2026-04-01', feor: '3119', weeklyHours: '40', baseSalary: '322800', valid: false, errors: ['Keresztnév hiányzik', 'TAJ szám formátum hibás (9 jegy szükséges)'] },
-];
 
 const TEMPLATE_HEADERS = ['Vezetéknév', 'Keresztnév', 'Születési dátum', 'TAJ-szám', 'Adóazonosító jel', 'Jogviszonykód', 'Belépés dátuma', 'FEOR', 'Heti óraszám', 'Alapbér (Ft)'];
+
+const SAMPLE_ROWS = [
+  ['Nagy', 'Anna', '1985-03-15', '123 456 789', '8765432109', '1101', '2026-01-02', '2411', '40', '450000'],
+  ['Kiss', 'Béla', '1990-07-22', '987 654 321', '1234567890', '1101', '2026-02-01', '3312', '40', '380000'],
+];
 
 export default function EmployeeImportPage() {
   const { id } = useParams<{ id: string }>();
@@ -39,38 +38,218 @@ export default function EmployeeImportPage() {
   const [phase, setPhase] = useState<'upload' | 'preview' | 'importing' | 'done'>('upload');
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [dragging, setDragging] = useState(false);
+  const [showTemplateMenu, setShowTemplateMenu] = useState(false);
 
   const validCount = rows.filter(r => r.valid).length;
   const errorCount = rows.filter(r => !r.valid).length;
 
-  const handleFileSelect = useCallback(() => {
-    // Simulate parsing — use SAMPLE_DATA
-    setRows(SAMPLE_DATA);
-    setPhase('preview');
+  const parseCSVContent = useCallback((text: string) => {
+    // Remove BOM if present
+    const clean = text.replace(/^\uFEFF/, '');
+    const lines = clean.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return []; // header only or empty
+
+    // Detect delimiter (semicolon or comma)
+    const header = lines[0];
+    const delimiter = header.includes(';') ? ';' : ',';
+
+    // Skip header row
+    const dataLines = lines.slice(1);
+    return dataLines.map((line, idx) => {
+      const cols = line.split(delimiter).map(c => c.trim());
+      const surname = cols[0] || '';
+      const firstName = cols[1] || '';
+      const birthDate = cols[2] || '';
+      const tajNumber = cols[3] || '';
+      const taxId = cols[4] || '';
+      const jobCode = cols[5] || '';
+      const startDate = cols[6] || '';
+      const feor = cols[7] || '';
+      const weeklyHours = cols[8] || '';
+      const baseSalary = cols[9] || '';
+
+      const errors: string[] = [];
+      if (!surname) errors.push('Vezetéknév hiányzik');
+      if (!firstName) errors.push('Keresztnév hiányzik');
+      if (!birthDate) errors.push('Születési dátum hiányzik');
+      const tajClean = tajNumber.replace(/[\s-]/g, '');
+      if (tajClean && tajClean.length !== 9) errors.push('TAJ szám formátum hibás (9 jegy szükséges)');
+      if (!tajClean) errors.push('TAJ-szám hiányzik');
+      if (!taxId) errors.push('Adóazonosító hiányzik');
+      if (!startDate) errors.push('Belépés dátuma hiányzik');
+
+      return {
+        id: idx + 1,
+        surname,
+        firstName,
+        birthDate,
+        tajNumber,
+        taxId,
+        jobCode,
+        startDate,
+        feor,
+        weeklyHours,
+        baseSalary,
+        valid: errors.length === 0,
+        errors,
+      } as ImportRow;
+    });
   }, []);
+
+  const parseExcelXML = useCallback((text: string): ImportRow[] => {
+    // Parse XML Spreadsheet 2003 format
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, 'text/xml');
+    const rowElements = doc.querySelectorAll('Row');
+    if (rowElements.length < 2) return [];
+
+    const dataRows: ImportRow[] = [];
+    // Skip first row (header)
+    for (let i = 1; i < rowElements.length; i++) {
+      const cells = rowElements[i].querySelectorAll('Data');
+      const cols = Array.from(cells).map(c => c.textContent?.trim() || '');
+
+      const surname = cols[0] || '';
+      const firstName = cols[1] || '';
+      const birthDate = cols[2] || '';
+      const tajNumber = cols[3] || '';
+      const taxId = cols[4] || '';
+      const jobCode = cols[5] || '';
+      const startDate = cols[6] || '';
+      const feor = cols[7] || '';
+      const weeklyHours = cols[8] || '';
+      const baseSalary = cols[9] || '';
+
+      // Skip completely empty rows
+      if (!surname && !firstName && !tajNumber) continue;
+
+      const errors: string[] = [];
+      if (!surname) errors.push('Vezetéknév hiányzik');
+      if (!firstName) errors.push('Keresztnév hiányzik');
+      if (!birthDate) errors.push('Születési dátum hiányzik');
+      const tajClean = tajNumber.replace(/[\s-]/g, '');
+      if (tajClean && tajClean.length !== 9) errors.push('TAJ szám formátum hibás (9 jegy szükséges)');
+      if (!tajClean) errors.push('TAJ-szám hiányzik');
+      if (!taxId) errors.push('Adóazonosító hiányzik');
+      if (!startDate) errors.push('Belépés dátuma hiányzik');
+
+      dataRows.push({
+        id: i,
+        surname,
+        firstName,
+        birthDate,
+        tajNumber,
+        taxId,
+        jobCode,
+        startDate,
+        feor,
+        weeklyHours,
+        baseSalary,
+        valid: errors.length === 0,
+        errors,
+      });
+    }
+    return dataRows;
+  }, []);
+
+  const processFile = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      if (!text) return;
+
+      let parsed: ImportRow[];
+      if (file.name.endsWith('.xls') || file.name.endsWith('.xml')) {
+        parsed = parseExcelXML(text);
+      } else {
+        parsed = parseCSVContent(text);
+      }
+
+      if (parsed.length === 0) {
+        alert('A fájl üres vagy nem megfelelő formátumú. Kérjük használja a sablont.');
+        return;
+      }
+
+      setRows(parsed);
+      setPhase('preview');
+    };
+    reader.readAsText(file, 'UTF-8');
+  }, [parseCSVContent, parseExcelXML]);
+
+  const handleFileSelect = useCallback((e?: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e?.target?.files?.[0] || fileRef.current?.files?.[0];
+    if (!file) return;
+    processFile(file);
+  }, [processFile]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
-    handleFileSelect();
-  }, [handleFileSelect]);
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  }, [processFile]);
 
   const handleImport = () => {
     setPhase('importing');
     setTimeout(() => setPhase('done'), 2500);
   };
 
-  const handleDownloadTemplate = () => {
-    const csv = TEMPLATE_HEADERS.join(';') + '\n' + 
-      'Nagy;Anna;1985-03-15;123 456 789;8765432109;1101;2026-01-02;2411;40;450000\n' +
-      'Kiss;Béla;1990-07-22;987 654 321;1234567890;1101;2026-02-01;3312;40;380000\n';
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const downloadCSV = () => {
+    const csv = TEMPLATE_HEADERS.join(';') + '\n' +
+      SAMPLE_ROWS.map(r => r.join(';')).join('\n') + '\n';
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = 'foglalkoztatott_import_sablon.csv';
     a.click();
     URL.revokeObjectURL(url);
+    setShowTemplateMenu(false);
+  };
+
+  const downloadExcel = () => {
+    // Generate XML Spreadsheet 2003 format (.xlsx compatible)
+    const escapeXml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const headerCells = TEMPLATE_HEADERS.map(h =>
+      `<Cell ss:StyleID="Header"><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`
+    ).join('');
+    const dataRows = SAMPLE_ROWS.map(row => {
+      const cells = row.map((val, i) => {
+        const isNumber = i >= 8; // weeklyHours, baseSalary
+        return `<Cell><Data ss:Type="${isNumber ? 'Number' : 'String'}">${escapeXml(val)}</Data></Cell>`;
+      }).join('');
+      return `<Row>${cells}</Row>`;
+    }).join('\n');
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+  <Styles>
+    <Style ss:ID="Default"><Font ss:FontName="Calibri" ss:Size="11"/></Style>
+    <Style ss:ID="Header">
+      <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>
+      <Interior ss:Color="#2E7D32" ss:Pattern="Solid"/>
+      <Alignment ss:Horizontal="Center"/>
+    </Style>
+  </Styles>
+  <Worksheet ss:Name="Foglalkoztatottak">
+    <Table>
+      ${TEMPLATE_HEADERS.map(h => `<Column ss:AutoFitWidth="1" ss:Width="120"/>`).join('\n      ')}
+      <Row>${headerCells}</Row>
+      ${dataRows}
+    </Table>
+  </Worksheet>
+</Workbook>`;
+
+    const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'foglalkoztatott_import_sablon.xls';
+    a.click();
+    URL.revokeObjectURL(url);
+    setShowTemplateMenu(false);
   };
 
   const removeRow = (rowId: number) => setRows(prev => prev.filter(r => r.id !== rowId));
@@ -91,9 +270,47 @@ export default function EmployeeImportPage() {
             <p className="text-sm text-slate-500">Foglalkoztatottak tömeges felvitele CSV/Excel fájlból</p>
           </div>
         </div>
-        <Button onClick={handleDownloadTemplate} variant="outline" className="gap-1.5">
-          <Download className="w-4 h-4" /> Sablon letöltése
-        </Button>
+        <div className="relative">
+          <Button
+            onClick={() => setShowTemplateMenu(p => !p)}
+            variant="outline"
+            className="gap-1.5"
+          >
+            <Download className="w-4 h-4" /> Sablon letöltése <ChevronDown className="w-3 h-3 ml-0.5" />
+          </Button>
+          {showTemplateMenu && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowTemplateMenu(false)} />
+              <div className="absolute right-0 top-full mt-1 w-56 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                <button
+                  onClick={downloadExcel}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <div className="p-1.5 bg-green-100 dark:bg-green-900/40 rounded-lg">
+                    <Table className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-900 dark:text-slate-100">Excel sablon (.xls)</p>
+                    <p className="text-[11px] text-slate-400">Megnyitható Excelben</p>
+                  </div>
+                </button>
+                <div className="border-t border-border" />
+                <button
+                  onClick={downloadCSV}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <div className="p-1.5 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                    <FileText className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-900 dark:text-slate-100">CSV sablon (.csv)</p>
+                    <p className="text-[11px] text-slate-400">Pontosvesszővel elválasztva, UTF-8</p>
+                  </div>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Upload phase */}

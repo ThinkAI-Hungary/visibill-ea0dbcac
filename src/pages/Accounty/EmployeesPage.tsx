@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Users, UserPlus, Search, Filter, ChevronRight, ArrowLeft,
-  Download, MoreVertical, Mail, Phone, Building2, Shield,
+  Download, Upload, MoreVertical, Mail, Phone, Building2, Shield,
   ChevronLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -118,6 +118,14 @@ export default function EmployeesPage() {
           >
             <Download className="w-4 h-4" />
             Export CSV
+          </Button>
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 text-sm"
+            onClick={() => navigate(`/accounty/payroll/${companyId}/employees/import`)}
+          >
+            <Upload className="w-4 h-4" />
+            Excel importálás
           </Button>
           <Button
             onClick={() => navigate(`/accounty/payroll/${companyId}/employees/new`)}
