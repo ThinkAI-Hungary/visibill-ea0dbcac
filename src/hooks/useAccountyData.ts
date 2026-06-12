@@ -1608,3 +1608,174 @@ export function useAccountyPortalStats() {
     staleTime: 60_000,
   });
 }
+
+// ── Cégkapu / KÜNY Settings ──
+
+export interface CegkapuSettings {
+  id: string;
+  companyId: string;
+  tarhelyType: 'cegkapu' | 'kuny';
+  tarhelyId: string;
+  tarhelyStatus: 'active' | 'error' | 'unknown';
+  tarhelyCompanyName: string;
+  capacityUsed: number;
+  capacityTotal: number;
+  signerName: string;
+  signerKauType: 'ugyfelkapu_plus' | 'dap' | 'eszig';
+  signerKauId: string;
+  signerVerified: boolean;
+  pollingFrequency: '15' | '30' | '60';
+  autoReceipt: boolean;
+  lastSync: string | null;
+}
+
+export function useCegkapuSettings(companyId: string) {
+  return useQuery({
+    queryKey: ['cegkapu-settings', companyId],
+    queryFn: async (): Promise<CegkapuSettings | null> => {
+      const { data, error } = await supabase
+        .from('accounty_cegkapu_settings')
+        .select('*')
+        .eq('company_id', companyId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      return {
+        id: data.id,
+        companyId: data.company_id,
+        tarhelyType: data.tarhely_type,
+        tarhelyId: data.tarhely_id || '',
+        tarhelyStatus: data.tarhely_status,
+        tarhelyCompanyName: data.tarhely_company_name || '',
+        capacityUsed: data.capacity_used || 0,
+        capacityTotal: data.capacity_total || 100,
+        signerName: data.signer_name || '',
+        signerKauType: data.signer_kau_type || 'ugyfelkapu_plus',
+        signerKauId: data.signer_kau_id || '',
+        signerVerified: data.signer_verified || false,
+        pollingFrequency: data.polling_frequency || '15',
+        autoReceipt: data.auto_receipt !== false,
+        lastSync: data.last_sync,
+      };
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useUpsertCegkapuSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (settings: Omit<CegkapuSettings, 'id'>) => {
+      const { error } = await supabase
+        .from('accounty_cegkapu_settings')
+        .upsert({
+          company_id: settings.companyId,
+          tarhely_type: settings.tarhelyType,
+          tarhely_id: settings.tarhelyId,
+          tarhely_status: settings.tarhelyStatus,
+          tarhely_company_name: settings.tarhelyCompanyName,
+          capacity_used: settings.capacityUsed,
+          capacity_total: settings.capacityTotal,
+          signer_name: settings.signerName,
+          signer_kau_type: settings.signerKauType,
+          signer_kau_id: settings.signerKauId,
+          signer_verified: settings.signerVerified,
+          polling_frequency: settings.pollingFrequency,
+          auto_receipt: settings.autoReceipt,
+          last_sync: settings.lastSync,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'company_id' });
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['cegkapu-settings', vars.companyId] });
+    },
+  });
+}
+
+// ── NAV Representations ──
+
+export interface NavRepresentation {
+  id: string;
+  companyId: string;
+  repType: 'person' | 'organization';
+  name: string;
+  taxId: string;
+  scope: 'all' | 'payroll' | 'custom';
+  scopeDetails: string | null;
+  startDate: string;
+  endDate: string | null;
+  status: 'active' | 'expired' | 'revoked';
+  registrationNumber: string | null;
+}
+
+export function useNavRepresentations(companyId: string) {
+  return useQuery({
+    queryKey: ['nav-representations', companyId],
+    queryFn: async (): Promise<NavRepresentation[]> => {
+      const { data, error } = await supabase
+        .from('accounty_nav_representations')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(r => ({
+        id: r.id,
+        companyId: r.company_id,
+        repType: r.rep_type,
+        name: r.name,
+        taxId: r.tax_id,
+        scope: r.scope,
+        scopeDetails: r.scope_details,
+        startDate: r.start_date,
+        endDate: r.end_date,
+        status: r.status,
+        registrationNumber: r.registration_number,
+      }));
+    },
+    enabled: !!companyId,
+  });
+}
+
+export function useAddNavRepresentation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (rep: Omit<NavRepresentation, 'id'>) => {
+      const { error } = await supabase
+        .from('accounty_nav_representations')
+        .insert({
+          company_id: rep.companyId,
+          rep_type: rep.repType,
+          name: rep.name,
+          tax_id: rep.taxId,
+          scope: rep.scope,
+          scope_details: rep.scopeDetails,
+          start_date: rep.startDate,
+          end_date: rep.endDate,
+          status: rep.status,
+          registration_number: rep.registrationNumber,
+        });
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['nav-representations', vars.companyId] });
+    },
+  });
+}
+
+export function useRevokeNavRepresentation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, companyId }: { id: string; companyId: string }) => {
+      const { error } = await supabase
+        .from('accounty_nav_representations')
+        .update({ status: 'revoked', updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+      return companyId;
+    },
+    onSuccess: (companyId) => {
+      qc.invalidateQueries({ queryKey: ['nav-representations', companyId] });
+    },
+  });
+}

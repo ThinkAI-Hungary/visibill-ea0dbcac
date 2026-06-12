@@ -112,6 +112,7 @@ const OutputDocumentsPage = lazy(() => import("./pages/Accounty/documents/Output
 const ExitDocumentsPage = lazy(() => import("./pages/Accounty/ExitDocumentsPage"));
 const YearEndDashboardPage = lazy(() => import("./pages/Accounty/YearEndDashboardPage"));
 const AiAnomalyReportPage = lazy(() => import("./pages/Accounty/reports/AiAnomalyReportPage"));
+const PrivacyPolicyPage = lazy(() => import("./pages/Accounty/PrivacyPolicyPage"));
 const CustomReportBuilderPage = lazy(() => import("./pages/Accounty/reports/CustomReportBuilderPage"));
 const DeclarationArchivePage = lazy(() => import("./pages/Accounty/declarations/DeclarationArchivePage"));
 const VatReturnPage = lazy(() => import("./pages/VatReturnPage"));
@@ -320,8 +321,10 @@ const App = () => (
                       <Route path="client/:id/invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientInvoicesPage /></Suspense>} />
                       <Route path="reports" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ReportsPage /></Suspense>} />
                       <Route path="reports/missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MissingInvoicesReportPage /></Suspense>} />
+                      <Route path="reports/ai-anomaly" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AiAnomalyReportPage /></Suspense>} />
                       <Route path="tax-calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaxCalendarPage /></Suspense>} />
                       <Route path="settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><SettingsPage /></Suspense>} />
+                      <Route path="privacy-policy" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PrivacyPolicyPage /></Suspense>} />
                       <Route path="help" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><HelpPage /></Suspense>} />
                       <Route path="tickets/:ticketId?" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TicketsPage /></Suspense>} />
                       <Route path="approval-queue" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ApprovalQueuePage /></Suspense>} />

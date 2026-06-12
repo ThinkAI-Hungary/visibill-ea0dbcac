@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { Bell, AlertTriangle, Info, CheckCircle, XCircle, Filter, Clock, TrendingUp, Users, FileWarning, Calculator } from 'lucide-react';
+import { Bell, AlertTriangle, Info, CheckCircle, XCircle, Clock, TrendingUp, Users, FileWarning, Calculator, Search, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useAccountyClients } from '@/hooks/useAccountyData';
 
 type AlertLevel = 'critical' | 'warning' | 'info';
 type AlertCategory = 'all' | 'nav' | 'payroll' | 'employee' | 'system';
+type AlertState = 'active' | 'resolved' | 'dismissed';
 
 interface Alert {
   id: string;
@@ -16,7 +18,6 @@ interface Alert {
   client?: string;
   createdAt: Date;
   action?: { label: string; path: string };
-  dismissed: boolean;
 }
 
 const LEVEL_CONFIG: Record<AlertLevel, { icon: React.ElementType; color: string; bg: string; border: string }> = {
@@ -64,7 +65,6 @@ function generateAlerts(clients: any[]): Alert[] {
       title: `NAV járulékbevallás határidő ${daysUntilNav} nap múlva`,
       description: `A 2608 havi járulékbevallás beadási határideje ${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${navDay}.`,
       createdAt: new Date(now.getTime() - 86400000),
-      dismissed: false,
     });
   }
 
@@ -78,7 +78,6 @@ function generateAlerts(clients: any[]): Alert[] {
       description: `Az aktuális hónapra még nem indult el a bérszámfejtési ciklus.`,
       client: client.name,
       createdAt: new Date(now.getTime() - 172800000 * (i + 1)),
-      dismissed: false,
     });
   });
 
@@ -90,7 +89,6 @@ function generateAlerts(clients: any[]): Alert[] {
     title: 'Minimálbér alatti bér — 2 foglalkoztatott',
     description: 'A 2026-os minimálbér (322 800 Ft) alatti alapbér rögzítve. Ellenőrizd a részfoglalkoztatást.',
     createdAt: new Date(now.getTime() - 86400000 * 2),
-    dismissed: false,
   });
 
   alerts.push({
@@ -100,7 +98,6 @@ function generateAlerts(clients: any[]): Alert[] {
     title: 'Rehabilitációs hozzájárulás aktiválandó',
     description: 'Egy ügyfél létszáma meghaladta a 25 főt, rehabilitációs hozzájárulási kötelezettség keletkezett.',
     createdAt: new Date(now.getTime() - 86400000 * 3),
-    dismissed: false,
   });
 
   // System info
@@ -111,7 +108,6 @@ function generateAlerts(clients: any[]): Alert[] {
     title: 'Új jogszabály-módosítás észlelve',
     description: 'Magyar Közlöny 2026/42. — családi kedvezmény végrehajtási rendelet frissítve.',
     createdAt: new Date(now.getTime() - 86400000 * 5),
-    dismissed: false,
   });
 
   return alerts.sort((a, b) => {
@@ -123,26 +119,40 @@ function generateAlerts(clients: any[]): Alert[] {
 export default function AlertsCenterPage() {
   const { data: clients = [] } = useAccountyClients();
   const [categoryFilter, setCategoryFilter] = useState<AlertCategory>('all');
-  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
-  const [showDismissed, setShowDismissed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  // Track alert states: active / resolved / dismissed
+  const [alertStates, setAlertStates] = useState<Record<string, AlertState>>({});
+  const [showArchived, setShowArchived] = useState(false);
 
   const allAlerts = useMemo(() => generateAlerts(clients), [clients]);
 
+  const getState = (id: string): AlertState => alertStates[id] || 'active';
+
   const filtered = useMemo(() => {
     return allAlerts.filter(a => {
+      const state = getState(a.id);
+      // Hide resolved/dismissed unless showArchived is on
+      if (!showArchived && (state === 'resolved' || state === 'dismissed')) return false;
       if (categoryFilter !== 'all' && a.category !== categoryFilter) return false;
-      if (!showDismissed && dismissedIds.has(a.id)) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        if (!a.title.toLowerCase().includes(q) && !a.description.toLowerCase().includes(q) && !(a.client || '').toLowerCase().includes(q)) return false;
+      }
       return true;
     });
-  }, [allAlerts, categoryFilter, dismissedIds, showDismissed]);
+  }, [allAlerts, categoryFilter, alertStates, showArchived, searchQuery]);
 
+  const activeAlerts = allAlerts.filter(a => getState(a.id) === 'active');
   const stats = {
-    critical: allAlerts.filter(a => a.level === 'critical' && !dismissedIds.has(a.id)).length,
-    warning: allAlerts.filter(a => a.level === 'warning' && !dismissedIds.has(a.id)).length,
-    info: allAlerts.filter(a => a.level === 'info' && !dismissedIds.has(a.id)).length,
+    critical: activeAlerts.filter(a => a.level === 'critical').length,
+    warning: activeAlerts.filter(a => a.level === 'warning').length,
+    info: activeAlerts.filter(a => a.level === 'info').length,
+    resolved: allAlerts.filter(a => getState(a.id) === 'resolved').length,
   };
 
-  const dismiss = (id: string) => setDismissedIds(prev => new Set(prev).add(id));
+  const setAlertState = (id: string, state: AlertState) => {
+    setAlertStates(prev => ({ ...prev, [id]: state }));
+  };
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
@@ -157,19 +167,19 @@ export default function AlertsCenterPage() {
             <p className="text-sm text-slate-500 dark:text-slate-400">Portfólió-szintű figyelmeztető rendszer</p>
           </div>
         </div>
-        <label className="flex items-center gap-2 text-xs text-slate-500 cursor-pointer">
+        <label className="flex items-center gap-2 text-xs text-slate-500 cursor-pointer select-none">
           <input
             type="checkbox"
-            checked={showDismissed}
-            onChange={e => setShowDismissed(e.target.checked)}
+            checked={showArchived}
+            onChange={e => setShowArchived(e.target.checked)}
             className="rounded"
           />
-          Elutasítottak mutatása
+          Archivált mutatása
         </label>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/40 rounded-xl p-4">
           <p className="text-xs text-red-500 font-medium">Kritikus</p>
           <p className="text-3xl font-bold text-red-600 dark:text-red-400">{stats.critical}</p>
@@ -182,25 +192,40 @@ export default function AlertsCenterPage() {
           <p className="text-xs text-blue-500 font-medium">Tájékoztató</p>
           <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.info}</p>
         </div>
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/40 rounded-xl p-4">
+          <p className="text-xs text-green-500 font-medium">Megoldva</p>
+          <p className="text-3xl font-bold text-green-600 dark:text-green-400">{stats.resolved}</p>
+        </div>
       </div>
 
-      {/* Category tabs */}
-      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl p-1 overflow-x-auto">
-        {CATEGORIES.map(cat => (
-          <button
-            key={cat.id}
-            onClick={() => setCategoryFilter(cat.id)}
-            className={cn(
-              'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all',
-              categoryFilter === cat.id
-                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
-            )}
-          >
-            <cat.icon className="w-3.5 h-3.5" />
-            {cat.label}
-          </button>
-        ))}
+      {/* Search + Category tabs */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            placeholder="Keresés riasztásokban..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="pl-9 bg-card border-border h-9 text-sm"
+          />
+        </div>
+        <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl p-1 overflow-x-auto">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setCategoryFilter(cat.id)}
+              className={cn(
+                'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all',
+                categoryFilter === cat.id
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+              )}
+            >
+              <cat.icon className="w-3.5 h-3.5" />
+              {cat.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Alert list */}
@@ -208,19 +233,26 @@ export default function AlertsCenterPage() {
         {filtered.length === 0 ? (
           <div className="py-16 text-center bg-card rounded-xl border border-border">
             <CheckCircle className="w-10 h-10 mx-auto mb-3 text-green-400" />
-            <p className="text-sm text-slate-500">Nincs aktív riasztás — minden rendben!</p>
+            <p className="text-sm text-slate-500">
+              {searchQuery || categoryFilter !== 'all' ? 'Nincs találat a szűrőkkel' : 'Nincs aktív riasztás — minden rendben!'}
+            </p>
           </div>
         ) : (
           filtered.map(alert => {
-            const config = LEVEL_CONFIG[alert.level];
+            const state = getState(alert.id);
+            const isResolved = state === 'resolved';
+            const isDismissed = state === 'dismissed';
+            const isArchived = isResolved || isDismissed;
+            const config = isResolved
+              ? { icon: CheckCircle2, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20', border: 'border-green-200 dark:border-green-800/50' }
+              : LEVEL_CONFIG[alert.level];
             const Icon = config.icon;
-            const isDismissed = dismissedIds.has(alert.id);
             return (
               <div
                 key={alert.id}
                 className={cn(
                   'rounded-xl border p-5 transition-all hover:shadow-md',
-                  isDismissed ? 'opacity-50' : '',
+                  isArchived ? 'opacity-50' : '',
                   config.bg, config.border
                 )}
               >
@@ -231,7 +263,9 @@ export default function AlertsCenterPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{alert.title}</h3>
+                        <h3 className={cn('text-sm font-bold', isResolved ? 'text-green-700 dark:text-green-400 line-through' : 'text-slate-900 dark:text-slate-100')}>
+                          {alert.title}
+                        </h3>
                         {alert.client && <p className="text-[10px] text-primary font-medium mt-0.5">{alert.client}</p>}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
@@ -239,14 +273,45 @@ export default function AlertsCenterPage() {
                           <Clock className="w-3 h-3" />
                           {alert.createdAt.toLocaleDateString('hu-HU', { month: 'short', day: 'numeric' })}
                         </span>
-                        {!isDismissed && (
-                          <Button variant="ghost" size="sm" className="h-6 text-[10px] text-slate-400 hover:text-slate-600" onClick={() => dismiss(alert.id)}>
-                            Elutasít
+                        {!isArchived && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-[10px] text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 gap-1"
+                              onClick={() => setAlertState(alert.id, 'resolved')}
+                            >
+                              <CheckCircle2 className="w-3 h-3" />
+                              Megoldva
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-[10px] text-slate-400 hover:text-slate-600"
+                              onClick={() => setAlertState(alert.id, 'dismissed')}
+                            >
+                              Elutasít
+                            </Button>
+                          </>
+                        )}
+                        {isArchived && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-[10px] text-slate-400 hover:text-slate-600"
+                            onClick={() => setAlertState(alert.id, 'active')}
+                          >
+                            Visszaállít
                           </Button>
                         )}
                       </div>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">{alert.description}</p>
+                    {isResolved && (
+                      <p className="text-[10px] text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Megoldva
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

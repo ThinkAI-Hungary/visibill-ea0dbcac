@@ -58,6 +58,7 @@ import {
   Rocket,
   ChevronUp,
   Landmark,
+  Shield,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -65,6 +66,7 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useUnreadTicketCount } from '@/hooks/useTickets';
 import { AiAssistantChat as AiDrawerChat } from './AiAssistantPage';
+import CookieConsentBanner from '@/components/accounty/CookieConsentBanner';
 
 export default function AccountyLayout() {
   const { user, signOut } = useAuth();
@@ -122,6 +124,7 @@ export default function AccountyLayout() {
   };
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
   const [notifDismissed, setNotifDismissed] = useState(false);
+  const [gdprBannerDismissed, setGdprBannerDismissed] = useState(() => sessionStorage.getItem('gdpr_banner_dismissed') === '1');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
@@ -835,6 +838,48 @@ export default function AccountyLayout() {
 
         {/* Page Content */}
         <div className="flex-1 overflow-auto p-8 relative">
+          {/* GDPR compliance reminder */}
+          {(() => {
+            // Check GDPR compliance (same logic as SettingsPage)
+            const dismissed = gdprBannerDismissed;
+            if (dismissed) return null;
+
+            let cookieOk = false;
+            let privacyOk = false;
+            try {
+              const cc = localStorage.getItem('accounty_cookie_consent');
+              cookieOk = cc ? JSON.parse(cc).version === '1.0' : false;
+            } catch {}
+            try {
+              const pp = localStorage.getItem('accounty_privacy_consent');
+              privacyOk = pp ? JSON.parse(pp).version === '1.0' : false;
+            } catch {}
+
+            if (cookieOk && privacyOk) return null;
+
+            return (
+              <div className="mb-5 flex items-center gap-3 px-4 py-3 bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-800/40 rounded-xl text-sm animate-in fade-in slide-in-from-top-2 duration-500">
+                <Shield className="w-4 h-4 text-amber-500 shrink-0" />
+                <p className="flex-1 text-amber-800 dark:text-amber-300">
+                  <span className="font-medium">GDPR megfelelőség hiányos</span>
+                  <span className="text-amber-600 dark:text-amber-400"> — Az adatvédelmi követelmények teljesítéséhez fogadja el a süti beállításokat és az adatkezelési tájékoztatót.</span>
+                </p>
+                <Link
+                  to="/accounty/settings"
+                  className="shrink-0 px-3 py-1 bg-amber-100 dark:bg-amber-800/40 text-amber-700 dark:text-amber-300 text-xs font-bold rounded-lg hover:bg-amber-200 dark:hover:bg-amber-800/60 transition-colors"
+                >
+                  Beállítások
+                </Link>
+                <button
+                  onClick={() => { sessionStorage.setItem('gdpr_banner_dismissed', '1'); setGdprBannerDismissed(true); }}
+                  className="shrink-0 p-1 text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors"
+                  title="Elutasítás"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            );
+          })()}
           <AccountyRoleProvider>
             <Outlet />
           </AccountyRoleProvider>
@@ -935,6 +980,7 @@ export default function AccountyLayout() {
         </DialogContent>
       </Dialog>
       <FeedbackFab onAiOpen={() => setAiDrawerOpen(true)} aiDrawerOpen={aiDrawerOpen} onAiClose={() => setAiDrawerOpen(false)} />
+      <CookieConsentBanner />
     </>
   );
 }

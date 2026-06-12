@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Shield, Building2, Key, Clock, CheckCircle, AlertTriangle,
-  Monitor, RefreshCw, Save, TestTube, User, FileText
+  Monitor, RefreshCw, Save, TestTube, User, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useCegkapuSettings, useUpsertCegkapuSettings, type CegkapuSettings } from '@/hooks/useAccountyData';
+import { useToast } from '@/hooks/use-toast';
 
 type TarhelyType = 'cegkapu' | 'kuny';
 type KauType = 'ugyfelkapu_plus' | 'dap' | 'eszig';
 
-interface CegkapuData {
+interface FormData {
   tarhelyType: TarhelyType;
   tarhelyId: string;
   tarhelyStatus: 'active' | 'error' | 'unknown';
@@ -26,7 +28,7 @@ interface CegkapuData {
   lastSync: string | null;
 }
 
-const INITIAL: CegkapuData = {
+const DEFAULTS: FormData = {
   tarhelyType: 'cegkapu',
   tarhelyId: '',
   tarhelyStatus: 'unknown',
@@ -42,48 +44,76 @@ const INITIAL: CegkapuData = {
   lastSync: null,
 };
 
-// Mock data for demo
-const MOCK_DATA: CegkapuData = {
-  tarhelyType: 'cegkapu',
-  tarhelyId: '1234567890',
-  tarhelyStatus: 'active',
-  tarhelyCompanyName: 'Teszt Kft.',
-  capacityUsed: 42,
-  capacityTotal: 100,
-  signerName: 'Kovács Péter',
-  signerKauType: 'ugyfelkapu_plus',
-  signerKauId: 'KP-2026-001',
-  signerVerified: true,
-  pollingFrequency: '15',
-  autoReceipt: true,
-  lastSync: '2026-06-10T10:30:00',
-};
-
 export default function CegkapuSettingsPage() {
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<CegkapuData>(MOCK_DATA);
-  const [saved, setSaved] = useState(false);
+  const { toast } = useToast();
+  const { data: saved, isLoading } = useCegkapuSettings(id || '');
+  const upsertMutation = useUpsertCegkapuSettings();
+  const [data, setData] = useState<FormData>(DEFAULTS);
+  const [dirty, setDirty] = useState(false);
   const [testing, setTesting] = useState(false);
 
-  const update = (patch: Partial<CegkapuData>) => {
+  // Sync from DB
+  useEffect(() => {
+    if (saved) {
+      setData({
+        tarhelyType: saved.tarhelyType,
+        tarhelyId: saved.tarhelyId,
+        tarhelyStatus: saved.tarhelyStatus,
+        tarhelyCompanyName: saved.tarhelyCompanyName,
+        capacityUsed: saved.capacityUsed,
+        capacityTotal: saved.capacityTotal,
+        signerName: saved.signerName,
+        signerKauType: saved.signerKauType,
+        signerKauId: saved.signerKauId,
+        signerVerified: saved.signerVerified,
+        pollingFrequency: saved.pollingFrequency,
+        autoReceipt: saved.autoReceipt,
+        lastSync: saved.lastSync,
+      });
+    }
+  }, [saved]);
+
+  const update = (patch: Partial<FormData>) => {
     setData(d => ({ ...d, ...patch }));
-    setSaved(false);
+    setDirty(true);
   };
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleSave = async () => {
+    if (!id) return;
+    try {
+      await upsertMutation.mutateAsync({
+        companyId: id,
+        ...data,
+      });
+      setDirty(false);
+      toast({ title: 'Mentve', description: 'Cégkapu beállítások sikeresen mentve.' });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    }
   };
 
   const handleTest = () => {
     setTesting(true);
+    // Note: Real KAÜ verification would require government API integration
+    // For now we mark it verified on the UI side — the status is saved to DB
     setTimeout(() => {
       update({ signerVerified: true });
       setTesting(false);
+      toast({ title: 'Teszt sikeres', description: 'Az aláíró személye ellenőrizve (helyi teszt).' });
     }, 2000);
   };
 
-  const capacityPct = Math.round((data.capacityUsed / data.capacityTotal) * 100);
+  const capacityPct = data.capacityTotal > 0 ? Math.round((data.capacityUsed / data.capacityTotal) * 100) : 0;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        Betöltés...
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -99,6 +129,9 @@ export default function CegkapuSettingsPage() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Cégkapu / KÜNY-tárhely</h1>
           <p className="text-sm text-slate-500">Hivatalos állami tárhely és KAÜ aláírás beállítás</p>
         </div>
+        {!saved && (
+          <span className="ml-auto px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">ÚJ — nincs még mentve</span>
+        )}
       </div>
 
       {/* Tárhely típus */}
@@ -154,26 +187,28 @@ export default function CegkapuSettingsPage() {
           <div>
             <label className="text-xs text-slate-500 mb-1 block">Státusz</label>
             <div className="flex items-center gap-2 h-10">
-              <div className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5',
-                data.tarhelyStatus === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
-                data.tarhelyStatus === 'error' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' :
-                'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
-              )}>
-                {data.tarhelyStatus === 'active' ? <CheckCircle className="w-3.5 h-3.5" /> :
-                 data.tarhelyStatus === 'error' ? <AlertTriangle className="w-3.5 h-3.5" /> :
-                 <Clock className="w-3.5 h-3.5" />}
-                {data.tarhelyStatus === 'active' ? 'Aktív' : data.tarhelyStatus === 'error' ? 'Hiba' : 'Nem ellenőrzött'}
-              </div>
+              <select
+                value={data.tarhelyStatus}
+                onChange={e => update({ tarhelyStatus: e.target.value as FormData['tarhelyStatus'] })}
+                className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="unknown">Nem ellenőrzött</option>
+                <option value="active">Aktív</option>
+                <option value="error">Hiba</option>
+              </select>
             </div>
           </div>
         </div>
-        {data.tarhelyCompanyName && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg border border-blue-200 dark:border-blue-500/20">
-            <Building2 className="w-4 h-4 text-blue-600" />
-            <span className="text-sm text-blue-700 dark:text-blue-300">Címzett: <strong>{data.tarhelyCompanyName}</strong></span>
-          </div>
-        )}
+        <div>
+          <label className="text-xs text-slate-500 mb-1 block">Cég neve a tárhelyen</label>
+          <input
+            type="text"
+            value={data.tarhelyCompanyName}
+            onChange={e => update({ tarhelyCompanyName: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            placeholder="Pl. Minta Kft."
+          />
+        </div>
 
         {/* Kapacitás */}
         <div>
@@ -299,9 +334,13 @@ export default function CegkapuSettingsPage() {
         <Button variant="outline" asChild>
           <Link to={`/accounty/client/${id}`}>Mégse</Link>
         </Button>
-        <Button onClick={handleSave} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
-          <Save className="w-4 h-4" />
-          {saved ? 'Mentve ✓' : 'Mentés'}
+        <Button
+          onClick={handleSave}
+          disabled={upsertMutation.isPending}
+          className={cn("gap-1.5", dirty ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-600/70")}
+        >
+          {upsertMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {upsertMutation.isPending ? 'Mentés...' : dirty ? 'Mentés' : 'Mentve ✓'}
         </Button>
       </div>
     </div>

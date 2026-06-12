@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { blockingCategoryMeta, type BlockingCategory, type BlockingItem } from './types';
-import { useAccountyClients, useAccountyMissingItems, useIgnoreMissingItem, useAddMissingItem, useAccountyDeadlines, useAccountyCommunicationPrefs, useUpsertCommunicationPrefs, useCompleteDeadline, useAccountyTaxProfile, useUpsertTaxProfile, useGeneratePortalToken, useCompanyInvoices } from '@/hooks/useAccountyData';
+import { useAccountyClients, useAccountyMissingItems, useIgnoreMissingItem, useAddMissingItem, useAccountyDeadlines, useAccountyCommunicationPrefs, useUpsertCommunicationPrefs, useCompleteDeadline, useAccountyTaxProfile, useUpsertTaxProfile, useGeneratePortalToken, useCompanyInvoices, useAccountyAuditLog, type AuditLogEntry } from '@/hooks/useAccountyData';
 import { useToast } from '@/hooks/use-toast';
 import {
   generateRequestEmail,
@@ -21,6 +21,7 @@ import {
 export default function ClientDetailsPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('Áttekintés');
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [ignoredIds, setIgnoredIds] = useState<Set<string>>(new Set());
@@ -345,6 +346,27 @@ export default function ClientDetailsPage() {
               <UploadCloud className="w-5 h-5 text-slate-400" />
               Riport generálása
             </Button>
+          </div>
+
+          {/* Gyors elérés — korábban csak a Bérszámfejtés fülről volt elérhető */}
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+            {[
+              { label: 'Cégkapu / KÜNY', path: `/accounty/client/${client.id}/cegkapu`, icon: '🏛️' },
+              { label: 'NAV meghatalmazás', path: `/accounty/client/${client.id}/representation`, icon: '📜' },
+              { label: 'Iratkezelés & GDPR', path: `/accounty/client/${client.id}/data-retention`, icon: '📁' },
+              { label: 'NAV bevallások', path: `/accounty/payroll/${client.id}/filings`, icon: '📊' },
+              { label: 'Bérezési struktúra', path: `/accounty/client/${client.id}/structure`, icon: '💰' },
+              { label: 'Paramétertábla', path: `/accounty/payroll/${client.id}/tax-params`, icon: '⚙️' },
+            ].map((link) => (
+              <button
+                key={link.label}
+                onClick={() => navigate(link.path)}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5 transition-all duration-200 group"
+              >
+                <span className="text-xl">{link.icon}</span>
+                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 group-hover:text-primary transition-colors text-center leading-tight">{link.label}</span>
+              </button>
+            ))}
           </div>
 
           {/* 🚨 Zárást blokkoló hiányosságok */}
@@ -707,56 +729,8 @@ export default function ClientDetailsPage() {
           {/* Bottom Section */}
           <div className="grid grid-cols-2 gap-6">
             
-            {/* Recent Activities */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
-              <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100">Legutóbbi tevékenységek</h3>
-                <button className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 flex items-center transition-colors">
-                  Összes <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
-                </button>
-              </div>
-              <div className="p-2 flex-1">
-                <div className="flex items-start gap-4 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 mt-0.5">
-                    <UploadCloud className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">12 számla feltöltve</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">2024.01.15</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-4 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center shrink-0 mt-0.5">
-                    <FileText className="w-4 h-4 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Bérszámfejtés lezárva</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">2024.01.14</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center shrink-0 mt-0.5">
-                    <RefreshCcw className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">NAV szinkronizálás</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">2024.01.13</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center shrink-0 mt-0.5">
-                    <FileCheck className="w-4 h-4 text-amber-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">5 számla kontírozva</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">2024.01.12</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Recent Activities — from audit log */}
+            <RecentActivities companyId={client?.companyId} />
 
             {/* Upcoming Deadlines */}
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
@@ -911,7 +885,10 @@ export default function ClientDetailsPage() {
                       });
                       setNotifSaved(true);
                       setTimeout(() => setNotifSaved(false), 2000);
-                    } catch {}
+                      toast({ title: 'Mentve!', description: 'Kapcsolattartó adatok sikeresen mentve.' });
+                    } catch (err: any) {
+                      toast({ title: 'Hiba történt', description: err?.message || 'A mentés sikertelen.', variant: 'destructive' });
+                    }
                     setNotifSaving(false);
                   }}
                   disabled={notifSaving}
@@ -1087,6 +1064,159 @@ export default function ClientDetailsPage() {
                 >
                   <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                   {link.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Riportok Tab */}
+      {activeTab === 'Riportok' && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+          {/* Summary cards */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-card rounded-xl border border-border p-5 shadow-soft">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Számlák (aktuális hó)</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                {(companyInvoices || []).filter((inv: any) => {
+                  const d = new Date(inv.invoice_date || inv.created_at);
+                  const now = new Date();
+                  return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                }).length}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-1">
+                ebből bejövő: {(companyInvoices || []).filter((inv: any) => {
+                  const d = new Date(inv.invoice_date || inv.created_at);
+                  const now = new Date();
+                  return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && inv.direction === 'incoming';
+                }).length}
+              </p>
+            </div>
+            <div className="bg-card rounded-xl border border-border p-5 shadow-soft">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Hiányzó tételek</p>
+              <p className={cn('text-2xl font-bold', (supabaseMissing || []).length > 0 ? 'text-red-600' : 'text-green-600')}>
+                {(supabaseMissing || []).length}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-1">
+                sürgős: {(supabaseMissing || []).filter((mi: any) => mi.priority === 'urgent').length}
+              </p>
+            </div>
+            <div className="bg-card rounded-xl border border-border p-5 shadow-soft">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Határidők</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                {(companyDeadlines || []).filter((d: any) => d.status === 'pending' || d.status === 'in_progress').length}
+              </p>
+              <p className="text-[10px] text-slate-400 mt-1">
+                aktív / {(companyDeadlines || []).length} összesen
+              </p>
+            </div>
+          </div>
+
+          {/* Missing items by category */}
+          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+            <div className="p-5 border-b border-border">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">Hiányzó tételek kategóriánként</h3>
+            </div>
+            <div className="p-5">
+              {(supabaseMissing || []).length === 0 ? (
+                <div className="text-center py-8 text-slate-400 text-sm">
+                  <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-400" />
+                  Nincs hiányzó tétel — minden rendben!
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {['bejovo', 'kimeno', 'bank', 'ber'].map(cat => {
+                    const items = (supabaseMissing || []).filter((mi: any) => mi.category === cat);
+                    const catLabels: Record<string, string> = { bejovo: 'Bejövő számlák', kimeno: 'Kimenő számlák', bank: 'Banki tételek', ber: 'Bérszámfejtés' };
+                    const catColors: Record<string, string> = { bejovo: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800', kimeno: 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800', bank: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800', ber: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' };
+                    return (
+                      <div key={cat} className={cn('rounded-lg border p-4', catColors[cat])}>
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{catLabels[cat]}</p>
+                        <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{items.length}</p>
+                        {items.filter((mi: any) => mi.priority === 'urgent').length > 0 && (
+                          <p className="text-[10px] text-red-500 mt-0.5">{items.filter((mi: any) => mi.priority === 'urgent').length} sürgős</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Invoice breakdown */}
+          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+            <div className="p-5 border-b border-border">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">Számla forgalom (utolsó 6 hónap)</h3>
+            </div>
+            <div className="p-5">
+              {(() => {
+                const now = new Date();
+                const months: { label: string; incoming: number; outgoing: number }[] = [];
+                for (let i = 5; i >= 0; i--) {
+                  const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                  const label = d.toLocaleDateString('hu-HU', { month: 'short' });
+                  const incoming = (companyInvoices || []).filter((inv: any) => {
+                    const id = new Date(inv.invoice_date || inv.created_at);
+                    return id.getMonth() === d.getMonth() && id.getFullYear() === d.getFullYear() && inv.direction === 'incoming';
+                  }).length;
+                  const outgoing = (companyInvoices || []).filter((inv: any) => {
+                    const id = new Date(inv.invoice_date || inv.created_at);
+                    return id.getMonth() === d.getMonth() && id.getFullYear() === d.getFullYear() && inv.direction === 'outgoing';
+                  }).length;
+                  months.push({ label, incoming, outgoing });
+                }
+                const maxVal = Math.max(1, ...months.map(m => Math.max(m.incoming, m.outgoing)));
+                return (
+                  <div className="flex items-end gap-3 h-32">
+                    {months.map((m, i) => (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                        <div className="w-full flex gap-0.5 items-end justify-center h-24">
+                          <div className="w-3 bg-blue-400 dark:bg-blue-500 rounded-t transition-all" style={{ height: `${(m.incoming / maxVal) * 100}%`, minHeight: m.incoming > 0 ? '4px' : '0px' }} />
+                          <div className="w-3 bg-purple-400 dark:bg-purple-500 rounded-t transition-all" style={{ height: `${(m.outgoing / maxVal) * 100}%`, minHeight: m.outgoing > 0 ? '4px' : '0px' }} />
+                        </div>
+                        <span className="text-[10px] text-slate-400">{m.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+              <div className="flex items-center justify-center gap-4 mt-3">
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                  <div className="w-2 h-2 bg-blue-400 rounded" /> Bejövő
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                  <div className="w-2 h-2 bg-purple-400 rounded" /> Kimenő
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick links to reports */}
+          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+            <div className="p-5 border-b border-border">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">Részletes riportok</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-3 p-5">
+              {[
+                { label: 'Hiányzó számlák riport', path: '/accounty/reports/missing-invoices', icon: FileWarning },
+                { label: 'AI Anomália riport', path: '/accounty/reports/ai-anomaly', icon: AlertTriangle },
+                { label: 'Összes riport', path: '/accounty/reports', icon: FileText },
+              ].map(link => (
+                <button
+                  key={link.path}
+                  onClick={() => navigate(link.path)}
+                  className="flex items-center gap-3 p-4 rounded-lg border border-border hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors text-left group"
+                >
+                  <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                    <link.icon className="w-4 h-4 text-slate-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors">{link.label}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary transition-colors" />
                 </button>
               ))}
             </div>
@@ -1551,6 +1681,90 @@ export default function ClientDetailsPage() {
         </div>
       )}
 
+    </div>
+  );
+}
+
+// ── RecentActivities: real data from accounty_audit_log ──
+
+const ACTION_META: Record<string, { label: string; icon: React.ElementType; bg: string; iconColor: string }> = {
+  create_client:     { label: 'Ügyfél létrehozva',        icon: Plus,        bg: 'bg-emerald-50 dark:bg-emerald-900/30', iconColor: 'text-emerald-600' },
+  resolve_missing:   { label: 'Hiányzó bizonylat rendezve', icon: CheckCircle2, bg: 'bg-emerald-50 dark:bg-emerald-900/30', iconColor: 'text-emerald-600' },
+  complete_deadline: { label: 'Határidő teljesítve',      icon: CheckCircle2, bg: 'bg-emerald-50 dark:bg-emerald-900/30', iconColor: 'text-emerald-600' },
+  generate_report:   { label: 'Riport generálva',         icon: FileText,    bg: 'bg-blue-50 dark:bg-blue-900/30',      iconColor: 'text-blue-600' },
+  upload_invoice:    { label: 'Számla feltöltve',          icon: UploadCloud, bg: 'bg-slate-100 dark:bg-slate-800',      iconColor: 'text-slate-600 dark:text-slate-400' },
+  nav_sync:          { label: 'NAV szinkronizálás',        icon: RefreshCcw,  bg: 'bg-blue-50 dark:bg-blue-900/30',      iconColor: 'text-blue-600' },
+  contiroz:          { label: 'Számla kontírozva',         icon: FileCheck,   bg: 'bg-amber-50 dark:bg-amber-900/30',    iconColor: 'text-amber-600' },
+  send_notification: { label: 'Értesítés küldve',          icon: Bell,        bg: 'bg-violet-50 dark:bg-violet-900/30',  iconColor: 'text-violet-600' },
+  add_missing:       { label: 'Hiányzó bizonylat rögzítve', icon: AlertTriangle, bg: 'bg-red-50 dark:bg-red-900/30',     iconColor: 'text-red-500' },
+  ignore_missing:    { label: 'Bizonylat figyelmen kívül hagyva', icon: EyeOff, bg: 'bg-slate-100 dark:bg-slate-800',   iconColor: 'text-slate-500' },
+  generate_portal:   { label: 'Portál link generálva',     icon: Link2,       bg: 'bg-blue-50 dark:bg-blue-900/30',      iconColor: 'text-blue-600' },
+  update_prefs:      { label: 'Kommunikációs beállítás frissítve', icon: Settings, bg: 'bg-slate-100 dark:bg-slate-800', iconColor: 'text-slate-500' },
+  update_tax:        { label: 'Adóprofil módosítva',       icon: Wrench,      bg: 'bg-amber-50 dark:bg-amber-900/30',    iconColor: 'text-amber-600' },
+};
+
+const DEFAULT_META = { label: 'Tevékenység', icon: Clock, bg: 'bg-slate-100 dark:bg-slate-800', iconColor: 'text-slate-500' };
+
+function RecentActivities({ companyId }: { companyId?: string }) {
+  const { data: allLogs, isLoading } = useAccountyAuditLog(50);
+
+  const logs = useMemo(() => {
+    if (!allLogs) return [];
+    const filtered = companyId
+      ? allLogs.filter(l => l.companyId === companyId)
+      : allLogs;
+    return filtered.slice(0, 6);
+  }, [allLogs, companyId]);
+
+  const formatDate = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    } catch { return iso; }
+  };
+
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
+      <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+        <h3 className="font-semibold text-slate-900 dark:text-slate-100">Legutóbbi tevékenységek</h3>
+        {logs.length > 0 && (
+          <span className="text-[10px] font-bold text-slate-400 uppercase">{logs.length} bejegyzés</span>
+        )}
+      </div>
+      <div className="p-2 flex-1">
+        {isLoading && (
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+          </div>
+        )}
+        {!isLoading && logs.length === 0 && (
+          <div className="text-center py-6">
+            <Clock className="w-6 h-6 mx-auto mb-2 text-slate-300" />
+            <p className="text-sm text-slate-400">Még nincs tevékenység</p>
+          </div>
+        )}
+        {logs.map(log => {
+          const meta = ACTION_META[log.action] || DEFAULT_META;
+          const Icon = meta.icon;
+          const detailText = log.details?.description || log.details?.item_title || log.details?.deadline_title || '';
+          return (
+            <div key={log.id} className="flex items-start gap-4 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors">
+              <div className={cn('w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5', meta.bg)}>
+                <Icon className={cn('w-4 h-4', meta.iconColor)} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                  {meta.label}
+                  {detailText && <span className="font-normal text-slate-500"> — {detailText}</span>}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {formatDate(log.createdAt)}
+                  {log.userName && log.userName !== 'Ismeretlen' && <span className="ml-1.5">· {log.userName}</span>}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

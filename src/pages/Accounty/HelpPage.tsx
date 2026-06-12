@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   HelpCircle, BookOpen, Keyboard, MessageCircle, ChevronDown, ChevronRight,
   FileWarning, Calendar, BarChart2, Settings, Briefcase, Search, Mail, Phone,
@@ -466,10 +467,10 @@ export default function HelpPage() {
                 Kapcsolat
               </h3>
               <div className="space-y-3">
-                <a href="mailto:support@taxology.hu" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors group">
+                <a href="mailto:support@accounty.hu" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors group">
                   <Mail className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   <div>
-                    <p className="text-sm font-medium text-foreground">support@taxology.hu</p>
+                    <p className="text-sm font-medium text-foreground">support@accounty.hu</p>
                     <p className="text-xs text-muted-foreground">Email támogatás</p>
                   </div>
                 </a>
@@ -497,10 +498,10 @@ export default function HelpPage() {
                   <span className="text-muted-foreground">Utolsó frissítés</span>
                   <span className="font-semibold text-foreground">{new Date().toLocaleDateString('hu-HU')}</span>
                 </div>
-                <a href="#" className="flex items-center gap-2 p-3 rounded-lg hover:bg-accent/50 transition-colors text-muted-foreground hover:text-primary">
+                <Link to="/accounty/privacy-policy" className="flex items-center gap-2 p-3 rounded-lg hover:bg-accent/50 transition-colors text-muted-foreground hover:text-primary">
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Adatvédelmi tájékoztató</span>
-                </a>
+                </Link>
               </div>
             </div>
           </div>

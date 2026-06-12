@@ -2,48 +2,12 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Plus, Shield, Clock, CheckCircle, AlertTriangle,
-  ChevronRight, X, Calendar, Users, Eye, Trash2
+  ChevronRight, X, Calendar, Users, Trash2, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-
-interface Representation {
-  id: string;
-  type: 'person' | 'organization';
-  name: string;
-  taxId: string;
-  scope: 'all' | 'payroll' | 'custom';
-  scopeDetails?: string;
-  startDate: string;
-  endDate: string | null;
-  status: 'active' | 'expired' | 'revoked';
-  registrationNumber?: string;
-}
-
-const MOCK_REPS: Representation[] = [
-  {
-    id: '1',
-    type: 'organization',
-    name: 'Accounty Könyvelőiroda Kft.',
-    taxId: '12345678-2-41',
-    scope: 'all',
-    startDate: '2024-01-15',
-    endDate: null,
-    status: 'active',
-    registrationNumber: 'UJ-2024-001234',
-  },
-  {
-    id: '2',
-    type: 'person',
-    name: 'Kovács Péter',
-    taxId: '8765432109',
-    scope: 'payroll',
-    startDate: '2023-06-01',
-    endDate: '2025-12-31',
-    status: 'expired',
-    registrationNumber: 'UJ-2023-005678',
-  },
-];
+import { useNavRepresentations, useAddNavRepresentation, useRevokeNavRepresentation, type NavRepresentation } from '@/hooks/useAccountyData';
+import { useToast } from '@/hooks/use-toast';
 
 // Wizard steps
 const WIZARD_STEPS = [
@@ -73,9 +37,14 @@ const SCOPE_OPTIONS = [
 
 export default function RepresentationPage() {
   const { id } = useParams<{ id: string }>();
-  const [reps, setReps] = useState(MOCK_REPS);
+  const { toast } = useToast();
+  const { data: reps, isLoading } = useNavRepresentations(id || '');
+  const addMutation = useAddNavRepresentation();
+  const revokeMutation = useRevokeNavRepresentation();
+  
   const [showWizard, setShowWizard] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
+  const [confirmed, setConfirmed] = useState(false);
   const [wizardData, setWizardData] = useState<WizardData>({
     type: 'organization',
     name: '',
@@ -87,8 +56,21 @@ export default function RepresentationPage() {
     indefinite: true,
   });
 
-  const activeReps = reps.filter(r => r.status === 'active');
-  const inactiveReps = reps.filter(r => r.status !== 'active');
+  // Step validation
+  const isStepValid = (step: number): boolean => {
+    switch (step) {
+      case 1: return wizardData.name.trim().length >= 2 && wizardData.taxId.trim().length >= 8;
+      case 2: return wizardData.scope !== 'custom' || wizardData.customScopes.length > 0;
+      case 3: return !!wizardData.startDate && (wizardData.indefinite || !!wizardData.endDate);
+      case 4: return true; // preview, always valid
+      case 5: return confirmed;
+      default: return true;
+    }
+  };
+
+  const allReps = reps || [];
+  const activeReps = allReps.filter(r => r.status === 'active');
+  const inactiveReps = allReps.filter(r => r.status !== 'active');
 
   const updateWizard = (patch: Partial<WizardData>) => setWizardData(d => ({ ...d, ...patch }));
 
@@ -99,26 +81,42 @@ export default function RepresentationPage() {
     }));
   };
 
-  const handleSubmit = () => {
-    const newRep: Representation = {
-      id: String(Date.now()),
-      type: wizardData.type,
-      name: wizardData.name,
-      taxId: wizardData.taxId,
-      scope: wizardData.scope,
-      scopeDetails: wizardData.scope === 'custom' ? wizardData.customScopes.join(', ') : undefined,
-      startDate: wizardData.startDate,
-      endDate: wizardData.indefinite ? null : wizardData.endDate,
-      status: 'active',
-      registrationNumber: `UJ-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 999999)).padStart(6, '0')}`,
-    };
-    setReps(prev => [newRep, ...prev]);
-    setShowWizard(false);
-    setWizardStep(1);
+  const handleSubmit = async () => {
+    if (!id) return;
+    try {
+      await addMutation.mutateAsync({
+        companyId: id,
+        repType: wizardData.type,
+        name: wizardData.name,
+        taxId: wizardData.taxId,
+        scope: wizardData.scope,
+        scopeDetails: wizardData.scope === 'custom' ? wizardData.customScopes.join(', ') : null,
+        startDate: wizardData.startDate,
+        endDate: wizardData.indefinite ? null : wizardData.endDate,
+        status: 'active',
+        registrationNumber: `UJ-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 999999)).padStart(6, '0')}`,
+      });
+      toast({ title: 'Meghatalmazás létrehozva', description: `${wizardData.name} hozzáadva.` });
+      setShowWizard(false);
+      setWizardStep(1);
+      setConfirmed(false);
+      setWizardData({
+        type: 'organization', name: '', taxId: '', scope: 'all',
+        customScopes: [], startDate: new Date().toISOString().split('T')[0],
+        endDate: '', indefinite: true,
+      });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    }
   };
 
-  const handleRevoke = (repId: string) => {
-    setReps(prev => prev.map(r => r.id === repId ? { ...r, status: 'revoked' as const } : r));
+  const handleRevoke = async (rep: NavRepresentation) => {
+    try {
+      await revokeMutation.mutateAsync({ id: rep.id, companyId: rep.companyId });
+      toast({ title: 'Visszavonva', description: `${rep.name} meghatalmazása visszavonva.` });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    }
   };
 
   const renderWizardContent = () => {
@@ -282,24 +280,50 @@ export default function RepresentationPage() {
         );
       case 5:
         return (
-          <div className="space-y-4 text-center py-6">
-            <div className="p-4 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl inline-block">
-              <CheckCircle className="w-12 h-12 text-emerald-600" />
+          <div className="space-y-5 py-4">
+            <div className="text-center">
+              <div className="p-4 bg-amber-50 dark:bg-amber-500/10 rounded-xl inline-block">
+                <Shield className="w-12 h-12 text-amber-600" />
+              </div>
+              <h3 className="text-lg font-bold mt-3">AVDH aláírás és beküldés</h3>
+              <p className="text-sm text-slate-500 max-w-md mx-auto mt-1">
+                A meghatalmazás aláírásra és beküldésre kész. Az aláíró személynek hitelesítenie kell magát a kiválasztott KAÜ szolgáltatón keresztül.
+              </p>
             </div>
-            <h3 className="text-lg font-bold">AVDH aláírás és beküldés</h3>
-            <p className="text-sm text-slate-500 max-w-md mx-auto">
-              A meghatalmazás aláírásra és beküldésre kész. Az aláíró személynek hitelesítenie kell magát a kiválasztott KAÜ szolgáltatón keresztül.
-            </p>
-            <Button onClick={handleSubmit} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 mt-4">
-              <Shield className="w-4 h-4" />
-              Aláírás és beküldés
-            </Button>
+
+            <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-300">
+              <AlertTriangle className="w-4 h-4 inline mr-1.5" />
+              <strong>Figyelem:</strong> Éles környezetben ez az aláírás a NAV AVDH rendszerén keresztül történik. Jelenleg a meghatalmazás rögzítése az Accounty nyilvántartásba történik, nem kerül beküldésre a NAV felé.
+            </div>
+
+            <label className="flex items-start gap-3 p-4 rounded-xl border-2 border-border hover:border-indigo-300 transition-all cursor-pointer">
+              <input
+                type="checkbox"
+                checked={confirmed}
+                onChange={e => setConfirmed(e.target.checked)}
+                className="mt-0.5 rounded"
+              />
+              <span className="text-sm text-slate-700 dark:text-slate-300">
+                Kijelentem, hogy az adatokat ellenőriztem, és hozzájárulok a meghatalmazás rögzítéséhez az Accounty rendszerben.
+              </span>
+            </label>
+
+            <div className="text-center">
+              <Button
+                onClick={handleSubmit}
+                disabled={addMutation.isPending || !confirmed}
+                className={cn("gap-1.5 mt-2", confirmed ? "bg-emerald-600 hover:bg-emerald-700" : "bg-slate-400 cursor-not-allowed")}
+              >
+                {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+                {addMutation.isPending ? 'Rögzítés...' : 'Megerősítés és rögzítés'}
+              </Button>
+            </div>
           </div>
         );
     }
   };
 
-  const renderRepCard = (rep: Representation) => (
+  const renderRepCard = (rep: NavRepresentation) => (
     <div key={rep.id} className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
       <div className={cn(
         'w-10 h-10 rounded-xl flex items-center justify-center',
@@ -307,7 +331,7 @@ export default function RepresentationPage() {
         rep.status === 'revoked' ? 'bg-red-100 dark:bg-red-500/20' :
         'bg-slate-100 dark:bg-slate-700'
       )}>
-        {rep.type === 'organization' ? <Users className="w-5 h-5 text-current" /> : <FileText className="w-5 h-5 text-current" />}
+        {rep.repType === 'organization' ? <Users className="w-5 h-5 text-current" /> : <FileText className="w-5 h-5 text-current" />}
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{rep.name}</p>
@@ -332,13 +356,28 @@ export default function RepresentationPage() {
       </div>
       <div className="flex items-center gap-1">
         {rep.status === 'active' && (
-          <Button variant="ghost" size="sm" onClick={() => handleRevoke(rep.id)} className="text-red-500 hover:text-red-600 hover:bg-red-50">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleRevoke(rep)}
+            disabled={revokeMutation.isPending}
+            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+          >
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
         )}
       </div>
     </div>
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        Betöltés...
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -432,7 +471,7 @@ export default function RepresentationPage() {
                 <Button variant="outline" onClick={() => setWizardStep(s => Math.max(1, s - 1))} disabled={wizardStep === 1}>
                   Vissza
                 </Button>
-                <Button onClick={() => setWizardStep(s => s + 1)} className="gap-1.5">
+                <Button onClick={() => setWizardStep(s => s + 1)} disabled={!isStepValid(wizardStep)} className="gap-1.5">
                   Tovább <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
