@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Clock, FileText, CreditCard, CheckCircle, Calendar, Search, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { ExportButton } from '@/components/accounty/ExportButton';
 
 interface Deadline {
   id: string;
@@ -115,6 +116,14 @@ export default function NavDeadlinesPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">NAV határidők</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">Bejelentési, bevallási és befizetési naptár</p>
+        </div>
+        <div className="ml-auto">
+          <ExportButton
+            filename={`nav_hataridok_${new Date().getFullYear()}`}
+            headers={['Dátum', 'Határidő', 'Típus', 'Leírás', 'Státusz']}
+            getRows={() => filtered.map(d => [d.date, d.title, TYPE_CONFIG[d.type]?.label || '', d.description, d.status === 'completed' ? 'Teljesítve' : d.status === 'due_today' ? 'Ma esedékes' : d.status === 'overdue' ? 'Lejárt' : 'Közelgő'])}
+            size="sm"
+          />
         </div>
       </div>
 

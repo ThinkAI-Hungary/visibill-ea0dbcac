@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAccountyDocuments, type AccountyDocument } from '@/hooks/useAccountyData';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function EPayslipPortalPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +19,7 @@ export default function EPayslipPortalPage() {
 
   const { data: docs, isLoading } = useAccountyDocuments(id || '', 'payslip');
   const slips = docs || [];
+  const queryClient = useQueryClient();
 
   const toggleSelect = (docId: string) => {
     setSelectedIds(prev => {
@@ -45,7 +48,24 @@ export default function EPayslipPortalPage() {
             <p className="text-sm text-slate-500">Elektronikus bérjegyzék hozzáférhetővé tétel — Mt. 155. § (3)</p>
           </div>
         </div>
-        <Button onClick={() => { setSending(true); toast({ title: 'E-bérjegyzékek kiküldve ', description: `${selectedIds.size || slips.length} bérjegyzék elküldve.` }); setTimeout(() => setSending(false), 2000); }} disabled={sending || slips.length === 0} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
+        <Button onClick={async () => {
+          setSending(true);
+          try {
+            const idsToSend = selectedIds.size > 0 ? Array.from(selectedIds) : slips.map(s => s.id);
+            const { error } = await supabase
+              .from('accounty_documents')
+              .update({ status: 'sent', updated_at: new Date().toISOString() })
+              .in('id', idsToSend);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['accounty', 'documents'] });
+            toast({ title: 'E-bérjegyzékek kiküldve', description: `${idsToSend.length} bérjegyzék elküldve.` });
+            setSelectedIds(new Set());
+          } catch (err: any) {
+            toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+          } finally {
+            setSending(false);
+          }
+        }} disabled={sending || slips.length === 0} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
           {sending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           {sending ? 'Küldés...' : `Kiküldés (${selectedIds.size || 'mind'})`}
         </Button>

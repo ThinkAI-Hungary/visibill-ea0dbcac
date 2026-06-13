@@ -8,6 +8,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { ExportButton } from '@/components/accounty/ExportButton';
+import { exportPdf } from '@/lib/exportPdf';
 import {
   useYearEndTasks, useUpdateYearEndTask, useSeedYearEndTasks,
   type YearEndTask,
@@ -75,6 +77,19 @@ export default function YearEndDashboardPage() {
         <div>
           <h1 className="text-2xl font-bold">Év végi feladatok — {currentYear}</h1>
           <p className="text-sm text-slate-500">Bérszámfejtési éves zárás teendők és határidők</p>
+        </div>
+        <div className="flex gap-2">
+          <ExportButton
+            filename={`evvegi_feladatok_${currentYear}`}
+            headers={['Feladat', 'Státusz', 'Határidő', 'Haladás']}
+            getRows={() => taskList.map(t => [t.title, STATUS_BADGE[t.status].label, t.deadline || '', `${t.checklist.filter(c => c.done).length}/${t.checklist.length}`])}
+            size="sm"
+          />
+          <Button variant="outline" className="gap-1.5" onClick={() => exportPdf(`evvegi_${currentYear}`, {
+            title: `Év végi feladatok — ${currentYear}`,
+            headers: ['Feladat', 'Státusz', 'Határidő', 'Haladás', 'Jogszabály'],
+            rows: taskList.map(t => [t.title, STATUS_BADGE[t.status].label, t.deadline || '–', `${t.checklist.filter(c => c.done).length}/${t.checklist.length}`, t.legalRef || '']),
+          })}><Download className="w-4 h-4" /> PDF</Button>
         </div>
       </div>
 
@@ -158,7 +173,14 @@ export default function YearEndDashboardPage() {
                       ))}
                       {task.outputLabel && (
                         <div className="flex justify-end pt-2">
-                          <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => window.print()}><Download className="w-3 h-3" /> {task.outputLabel}</Button>
+                          <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => {
+                            exportPdf(`evvegi_${task.title.replace(/\s+/g, '_')}`, {
+                              title: task.title,
+                              subtitle: task.subtitle,
+                              headers: ['Feladat', 'Kész'],
+                              rows: task.checklist.map(c => [c.item, c.done ? 'Igen' : 'Nem']),
+                            });
+                          }}><Download className="w-3 h-3" /> {task.outputLabel}</Button>
                         </div>
                       )}
                     </div>

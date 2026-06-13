@@ -5,6 +5,7 @@ import {
   AlertTriangle, Search, Plus, Loader2, Send, XCircle, Filter
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ExportButton } from '@/components/accounty/ExportButton';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import {
@@ -15,6 +16,7 @@ import { useAccountyClients } from '@/hooks/useAccountyData';
 import { generateFiling08Xml, downloadXml, type Filing08Data, type Filing08EmployeeLine } from '@/lib/payroll/filingGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 const FILING_TYPES: Record<string, { label: string; color: string; desc: string }> = {
   '08': { label: '08-as bevallás', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400', desc: 'Havi foglalkoztatói bevallás' },
@@ -37,6 +39,7 @@ export default function FilingsPage() {
   const { id: companyId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
@@ -158,12 +161,12 @@ export default function FilingsPage() {
         .from('accounty_filings')
         .insert({
           company_id: companyId,
-          filing_type: '08',
+          filing_type: '08e',
           period_year: genYear,
           period_month: genMonth,
           status: 'generated',
           xml_data: xml,
-          channel: 'manual',
+          channel: 'onya',
         });
 
       if (saveErr) throw saveErr;
@@ -173,6 +176,7 @@ export default function FilingsPage() {
 
       toast({ title: 'Siker', description: '08-as bevallás generálva és letöltve.' });
       setShowGenPanel(false);
+      queryClient.invalidateQueries({ queryKey: ['payroll', 'filings', companyId] });
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Generálási hiba', description: err.message });
     } finally {
@@ -232,6 +236,18 @@ export default function FilingsPage() {
           >
             <Plus className="w-4 h-4" /> Új bevallás
           </Button>
+          <ExportButton
+            filename={`bevallasok_${company?.name || 'ceg'}`}
+            headers={['Típus', 'Időszak', 'Státusz', 'NAV azonosító', 'Beküldve']}
+            getRows={() => filteredFilings.map(f => [
+              FILING_TYPES[f.filing_type]?.label || f.filing_type,
+              `${f.period_year}/${f.period_month ? String(f.period_month).padStart(2, '0') : '-'}`,
+              STATUS_MAP[f.status]?.label || f.status,
+              f.nav_receipt_id || '-',
+              f.submitted_at ? new Date(f.submitted_at).toLocaleDateString('hu-HU') : '-',
+            ])}
+            size="sm"
+          />
         </div>
       </div>
 
@@ -367,7 +383,7 @@ export default function FilingsPage() {
                   const StatusIcon = statusInfo.icon;
 
                   return (
-                    <tr key={filing.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <tr key={filing.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" onClick={() => navigate(`/accounty/payroll/${companyId}/filings/${filing.id}/workflow`)}>
                       <td className="px-5 py-3">
                         <span className={cn('px-2.5 py-1 rounded-full text-[10px] font-bold uppercase', typeInfo.color)}>
                           {typeInfo.label}

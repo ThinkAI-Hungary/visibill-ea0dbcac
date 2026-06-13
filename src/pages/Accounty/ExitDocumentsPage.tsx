@@ -7,6 +7,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useEmployeeJobs } from '@/hooks/useAccountyData';
+import { ExportButton } from '@/components/accounty/ExportButton';
+import { exportPdf } from '@/lib/exportPdf';
 
 interface ExitDocument {
   id: string;
@@ -65,8 +67,19 @@ export default function ExitDocumentsPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-1.5"><Printer className="w-4 h-4" /> Nyomtatás</Button>
-          <Button className="gap-1.5 bg-red-600 hover:bg-red-700" onClick={() => window.print()}><Download className="w-4 h-4" /> Teljes csomag (ZIP)</Button>
+          <ExportButton
+            filename={`kilepo_csomag_${empLabel}`}
+            headers={['Dokumentum', 'Jogszabály', 'Státusz', 'Kötelező']}
+            getRows={() => docs.map(d => [d.title, d.legalRef, STATUS_BADGE[d.status].label, d.required ? 'Igen' : 'Nem'])}
+            size="sm"
+          />
+          <Button variant="outline" className="gap-1.5" onClick={() => window.print()}><Printer className="w-4 h-4" /> Nyomtatás</Button>
+          <Button className="gap-1.5 bg-red-600 hover:bg-red-700" onClick={() => exportPdf(`kilepo_csomag`, {
+            title: 'Kilépő dokumentumcsomag',
+            subtitle: empLabel,
+            headers: ['Dokumentum', 'Jogszabály', 'Leírás', 'Kötelező', 'Státusz'],
+            rows: docs.map(d => [d.title, d.legalRef, d.description, d.required ? 'Igen' : 'Nem', STATUS_BADGE[d.status].label]),
+          })}><Download className="w-4 h-4" /> Teljes csomag (PDF)</Button>
         </div>
       </div>
 

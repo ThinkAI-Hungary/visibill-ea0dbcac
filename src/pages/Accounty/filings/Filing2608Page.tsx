@@ -1,30 +1,86 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
 import {
-  ArrowLeft, FileText, Download, Send, CheckCircle, Clock,
-  AlertTriangle, Loader2, Database, Users
+  ArrowLeft, FileText, Download, Send, Clock,
+  Loader2, Database, Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ExportButton } from '@/components/accounty/ExportButton';
 import { cn } from '@/lib/utils';
-import { useFilings, type Filing } from '@/hooks/useAccountyData';
+import {
+  usePayrollCycles, usePayrollCalculations, usePayrollEmployees
+} from '@/hooks/usePayrollData';
+import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useToast } from '@/hooks/use-toast';
 
 const fmt = (n: number) => n.toLocaleString('hu-HU') + ' Ft';
-
-const STATUS_BADGE: Record<string, { label: string; color: string }> = {
-  draft: { label: 'Piszkozat', color: 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400' },
-  ready: { label: 'Ellenőrizendő', color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' },
-  submitted: { label: 'Beküldve', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' },
-  accepted: { label: 'Elfogadva', color: 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' },
-};
+const MONTHS = ['Jan', 'Feb', 'Már', 'Ápr', 'Máj', 'Jún', 'Júl', 'Aug', 'Szep', 'Okt', 'Nov', 'Dec'];
 
 export default function Filing2608Page() {
-  const { id } = useParams<{ id: string }>();
-  const [period, setPeriod] = useState(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`);
-  const { data: filings, isLoading } = useFilings(id || '', '2608');
+  const { id: companyId } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
-  const currentFiling = (filings || []).find(f => f.period === period);
-  const alapRows = (currentFiling?.data?.alapRows || []) as { key: string; label: string; amount: number }[];
-  const mlapRows = (currentFiling?.data?.mlapRows || []) as { name: string; tajNumber: string; grossSalary: number; netSalary: number }[];
+  const { data: clients } = useAccountyClients();
+  const { data: cycles = [] } = usePayrollCycles(companyId || '');
+  const { data: employees = [] } = usePayrollEmployees(companyId || '');
+
+  const company = useMemo(() => clients?.find(c => c.id === companyId), [clients, companyId]);
+
+  // Find matching cycle
+  const cycle = useMemo(
+    () => cycles.find(c => c.year === selectedYear && c.month === selectedMonth),
+    [cycles, selectedYear, selectedMonth]
+  );
+
+  const { data: calculations = [], isLoading } = usePayrollCalculations(cycle?.id || '');
+
+  // Build A-lap summary from calculations
+  const alapData = useMemo(() => {
+    if (calculations.length === 0) return [];
+    const totalGross = calculations.reduce((s, c) => s + (c.gross_salary || 0), 0);
+    const totalSzja = calculations.reduce((s, c) => s + (c.szja_amount || 0), 0);
+    const totalTb = calculations.reduce((s, c) => s + (c.tb_amount || 0), 0);
+    const totalSzocho = calculations.reduce((s, c) => s + (c.szocho_amount || 0), 0);
+    const totalNet = calculations.reduce((s, c) => s + (c.net_salary || 0), 0);
+    const totalDeductions = calculations.reduce((s, c) => s + (c.total_deductions || 0), 0);
+
+    return [
+      { label: 'Biztosítottak száma', amount: calculations.length, isCnt: true },
+      { label: 'Bruttó bér összesen', amount: totalGross },
+      { label: 'Személyi jövedelemadó (SZJA 15%)', amount: totalSzja },
+      { label: 'TB járulék (18,5%)', amount: totalTb },
+      { label: 'Szociális hozzájárulási adó (SZOCHO 13%)', amount: totalSzocho },
+      { label: 'Levonások összesen', amount: totalDeductions },
+      { label: 'Nettó bér összesen', amount: totalNet },
+      { label: 'Fizetendő közteher összesen', amount: totalSzja + totalTb + totalSzocho },
+    ];
+  }, [calculations]);
+
+  // Build M-lap rows from calculations
+  const mlapRows = useMemo(() => {
+    return calculations.map((calc) => {
+      const meta = calc.metadata as any;
+      const emp = employees.find(e => e.id === meta?.employee_id);
+      return {
+        id: calc.id,
+        name: meta?.employee_name || `${emp?.last_name || ''} ${emp?.first_name || ''}`.trim() || '–',
+        tajNumber: emp?.taj_number || '–',
+        grossSalary: calc.gross_salary || 0,
+        szja: calc.szja_amount || 0,
+        tb: calc.tb_amount || 0,
+        szocho: calc.szocho_amount || 0,
+        netSalary: calc.net_salary || 0,
+        deductions: calc.total_deductions || 0,
+      };
+    });
+  }, [calculations, employees]);
+
+  const handleNavSubmit = () => {
+    toast({ title: 'Demo mód', description: 'A NAV beküldés éles környezetben az ÁNYK/ONYA integráción keresztül történik.' });
+  };
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -34,98 +90,155 @@ export default function Filing2608Page() {
           <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg"><FileText className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">2608-as bevallás</h1>
-            <p className="text-sm text-slate-500">Havi járulékbevallás</p>
+            <p className="text-sm text-slate-500">{company?.name || '–'} — Havi járulékbevallás</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <input type="month" value={period} onChange={e => setPeriod(e.target.value)} className="px-3 py-2 rounded-lg border border-border bg-background text-sm" />
+          <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))} className="px-3 py-2 rounded-lg border border-border bg-card text-sm">
+            {[2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <select value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))} className="px-3 py-2 rounded-lg border border-border bg-card text-sm">
+            {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+          </select>
+          <ExportButton
+            filename={`2608_${company?.name || 'ceg'}_${selectedYear}_${String(selectedMonth).padStart(2, '0')}`}
+            headers={['Név', 'TAJ', 'Bruttó (Ft)', 'SZJA (Ft)', 'TB (Ft)', 'SZOCHO (Ft)', 'Nettó (Ft)']}
+            getRows={() => mlapRows.map(r => [r.name, r.tajNumber, r.grossSalary, r.szja, r.tb, r.szocho, r.netSalary])}
+            size="sm"
+          />
         </div>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>
-      ) : !currentFiling ? (
+      ) : calculations.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center space-y-3">
           <Database className="w-10 h-10 mx-auto text-slate-400" />
-          <p className="text-sm text-slate-500">Nincs bevallás a kiválasztott időszakra ({period}).</p>
+          <p className="text-sm text-slate-500">Nincs számfejtett adat a kiválasztott időszakra ({selectedYear}. {MONTHS[selectedMonth - 1]}).</p>
           <p className="text-xs text-slate-400">A bevallás a számfejtés véglegesítése után kerül generálásra.</p>
         </div>
       ) : (
         <>
-          {/* Status */}
-          <div className="flex items-center gap-3">
-            <span className={cn('px-3 py-1 rounded-full text-xs font-bold', STATUS_BADGE[currentFiling.status]?.color)}>{STATUS_BADGE[currentFiling.status]?.label}</span>
-            {currentFiling.submittedAt && <span className="text-xs text-slate-400">Beküldve: {new Date(currentFiling.submittedAt).toLocaleDateString('hu-HU')}</span>}
-          </div>
-
           {/* Summary cards */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             <div className="bg-card rounded-xl border border-border p-4 text-center">
               <p className="text-[10px] text-slate-400 uppercase font-bold">Biztosítottak</p>
-              <p className="text-2xl font-bold text-blue-600">{mlapRows.length}</p>
+              <p className="text-2xl font-bold text-blue-600">{calculations.length}</p>
             </div>
             <div className="bg-card rounded-xl border border-border p-4 text-center">
               <p className="text-[10px] text-slate-400 uppercase font-bold">Bruttó összesen</p>
-              <p className="text-lg font-bold font-mono">{fmt(alapRows.find(r => r.key === 'gross_total')?.amount || 0)}</p>
+              <p className="text-lg font-bold font-mono">{fmt(calculations.reduce((s, c) => s + (c.gross_salary || 0), 0))}</p>
             </div>
             <div className="bg-card rounded-xl border border-border p-4 text-center">
-              <p className="text-[10px] text-slate-400 uppercase font-bold">Családi kedvezmény</p>
-              <p className="text-lg font-bold font-mono text-emerald-600">{fmt(alapRows.find(r => r.key === 'family_benefit')?.amount || 0)}</p>
+              <p className="text-[10px] text-slate-400 uppercase font-bold">Fizetendő közteher</p>
+              <p className="text-lg font-bold font-mono text-red-600">{fmt(calculations.reduce((s, c) => s + (c.szja_amount || 0) + (c.tb_amount || 0) + (c.szocho_amount || 0), 0))}</p>
+            </div>
+            <div className="bg-card rounded-xl border border-border p-4 text-center">
+              <p className="text-[10px] text-slate-400 uppercase font-bold">Nettó összesen</p>
+              <p className="text-lg font-bold font-mono text-green-600">{fmt(calculations.reduce((s, c) => s + (c.net_salary || 0), 0))}</p>
             </div>
           </div>
 
           {/* A-lap */}
-          {alapRows.length > 0 && (
-            <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-              <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
-                <h2 className="text-sm font-bold">A-lap — Összesítő</h2>
-              </div>
-              <table className="w-full text-sm">
-                <tbody>
-                  {alapRows.map((row, i) => (
-                    <tr key={i} className="border-b border-border/30 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                      <td className="px-5 py-2 text-xs text-slate-500">{row.label}</td>
-                      <td className="px-3 py-2 text-right font-mono text-xs font-bold">{fmt(row.amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+            <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+              <h2 className="text-sm font-bold">A-lap — Munkáltatói összesítő</h2>
+              <span className="text-xs text-slate-400">Időszak: {selectedYear}. {MONTHS[selectedMonth - 1]}</span>
             </div>
-          )}
+            <table className="w-full text-sm">
+              <tbody>
+                {alapData.map((row, i) => (
+                  <tr key={i} className={cn(
+                    'border-b border-border/30 hover:bg-slate-50 dark:hover:bg-slate-800/50',
+                    i === alapData.length - 1 && 'font-bold bg-slate-50/80 dark:bg-slate-900/50'
+                  )}>
+                    <td className="px-5 py-2.5 text-xs text-slate-600 dark:text-slate-400">{row.label}</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-xs font-bold">
+                      {row.isCnt ? `${row.amount} fő` : fmt(row.amount)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {/* M-lapok */}
-          {mlapRows.length > 0 && (
-            <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-              <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30">
-                <h2 className="text-sm font-bold">M-lapok ({mlapRows.length} fő)</h2>
-              </div>
+          <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+            <div className="px-5 py-3 border-b border-border">
+              <h2 className="text-sm font-bold">M-lapok — Személyi bontás ({mlapRows.length} fő)</h2>
+            </div>
+            <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left px-5 py-2 text-xs font-bold text-slate-500 uppercase">Név</th>
                     <th className="text-left px-3 py-2 text-xs font-bold text-slate-500 uppercase">TAJ</th>
                     <th className="text-right px-3 py-2 text-xs font-bold text-slate-500 uppercase">Bruttó</th>
+                    <th className="text-right px-3 py-2 text-xs font-bold text-slate-500 uppercase">SZJA</th>
+                    <th className="text-right px-3 py-2 text-xs font-bold text-slate-500 uppercase">TB</th>
+                    <th className="text-right px-3 py-2 text-xs font-bold text-slate-500 uppercase">SZOCHO</th>
                     <th className="text-right px-3 py-2 text-xs font-bold text-slate-500 uppercase">Nettó</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {mlapRows.map((m, i) => (
-                    <tr key={i} className="border-b border-border/30 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                      <td className="px-5 py-2 font-medium">{m.name}</td>
-                      <td className="px-3 py-2 font-mono text-xs text-slate-500">{m.tajNumber}</td>
-                      <td className="px-3 py-2 text-right font-mono text-xs">{fmt(m.grossSalary)}</td>
-                      <td className="px-3 py-2 text-right font-mono text-xs">{fmt(m.netSalary)}</td>
-                    </tr>
+                  {mlapRows.map((m) => (
+                    <React.Fragment key={m.id}>
+                      <tr
+                        className="border-b border-border/30 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                        onClick={() => setExpandedRow(expandedRow === m.id ? null : m.id)}
+                      >
+                        <td className="px-5 py-2.5 font-medium">{m.name}</td>
+                        <td className="px-3 py-2.5 font-mono text-xs text-slate-500">{m.tajNumber}</td>
+                        <td className="px-3 py-2.5 text-right font-mono text-xs">{fmt(m.grossSalary)}</td>
+                        <td className="px-3 py-2.5 text-right font-mono text-xs text-red-600">{fmt(m.szja)}</td>
+                        <td className="px-3 py-2.5 text-right font-mono text-xs text-blue-600">{fmt(m.tb)}</td>
+                        <td className="px-3 py-2.5 text-right font-mono text-xs text-violet-600">{fmt(m.szocho)}</td>
+                        <td className="px-3 py-2.5 text-right font-mono text-xs font-bold text-green-600">{fmt(m.netSalary)}</td>
+                      </tr>
+                      {expandedRow === m.id && (
+                        <tr className="bg-slate-50/50 dark:bg-slate-800/20">
+                          <td colSpan={7} className="px-5 py-3">
+                            <div className="grid grid-cols-4 gap-4 text-xs animate-in fade-in slide-in-from-top-1 duration-200">
+                              <div>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase">SZOCHO alap</p>
+                                <p className="font-mono font-bold">{fmt(m.grossSalary)}</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase">Családi kedv.</p>
+                                <p className="font-mono font-bold text-emerald-600">0 Ft</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase">Munkanapok</p>
+                                <p className="font-mono font-bold">22 nap</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase">Napi bér</p>
+                                <p className="font-mono font-bold">{fmt(Math.round(m.grossSalary / 22))}</p>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
+                  {/* Totals */}
+                  <tr className="border-t-2 border-border bg-slate-50/80 dark:bg-slate-900/50 font-bold">
+                    <td className="px-5 py-2.5 text-xs">ÖSSZESEN</td>
+                    <td className="px-3 py-2.5 text-xs text-slate-400">{mlapRows.length} fő</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-xs">{fmt(mlapRows.reduce((s, r) => s + r.grossSalary, 0))}</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-xs text-red-600">{fmt(mlapRows.reduce((s, r) => s + r.szja, 0))}</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-xs text-blue-600">{fmt(mlapRows.reduce((s, r) => s + r.tb, 0))}</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-xs text-violet-600">{fmt(mlapRows.reduce((s, r) => s + r.szocho, 0))}</td>
+                    <td className="px-3 py-2.5 text-right font-mono text-xs text-green-600">{fmt(mlapRows.reduce((s, r) => s + r.netSalary, 0))}</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
-          )}
+          </div>
 
           {/* Actions */}
           <div className="flex justify-end gap-2">
-            <Button variant="outline" className="gap-1.5" onClick={() => window.print()}><Download className="w-4 h-4" /> XML letöltés</Button>
-            <Button className="gap-1.5 bg-blue-600 hover:bg-blue-700"><Send className="w-4 h-4" /> Beküldés NAV-nak</Button>
+            <Button variant="outline" className="gap-1.5" onClick={handleNavSubmit}><Send className="w-4 h-4" /> Beküldés NAV-nak (demo)</Button>
           </div>
         </>
       )}

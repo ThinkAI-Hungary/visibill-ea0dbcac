@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { exportReceiptPdf } from '@/lib/exportPdf';
 
 export default function NewClientPage() {
   const navigate = useNavigate();
@@ -612,7 +613,17 @@ export default function NewClientPage() {
                   </div>
 
                   <div className="flex gap-3">
-                    <Button variant="outline" className="gap-2 text-slate-600 dark:text-slate-400" onClick={() => window.print()}>
+                    <Button variant="outline" className="gap-2 text-slate-600 dark:text-slate-400" onClick={() => {
+                      exportReceiptPdf('rlb_integracis_utmutato', {
+                        title: 'RLB Integrációs Útmutató',
+                        fields: [
+                          { label: '1. lépés', value: 'Telepítsd a Visibill RPA ügynököt' },
+                          { label: '2. lépés', value: 'Indítsd el és jelentkezz be' },
+                          { label: '3. lépés', value: 'Válaszd ki az RLB programot' },
+                          { label: '4. lépés', value: 'Teszteld a kapcsolatot' },
+                        ],
+                      });
+                    }}>
                       <Download className="w-4 h-4" /> Részletes útmutató letöltése
                     </Button>
                     <Button variant="outline" className="gap-2 text-slate-600 dark:text-slate-400">
@@ -647,7 +658,17 @@ export default function NewClientPage() {
                   </div>
 
                   <div className="flex gap-3">
-                    <Button variant="outline" className="gap-2 text-slate-600 dark:text-slate-400" onClick={() => window.print()}>
+                    <Button variant="outline" className="gap-2 text-slate-600 dark:text-slate-400" onClick={() => {
+                      exportReceiptPdf('novitax_integracis_utmutato', {
+                        title: 'Novitax Integrációs Útmutató',
+                        fields: [
+                          { label: '1. lépés', value: 'Telepítsd a Visibill RPA ügynököt' },
+                          { label: '2. lépés', value: 'Indítsd el és jelentkezz be' },
+                          { label: '3. lépés', value: 'Válaszd ki a Novitax programot' },
+                          { label: '4. lépés', value: 'Teszteld a kapcsolatot' },
+                        ],
+                      });
+                    }}>
                       <Download className="w-4 h-4" /> Részletes útmutató letöltése
                     </Button>
                     <Button variant="outline" className="gap-2 text-slate-600 dark:text-slate-400">

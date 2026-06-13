@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAccountyDocuments, type AccountyDocument } from '@/hooks/useAccountyData';
 import { useToast } from '@/hooks/use-toast';
+import { exportPdf } from '@/lib/exportPdf';
 
 export default function PayslipGeneratorPage() {
   const { id } = useParams<{ id: string }>();
@@ -79,8 +80,16 @@ export default function PayslipGeneratorPage() {
               {generating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
               {generating ? 'Generálás...' : 'Mind generálása'}
             </Button>
-            <Button variant="outline" className="w-full gap-1.5 text-sm" onClick={() => window.print()}><Download className="w-3.5 h-3.5" /> Tömeges ZIP letöltés</Button>
-            <Button variant="outline" className="w-full gap-1.5 text-sm"><Printer className="w-3.5 h-3.5" /> Nyomtatás</Button>
+            <Button variant="outline" className="w-full gap-1.5 text-sm" onClick={() => {
+              if (slips.length === 0) return;
+              exportPdf('berjegyzekek', {
+                title: 'Bérjegyzékek',
+                subtitle: 'Havi bérjegyzék lista',
+                headers: ['Dokumentum', 'Időszak', 'Státusz'],
+                rows: slips.map(s => [s.title, s.period, s.status === 'generated' ? 'Generálva' : s.status]),
+              });
+            }}><Download className="w-3.5 h-3.5" /> PDF letöltés</Button>
+            <Button variant="outline" className="w-full gap-1.5 text-sm" onClick={() => window.print()}><Printer className="w-3.5 h-3.5" /> Nyomtatás</Button>
           </div>
         </div>
       </div>

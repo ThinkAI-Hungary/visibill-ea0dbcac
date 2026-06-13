@@ -5,9 +5,12 @@ import {
   Copy, Eye, RefreshCw, Send, Building, Users, Loader2, Database
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ExportButton } from '@/components/accounty/ExportButton';
 import { cn } from '@/lib/utils';
 import { useTransfers, type Transfer } from '@/hooks/useAccountyData';
 import { useToast } from '@/hooks/use-toast';
+import { exportPdf } from '@/lib/exportPdf';
+import { exportToCsv } from '@/lib/exportCsv';
 
 export default function TransferListPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,7 +26,18 @@ export default function TransferListPage() {
   const totalAmount = transferList.filter(t => t.status === 'approved').reduce((s, t) => s + t.netSalary, 0);
 
   const handleGenerate = () => {
-    toast({ title: 'Utalási lista generálva ', description: `${exportFormat.toUpperCase()} formátum — ${readyCount} tétel, összesen ${fmt(totalAmount)} Ft` });
+    if (exportFormat === 'csv') {
+      exportToCsv(`utalasi_lista_${currentPeriod}`, ['Kedvezményezett', 'Bankszámla', 'Nettó (Ft)', 'Státusz'],
+        transferList.map(t => [t.employeeName, t.bankAccount || '', t.netSalary, t.status]));
+    } else {
+      exportPdf(`utalasi_lista_${currentPeriod}`, {
+        title: `Utalási lista — ${currentPeriod}`,
+        subtitle: `Formátum: ${exportFormat.toUpperCase()}`,
+        headers: ['Kedvezményezett', 'Bankszámla', 'Nettó összeg (Ft)', 'Státusz'],
+        rows: transferList.map(t => [t.employeeName, t.bankAccount || '–', fmt(t.netSalary), t.status === 'approved' ? 'Jóváhagyva' : t.status]),
+        footer: { label: 'Összes nettó', value: fmt(totalAmount) + ' Ft' },
+      });
+    }
     setGenerated(true);
     setTimeout(() => setGenerated(false), 2000);
   };
@@ -45,8 +59,14 @@ export default function TransferListPage() {
           </select>
           <Button onClick={handleGenerate} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700" disabled={transferList.length === 0}>
             {generated ? <CheckCircle className="w-4 h-4" /> : <Download className="w-4 h-4" />}
-            {generated ? 'Letöltve ' : `Exportálás (${exportFormat.toUpperCase()})`}
+            {generated ? 'Letöltve' : `Exportálás (${exportFormat.toUpperCase()})`}
           </Button>
+          <ExportButton
+            filename={`utalasi_lista_${currentPeriod}`}
+            headers={['Kedvezményezett', 'Bankszámla', 'Nettó (Ft)', 'Státusz']}
+            getRows={() => transferList.map(t => [t.employeeName, t.bankAccount || '', t.netSalary, t.status])}
+            size="sm"
+          />
         </div>
       </div>
 

@@ -7,6 +7,7 @@ import {
   CheckCircle2, Send, Download, Play, Printer, Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ExportButton } from '@/components/accounty/ExportButton';
 import { cn } from '@/lib/utils';
 import {
   usePayrollCycle, usePayrollEmployees, usePayrollItems,
@@ -434,9 +435,33 @@ export default function PayrollCyclePage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="flex items-center gap-2" onClick={() => window.print()}>
-            <Download className="w-4 h-4" /> Export
-          </Button>
+          <ExportButton
+            filename={`berszamfejtes_${cycle.year}_${MONTHS[cycle.month - 1]}`}
+            headers={['Név', 'Bruttó (Ft)', 'SZJA (Ft)', 'TB (Ft)', 'SZOCHO (Ft)', 'Levonás (Ft)', 'Nettó (Ft)']}
+            getRows={() => {
+              const rows = calculations.map(calc => [
+                getCalcName(calc),
+                calc.gross_salary || 0,
+                calc.szja_amount || 0,
+                calc.tb_amount || 0,
+                calc.szocho_amount || 0,
+                calc.total_deductions || 0,
+                calc.net_salary || 0,
+              ]);
+              // Add totals row
+              rows.push([
+                'ÖSSZESEN',
+                calculations.reduce((s, c) => s + (c.gross_salary || 0), 0),
+                calculations.reduce((s, c) => s + (c.szja_amount || 0), 0),
+                calculations.reduce((s, c) => s + (c.tb_amount || 0), 0),
+                calculations.reduce((s, c) => s + (c.szocho_amount || 0), 0),
+                calculations.reduce((s, c) => s + (c.total_deductions || 0), 0),
+                calculations.reduce((s, c) => s + (c.net_salary || 0), 0),
+              ]);
+              return rows;
+            }}
+            size="sm"
+          />
         </div>
       </div>
 

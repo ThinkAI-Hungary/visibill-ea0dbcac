@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Wrench, Plus, Trash2, GripVertical, Download, Eye,
   Save, Filter, Columns, CheckCircle, Table, BarChart3, Database
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ExportButton } from '@/components/accounty/ExportButton';
 import { cn } from '@/lib/utils';
+import { usePayrollEmployees } from '@/hooks/usePayrollData';
 
 interface ColumnDef {
   id: string;
@@ -55,6 +57,8 @@ export default function CustomReportBuilderPage() {
   const [showColumnPicker, setShowColumnPicker] = useState(true);
   const [generated, setGenerated] = useState(false);
 
+  const { data: employees = [] } = usePayrollEmployees(id || '');
+
   const selectedColumns = columns.filter(c => c.selected);
   const categories = [...new Set(AVAILABLE_COLUMNS.map(c => c.category))];
 
@@ -64,6 +68,39 @@ export default function CustomReportBuilderPage() {
   const removeFilter = (idx: number) => setFilters(prev => prev.filter((_, i) => i !== idx));
 
   const handleGenerate = () => { setGenerated(true); setShowColumnPicker(false); };
+
+  const COLUMN_ACCESSOR: Record<string, (e: any) => string> = {
+    name: e => e.full_name || `${e.first_name || ''} ${e.last_name || ''}`.trim() || '–',
+    taxId: e => e.tax_id || '–',
+    tajNumber: e => e.taj_number || '–',
+    birthDate: e => e.birth_date ? new Date(e.birth_date).toLocaleDateString('hu-HU') : '–',
+    age: e => e.birth_date ? String(new Date().getFullYear() - new Date(e.birth_date).getFullYear()) : '–',
+    jobCode: e => e.job_code || '–',
+    position: e => e.position || '–',
+    feor: e => e.feor || '–',
+    startDate: e => e.start_date ? new Date(e.start_date).toLocaleDateString('hu-HU') : '–',
+    weeklyHours: e => e.weekly_hours != null ? String(e.weekly_hours) : '40',
+    site: e => e.site || '–',
+    costCenter: e => e.cost_center || '–',
+    grossSalary: e => e.base_salary != null ? Number(e.base_salary).toLocaleString('hu-HU') + ' Ft' : '–',
+    netSalary: e => e.base_salary != null ? Math.round(Number(e.base_salary) * 0.665).toLocaleString('hu-HU') + ' Ft' : '–',
+    szja: e => e.base_salary != null ? Math.round(Number(e.base_salary) * 0.15).toLocaleString('hu-HU') + ' Ft' : '–',
+    tbJarék: e => e.base_salary != null ? Math.round(Number(e.base_salary) * 0.185).toLocaleString('hu-HU') + ' Ft' : '–',
+    szocho: e => e.base_salary != null ? Math.round(Number(e.base_salary) * 0.13).toLocaleString('hu-HU') + ' Ft' : '–',
+    familyBenefit: e => '–',
+    totalCost: e => e.base_salary != null ? Math.round(Number(e.base_salary) * 1.13).toLocaleString('hu-HU') + ' Ft' : '–',
+    leaveTotal: e => e.leave_total != null ? String(e.leave_total) : '20',
+    leaveUsed: e => e.leave_used != null ? String(e.leave_used) : '0',
+    leaveRemaining: e => String((e.leave_total || 20) - (e.leave_used || 0)),
+    sickDays: e => e.sick_days != null ? String(e.sick_days) : '0',
+  };
+
+  const reportRows = useMemo(() => {
+    if (!generated) return [];
+    return employees.map((emp: any) =>
+      selectedColumns.map(col => (COLUMN_ACCESSOR[col.id] || (() => '–'))(emp))
+    );
+  }, [generated, employees, selectedColumns]);
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -78,7 +115,12 @@ export default function CustomReportBuilderPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setShowColumnPicker(!showColumnPicker)} className="gap-1.5"><Columns className="w-4 h-4" /> Oszlopok ({selectedColumns.length})</Button>
-          {generated && <Button variant="outline" className="gap-1.5" onClick={() => window.print()}><Download className="w-4 h-4" /> Excel export</Button>}
+          {generated && <ExportButton
+            filename={reportName.replace(/\s+/g, '_')}
+            headers={selectedColumns.map(c => c.label)}
+            getRows={() => reportRows}
+            size="sm"
+          />}
           <Button onClick={handleGenerate} className="gap-1.5 bg-slate-900 dark:bg-slate-100 dark:text-slate-900 hover:bg-slate-800">
             <Table className="w-4 h-4" /> Generálás
           </Button>
@@ -108,14 +150,42 @@ export default function CustomReportBuilderPage() {
             ))}
           </div>
 
-          {/* Generated report — shows empty state since no payroll data */}
+          {/* Generated report */}
           {generated && (
-            <div className="bg-card rounded-xl border border-border p-12 text-center space-y-3">
-              <Database className="w-12 h-12 mx-auto text-slate-300" />
-              <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">{reportName}</h3>
-              <p className="text-sm text-slate-400">Nincs riport adat a kiválasztott oszlopokhoz ({selectedColumns.length} oszlop).</p>
-              <p className="text-xs text-slate-400">A riport adatok a bérszámfejtés véglegesítése után állnak rendelkezésre.</p>
-            </div>
+            reportRows.length === 0 ? (
+              <div className="bg-card rounded-xl border border-border p-12 text-center space-y-3">
+                <Database className="w-12 h-12 mx-auto text-slate-300" />
+                <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">{reportName}</h3>
+                <p className="text-sm text-slate-400">Nincs riport adat a kiválasztott oszlopokhoz ({selectedColumns.length} oszlop).</p>
+                <p className="text-xs text-slate-400">A riport adatok a bérszámfejtés véglegesítése után állnak rendelkezésre.</p>
+              </div>
+            ) : (
+              <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
+                <div className="px-4 py-3 border-b border-border">
+                  <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">{reportName} — {reportRows.length} sor</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border dark:bg-slate-900/30">
+                        {selectedColumns.map(col => (
+                          <th key={col.id} className="text-left px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{col.label}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                      {reportRows.map((row, ri) => (
+                        <tr key={ri} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                          {row.map((cell, ci) => (
+                            <td key={ci} className="px-3 py-2 text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">{cell}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )
           )}
         </div>
 

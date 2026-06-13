@@ -8,6 +8,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAccountyDocuments, type AccountyDocument } from '@/hooks/useAccountyData';
+import { ExportButton } from '@/components/accounty/ExportButton';
+import { exportPdf } from '@/lib/exportPdf';
 
 // Document categories — these are static navigation items, not user data
 const DOC_CATEGORIES = [
@@ -56,7 +58,17 @@ export default function DocumentCenterPage() {
           <Link to={`/accounty/payroll/${id}/documents/all`}>
             <Button variant="outline" className="gap-1.5"><Eye className="w-4 h-4" /> Összes dokumentum</Button>
           </Link>
-          <Button variant="outline" className="gap-1.5" onClick={() => window.print()}><Download className="w-4 h-4" /> Minden letöltése (ZIP)</Button>
+          <ExportButton
+            filename="dokumentum_kozpont"
+            headers={['Típus', 'Dokumentumok', 'Kész']}
+            getRows={() => DOC_CATEGORIES.map(c => [c.title, countByType(c.id), readyByType(c.id)])}
+            size="sm"
+          />
+          <Button variant="outline" className="gap-1.5" onClick={() => exportPdf('dokumentum_kozpont', {
+            title: 'Dokumentum-központ összesítő',
+            headers: ['Típus', 'Dokumentumok (db)', 'Kész (db)'],
+            rows: DOC_CATEGORIES.map(c => [c.title, countByType(c.id), readyByType(c.id)]),
+          })}><Download className="w-4 h-4" /> PDF letöltés</Button>
         </div>
       </div>
 

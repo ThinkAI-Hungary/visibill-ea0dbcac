@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, UserX, Calendar, CheckCircle, AlertTriangle,
   FileText, ArrowRight, Loader2, Save
@@ -8,16 +8,33 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useEmployeeJobs } from '@/hooks/useAccountyData';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 const REASONS = [
   'Közös megegyezés', 'Munkavállaló felmondása', 'Munkáltatói felmondás',
   'Próbaidő alatti azonnali hatályú felmondás', 'Határozott idő lejárta',
 ];
 
+const EXIT_DOCS = [
+  { id: 'cert', label: 'Munkáltatói igazolás', ref: 'Mt. 80. § (2)', required: true },
+  { id: 'tb', label: 'TB igazolás (OEP)', ref: 'Tbj. 50. §', required: true },
+  { id: 'm30', label: 'Jövedelemigazolás (M30)', ref: 'Szja tv. 46. § (4)', required: true },
+  { id: 'leave', label: 'Szabadság-elszámolás', ref: 'Mt. 125. §', required: true },
+  { id: 'final_payslip', label: 'Záró bérjegyzék', ref: 'Mt. 155. §', required: true },
+  { id: 'deregister', label: '08E kijelentés', ref: 'Art. 50. §', required: true },
+  { id: 'severance', label: 'Végkielégítés számfejtés', ref: 'Mt. 77. §', required: false },
+  { id: 'pension', label: 'Szolgálati idő igazolás', ref: 'Tny. 96. §', required: false },
+  { id: 'competition', label: 'Versenytilalmi megállapodás', ref: 'Mt. 228. §', required: false },
+];
+
 export default function EmployeeExitWizardPage() {
   const { id, empId } = useParams<{ id: string; empId: string }>();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: jobs, isLoading } = useEmployeeJobs(id || '', empId || '');
+  const [saving, setSaving] = useState(false);
 
   const activeJob = (jobs || []).find(j => j.status === 'active');
 
@@ -27,6 +44,7 @@ export default function EmployeeExitWizardPage() {
   const [leavePayDays, setLeavePayDays] = useState('0');
   const [severancePay, setSeverancePay] = useState(false);
   const [notes, setNotes] = useState('');
+  const [checkedDocs, setCheckedDocs] = useState<Set<string>>(new Set());
 
   const leavePayAmount = activeJob ? Number(leavePayDays) * Math.round(activeJob.baseSalary / 22) : 0;
 
@@ -36,8 +54,54 @@ export default function EmployeeExitWizardPage() {
     return true;
   };
 
-  const handleFinish = () => {
-    toast({ title: 'Kilépési folyamat rögzítve ', description: `${activeJob?.position || 'Munkavállaló'} — Utolsó nap: ${lastDay}` });
+  const handleFinish = async () => {
+    if (!id || !empId || !activeJob) return;
+    setSaving(true);
+    try {
+      // 1. Terminate the employment
+      const { error: empErr } = await supabase
+        .from('accounty_employments')
+        .update({
+          status: 'terminated',
+          end_date: lastDay,
+          termination_reason: reason,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', activeJob.id);
+      if (empErr) throw empErr;
+
+      // 2. Generate 08E kijelentés filing
+      const rowData = {
+        name: activeJob.position || '',
+        tajNumber: '',
+        changeType: 'kijelentes',
+        changeCode: '02',
+        effectiveDate: lastDay,
+        feor: activeJob.feor || '',
+        weeklyHours: 40,
+        insured: true,
+      };
+      await supabase.from('accounty_filings').insert({
+        company_id: id,
+        filing_type: '08e',
+        period_year: new Date(lastDay).getFullYear(),
+        period_month: new Date(lastDay).getMonth() + 1,
+        status: 'draft',
+        xml_data: JSON.stringify(rowData),
+        channel: 'onya',
+      });
+
+      // 3. Invalidate caches
+      queryClient.invalidateQueries({ queryKey: ['payroll'] });
+      queryClient.invalidateQueries({ queryKey: ['accounty'] });
+
+      toast({ title: 'Kilépés rögzítve', description: `${activeJob.position} — Utolsó nap: ${lastDay}. 08E kijelentés generálva.` });
+      navigate(`/accounty/payroll/${id}/employees/${empId}/exit-docs`);
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (isLoading) return <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>;
@@ -55,7 +119,7 @@ export default function EmployeeExitWizardPage() {
     );
   }
 
-  const STEPS = ['Kilépés oka', 'Dátumok', 'Pénzügyi elszámolás', 'Összesítés'];
+  const STEPS = ['Kilépés oka', 'Dátumok', 'Pénzügyi elszámolás', 'Dokumentumok', 'Összesítés'];
 
   return (
     <div className="w-full max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -133,8 +197,39 @@ export default function EmployeeExitWizardPage() {
         </div>
       )}
 
-      {/* Step 3: Summary */}
+      {/* Step 3: Documents checklist */}
       {step === 3 && (
+        <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Kilépő dokumentumcsomag</h2>
+          <p className="text-xs text-slate-500">Jelöld be, mely dokumentumok készültek el vagy relevánsak.</p>
+          <div className="space-y-2">
+            {EXIT_DOCS.map(doc => (
+              <button key={doc.id} onClick={() => setCheckedDocs(prev => {
+                const next = new Set(prev);
+                next.has(doc.id) ? next.delete(doc.id) : next.add(doc.id);
+                return next;
+              })} className={cn('w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left text-sm transition-all',
+                checkedDocs.has(doc.id) ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10' : 'border-border hover:border-slate-300'
+              )}>
+                <div className={cn('w-5 h-5 rounded flex items-center justify-center shrink-0',
+                  checkedDocs.has(doc.id) ? 'bg-emerald-500 text-white' : 'border border-slate-300'
+                )}>
+                  {checkedDocs.has(doc.id) && <CheckCircle className="w-3.5 h-3.5" />}
+                </div>
+                <div className="flex-1">
+                  <span className="font-medium">{doc.label}</span>
+                  {doc.required && <span className="ml-2 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">KÖTELEZŐ</span>}
+                </div>
+                <span className="text-[10px] text-slate-400 font-mono">{doc.ref}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-slate-400">{checkedDocs.size}/{EXIT_DOCS.length} dokumentum jelölve</p>
+        </div>
+      )}
+
+      {/* Step 4: Summary */}
+      {step === 4 && (
         <div className="bg-card rounded-xl border border-border p-6 space-y-4">
           <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Összesítés</h2>
           <div className="grid grid-cols-2 gap-3 text-sm">
@@ -143,6 +238,7 @@ export default function EmployeeExitWizardPage() {
             <div><p className="text-slate-500 text-xs">Utolsó munkanap:</p><p className="font-bold">{lastDay}</p></div>
             <div><p className="text-slate-500 text-xs">Szabadság megváltás:</p><p className="font-bold">{leavePayDays} nap ({leavePayAmount.toLocaleString('hu-HU')} Ft)</p></div>
             <div><p className="text-slate-500 text-xs">Végkielégítés:</p><p className="font-bold">{severancePay ? 'Igen' : 'Nem'}</p></div>
+            <div><p className="text-slate-500 text-xs">Dokumentumok:</p><p className="font-bold">{checkedDocs.size}/{EXIT_DOCS.length} kész</p></div>
           </div>
           {notes && <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 text-xs text-slate-600">{notes}</div>}
           <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 rounded-lg p-3 text-xs text-blue-700 dark:text-blue-300">
@@ -160,8 +256,9 @@ export default function EmployeeExitWizardPage() {
             Tovább <ArrowRight className="w-4 h-4" />
           </Button>
         ) : (
-          <Button onClick={handleFinish} className="gap-1.5 bg-red-600 hover:bg-red-700">
-            <Save className="w-4 h-4" /> Kilépés véglegesítése
+          <Button onClick={handleFinish} disabled={saving} className="gap-1.5 bg-red-600 hover:bg-red-700">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {saving ? 'Mentés...' : 'Kilépés véglegesítése'}
           </Button>
         )}
       </div>

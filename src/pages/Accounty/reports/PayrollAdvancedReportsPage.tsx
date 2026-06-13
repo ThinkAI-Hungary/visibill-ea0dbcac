@@ -5,6 +5,8 @@ import {
   Users, DollarSign, PieChart, RefreshCw, Table, FileSpreadsheet, Database
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ExportButton } from '@/components/accounty/ExportButton';
+import { exportPdf } from '@/lib/exportPdf';
 import { cn } from '@/lib/utils';
 
 type ReportType = 'salary_journal' | 'cost_analysis' | 'tax_summary' | 'headcount' | 'leave' | 'garnishment' | 'contributions' | 'custom';
@@ -40,7 +42,14 @@ export default function PayrollReportsPage2() {
         <p className="text-xs text-slate-400">A riportok a bérszámfejtés véglegesítése és zárása után generálhatók.</p>
         <div className="flex gap-2 justify-center mt-3">
           <Button variant="outline" className="gap-1.5 text-sm"><RefreshCw className="w-4 h-4" /> Riport generálás</Button>
-          <Button variant="outline" className="gap-1.5 text-sm" onClick={() => window.print()}><Download className="w-4 h-4" /> Export ({exportFormat.toUpperCase()})</Button>
+          <Button variant="outline" className="gap-1.5 text-sm" onClick={() => {
+            exportPdf(selectedReport || 'riport', {
+              title: reportTitle,
+              subtitle: `Időszak: ${period}`,
+              headers: ['Nincs adat'],
+              rows: [['A riportok a bérszámfejtés véglegesítése után generálhatók.']],
+            });
+          }}><Download className="w-4 h-4" /> Export ({exportFormat.toUpperCase()})</Button>
         </div>
       </div>
     );
