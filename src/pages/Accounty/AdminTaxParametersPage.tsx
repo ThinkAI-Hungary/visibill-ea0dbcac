@@ -123,7 +123,7 @@ export default function AdminTaxParametersPage() {
       <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+            <tr className="border-b border-border dark:bg-slate-900/30">
               <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Paraméter</th>
               <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Érték {selectedYear}</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Jogalap</th>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { ExportButton } from '@/components/accounty/ExportButton';
 import {
   ArrowLeft, Archive, Search, Download, Eye, Calendar, Filter,
   FileText, CheckCircle, Clock, AlertTriangle, Trash2, RotateCcw, Loader2, Database
@@ -55,14 +56,23 @@ export default function DeclarationArchivePage() {
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}/declarations`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg shadow-amber-500/25"><Archive className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">Nyilatkozat-archívum</h1>
             <p className="text-sm text-slate-500">Korábbi és érvényes nyilatkozatok teljes előzménye</p>
           </div>
         </div>
-        <Button variant="outline" className="gap-1.5"><Download className="w-4 h-4" /> Export (Excel)</Button>
+        <ExportButton
+          filename="nyilatkozat_archivum"
+          headers={['Munkavállaló', 'Típus', 'Év', 'Státusz', 'Beadva']}
+          getRows={() => filtered.map(d => [
+            d.data?.employeeName || '', TYPE_LABELS[d.type] || d.type,
+            d.validFrom ? new Date(d.validFrom).getFullYear() : '',
+            STATUS_BADGE[d.status]?.label || d.status,
+            d.filedAt ? new Date(d.filedAt).toLocaleDateString('hu-HU') : ''
+          ])}
+        />
       </div>
 
       {isLoading ? (
@@ -101,12 +111,12 @@ export default function DeclarationArchivePage() {
           </div>
 
           <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-            <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+            <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30">
               <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Archivált nyilatkozatok ({filtered.length})</h2>
             </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-slate-50/30">
+                <tr className="border-b border-border">
                   <th className="text-left px-5 py-2 text-xs font-bold text-slate-500">Munkavállaló</th>
                   <th className="text-left px-3 py-2 text-xs font-bold text-slate-500">Típus</th>
                   <th className="text-center px-3 py-2 text-xs font-bold text-slate-500">Év</th>
@@ -126,7 +136,14 @@ export default function DeclarationArchivePage() {
                     <td className="px-3 py-2.5">
                       <div className="flex gap-1">
                         <Button variant="ghost" size="sm" className="h-7 w-7 p-0"><Eye className="w-3 h-3" /></Button>
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0"><Download className="w-3 h-3" /></Button>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => {
+                          exportToCsv(`nyilatkozat_${dec.type}`, ['Munkavállaló', 'Típus', 'Év', 'Státusz', 'Beadva'], [[
+                            dec.data?.employeeName || '', TYPE_LABELS[dec.type] || dec.type,
+                            dec.validFrom ? new Date(dec.validFrom).getFullYear() : '',
+                            STATUS_BADGE[dec.status]?.label || dec.status,
+                            dec.filedAt ? new Date(dec.filedAt).toLocaleDateString('hu-HU') : ''
+                          ]]);
+                        }}><Download className="w-3 h-3" /></Button>
                       </div>
                     </td>
                   </tr>

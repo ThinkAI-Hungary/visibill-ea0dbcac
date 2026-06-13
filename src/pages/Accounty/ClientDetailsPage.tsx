@@ -351,12 +351,12 @@ export default function ClientDetailsPage() {
           {/* Gyors elérés — korábban csak a Bérszámfejtés fülről volt elérhető */}
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
             {[
-              { label: 'Cégkapu / KÜNY', path: `/accounty/client/${client.id}/cegkapu`, icon: '🏛️' },
-              { label: 'NAV meghatalmazás', path: `/accounty/client/${client.id}/representation`, icon: '📜' },
-              { label: 'Iratkezelés & GDPR', path: `/accounty/client/${client.id}/data-retention`, icon: '📁' },
-              { label: 'NAV bevallások', path: `/accounty/payroll/${client.id}/filings`, icon: '📊' },
-              { label: 'Bérezési struktúra', path: `/accounty/client/${client.id}/structure`, icon: '💰' },
-              { label: 'Paramétertábla', path: `/accounty/payroll/${client.id}/tax-params`, icon: '⚙️' },
+              { label: 'Cégkapu / KÜNY', path: `/accounty/client/${client.id}/cegkapu`, icon: '' },
+              { label: 'NAV meghatalmazás', path: `/accounty/client/${client.id}/representation`, icon: '' },
+              { label: 'Iratkezelés & GDPR', path: `/accounty/client/${client.id}/data-retention`, icon: '' },
+              { label: 'NAV bevallások', path: `/accounty/payroll/${client.id}/filings`, icon: '' },
+              { label: 'Bérezési struktúra', path: `/accounty/client/${client.id}/structure`, icon: '' },
+              { label: 'Paramétertábla', path: `/accounty/payroll/${client.id}/tax-params`, icon: '' },
             ].map((link) => (
               <button
                 key={link.label}
@@ -369,7 +369,7 @@ export default function ClientDetailsPage() {
             ))}
           </div>
 
-          {/* 🚨 Zárást blokkoló hiányosságok */}
+          {/*  Zárást blokkoló hiányosságok */}
           {(() => {
             const allItems = [
               ...supabaseBlockingItems.filter((item) => item.clientId === client.id),
@@ -403,7 +403,7 @@ export default function ClientDetailsPage() {
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
                     <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                      🚨 Zárást blokkoló hiányosságok
+                       Zárást blokkoló hiányosságok
                     </h2>
                     {totalCount > 0 && (
                       <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400">
@@ -451,10 +451,10 @@ export default function ClientDetailsPage() {
                           onChange={(e) => setNewItem({ ...newItem, category: e.target.value as BlockingCategory })}
                           className="w-full h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400"
                         >
-                          <option value="bejovo">📥 Bejövő</option>
-                          <option value="kimeno">📤 Kimenő</option>
-                          <option value="bank">🏦 Bank</option>
-                          <option value="ber">👥 Bér</option>
+                          <option value="bejovo"> Bejövő</option>
+                          <option value="kimeno"> Kimenő</option>
+                          <option value="bank"> Bank</option>
+                          <option value="ber"> Bér</option>
                         </select>
                       </div>
                       {/* Megnevezés */}
@@ -488,9 +488,9 @@ export default function ClientDetailsPage() {
                             onChange={(e) => setNewItem({ ...newItem, priority: e.target.value as BlockingItem['priority'] })}
                             className="w-full h-9 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400"
                           >
-                            <option value="urgent">🔴 Sürgős</option>
-                            <option value="medium">🟡 Közepes</option>
-                            <option value="low">⚪ Alacsony</option>
+                            <option value="urgent"> Sürgős</option>
+                            <option value="medium"> Közepes</option>
+                            <option value="low"> Alacsony</option>
                           </select>
                         </div>
                         <div className="flex items-end">
@@ -541,7 +541,7 @@ export default function ClientDetailsPage() {
                             ? 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                             : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'
                         )}>
-                          {items.length > 0 ? items.length : '✓'}
+                          {items.length > 0 ? items.length : ''}
                         </span>
                       </div>
 
@@ -758,7 +758,7 @@ export default function ClientDetailsPage() {
                           "border rounded-xl p-4 flex items-center justify-between",
                           isOverdue
                             ? "border-red-200 dark:border-red-900/50 bg-red-50/30 dark:bg-red-900/20"
-                            : "border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50"
+                            : "border-slate-100 dark:border-slate-800 dark:bg-slate-900/50"
                         )}
                       >
                         <div className="flex items-center gap-4">
@@ -1289,9 +1289,9 @@ export default function ClientDetailsPage() {
                     onChange={(e) => setNotifPrefs(prev => ({ ...prev, language: e.target.value }))}
                     className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400"
                   >
-                    <option value="hu">🇭🇺 Magyar</option>
-                    <option value="en">🇬🇧 English</option>
-                    <option value="de">🇩🇪 Deutsch</option>
+                    <option value="hu"> Magyar</option>
+                    <option value="en"> English</option>
+                    <option value="de"> Deutsch</option>
                   </select>
                 </div>
                 <div>
@@ -1301,9 +1301,9 @@ export default function ClientDetailsPage() {
                     onChange={(e) => setNotifPrefs(prev => ({ ...prev, frequency: e.target.value }))}
                     className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400"
                   >
-                    <option value="aggressive">🔴 Agresszív (naponta)</option>
-                    <option value="normal">🟡 Normál (hetente 2x)</option>
-                    <option value="gentle">🟢 Óvatos (hetente 1x)</option>
+                    <option value="aggressive"> Agresszív (naponta)</option>
+                    <option value="normal"> Normál (hetente 2x)</option>
+                    <option value="gentle"> Óvatos (hetente 1x)</option>
                   </select>
                 </div>
               </div>
@@ -1387,7 +1387,7 @@ export default function ClientDetailsPage() {
             </div>
 
             {/* GDPR Opt-in */}
-            <div className="mt-4 p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+            <div className="mt-4 p-4 rounded-xl border border-slate-100 dark:border-slate-800 dark:bg-slate-800/30">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">GDPR Hozzájárulás</p>
@@ -1640,7 +1640,7 @@ export default function ClientDetailsPage() {
                   </div>
                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Beszélgetés folyamatban</p>
                   <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{formatTime(callTimer)}</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">🤖 AI kéri a hiányzó dokumentumokat</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400"> AI kéri a hiányzó dokumentumokat</p>
                 </div>
               )}
               {callState === 'completed' && (

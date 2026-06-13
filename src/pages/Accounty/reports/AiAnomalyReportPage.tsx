@@ -309,7 +309,7 @@ export default function AiAnomalyReportPage() {
                         </div>
                       </div>
                       <button onClick={() => toggleResolved(anomaly.id)} className={cn('px-3 py-1 rounded-lg text-xs font-bold transition-colors shrink-0', anomaly.resolved ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600 hover:bg-emerald-100 hover:text-emerald-700')}>
-                        {anomaly.resolved ? '✓ Megoldva' : 'Megoldva'}
+                        {anomaly.resolved ? ' Megoldva' : 'Megoldva'}
                       </button>
                     </div>
                     {!anomaly.resolved && (

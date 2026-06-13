@@ -30,7 +30,7 @@ export default function Filing2608Page() {
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg"><FileText className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">2608-as bevallás</h1>
@@ -77,7 +77,7 @@ export default function Filing2608Page() {
           {/* A-lap */}
           {alapRows.length > 0 && (
             <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-              <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
+              <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
                 <h2 className="text-sm font-bold">A-lap — Összesítő</h2>
               </div>
               <table className="w-full text-sm">
@@ -96,12 +96,12 @@ export default function Filing2608Page() {
           {/* M-lapok */}
           {mlapRows.length > 0 && (
             <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-              <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+              <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30">
                 <h2 className="text-sm font-bold">M-lapok ({mlapRows.length} fő)</h2>
               </div>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-slate-50/30">
+                  <tr className="border-b border-border">
                     <th className="text-left px-5 py-2 text-xs font-bold text-slate-500 uppercase">Név</th>
                     <th className="text-left px-3 py-2 text-xs font-bold text-slate-500 uppercase">TAJ</th>
                     <th className="text-right px-3 py-2 text-xs font-bold text-slate-500 uppercase">Bruttó</th>
@@ -124,7 +124,7 @@ export default function Filing2608Page() {
 
           {/* Actions */}
           <div className="flex justify-end gap-2">
-            <Button variant="outline" className="gap-1.5"><Download className="w-4 h-4" /> XML letöltés</Button>
+            <Button variant="outline" className="gap-1.5" onClick={() => window.print()}><Download className="w-4 h-4" /> XML letöltés</Button>
             <Button className="gap-1.5 bg-blue-600 hover:bg-blue-700"><Send className="w-4 h-4" /> Beküldés NAV-nak</Button>
           </div>
         </>

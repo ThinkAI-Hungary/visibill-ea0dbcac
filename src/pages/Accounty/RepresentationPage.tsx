@@ -407,7 +407,7 @@ export default function RepresentationPage() {
 
       {/* Active */}
       <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-        <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
+        <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
           <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Aktív meghatalmazások</h2>
           <span className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">
             {activeReps.length}
@@ -425,7 +425,7 @@ export default function RepresentationPage() {
       {/* Inactive */}
       {inactiveReps.length > 0 && (
         <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-          <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+          <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30">
             <h2 className="text-sm font-bold text-slate-400">Lejárt / Visszavont</h2>
           </div>
           <div className="divide-y divide-border/50 opacity-60">

@@ -340,7 +340,7 @@ export default function CegkapuSettingsPage() {
           className={cn("gap-1.5", dirty ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-600/70")}
         >
           {upsertMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {upsertMutation.isPending ? 'Mentés...' : dirty ? 'Mentés' : 'Mentve ✓'}
+          {upsertMutation.isPending ? 'Mentés...' : dirty ? 'Mentés' : 'Mentve '}
         </Button>
       </div>
     </div>

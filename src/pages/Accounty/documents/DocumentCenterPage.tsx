@@ -11,14 +11,14 @@ import { useAccountyDocuments, type AccountyDocument } from '@/hooks/useAccounty
 
 // Document categories — these are static navigation items, not user data
 const DOC_CATEGORIES = [
-  { id: 'payslip', title: 'Bérjegyzékek', icon: FileText, color: 'from-blue-500 to-indigo-500' },
-  { id: 'transfer', title: 'Utalási lista', icon: CreditCard, color: 'from-emerald-500 to-teal-500' },
-  { id: 'cash', title: 'Készpénzes kifizetési lista', icon: FileSpreadsheet, color: 'from-amber-500 to-orange-500' },
-  { id: 'garnishment', title: 'Letiltások jegyzéke', icon: AlertTriangle, color: 'from-red-500 to-pink-500' },
-  { id: 'cafeteria', title: 'Cafeteria feltöltési fájlok', icon: Archive, color: 'from-violet-500 to-purple-500' },
-  { id: 'summary', title: 'Munkáltatói összesítő', icon: Users, color: 'from-slate-500 to-slate-600' },
-  { id: 'filing', title: 'Bevallás PDF-ek', icon: FileText, color: 'from-cyan-500 to-blue-500' },
-  { id: 'certificate', title: 'Jövedelem- és foglalkoztatási igazolások', icon: Folder, color: 'from-green-500 to-emerald-500' },
+  { id: 'payslip', title: 'Bérjegyzékek', icon: FileText, color: 'from-blue-500 to-indigo-500', route: 'payslips' },
+  { id: 'transfer', title: 'Utalási lista', icon: CreditCard, color: 'from-emerald-500 to-teal-500', route: 'transfer' },
+  { id: 'e-payslip', title: 'E-bérjegyzék portál', icon: Users, color: 'from-cyan-500 to-blue-500', route: 'e-payslip' },
+  { id: 'cash', title: 'Készpénzes kifizetési lista', icon: FileSpreadsheet, color: 'from-amber-500 to-orange-500', route: 'cash' },
+  { id: 'garnishment', title: 'Letiltások jegyzéke', icon: AlertTriangle, color: 'from-red-500 to-pink-500', route: 'garnishment' },
+  { id: 'cafeteria', title: 'Cafeteria feltöltési fájlok', icon: Archive, color: 'from-violet-500 to-purple-500', route: 'cafeteria' },
+  { id: 'summary', title: 'Munkáltatói összesítő', icon: Users, color: 'from-slate-500 to-slate-600', route: 'summary' },
+  { id: 'certificate', title: 'Igazolások', icon: Folder, color: 'from-green-500 to-emerald-500', route: 'certificates' },
 ];
 
 export default function DocumentCenterPage() {
@@ -45,7 +45,7 @@ export default function DocumentCenterPage() {
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/25"><Folder className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">Dokumentum-központ</h1>
@@ -53,7 +53,10 @@ export default function DocumentCenterPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-1.5"><Download className="w-4 h-4" /> Minden letöltése (ZIP)</Button>
+          <Link to={`/accounty/payroll/${id}/documents/all`}>
+            <Button variant="outline" className="gap-1.5"><Eye className="w-4 h-4" /> Összes dokumentum</Button>
+          </Link>
+          <Button variant="outline" className="gap-1.5" onClick={() => window.print()}><Download className="w-4 h-4" /> Minden letöltése (ZIP)</Button>
         </div>
       </div>
 
@@ -81,7 +84,7 @@ export default function DocumentCenterPage() {
               const badge = STATUS_BADGE[status];
 
               return (
-                <div key={cat.id} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                <Link key={cat.id} to={`/accounty/payroll/${id}/documents/${cat.route}`} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer">
                   <div className="p-5 flex items-start gap-4">
                     <div className={cn('w-12 h-12 rounded-xl bg-gradient-to-br text-white flex items-center justify-center shrink-0', cat.color)}>
                       <cat.icon className="w-6 h-6" />
@@ -101,7 +104,7 @@ export default function DocumentCenterPage() {
                     <Button variant="outline" size="sm" className="text-xs gap-1" disabled={count === 0}><Eye className="w-3 h-3" /> Előnézet</Button>
                     <Button variant="outline" size="sm" className="text-xs gap-1" disabled={count === 0}><Download className="w-3 h-3" /> Letöltés</Button>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

@@ -33,8 +33,8 @@ export interface BlockingItem {
 }
 
 export const blockingCategoryMeta: Record<BlockingCategory, { label: string; icon: string }> = {
-  bejovo:  { label: 'Bejövő',  icon: '📥' },
-  kimeno:  { label: 'Kimenő',  icon: '📤' },
-  bank:    { label: 'Bank',    icon: '🏦' },
-  ber:     { label: 'Bér',     icon: '👥' },
+  bejovo:  { label: 'Bejövő',  icon: '' },
+  kimeno:  { label: 'Kimenő',  icon: '' },
+  bank:    { label: 'Bank',    icon: '' },
+  ber:     { label: 'Bér',     icon: '' },
 };

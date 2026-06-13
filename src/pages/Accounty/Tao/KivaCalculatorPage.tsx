@@ -188,7 +188,7 @@ export default function KivaCalculatorPage() {
               </div>
               {computed.kivaBase < computed.minBase && (
                 <p className="text-[10px] text-amber-600 mt-1">
-                  ⚠ Minimum adóalap alkalmazva (= személyi kifizetések)
+                   Minimum adóalap alkalmazva (= személyi kifizetések)
                 </p>
               )}
             </div>

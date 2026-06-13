@@ -150,7 +150,7 @@ export default function SettingsPage() {
 
     setSaving(false);
     setSaved(true);
-    toast({ title: '✅ Beállítások mentve', description: 'A módosítások sikeresen elmentve.' });
+    toast({ title: ' Beállítások mentve', description: 'A módosítások sikeresen elmentve.' });
     setTimeout(() => setSaved(false), 2000);
   };
 
@@ -495,8 +495,8 @@ export default function SettingsPage() {
                   <div className="space-y-2">
                     <label className="text-xs text-slate-500">Környezet</label>
                     <select value={navEnvironment} onChange={e => setNavEnvironment(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm">
-                      <option value="production">🟢 Éles (production)</option>
-                      <option value="sandbox">🟡 Teszt (sandbox)</option>
+                      <option value="production"> Éles (production)</option>
+                      <option value="sandbox"> Teszt (sandbox)</option>
                     </select>
                   </div>
                   <div className="space-y-2">
@@ -645,7 +645,7 @@ export default function SettingsPage() {
                     'overflow-hidden transition-all duration-300',
                     gdprExpanded ? 'max-h-[600px]' : 'max-h-0'
                   )}>
-                    <div className="p-4 space-y-2 bg-slate-50/50 dark:bg-slate-900/30">
+                    <div className="p-4 space-y-2 dark:bg-slate-900/30">
                       {gdprItems.map(item => {
                         const checked = gdprChecks[item.key];
                         return (
@@ -719,7 +719,7 @@ export default function SettingsPage() {
           )}
 
           {/* Save button */}
-          <div className="p-4 border-t border-border bg-slate-50/50 dark:bg-slate-900/50 flex justify-end">
+          <div className="p-4 border-t border-border dark:bg-slate-900/50 flex justify-end">
             <Button
               onClick={handleSave}
               disabled={saving}

@@ -68,7 +68,7 @@ export default function TaoLifecyclePage() {
           <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
             <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
             <p className="text-xs text-amber-700 dark:text-amber-300">
-              Záró bevallási kötelezettség az Art. szerint. {terminationType === 'kiva' && 'KIVA ↔ TAO áttéréskori korrekciók szükségesek.'}
+              Záró bevallási kötelezettség az Art. szerint. {terminationType === 'kiva' && 'KIVA  TAO áttéréskori korrekciók szükségesek.'}
             </p>
           </div>
         )}
@@ -79,7 +79,7 @@ export default function TaoLifecyclePage() {
         <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Áttéréskori korrekciók</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {[
-            { label: 'KIVA ↔ TAO', desc: 'Áttérési különbözet', link: '#' },
+            { label: 'KIVA  TAO', desc: 'Áttérési különbözet', link: '#' },
             { label: 'IFRS áttérés', desc: 'Tao tv. 18/A.§', link: '#' },
             { label: 'Pénznem-váltás', desc: 'Könyvvezetés pénzneme', link: '#' },
           ].map(item => (

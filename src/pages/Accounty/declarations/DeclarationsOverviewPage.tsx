@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Plus, CheckCircle, Clock, AlertTriangle, Users,
-  Heart, Baby, Cake, Ring, Star, Eye, ChevronRight, Shield, Loader2, Database
+  Heart, Baby, Cake, CircleDot, Star, Eye, ChevronRight, Shield, Loader2, Database
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -13,7 +13,7 @@ const DECLARATION_TYPES = [
   { id: 'netak', label: 'NÉTAK — 4+ gyermek', icon: Star, color: 'from-amber-500 to-orange-500', desc: 'Négy vagy több gyermekes anyák kedvezménye — teljes SZJA mentesség', route: 'netak', saving: 'Teljes SZJA mentesség' },
   { id: 'mothers', label: '30 év alatti anyák', icon: Baby, color: 'from-pink-500 to-rose-500', desc: '30 év alatti, legalább 2 gyermekes anyák SZJA kedvezménye', route: 'mothers', saving: 'Max havi 107 650 Ft' },
   { id: 'young', label: '25 év alattiak kedvezménye', icon: Cake, color: 'from-green-500 to-emerald-500', desc: '25 év alatti fiatalok SZJA mentessége a bruttó átlagkeresetig', route: 'young', saving: 'Max havi 715 765 Ft adóalap' },
-  { id: 'first_marriage', label: 'Első házasok kedvezménye', icon: Ring, color: 'from-violet-500 to-purple-500', desc: 'Első házasságkötéstől 24 hónapig járó kedvezmény', route: 'first-marriage', saving: '5 000 Ft/hó' },
+  { id: 'first_marriage', label: 'Első házasok kedvezménye', icon: CircleDot, color: 'from-violet-500 to-purple-500', desc: 'Első házasságkötéstől 24 hónapig járó kedvezmény', route: 'first-marriage', saving: '5 000 Ft/hó' },
   { id: 'personal', label: 'Személyi kedvezmény', icon: Heart, color: 'from-red-500 to-pink-500', desc: 'Súlyos fogyatékosság / rokkantság esetén járó kedvezmény', route: 'personal', saving: '16 140 Ft/hó' },
 ];
 
@@ -40,14 +40,19 @@ export default function DeclarationsOverviewPage() {
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}/employees${empId ? `/${empId}` : ''}`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/25"><FileText className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Adóelőleg-nyilatkozatok</h1>
             <p className="text-sm text-slate-500">SZJA kedvezmények és nyilatkozatok kezelése</p>
           </div>
         </div>
-        <Button variant="outline" onClick={() => setShowPriority(!showPriority)} className="gap-1.5 text-sm"><Shield className="w-4 h-4" /> Érvényesítési sorrend</Button>
+        <div className="flex items-center gap-2">
+          <Link to={`/accounty/payroll/${id}/declarations/archive`}>
+            <Button variant="outline" className="gap-1.5 text-sm"><Database className="w-4 h-4" /> Archívum</Button>
+          </Link>
+          <Button variant="outline" onClick={() => setShowPriority(!showPriority)} className="gap-1.5 text-sm"><Shield className="w-4 h-4" /> Érvényesítési sorrend</Button>
+        </div>
       </div>
 
       {/* Summary */}
@@ -94,7 +99,7 @@ export default function DeclarationsOverviewPage() {
               <div className={cn('w-8 h-8 rounded-lg bg-gradient-to-br text-white flex items-center justify-center mb-2 group-hover:scale-110 transition-transform', dt.color)}><dt.icon className="w-4 h-4" /></div>
               <p className="text-sm font-bold">{dt.label}</p>
               <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">{dt.desc}</p>
-              <p className="text-[10px] text-emerald-600 font-bold mt-1">💰 {dt.saving}</p>
+              <p className="text-[10px] text-emerald-600 font-bold mt-1"> {dt.saving}</p>
             </Link>
           ))}
         </div>
@@ -110,7 +115,7 @@ export default function DeclarationsOverviewPage() {
         </div>
       ) : (
         <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-          <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
+          <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Aktív nyilatkozatok</h2>
             <span className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">{activeDecls.length}</span>
           </div>
@@ -130,7 +135,9 @@ export default function DeclarationsOverviewPage() {
                     <p className="text-sm font-bold font-mono text-emerald-600">-{(decl.data?.monthlySaving || 0).toLocaleString('hu-HU')} Ft/hó</p>
                     <p className="text-[10px] text-slate-400">{decl.data?.startDate || ''} → {decl.data?.endDate || 'visszavonásig'}</p>
                   </div>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0"><Eye className="w-3.5 h-3.5" /></Button>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" asChild>
+                    <Link to={`/accounty/payroll/${id}/declarations/${dt?.route || decl.type}${decl.employeeId ? `?empId=${decl.employeeId}` : ''}`}><Eye className="w-3.5 h-3.5" /></Link>
+                  </Button>
                 </div>
               );
             })}
@@ -140,7 +147,7 @@ export default function DeclarationsOverviewPage() {
 
       {expiredDecls.length > 0 && (
         <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden opacity-60">
-          <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30"><h2 className="text-sm font-bold text-slate-400">Lejárt / Visszavont nyilatkozatok</h2></div>
+          <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30"><h2 className="text-sm font-bold text-slate-400">Lejárt / Visszavont nyilatkozatok</h2></div>
           <div className="divide-y divide-border/50">
             {expiredDecls.map(decl => {
               const dt = DECLARATION_TYPES.find(t => t.id === decl.type);

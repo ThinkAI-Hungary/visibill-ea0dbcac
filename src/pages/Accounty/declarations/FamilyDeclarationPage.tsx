@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import {
-  ArrowLeft, Users, Save, Calculator, Plus, Trash2, Info, CheckCircle, AlertTriangle
+  ArrowLeft, Users, Save, Calculator, Plus, Trash2, Info, CheckCircle, AlertTriangle, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAddDeclaration } from '@/hooks/usePayrollData';
 
 interface Child {
   id: string;
@@ -33,6 +34,7 @@ export default function FamilyDeclarationPage() {
   const [spouseSharePercent, setSpouseSharePercent] = useState('50');
   const [effectiveFrom, setEffectiveFrom] = useState(new Date().toISOString().split('T')[0]);
   const [saved, setSaved] = useState(false);
+  const addDeclaration = useAddDeclaration();
 
   const addChild = () => setChildren(prev => [...prev, { id: String(Date.now()), name: '', birthDate: '', taxId: '', disabled: false }]);
   const removeChild = (childId: string) => setChildren(prev => prev.filter(c => c.id !== childId));
@@ -53,7 +55,23 @@ export default function FamilyDeclarationPage() {
   const effectiveShare = spouseShares ? Number(spouseSharePercent) / 100 : 1;
   const actualSaving = Math.round(totalSaving * effectiveShare);
 
-  const handleSave = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+  const handleSave = async () => {
+    if (!empId) return;
+    try {
+      await addDeclaration.mutateAsync({
+        employee_id: empId,
+        declaration_type: 'family',
+        valid_from: effectiveFrom,
+        parameters: {
+          declarantName, declarantTaxId, children: validChildren,
+          spouseShares, spouseSharePercent: Number(spouseSharePercent),
+          totalBase, totalSaving: actualSaving,
+        },
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch { /* error handled by mutation */ }
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -193,8 +211,8 @@ export default function FamilyDeclarationPage() {
       {/* Actions */}
       <div className="flex justify-end gap-3">
         <Button variant="outline" asChild><Link to={`/accounty/payroll/${id}/declarations`}>Mégse</Link></Button>
-        <Button onClick={handleSave} className="gap-1.5 bg-blue-600 hover:bg-blue-700" disabled={childCount === 0}>
-          <Save className="w-4 h-4" /> {saved ? 'Mentve ✓' : 'Nyilatkozat mentése'}
+        <Button onClick={handleSave} className="gap-1.5 bg-blue-600 hover:bg-blue-700" disabled={childCount === 0 || !empId || addDeclaration.isPending}>
+          {addDeclaration.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saved ? 'Mentve ' : 'Nyilatkozat mentése'}
         </Button>
       </div>
     </div>

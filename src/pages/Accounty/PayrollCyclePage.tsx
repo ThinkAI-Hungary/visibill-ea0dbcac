@@ -185,7 +185,7 @@ export default function PayrollCyclePage() {
 
 
       toast({
-        title: unmatchedNames.length === 0 && warnings.length === 0 ? 'CSV sikeresen beolvasva ✓' : 'CSV beolvasva — figyelmeztetésekkel',
+        title: unmatchedNames.length === 0 && warnings.length === 0 ? 'CSV sikeresen beolvasva ' : 'CSV beolvasva — figyelmeztetésekkel',
         description: `${file.name} — ${matched}/${dataRowCount} foglalkoztatott párosítva.${unmatchedNames.length > 0 ? ` ${unmatchedNames.length} nem párosított.` : ''}`,
         variant: unmatchedNames.length > 0 ? 'destructive' : undefined,
       });
@@ -258,7 +258,7 @@ export default function PayrollCyclePage() {
 
       setEmailSent(true);
       setEmailDialogOpen(false);
-      toast({ title: '✅ E-mail elküldve!', description: `Adatbekérő kiküldve: ${emailTo}` });
+      toast({ title: ' E-mail elküldve!', description: `Adatbekérő kiküldve: ${emailTo}` });
     } catch (err: any) {
       console.error('Email send error:', err);
       toast({ title: 'Hiba', description: err?.message || 'Nem sikerült elküldeni az e-mailt.', variant: 'destructive' });
@@ -434,7 +434,7 @@ export default function PayrollCyclePage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="flex items-center gap-2" onClick={() => window.print()}>
             <Download className="w-4 h-4" /> Export
           </Button>
         </div>
@@ -539,7 +539,7 @@ export default function PayrollCyclePage() {
                     )}
                     <div className="text-left">
                       <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                        {emailSending ? 'Küldés...' : emailSent ? `Elküldve ✓ → ${emailTo}` : 'E-mail küldése'}
+                        {emailSending ? 'Küldés...' : emailSent ? `Elküldve  → ${emailTo}` : 'E-mail küldése'}
                       </p>
                       <p className="text-xs text-slate-500">
                         {emailSent ? 'Adatbekérő sikeresen kiküldve' : 'Sablon-alapú bekérés'}
@@ -664,7 +664,7 @@ export default function PayrollCyclePage() {
 
                       {/* Expanded details */}
                       {isOpen && (
-                        <div className="px-4 pb-4 pt-1 bg-slate-50/50 dark:bg-slate-800/20 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className="px-4 pb-4 pt-1 dark:bg-slate-800/20 animate-in fade-in slide-in-from-top-1 duration-200">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-12">
                             {/* Személyes adatok */}
                             <div className="space-y-2">
@@ -701,7 +701,7 @@ export default function PayrollCyclePage() {
                                   <DetailRow label="Heti óra" value={`${employment.weekly_hours}h`} />
                                   <DetailRow label="Alapbér" value={employment.base_salary ? `${Number(employment.base_salary).toLocaleString('hu-HU')} Ft` : '–'} mono />
                                   <DetailRow label="Bérezés" value={employment.salary_type === 'monthly' ? 'Havibér' : employment.salary_type === 'hourly' ? 'Órabér' : employment.salary_type} />
-                                  <DetailRow label="Biztosított" value={employment.is_insured ? '✓ Igen' : '✗ Nem'} />
+                                  <DetailRow label="Biztosított" value={employment.is_insured ? ' Igen' : ' Nem'} />
                                   {employment.is_fixed_term && <DetailRow label="Határozat" value="Határozott idejű" />}
                                 </>
                               ) : (
@@ -818,7 +818,7 @@ export default function PayrollCyclePage() {
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+                    <tr className="border-b border-border dark:bg-slate-900/30">
                       <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Név</th>
                       <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase">Munkanapok</th>
                       <th className="px-4 py-2 text-center text-xs font-medium text-slate-500 uppercase">Túlóra (h)</th>
@@ -867,7 +867,7 @@ export default function PayrollCyclePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Phone panel */}
                 <div className="p-4 rounded-lg border border-border">
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-2">📱 Magáncélú telefon</h4>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-2"> Magáncélú telefon</h4>
                   <p className="text-xs text-slate-500 mb-3">A magáncélú telefonhasználat 20%-a kerül adóztatásra.</p>
                   <div className="text-center py-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
                     <p className="text-sm text-slate-400">Nincs rögzített tétel</p>
@@ -876,7 +876,7 @@ export default function PayrollCyclePage() {
 
                 {/* SZÉP kártya panel */}
                 <div className="p-4 rounded-lg border border-border">
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-2">🎁 SZÉP kártya</h4>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-2"> SZÉP kártya</h4>
                   <p className="text-xs text-slate-500 mb-3">Éves limit: 450.000 Ft / zseb</p>
                   <div className="space-y-3">
                     {[
@@ -904,7 +904,7 @@ export default function PayrollCyclePage() {
               {/* Rekreáció */}
               <div className="p-4 rounded-lg border border-border">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">🧘 Rekreáció</h4>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100"> Rekreáció</h4>
                   <span className="text-xs text-slate-500 font-mono">0 / 75.000 Ft</span>
                 </div>
                 <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -924,7 +924,7 @@ export default function PayrollCyclePage() {
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+                    <tr className="border-b border-border dark:bg-slate-900/30">
                       <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Név</th>
                       <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">Alapbér</th>
                       <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">Pótlék</th>
@@ -977,7 +977,7 @@ export default function PayrollCyclePage() {
                 <div className="overflow-x-auto rounded-lg border border-border">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+                      <tr className="border-b border-border dark:bg-slate-900/30">
                         <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Név</th>
                         <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">SZJA</th>
                         <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">TB</th>
@@ -1021,7 +1021,7 @@ export default function PayrollCyclePage() {
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+                    <tr className="border-b border-border dark:bg-slate-900/30">
                       <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Név</th>
                       <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">Letiltás</th>
                       <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">Előleg</th>
@@ -1078,7 +1078,7 @@ export default function PayrollCyclePage() {
                   <div className="overflow-x-auto rounded-lg border border-border">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+                        <tr className="border-b border-border dark:bg-slate-900/30">
                           <th className="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase">Név</th>
                           <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">Bruttó</th>
                           <th className="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase">SZJA</th>
@@ -1213,7 +1213,7 @@ export default function PayrollCyclePage() {
             onClick={async () => {
               if (!cycle?.id) return;
               await supabase.from('payroll_cycles').update({ status: 'closed', current_step: 8 } as any).eq('id', cycle.id);
-              toast({ title: '✅ Ciklus lezárva', description: `${cycle.year}. ${MONTHS[cycle.month - 1]} bérszámfejtés lezárva.` });
+              toast({ title: ' Ciklus lezárva', description: `${cycle.year}. ${MONTHS[cycle.month - 1]} bérszámfejtés lezárva.` });
               navigate(`/accounty/payroll/${companyId}`);
             }}
           >

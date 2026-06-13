@@ -477,7 +477,7 @@ export default function TaxCalendarPage() {
                 key={index} 
                 className={cn(
                   "bg-card min-h-[120px] p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group",
-                  !cell.isCurrentMonth && "text-slate-400 bg-slate-50/50 dark:bg-slate-950/50"
+                  !cell.isCurrentMonth && "text-slate-400 dark:bg-slate-950/50"
                 )}
               >
                 <div className={cn(
@@ -521,7 +521,7 @@ export default function TaxCalendarPage() {
           {selectedDeadline && (
             <>
               {/* Drawer Header */}
-              <div className="p-6 border-b border-border bg-slate-50/50 dark:bg-slate-900/50 relative">
+              <div className="p-6 border-b border-border dark:bg-slate-900/50 relative">
                 <div className="flex items-center gap-3 text-slate-800 dark:text-slate-200">
                   <div className="p-2 bg-red-100 text-red-600 rounded-lg shrink-0">
                     <CalendarIcon className="w-5 h-5" />

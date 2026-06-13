@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Users, Calculator, FileText, Calendar, Clock, TrendingUp,
   Plus, Search, ArrowUpRight, Banknote, UserPlus, ChevronRight,
-  AlertTriangle, CheckCircle2, Loader2, Building2
+  AlertTriangle, CheckCircle2, Loader2, Building2, Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -186,6 +186,14 @@ export default function PayrollDashboardPage() {
           <p className="text-slate-500 dark:text-slate-400 mt-1">Foglalkoztatottak, havi ciklusok és bevallások kezelése</p>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            onClick={() => navigate(`/accounty/payroll/${companyId}/settings`)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            Beállítások
+          </Button>
           <Button
             onClick={() => navigate(`/accounty/payroll/${companyId}/employees/new`)}
             variant="outline"
@@ -459,8 +467,13 @@ export default function PayrollDashboardPage() {
         {[
           { path: 'filings', icon: FileText, title: 'NAV Bevallások', desc: '08-as, M30 generálás', color: 'blue', action: 'Megnyitás' },
           { path: 'reports', icon: TrendingUp, title: 'Riportok', desc: 'Bérelőzmény, trendek', color: 'violet', action: 'Megtekintés' },
+          { path: 'declarations', icon: FileText, title: 'Nyilatkozatok', desc: 'SZJA kedvezmények', color: 'teal', action: 'Megnyitás' },
+          { path: 'documents', icon: FileText, title: 'Dokumentumok', desc: 'Bérjegyzék, utalás', color: 'blue', action: 'Megnyitás' },
+          { path: 'year-end', icon: Calendar, title: 'Év végi feladatok', desc: 'M30, SZJA, szabadság', color: 'amber', action: 'Megnyitás' },
+          { path: 'advanced-reports', icon: TrendingUp, title: 'Haladó riportok', desc: 'Anomália, egyéni riport', color: 'violet', action: 'Megnyitás' },
           { path: 'portal', icon: Building2, title: 'Ügyfélportál', desc: 'Adatbekérés, chat', color: 'amber', action: 'Megnyitás' },
           { path: 'tax-params', icon: Calculator, title: 'Paraméterek', desc: 'Adókulcsok, minimálbér', color: 'teal', action: 'Szerkesztés' },
+          { path: 'settings', icon: Settings, title: 'Beállítások', desc: 'Cégspecifikus konfiguráció', color: 'slate', action: 'Megnyitás' },
           { path: 'employees', icon: Users, title: 'Foglalkoztatottak', desc: 'Adatok, jogviszonyok', color: 'blue', action: 'Összes' },
         ].map((card) => {
           const colorMap: Record<string, string> = {
@@ -468,9 +481,10 @@ export default function PayrollDashboardPage() {
             violet: 'bg-violet-100 dark:bg-violet-900/30',
             amber: 'bg-amber-100 dark:bg-amber-900/30',
             teal: 'bg-teal-100 dark:bg-teal-900/30',
+            slate: 'bg-slate-200 dark:bg-slate-700/50',
           };
           const iconColorMap: Record<string, string> = {
-            blue: 'text-blue-600', violet: 'text-violet-600', amber: 'text-amber-600', teal: 'text-teal-600',
+            blue: 'text-blue-600', violet: 'text-violet-600', amber: 'text-amber-600', teal: 'text-teal-600', slate: 'text-slate-600',
           };
           return (
             <div

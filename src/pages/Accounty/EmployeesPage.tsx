@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Users, UserPlus, Search, Filter, ChevronRight, ArrowLeft,
   Download, Upload, MoreVertical, Mail, Phone, Building2, Shield,
-  ChevronLeft
+  ChevronLeft, Briefcase, Trash2, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { usePayrollEmployees } from '@/hooks/usePayrollData';
 import { formatTajNumber } from '@/lib/payroll/validators';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 export default function EmployeesPage() {
   const { id: companyId } = useParams<{ id: string }>();
@@ -18,7 +21,25 @@ export default function EmployeesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(0);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const PAGE_SIZE = 20;
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  const handleDelete = async (empId: string, empName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeletingId(empId);
+    try {
+      const { error } = await supabase.from('accounty_employees').delete().eq('id', empId);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ['payroll', 'employees', companyId] });
+      toast({ title: 'Törölve', description: `${empName} sikeresen törölve.` });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const { data: employees = [], isLoading } = usePayrollEmployees(companyId || '');
 
@@ -191,7 +212,7 @@ export default function EmployeesPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border/50 bg-slate-50/50 dark:bg-slate-900/30">
+                <tr className="border-b border-border/50 dark:bg-slate-900/30">
                   <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Név</th>
                   <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">TAJ-szám</th>
                   <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Adóazonosító</th>
@@ -254,7 +275,16 @@ export default function EmployeesPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3.5">
-                      <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-primary transition-colors" />
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={(e) => handleDelete(emp.id, `${emp.last_name} ${emp.first_name}`, e)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
+                          title="Törlés"
+                        >
+                          {deletingId === emp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                        </button>
+                        <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-primary transition-colors" />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -263,7 +293,7 @@ export default function EmployeesPage() {
           </div>
           {/* Pagination */}
           {filtered.length > PAGE_SIZE && (
-            <div className="px-5 py-3 border-t border-border/50 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/30">
+            <div className="px-5 py-3 border-t border-border/50 flex items-center justify-between dark:bg-slate-900/30">
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} / {filtered.length} fő
               </p>

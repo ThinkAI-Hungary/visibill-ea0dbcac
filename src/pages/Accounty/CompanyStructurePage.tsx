@@ -296,7 +296,7 @@ export default function CompanyStructurePage() {
             <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-slate-50/30 dark:bg-slate-900/20">
+                  <tr className="border-b border-border dark:bg-slate-900/20">
                     <th className="text-left px-5 py-2.5 text-xs font-bold text-slate-500 uppercase">Kód</th>
                     <th className="text-left px-3 py-2.5 text-xs font-bold text-slate-500 uppercase">Megnevezés</th>
                     <th className="text-left px-3 py-2.5 text-xs font-bold text-slate-500 uppercase">Cím</th>
@@ -333,7 +333,7 @@ export default function CompanyStructurePage() {
                   })}
                 </tbody>
               </table>
-              <div className="px-5 py-3 bg-slate-50/50 dark:bg-slate-900/30 border-t border-border text-xs text-slate-500">
+              <div className="px-5 py-3 dark:bg-slate-900/30 border-t border-border text-xs text-slate-500">
                 Összesen: {sitesList.reduce((s, site) => {
                   const depsForSite = deptsList.filter(d => d.siteId === site.id);
                   return s + (depsForSite.length > 0 ? depsForSite.reduce((acc, d) => acc + d.headcount, 0) : site.headcount);
@@ -383,14 +383,14 @@ export default function CompanyStructurePage() {
             <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>
           ) : (
             <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-              <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
+              <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Költséghelyi hierarchia</h2>
                 <Button variant="outline" size="sm" onClick={() => setShowNewCC(true)} className="gap-1.5 text-xs"><Plus className="w-3 h-3" /> Új költséghely</Button>
               </div>
               {ccList.length === 0 ? (
                 <div className="py-12 text-center text-sm text-slate-400">Nincsenek költséghelyek.</div>
               ) : ccList.map(node => renderCostCenterNode(node))}
-              <div className="px-5 py-3 bg-slate-50/50 dark:bg-slate-900/30 border-t border-border text-xs text-slate-500">
+              <div className="px-5 py-3 dark:bg-slate-900/30 border-t border-border text-xs text-slate-500">
                 {flattenCC(ccList)} költséghely
               </div>
             </div>
@@ -440,7 +440,7 @@ export default function CompanyStructurePage() {
             <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>
           ) : (
             <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-              <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
+              <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Részlegek és csoportok</h2>
                 <Button variant="outline" size="sm" onClick={() => setShowNewDept(true)} className="gap-1.5 text-xs"><Plus className="w-3 h-3" /> Új részleg</Button>
               </div>
@@ -449,7 +449,7 @@ export default function CompanyStructurePage() {
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border bg-slate-50/30 dark:bg-slate-900/20">
+                    <tr className="border-b border-border dark:bg-slate-900/20">
                       <th className="text-left px-5 py-2.5 text-xs font-bold text-slate-500 uppercase">Részleg</th>
                       <th className="text-left px-3 py-2.5 text-xs font-bold text-slate-500 uppercase">Telephely</th>
                       <th className="text-left px-3 py-2.5 text-xs font-bold text-slate-500 uppercase">Vezető</th>
@@ -486,7 +486,7 @@ export default function CompanyStructurePage() {
                   </tbody>
                 </table>
               )}
-              <div className="px-5 py-3 bg-slate-50/50 dark:bg-slate-900/30 border-t border-border text-xs text-slate-500">
+              <div className="px-5 py-3 dark:bg-slate-900/30 border-t border-border text-xs text-slate-500">
                 Összesen: {deptsList.reduce((s, d) => s + d.headcount, 0)} fő{sitesList.length > 0 ? `, ${new Set(deptsList.filter(d => d.siteId).map(d => d.siteId)).size} telephelyen` : ''}
               </div>
             </div>

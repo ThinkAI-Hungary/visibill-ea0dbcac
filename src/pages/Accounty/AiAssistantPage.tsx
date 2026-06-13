@@ -142,7 +142,7 @@ export function AiAssistantChat({ fullPage = false }: AiAssistantChatProps) {
         setMessages(prev => [...prev, {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: `⚠️ Hiba történt: ${err.message}\n\nKérlek próbáld újra.`,
+          content: ` Hiba történt: ${err.message}\n\nKérlek próbáld újra.`,
           timestamp: new Date(),
         }]);
       }

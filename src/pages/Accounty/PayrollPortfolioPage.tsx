@@ -244,7 +244,7 @@ export default function PayrollPortfolioPage() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+              <tr className="border-b border-border dark:bg-slate-900/30">
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Ügyfél</th>
                 <th className="text-center px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Létszám</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Ciklus státusz</th>

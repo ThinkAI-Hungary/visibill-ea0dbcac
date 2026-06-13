@@ -226,7 +226,7 @@ export default function TaoCalendarPage() {
   const renderListView = () => (
     <div className="space-y-4">
       <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-        <div className="px-4 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+        <div className="px-4 py-3 border-b border-border dark:bg-slate-900/30">
           <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Közelgő határidők</h2>
         </div>
         <div className="divide-y divide-border/50">
@@ -239,7 +239,7 @@ export default function TaoCalendarPage() {
       </div>
       {pastEvents.length > 0 && (
         <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-          <div className="px-4 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+          <div className="px-4 py-3 border-b border-border dark:bg-slate-900/30">
             <h2 className="text-sm font-bold text-slate-400">Lejárt határidők</h2>
           </div>
           <div className="divide-y divide-border/50">

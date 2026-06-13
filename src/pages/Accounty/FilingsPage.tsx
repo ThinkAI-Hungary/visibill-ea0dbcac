@@ -204,12 +204,35 @@ export default function FilingsPage() {
             <p className="text-sm text-slate-500 dark:text-slate-400">{company?.name || '–'}</p>
           </div>
         </div>
-        <Button
-          onClick={() => setShowGenPanel(!showGenPanel)}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" /> Új bevallás
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/accounty/payroll/${companyId}/filings/08e`)}
+            className="flex items-center gap-1.5 text-sm"
+          >
+            <FileText className="w-4 h-4" /> 08E
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/accounty/payroll/${companyId}/filings/2608`)}
+            className="flex items-center gap-1.5 text-sm"
+          >
+            <FileText className="w-4 h-4" /> 2608
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/accounty/payroll/${companyId}/filings/all`)}
+            className="flex items-center gap-1.5 text-sm"
+          >
+            <Filter className="w-4 h-4" /> Összes típus
+          </Button>
+          <Button
+            onClick={() => setShowGenPanel(!showGenPanel)}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" /> Új bevallás
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -328,7 +351,7 @@ export default function FilingsPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+                <tr className="border-b border-border dark:bg-slate-900/30">
                   <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Típus</th>
                   <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Időszak</th>
                   <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Státusz</th>

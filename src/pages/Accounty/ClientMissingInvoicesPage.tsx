@@ -148,7 +148,7 @@ export default function ClientMissingInvoicesPage() {
 
     addToApprovalQueue(message);
     toast({
-      title: '📬 Bekérés a jóváhagyó sorba került',
+      title: ' Bekérés a jóváhagyó sorba került',
       description: `${items.length} dokumentum – ${clientName}`,
     });
     navigate('/accounty/approval-queue');
@@ -494,7 +494,7 @@ export default function ClientMissingInvoicesPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/50">
+                  <tr className="border-b border-border dark:bg-slate-900/50">
                     <th className="py-4 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">Dátum</th>
                     <th className="py-4 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">Csatorna</th>
                     <th className="py-4 px-6 text-xs font-semibold text-slate-500 dark:text-slate-400 tracking-wider">Számla</th>
@@ -687,7 +687,7 @@ export default function ClientMissingInvoicesPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/50">
+              <tr className="border-b border-border dark:bg-slate-900/50">
                 <th className="py-4 px-4 w-12">
                   <input 
                     type="checkbox" 

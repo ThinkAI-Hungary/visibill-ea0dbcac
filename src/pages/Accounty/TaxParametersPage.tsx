@@ -392,7 +392,7 @@ export default function TaxParametersPage() {
       {/* Parameter categories */}
       {params && Object.entries(filteredCategories).map(([catId, cat]) => (
         <div key={catId} className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-          <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30 flex items-center gap-2">
+          <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center gap-2">
             <cat.icon className="w-4 h-4 text-primary" />
             <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">{cat.label}</h2>
           </div>
@@ -455,7 +455,7 @@ export default function TaxParametersPage() {
       {/* Uncategorized parameters */}
       {uncategorizedKeys.length > 0 && params && (
         <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-          <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+          <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30">
             <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Egyéb paraméterek</h2>
           </div>
           <div className="divide-y divide-border/50">

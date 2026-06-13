@@ -57,19 +57,20 @@ export default function NewClientPage() {
 
   const handleUploadDocs = () => {
     setIsUploadingDocs(true);
-    // Simulate OCR delay
+    // OCR integration placeholder — real OCR will populate these fields
     setTimeout(() => {
       setIsUploadingDocs(false);
       setDocsUploaded(true);
+      // Leave fields empty for manual entry until real OCR is integrated
       setPersonalData({
-        fullName: 'Kovács János',
-        birthName: 'Kovács János',
-        mothersName: 'Szabó Éva',
-        birthPlaceDate: 'Budapest, 1985. 04. 12.',
-        idCardNumber: '123456AB',
-        address: '1111 Budapest, Példa utca 12. 3/4.'
+        fullName: '',
+        birthName: '',
+        mothersName: '',
+        birthPlaceDate: '',
+        idCardNumber: '',
+        address: ''
       });
-    }, 2000);
+    }, 1500);
   };
 
   const handleNext = async () => {
@@ -338,7 +339,7 @@ export default function NewClientPage() {
                       <div 
                         className={cn(
                           "border-2 border-dashed rounded-xl p-8 text-center transition-colors flex flex-col items-center justify-center gap-3",
-                          isUploadingDocs ? "border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50" : "border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700 bg-slate-50/50 hover:bg-slate-50 dark:bg-slate-900 cursor-pointer"
+                          isUploadingDocs ? "border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50" : "border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700 hover:bg-slate-50 dark:bg-slate-900 cursor-pointer"
                         )}
                         onClick={handleUploadClick}
                       >
@@ -611,7 +612,7 @@ export default function NewClientPage() {
                   </div>
 
                   <div className="flex gap-3">
-                    <Button variant="outline" className="gap-2 text-slate-600 dark:text-slate-400">
+                    <Button variant="outline" className="gap-2 text-slate-600 dark:text-slate-400" onClick={() => window.print()}>
                       <Download className="w-4 h-4" /> Részletes útmutató letöltése
                     </Button>
                     <Button variant="outline" className="gap-2 text-slate-600 dark:text-slate-400">
@@ -646,7 +647,7 @@ export default function NewClientPage() {
                   </div>
 
                   <div className="flex gap-3">
-                    <Button variant="outline" className="gap-2 text-slate-600 dark:text-slate-400">
+                    <Button variant="outline" className="gap-2 text-slate-600 dark:text-slate-400" onClick={() => window.print()}>
                       <Download className="w-4 h-4" /> Részletes útmutató letöltése
                     </Button>
                     <Button variant="outline" className="gap-2 text-slate-600 dark:text-slate-400">
@@ -678,7 +679,7 @@ export default function NewClientPage() {
             <div className="animate-in fade-in zoom-in-95 duration-500 w-full">
               <div className="text-center mb-8">
                 <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <span className="text-3xl">🎉</span>
+                  <span className="text-3xl"></span>
                 </div>
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Minden készen áll!</h1>
                 <p className="text-slate-500 dark:text-slate-400 mt-2">A könyvelői fiókod be van állítva. Kezdheted a munkát!</p>
@@ -721,7 +722,7 @@ export default function NewClientPage() {
 
               <div className="bg-card rounded-xl p-5 border border-border shadow-soft mb-6 text-sm">
                 <p className="font-semibold text-amber-600 flex items-center gap-2 mb-2">
-                  <span className="text-base">💡</span> Tudtad?
+                  <span className="text-base"></span> Tudtad?
                 </p>
                 <ul className="list-disc pl-5 text-slate-600 dark:text-slate-400 space-y-1.5 text-xs">
                   <li>A portfólió nézetben egy helyen látod az összes ügyfeled státuszát</li>

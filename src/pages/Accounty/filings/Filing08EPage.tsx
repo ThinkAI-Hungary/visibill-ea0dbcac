@@ -56,7 +56,7 @@ export default function Filing08EPage() {
     <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}/filings`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/25"><FileText className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">08E — Biztosítotti bejelentés</h1>
@@ -114,13 +114,13 @@ export default function Filing08EPage() {
           </details>
 
           <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-            <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+            <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30">
               <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Bejelentendő sorok ({rows.length})</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-slate-50/30">
+                  <tr className="border-b border-border">
                     <th className="text-left px-5 py-2 text-xs font-bold text-slate-500">Munkavállaló</th>
                     <th className="text-center px-3 py-2 text-xs font-bold text-slate-500">Típus</th>
                     <th className="text-center px-3 py-2 text-xs font-bold text-slate-500">Kód</th>

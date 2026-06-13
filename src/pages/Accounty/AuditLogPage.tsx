@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Search, Download, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ExportButton } from '@/components/accounty/ExportButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuditLog } from '@/hooks/useAdminData';
@@ -59,24 +60,7 @@ export default function AuditLogPage() {
     );
   }, [entries, searchQuery]);
 
-  const handleExportCsv = () => {
-    const headers = ['Dátum', 'Felhasználó', 'Esemény', 'Entitás', 'Entitás ID', 'IP'];
-    const rows = filtered.map((e: any) => [
-      new Date(e.created_at).toLocaleString('hu-HU'),
-      e.user_email || '-',
-      EVENT_LABELS[e.event_type] || e.event_type,
-      e.entity_type,
-      e.entity_id || '-',
-      e.ip_address || '-',
-    ]);
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `audit_log_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-  };
+
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
@@ -91,10 +75,18 @@ export default function AuditLogPage() {
             <p className="text-sm text-slate-500 dark:text-slate-400">Összes adatmódosítás, bejelentkezés és beküldés naplója</p>
           </div>
         </div>
-        <Button variant="outline" className="gap-2" onClick={handleExportCsv}>
-          <Download className="w-4 h-4" />
-          Export CSV
-        </Button>
+        <ExportButton
+          filename={`audit_log_${new Date().toISOString().slice(0, 10)}`}
+          headers={['Dátum', 'Felhasználó', 'Esemény', 'Entitás', 'Entitás ID', 'IP']}
+          getRows={() => filtered.map((e: any) => [
+            new Date(e.created_at).toLocaleString('hu-HU'),
+            e.user_email || '-',
+            EVENT_LABELS[e.event_type] || e.event_type,
+            e.entity_type,
+            e.entity_id || '-',
+            e.ip_address || '-',
+          ])}
+        />
       </div>
 
       {/* Filters */}
@@ -127,7 +119,7 @@ export default function AuditLogPage() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+              <tr className="border-b border-border dark:bg-slate-900/30">
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Dátum</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Felhasználó</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Esemény</th>

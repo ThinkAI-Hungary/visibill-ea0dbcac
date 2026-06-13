@@ -70,7 +70,7 @@ export default function YearEndDashboardPage() {
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center gap-3">
-        <Link to={`/accounty/payroll/${id}`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+        <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
         <div className="p-2.5 bg-gradient-to-br from-amber-500 to-red-500 rounded-xl shadow-lg shadow-amber-500/25"><Star className="w-5 h-5 text-white" /></div>
         <div>
           <h1 className="text-2xl font-bold">Év végi feladatok — {currentYear}</h1>
@@ -158,7 +158,7 @@ export default function YearEndDashboardPage() {
                       ))}
                       {task.outputLabel && (
                         <div className="flex justify-end pt-2">
-                          <Button variant="outline" size="sm" className="gap-1 text-xs"><Download className="w-3 h-3" /> {task.outputLabel}</Button>
+                          <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => window.print()}><Download className="w-3 h-3" /> {task.outputLabel}</Button>
                         </div>
                       )}
                     </div>

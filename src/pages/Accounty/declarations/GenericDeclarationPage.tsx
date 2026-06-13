@@ -2,10 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Save, Calculator, Info, CheckCircle, AlertTriangle,
-  Star, Baby, Cake, Ring, Heart
+  Star, Baby, Cake, CircleDot, Heart, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAddDeclaration } from '@/hooks/usePayrollData';
 
 type DeclType = 'netak' | 'mothers' | 'young' | 'first-marriage' | 'personal';
 
@@ -72,7 +73,7 @@ const CONFIGS: Record<DeclType, {
   'first-marriage': {
     title: 'Első házasok kedvezménye',
     subtitle: 'Szja tv. 29/C. § — 24 hónapon át jár',
-    icon: Ring,
+    icon: CircleDot,
     color: 'from-violet-500 to-purple-500',
     infoText: 'Az első házasságkötéstől számított 24 hónapig havi 33 335 Ft adóalap-csökkentés jár (5 000 Ft SZJA megtakarítás/hó). A házasfelek közül bármelyik érvényesítheti.',
     monthlyBase: 33335,
@@ -115,6 +116,8 @@ export default function GenericDeclarationPage() {
 
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
+  const empId = searchParams.get('empId');
+  const addDeclaration = useAddDeclaration();
 
   if (!config) {
     return (
@@ -126,7 +129,20 @@ export default function GenericDeclarationPage() {
   }
 
   const updateField = (key: string, value: string) => setFormData(prev => ({ ...prev, [key]: value }));
-  const handleSave = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+  const handleSave = async () => {
+    if (!empId) return;
+    try {
+      await addDeclaration.mutateAsync({
+        employee_id: empId,
+        declaration_type: declType,
+        valid_from: formData.startDate || new Date().toISOString().split('T')[0],
+        valid_until: endDate || undefined,
+        parameters: { ...formData, monthlyBase: config.monthlyBase, monthlySaving: config.monthlySaving },
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch { /* error handled by mutation */ }
+  };
 
   const isComplete = config.fields.filter(f => f.required).every(f => formData[f.key]?.trim());
 
@@ -262,8 +278,8 @@ export default function GenericDeclarationPage() {
       {/* Actions */}
       <div className="flex justify-end gap-3">
         <Button variant="outline" asChild><Link to={`/accounty/payroll/${id}/declarations`}>Mégse</Link></Button>
-        <Button onClick={handleSave} className={cn('gap-1.5', `bg-gradient-to-r ${config.color} hover:opacity-90`)} disabled={!isComplete}>
-          <Save className="w-4 h-4" /> {saved ? 'Mentve ✓' : 'Nyilatkozat mentése'}
+        <Button onClick={handleSave} className={cn('gap-1.5', `bg-gradient-to-r ${config.color} hover:opacity-90`)} disabled={!isComplete || !empId || addDeclaration.isPending}>
+          {addDeclaration.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {saved ? 'Mentve ' : 'Nyilatkozat mentése'}
         </Button>
       </div>
     </div>

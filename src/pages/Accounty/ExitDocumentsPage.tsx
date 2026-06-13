@@ -57,7 +57,7 @@ export default function ExitDocumentsPage() {
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}/employees/${empId || ''}`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl shadow-lg shadow-red-500/25"><Package className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">Kilépő dokumentumcsomag</h1>
@@ -66,7 +66,7 @@ export default function ExitDocumentsPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="gap-1.5"><Printer className="w-4 h-4" /> Nyomtatás</Button>
-          <Button className="gap-1.5 bg-red-600 hover:bg-red-700"><Download className="w-4 h-4" /> Teljes csomag (ZIP)</Button>
+          <Button className="gap-1.5 bg-red-600 hover:bg-red-700" onClick={() => window.print()}><Download className="w-4 h-4" /> Teljes csomag (ZIP)</Button>
         </div>
       </div>
 

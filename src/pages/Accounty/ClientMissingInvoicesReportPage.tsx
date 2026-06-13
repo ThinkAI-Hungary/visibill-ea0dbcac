@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Download, TrendingUp, CheckCircle2, Clock, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ExportButton } from '@/components/accounty/ExportButton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAccountyClients, useAccountyMissingItems } from '@/hooks/useAccountyData';
@@ -46,28 +47,7 @@ export default function ClientMissingInvoicesReportPage() {
     return { requested, resolved, successRate, pending };
   }, [missingItems]);
 
-  const exportToCSV = () => {
-    const headers = ['Dokumentum', 'Kategória', 'Állapot', 'Létrehozva'];
-    const rows = (missingItems || []).map(r => {
-      const typeMap: Record<string, string> = { bejovo: 'Bejövő', kimeno: 'Kimenő', bank: 'Bank', ber: 'Bér' };
-      const statusMap: Record<string, string> = { pending: 'Feldolgozandó', notified: 'Felszólítva', resolved: 'Rendben', ignored: 'Mellőzve' };
-      return [
-        r.description,
-        typeMap[r.category] || r.category,
-        statusMap[r.status] || r.status,
-        new Date(r.created_at).toLocaleDateString('hu-HU')
-      ];
-    });
-    const csvContent = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ugyfel_hianyzok_${id}_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+
 
   // Dynamic pie: category breakdown
   const dynamicPieData = useMemo(() => {
@@ -123,10 +103,21 @@ export default function ClientMissingInvoicesReportPage() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" className="gap-2" onClick={exportToCSV}>
-            <Download className="w-4 h-4" />
-            Riport Exportálása
-          </Button>
+          <ExportButton
+            filename={`ugyfel_hianyzok_${id}_${new Date().toISOString().split('T')[0]}`}
+            headers={['Dokumentum', 'Kategória', 'Állapot', 'Létrehozva']}
+            label="Riport Exportálása"
+            getRows={() => (missingItems || []).map(r => {
+              const typeMap: Record<string, string> = { bejovo: 'Bejövő', kimeno: 'Kimenő', bank: 'Bank', ber: 'Bér' };
+              const statusMap: Record<string, string> = { pending: 'Feldolgozandó', notified: 'Felszólítva', resolved: 'Rendben', ignored: 'Mellőzve' };
+              return [
+                r.description,
+                typeMap[r.category] || r.category,
+                statusMap[r.status] || r.status,
+                new Date(r.created_at).toLocaleDateString('hu-HU')
+              ];
+            })}
+          />
         </div>
       </div>
 
@@ -278,7 +269,7 @@ export default function ClientMissingInvoicesReportPage() {
                   </tr>
                 );
               }
-              const catLabels: Record<string, string> = { bejovo: '📥 Bejövő', kimeno: '📤 Kimenő', bank: '🏦 Bank', ber: '👥 Bér' };
+              const catLabels: Record<string, string> = { bejovo: ' Bejövő', kimeno: ' Kimenő', bank: ' Bank', ber: ' Bér' };
               const cats = ['bejovo', 'kimeno', 'bank', 'ber'];
               return cats.map(cat => {
                 const items = missingItems.filter(mi => mi.category === cat);

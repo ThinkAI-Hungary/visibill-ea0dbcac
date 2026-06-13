@@ -768,7 +768,7 @@ export default function AccountyLayout() {
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-80 p-0 mt-2 border-border shadow-lg rounded-xl overflow-hidden dark:bg-card" align="end" sideOffset={8}>
-                <div className="px-4 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
+                <div className="px-4 py-3 border-b border-border dark:bg-slate-900/50 flex items-center justify-between">
                   <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100">Értesítések</h3>
                   {((kpis?.criticalClients ?? 0) > 0 || (kpis?.missingItems ?? 0) > 0 || (kpis?.todayDeadlines ?? 0) > 0 || (kpis?.upcomingDeadlines ?? 0) > 0) && (
                     <button

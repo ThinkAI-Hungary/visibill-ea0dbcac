@@ -24,46 +24,46 @@ const STEPS = [
 // ── Employment type cards — complete list based on Tbj. / NAV 08E ──
 const EMPLOYMENT_TYPES = [
   // ── Magánszféra — munkaviszony alapú ──
-  { value: 'munkaviszony', label: 'Munkaviszony (Mt.)', code: '1101', desc: 'Klasszikus munkaviszony', icon: '👔', group: 'Munkaviszony' },
-  { value: 'munkaviszony_reszido', label: 'Részmunkaidős munkaviszony', code: '1101', desc: 'Mt. szerinti, csökkentett óraszám', icon: '⏰', group: 'Munkaviszony' },
-  { value: 'bedolgozo', label: 'Bedolgozói jogviszony', code: '1101', desc: 'Otthoni munkavégzés, Mt. speciális', icon: '🏠', group: 'Munkaviszony' },
-  { value: 'munkaero_kolcsonzes', label: 'Munkaerő-kölcsönzés', code: '1101', desc: 'Kölcsönbeadó által foglalkoztatott', icon: '🔄', group: 'Munkaviszony' },
-  { value: 'szakkep', label: 'Szakképzési munkaszerződés', code: '1131', desc: 'Szkt. szerinti tanulói jogviszony', icon: '🎓', group: 'Munkaviszony' },
-  { value: 'osztondijas', label: 'Ösztöndíjas foglalkoztatott', code: '1140', desc: 'Gyakornoki / ösztöndíjas jogviszony', icon: '📚', group: 'Munkaviszony' },
-  { value: 'neveloszulo', label: 'Nevelőszülő', code: '1150', desc: 'Nevelőszülői foglalkoztatási jogviszony', icon: '🤱', group: 'Munkaviszony' },
-  { value: 'haztartasi', label: 'Háztartási alkalmazott', code: '1190', desc: 'Háztartási munkára irányuló egyszerűsített fogl.', icon: '🏡', group: 'Munkaviszony' },
+  { value: 'munkaviszony', label: 'Munkaviszony (Mt.)', code: '1101', desc: 'Klasszikus munkaviszony', icon: '', group: 'Munkaviszony' },
+  { value: 'munkaviszony_reszido', label: 'Részmunkaidős munkaviszony', code: '1101', desc: 'Mt. szerinti, csökkentett óraszám', icon: '', group: 'Munkaviszony' },
+  { value: 'bedolgozo', label: 'Bedolgozói jogviszony', code: '1101', desc: 'Otthoni munkavégzés, Mt. speciális', icon: '', group: 'Munkaviszony' },
+  { value: 'munkaero_kolcsonzes', label: 'Munkaerő-kölcsönzés', code: '1101', desc: 'Kölcsönbeadó által foglalkoztatott', icon: '', group: 'Munkaviszony' },
+  { value: 'szakkep', label: 'Szakképzési munkaszerződés', code: '1131', desc: 'Szkt. szerinti tanulói jogviszony', icon: '', group: 'Munkaviszony' },
+  { value: 'osztondijas', label: 'Ösztöndíjas foglalkoztatott', code: '1140', desc: 'Gyakornoki / ösztöndíjas jogviszony', icon: '', group: 'Munkaviszony' },
+  { value: 'neveloszulo', label: 'Nevelőszülő', code: '1150', desc: 'Nevelőszülői foglalkoztatási jogviszony', icon: '', group: 'Munkaviszony' },
+  { value: 'haztartasi', label: 'Háztartási alkalmazott', code: '1190', desc: 'Háztartási munkára irányuló egyszerűsített fogl.', icon: '', group: 'Munkaviszony' },
 
   // ── Közszféra ──
-  { value: 'kozalkalmazott', label: 'Közalkalmazott (Kjt.)', code: '1201', desc: 'Önkormányzat, iskola, kórház, kultúra', icon: '🏫', group: 'Közszféra', tag: 'KÖZSZ' },
-  { value: 'kozszolgalati', label: 'Köztisztviselő (Kttv.)', code: '1220', desc: 'Államigazgatási szerv, jegyző', icon: '🏛️', group: 'Közszféra', tag: 'KÖZSZ' },
-  { value: 'kormanytisztviselo', label: 'Kormánytisztviselő (Kit.)', code: '1210', desc: 'Kormányzati igazgatási szerv', icon: '⚖️', group: 'Közszféra', tag: 'KÖZSZ' },
-  { value: 'biro_ugyesz', label: 'Bíró, ügyész, igazságügyi alk.', code: '1120', desc: 'Igazságszolgáltatási jogviszony', icon: '🔨', group: 'Közszféra', tag: 'KÖZSZ' },
-  { value: 'hivatásos_katona', label: 'Hivatásos/szerződéses katona', code: '1130', desc: 'Honvédelmi jogviszony (Hjt.)', icon: '🎖️', group: 'Közszféra', tag: 'KÖZSZ' },
-  { value: 'egyhazi', label: 'Egyházi személy', code: '1500', desc: 'Egyházi szolgálati jogviszony', icon: '⛪', group: 'Közszféra', tag: 'KÖZSZ' },
-  { value: 'kozfogl', label: 'Közfoglalkoztatás', code: '1600', desc: 'Közfoglalkoztatási jogviszony', icon: '🏗️', group: 'Közszféra', tag: 'KÖZSZ' },
-  { value: 'premiumevek', label: 'Prémiumévek program', code: '1240', desc: 'Nyugdíj előtti foglalkoztatási program', icon: '🌅', group: 'Közszféra', tag: 'KÖZSZ' },
+  { value: 'kozalkalmazott', label: 'Közalkalmazott (Kjt.)', code: '1201', desc: 'Önkormányzat, iskola, kórház, kultúra', icon: '', group: 'Közszféra', tag: 'KÖZSZ' },
+  { value: 'kozszolgalati', label: 'Köztisztviselő (Kttv.)', code: '1220', desc: 'Államigazgatási szerv, jegyző', icon: '', group: 'Közszféra', tag: 'KÖZSZ' },
+  { value: 'kormanytisztviselo', label: 'Kormánytisztviselő (Kit.)', code: '1210', desc: 'Kormányzati igazgatási szerv', icon: '', group: 'Közszféra', tag: 'KÖZSZ' },
+  { value: 'biro_ugyesz', label: 'Bíró, ügyész, igazságügyi alk.', code: '1120', desc: 'Igazságszolgáltatási jogviszony', icon: '', group: 'Közszféra', tag: 'KÖZSZ' },
+  { value: 'hivatásos_katona', label: 'Hivatásos/szerződéses katona', code: '1130', desc: 'Honvédelmi jogviszony (Hjt.)', icon: '', group: 'Közszféra', tag: 'KÖZSZ' },
+  { value: 'egyhazi', label: 'Egyházi személy', code: '1500', desc: 'Egyházi szolgálati jogviszony', icon: '', group: 'Közszféra', tag: 'KÖZSZ' },
+  { value: 'kozfogl', label: 'Közfoglalkoztatás', code: '1600', desc: 'Közfoglalkoztatási jogviszony', icon: '', group: 'Közszféra', tag: 'KÖZSZ' },
+  { value: 'premiumevek', label: 'Prémiumévek program', code: '1240', desc: 'Nyugdíj előtti foglalkoztatási program', icon: '', group: 'Közszféra', tag: 'KÖZSZ' },
 
   // ── Megbízás / választott ──
-  { value: 'tartos_megbizas', label: 'Tartós megbízás (ÚJ 2026)', code: '1115', desc: 'Előzetes bejelentés, biztosított', icon: '📋', group: 'Megbízás', isNew: true },
-  { value: 'megbizas', label: 'Megbízási jogviszony', code: '1300', desc: 'Ptk. szerinti megbízás (biztosított)', icon: '📑', group: 'Megbízás' },
-  { value: 'megbizas_eseti', label: 'Eseti megbízás (nem biztosított)', code: '1301', desc: 'Ptk. megbízás, nem éri el a bizt. küszöböt', icon: '📄', group: 'Megbízás' },
-  { value: 'valasztott_tisztsegviselo', label: 'Választott tisztségviselő', code: '1350', desc: 'Önkormányzati, társasházi, alapítványi', icon: '🗳️', group: 'Megbízás' },
+  { value: 'tartos_megbizas', label: 'Tartós megbízás (ÚJ 2026)', code: '1115', desc: 'Előzetes bejelentés, biztosított', icon: '', group: 'Megbízás', isNew: true },
+  { value: 'megbizas', label: 'Megbízási jogviszony', code: '1300', desc: 'Ptk. szerinti megbízás (biztosított)', icon: '', group: 'Megbízás' },
+  { value: 'megbizas_eseti', label: 'Eseti megbízás (nem biztosított)', code: '1301', desc: 'Ptk. megbízás, nem éri el a bizt. küszöböt', icon: '', group: 'Megbízás' },
+  { value: 'valasztott_tisztsegviselo', label: 'Választott tisztségviselő', code: '1350', desc: 'Önkormányzati, társasházi, alapítványi', icon: '', group: 'Megbízás' },
 
   // ── Vállalkozók ──
-  { value: 'tarsas_vallalkozo', label: 'Társas vállalkozó (főfogl.)', code: '1451', desc: 'Személyesen közreműködő tag, főállás', icon: '🏢', group: 'Vállalkozó' },
-  { value: 'tarsas_vallalkozo_mellekfogl', label: 'Társas vállalkozó (mellékfogl.)', code: '1452', desc: 'Mellékfoglalkozású társas vállalkozó', icon: '🏢', group: 'Vállalkozó', tag: 'KEDV' },
-  { value: 'ev', label: 'Egyéni vállalkozó (főfogl.)', code: '1470', desc: 'Főállású egyéni vállalkozó', icon: '🧑‍💼', group: 'Vállalkozó' },
-  { value: 'ev_mellekfogl', label: 'Egyéni vállalkozó (mellékfogl.)', code: '1471', desc: 'Mellékfoglalkozású EV', icon: '🧑‍💼', group: 'Vállalkozó', tag: 'KEDV' },
-  { value: 'szovetkezeti_tag', label: 'Szövetkezeti tag', code: '1460', desc: 'Szövetkezetben személyesen közreműködő', icon: '🤝', group: 'Vállalkozó' },
-  { value: 'iskolaszovetkezet', label: 'Iskolaszövetkezeti tag', code: '1464', desc: 'Diákmunka iskolaszövetkezeten keresztül', icon: '🎒', group: 'Vállalkozó' },
+  { value: 'tarsas_vallalkozo', label: 'Társas vállalkozó (főfogl.)', code: '1451', desc: 'Személyesen közreműködő tag, főállás', icon: '', group: 'Vállalkozó' },
+  { value: 'tarsas_vallalkozo_mellekfogl', label: 'Társas vállalkozó (mellékfogl.)', code: '1452', desc: 'Mellékfoglalkozású társas vállalkozó', icon: '', group: 'Vállalkozó', tag: 'KEDV' },
+  { value: 'ev', label: 'Egyéni vállalkozó (főfogl.)', code: '1470', desc: 'Főállású egyéni vállalkozó', icon: '', group: 'Vállalkozó' },
+  { value: 'ev_mellekfogl', label: 'Egyéni vállalkozó (mellékfogl.)', code: '1471', desc: 'Mellékfoglalkozású EV', icon: '', group: 'Vállalkozó', tag: 'KEDV' },
+  { value: 'szovetkezeti_tag', label: 'Szövetkezeti tag', code: '1460', desc: 'Szövetkezetben személyesen közreműködő', icon: '', group: 'Vállalkozó' },
+  { value: 'iskolaszovetkezet', label: 'Iskolaszövetkezeti tag', code: '1464', desc: 'Diákmunka iskolaszövetkezeten keresztül', icon: '', group: 'Vállalkozó' },
 
   // ── Speciális / kedvezményes ──
-  { value: 'efo_alkalmi', label: 'Egyszerűsített foglalkoztatás (EFO)', code: 'EFO', desc: 'Alkalmi munka, mezőgazdasági idénymunka', icon: '⚡', group: 'Speciális' },
-  { value: 'nyugdijas', label: 'Nyugdíjas munkavállaló', code: '1101', desc: 'Öregségi nyugdíj mellett, SZOCHO/járulék kedv.', icon: '🏖️', group: 'Speciális', tag: 'KEDV' },
-  { value: 'gyes_gyed', label: 'GYES/GYED melletti fogl.', code: '1101', desc: 'Gyermekgondozási ellátás mellett dolgozó', icon: '👶', group: 'Speciális', tag: 'KEDV' },
-  { value: 'kulfold_kikuld', label: 'Külföldi kiküldetés (expat)', code: '1101', desc: 'Kiküldetés EGT/harmadik országba', icon: '✈️', group: 'Speciális' },
-  { value: 'segito_csaladtag', label: 'Segítő családtag', code: '1800', desc: 'Családi gazdaságban segítő rokon', icon: '👨‍👩‍👧', group: 'Speciális' },
-  { value: 'onkentes', label: 'Közérdekű önkéntes', code: '1900', desc: 'Díjazás nélküli önkéntes tevékenység', icon: '🤲', group: 'Speciális' },
+  { value: 'efo_alkalmi', label: 'Egyszerűsített foglalkoztatás (EFO)', code: 'EFO', desc: 'Alkalmi munka, mezőgazdasági idénymunka', icon: '', group: 'Speciális' },
+  { value: 'nyugdijas', label: 'Nyugdíjas munkavállaló', code: '1101', desc: 'Öregségi nyugdíj mellett, SZOCHO/járulék kedv.', icon: '', group: 'Speciális', tag: 'KEDV' },
+  { value: 'gyes_gyed', label: 'GYES/GYED melletti fogl.', code: '1101', desc: 'Gyermekgondozási ellátás mellett dolgozó', icon: '', group: 'Speciális', tag: 'KEDV' },
+  { value: 'kulfold_kikuld', label: 'Külföldi kiküldetés (expat)', code: '1101', desc: 'Kiküldetés EGT/harmadik országba', icon: '', group: 'Speciális' },
+  { value: 'segito_csaladtag', label: 'Segítő családtag', code: '1800', desc: 'Családi gazdaságban segítő rokon', icon: '', group: 'Speciális' },
+  { value: 'onkentes', label: 'Közérdekű önkéntes', code: '1900', desc: 'Díjazás nélküli önkéntes tevékenység', icon: '', group: 'Speciális' },
 ];
 
 type FormData = {

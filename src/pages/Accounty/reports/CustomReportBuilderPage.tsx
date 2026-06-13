@@ -69,7 +69,7 @@ export default function CustomReportBuilderPage() {
     <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}/advanced-reports`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl shadow-lg"><Wrench className="w-5 h-5 text-white" /></div>
           <div>
             <input type="text" value={reportName} onChange={e => setReportName(e.target.value)} className="text-2xl font-bold bg-transparent border-none outline-none focus:underline" />
@@ -78,7 +78,7 @@ export default function CustomReportBuilderPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setShowColumnPicker(!showColumnPicker)} className="gap-1.5"><Columns className="w-4 h-4" /> Oszlopok ({selectedColumns.length})</Button>
-          {generated && <Button variant="outline" className="gap-1.5"><Download className="w-4 h-4" /> Excel export</Button>}
+          {generated && <Button variant="outline" className="gap-1.5" onClick={() => window.print()}><Download className="w-4 h-4" /> Excel export</Button>}
           <Button onClick={handleGenerate} className="gap-1.5 bg-slate-900 dark:bg-slate-100 dark:text-slate-900 hover:bg-slate-800">
             <Table className="w-4 h-4" /> Generálás
           </Button>

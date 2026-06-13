@@ -196,7 +196,7 @@ export default function ClientPortalPage() {
       await navigator.clipboard.writeText(link);
       queryClient.invalidateQueries({ queryKey: ['portal-tokens', companyId] });
 
-      toast({ title: 'Portál link generálva ✓', description: 'A link a vágólapra másolva. Érvényes: 30 nap.' });
+      toast({ title: 'Portál link generálva ', description: 'A link a vágólapra másolva. Érvényes: 30 nap.' });
     } catch (err) {
       console.error('Portal token error:', err);
       toast({ variant: 'destructive', title: 'Hiba', description: 'Nem sikerült a link generálás.' });
@@ -225,7 +225,7 @@ export default function ClientPortalPage() {
           body_html: `<p>Kedves Ügyfelünk!</p><p>Az alábbi linken töltheti fel a szükséges dokumentumokat:</p><p><a href="${link}">${link}</a></p><p>A link 30 napig érvényes.</p>`,
         },
       });
-      toast({ title: 'Meghívó elküldve ✉️', description: `Portál link és e-mail kiküldve a(z) ${company?.name || 'ügyfél'} részére.` });
+      toast({ title: 'Meghívó elküldve ', description: `Portál link és e-mail kiküldve a(z) ${company?.name || 'ügyfél'} részére.` });
     } catch {
       // Link was already generated, email is optional
       toast({ title: 'Link generálva', description: 'Portál link létrehozva, de az e-mail küldés sikertelen.' });
@@ -322,7 +322,7 @@ export default function ClientPortalPage() {
         queryClient.invalidateQueries({ queryKey: ['accounty-missing-items'] });
 
         toast({
-          title: 'Feltöltve ✓',
+          title: 'Feltöltve ',
           description: `${uploadedPaths.length} fájl sikeresen feltöltve a(z) "${requestTitle}" tételhez.`,
         });
       } else if (missingItemId && uploadedPaths.length === 0) {
@@ -444,7 +444,7 @@ export default function ClientPortalPage() {
           {/* Welcome card */}
           <div className="bg-card rounded-xl border border-border shadow-soft p-6">
             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-              Üdvözöljük! 👋
+              Üdvözöljük! 
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
               Könyvelője hiányzó dokumentumokat kér Öntől. Kérjük, válassza ki a megfelelő fájlokat 
@@ -522,7 +522,7 @@ export default function ClientPortalPage() {
                         )}
                         {isUploaded && (
                           <span className="px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold">
-                            ✓ Feltöltve
+                             Feltöltve
                           </span>
                         )}
                       </div>
@@ -564,7 +564,7 @@ export default function ClientPortalPage() {
 
             {/* Global upload button */}
             {totalStagedCount > 0 && (
-              <div className="px-6 py-4 border-t border-border bg-slate-50/50 dark:bg-slate-900/30">
+              <div className="px-6 py-4 border-t border-border dark:bg-slate-900/30">
                 <button
                   onClick={handleUploadAll}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold transition-colors shadow-sm"
@@ -656,7 +656,7 @@ export default function ClientPortalPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+                <tr className="border-b border-border dark:bg-slate-900/30">
                   <th className="px-5 py-3 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Dokumentum</th>
                   <th className="px-5 py-3 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Kategória</th>
                   <th className="px-5 py-3 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Határidő</th>

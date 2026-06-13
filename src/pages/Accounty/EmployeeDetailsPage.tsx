@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, User, Briefcase, CreditCard, Calendar, FileText,
   Shield, Clock, ChevronRight, Edit3, Trash2, Plus, Check, X,
-  Mail, Phone, MapPin, Banknote, AlertTriangle, Save, Loader2
+  Mail, Phone, MapPin, Banknote, AlertTriangle, Save, Loader2,
+  Users, LogOut, FolderOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -322,16 +323,54 @@ export default function EmployeeDetailsPage() {
                         {emp.status === 'active' ? 'Aktív' : emp.status}
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-slate-500 dark:text-slate-400">
-                      <span>Kezdés: {emp.start_date}</span>
-                      <span>Munkakör: {emp.job_title || '–'}</span>
-                      <span>FEOR: {emp.feor_code || '–'}</span>
-                      <span>Alapbér: {emp.base_salary ? formatAmount(emp.base_salary) : '–'}</span>
+                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/50">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-slate-500 dark:text-slate-400 flex-1">
+                        <span>Kezdés: {emp.start_date}</span>
+                        <span>Munkakör: {emp.job_title || '–'}</span>
+                        <span>FEOR: {emp.feor_code || '–'}</span>
+                        <span>Alapbér: {emp.base_salary ? formatAmount(emp.base_salary) : '–'}</span>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1.5 text-xs ml-4 shrink-0"
+                        onClick={() => navigate(`/accounty/payroll/${companyId}/employees/${empId}/modification`)}
+                      >
+                        <Edit3 className="w-3 h-3" /> Módosítás
+                      </Button>
                     </div>
                   </div>
                 ))}
               </div>
             )}
+
+            {/* Quick action buttons */}
+            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border/50">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1.5 text-xs"
+                onClick={() => navigate(`/accounty/payroll/${companyId}/employees/${empId}/multi-job`)}
+              >
+                <Users className="w-3 h-3" /> Több jogviszony
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1.5 text-xs"
+                onClick={() => navigate(`/accounty/payroll/${companyId}/employees/${empId}/exit`)}
+              >
+                <LogOut className="w-3 h-3" /> Kilépés indítása
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1.5 text-xs"
+                onClick={() => navigate(`/accounty/payroll/${companyId}/employees/${empId}/exit-docs`)}
+              >
+                <FolderOpen className="w-3 h-3" /> Kilépő dokumentumok
+              </Button>
+            </div>
           </div>
         )}
 

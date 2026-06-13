@@ -262,7 +262,7 @@ export default function ReportsPage() {
               {showPreview && (
                 <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
                   <div className="bg-slate-50 dark:bg-slate-800/50 p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">📊 Előnézet — {currentTypeLabel}</span>
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-400"> Előnézet — {currentTypeLabel}</span>
                     <button onClick={() => setShowPreview(false)} className="text-slate-400 hover:text-slate-600">
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -275,7 +275,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-border flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="p-4 border-t border-border flex items-center justify-between shrink-0 dark:bg-slate-900/50">
               <Button variant="ghost" className="text-slate-500 dark:text-slate-400 hover:text-slate-700 whitespace-nowrap" onClick={() => setIsModalOpen(false)}>
                 Mégse
               </Button>
@@ -555,7 +555,7 @@ function exportPDF(data: FullReportData, type: string, options: { details: boole
       .kritikus { background: #fee2e2; color: #991b1b; }
       @media print { body { padding: 20px; } }
     </style></head><body>
-    <h1>📊 ${title}</h1>
+    <h1> ${title}</h1>
     <p class="sub">Generálva: ${now} – Visibill for Accountants</p>
     ${tableHtml}
     </body></html>`;

@@ -170,13 +170,13 @@ export default function ApprovalQueuePage() {
       if (success) {
         updateMessageStatus(selectedMessage.id, 'sent');
         toast({
-          title: '✅ Üzenet elküldve',
+          title: ' Üzenet elküldve',
           description: `${selectedMessage.companyName} – Az email sikeresen elküldve a(z) ${recipientEmail} címre.`,
         });
       } else {
         updateMessageStatus(selectedMessage.id, 'approved');
         toast({
-          title: '⚠️ Jóváhagyva, de küldési hiba',
+          title: ' Jóváhagyva, de küldési hiba',
           description: `${selectedMessage.companyName} – Az email jóváhagyásra került, de a küldés sikertelen volt. Később újrapróbálható.`,
           variant: 'destructive',
         });
@@ -196,7 +196,7 @@ export default function ApprovalQueuePage() {
     setSelectedMessage(null);
     refresh();
     toast({
-      title: '❌ Üzenet elutasítva',
+      title: ' Üzenet elutasítva',
       description: `${selectedMessage.companyName} – Az üzenet elutasításra került.`,
     });
   };
@@ -223,13 +223,13 @@ export default function ApprovalQueuePage() {
       refresh();
       if (successCount > 0) {
         toast({
-          title: `✅ ${successCount} üzenet sikeresen elküldve`,
+          title: ` ${successCount} üzenet sikeresen elküldve`,
           description: errorCount > 0 ? `${errorCount} küldés sikertelen.` : undefined,
         });
       }
       if (errorCount > 0 && successCount === 0) {
         toast({
-          title: `❌ ${errorCount} küldés sikertelen`,
+          title: ` ${errorCount} küldés sikertelen`,
           variant: 'destructive',
         });
       }
@@ -249,7 +249,7 @@ export default function ApprovalQueuePage() {
     setSelectedIds(new Set());
     refresh();
     toast({
-      title: '❌ Tömeges elutasítás',
+      title: ' Tömeges elutasítás',
       description: `${selectedIds.size} üzenet elutasítva.`,
     });
   };
@@ -287,7 +287,7 @@ export default function ApprovalQueuePage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
-            📬 Jóváhagyó rendszer
+             Jóváhagyó rendszer
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Kimenő kommunikáció áttekintése és jóváhagyása
@@ -474,7 +474,7 @@ export default function ApprovalQueuePage() {
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 py-3 bg-slate-50/50 dark:bg-slate-900/50 border-t border-border flex items-center justify-between">
+                <div className="px-4 py-3 dark:bg-slate-900/50 border-t border-border flex items-center justify-between">
                   {activeTab === 'pending' ? (
                     <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
                       <Clock className="w-3 h-3" />
@@ -512,7 +512,7 @@ export default function ApprovalQueuePage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/50">
+                <tr className="border-b border-border dark:bg-slate-900/50">
                   {activeTab === 'pending' && (
                     <th className="py-4 px-4 w-12">
                       <input
@@ -656,7 +656,7 @@ export default function ApprovalQueuePage() {
                     {selectedMessage.originalContext}
                   </p>
                   <div className="flex items-center gap-4 mt-3 text-xs text-slate-500 dark:text-slate-400">
-                    <span>🏢 {selectedMessage.companyName}</span>
+                    <span> {selectedMessage.companyName}</span>
                   </div>
                 </div>
 
@@ -675,7 +675,7 @@ export default function ApprovalQueuePage() {
                     />
                     {editedRecipient !== selectedMessage.contactEmail && (
                       <p className="text-[11px] text-amber-500 mt-1.5 flex items-center gap-1">
-                        ⚠️ Módosított címzett (eredeti: {selectedMessage.contactEmail})
+                         Módosított címzett (eredeti: {selectedMessage.contactEmail})
                       </p>
                     )}
                   </div>

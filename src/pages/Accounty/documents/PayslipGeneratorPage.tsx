@@ -7,6 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAccountyDocuments, type AccountyDocument } from '@/hooks/useAccountyData';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PayslipGeneratorPage() {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +15,7 @@ export default function PayslipGeneratorPage() {
   const [language, setLanguage] = useState<'hu' | 'en'>('hu');
   const [avdh, setAvdh] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const { toast } = useToast();
 
   const { data: docs, isLoading } = useAccountyDocuments(id || '', 'payslip');
   const slips = docs || [];
@@ -28,7 +30,7 @@ export default function PayslipGeneratorPage() {
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}/documents`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/25"><FileText className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">Bérjegyzék generálás</h1>
@@ -73,11 +75,11 @@ export default function PayslipGeneratorPage() {
         <div className="bg-card rounded-xl border border-border p-4 space-y-3">
           <h3 className="text-xs font-bold text-slate-500 uppercase">Műveletek</h3>
           <div className="space-y-2">
-            <Button onClick={() => { setGenerating(true); setTimeout(() => setGenerating(false), 2000); }} disabled={generating} className="w-full gap-1.5 bg-blue-600 hover:bg-blue-700 text-sm">
+            <Button onClick={() => { setGenerating(true); toast({ title: 'Bérjegyzékek generálva ' }); setTimeout(() => setGenerating(false), 2000); }} disabled={generating} className="w-full gap-1.5 bg-blue-600 hover:bg-blue-700 text-sm">
               {generating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
               {generating ? 'Generálás...' : 'Mind generálása'}
             </Button>
-            <Button variant="outline" className="w-full gap-1.5 text-sm"><Download className="w-3.5 h-3.5" /> Tömeges ZIP letöltés</Button>
+            <Button variant="outline" className="w-full gap-1.5 text-sm" onClick={() => window.print()}><Download className="w-3.5 h-3.5" /> Tömeges ZIP letöltés</Button>
             <Button variant="outline" className="w-full gap-1.5 text-sm"><Printer className="w-3.5 h-3.5" /> Nyomtatás</Button>
           </div>
         </div>
@@ -97,7 +99,7 @@ export default function PayslipGeneratorPage() {
         </div>
       ) : (
         <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-          <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
+          <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Bérjegyzékek ({slips.length} db)</h2>
             <span className="text-xs text-emerald-600 font-bold">{generatedCount}/{slips.length} generálva</span>
           </div>

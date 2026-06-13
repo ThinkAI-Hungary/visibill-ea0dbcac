@@ -37,7 +37,7 @@ export default function EmployeeExitWizardPage() {
   };
 
   const handleFinish = () => {
-    toast({ title: 'Kilépési folyamat rögzítve ✓', description: `${activeJob?.position || 'Munkavállaló'} — Utolsó nap: ${lastDay}` });
+    toast({ title: 'Kilépési folyamat rögzítve ', description: `${activeJob?.position || 'Munkavállaló'} — Utolsó nap: ${lastDay}` });
   };
 
   if (isLoading) return <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>;
@@ -46,7 +46,7 @@ export default function EmployeeExitWizardPage() {
     return (
       <div className="w-full max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}/employees/${empId || ''}`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl shadow-lg"><UserX className="w-5 h-5 text-white" /></div>
           <h1 className="text-2xl font-bold">Kilépési varázsló</h1>
         </div>
@@ -60,7 +60,7 @@ export default function EmployeeExitWizardPage() {
   return (
     <div className="w-full max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center gap-3">
-        <Link to={`/accounty/payroll/${id}/employees/${empId || ''}`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+        <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
         <div className="p-2.5 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl shadow-lg"><UserX className="w-5 h-5 text-white" /></div>
         <div>
           <h1 className="text-2xl font-bold">Kilépési varázsló</h1>

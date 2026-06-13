@@ -219,7 +219,7 @@ export default function ClientReportsPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-border flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="p-4 border-t border-border flex items-center justify-between shrink-0 dark:bg-slate-900/50">
               <Button variant="ghost" className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 whitespace-nowrap" onClick={() => setIsModalOpen(false)}>
                 Mégse
               </Button>

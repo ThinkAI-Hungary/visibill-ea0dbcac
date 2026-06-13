@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { ExportButton } from '@/components/accounty/ExportButton';
 import {
   ArrowLeft, FileSpreadsheet, Download, Eye, Banknote, AlertTriangle,
   Users, Coffee, FileText, CheckCircle, Printer
@@ -102,11 +103,11 @@ const CONFIGS: Record<DocType, DocConfig> = {
       { key: 'status', label: 'Státusz', align: 'center' },
     ],
     data: [
-      { name: 'Nagy Anna', type: 'Jövedelemigazolás', purpose: 'Hitelkérelem (OTP)', requestDate: '2026-06-05', status: '✅ Kész' },
-      { name: 'Tóth Éva', type: 'Foglalkoztatási igazolás', purpose: 'Lakáspályázat', requestDate: '2026-06-08', status: '✅ Kész' },
-      { name: 'Szabó Péter', type: 'Jövedelemigazolás', purpose: 'Bíróság', requestDate: '2026-06-10', status: '⏳ Folyamatban' },
-      { name: 'Kiss Béla', type: 'TB igazolás', purpose: 'Kórházi kezelés', requestDate: '2026-06-09', status: '✅ Kész' },
-      { name: 'Horváth Dávid', type: 'Munkáltatói igazolás', purpose: 'Albérlet kérelem', requestDate: '2026-06-10', status: '⏳ Folyamatban' },
+      { name: 'Nagy Anna', type: 'Jövedelemigazolás', purpose: 'Hitelkérelem (OTP)', requestDate: '2026-06-05', status: ' Kész' },
+      { name: 'Tóth Éva', type: 'Foglalkoztatási igazolás', purpose: 'Lakáspályázat', requestDate: '2026-06-08', status: ' Kész' },
+      { name: 'Szabó Péter', type: 'Jövedelemigazolás', purpose: 'Bíróság', requestDate: '2026-06-10', status: ' Folyamatban' },
+      { name: 'Kiss Béla', type: 'TB igazolás', purpose: 'Kórházi kezelés', requestDate: '2026-06-09', status: ' Kész' },
+      { name: 'Horváth Dávid', type: 'Munkáltatói igazolás', purpose: 'Albérlet kérelem', requestDate: '2026-06-10', status: ' Folyamatban' },
     ],
   },
 };
@@ -119,7 +120,7 @@ export default function OutputDocumentsPage() {
     return (
       <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}/documents`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <h1 className="text-2xl font-bold">Kimeneti dokumentumok</h1>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -142,7 +143,7 @@ export default function OutputDocumentsPage() {
     <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}/documents/all`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className={cn('p-2.5 bg-gradient-to-br rounded-xl shadow-lg', config.color)}><config.icon className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-xl font-bold">{config.title}</h1>
@@ -150,16 +151,20 @@ export default function OutputDocumentsPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-1.5"><Printer className="w-4 h-4" /> Nyomtatás</Button>
-          <Button variant="outline" className="gap-1.5"><Download className="w-4 h-4" /> Excel export</Button>
-          <Button className={cn('gap-1.5 bg-gradient-to-r hover:opacity-90', config.color)}><Download className="w-4 h-4" /> PDF letöltés</Button>
+          <Button variant="outline" className="gap-1.5" onClick={() => window.print()}><Printer className="w-4 h-4" /> Nyomtatás</Button>
+          <ExportButton
+            filename={docType || 'document'}
+            headers={config.columns.map(c => c.label)}
+            getRows={() => config.data.map(row => config.columns.map(c => row[c.key] ?? ''))}
+          />
+          <Button className={cn('gap-1.5 bg-gradient-to-r hover:opacity-90', config.color)} onClick={() => window.print()}><Download className="w-4 h-4" /> PDF letöltés</Button>
         </div>
       </div>
 
       <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-slate-50/30 dark:bg-slate-900/20">
+            <tr className="border-b border-border dark:bg-slate-900/20">
               {config.columns.map(col => (
                 <th key={col.key} className={cn('px-5 py-2 text-xs font-bold text-slate-500', col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left')}>{col.label}</th>
               ))}

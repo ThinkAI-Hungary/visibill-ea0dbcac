@@ -65,7 +65,7 @@ export default function OfficeSettingsPage() {
   const handleSave = async () => {
     try {
       await saveMut.mutateAsync(settings);
-      toast({ title: 'Beállítások mentve ✓' });
+      toast({ title: 'Beállítások mentve ' });
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Hiba', description: err.message });
     }
@@ -89,7 +89,7 @@ export default function OfficeSettingsPage() {
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center gap-3">
-        <Link to="/accounty" className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+        <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
         <div className="p-2.5 bg-gradient-to-br from-slate-600 to-slate-800 rounded-xl shadow-lg"><Building className="w-5 h-5 text-white" /></div>
         <div>
           <h1 className="text-2xl font-bold">Iroda beállítások</h1>
@@ -135,7 +135,7 @@ export default function OfficeSettingsPage() {
               <div>
                 <label className="text-xs text-slate-500 mb-1 block">Nyelv</label>
                 <select value={settings.language} onChange={e => update({ language: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm">
-                  <option value="hu">🇭🇺 Magyar</option><option value="en">🇬🇧 English</option><option value="de">🇩🇪 Deutsch</option>
+                  <option value="hu"> Magyar</option><option value="en"> English</option><option value="de"> Deutsch</option>
                 </select>
               </div>
               <div>
@@ -209,7 +209,7 @@ export default function OfficeSettingsPage() {
             <div><label className="text-xs text-slate-500 mb-1 block">NAV API kulcs</label><input type="password" value={settings.navApiKey} onChange={e => update({ navApiKey: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" /></div>
             <div><label className="text-xs text-slate-500 mb-1 block">Környezet</label>
               <select value={settings.navEnvironment} onChange={e => update({ navEnvironment: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm">
-                <option value="production">🟢 Production</option><option value="sandbox">🟡 Sandbox (teszt)</option>
+                <option value="production"> Production</option><option value="sandbox"> Sandbox (teszt)</option>
               </select>
             </div>
           </div>

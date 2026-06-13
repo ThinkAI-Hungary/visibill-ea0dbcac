@@ -198,7 +198,7 @@ export default function DataRetentionPage() {
             </div>
           ) : (
             <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-              <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
+              <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Dokumentumtípusok és megőrzési idők</h2>
                 <Button variant="outline" size="sm" onClick={() => setShowAddRule(true)} className="gap-1 text-xs">
                   <Plus className="w-3.5 h-3.5" /> Új típus
@@ -207,7 +207,7 @@ export default function DataRetentionPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border bg-slate-50/30 dark:bg-slate-900/20">
+                    <tr className="border-b border-border dark:bg-slate-900/20">
                       <th className="text-left px-5 py-2.5 text-xs font-bold text-slate-500 uppercase">Dokumentumtípus</th>
                       <th className="text-center px-3 py-2.5 text-xs font-bold text-slate-500 uppercase">Megőrzés</th>
                       <th className="text-left px-3 py-2.5 text-xs font-bold text-slate-500 uppercase">Jogalap</th>
@@ -345,7 +345,7 @@ export default function DataRetentionPage() {
                   </tbody>
                 </table>
               </div>
-              <div className="px-5 py-3 bg-slate-50/50 dark:bg-slate-900/30 border-t border-border text-xs text-slate-500">
+              <div className="px-5 py-3 dark:bg-slate-900/30 border-t border-border text-xs text-slate-500">
                 {(rules || []).length} dokumentumtípus konfigurálva
               </div>
             </div>
@@ -457,7 +457,7 @@ export default function DataRetentionPage() {
 
               {/* Contracts list */}
               <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-                <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+                <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30">
                   <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Adatfeldolgozói szerződések (GDPR 28. cikk)</h2>
                 </div>
                 <div className="divide-y divide-border/50">
@@ -526,7 +526,7 @@ export default function DataRetentionPage() {
       {/* GDPR Requests — links to admin module */}
       {tab === 'requests' && (
         <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-          <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
+          <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Érintetti kérelmek</h2>
             <Button variant="outline" size="sm" className="text-xs" asChild>
               <Link to="/accounty/admin/gdpr">Rendszerszintű GDPR modul →</Link>

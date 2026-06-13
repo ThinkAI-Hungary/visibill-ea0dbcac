@@ -2391,20 +2391,30 @@ export function useEmployeeJobs(companyId: string, employeeId: string) {
   return useQuery({
     queryKey: ['employee-jobs', companyId, employeeId],
     queryFn: async (): Promise<EmployeeJob[]> => {
+      // Read from accounty_employments — the single source of truth for jobs
       const { data, error } = await supabase
-        .from('accounty_employee_jobs')
+        .from('accounty_employments')
         .select('*')
-        .eq('company_id', companyId)
         .eq('employee_id', employeeId)
-        .order('seq_num');
+        .order('start_date');
       if (error) throw error;
-      return (data || []).map(r => ({
-        id: r.id, companyId: r.company_id, employeeId: r.employee_id,
-        jobCode: r.job_code, jobCodeLabel: r.job_code_label || '', seqNum: r.seq_num || 1,
-        position: r.position || '', feor: r.feor || '', weeklyHours: r.weekly_hours || 40,
-        startDate: r.start_date, endDate: r.end_date, baseSalary: r.base_salary || 0,
-        status: r.status, insured: r.insured ?? true, minimumBase: r.minimum_base ?? false,
-        employer: r.employer || '',
+      return (data || []).map((e: any, i: number) => ({
+        id: e.id,
+        companyId: companyId,
+        employeeId: e.employee_id,
+        jobCode: e.job_code || '',
+        jobCodeLabel: e.employment_type || e.job_code || '',
+        seqNum: i + 1,
+        position: e.job_title || '',
+        feor: e.feor_code || '',
+        weeklyHours: e.weekly_hours || 40,
+        startDate: e.start_date,
+        endDate: e.end_date || '',
+        baseSalary: e.base_salary || 0,
+        status: e.status || 'active',
+        insured: true,
+        minimumBase: false,
+        employer: '',
       }));
     },
     enabled: !!companyId && !!employeeId,
@@ -2415,12 +2425,18 @@ export function useAddEmployeeJob() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (job: Omit<EmployeeJob, 'id'>) => {
-      const { error } = await supabase.from('accounty_employee_jobs').insert({
-        company_id: job.companyId, employee_id: job.employeeId, job_code: job.jobCode,
-        job_code_label: job.jobCodeLabel, seq_num: job.seqNum, position: job.position,
-        feor: job.feor, weekly_hours: job.weeklyHours, start_date: job.startDate,
-        end_date: job.endDate, base_salary: job.baseSalary, status: job.status,
-        insured: job.insured, minimum_base: job.minimumBase, employer: job.employer,
+      const { error } = await supabase.from('accounty_employments').insert({
+        employee_id: job.employeeId,
+        company_id: job.companyId,
+        employment_type: job.jobCodeLabel || job.jobCode,
+        job_code: job.jobCode,
+        job_title: job.position,
+        feor_code: job.feor,
+        weekly_hours: job.weeklyHours,
+        start_date: job.startDate,
+        end_date: job.endDate || null,
+        base_salary: job.baseSalary,
+        status: job.status,
       });
       if (error) throw error;
       return { companyId: job.companyId, employeeId: job.employeeId };
@@ -2433,7 +2449,7 @@ export function useDeleteEmployeeJob() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, companyId, employeeId }: { id: string; companyId: string; employeeId: string }) => {
-      const { error } = await supabase.from('accounty_employee_jobs').delete().eq('id', id);
+      const { error } = await supabase.from('accounty_employments').delete().eq('id', id);
       if (error) throw error;
       return { companyId, employeeId };
     },
@@ -2446,16 +2462,52 @@ export function useDeleteEmployeeJob() {
 export function useAddJobModification() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (mod: { companyId: string; employeeId: string; jobId?: string; changeType: string; effectiveDate: string; oldValue: string; newValue: string; reason: string; generate08e: boolean }) => {
-      const { error } = await supabase.from('accounty_job_modifications').insert({
-        company_id: mod.companyId, employee_id: mod.employeeId, job_id: mod.jobId || null,
-        change_type: mod.changeType, effective_date: mod.effectiveDate,
-        old_value: mod.oldValue, new_value: mod.newValue, reason: mod.reason, generate_08e: mod.generate08e,
-      });
-      if (error) throw error;
-      return mod.companyId;
+    mutationFn: async (mods: { companyId: string; employeeId: string; changeType: string; effectiveDate: string; oldValue: string; newValue: string; reason: string; generate08e: boolean }[]) => {
+      // 1. Find the active employment for this employee
+      const { data: empRows } = await supabase
+        .from('accounty_employments')
+        .select('id')
+        .eq('employee_id', mods[0].employeeId)
+        .eq('status', 'active')
+        .limit(1);
+      const employmentId = empRows?.[0]?.id;
+
+      // 2. Apply each modification to the actual employment record
+      for (const mod of mods) {
+        const updatePayload: Record<string, unknown> = {};
+        switch (mod.changeType) {
+          case 'worktime': updatePayload.weekly_hours = Number(mod.newValue) || 40; break;
+          case 'feor': updatePayload.feor_code = mod.newValue; break;
+          case 'salary': updatePayload.base_salary = Number(mod.newValue) || 0; break;
+          case 'position': updatePayload.job_title = mod.newValue; break;
+          case 'costcenter': updatePayload.cost_center = mod.newValue; break;
+          // 'site' needs location_id lookup - store as text for now
+          case 'site': break;
+        }
+
+        if (employmentId && Object.keys(updatePayload).length > 0) {
+          const { error: updateErr } = await supabase
+            .from('accounty_employments')
+            .update(updatePayload)
+            .eq('id', employmentId);
+          if (updateErr) throw updateErr;
+        }
+      }
+
+      // 3. Log the modifications (best effort - may fail on FK constraints)
+      const logRows = mods.map(m => ({
+        company_id: m.companyId, employee_id: m.employeeId,
+        change_type: m.changeType, effective_date: m.effectiveDate,
+        old_value: m.oldValue, new_value: m.newValue, reason: m.reason, generate_08e: m.generate08e,
+      }));
+      await supabase.from('accounty_job_modifications').insert(logRows);
+
+      return { companyId: mods[0].companyId, employeeId: mods[0].employeeId };
     },
-    onSuccess: () => {},
+    onSuccess: (ctx) => {
+      qc.invalidateQueries({ queryKey: ['payroll', 'employments', ctx.employeeId] });
+      qc.invalidateQueries({ queryKey: ['payroll', 'employees'] });
+    },
   });
 }
 

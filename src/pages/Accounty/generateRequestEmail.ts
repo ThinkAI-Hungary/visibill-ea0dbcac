@@ -99,7 +99,7 @@ ${senderName}`;
     </div>
     <div style="text-align: center; margin: 28px 0;">
       <a href="${portalLink}" style="display: inline-block; padding: 14px 32px; background: #111827; color: #ffffff; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;">
-        📄 Dokumentumok feltöltése
+         Dokumentumok feltöltése
       </a>
     </div>
     <p style="font-size: 13px; color: #9ca3af; margin-top: 20px;">

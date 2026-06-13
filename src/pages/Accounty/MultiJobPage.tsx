@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Users, Plus, Briefcase, Shield, CheckCircle, AlertTriangle,
-  Clock, Calendar, Hash, ChevronRight, Eye, Layers, Loader2
+  ArrowLeft, Plus, Briefcase, Shield, CheckCircle, AlertTriangle,
+  Hash, Layers, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ function calculateInsurance(jobs: EmployeeJob[]) {
 
 export default function MultiJobPage() {
   const { id, empId } = useParams<{ id: string; empId: string }>();
+  const navigate = useNavigate();
   const { data: jobs, isLoading } = useEmployeeJobs(id || '', empId || '');
   const [showInsurance, setShowInsurance] = useState(false);
 
@@ -34,6 +35,7 @@ export default function MultiJobPage() {
     terminated: { label: 'Megszűnt', color: 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400' },
     suspended: { label: 'Szünetelő', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400' },
   };
+
 
   const renderJobCard = (job: EmployeeJob) => (
     <div key={job.id} className={cn('bg-card rounded-xl border shadow-soft overflow-hidden transition-all hover:shadow-lg', job.status === 'active' ? 'border-border' : 'border-border/50 opacity-70')}>
@@ -62,7 +64,7 @@ export default function MultiJobPage() {
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}/employees/${empId || ''}`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/25"><Layers className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Több jogviszony kezelése</h1>
@@ -71,7 +73,9 @@ export default function MultiJobPage() {
         </div>
         <div className="flex gap-2">
           {jobList.length > 0 && <Button variant="outline" onClick={() => setShowInsurance(!showInsurance)} className="gap-1.5 text-sm"><Shield className="w-4 h-4" /> Biztosítási elbírálás</Button>}
-          <Button className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-sm"><Plus className="w-4 h-4" /> Új jogviszony</Button>
+          <Button className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-sm" onClick={() => navigate(`/accounty/payroll/${id}/employees/${empId}/special`)}>
+            <Plus className="w-4 h-4" /> Új jogviszony
+          </Button>
         </div>
       </div>
 

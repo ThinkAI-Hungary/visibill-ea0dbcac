@@ -40,7 +40,7 @@ export default function PayrollReportsPage2() {
         <p className="text-xs text-slate-400">A riportok a bérszámfejtés véglegesítése és zárása után generálhatók.</p>
         <div className="flex gap-2 justify-center mt-3">
           <Button variant="outline" className="gap-1.5 text-sm"><RefreshCw className="w-4 h-4" /> Riport generálás</Button>
-          <Button variant="outline" className="gap-1.5 text-sm"><Download className="w-4 h-4" /> Export ({exportFormat.toUpperCase()})</Button>
+          <Button variant="outline" className="gap-1.5 text-sm" onClick={() => window.print()}><Download className="w-4 h-4" /> Export ({exportFormat.toUpperCase()})</Button>
         </div>
       </div>
     );
@@ -50,7 +50,7 @@ export default function PayrollReportsPage2() {
     <div className="w-full max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl shadow-lg shadow-indigo-500/25"><BarChart3 className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">Riportok és kimutatások</h1>

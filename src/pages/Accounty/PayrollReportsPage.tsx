@@ -5,6 +5,7 @@ import {
   Users, Calendar, DollarSign, FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ExportButton } from '@/components/accounty/ExportButton';
 import { cn } from '@/lib/utils';
 import { usePayrollCycles, usePayrollEmployees, usePayrollFilings } from '@/hooks/usePayrollData';
 import { useAccountyClients } from '@/hooks/useAccountyData';
@@ -91,22 +92,7 @@ export default function PayrollReportsPage() {
   // Max value for chart scaling
   const maxGross = Math.max(...monthlyData.map(m => m.gross), 1);
 
-  // CSV export
-  const handleExportCsv = () => {
-    const header = 'Hónap;Létszám;Bruttó;SZJA;TB;SZOCHO;Nettó';
-    const rows = monthlyData.map(m =>
-      `${selectedYear}. ${MONTHS[m.month - 1]};${m.employees};${m.gross};${m.szja};${m.tb};${m.szocho};${m.net}`
-    );
-    const totalRow = `ÖSSZESEN;${yearTotals.avgEmployees};${yearTotals.gross};${yearTotals.szja};${yearTotals.tb};${yearTotals.szocho};${yearTotals.net}`;
-    const csvContent = '\uFEFF' + [header, ...rows, totalRow].join('\n'); // BOM for Excel
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `berelozmeny_${company?.name || 'riport'}_${selectedYear}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
@@ -122,9 +108,15 @@ export default function PayrollReportsPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportCsv} className="flex items-center gap-1.5">
-            <Download className="w-3.5 h-3.5" /> CSV export
-          </Button>
+          <ExportButton
+            filename={`berelozmeny_${company?.name || 'riport'}_${selectedYear}`}
+            headers={['Hónap', 'Létszám', 'Bruttó', 'SZJA', 'TB', 'SZOCHO', 'Nettó']}
+            getRows={() => [
+              ...monthlyData.map(m => [`${selectedYear}. ${MONTHS[m.month - 1]}`, m.employees, m.gross, m.szja, m.tb, m.szocho, m.net]),
+              ['ÖSSZESEN', yearTotals.avgEmployees, yearTotals.gross, yearTotals.szja, yearTotals.tb, yearTotals.szocho, yearTotals.net],
+            ]}
+            size="sm"
+          />
           {[2025, 2026, 2027].map(year => (
             <button
               key={year}
@@ -217,7 +209,7 @@ export default function PayrollReportsPage() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+              <tr className="border-b border-border dark:bg-slate-900/30">
                 <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase">Hónap</th>
                 <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase">Létszám</th>
                 <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase">Bruttó</th>

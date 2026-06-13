@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useCreateEmployee } from '@/hooks/usePayrollData';
 
 interface ImportRow {
   id: number;
@@ -189,9 +190,42 @@ export default function EmployeeImportPage() {
     if (file) processFile(file);
   }, [processFile]);
 
-  const handleImport = () => {
+  const createEmployee = useCreateEmployee();
+
+  const handleImport = async () => {
+    if (!id) return;
+    const validRows = rows.filter(r => r.valid);
+    if (validRows.length === 0) return;
     setPhase('importing');
-    setTimeout(() => setPhase('done'), 2500);
+    try {
+      for (const row of validRows) {
+        await createEmployee.mutateAsync({
+          company_id: id,
+          first_name: row.firstName,
+          last_name: row.surname,
+          birth_name: null,
+          birth_place: null,
+          birth_date: row.birthDate || null,
+          mothers_name: null,
+          gender: null,
+          nationality: 'magyar',
+          taj_number: row.tajNumber || null,
+          tax_id: row.taxId || null,
+          id_card_number: null,
+          address: null,
+          temp_address: null,
+          email: null,
+          phone: null,
+          bank_account: null,
+          iban: null,
+          status: 'active',
+          avatar_url: null,
+        });
+      }
+      setPhase('done');
+    } catch {
+      setPhase('preview');
+    }
   };
 
   const downloadCSV = () => {
@@ -396,7 +430,7 @@ export default function EmployeeImportPage() {
 
           {/* Data table */}
           <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-            <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
+            <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
               <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Importálandó adatok előnézete</h2>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => { setPhase('upload'); setRows([]); }} className="gap-1 text-xs">
@@ -407,7 +441,7 @@ export default function EmployeeImportPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-slate-50/30 dark:bg-slate-900/20">
+                  <tr className="border-b border-border dark:bg-slate-900/20">
                     <th className="px-3 py-2 text-xs font-bold text-slate-500 text-center">#</th>
                     <th className="px-3 py-2 text-xs font-bold text-slate-500 text-left">Név</th>
                     <th className="px-3 py-2 text-xs font-bold text-slate-500 text-left">Szül. dátum</th>

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useGdprRequests, useCreateGdprRequest, useUpdateGdprRequest } from '@/hooks/useAdminData';
+import { useAccountyClients } from '@/hooks/useAccountyData';
 
 const TYPE_LABELS: Record<string, string> = {
   access: 'Hozzáférés',
@@ -21,14 +22,20 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 
 export default function GdprPage() {
   const { data: requests = [], isLoading } = useGdprRequests();
+  const { data: clients = [] } = useAccountyClients();
   const createRequest = useCreateGdprRequest();
   const updateRequest = useUpdateGdprRequest();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [form, setForm] = useState({ employee_name: '', request_type: 'access', notes: '' });
 
+  // Use selected company or first available
+  const effectiveCompanyId = selectedCompanyId || (clients.length > 0 ? clients[0].id : '');
+
   const handleCreate = () => {
+    if (!effectiveCompanyId) return;
     createRequest.mutate({
-      company_id: '00000000-0000-0000-0000-000000000000', // TODO: multi-company selector
+      company_id: effectiveCompanyId,
       employee_name: form.employee_name,
       request_type: form.request_type,
       notes: form.notes || undefined,
@@ -83,7 +90,7 @@ export default function GdprPage() {
       <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/30">
+            <tr className="border-b border-border dark:bg-slate-900/30">
               <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Érintett</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Típus</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Benyújtás</th>

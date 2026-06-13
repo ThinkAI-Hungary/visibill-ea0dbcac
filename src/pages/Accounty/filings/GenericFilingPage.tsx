@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 type FilingType = 't1042e' | 't1041int' | 't101e' | 't34' | 'ujegyke' | '2658' | 'm30' | 'ny' | 'rehab' | 'kata';
 
@@ -112,12 +113,13 @@ export default function GenericFilingPage() {
   const config = CONFIGS[filingType as FilingType];
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const { toast } = useToast();
 
   if (!config) {
     return (
       <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}/filings`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <h1 className="text-2xl font-bold">Bevallás típusok</h1>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -137,13 +139,17 @@ export default function GenericFilingPage() {
     );
   }
 
-  const handleSubmit = () => { setSubmitted(true); setTimeout(() => setSubmitted(false), 3000); };
+  const handleSubmit = () => {
+    toast({ title: 'Bevallás előkészítve ', description: `${config.title} — NAV beküldés a workflow oldalon indítható.` });
+    setSubmitted(true);
+    setTimeout(() => setSubmitted(false), 3000);
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}/filings/all`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg shadow-violet-500/25"><FileText className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-xl font-bold">{config.title}</h1>
@@ -151,11 +157,11 @@ export default function GenericFilingPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-1.5 text-sm"><Download className="w-4 h-4" /> XML</Button>
+          <Button variant="outline" className="gap-1.5 text-sm" onClick={() => window.print()}><Download className="w-4 h-4" /> XML</Button>
           <Button variant="outline" className="gap-1.5 text-sm"><Eye className="w-4 h-4" /> Előnézet</Button>
           <Button onClick={handleSubmit} className="gap-1.5 bg-violet-600 hover:bg-violet-700 text-sm">
             {submitted ? <CheckCircle className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-            {submitted ? 'Beküldve ✓' : 'Beküldés'}
+            {submitted ? 'Beküldve ' : 'Beküldés'}
           </Button>
         </div>
       </div>

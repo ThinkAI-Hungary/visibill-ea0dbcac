@@ -7,6 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTransfers, type Transfer } from '@/hooks/useAccountyData';
+import { useToast } from '@/hooks/use-toast';
 
 export default function TransferListPage() {
   const { id } = useParams<{ id: string }>();
@@ -14,19 +15,24 @@ export default function TransferListPage() {
   const { data: transfers, isLoading } = useTransfers(id || '', currentPeriod);
   const [exportFormat, setExportFormat] = useState<'mt940' | 'sepa' | 'csv'>('sepa');
   const [generated, setGenerated] = useState(false);
+  const { toast } = useToast();
 
   const transferList = transfers || [];
   const fmt = (n: number) => n.toLocaleString('hu-HU');
   const readyCount = transferList.filter(t => t.status === 'approved').length;
   const totalAmount = transferList.filter(t => t.status === 'approved').reduce((s, t) => s + t.netSalary, 0);
 
-  const handleGenerate = () => { setGenerated(true); setTimeout(() => setGenerated(false), 2000); };
+  const handleGenerate = () => {
+    toast({ title: 'Utalási lista generálva ', description: `${exportFormat.toUpperCase()} formátum — ${readyCount} tétel, összesen ${fmt(totalAmount)} Ft` });
+    setGenerated(true);
+    setTimeout(() => setGenerated(false), 2000);
+  };
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to={`/accounty/payroll/${id}/documents`} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
+          <button onClick={() => window.history.back()} className="p-2 rounded-lg hover:bg-muted transition-colors"><ArrowLeft className="w-5 h-5" /></button>
           <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/25"><CreditCard className="w-5 h-5 text-white" /></div>
           <div>
             <h1 className="text-2xl font-bold">Utalási lista</h1>
@@ -39,7 +45,7 @@ export default function TransferListPage() {
           </select>
           <Button onClick={handleGenerate} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700" disabled={transferList.length === 0}>
             {generated ? <CheckCircle className="w-4 h-4" /> : <Download className="w-4 h-4" />}
-            {generated ? 'Letöltve ✓' : `Exportálás (${exportFormat.toUpperCase()})`}
+            {generated ? 'Letöltve ' : `Exportálás (${exportFormat.toUpperCase()})`}
           </Button>
         </div>
       </div>
@@ -61,13 +67,13 @@ export default function TransferListPage() {
           </div>
 
           <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-            <div className="px-5 py-3 border-b border-border bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between">
+            <div className="px-5 py-3 border-b border-border dark:bg-slate-900/30 flex items-center justify-between">
               <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Utalási tételek</h2>
               <span className="text-xs text-emerald-600 font-bold">{readyCount}/{transferList.length} kész</span>
             </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-slate-50/30">
+                <tr className="border-b border-border">
                   <th className="text-left px-5 py-2 text-xs font-bold text-slate-500">Kedvezményezett</th>
                   <th className="text-left px-3 py-2 text-xs font-bold text-slate-500">Bankszámla</th>
                   <th className="text-right px-3 py-2 text-xs font-bold text-slate-500">Nettó összeg</th>
@@ -82,7 +88,7 @@ export default function TransferListPage() {
                     <td className="px-3 py-2.5 text-right font-mono font-bold text-emerald-600">{fmt(t.netSalary)}</td>
                     <td className="px-3 py-2.5 text-center">
                       {t.status === 'approved' && <CheckCircle className="w-4 h-4 text-emerald-500 mx-auto" />}
-                      {t.status === 'pending' && <span className="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-bold">⚠️ Ellenőrizni</span>}
+                      {t.status === 'pending' && <span className="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-bold"> Ellenőrizni</span>}
                       {t.status === 'sent' && <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">Utalva</span>}
                     </td>
                   </tr>

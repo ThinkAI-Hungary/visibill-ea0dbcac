@@ -1000,7 +1000,7 @@ export default function AccountyApp() {
             order={widgetOrder.indexOf('colleague_table')}
           >
             <div className="bg-card rounded-xl border border-border shadow-soft overflow-hidden">
-            <div className="p-4 border-b border-border bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
+            <div className="p-4 border-b border-border dark:bg-slate-900/50 flex items-center justify-between">
               <h3 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <User className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 Kolléga statisztikák (Havi Zárás)
@@ -1121,7 +1121,7 @@ export default function AccountyApp() {
           >
             <div className="pt-8">
               <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-6 flex items-center gap-2">
-              🤖 Bekérési Automatizmus & Ügyfél Kockázat
+               Bekérési Automatizmus & Ügyfél Kockázat
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
