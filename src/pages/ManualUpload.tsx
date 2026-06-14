@@ -263,13 +263,14 @@ const ManualUpload = () => {
   const checkDuplicateFile = async (fileName: string, table: 'invoice_uploads' | 'transaction_uploads'): Promise<boolean> => {
     if (!selectedCompany?.id) return false;
 
+    const doneStatus = table === 'invoice_uploads' ? 'processed' : 'completed';
     const { data } = await supabase
       .from(table)
       .select('id, file_name')
       .eq('company_id', selectedCompany.id)
       .eq('file_name', fileName)
       .eq('upload_status', 'uploaded')
-      .eq('processing_status', 'completed')
+      .eq('processing_status', doneStatus)
       .limit(1);
 
     return (data && data.length > 0);

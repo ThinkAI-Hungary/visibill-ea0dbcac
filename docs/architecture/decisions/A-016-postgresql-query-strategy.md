@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-Q3 (implementálva) → Folyamatosan bővül  
-**Utoljára frissítve:** 2026-06-08
+**Utoljára frissítve:** 2026-06-14
 
 ## Context
 
@@ -142,9 +142,9 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `clear_transaction_match_on_invoice_delete()` | invoices | Tranzakció match törlése számla törlésnél |
 | `reset_paid_on_transaction_delete()` | transactions | Fizetett flag reset tranzakció törlésnél |
 | `reset_paid_on_transaction_unmatch()` | transactions | Fizetett flag reset unmatch-nél |
-| `mark_invoice_upload_completed_on_invoice_insert()` | invoices | Upload rekord completed jelölés |
-| `mark_salary_file_completed_on_salary_insert()` | salary | Salary fájl completed jelölés |
-| `mark_transaction_upload_completed_on_transaction_insert()` | transactions | Tranzakció upload completed jelölés |
+| `mark_invoice_upload_completed_on_invoice_insert()` | invoices | Upload rekord processed jelölés |
+| `mark_salary_file_completed_on_salary_insert()` | salary | Salary fájl processed jelölés |
+| `mark_transaction_upload_completed_on_transaction_insert()` | transactions | Tranzakció upload processed jelölés |
 | `set_invoice_feldolgozva_on_upload_link()` | invoices | Feldolgozva flag beállítás upload linkelésnél |
 | `enforce_invoice_single_project()` | invoices | Egy számla = egy projekt constraint |
 | `auto_mark_cash_paid()` | invoices | Készpénzes számlák auto fizetett jelölés |
@@ -196,7 +196,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 
 | Function | Security | Cél |
 |---|---|---|
-| `global_audit_trigger_func()` | DEFINER | Globális audit log trigger (INSERT/UPDATE/DELETE naplózás) |
+| `global_audit_trigger_func()` | DEFINER | Globális audit log trigger (INSERT/UPDATE/DELETE naplózás). UPDATE-nél `invoice_uploads.processing_status = 'processed'` átmenetre tüzel. |
 | `rls_auto_enable()` | DEFINER | Automatikus RLS engedélyezés új táblákon |
 | `reset_monthly_usage()` | DEFINER | Havi számlafeldolgozási kvóta nullázás (cron) |
 | `sync_sandbox_from_taxology()` | DEFINER | Sandbox adatok szinkronizálás taxology-ból |

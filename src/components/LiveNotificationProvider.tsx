@@ -181,7 +181,7 @@ export function LiveNotificationProvider() {
         (payload) => {
           if (!isMyCompany(payload)) return;
           invalidate('uploadHistory', 'submittedInvoices', 'filteredSubmittedInvoices');
-          // Show notification when processing_status changes to 'completed'
+          // Show notification when processing_status changes to 'processed' (invoice pipeline)
           if (payload.eventType === 'UPDATE') {
             const row = payload.new as any;
             const oldRow = payload.old as any;

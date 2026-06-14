@@ -136,26 +136,26 @@ query-nav-invoices EF ← decrypt ← nav_credentials tábla
 #### Global audit log:
 ```sql
 -- Trigger-alapú audit minden fontosabb táblán
-CREATE OR REPLACE FUNCTION public.global_audit_trigger_func()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
-SET search_path TO 'public' AS $$
-BEGIN
-  INSERT INTO public.audit_logs (
-    table_name, record_id, action, old_data, new_data, user_id
-  ) VALUES (
-    TG_TABLE_NAME, COALESCE(NEW.id, OLD.id), TG_OP,
-    row_to_json(OLD), row_to_json(NEW), auth.uid()
-  );
-  RETURN COALESCE(NEW, OLD);
-END;
-$$;
+-- global_audit_trigger_func() (SECURITY DEFINER)
+-- Tüzel: invoice_uploads, invoices, salary_files, transactions
+--
+-- INSERT → 'feltöltés' audit_log bejegyzés
+-- UPDATE → 'módosítás' (csak specifikus státusz-átmeneteknél):
+--   • invoice_uploads: processing_status → 'processed' (⚠️ korábban hibásan 'completed'-re figyelt, 2026-06-14 fixálva)
+--   • invoices: statusz → 'feldolgozott'
+--   • salary_files: status → 'completed'
+-- DELETE → 'törlés' audit_log bejegyzés
+--
+-- A details JSONB mező tartalmazza: source, table, op, upload_source, is_system, processing_type
 ```
 
 **Auditált műveletek:**
-- Számla módosítás/törlés
+- Számla / dokumentum feltöltés (INSERT trigger)
+- Számla feldolgozás befejezése (`invoice_uploads.processing_status = 'processed'`)
 - Tranzakció match módosítás
 - GL felülbírálás (`override_gl_classification`)
 - NAV credential mentés
+- Dokumentum / számla törlés
 
 ---
 

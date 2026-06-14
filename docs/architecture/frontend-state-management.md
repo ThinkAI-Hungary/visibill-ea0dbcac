@@ -181,7 +181,7 @@ Globális Supabase Realtime listener a `ProtectedLayout`-ban mountolva:
 | `salary` | INSERT | Toast + cache invalidation |
 | `salary_files` | UPDATE (→completed) | Toast + cache invalidation |
 | `invoices` | INSERT | Toast (upload ID-nként deduplikálva) |
-| `invoice_uploads` | UPDATE (→completed) | Toast |
+| `invoice_uploads` | UPDATE (→processed) | Toast |
 | `nav_invoices` | * | Cache invalidation |
 | `transactions` | INSERT | Toast + azonnali cache frissítés |
 | `transaction_uploads` | UPDATE (→completed) | Toast + force invalidation |
