@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn, formatCurrency } from '@/lib/utils';
-import { Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Pencil, Package, RotateCcw, CalendarIcon, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
+import { Search, Download, ArrowUpDown, FileText, X, ChevronDown, Info, Pencil, Package, RotateCcw, CalendarIcon, ChevronsUpDown, ChevronsDownUp, Link2, Link2Off, Lightbulb } from 'lucide-react';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -38,7 +38,7 @@ import { getInitials, getAvatarColor } from '@/lib/helpers';
 
 import { useInvoiceData } from '@/hooks/useInvoiceData';
 import type { NavInvoice, SubmittedInvoice, TransactionRecord } from '@/hooks/useInvoiceData';
-import { useInvoiceFilters } from '@/hooks/useInvoiceFilters';
+import { useInvoiceFilters, FILTER_URL_KEYS, defaultFilters } from '@/hooks/useInvoiceFilters';
 import type { InvoiceTab } from '@/hooks/useInvoiceFilters';
 import { useInvoiceMutations } from '@/hooks/useInvoiceMutations';
 import { useUrlTab } from '@/lib/navigation';
@@ -66,6 +66,18 @@ const InvoicesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
+
+  // KPI filter: click a KPI card to filter the table by match status
+  type KpiFilterType = 'all' | 'matched' | 'suggested' | 'unmatched';
+  const [kpiFilter, setKpiFilter] = useState<KpiFilterType>(() => {
+    const urlKpi = searchParams.get('kpi');
+    return (urlKpi && ['matched', 'suggested', 'unmatched'].includes(urlKpi))
+      ? urlKpi as KpiFilterType
+      : 'all';
+  });
+  const toggleKpiFilter = useCallback((filter: KpiFilterType) => {
+    setKpiFilter(prev => prev === filter ? 'all' : filter);
+  }, []);
 
   // Tab state synced to URL (e.g., /invoices/outbound_nav)
   const [tabSlug, setTabSlug] = useUrlTab('invoices', 'outbound_nav' as TabSlug, TAB_SLUGS);
@@ -139,6 +151,63 @@ const InvoicesPage = () => {
   const loading = dataLoading || navLoading || submittedFilterLoading;
   const tabFetching = isSubmittedTab ? submittedFetching : navFetching;
 
+  // Computed: are any filters active (standard filters OR KPI filter)?
+  const hasStandardFilters = useMemo(() => {
+    return filters.search !== '' || filters.issueDateFrom !== '' || filters.issueDateTo !== '' ||
+      filters.amountMin !== '' || filters.amountMax !== '' ||
+      filters.currency !== 'all' || filters.paid !== 'all' || filters.submitted !== 'all' ||
+      filters.project !== 'all' || filters.category !== 'all' || filters.paymentMethod !== 'all';
+  }, [filters]);
+  const hasAnyActiveFilter = hasStandardFilters || kpiFilter !== 'all';
+
+  const clearAllFilters = useCallback(() => {
+    clearFilters();
+    setKpiFilter('all');
+  }, [clearFilters]);
+
+  // ── Sync ALL view state → URL query params (single effect, no conflicts) ──
+  useEffect(() => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+
+      // Clear all filter-related params (preserve 'invoice', 'action', etc.)
+      for (const urlKey of Object.values(FILTER_URL_KEYS)) {
+        next.delete(urlKey);
+      }
+      next.delete('kpi');
+      next.delete('sf');
+      next.delete('sd');
+      next.delete('p');
+      next.delete('ps');
+
+      // Set non-default filter values
+      for (const [key, urlKey] of Object.entries(FILTER_URL_KEYS)) {
+        const value = filters[key as keyof typeof filters];
+        const defValue = defaultFilters[key as keyof typeof defaultFilters];
+        if (value !== defValue) {
+          next.set(urlKey, value);
+        }
+      }
+
+      // KPI filter
+      if (kpiFilter !== 'all') next.set('kpi', kpiFilter);
+
+      // Sort (only if non-default)
+      if (sortField !== 'invoice_issue_date') next.set('sf', sortField);
+      if (sortDirection !== 'desc') next.set('sd', sortDirection);
+
+      // Page (only if > 1)
+      const currentPage = isSubmittedTab ? submittedCurrentPage : navCurrentPage;
+      if (currentPage > 1) next.set('p', String(currentPage));
+
+      // Page size (only if non-default)
+      const currentPageSize = isSubmittedTab ? submittedPageSize : navPageSize;
+      if (currentPageSize !== 50) next.set('ps', String(currentPageSize));
+
+      return next;
+    }, { replace: true });
+  }, [filters, kpiFilter, sortField, sortDirection, navCurrentPage, submittedCurrentPage, navPageSize, submittedPageSize, isSubmittedTab, setSearchParams]);
+
   // ── Mutations hook ──
   const {
     syncing, canSync, cooldownSeconds, formatCooldown,
@@ -179,7 +248,7 @@ const InvoicesPage = () => {
     setExpandedRowIds(new Set());
   }, [selectedCompany?.id]);
 
-  // Clear selection and expanded row when tab changes
+  // Clear selection and expanded rows when tab changes (KPI filter persists)
   useEffect(() => {
     setSelectedInvoiceIds(new Set());
     setSelectedSubmittedIds(new Set());
@@ -580,6 +649,238 @@ const InvoicesPage = () => {
     return ids;
   }, [allTransactions]);
 
+  // ── Invoice KPI summary (respects ALL active filters) ──
+  const invoiceKpis = useMemo(() => {
+    // Helper: apply standard filters client-side to a NAV invoice
+    const passesNavFilters = (inv: NavInvoice) => {
+      // Global date range (invoice_issue_date)
+      if (dateFromFormatted && inv.invoice_issue_date && inv.invoice_issue_date < dateFromFormatted) return false;
+      if (dateToFormatted && inv.invoice_issue_date && inv.invoice_issue_date > dateToFormatted) return false;
+      // Issue date range filter
+      if (filters.issueDateFrom && inv.invoice_issue_date && inv.invoice_issue_date < filters.issueDateFrom) return false;
+      if (filters.issueDateTo && inv.invoice_issue_date && inv.invoice_issue_date > filters.issueDateTo) return false;
+      // Currency
+      if (filters.currency !== 'all' && inv.currency !== filters.currency) return false;
+      // Submitted
+      if (filters.submitted === 'yes' && !inv.submitted) return false;
+      if (filters.submitted === 'no' && inv.submitted) return false;
+      // Amount range (gross)
+      if (filters.amountMin && Math.abs(inv.invoice_gross_amount || 0) < parseFloat(filters.amountMin)) return false;
+      if (filters.amountMax && Math.abs(inv.invoice_gross_amount || 0) > parseFloat(filters.amountMax)) return false;
+      // Search (partner name, invoice number)
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        const partnerName = (inv.invoice_direction === 'OUTBOUND' ? inv.customer_name : inv.supplier_name) || '';
+        if (!partnerName.toLowerCase().includes(q) && !inv.invoice_number.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    };
+
+    // Helper: apply standard filters client-side to a Submitted invoice
+    const passesSubmittedFilters = (inv: SubmittedInvoice) => {
+      // Issue date (kibocsatas_datuma)
+      if (filters.issueDateFrom && inv.kibocsatas_datuma && inv.kibocsatas_datuma < filters.issueDateFrom) return false;
+      if (filters.issueDateTo && inv.kibocsatas_datuma && inv.kibocsatas_datuma > filters.issueDateTo) return false;
+      // Currency
+      if (filters.currency !== 'all' && inv.penznem !== filters.currency) return false;
+      // Amount range (gross)
+      if (filters.amountMin && Math.abs(inv.brutto_vegosszeg || 0) < parseFloat(filters.amountMin)) return false;
+      if (filters.amountMax && Math.abs(inv.brutto_vegosszeg || 0) > parseFloat(filters.amountMax)) return false;
+      // Project
+      if (filters.project !== 'all' && inv.project_id !== filters.project) return false;
+      // Category
+      if (filters.category !== 'all' && inv.category_id !== filters.category) return false;
+      // Payment method
+      if (filters.paymentMethod !== 'all') {
+        if (filters.paymentMethod === 'none' && inv.fizetesi_mod) return false;
+        if (filters.paymentMethod !== 'none' && inv.fizetesi_mod !== filters.paymentMethod) return false;
+      }
+      // Search
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        const partnerName = (inv.invoice_direction === 'OUTBOUND' ? inv.vevo_nev : inv.elado_nev) || '';
+        if (!partnerName.toLowerCase().includes(q) && !(inv.bizonylatsorszam || '').toLowerCase().includes(q)) return false;
+      }
+      return true;
+    };
+
+    const isNavKpi = activeTab === 'OUTBOUND' || activeTab === 'INBOUND';
+    if (isNavKpi) {
+      const direction = activeTab;
+      const navInvs = navInvoicesLookup.filter(inv => inv.invoice_direction === direction && passesNavFilters(inv));
+      const total = navInvs.length;
+      let matched = 0, suggested = 0, unmatched = 0;
+      for (const inv of navInvs) {
+        if (suggestedOnlyIds.has(inv.id)) {
+          suggested++;
+        } else {
+          const directlyMatched = matchedInvoiceIds.has(inv.id);
+          const sMatches = navToSubmittedMap.get(normalizeInvNum(inv.invoice_number)) || [];
+          const indirectlyMatched = sMatches.some(sub => submittedIdToTransactionsMap.has(sub.id));
+          const linkedChain = !indirectlyMatched && sMatches.some(sub => {
+            const linked = getLinkedInvoices(sub);
+            return linked.some(l => submittedIdToTransactionsMap.has(l.id));
+          });
+          const isPaid = inv.paid === true || !!inv.transaction_id || directlyMatched || indirectlyMatched || linkedChain;
+          if (isPaid) matched++;
+          else unmatched++;
+        }
+      }
+      return { total, matched, suggested, unmatched };
+    } else {
+      const direction = activeTab === 'SUBMITTED_OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
+      const subInvs = submittedInvoices.filter(inv => inv.invoice_direction === direction && passesSubmittedFilters(inv));
+      const total = subInvs.length;
+      let matched = 0, suggested = 0, unmatched = 0;
+      for (const inv of subInvs) {
+        if (suggestedOnlyIds.has(inv.id)) {
+          suggested++;
+        } else if (extendedMatchedIds.has(inv.id)) {
+          matched++;
+        } else {
+          unmatched++;
+        }
+      }
+      return { total, matched, suggested, unmatched };
+    }
+  }, [activeTab, navInvoicesLookup, submittedInvoices, matchedInvoiceIds, extendedMatchedIds, suggestedOnlyIds, navToSubmittedMap, submittedIdToTransactionsMap, getLinkedInvoices, filters, dateFromFormatted, dateToFormatted]);
+
+  // ── KPI-filtered rows (client-side filter on paginated data) ──
+  // NAV match status: replicates the exact same isPaid logic used in row rendering
+  const getNavMatchStatus = useCallback((invoice: NavInvoice): KpiFilterType => {
+    if (suggestedOnlyIds.has(invoice.id)) return 'suggested';
+    // 5 sources of "paid/matched" for NAV invoices:
+    const directlyMatched = matchedInvoiceIds.has(invoice.id);
+    const submittedMatches = navToSubmittedMap.get(normalizeInvNum(invoice.invoice_number)) || [];
+    const indirectlyMatched = submittedMatches.some(sub => submittedIdToTransactionsMap.has(sub.id));
+    const linkedChainMatched = !indirectlyMatched && submittedMatches.some(sub => {
+      const linked = getLinkedInvoices(sub);
+      return linked.some(l => submittedIdToTransactionsMap.has(l.id));
+    });
+    const isPaid = invoice.paid === true || !!invoice.transaction_id || directlyMatched || indirectlyMatched || linkedChainMatched;
+    if (isPaid) return 'matched';
+    return 'unmatched';
+  }, [matchedInvoiceIds, suggestedOnlyIds, navToSubmittedMap, submittedIdToTransactionsMap, getLinkedInvoices]);
+
+  const getSubmittedMatchStatus = useCallback((invoiceId: string): KpiFilterType => {
+    if (suggestedOnlyIds.has(invoiceId)) return 'suggested';
+    if (extendedMatchedIds.has(invoiceId)) return 'matched';
+    return 'unmatched';
+  }, [extendedMatchedIds, suggestedOnlyIds]);
+  // ── KPI-filtered display: when KPI filter is active, paginate client-side from FULL dataset ──
+  // This fixes the bug where server-side pagination (50/page) was filtered client-side,
+  // showing e.g. only 1 "matched" row on page 1 out of 50 server-returned rows.
+  const displayedNavInvoices = useMemo(() => {
+    if (kpiFilter === 'all') return paginatedNavInvoices;
+
+    // KPI filter active → filter from ALL nav invoices (not just current page)
+    const direction = activeTab as string;
+    const allFiltered = navInvoicesLookup
+      .filter(inv => inv.invoice_direction === direction)
+      .filter(inv => {
+        // Apply same standard filters as invoiceKpis
+        if (dateFromFormatted && inv.invoice_issue_date && inv.invoice_issue_date < dateFromFormatted) return false;
+        if (dateToFormatted && inv.invoice_issue_date && inv.invoice_issue_date > dateToFormatted) return false;
+        if (filters.issueDateFrom && inv.invoice_issue_date && inv.invoice_issue_date < filters.issueDateFrom) return false;
+        if (filters.issueDateTo && inv.invoice_issue_date && inv.invoice_issue_date > filters.issueDateTo) return false;
+        if (filters.currency !== 'all' && inv.currency !== filters.currency) return false;
+        if (filters.submitted === 'yes' && !inv.submitted) return false;
+        if (filters.submitted === 'no' && inv.submitted) return false;
+        if (filters.amountMin && Math.abs(inv.invoice_gross_amount || 0) < parseFloat(filters.amountMin)) return false;
+        if (filters.amountMax && Math.abs(inv.invoice_gross_amount || 0) > parseFloat(filters.amountMax)) return false;
+        if (filters.search) {
+          const q = filters.search.toLowerCase();
+          const partnerName = (inv.invoice_direction === 'OUTBOUND' ? inv.customer_name : inv.supplier_name) || '';
+          if (!partnerName.toLowerCase().includes(q) && !inv.invoice_number.toLowerCase().includes(q)) return false;
+        }
+        return true;
+      })
+      .filter(inv => getNavMatchStatus(inv) === kpiFilter);
+
+    // Sort client-side (same field/direction as server-side sort)
+    allFiltered.sort((a, b) => {
+      const aVal = (a as any)[sortField] ?? '';
+      const bVal = (b as any)[sortField] ?? '';
+      const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+
+    // Paginate client-side
+    const pageSize = navPageSize;
+    const start = (navCurrentPage - 1) * pageSize;
+    return allFiltered.slice(start, start + pageSize);
+  }, [kpiFilter, paginatedNavInvoices, navInvoicesLookup, activeTab, getNavMatchStatus,
+      filters, dateFromFormatted, dateToFormatted, sortField, sortDirection, navPageSize, navCurrentPage]);
+
+  const displayedSubmittedInvoices = useMemo(() => {
+    if (kpiFilter === 'all') return paginatedSubmittedInvoices;
+
+    // KPI filter active → filter from ALL submitted invoices
+    const direction = activeTab === 'SUBMITTED_OUTBOUND' ? 'OUTBOUND' : 'INBOUND';
+    const allFiltered = submittedInvoices
+      .filter(inv => inv.invoice_direction === direction)
+      .filter(inv => {
+        if (filters.issueDateFrom && inv.kibocsatas_datuma && inv.kibocsatas_datuma < filters.issueDateFrom) return false;
+        if (filters.issueDateTo && inv.kibocsatas_datuma && inv.kibocsatas_datuma > filters.issueDateTo) return false;
+        if (filters.currency !== 'all' && inv.penznem !== filters.currency) return false;
+        if (filters.amountMin && Math.abs(inv.brutto_vegosszeg || 0) < parseFloat(filters.amountMin)) return false;
+        if (filters.amountMax && Math.abs(inv.brutto_vegosszeg || 0) > parseFloat(filters.amountMax)) return false;
+        if (filters.project !== 'all' && inv.project_id !== filters.project) return false;
+        if (filters.category !== 'all' && inv.category_id !== filters.category) return false;
+        if (filters.paymentMethod !== 'all') {
+          if (filters.paymentMethod === 'none' && inv.fizetesi_mod) return false;
+          if (filters.paymentMethod !== 'none' && inv.fizetesi_mod !== filters.paymentMethod) return false;
+        }
+        if (filters.search) {
+          const q = filters.search.toLowerCase();
+          const partnerName = (inv.invoice_direction === 'OUTBOUND' ? inv.vevo_nev : inv.elado_nev) || '';
+          if (!partnerName.toLowerCase().includes(q) && !(inv.bizonylatsorszam || '').toLowerCase().includes(q)) return false;
+        }
+        return true;
+      })
+      .filter(inv => getSubmittedMatchStatus(inv.id) === kpiFilter);
+
+    // Sort client-side
+    const fieldMap: Record<string, string> = {
+      invoice_issue_date: 'kibocsatas_datuma',
+      invoice_gross_amount: 'brutto_vegosszeg',
+      invoice_number: 'bizonylatsorszam',
+    };
+    const mappedField = fieldMap[sortField] || sortField;
+    allFiltered.sort((a, b) => {
+      const aVal = (a as any)[mappedField] ?? '';
+      const bVal = (b as any)[mappedField] ?? '';
+      const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+
+    // Paginate client-side
+    const pageSize = submittedPageSize;
+    const start = (submittedCurrentPage - 1) * pageSize;
+    return allFiltered.slice(start, start + pageSize);
+  }, [kpiFilter, paginatedSubmittedInvoices, submittedInvoices, activeTab, getSubmittedMatchStatus,
+      filters, sortField, sortDirection, submittedPageSize, submittedCurrentPage]);
+
+  // When KPI filter is active, show the KPI count as totalItems in pagination
+  // Always use invoiceKpis values so "Találatok" is consistent with the KPI cards
+  const kpiFilteredTotalItems = useMemo(() => {
+    if (kpiFilter === 'all') return invoiceKpis.total;
+    if (kpiFilter === 'matched') return invoiceKpis.matched;
+    if (kpiFilter === 'suggested') return invoiceKpis.suggested;
+    return invoiceKpis.unmatched;
+  }, [kpiFilter, invoiceKpis]);
+
+  // Compute totalPages from kpiFilteredTotalItems so pagination shows correct page count
+  const kpiFilteredNavTotalPages = useMemo(() => {
+    if (kpiFilter === 'all') return navTotalPages;
+    return Math.max(1, Math.ceil(kpiFilteredTotalItems / navPageSize));
+  }, [kpiFilter, navTotalPages, kpiFilteredTotalItems, navPageSize]);
+
+  const kpiFilteredSubmittedTotalPages = useMemo(() => {
+    if (kpiFilter === 'all') return submittedTotalPages;
+    return Math.max(1, Math.ceil(kpiFilteredTotalItems / submittedPageSize));
+  }, [kpiFilter, submittedTotalPages, kpiFilteredTotalItems, submittedPageSize]);
+
   return (
     <div className="h-full bg-background page-animate">
       <main className="w-full max-w-none px-4 py-4">
@@ -599,10 +900,7 @@ const InvoicesPage = () => {
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                </div>
-                <CardDescription>
-                  Számlák áttekintése és kezelése - {getResultCount()} találat
-                </CardDescription>
+              </div>
               </div>
               <div className="flex gap-2">
                 <TooltipProvider>
@@ -677,6 +975,50 @@ const InvoicesPage = () => {
                 <TabsTrigger value="SUBMITTED_OUTBOUND">Beküldött (Kimenő)</TabsTrigger>
                 <TabsTrigger value="SUBMITTED_INBOUND">Beküldött (Bejövő)</TabsTrigger>
               </TabsList>
+
+              {/* ── KPI Summary Bar (clickable filters) ── */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 mb-2 print:hidden">
+                <div
+                  onClick={() => toggleKpiFilter('all')}
+                  className={cn(
+                    "bg-card border rounded-xl p-3.5 flex items-center gap-3 cursor-pointer transition-all hover:shadow-md",
+                    kpiFilter === 'all' ? "border-primary/50 ring-2 ring-primary/20 shadow-sm" : "border-border/60"
+                  )}
+                >
+                  <div className="bg-primary/10 text-primary p-2 rounded-lg"><FileText className="w-4 h-4" /></div>
+                  <div><div className="text-lg font-bold tabular-nums">{invoiceKpis.total.toLocaleString('hu-HU')}</div><div className="text-[11px] text-muted-foreground">Összes találat</div></div>
+                </div>
+                <div
+                  onClick={() => toggleKpiFilter('matched')}
+                  className={cn(
+                    "bg-card border rounded-xl p-3.5 flex items-center gap-3 cursor-pointer transition-all hover:shadow-md",
+                    kpiFilter === 'matched' ? "border-emerald-500/50 ring-2 ring-emerald-500/20 shadow-sm" : "border-border/60"
+                  )}
+                >
+                  <div className="bg-emerald-500/10 text-emerald-600 p-2 rounded-lg"><Link2 className="w-4 h-4" /></div>
+                  <div><div className="text-lg font-bold tabular-nums text-emerald-600">{invoiceKpis.matched}</div><div className="text-[11px] text-muted-foreground">Párosított</div></div>
+                </div>
+                <div
+                  onClick={() => toggleKpiFilter('suggested')}
+                  className={cn(
+                    "bg-card border rounded-xl p-3.5 flex items-center gap-3 cursor-pointer transition-all hover:shadow-md",
+                    kpiFilter === 'suggested' ? "border-amber-500/50 ring-2 ring-amber-500/20 shadow-sm" : "border-border/60"
+                  )}
+                >
+                  <div className="bg-amber-500/10 text-amber-500 p-2 rounded-lg"><Lightbulb className="w-4 h-4" /></div>
+                  <div><div className="text-lg font-bold tabular-nums text-amber-500">{invoiceKpis.suggested}</div><div className="text-[11px] text-muted-foreground">Javasolt (jóváhagyásra vár)</div></div>
+                </div>
+                <div
+                  onClick={() => toggleKpiFilter('unmatched')}
+                  className={cn(
+                    "bg-card border rounded-xl p-3.5 flex items-center gap-3 cursor-pointer transition-all hover:shadow-md",
+                    kpiFilter === 'unmatched' ? "border-red-500/50 ring-2 ring-red-500/20 shadow-sm" : "border-border/60"
+                  )}
+                >
+                  <div className="bg-red-500/10 text-red-500 p-2 rounded-lg"><Link2Off className="w-4 h-4" /></div>
+                  <div><div className="text-lg font-bold tabular-nums text-red-500">{invoiceKpis.unmatched}</div><div className="text-[11px] text-muted-foreground">Nincs párosítás</div></div>
+                </div>
+              </div>
 
               {/* NAV Invoice Tabs */}
               {(activeTab === 'OUTBOUND' || activeTab === 'INBOUND') && (
@@ -843,21 +1185,43 @@ const InvoicesPage = () => {
                       </SelectContent>
                     </Select>
 
-                    <Button variant="ghost" size="sm" onClick={clearFilters}>
+                    {hasAnyActiveFilter && (
+                    <Button variant="ghost" size="sm" onClick={clearAllFilters}>
                       <X className="h-4 w-4 mr-1" />
                       Szűrők törlése
                     </Button>
+                    )}
                   </div>
 
                   <UnifiedPagination
                     currentPage={navCurrentPage}
-                    totalPages={navTotalPages}
-                    totalItems={navTotalCount}
+                    totalPages={kpiFilteredNavTotalPages}
+                    totalItems={kpiFilteredTotalItems}
                     pageSize={navPageSize}
                     onPageChange={setNavCurrentPage}
                     onPageSizeChange={(size) => { setNavPageSize(size); setNavCurrentPage(1); }}
                     className="mb-3"
                   />
+
+                  <div className="flex items-center gap-4 mb-2 text-[11px] text-muted-foreground">
+                    <span className="font-medium">Jelmagyarázat:</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-sm bg-emerald-100 dark:bg-emerald-950/60 border-l-2 border-l-emerald-500" />
+                      <span>Párosított / Kifizetve</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-sm bg-amber-100 dark:bg-amber-950/60 border-l-2 border-l-amber-500" />
+                      <span>AI javaslat (jóváhagyásra vár)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-sm bg-destructive/10 border-l-2 border-l-destructive" />
+                      <span>Nem kifizetve</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-sm bg-background border border-border/50" />
+                      <span>Nincs párosítás</span>
+                    </div>
+                  </div>
 
                   {/* NAV Invoice Table */}
                   <ContextMenu>
@@ -907,16 +1271,17 @@ const InvoicesPage = () => {
                           {activeTab === 'INBOUND' && (<TableHead className="font-semibold text-center whitespace-nowrap">Kategória</TableHead>)}
                           <TableHead className="font-semibold text-center whitespace-nowrap">Projekt</TableHead>
                           <TableHead className="font-semibold text-center whitespace-nowrap">Fiz. mód</TableHead>
+                          <TableHead className="font-semibold text-center whitespace-nowrap">Számla kép</TableHead>
                           <TableHead className="font-semibold text-center whitespace-nowrap">Tételek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {(loading || tabFetching) ? (
-                          <TableSkeleton rows={10} columns={activeTab === 'INBOUND' ? 14 : 12} />
-                        ) : paginatedNavInvoices.length === 0 ? (
-                          <TableEmptyState colSpan={activeTab === 'INBOUND' ? 14 : 12} title="Nincs megjeleníthető számla" description="Próbáld módosítani a szűrőket vagy keresési feltételeket." onClearFilters={clearFilters} />
+                          <TableSkeleton rows={10} columns={activeTab === 'INBOUND' ? 15 : 13} />
+                        ) : displayedNavInvoices.length === 0 ? (
+                          <TableEmptyState colSpan={activeTab === 'INBOUND' ? 15 : 13} title={kpiFilter !== 'all' ? "Nincs ilyen státuszú számla ezen az oldalon" : "Nincs megjeleníthető számla"} description={kpiFilter !== 'all' ? "Kattints az \"Összes találat\" KPI kártyára a szűrő törléséhez." : "Próbáld módosítani a szűrőket vagy keresési feltételeket."} onClearFilters={kpiFilter !== 'all' ? () => setKpiFilter('all') : clearFilters} />
                         ) : (
-                          paginatedNavInvoices.map((invoice) => {
+                          displayedNavInvoices.map((invoice) => {
                             const partnerTaxNumber = getPartnerTaxNumber(invoice);
                             const partnerName = getInvoicePartnerName(invoice);
                             // Check paid status from multiple sources:
@@ -954,7 +1319,7 @@ const InvoicesPage = () => {
                                       {partnerName === 'Ismeretlen partner' ? (
                                         <span className="text-xs text-muted-foreground italic">Ismeretlen partner</span>
                                       ) : (
-                                        <CopyableCell value={partnerName} displayValue={partnerName.length > 13 ? partnerName.slice(0, 13) + '…' : partnerName} truncate maxWidth="100%" className="font-medium text-xs" ariaLabel={`${partnerName} másolása`} />
+                                        <CopyableCell value={partnerName} displayValue={partnerName.length > 20 ? partnerName.slice(0, 20) + '…' : partnerName} truncate maxWidth="100%" className="font-medium text-xs" ariaLabel={`${partnerName} másolása`} />
                                       )}
                                     </div>
                                   </TableCell>
@@ -1017,6 +1382,29 @@ const InvoicesPage = () => {
                                     <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground">{getPaymentMethodLabel(invoice.payment_method)}</span>
                                   </TableCell>
                                   <TableCell className="text-center">
+                                    {(() => {
+                                      const matchedSubs = navToSubmittedMap.get(normalizeInvNum(invoice.invoice_number));
+                                      const sub = matchedSubs?.find(s => s.image_url || s.melleklet_url);
+                                      if (sub) {
+                                        return (
+                                          <HoverCard openDelay={200} closeDelay={100}>
+                                            <HoverCardTrigger asChild>
+                                              <Button size="sm" variant="ghost" className="h-8 w-8 opacity-70 group-hover:opacity-100" onClick={() => { setSelectedInvoice(sub as any); setImageDialogOpen(true); }}>
+                                                <FileText className="h-4 w-4" />
+                                              </Button>
+                                            </HoverCardTrigger>
+                                            <HoverCardContent side="left" align="center" className="w-64 p-1.5">
+                                              <InvoiceImagePreview invoiceId={sub.id} imageUrl={sub.image_url} mellekletUrl={sub.melleklet_url} isOpen={true} />
+                                            </HoverCardContent>
+                                          </HoverCard>
+                                        );
+                                      }
+                                      return (
+                                        <FileText className="h-4 w-4 mx-auto text-muted-foreground/30" />
+                                      );
+                                    })()}
+                                  </TableCell>
+                                  <TableCell className="text-center">
                                     <TooltipProvider><Tooltip><TooltipTrigger asChild>
                                       <Button variant="ghost" size="icon" className="h-8 w-8 opacity-70 group-hover:opacity-100" onClick={() => { setSelectedNavInvoice(invoice); setItemsDialogOpen(true); setInvoiceParam(invoice.id); }}>
                                         <Package className="h-4 w-4" />
@@ -1028,7 +1416,7 @@ const InvoicesPage = () => {
                                   const matches = getNavInvoiceMatches(invoice);
                                   return (
                                     <ExpandedInvoiceRow
-                                      colSpan={activeTab === 'INBOUND' ? 14 : 12}
+                                      colSpan={activeTab === 'INBOUND' ? 15 : 13}
                                       matchedSubmittedInvoices={matches.matchedSubmitted}
                                       matchedNavInvoices={[]}
                                       matchedTransactions={matches.matchedTransactions}
@@ -1038,6 +1426,12 @@ const InvoicesPage = () => {
                                       onViewInvoice={(inv) => { setSelectedInvoice(inv as any); setImageDialogOpen(true); }}
                                       excludeFromAccounting={!!invoice.exclude_from_accounting}
                                       onToggleExclude={() => handleToggleExclude(invoice.id, 'nav_invoices', !!invoice.exclude_from_accounting)}
+                                      invoiceId={invoice.id}
+                                      invoiceAmount={invoice.invoice_gross_amount || 0}
+                                      invoiceCurrency={invoice.currency || 'HUF'}
+                                      invoiceDate={invoice.invoice_issue_date || ''}
+                                      companyId={companyId}
+                                      onMatchUpdate={invalidateInvoiceData}
                                     />
                                   );
                                 })()}
@@ -1045,7 +1439,7 @@ const InvoicesPage = () => {
                             );
                           })
                         )}
-                        <TablePlaceholderRows currentCount={paginatedNavInvoices.length} pageSize={navPageSize} columns={activeTab === 'INBOUND' ? 14 : 12} />
+                        <TablePlaceholderRows currentCount={paginatedNavInvoices.length} pageSize={navPageSize} columns={activeTab === 'INBOUND' ? 15 : 13} />
                       </TableBody>
                     </Table>
                   </div>
@@ -1066,8 +1460,8 @@ const InvoicesPage = () => {
 
                   <UnifiedPagination
                     currentPage={navCurrentPage}
-                    totalPages={navTotalPages}
-                    totalItems={navTotalCount}
+                    totalPages={kpiFilteredNavTotalPages}
+                    totalItems={kpiFilteredTotalItems}
                     pageSize={navPageSize}
                     onPageChange={setNavCurrentPage}
                     onPageSizeChange={(size) => { setNavPageSize(size); setNavCurrentPage(1); }}
@@ -1192,21 +1586,43 @@ const InvoicesPage = () => {
                       </SelectContent>
                     </Select>
 
-                    <Button variant="ghost" size="sm" onClick={clearFilters}>
+                    {hasAnyActiveFilter && (
+                    <Button variant="ghost" size="sm" onClick={clearAllFilters}>
                       <X className="h-4 w-4 mr-1" />
                       Szűrők törlése
                     </Button>
+                    )}
                   </div>
 
                   <UnifiedPagination
                     currentPage={submittedCurrentPage}
-                    totalPages={submittedTotalPages}
-                    totalItems={submittedTotalCount}
+                    totalPages={kpiFilteredSubmittedTotalPages}
+                    totalItems={kpiFilteredTotalItems}
                     pageSize={submittedPageSize}
                     onPageChange={setSubmittedCurrentPage}
                     onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}
                     className="mb-3"
                   />
+
+                  <div className="flex items-center gap-4 mb-2 text-[11px] text-muted-foreground">
+                    <span className="font-medium">Jelmagyarázat:</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-sm bg-emerald-100 dark:bg-emerald-950/60 border-l-2 border-l-emerald-500" />
+                      <span>Párosított / Kifizetve</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-sm bg-amber-100 dark:bg-amber-950/60 border-l-2 border-l-amber-500" />
+                      <span>AI javaslat (jóváhagyásra vár)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-sm bg-destructive/10 border-l-2 border-l-destructive" />
+                      <span>Nem kifizetve</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-sm bg-background border border-border/50" />
+                      <span>Nincs párosítás</span>
+                    </div>
+                  </div>
 
                   {/* Submitted Invoice Table */}
                   <ContextMenu>
@@ -1244,16 +1660,17 @@ const InvoicesPage = () => {
                           </TableHead>
                           <TableHead className="font-semibold w-[80px] text-center whitespace-nowrap">Fiz. mód</TableHead>
                           <TableHead className="font-semibold w-[55px] text-center whitespace-nowrap">Tételek</TableHead>
+                          <TableHead className="font-semibold text-center whitespace-nowrap">Számla kép</TableHead>
                           <TableHead className="text-center font-semibold w-[75px] whitespace-nowrap">Műveletek</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {(loading || tabFetching) ? (
-                          <TableSkeleton rows={10} columns={11} />
-                        ) : paginatedSubmittedInvoices.length === 0 ? (
-                          <TableEmptyState colSpan={11} title="Nincs megjeleníthető számla" description="Próbáld módosítani a szűrőket vagy keresési feltételeket." />
+                          <TableSkeleton rows={10} columns={12} />
+                        ) : displayedSubmittedInvoices.length === 0 ? (
+                          <TableEmptyState colSpan={12} title={kpiFilter !== 'all' ? "Nincs ilyen státuszú számla ezen az oldalon" : "Nincs megjeleníthető számla"} description={kpiFilter !== 'all' ? "Kattints az \"Összes találat\" KPI kártyára a szűrő törléséhez." : "Próbáld módosítani a szűrőket vagy keresési feltételeket."} />
                         ) : (
-                          paginatedSubmittedInvoices.map((invoice) => (
+                          displayedSubmittedInvoices.map((invoice) => (
                             <React.Fragment key={invoice.id}>
                               <TableRow className={cn(
                                 "group cursor-pointer",
@@ -1278,7 +1695,7 @@ const InvoicesPage = () => {
                                         {partnerName === '-' || partnerName === 'Ismeretlen partner' ? (
                                           <span className="text-xs text-muted-foreground italic">Ismeretlen partner</span>
                                         ) : (
-                                          <CopyableCell value={partnerName} displayValue={partnerName.length > 13 ? partnerName.slice(0, 13) + '…' : partnerName} truncate maxWidth="100%" className="font-medium text-xs" ariaLabel={`${partnerName} másolása`} />
+                                          <CopyableCell value={partnerName} displayValue={partnerName.length > 20 ? partnerName.slice(0, 20) + '…' : partnerName} truncate maxWidth="100%" className="font-medium text-xs" ariaLabel={`${partnerName} másolása`} />
                                         )}
                                       </div>
                                     );
@@ -1320,32 +1737,34 @@ const InvoicesPage = () => {
                                   </TooltipTrigger><TooltipContent><p>Számlatételek megtekintése</p></TooltipContent></Tooltip></TooltipProvider>
                                 </TableCell>
                                 <TableCell className="text-center">
-                                  <div className="flex items-center justify-center gap-1">
-                                    {(invoice.image_url || invoice.melleklet_url) && (
-                                      <HoverCard openDelay={200} closeDelay={100}>
-                                        <HoverCardTrigger asChild>
-                                          <Button size="sm" variant="ghost" className="h-8 w-8 opacity-70 group-hover:opacity-100" onClick={() => openImageDialog(invoice)}>
-                                            <FileText className="h-4 w-4" />
-                                          </Button>
-                                        </HoverCardTrigger>
-                                        <HoverCardContent side="left" align="center" className="w-64 p-1.5">
-                                          <InvoiceImagePreview invoiceId={invoice.id} imageUrl={invoice.image_url} mellekletUrl={invoice.melleklet_url} isOpen={true} />
-                                        </HoverCardContent>
-                                      </HoverCard>
-                                    )}
-                                    <TooltipProvider><Tooltip><TooltipTrigger asChild>
-                                      <Button size="sm" variant="ghost" className="h-8 w-8 opacity-70 group-hover:opacity-100" onClick={() => openEditDialog(invoice)}>
-                                        <Pencil className="h-4 w-4" />
-                                      </Button>
-                                    </TooltipTrigger><TooltipContent><p>Számla szerkesztése</p></TooltipContent></Tooltip></TooltipProvider>
-                                  </div>
+                                  {(invoice.image_url || invoice.melleklet_url) ? (
+                                    <HoverCard openDelay={200} closeDelay={100}>
+                                      <HoverCardTrigger asChild>
+                                        <Button size="sm" variant="ghost" className="h-8 w-8 opacity-70 group-hover:opacity-100" onClick={() => openImageDialog(invoice)}>
+                                          <FileText className="h-4 w-4" />
+                                        </Button>
+                                      </HoverCardTrigger>
+                                      <HoverCardContent side="left" align="center" className="w-64 p-1.5">
+                                        <InvoiceImagePreview invoiceId={invoice.id} imageUrl={invoice.image_url} mellekletUrl={invoice.melleklet_url} isOpen={true} />
+                                      </HoverCardContent>
+                                    </HoverCard>
+                                  ) : (
+                                    <FileText className="h-4 w-4 mx-auto text-muted-foreground/30" />
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                                    <Button size="sm" variant="ghost" className="h-8 w-8 opacity-70 group-hover:opacity-100" onClick={() => openEditDialog(invoice)}>
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger><TooltipContent><p>Számla szerkesztése</p></TooltipContent></Tooltip></TooltipProvider>
                                 </TableCell>
                               </TableRow>
                               {expandedRowIds.has(invoice.id) && (() => {
                                 const matches = getSubmittedInvoiceMatches(invoice);
                                 return (
                                   <ExpandedInvoiceRow
-                                    colSpan={11}
+                                    colSpan={12}
                                     matchedSubmittedInvoices={[]}
                                     matchedNavInvoices={matches.matchedNav}
                                     matchedTransactions={matches.matchedTransactions}
@@ -1355,13 +1774,19 @@ const InvoicesPage = () => {
                                     onViewInvoice={(inv) => { setSelectedInvoice(inv as any); setImageDialogOpen(true); }}
                                     excludeFromAccounting={!!invoice.exclude_from_accounting}
                                     onToggleExclude={() => handleToggleExclude(invoice.id, 'invoices', !!invoice.exclude_from_accounting)}
+                                    invoiceId={invoice.id}
+                                    invoiceAmount={invoice.brutto_vegosszeg || 0}
+                                    invoiceCurrency={invoice.penznem || 'HUF'}
+                                    invoiceDate={invoice.kibocsatas_datuma || ''}
+                                    companyId={companyId}
+                                    onMatchUpdate={invalidateInvoiceData}
                                   />
                                 );
                               })()}
                             </React.Fragment>
                           ))
                         )}
-                        <TablePlaceholderRows currentCount={paginatedSubmittedInvoices.length} pageSize={submittedPageSize} columns={11} />
+                        <TablePlaceholderRows currentCount={paginatedSubmittedInvoices.length} pageSize={submittedPageSize} columns={12} />
                       </TableBody>
                     </Table>
                   </div>
@@ -1382,8 +1807,8 @@ const InvoicesPage = () => {
 
                   <UnifiedPagination
                     currentPage={submittedCurrentPage}
-                    totalPages={submittedTotalPages}
-                    totalItems={submittedTotalCount}
+                    totalPages={kpiFilteredSubmittedTotalPages}
+                    totalItems={kpiFilteredTotalItems}
                     pageSize={submittedPageSize}
                     onPageChange={setSubmittedCurrentPage}
                     onPageSizeChange={(size) => { setSubmittedPageSize(size); setSubmittedCurrentPage(1); }}

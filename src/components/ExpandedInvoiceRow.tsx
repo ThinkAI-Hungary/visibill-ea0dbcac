@@ -2,14 +2,18 @@ import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useState } from 'react';
-import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown } from 'lucide-react';
+import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown, Search, Check, Plus, X, Unlink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { cn } from '@/lib/utils';
 import { INVOICE_TYPE_LABELS } from '@/types/invoices';
+import { useTransactionMatcher } from '@/hooks/useTransactionMatcher';
 
 interface MatchedSubmittedInvoice {
   id: string;
@@ -51,6 +55,7 @@ interface MatchedTransaction {
   confidence_score: number | null;
   match_type: string | null;
   is_verified: boolean | null;
+  reason: string | null;
 }
 
 interface LinkedInvoice {
@@ -97,6 +102,19 @@ interface ExpandedInvoiceRowProps {
   excludeFromAccounting?: boolean;
   /** Callback to toggle exclude from accounting */
   onToggleExclude?: () => void;
+  // ── Invoice-side transaction matching props ──
+  /** Invoice ID for matching (enables matching UI when set) */
+  invoiceId?: string;
+  /** Invoice gross amount (for proximity sorting) */
+  invoiceAmount?: number;
+  /** Invoice currency */
+  invoiceCurrency?: string;
+  /** Invoice issue date (for ±180 day window) */
+  invoiceDate?: string;
+  /** Company ID for transaction search */
+  companyId?: string;
+  /** Called after successful match/unmatch/verify operations */
+  onMatchUpdate?: () => void;
 }
 
 // Compact collapsible transaction list inside invoice cards
@@ -165,7 +183,24 @@ const ExpandedInvoiceRow = ({
   hideStandaloneTransactions = false,
   excludeFromAccounting = false,
   onToggleExclude,
+  invoiceId,
+  invoiceAmount,
+  invoiceCurrency,
+  invoiceDate,
+  companyId,
+  onMatchUpdate,
 }: ExpandedInvoiceRowProps) => {
+  // Invoice-side matching is enabled when all required props are provided
+  const matchingEnabled = !!(invoiceId && companyId && invoiceDate && !hideStandaloneTransactions);
+
+  const matcher = useTransactionMatcher({
+    invoiceId: invoiceId || '',
+    invoiceAmount: invoiceAmount || 0,
+    invoiceCurrency: invoiceCurrency || 'HUF',
+    invoiceDate: invoiceDate || '',
+    companyId: companyId || '',
+    onUpdate: onMatchUpdate,
+  });
   // Detect broken chain: reference_number exists but no matching linked invoice found
   const hasBrokenChain = !linkedInvoicesLoading
     && !!invoiceReferenceNumber
@@ -219,36 +254,61 @@ const ExpandedInvoiceRow = ({
                 <Link2 className="h-3.5 w-3.5" />
                 Kapcsolódó tételek
               </div>
-              {onToggleExclude && (
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); onToggleExclude(); }}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all duration-200 border",
-                    excludeFromAccounting
-                      ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-300/40 hover:bg-amber-500/25"
-                      : "bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <div className={cn(
-                    "w-3 h-3 rounded-sm border-2 flex items-center justify-center transition-colors",
-                    excludeFromAccounting ? "border-amber-500 bg-amber-500" : "border-muted-foreground/40"
-                  )}>
-                    {excludeFromAccounting && (
-                      <svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1.5 4L3 5.5L6.5 2" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
+              <div className="flex items-center gap-2">
+                {/* "Tranzakció hozzárendelése" small button when there ARE existing matches */}
+                {matchingEnabled && hasAny && !matcher.showSearch && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => { e.stopPropagation(); matcher.openSearch(); }}
+                    className="h-7 text-[11px] gap-1.5 px-2.5"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Tranzakció
+                  </Button>
+                )}
+                {onToggleExclude && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onToggleExclude(); }}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all duration-200 border",
+                      excludeFromAccounting
+                        ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-300/40 hover:bg-amber-500/25"
+                        : "bg-muted/50 text-muted-foreground border-border/50 hover:bg-muted hover:text-foreground"
                     )}
-                  </div>
-                  Nem kerül könyvelésre
-                </button>
-              )}
+                  >
+                    <div className={cn(
+                      "w-3 h-3 rounded-sm border-2 flex items-center justify-center transition-colors",
+                      excludeFromAccounting ? "border-amber-500 bg-amber-500" : "border-muted-foreground/40"
+                    )}>
+                      {excludeFromAccounting && (
+                        <svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M1.5 4L3 5.5L6.5 2" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+                    Nem kerül könyvelésre
+                  </button>
+                )}
+              </div>
             </div>
 
             {!hasAny && (
               <Card className="bg-muted/30 border-border/50 expand-stagger-1">
-                <CardContent className="p-4 flex items-center justify-center">
+                <CardContent className="p-4 flex flex-col items-center justify-center gap-3">
                   <p className="text-sm text-muted-foreground italic">Nincs párosított tétel ehhez a számlához.</p>
+                  {matchingEnabled && !matcher.showSearch && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); matcher.openSearch(); }}
+                      className="h-8 text-xs gap-1.5"
+                    >
+                      <ArrowRightLeft className="h-3.5 w-3.5" />
+                      Tranzakció hozzárendelése
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -546,11 +606,187 @@ const ExpandedInvoiceRow = ({
                       <span className="text-muted-foreground">Leírás:</span>
                       <span className="ml-1">{tx.description || '-'}</span>
                     </div>
+                    {tx.reason && (
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">AI indoklás:</span>
+                        <p className="mt-1 text-[10px] bg-background/50 p-1.5 rounded border border-border/30 max-h-[80px] overflow-y-auto">
+                          {tx.reason}
+                        </p>
+                      </div>
+                    )}
                   </div>
+                  {/* Action buttons for invoice-side matching */}
+                  {matchingEnabled && (
+                    <div className="flex items-center gap-2 mt-2.5 pt-2 border-t border-border/30">
+                      {isSuggested && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={matcher.saving}
+                          onClick={(e) => { e.stopPropagation(); matcher.handleVerify(tx.id); }}
+                          className="h-6 text-[10px] gap-1 bg-emerald-500/10 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/20"
+                        >
+                          <Check className="h-2.5 w-2.5" />
+                          Jóváhagyás
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={matcher.saving}
+                        onClick={(e) => { e.stopPropagation(); matcher.handleUnmatch(tx.id); }}
+                        className="h-6 text-[10px] gap-1 text-muted-foreground hover:text-destructive"
+                      >
+                        <Unlink className="h-2.5 w-2.5" />
+                        Leválasztás
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               );
             })}
+
+            {/* ── Inline transaction search panel (invoice-side matching) ── */}
+            {matchingEnabled && matcher.showSearch && (
+              <Card className="bg-muted/30 border-primary/30 expand-stagger-4">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs font-medium flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <ArrowRightLeft className="h-3.5 w-3.5 text-primary" />
+                      Tranzakció hozzárendelése
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); matcher.closeSearch(); }}
+                      className="h-6 text-xs gap-1"
+                    >
+                      <X className="h-3 w-3" />
+                      Bezárás
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0 space-y-2.5">
+                  <p className="text-[10px] text-muted-foreground">
+                    Összeg alapján rendezve · keresett: <span className="font-mono font-medium">{formatCurrency(invoiceAmount || 0, invoiceCurrency || 'HUF')}</span>
+                  </p>
+
+                  {/* Search input */}
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      placeholder="Keresés leírás, összeg vagy típus alapján..."
+                      value={matcher.search}
+                      onChange={(e) => matcher.setSearch(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="pl-8 h-8 text-xs"
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* Results count */}
+                  {!matcher.loading && matcher.filteredTransactions.length > 0 && (
+                    <div className="text-[10px] text-muted-foreground px-0.5">
+                      {matcher.filteredTransactions.length} tranzakció az időszakban (±180 nap)
+                    </div>
+                  )}
+
+                  {/* Transaction list */}
+                  <div className="max-h-[240px] overflow-y-auto border rounded-md" onClick={(e) => e.stopPropagation()}>
+                    {matcher.loading ? (
+                      <div className="flex items-center justify-center h-20">
+                        <LoadingSpinner />
+                      </div>
+                    ) : matcher.filteredTransactions.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-20 text-muted-foreground">
+                        <ArrowRightLeft className="h-5 w-5 mb-1" />
+                        <p className="text-xs">{matcher.search ? 'Nincs találat a keresésre' : 'Nincs elérhető tranzakció az időszakban'}</p>
+                      </div>
+                    ) : (
+                      <div className="p-1.5 space-y-1">
+                        {matcher.filteredTransactions.map((tx) => {
+                          const isSelected = matcher.selectedTransactionId === tx.id;
+                          const txAmt = Math.abs(tx.amount || 0);
+                          const invAmt = Math.abs(invoiceAmount || 0);
+                          const txHuf = Math.abs(matcher.toHuf(txAmt, tx.currency));
+                          const invHuf = Math.abs(matcher.toHuf(invAmt, invoiceCurrency));
+                          const diff = txHuf - invHuf;
+                          const absDiff = Math.abs(diff);
+                          const isExact = absDiff < 1;
+                          const isNear = !isExact && invHuf > 0 && absDiff < invHuf * 0.05;
+                          const pctDiff = invHuf > 0 ? (absDiff / invHuf * 100) : 0;
+
+                          return (
+                            <div
+                              key={tx.id}
+                              className={cn(
+                                "rounded-md border p-2.5 cursor-pointer transition-all",
+                                isSelected
+                                  ? "border-primary bg-primary/10 ring-1 ring-primary/30"
+                                  : "hover:bg-muted/40 hover:border-border",
+                                isExact && !isSelected && "border-emerald-500/40 bg-emerald-500/5",
+                                isNear && !isSelected && "border-amber-500/30 bg-amber-500/5"
+                              )}
+                              onClick={() => matcher.setSelectedTransactionId(tx.id)}
+                            >
+                              <div className="flex justify-between items-start gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1.5">
+                                    {isSelected && <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />}
+                                    <p className="font-medium text-xs">
+                                      {format(new Date(tx.transaction_date), 'yyyy.MM.dd', { locale: hu })}
+                                    </p>
+                                    {tx.type && (
+                                      <Badge variant="outline" className="text-[9px] h-4 px-1">{tx.type}</Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-muted-foreground text-[10px] mt-0.5 truncate">
+                                    {tx.description || '-'}
+                                  </p>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <p className={cn(
+                                    "font-mono font-medium text-xs",
+                                    tx.amount < 0 ? "text-destructive" : "text-success"
+                                  )}>
+                                    {formatCurrency(tx.amount, tx.currency || 'HUF')}
+                                  </p>
+                                  {isExact ? (
+                                    <Badge variant="success" className="text-[9px] h-4 mt-0.5">✓ Egyező</Badge>
+                                  ) : isNear ? (
+                                    <Badge className="text-[9px] h-4 mt-0.5 bg-amber-500/20 text-amber-600 border-amber-500/30 hover:bg-amber-500/20">
+                                      ~{pctDiff.toFixed(0)}% elt.
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-[10px] text-muted-foreground/60 mt-0.5 block">
+                                      {diff > 0 ? '+' : ''}{formatCurrency(diff, 'HUF')}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Match action button */}
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      disabled={!matcher.selectedTransactionId || matcher.saving}
+                      onClick={(e) => { e.stopPropagation(); matcher.handleMatch(); }}
+                      className="text-xs h-8"
+                    >
+                      <Check className="h-3 w-3 mr-1" />
+                      {matcher.saving ? 'Mentés...' : 'Párosítás mentése'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Separator between transactions and courier reports */}
             {((matchedSubmittedInvoices.length > 0 || matchedNavInvoices.length > 0 || matchedTransactions.length > 0) && matchedCourierReports.length > 0) && (

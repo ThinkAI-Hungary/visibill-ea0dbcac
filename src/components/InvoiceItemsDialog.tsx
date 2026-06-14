@@ -240,7 +240,7 @@ export function InvoiceItemsDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-7xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader className="pb-4 border-b border-border/50">
             <DialogTitle className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">

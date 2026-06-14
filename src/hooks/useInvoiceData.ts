@@ -16,6 +16,7 @@ export interface TransactionRecord {
   confidence_score: number | null;
   match_type: string | null;
   is_verified: boolean | null;
+  reason: string | null;
 }
 
 export interface NavInvoice {
@@ -200,7 +201,7 @@ export function useInvoiceData(
     queryFn: async () => {
       const { data } = await supabase
         .from('transactions')
-        .select('id, matched_invoice_id, transaction_date, amount, description, currency, type, confidence_score, match_type, is_verified')
+        .select('id, matched_invoice_id, transaction_date, amount, description, currency, type, confidence_score, match_type, is_verified, reason')
         .eq('company_id', companyId)
         .not('matched_invoice_id', 'is', null);
       return (data || []) as TransactionRecord[];
@@ -249,7 +250,7 @@ export function useInvoiceData(
         const to = from + PAGE_SIZE - 1;
         const { data, error } = await supabase
           .from('nav_invoices')
-          .select('id, invoice_number, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, transaction_id, submitted')
+          .select('id, invoice_number, invoice_direction, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, transaction_id, submitted')
           .eq('company_id', companyId)
           .range(from, to)
           .order('invoice_issue_date', { ascending: false })

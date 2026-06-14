@@ -289,8 +289,12 @@ Részletes leírás: [04-component-library.md](./04-component-library.md#copyabl
 Számla táblázat sorok kibonthatók részletes nézetté, ami tartalmazza:
 - Számla képe/PDF
 - Tételek listája
-- Párosítási információk
-- Szerkesztési lehetőségek
+- Párosítási információk (tranzakció, beküldött számla, NAV számla)
+- **AI indoklás** megjelenítése a párosított tranzakción (ha van `reason` mező)
+- Hivatkozott számlák láncolata (linked invoices)
+- Futárszolgálat riportok (courier reports)
+- Szerkesztési/leválasztási/jóváhagyási lehetőségek
+- Tranzakció kézi hozzárendelés (inline search)
 
 ---
 

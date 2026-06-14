@@ -66,7 +66,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| A-013 | Scoped URL routing pattern (/:companyId/:dateRange/*) | ✅ Decided | [A-013](./A-013-scoped-routing.md) |
+| A-013 | Scoped URL routing + invoice filter query params | ✅ Decided | [A-013](./A-013-scoped-routing.md) |
 | A-014 | React Query cache stratégia | ✅ Decided | [A-014](./A-014-react-query-cache.md) |
 
 ## 💳 Fizetés

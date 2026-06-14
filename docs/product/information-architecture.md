@@ -1,6 +1,6 @@
 # Visibill — Information Architecture & Navigation
 
-> **Verzió:** 1.0 | **Dátum:** 2026-05-16  
+> **Verzió:** 1.1 | **Dátum:** 2026-06-14  
 > **Forrás:** [AppSidebar.tsx](../../src/components/AppSidebar.tsx) · [App.tsx](../../src/App.tsx)  
 > **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md)
 
@@ -20,6 +20,30 @@ Az alkalmazás scoped URL pattern-t használ:
 | `dateRange` | Dátum szűrő | `2026-01-01_2026-12-31` |
 | `page` | Oldal neve | `invoices` |
 | `tab?` | Opcionális tab | `all`, `incoming` |
+
+**Query paraméterek (Számlák oldal):**
+
+A számlák oldal (`/invoices/:tab`) az összes szűrőt és nézet-állapotot URL query params-ként szinkronizálja,
+lehetővé téve linkek megosztását azonos nézettel:
+
+```
+/:companyId/:dateRange/invoices/outbound_nav?cur=HUF&kpi=unmatched&p=2
+```
+
+| Param | Szűrő | Default (nem jelenik meg) |
+|-------|-------|--------------------------|
+| `q` | Keresés | `""` |
+| `idf` / `idt` | Kibocsátási dátum-tól/-ig | `""` |
+| `amin` / `amax` | Összeg tartomány | `""` |
+| `cur` | Pénznem | `all` |
+| `paid` | Kifizetve | `all` |
+| `sub` | Beküldve | `all` |
+| `proj` | Projekt | `all` |
+| `cat` | Kategória | `all` |
+| `pm` | Fizetési mód | `all` |
+| `kpi` | KPI szűrő (párosított/javasolt/nincs) | `all` |
+| `sf` / `sd` | Rendezés mező/irány | `invoice_issue_date` / `desc` |
+| `p` / `ps` | Oldal / Oldalméret | `1` / `50` |
 
 **Publikus route-ok** (auth nélkül):
 
