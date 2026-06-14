@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+﻿import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +19,7 @@ import { format, startOfDay, endOfDay, subDays, startOfWeek } from 'date-fns';
 import { formatDistanceToNow } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { UserActivityDialog } from './UserActivityDialog';
+import { reportError } from '@/lib/errorReporter';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface AuditLogRow {
@@ -612,7 +613,7 @@ export function ActivityLogSheet() {
         throw new Error('Unrecognized file format');
       }
     } catch (err) {
-      console.error('PDF Preview Error:', err);
+      reportError({ type: 'db_query', component: 'ActivityLogSheet', action: 'error', message: 'PDF Preview Error:', error: err });
       setPdfError(true);
     } finally {
       setIsLoadingPdf(false);

@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { exportToFile } from '@/lib/exportUtils';
 import type { NavInvoice, SubmittedInvoice } from './useInvoiceData';
+import { reportError } from '@/lib/errorReporter';
 
 interface UseInvoiceMutationsParams {
   companyId: string;
@@ -64,7 +65,7 @@ export function useInvoiceMutations({
         setServerLastSyncTime(null);
       }
     } catch (err) {
-      console.error('Failed to check cooldown:', err);
+      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Failed to check cooldown:', error: err });
     } finally {
       setCooldownCheckLoading(false);
     }
@@ -206,14 +207,14 @@ export function useInvoiceMutations({
           });
           console.log('Categorization webhook triggered', { forceRecategorizeIds: forceRecategorizeIds.length });
         } catch (categorizationError) {
-          console.error('Categorization webhook failed:', categorizationError);
+          reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Categorization webhook failed:', error: categorizationError });
         }
       }
 
       setSelectedInvoiceIds(new Set());
       invalidateInvoiceData();
     } catch (error: any) {
-      console.error('Sync error:', error);
+      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Sync error:', error: error });
       toast({ title: error.message || 'Nem sikerült szinkronizálni a számlákat', variant: 'destructive' });
     } finally {
       setSyncing(false);
@@ -230,7 +231,7 @@ export function useInvoiceMutations({
       invalidateInvoiceData();
       toast({ title: 'Projekt hozzárendelve' });
     } catch (error) {
-      console.error('Error updating project:', error);
+      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error updating project:', error: error });
       toast({ title: 'Hiba a projekt hozzárendelésekor', variant: 'destructive' });
     }
   };
@@ -245,7 +246,7 @@ export function useInvoiceMutations({
       invalidateInvoiceData();
       toast({ title: 'Kategória hozzárendelve' });
     } catch (error) {
-      console.error('Error updating category:', error);
+      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error updating category:', error: error });
       toast({ title: 'Hiba a kategória hozzárendelésekor', variant: 'destructive' });
     }
   };
@@ -261,7 +262,7 @@ export function useInvoiceMutations({
       invalidateInvoiceData();
       toast({ title: newValue ? 'Beküldve megjelölve' : 'Beküldve visszavonva' });
     } catch (error) {
-      console.error('Error updating submitted status:', error);
+      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error updating submitted status:', error: error });
       toast({ title: 'Hiba a státusz frissítésekor', variant: 'destructive' });
     }
   };

@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { blockingCategoryMeta, type BlockingCategory, type BlockingItem } from './types';
 import { useAccountyClients, useAccountyMissingItems, useIgnoreMissingItem, useAddMissingItem, useAccountyDeadlines, useAccountyCommunicationPrefs, useUpsertCommunicationPrefs, useCompleteDeadline, useAccountyTaxProfile, useUpsertTaxProfile, useGeneratePortalToken, useCompanyInvoices } from '@/hooks/useAccountyData';
 import { useToast } from '@/hooks/use-toast';
+import { reportError } from '@/lib/errorReporter';
 import {
   generateRequestEmail,
   addToApprovalQueue,
@@ -228,7 +229,7 @@ export default function ClientDetailsPage() {
                 setLinkCopied(true);
                 setTimeout(() => setLinkCopied(false), 2000);
               } catch (e) {
-                console.error('Failed to generate portal token:', e);
+                reportError({ type: 'db_query', component: 'ClientDetailsPage', action: 'error', message: 'Failed to generate portal token:', error: e });
               }
             }}
             disabled={generateToken.isPending}
@@ -487,7 +488,7 @@ export default function ClientDetailsPage() {
                                 setNewItem({ category: 'bejovo', title: '', subtitle: '', priority: 'medium', details: '' });
                                 setShowAddForm(false);
                               } catch (err) {
-                                console.error('Add blocking item failed:', err);
+                                reportError({ type: 'db_query', component: 'ClientDetailsPage', action: 'error', message: 'Add blocking item failed:', error: err });
                               }
                             }}
                             disabled={!newItem.title.trim()}
@@ -617,7 +618,7 @@ export default function ClientDetailsPage() {
                                           try {
                                             await ignoreMutation.mutateAsync(item.id);
                                           } catch (err) {
-                                            console.error('Ignore failed:', err);
+                                            reportError({ type: 'db_query', component: 'ClientDetailsPage', action: 'error', message: 'Ignore failed:', error: err });
                                           }
                                           setExpandedItemId(null);
                                         }}
@@ -665,7 +666,7 @@ export default function ClientDetailsPage() {
                                               portalLink = `${window.location.origin}/portal/${token}`;
                                             }
                                           } catch (err) {
-                                            console.error('Portal token creation failed:', err);
+                                            reportError({ type: 'db_query', component: 'ClientDetailsPage', action: 'error', message: 'Portal token creation failed:', error: err });
                                           }
 
                                           const missingItemForEmail: MissingItemForEmail = {
@@ -1331,7 +1332,7 @@ export default function ClientDetailsPage() {
                     setNotifSaved(true);
                     setTimeout(() => setNotifSaved(false), 2000);
                   } catch (e) {
-                    console.error('Failed to save communication prefs:', e);
+                    reportError({ type: 'db_query', component: 'ClientDetailsPage', action: 'error', message: 'Failed to save communication prefs:', error: e });
                   } finally {
                     setNotifSaving(false);
                   }

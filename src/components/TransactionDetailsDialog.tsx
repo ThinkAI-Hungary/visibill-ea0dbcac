@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { computeMatchStatus, getPaymentStatusBadge } from '@/hooks/useComputedStatus';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { format, subDays, addDays } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { useScopedNavigate } from '@/lib/navigation';
 import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
+import { reportError } from '@/lib/errorReporter';
 
 interface Transaction {
   id: string;
@@ -208,7 +209,7 @@ export const TransactionDetailsDialog = ({
         }
       }
     } catch (error) {
-      console.error('Error fetching matched invoice:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error fetching matched invoice:', error: error });
       setMatchedInvoice(null);
       setMatchedNavInvoice(null);
     } finally {
@@ -228,7 +229,7 @@ export const TransactionDetailsDialog = ({
       if (error) throw error;
       setMatchedCourierReports(data || []);
     } catch (error) {
-      console.error('Error fetching courier reports:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error fetching courier reports:', error: error });
       setMatchedCourierReports([]);
     }
   };
@@ -374,7 +375,7 @@ export const TransactionDetailsDialog = ({
 
       setAvailableInvoices(combined);
     } catch (error) {
-      console.error('Error fetching invoices:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error fetching invoices:', error: error });
       toast({ title: 'Hiba a számlák betöltésekor', variant: 'destructive' });
     } finally {
       setLoadingAvailable(false);
@@ -402,7 +403,7 @@ export const TransactionDetailsDialog = ({
       onUpdate();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error verifying transaction:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error verifying transaction:', error: error });
       toast({ title: 'Hiba a jóváhagyás során', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -430,7 +431,7 @@ export const TransactionDetailsDialog = ({
       onUpdate();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error matching transaction:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error matching transaction:', error: error });
       toast({ title: 'Hiba a párosítás mentésekor', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -457,7 +458,7 @@ export const TransactionDetailsDialog = ({
       onUpdate();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error unmatching transaction:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error unmatching transaction:', error: error });
       toast({ title: 'Hiba a párosítás megszüntetésekor', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -484,7 +485,7 @@ export const TransactionDetailsDialog = ({
       onUpdate();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error marking no invoice:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error marking no invoice:', error: error });
       toast({ title: 'Hiba a jelölés mentésekor', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -511,7 +512,7 @@ export const TransactionDetailsDialog = ({
       onUpdate();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error marking invoice missing:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error marking invoice missing:', error: error });
       toast({ title: 'Hiba a jelölés mentésekor', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -536,7 +537,7 @@ export const TransactionDetailsDialog = ({
       onUpdate();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error reverting status:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error reverting status:', error: error });
       toast({ title: 'Hiba a visszavonás során', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -611,7 +612,7 @@ export const TransactionDetailsDialog = ({
       if (error?.code === '23505') {
         toast({ title: 'Ez a számla már hozzá van rendelve ehhez a tranzakcióhoz', variant: 'destructive' });
       } else {
-        console.error('Error adding extra match:', error);
+        reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error adding extra match:', error: error });
         toast({ title: 'Hiba a számla hozzáadásakor', variant: 'destructive' });
       }
     } finally {
@@ -633,7 +634,7 @@ export const TransactionDetailsDialog = ({
       fetchExtraMatches();
       onUpdate();
     } catch (error) {
-      console.error('Error removing extra match:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error removing extra match:', error: error });
       toast({ title: 'Hiba az eltávolításkor', variant: 'destructive' });
     } finally {
       setSaving(false);

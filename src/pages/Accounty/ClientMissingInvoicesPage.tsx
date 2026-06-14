@@ -37,6 +37,7 @@ import { useAccountyMissingItems, useAddMissingItem, useIgnoreMissingItem, useRe
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { reportError } from '@/lib/errorReporter';
 import {
   generateRequestEmail,
   addToApprovalQueue,
@@ -124,10 +125,10 @@ export default function ClientMissingInvoicesPage() {
       if (!tokenError) {
         portalLink = `${window.location.origin}/portal/${token}`;
       } else {
-        console.error('Portal token creation error:', tokenError);
+        reportError({ type: 'db_query', component: 'ClientMissingInvoicesPage', action: 'error', message: 'Portal token creation error:', error: tokenError });
       }
     } catch (err) {
-      console.error('Portal token creation failed:', err);
+      reportError({ type: 'db_query', component: 'ClientMissingInvoicesPage', action: 'error', message: 'Portal token creation failed:', error: err });
     }
 
     const generated = generateRequestEmail({
@@ -229,7 +230,7 @@ export default function ClientMissingInvoicesPage() {
       setIsAddModalOpen(false);
       setNewInvoiceForm({ vendor: '', subtext: '', amount: '0', period: '2024 Január', priority: 'Közepes', note: '' });
     } catch (err) {
-      console.error('Add invoice failed:', err);
+      reportError({ type: 'db_query', component: 'ClientMissingInvoicesPage', action: 'error', message: 'Add invoice failed:', error: err });
     }
   };
 
@@ -237,7 +238,7 @@ export default function ClientMissingInvoicesPage() {
     try {
       await ignoreMissingItem.mutateAsync(idToDelete);
     } catch (err) {
-      console.error('Delete invoice failed:', err);
+      reportError({ type: 'db_query', component: 'ClientMissingInvoicesPage', action: 'error', message: 'Delete invoice failed:', error: err });
     }
   };
 
@@ -246,7 +247,7 @@ export default function ClientMissingInvoicesPage() {
       await Promise.all(selectedIds.map(id => ignoreMissingItem.mutateAsync(id)));
       setSelectedIds([]);
     } catch (err) {
-      console.error('Bulk delete failed:', err);
+      reportError({ type: 'db_query', component: 'ClientMissingInvoicesPage', action: 'error', message: 'Bulk delete failed:', error: err });
     }
   };
 
@@ -254,7 +255,7 @@ export default function ClientMissingInvoicesPage() {
     try {
       await resolveMissingItem.mutateAsync(idToResolve);
     } catch (err) {
-      console.error('Resolve invoice failed:', err);
+      reportError({ type: 'db_query', component: 'ClientMissingInvoicesPage', action: 'error', message: 'Resolve invoice failed:', error: err });
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { reportError } from '@/lib/errorReporter';
 
 interface NavCredentialsFormProps {
   companyId?: string;
@@ -92,7 +93,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         setCredentialInfo(null);
       }
     } catch (error) {
-      console.error('Error loading credential info:', error);
+      reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: 'Error loading credential info:', error: error });
     } finally {
       setInitialLoading(false);
     }
@@ -251,7 +252,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       onCredentialsSaved?.();
 
     } catch (error: any) {
-      console.error('Error saving credentials:', error);
+      reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: 'Error saving credentials:', error: error });
       toast({
         title: 'Mentési hiba',
         description: error.message || 'Nem sikerült menteni az adatokat',
@@ -300,7 +301,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       }
 
     } catch (error: any) {
-      console.error('Validation error:', error);
+      reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: 'Validation error:', error: error });
       setValidationStatus('error');
       toast({
         title: 'Validálási hiba',
@@ -347,7 +348,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       });
 
       if (outboundError || outboundData?.error) {
-        console.error('[NavCredentialsForm] OUTBOUND sync failed:', outboundError || outboundData?.error);
+        reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: '[NavCredentialsForm] OUTBOUND sync failed:', error: outboundError || outboundData?.error });
         hasError = true;
       } else {
         totalOutbound = outboundData?.totalInvoices || 0;
@@ -368,7 +369,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       });
 
       if (inboundError || inboundData?.error) {
-        console.error('[NavCredentialsForm] INBOUND sync failed:', inboundError || inboundData?.error);
+        reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: '[NavCredentialsForm] INBOUND sync failed:', error: inboundError || inboundData?.error });
         hasError = true;
       } else {
         totalInbound = inboundData?.totalInvoices || 0;
@@ -390,7 +391,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
           });
           console.log('[NavCredentialsForm] Categorization webhook triggered successfully');
         } catch (categorizationError) {
-          console.error('[NavCredentialsForm] Categorization webhook failed:', categorizationError);
+          reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: '[NavCredentialsForm] Categorization webhook failed:', error: categorizationError });
         }
       }
       
@@ -414,7 +415,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       }
       
     } catch (error: any) {
-      console.error('[NavCredentialsForm] Initial sync error:', error);
+      reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: '[NavCredentialsForm] Initial sync error:', error: error });
       toast({
         title: 'Szinkronizálási hiba',
         description: 'Az adatok letöltése részlegesen sikertelen. Próbálja újra később.',
@@ -468,7 +469,7 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
       onCredentialsSaved?.();
 
     } catch (error: any) {
-      console.error('Error disconnecting NAV credentials:', error);
+      reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: 'Error disconnecting NAV credentials:', error: error });
       toast({
         title: "Hiba",
         description: error.message || "Nem sikerült leválasztani a NAV kapcsolatot.",

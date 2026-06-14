@@ -1,7 +1,7 @@
 # A-019: Management Dashboard Architektúra
 
 **Status:** Decided  
-**Date:** 2025-12
+**Date:** 2025-12 (last updated 2026-06-14)
 
 ## Context
 
@@ -44,13 +44,16 @@ if (requesterProfile?.role !== "management") {
 
 ### API Design: Action-based Query Params
 
-Egyetlen Edge Function, 3 action:
+Egyetlen Edge Function, 6 action:
 
 | Action | Params | Visszatérés |
 |---|---|---|
 | `overview` | — | usersCount, companiesCount, companies[], users[], llmOverview |
 | `company-detail` | `companyId`, `page`, `pageSize`, `sortBy`, `sortDir`, `search`, `dateFrom`, `dateTo` | invoiceCount, members[], lastActivity, llmCosts{details[]} |
 | `user-detail` | `userId` | companyCount, companies[] |
+| `errors` | `page`, `pageSize`, `sortCol`, `sortDir`, `search`, `filterSource`, `filterCategory`, `filterCompanyId`, `filterUserId` | totalErrors, last24hErrors, mostAffectedCompany, mostAffectedUser, topErrorCategory, errors[], totalRows |
+| `delete-errors` | POST body: `{ ids }` | Hibák törlése az `app_error_logs` táblából |
+| `retry-errors` | POST body: `{ ids, targetQueue?, targetCategory? }` | Hibák újraküldése PGMQ queue-ba |
 
 ### Adatforrások
 
@@ -66,6 +69,7 @@ Az Edge Function `service_role` klienssel az alábbi táblákat olvassa:
 | `transactions` | Tranzakciók összesítés |
 | `salary` | Bérszámfejtés összesítés |
 | `llm_koltsegek` | LLM token/költség részletezés (szerver-oldali lapozás) |
+| `app_error_logs` | Centralizált hibalogok (frontend, worker, webhook, mailgun) |
 | `audit_logs` | Utolsó aktivitás (company-detail) |
 | `auth.users` (admin API) | Email címek (listUsers) |
 
@@ -139,3 +143,8 @@ Az Edge Function **mindig érvényes JSON-t ad vissza** — hiba esetén üres a
 - Overview minden company és member adatát egyszerre tölti le → nagy tenant számmal skálázódási kockázat
 - Nincs cache-invalidation — `refetchInterval` alapú polling, nem Realtime
 - A `management` role check a `profiles` tábla `role` mezőjére épít, nem Supabase-natív custom claims-re
+
+## Kapcsolódó Dokumentáció
+
+- [Error Logging System](../error-logging-system.md) — Részletes error logging architektúra és dashboard
+- [09-Error Handling & Feedback](../../design/09-error-handling-feedback.md) — Frontend error kezelés design

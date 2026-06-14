@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +10,7 @@ import { Search, Plus, Check, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
+import { reportError } from '@/lib/errorReporter';
 
 interface Invoice {
   id: string;
@@ -101,7 +102,7 @@ export function SupplierInvoiceAssignment({
       
       setInvoices(transformedData);
     } catch (error) {
-      console.error('Error loading invoices:', error);
+      reportError({ type: 'db_query', component: 'SupplierInvoiceAssignment', action: 'error', message: 'Error loading invoices:', error: error });
       toast({
         variant: 'destructive',
         title: 'Hiba',

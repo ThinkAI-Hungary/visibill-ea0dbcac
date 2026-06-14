@@ -1,6 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { FixedAsset, AssetEvent, TaoTemplate } from '@/types/fixed-assets';
+import { reportError } from '@/lib/errorReporter';
 
 // ── Lista lekérés ──
 export function useFixedAssets(companyId: string | undefined) {
@@ -169,7 +170,7 @@ export function useCreateFixedAsset() {
           },
         });
 
-      if (eventError) console.error('Event insert error:', eventError);
+      if (eventError) reportError({ type: 'db_query', component: 'useFixedAssets', action: 'error', message: 'Event insert error:', error: eventError });
 
       return asset;
     },
@@ -234,7 +235,7 @@ export function useTransferAsset() {
           old_values: { location: params.oldLocationName },
           new_values: { location: params.newLocationName },
         });
-      if (eventError) console.error('Event insert error:', eventError);
+      if (eventError) reportError({ type: 'db_query', component: 'useFixedAssets', action: 'error', message: 'Event insert error:', error: eventError });
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['fixedAssets', variables.companyId] });
@@ -280,7 +281,7 @@ export function useReactivateAsset() {
           old_values: { acquisition_value: params.oldAcquisitionValue },
           new_values: { acquisition_value: newValue, added_value: params.additionalValue },
         });
-      if (eventError) console.error('Event insert error:', eventError);
+      if (eventError) reportError({ type: 'db_query', component: 'useFixedAssets', action: 'error', message: 'Event insert error:', error: eventError });
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['fixedAssets', variables.companyId] });
@@ -328,7 +329,7 @@ export function useDisposeAsset() {
             ...(params.saleValue ? { sale_value: params.saleValue } : {}),
           },
         });
-      if (eventError) console.error('Event insert error:', eventError);
+      if (eventError) reportError({ type: 'db_query', component: 'useFixedAssets', action: 'error', message: 'Event insert error:', error: eventError });
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['fixedAssets', variables.companyId] });

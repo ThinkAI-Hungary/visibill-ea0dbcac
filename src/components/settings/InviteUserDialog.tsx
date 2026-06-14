@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany, type Company } from '@/contexts/CompanyContext';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { UserPlus, Loader2, Eye, EyeOff, Building2, Search, Check, X, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { reportError } from '@/lib/errorReporter';
 
 interface InviteUserDialogProps {
   open: boolean;
@@ -205,7 +206,7 @@ export function InviteUserDialog({
       onOpenChange(false);
       onSuccess();
     } catch (err: any) {
-      console.error('Invite error:', err);
+      reportError({ type: 'db_query', component: 'InviteUserDialog', action: 'error', message: 'Invite error:', error: err });
       toast({
         title: 'Meghívás sikertelen',
         description: err.message || 'Ismeretlen hiba történt.',

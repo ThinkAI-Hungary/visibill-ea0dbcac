@@ -20,6 +20,7 @@ import { SystemSection } from '@/components/settings/SystemSection';
 import { SecuritySection } from '@/components/settings/SecuritySection';
 import { InviteUserDialog } from '@/components/settings/InviteUserDialog';
 import { useUserRole } from '@/hooks/useUserRole';
+import { reportError } from '@/lib/errorReporter';
 import { useUrlTab } from '@/lib/navigation';
 
 // ── Inline sub-components (CompanyAccessCard, CompanyMembersCard) kept here for simplicity ──
@@ -83,7 +84,7 @@ function CompanyAccessCard({ companyId, toast }: { companyId: string; toast: any
     for (let i = 0; i < 6; i++) token += chars[bytes[i] % chars.length];
     const now = new Date().toISOString();
     const { error } = await supabase.from('companies').update({ share_token: token, share_token_created_at: now } as any).eq('id', companyId);
-    if (error) toast({ title: "Hiba", description: "Nem sikerült a kód generálása.", variant: "destructive" });
+    if (error) { reportError({ type: 'db_query', component: 'Settings', action: 'generateToken', message: 'Share token generation failed', error }); toast({ title: "Hiba", description: "Nem sikerült a kód generálása.", variant: "destructive" }); }
     else { setShareToken(token); setTokenCreatedAt(now); toast({ title: "Siker", description: "Meghívó kód generálva! 10 percig érvényes." }); }
     setGenerating(false);
   };
@@ -148,7 +149,7 @@ function CompanyMembersCard({ companyId, companyName, ownerId, isOwnerOrAdmin, t
   const removeMember = async (memberId: string, userId: string) => {
     if (userId === ownerId) return;
     const { error } = await supabase.from('company_members').delete().eq('id', memberId);
-    if (error) toast({ title: "Hiba", description: "Nem sikerült a tag eltávolítása.", variant: "destructive" });
+    if (error) { reportError({ type: 'db_query', component: 'Settings', action: 'removeMember', message: 'Member removal failed', error }); toast({ title: "Hiba", description: "Nem sikerült a tag eltávolítása.", variant: "destructive" }); }
     else { toast({ title: "Siker", description: "Tag eltávolítva." }); queryClient.invalidateQueries({ queryKey: queryKeys.settingsMembers(companyId) }); }
   };
 
@@ -329,7 +330,7 @@ export default function Settings() {
     if (!user) return;
     setLoading(true);
     const { error } = await supabase.from('profiles').upsert({ user_id: user.id, name: profile.name, company: profile.company, position: profile.position, avatar_url: profile.avatar_url }, { onConflict: 'user_id' });
-    if (error) toast({ title: 'Hiba történt', description: 'A profil mentése sikertelen.', variant: 'destructive' });
+    if (error) { reportError({ type: 'db_query', component: 'Settings', action: 'updateProfile', message: 'Profile upsert failed', error }); toast({ title: 'Hiba történt', description: 'A profil mentése sikertelen.', variant: 'destructive' }); }
     else { setInitialProfile({ ...profile }); toast({ title: 'Siker', description: 'A profil sikeresen mentve.' }); }
     setLoading(false);
   };
@@ -343,7 +344,7 @@ export default function Settings() {
         if (error) throw error;
       }
       toast({ title: 'Siker', description: 'A beállítások sikeresen mentve.' });
-    } catch { toast({ title: 'Hiba történt', description: 'A beállítások mentése sikertelen.', variant: 'destructive' }); }
+    } catch (err) { reportError({ type: 'db_query', component: 'Settings', action: 'updateSettings', message: 'Settings upsert failed', error: err }); toast({ title: 'Hiba történt', description: 'A beállítások mentése sikertelen.', variant: 'destructive' }); }
     setLoading(false);
   };
 
@@ -357,7 +358,7 @@ export default function Settings() {
       setSelectedCompany({ ...selectedCompany, name: companyName.trim(), tax_number: companyTaxNumber.trim() || null, address: companyAddress.trim() || null });
       setInitialCompanyData({ name: companyName.trim(), taxNumber: companyTaxNumber.trim(), address: companyAddress.trim() });
       toast({ title: 'Siker', description: 'Cég adatai sikeresen mentve.' });
-    } catch { toast({ title: 'Hiba történt', description: 'A cég adatainak mentése sikertelen.', variant: 'destructive' }); }
+    } catch (err) { reportError({ type: 'db_query', component: 'Settings', action: 'saveCompanyData', message: 'Company update failed', error: err }); toast({ title: 'Hiba történt', description: 'A cég adatainak mentése sikertelen.', variant: 'destructive' }); }
     finally { setSavingCompany(false); }
   };
 
@@ -378,7 +379,7 @@ export default function Settings() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       toast({ title: 'Siker', description: 'Adatok sikeresen exportálva és letöltve!' });
-    } catch { toast({ title: 'Hiba', description: 'Hiba történt az adatok exportálása során.', variant: 'destructive' }); }
+    } catch (err) { reportError({ type: 'api_call', component: 'Settings', action: 'exportData', message: 'Data export failed', error: err }); toast({ title: 'Hiba', description: 'Hiba történt az adatok exportálása során.', variant: 'destructive' }); }
     finally { setExportLoading(false); }
   };
 

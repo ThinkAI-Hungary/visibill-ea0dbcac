@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { FileText, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { INVOICE_TYPE_LABELS } from '@/types/invoices';
+import { reportError } from '@/lib/errorReporter';
 
 interface InvoiceDetailPopupProps {
   open: boolean;
@@ -114,7 +115,7 @@ export const InvoiceDetailPopup = ({ open, onOpenChange, invoiceId }: InvoiceDet
       if (error) throw error;
       setInvoice(data);
     } catch (error) {
-      console.error('Error fetching invoice details:', error);
+      reportError({ type: 'db_query', component: 'InvoiceDetailPopup', action: 'error', message: 'Error fetching invoice details:', error: error });
     } finally {
       setLoading(false);
     }

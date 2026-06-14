@@ -210,6 +210,48 @@ Figyelmeztetés mentetlen változások esetén navigáció előtt.
 
 ---
 
+## Centralizált Error Logging
+
+> **Részletes dokumentáció:** [Error Logging System](../architecture/error-logging-system.md)
+
+A rendszer minden rétege (frontend, worker, Edge Functions) egy közös `app_error_logs` táblába logolja a hibákat. A Management Dashboard Error paneljén tekinthetők meg.
+
+### Frontend Error Reporter
+
+**Fájl:** `lib/errorReporter.ts`
+
+```typescript
+import { reportError } from '@/lib/errorReporter';
+
+reportError({
+  type: 'db_query',           // auth_error | db_query | api_error | unhandled
+  component: 'InvoicesPage',  // modul/fájl neve
+  action: 'error',            // error | warning | info
+  message: 'Query failed',
+  error: e,                   // opcionális: Error objektum
+  context: { foo: 'bar' },   // opcionális: extra kontextus
+});
+```
+
+- Rate limit: max 10 log/perc/user
+- Automatikus szenzitív adat szűrés
+- Retry logika: 1x próbálkozás
+
+### Instrumentált Komponensek
+
+| Komponens | Error típus |
+|-----------|-------------|
+| `AuthContext` | `auth_error` (signIn, signUp, signOut, session refresh) |
+| `CompanyContext` | `db_query` (cég lista, cég váltás) |
+| `useActivePreset` | `db_query` (preset betöltés) |
+| `ErrorBoundary` | `unhandled` (runtime errors) |
+| `upload-ticket-image` | `api_error` (kép feltöltés) |
+| Worker pipeline-ok | `classification_error`, `ocr_error`, stb. |
+| Mailgun webhook EF | `webhook`, `mailgun` |
+| Email alias EF-ek | `email_alias` |
+
+---
+
 ## Hibakezelési Patternek Összefoglaló
 
 | Hiba típus | Kezelés | Vizuális |
@@ -222,3 +264,4 @@ Figyelmeztetés mentetlen változások esetén navigáció előtt.
 | Session lejárt | IdleWarningModal | Modal + countdown |
 | Hozzáférés megtagadva | ScopedLayout screen | Shield ikon + szöveg |
 | 404 Not Found | NotFound page | Egyszerű szöveg |
+| **Logolt hibák** | **app_error_logs → Management Dashboard** | **Szűrhető tábla + KPI + bulk akciók** |

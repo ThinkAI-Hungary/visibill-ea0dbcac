@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +25,7 @@ import { isSameDay, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, star
 import { useScopedNavigate } from '@/lib/navigation';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { reportError } from '@/lib/errorReporter';
 
 
 
@@ -402,7 +403,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
       toast({ title: 'Sikeres exportálás', description: 'Az eredménykimutatás letöltése megkezdődött.' });
     } catch (err) {
       toast({ title: 'Hiba történt', description: 'Nem sikerült legenerálni az Excel fájlt.', variant: 'destructive' });
-      console.error(err);
+      reportError({ type: 'db_query', component: 'ProfitAndLoss', action: 'error', message: String(err), error: err });
     }
   };
 
@@ -723,7 +724,7 @@ export default function ProfitAndLoss() {
     isThisQuarter = isSameDay(dateFrom, startOfQuarter(new Date())) && isSameDay(dateTo, endOfQuarter(new Date()));
     isThisYear = isSameDay(dateFrom, startOfYear(new Date())) && isSameDay(dateTo, endOfYear(new Date()));
   } catch (e) {
-    console.error('Date comparison error:', e);
+    reportError({ type: 'db_query', component: 'ProfitAndLoss', action: 'error', message: 'Date comparison error:', error: e });
   }
   
   const activeDatePreset = isThisYear ? 'year' : isThisQuarter ? 'quarter' : isThisMonth ? 'month' : 'custom';

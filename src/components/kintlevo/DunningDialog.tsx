@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CAT, fmt, validateEmail } from '@/lib/kintlevo-helpers';
 import type { AgingCategory, CompanyGroup } from '@/lib/kintlevo-helpers';
 import type { QueryClient } from '@tanstack/react-query';
+import { reportError } from '@/lib/errorReporter';
 
 interface Props {
   open: boolean;
@@ -121,7 +122,7 @@ export function DunningDialog({
           if (error) throw error;
           successCount++;
         } catch (err: any) {
-          console.error('Dunning send error for', target.companyName, err);
+          reportError({ type: 'db_query', component: 'DunningDialog', action: 'error', message: 'Dunning send error for', error: target.companyName, err });
           errorCount++;
         }
       }

@@ -1,8 +1,9 @@
-import { useEffect, useRef, useCallback } from 'react';
+﻿import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
+import { reportError } from '@/lib/errorReporter';
 
 /**
  * Global Realtime listener that:
@@ -53,7 +54,7 @@ export function LiveNotificationProvider() {
         .single();
       if (data?.file_name) fileName = data.file_name;
     } catch (err) {
-      console.error('[RealtimeSync] File lookup failed:', err);
+      reportError({ type: 'db_query', component: 'LiveNotificationProvider', action: 'error', message: '[RealtimeSync] File lookup failed:', error: err });
     }
 
     toast({

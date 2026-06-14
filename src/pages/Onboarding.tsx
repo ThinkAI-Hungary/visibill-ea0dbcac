@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -11,6 +11,7 @@ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 import { CategoryCard } from '@/components/CategoryCard';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
+import { reportError } from '@/lib/errorReporter';
 
 interface Category {
   id?: string;
@@ -88,7 +89,7 @@ const Onboarding = () => {
         setCategories(loadedCategories);
         setInitialCategories(loadedCategories.map(c => ({ ...c })));
       } catch (error) {
-        console.error('Error loading data:', error);
+        reportError({ type: 'db_query', component: 'Onboarding', action: 'error', message: 'Error loading data:', error: error });
         const defaultCategories = [{ name: '', description: '' }];
         setCategories(defaultCategories);
         setInitialCategories(defaultCategories.map(c => ({ ...c })));

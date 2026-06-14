@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { FileText, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { reportError } from '@/lib/errorReporter';
 
 // Module-level cache so signed URLs persist across re-renders
 const signedUrlCache = new Map<string, string>();
@@ -39,6 +40,7 @@ export function InvoiceImagePreview({ invoiceId, imageUrl, mellekletUrl, isOpen 
       body: { invoiceId }
     }).then(({ data, error: fnError }) => {
       if (fnError || !data?.signedUrl) {
+        reportError({ type: 'api_call', component: 'InvoiceImagePreview', action: 'getSignedUrl', message: 'Failed to get invoice image URL', error: fnError, context: { invoiceId } });
         setError(true);
       } else {
         signedUrlCache.set(invoiceId, data.signedUrl);

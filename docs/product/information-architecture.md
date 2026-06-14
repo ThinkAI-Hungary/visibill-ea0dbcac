@@ -124,6 +124,9 @@ Visibill
 │
 └── Admin
     └── /management                Admin management panel
+        ├── Áttekintés tab          Cégek, felhasználók, LLM költségek
+        ├── Hibák tab               Error log tábla (filter, bulk delete/retry)
+        └── Cég részletek           Cég-szintű adatok, LLM költség részletezés
 ```
 
 ---

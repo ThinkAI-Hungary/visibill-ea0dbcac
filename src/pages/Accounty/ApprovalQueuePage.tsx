@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { reportError } from '@/lib/errorReporter';
 import {
   type OutgoingMessage,
   type MessageStatus,
@@ -155,7 +156,7 @@ export default function ApprovalQueuePage() {
       if (error) throw error;
       return true;
     } catch (err: any) {
-      console.error('[accounty-email] Send error:', err);
+      reportError({ type: 'db_query', component: 'ApprovalQueuePage', action: 'error', message: '[accounty-email] Send error:', error: err });
       return false;
     }
   };

@@ -1,7 +1,8 @@
-import React from 'react';
+﻿import React from 'react';
 import { AlertTriangle, RefreshCw, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { reportError } from '@/lib/errorReporter';
 
 interface Props {
   children: React.ReactNode;
@@ -39,7 +40,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    reportError({ type: 'db_query', component: 'ErrorBoundary', action: 'error', message: 'ErrorBoundary caught an error:', error: error, errorInfo });
 
     // Remove the HTML initial-loader so the error UI is visible
     try {
@@ -48,7 +49,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
         loader.remove();
       }
     } catch (e) {
-      console.error('Failed to remove initial-loader in ErrorBoundary', e);
+      reportError({ type: 'db_query', component: 'ErrorBoundary', action: 'error', message: 'Failed to remove initial-loader in ErrorBoundary', error: e });
     }
 
     // If it's a chunk loading failure, attempt auto-recovery
@@ -69,7 +70,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
         window.location.reload();
       }
     } catch (e) {
-      console.error('Failed to auto-reload on chunk error', e);
+      reportError({ type: 'db_query', component: 'ErrorBoundary', action: 'error', message: 'Failed to auto-reload on chunk error', error: e });
     }
   };
 
@@ -106,7 +107,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       // Hard redirect to root which will send user to auth
       window.location.href = '/auth';
     } catch (e) {
-      console.error('Failed to clear credentials', e);
+      reportError({ type: 'db_query', component: 'ErrorBoundary', action: 'error', message: 'Failed to clear credentials', error: e });
       window.location.href = '/auth';
     }
   };

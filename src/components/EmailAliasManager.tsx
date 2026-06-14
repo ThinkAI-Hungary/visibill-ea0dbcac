@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -7,6 +7,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Copy, CheckCircle, Loader2, Plus } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { reportError } from '@/lib/errorReporter';
 
 interface EmailAlias {
   id: string;
@@ -97,7 +98,7 @@ const EmailAliasManager = () => {
         }
       }
     } catch (error: any) {
-      console.error('Error generating alias:', error);
+      reportError({ type: 'db_query', component: 'EmailAliasManager', action: 'error', message: 'Error generating alias:', error: error });
       
       let errorMessage = 'Nem sikerült létrehozni az email aliast';
       if (error?.message) {

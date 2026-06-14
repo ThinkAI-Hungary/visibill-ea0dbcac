@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, X, Building2, User, Mail, Phone, ExternalLink, Download, FileText, Smartphone, Send, Settings, Users, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { reportError } from '@/lib/errorReporter';
 
 export default function NewClientPage() {
   const navigate = useNavigate();
@@ -147,7 +148,7 @@ export default function NewClientPage() {
           queryClient.invalidateQueries({ queryKey: ['accounty-clients'] });
           queryClient.invalidateQueries({ queryKey: ['accounty-kpis'] });
         } catch (err) {
-          console.error('Failed to create client assignment:', err);
+          reportError({ type: 'db_query', component: 'NewClientPage', action: 'error', message: 'Failed to create client assignment:', error: err });
         }
       }
       setStep(3);

@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+﻿import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,7 @@ import { useCourierReportData, type CourierReport } from '@/hooks/useCourierRepo
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { ReportFilesDialog } from '@/components/courier/ReportFilesDialog';
+import { reportError } from '@/lib/errorReporter';
 
 const REPORT_LABELS: Record<string, string> = {
   gls: 'GLS',
@@ -168,7 +169,7 @@ function CourierInvoiceDialog({
       if (error) throw error;
       setAvailableInvoices(data || []);
     } catch (err) {
-      console.error('Error fetching available invoices:', err);
+      reportError({ type: 'db_query', component: 'CourierReportTab', action: 'error', message: 'Error fetching available invoices:', error: err });
     } finally {
       setLoadingAvailable(false);
     }

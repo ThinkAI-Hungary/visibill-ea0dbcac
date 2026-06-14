@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+﻿import { useState, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { format, subDays, addDays } from 'date-fns';
@@ -84,7 +84,7 @@ export function useTransactionMatcher({
         (data || []).filter(tx => !tx.matched_invoice_id)
       );
     } catch (error) {
-      console.error('Error fetching transactions:', error);
+      reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error fetching transactions:', error: error });
       toast({ title: 'Hiba a tranzakciók betöltésekor', variant: 'destructive' });
     } finally {
       setLoading(false);
@@ -184,7 +184,7 @@ export function useTransactionMatcher({
       closeSearch();
       onUpdate?.();
     } catch (error) {
-      console.error('Error matching transaction:', error);
+      reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error matching transaction:', error: error });
       toast({ title: 'Hiba a párosítás mentésekor', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -209,7 +209,7 @@ export function useTransactionMatcher({
       toast({ title: 'Párosítás megszüntetve!' });
       onUpdate?.();
     } catch (error) {
-      console.error('Error unmatching transaction:', error);
+      reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error unmatching transaction:', error: error });
       toast({ title: 'Hiba a párosítás megszüntetésekor', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -230,7 +230,7 @@ export function useTransactionMatcher({
       toast({ title: 'Párosítás jóváhagyva!' });
       onUpdate?.();
     } catch (error) {
-      console.error('Error verifying match:', error);
+      reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error verifying match:', error: error });
       toast({ title: 'Hiba a jóváhagyás során', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -255,7 +255,7 @@ export function useTransactionMatcher({
       toast({ title: 'Tranzakció megjelölve: Nincs hozzá számla' });
       onUpdate?.();
     } catch (error) {
-      console.error('Error marking no invoice:', error);
+      reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error marking no invoice:', error: error });
       toast({ title: 'Hiba a jelölés mentésekor', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -280,7 +280,7 @@ export function useTransactionMatcher({
       toast({ title: 'Tranzakció megjelölve: Számla nincs feltöltve' });
       onUpdate?.();
     } catch (error) {
-      console.error('Error marking invoice missing:', error);
+      reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error marking invoice missing:', error: error });
       toast({ title: 'Hiba a jelölés mentésekor', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -301,7 +301,7 @@ export function useTransactionMatcher({
       toast({ title: 'Státusz visszavonva' });
       onUpdate?.();
     } catch (error) {
-      console.error('Error reverting status:', error);
+      reportError({ type: 'db_query', component: 'useTransactionMatcher', action: 'error', message: 'Error reverting status:', error: error });
       toast({ title: 'Hiba a visszavonás során', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -335,3 +335,5 @@ export function useTransactionMatcher({
     toHuf,
   };
 }
+
+import { reportError } from '@/lib/errorReporter';

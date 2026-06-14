@@ -1,6 +1,6 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-06-11  
+> **Utoljára frissítve:** 2026-06-14  
 > **Összesen:** 20 döntés | ✅ Decided: 19 | ⛔ Superseded: 1
 
 ---
@@ -99,3 +99,4 @@ A `docs/architecture/` mappában az ADR-ek mellett részletes frontend referenci
 | [frontend-state-management.md](../frontend-state-management.md) | React Context-ek, React Query, Realtime invalidáció, localStorage |
 | [frontend-auth-onboarding.md](../frontend-auth-onboarding.md) | Auth flow, session management, RBAC, onboarding wizard |
 | [frontend-performance.md](../frontend-performance.md) | Code splitting, prefetch, memoizáció, query cache tuning |
+| [error-logging-system.md](../error-logging-system.md) | Centralizált error logging & dashboard (app_error_logs tábla, management-stats EF, Management Dashboard Error panel) |

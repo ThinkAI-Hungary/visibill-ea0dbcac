@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Check, ChevronRight, ChevronLeft,
@@ -19,6 +19,7 @@ import { printPayslip, type PayslipData } from '@/lib/payroll/payslipGenerator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { reportError } from '@/lib/errorReporter';
 
 // ── 8 lépés definíció ──
 const CYCLE_STEPS = [
@@ -210,7 +211,7 @@ export default function PayrollCyclePage() {
       setEmailSent(true);
       toast({ title: '✅ E-mail elküldve!', description: `A bérszámfejtési adatbekérő kiküldve a(z) ${company?.name || 'ügyfél'} részére.` });
     } catch (err: any) {
-      console.error('Email send error:', err);
+      reportError({ type: 'db_query', component: 'PayrollCyclePage', action: 'error', message: 'Email send error:', error: err });
       toast({ title: 'Hiba', description: err?.message || 'Nem sikerült elküldeni az e-mailt.', variant: 'destructive' });
     } finally {
       setEmailSending(false);

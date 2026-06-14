@@ -13,6 +13,7 @@ import { useActivePreset } from '@/hooks/useActivePreset';
 import { supabase } from '@/integrations/supabase/client';
 import { Package2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { reportError } from '@/lib/errorReporter';
 
 interface SelectedItem {
   id: string;
@@ -150,6 +151,7 @@ export function AssetActivationDialog({
       onOpenChange(false);
       onSuccess?.();
     } catch (error: any) {
+      reportError({ type: 'db_query', component: 'AssetActivationDialog', action: 'activateAsset', message: error?.message || 'Asset activation failed', error });
       toast({
         title: 'Hiba',
         description: error?.message || 'Nem sikerült az eszközök aktiválása.',

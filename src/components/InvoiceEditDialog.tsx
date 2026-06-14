@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Invoice } from '@/types/invoices';
 import { toast } from '@/hooks/use-toast';
 import { getPaymentStatusBadge } from '@/hooks/useComputedStatus';
+import { reportError } from '@/lib/errorReporter';
 
 interface Category {
   id: string;
@@ -62,7 +63,7 @@ const InvoiceEditDialog = ({ invoice, categories, projects, open, onClose, onSav
       onSave();
       onClose();
     } catch (error) {
-      console.error('Error updating invoice:', error);
+      reportError({ type: 'db_query', component: 'InvoiceEditDialog', action: 'error', message: 'Error updating invoice:', error: error });
       toast({ title: 'Nem sikerült menteni a változtatásokat', variant: 'destructive' });
     } finally {
       setIsSaving(false);

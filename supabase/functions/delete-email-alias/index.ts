@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { logError } from "../_shared/error-logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,7 +63,21 @@ serve(async (req) => {
         );
 
         if (!deleteResponse.ok) {
-          console.error('Failed to delete Mailgun route:', await deleteResponse.text());
+          const errText = await deleteResponse.text();
+          console.error('Failed to delete Mailgun route:', errText);
+          // Log but continue anyway to delete from our database
+          const svc = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+          );
+          await logError(svc, {
+            error_type: 'mailgun',
+            component: 'delete-email-alias',
+            action: 'delete_route',
+            message: `Failed to delete Mailgun route: ${alias.mailgun_route_id}`,
+            user_id: user.id,
+            context: { routeId: alias.mailgun_route_id, statusCode: deleteResponse.status, errorText: errText?.substring(0, 500) },
+          });
           // Continue anyway to delete from our database
         } else {
           console.log('Mailgun route deleted:', alias.mailgun_route_id);
@@ -90,6 +105,19 @@ serve(async (req) => {
     );
   } catch (error: any) {
     console.error('Error in delete-email-alias:', error);
+    try {
+      const svc = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      await logError(svc, {
+        error_type: 'email_alias',
+        component: 'delete-email-alias',
+        action: 'unhandled_exception',
+        message: error.message || 'Failed to delete email alias',
+        context: { stack: error.stack },
+      });
+    } catch { /* ignore logging failure */ }
     return new Response(
       JSON.stringify({ error: error.message }),
       {

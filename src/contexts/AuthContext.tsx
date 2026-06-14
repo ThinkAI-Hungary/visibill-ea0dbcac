@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/use-toast';
 import { STORAGE_KEYS, SIGNOUT_DELETE_KEYS } from '@/lib/constants';
 import { useSessionGuard, type SessionGuardState } from '@/hooks/useSessionGuard';
+import { reportError } from '@/lib/errorReporter';
 
 const ABSOLUTE_LIMIT_MS = 4 * 60 * 60 * 1000; // 4 hours
 
@@ -103,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Normal path — check for existing session
       supabase.auth.getSession().then(({ data: { session: existingSession }, error }) => {
         if (error) {
-          console.error('Session error:', error.message);
+          reportError({ type: 'auth', component: 'AuthContext', action: 'error', message: 'Session error:', error: error.message });
           if (error.message.includes('Refresh Token') || error.message.includes('refresh_token')) {
             console.log('Invalid refresh token detected, clearing session...');
             try {
@@ -118,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         setLoading(false);
       }).catch((err) => {
-        console.error('Failed to get session:', err);
+        reportError({ type: 'auth', component: 'AuthContext', action: 'error', message: 'Failed to get session:', error: err });
         setLoading(false);
       });
     }
@@ -139,6 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     
     if (error) {
+      reportError({ type: 'auth', component: 'AuthContext', action: 'signUp', message: error.message, error, context: { email } });
       toast({
         variant: "destructive",
         title: "Regisztráció sikertelen",
@@ -159,6 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     
     if (error) {
+      reportError({ type: 'auth', component: 'AuthContext', action: 'signIn', message: error.message, error, context: { email } });
       toast({
         variant: "destructive",
         title: "Bejelentkezés sikertelen",
@@ -257,6 +260,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (signInError) {
+      reportError({ type: 'auth', component: 'AuthContext', action: 'updatePassword', message: 'Current password verification failed', error: signInError });
       toast({
         variant: "destructive",
         title: "Hitelesítés sikertelen",

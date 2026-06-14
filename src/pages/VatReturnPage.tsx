@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -21,6 +21,7 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import { generateVatReturnPdf } from '@/lib/vatReturnPdf';
 import { generateVatReturnXml } from '@/lib/vatReturnXml';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { reportError } from '@/lib/errorReporter';
 
 /* ────────────────────────────────────────── */
 /*  Types                                     */
@@ -411,7 +412,7 @@ function VatRowDrillDown({ sourceVatCodes, companyId, year, month, frequency }: 
         .order('invoice_delivery_date', { ascending: true });
 
       const { data, error } = await query;
-      if (error) { console.error('drill error:', error); return []; }
+      if (error) { reportError({ type: 'db_query', component: 'VatReturnPage', action: 'error', message: 'drill error:', error: error }); return []; }
       return (data || []) as any[];
     },
     enabled: matchingCodes.length > 0,
@@ -602,7 +603,7 @@ function VatReturnViewTab() {
         .eq('period_month', month)
         .eq('frequency', frequency)
         .maybeSingle();
-      if (error) { console.error('vat_returns query error:', error); return null; }
+      if (error) { reportError({ type: 'db_query', component: 'VatReturnPage', action: 'error', message: 'vat_returns query error:', error: error }); return null; }
       return data as any;
     },
     enabled: !!selectedCompany?.id,
@@ -614,7 +615,7 @@ function VatReturnViewTab() {
     queryFn: async () => {
       if (!vatReturn?.id) return [];
       const { data, error } = await supabase.from('vat_return_lines' as any).select('*').eq('vat_return_id', vatReturn.id);
-      if (error) { console.error('vat_return_lines error:', error); return []; }
+      if (error) { reportError({ type: 'db_query', component: 'VatReturnPage', action: 'error', message: 'vat_return_lines error:', error: error }); return []; }
       return (data || []) as unknown as ReturnLine[];
     },
     enabled: !!vatReturn?.id,
@@ -625,7 +626,7 @@ function VatReturnViewTab() {
     queryFn: async () => {
       if (!vatReturn?.id) return [];
       const { data, error } = await supabase.from('vat_return_m_lines' as any).select('*').eq('vat_return_id', vatReturn.id).order('base_amount_rounded', { ascending: false });
-      if (error) { console.error('vat_return_m_lines error:', error); return []; }
+      if (error) { reportError({ type: 'db_query', component: 'VatReturnPage', action: 'error', message: 'vat_return_m_lines error:', error: error }); return []; }
       return (data || []) as unknown as MLine[];
     },
     enabled: !!vatReturn?.id,
@@ -635,7 +636,7 @@ function VatReturnViewTab() {
     queryKey: ['vat_form_rows'],
     queryFn: async () => {
       const { data, error } = await supabase.from('vat_form_rows' as any).select('*').order('sort_order');
-      if (error) { console.error('vat_form_rows error:', error); return []; }
+      if (error) { reportError({ type: 'db_query', component: 'VatReturnPage', action: 'error', message: 'vat_form_rows error:', error: error }); return []; }
       return (data || []) as unknown as FormRow[];
     },
   });
@@ -747,7 +748,7 @@ function VatReturnViewTab() {
         is_calculated: false,
       } as any, { onConflict: 'vat_return_id,row_number' });
     if (error) {
-      console.error('Detail row save error:', error);
+      reportError({ type: 'db_query', component: 'VatReturnPage', action: 'error', message: 'Detail row save error:', error: error });
       toast({ title: 'Mentési hiba', description: error.message, variant: 'destructive' });
     } else {
       qc.invalidateQueries({ queryKey: ['vat_return_lines', (vatReturn as any).id] });

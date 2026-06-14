@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 
@@ -20,6 +20,7 @@ import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
+import { reportError } from '@/lib/errorReporter';
 
 interface HpSettings {
   id: string;
@@ -59,7 +60,7 @@ const PettyCashPage = () => {
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching hp_settings:', error);
+        reportError({ type: 'db_query', component: 'PettyCashPage', action: 'error', message: 'Error fetching hp_settings:', error: error });
         return null;
       }
       return data as HpSettings | null;
@@ -219,7 +220,7 @@ const PettyCashPage = () => {
       toast({ title: 'Házipénztár beállítások mentve!' });
       queryClient.invalidateQueries({ queryKey: queryKeys.pettyCashSettings(selectedCompany!.id) });
     } catch (error: any) {
-      console.error('Error saving settings:', error);
+      reportError({ type: 'db_query', component: 'PettyCashPage', action: 'error', message: 'Error saving settings:', error: error });
       toast({ title: 'Hiba a mentés során', description: error.message , variant: 'destructive' });
     } finally {
       setSaving(false);

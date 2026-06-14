@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +22,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { exportBsExcel } from '@/lib/bsExport';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { reportError } from '@/lib/errorReporter';
 
 // ─── Mapping Tab ───
 function BsMappingTab({ presetId }: { presetId?: string }) {
@@ -264,7 +265,7 @@ function BsViewTab({ presetId }: { presetId?: string }) {
         p_exchange_rates: exchangeRates || {}
       });
       if (error) {
-        console.error('[BS Report RPC Error]', error);
+        reportError({ type: 'db_query', component: 'BalanceSheet', action: 'error', message: '[BS Report RPC Error]', error: error });
         throw error;
       }
       return data;

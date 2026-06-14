@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { reportError } from '@/lib/errorReporter';
 import {
   Bug,
   MessageSquareText,
@@ -187,7 +188,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
         description: "Köszönjük a visszajelzést! Csapatunk hamarosan áttekinti.",
       });
     } catch (err: any) {
-      console.error("Feedback submit error:", err);
+      reportError({ type: 'db_query', component: 'FeedbackDialog', action: 'error', message: 'Feedback submit error:', error: err });
       const errorMsg = err?.message || err?.error_description || "Ismeretlen hiba";
       toast({
         variant: "destructive",

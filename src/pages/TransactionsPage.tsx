@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+﻿import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { Landmark } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { reportError } from '@/lib/errorReporter';
 
 
 // ── Bank display config ──
@@ -96,7 +97,7 @@ const TransactionsPage = () => {
         .eq('company_id', selectedCompany!.id)
         .not('detected_bank', 'is', null)
         .eq('processing_status', 'completed');
-      if (error) { console.error('detected_banks query error:', error); return []; }
+      if (error) { reportError({ type: 'db_query', component: 'TransactionsPage', action: 'error', message: 'detected_banks query error:', error: error }); return []; }
       // Get unique bank keys
       const bankSet = new Set<string>();
       const uploadBankMap: Record<string, string> = {};
@@ -535,7 +536,7 @@ function BankTransactionTab({ bankKey, bankLabel, uploadIds, companyId, dateFrom
         .gte('transaction_date', dateFromStr)
         .lte('transaction_date', dateToStr)
         .order('transaction_date', { ascending: false });
-      if (error) { console.error('bank-tx error:', error); return []; }
+      if (error) { reportError({ type: 'db_query', component: 'TransactionsPage', action: 'error', message: 'bank-tx error:', error: error }); return []; }
       return (data || []) as unknown as Transaction[];
     },
     enabled: uploadIds.length > 0 && !!companyId,

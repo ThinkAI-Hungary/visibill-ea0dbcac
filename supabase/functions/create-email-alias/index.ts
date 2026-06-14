@@ -1,5 +1,6 @@
-﻿import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { logError } from "../_shared/error-logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -179,6 +180,16 @@ serve(async (req) => {
             errorMessage = errorText || routeResponse.statusText;
           }
           
+          // Log before throwing
+          await logError(serviceClient, {
+            error_type: 'mailgun',
+            component: 'create-email-alias',
+            action: 'create_route',
+            message: `Mailgun route creation failed: ${errorMessage}`,
+            user_id: user.id,
+            company_id,
+            context: { aliasEmail, attempt, statusCode: routeResponse.status },
+          });
           throw new Error(errorMessage);
         }
 
@@ -279,6 +290,19 @@ serve(async (req) => {
     );
   } catch (error: any) {
     console.error('Error in create-email-alias:', error);
+    try {
+      const svc = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      await logError(svc, {
+        error_type: 'email_alias',
+        component: 'create-email-alias',
+        action: 'unhandled_exception',
+        message: error.message || 'Failed to create email alias',
+        context: { stack: error.stack },
+      });
+    } catch { /* ignore logging failure */ }
     return new Response(
       JSON.stringify({ error: error.message }),
       {

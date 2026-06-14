@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
+import { reportAuthError } from '@/lib/errorReporter';
 
 /* Tape showcase animations */
 const carouselStyle = document.createElement('style');
@@ -207,11 +208,11 @@ const Auth = () => {
           queryClient.invalidateQueries({ queryKey: ['profile-check'] });
           setVerificationSuccess(true);
         } else {
-          console.error('Verification failed:', data);
+          reportAuthError('Auth', 'email_verification', 'Verification failed', undefined, { response: data });
           toast({ title: 'Megerősítés sikertelen', description: 'Érvénytelen vagy lejárt link.', variant: 'destructive' });
         }
       } catch (err: any) {
-        console.error('Verification error:', err);
+        reportAuthError('Auth', 'email_verification', err.message || 'Verification error', err);
         toast({ title: 'Hiba a megerősítéskor', description: err.message, variant: 'destructive' });
       } finally {
         setIsVerifying(false);
@@ -260,7 +261,7 @@ const Auth = () => {
       }
       toast({ title: 'Megerősítő email újraküldve!', description: 'Ellenőrizd a postaládádat.' });
     } catch (err: any) {
-      console.error('Resend verification error:', err);
+      reportAuthError('Auth', 'resend_verification', err.message || 'Resend verification error', err);
       toast({ title: 'Hiba az email küldésekor', description: err.message, variant: 'destructive' });
     } finally {
       setResending(false);
@@ -642,7 +643,7 @@ const Auth = () => {
 
     if (error) {
       toast({ title: 'Google bejelentkezés sikertelen', variant: 'destructive' });
-      console.error('Google sign in error:', error);
+      reportAuthError('Auth', 'google_signin', 'Google sign in error', error);
     }
   };
 
@@ -661,7 +662,7 @@ const Auth = () => {
       toast({ title: 'Jelszó visszaállító email elküldve! Ellenőrizd a postaládádat.' });
       setShowForgotPassword(false);
     } catch (error: any) {
-      console.error('Password reset error:', error);
+      reportAuthError('Auth', 'password_reset', error.message || 'Password reset error', error);
       toast({ title: error.message || 'Hiba történt', variant: 'destructive' });
     } finally {
       setLoading(false);

@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect } from "react";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryCache, MutationCache, useQuery } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
@@ -73,6 +73,8 @@ const PayrollReportsPage = lazy(() => import("./pages/Accounty/PayrollReportsPag
 const VatReturnPage = lazy(() => import("./pages/VatReturnPage"));
 const TicketsPage = lazy(() => import("./pages/TicketsPage"));
 
+import { reportError } from '@/lib/errorReporter';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -82,6 +84,32 @@ const queryClient = new QueryClient({
       retry: 1,
     },
   },
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      // Log every final query failure (after retries exhausted)
+      reportError({
+        type: 'db_query',
+        component: String(query.queryKey?.[0] || 'UnknownQuery'),
+        action: 'query_error',
+        message: error instanceof Error ? error.message : String(error),
+        error,
+        context: { queryKey: query.queryKey },
+      });
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error, _variables, _context, mutation) => {
+      // Log every mutation failure
+      reportError({
+        type: 'db_query',
+        component: String(mutation.options.mutationKey?.[0] || 'UnknownMutation'),
+        action: 'mutation_error',
+        message: error instanceof Error ? error.message : String(error),
+        error,
+        context: { mutationKey: mutation.options.mutationKey },
+      });
+    },
+  }),
 });
 
 function ProtectedPage({ children }: { children: React.ReactNode }) {

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { logError } from "../_shared/error-logger.ts";
 
 // Helper function to verify Mailgun webhook signature using Web Crypto API
 async function verifySignature(timestamp: string, token: string, signature: string, signingKey: string): Promise<boolean> {
@@ -128,6 +129,13 @@ serve(async (req) => {
       const isValid = await verifySignature(timestamp, token, signature, mailgunSigningKey);
       if (!isValid) {
         console.error('Invalid webhook signature');
+        await logError(supabase, {
+          error_type: 'webhook',
+          component: 'process-mailgun-webhook',
+          action: 'verify_signature',
+          message: 'Invalid webhook signature — potential spoofing attempt',
+          context: { recipient, sender },
+        });
         return new Response('Invalid signature', { status: 401 });
       }
       console.log('Webhook signature verified');
@@ -161,6 +169,13 @@ serve(async (req) => {
 
     if (aliasError || !alias) {
       console.error('Alias not found for:', recipient, 'Error:', aliasError);
+      await logError(supabase, {
+        error_type: 'webhook',
+        component: 'process-mailgun-webhook',
+        action: 'lookup_alias',
+        message: `Alias not found for recipient: ${recipient}`,
+        context: { recipient, sender, aliasError: aliasError?.message },
+      });
       return new Response(JSON.stringify({ error: 'Alias not found', recipient }), {
         headers: { 'Content-Type': 'application/json' },
         status: 404,
@@ -260,6 +275,16 @@ serve(async (req) => {
 
         if (uploadError) {
           console.error('Upload error:', uploadError);
+          await logError(supabase, {
+            error_type: 'upload',
+            severity: 'error',
+            component: 'process-mailgun-webhook',
+            action: 'storage_upload',
+            message: `File upload failed: ${attachment.name}`,
+            user_id: alias.user_id,
+            company_id: alias.company_id,
+            context: { fileName: attachment.name, fileType: attachment.type, fileSize: attachment.size, uploadError: uploadError.message },
+          });
           continue;
         }
 
@@ -295,6 +320,15 @@ serve(async (req) => {
 
         if (recordError) {
           console.error('Error creating invoice upload record:', recordError);
+          await logError(supabase, {
+            error_type: 'db_query',
+            component: 'process-mailgun-webhook',
+            action: 'create_upload_record',
+            message: `Failed to create invoice upload record for: ${attachment.name}`,
+            user_id: alias.user_id,
+            company_id: alias.company_id,
+            context: { fileName: attachment.name, recordError: recordError.message },
+          });
         } else {
           console.log('Invoice upload record created:', uploadRecord.id);
           // Processing is handled automatically by the DB trigger (trg_enqueue_invoice)
@@ -340,6 +374,15 @@ serve(async (req) => {
 
         if (resolveError) {
           console.error('[ACCOUNTY-NLP] Resolve error:', resolveError);
+          await logError(supabase, {
+            error_type: 'db_query',
+            component: 'process-mailgun-webhook',
+            action: 'auto_resolve_missing_items',
+            message: `Failed to auto-resolve missing items for company`,
+            company_id: alias.company_id,
+            user_id: alias.user_id,
+            context: { resolveError: resolveError.message },
+          });
         } else {
           console.log(`[ACCOUNTY-NLP] Auto-resolved ${resolved?.length || 0} missing items`);
         }
@@ -362,6 +405,21 @@ serve(async (req) => {
     console.error('=== Error in process-mailgun-webhook ===');
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
+    // Best-effort logging — create a fresh service client for this
+    try {
+      const svc = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      await logError(svc, {
+        error_type: 'webhook',
+        severity: 'error',
+        component: 'process-mailgun-webhook',
+        action: 'unhandled_exception',
+        message: error.message || 'Unknown webhook error',
+        stack_trace: error.stack,
+      });
+    } catch { /* ignore logging failure */ }
     return new Response(
       JSON.stringify({ error: error.message }),
       {

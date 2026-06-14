@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+﻿import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Upload, CheckCircle2, Clock, AlertTriangle,
@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { reportError } from '@/lib/errorReporter';
 
 const MONTHS = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
 
@@ -169,7 +170,7 @@ export default function ClientPortalPage() {
 
       toast({ title: 'Portál link generálva ✓', description: 'A link a vágólapra másolva. Érvényes: 30 nap.' });
     } catch (err) {
-      console.error('Portal token error:', err);
+      reportError({ type: 'db_query', component: 'ClientPortalPage', action: 'error', message: 'Portal token error:', error: err });
       toast({ variant: 'destructive', title: 'Hiba', description: 'Nem sikerült a link generálás.' });
     } finally {
       setGeneratingLink(false);
@@ -215,7 +216,7 @@ export default function ClientPortalPage() {
           .upload(filePath, file, { upsert: false });
 
         if (uploadErr) {
-          console.error('Upload error:', uploadErr);
+          reportError({ type: 'db_query', component: 'ClientPortalPage', action: 'error', message: 'Upload error:', error: uploadErr });
         }
       }
 
@@ -229,7 +230,7 @@ export default function ClientPortalPage() {
         .eq('company_id', companyId)
         .in('status', ['open', 'notified']);
 
-      if (resolveErr) console.error('Auto-resolve error:', resolveErr);
+      if (resolveErr) reportError({ type: 'db_query', component: 'ClientPortalPage', action: 'error', message: 'Auto-resolve error:', error: resolveErr });
 
       queryClient.invalidateQueries({ queryKey: ['accounty-missing-items'] });
 
@@ -238,7 +239,7 @@ export default function ClientPortalPage() {
         description: `${files.length} fájl a(z) "${requestTitle}" kéréshez. Kapcsolódó hiányzó tételek feloldva.`,
       });
     } catch (err) {
-      console.error('Upload error:', err);
+      reportError({ type: 'db_query', component: 'ClientPortalPage', action: 'error', message: 'Upload error:', error: err });
       toast({ variant: 'destructive', title: 'Feltöltési hiba', description: 'A fájl feltöltés sikertelen.' });
     }
   };

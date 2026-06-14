@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { reportError } from '@/lib/errorReporter';
 import {
   Sun,
   Moon,
@@ -135,7 +136,7 @@ export default function EmployeeRegister() {
         .eq('id', tokenData.id);
 
       if (linkError) {
-        console.error('Link error:', linkError);
+        reportError({ type: 'db_query', component: 'EmployeeRegister', action: 'error', message: 'Link error:', error: linkError });
         // Don't throw — user is already created, they just need manual linking
       }
 
@@ -149,13 +150,13 @@ export default function EmployeeRegister() {
         });
 
       if (memberError) {
-        console.error('Member insert error:', memberError);
+        reportError({ type: 'db_query', component: 'EmployeeRegister', action: 'error', message: 'Member insert error:', error: memberError });
         // Don't throw — important but not blocking
       }
 
       setPageState('success');
     } catch (err: any) {
-      console.error('Registration error:', err);
+      reportError({ type: 'db_query', component: 'EmployeeRegister', action: 'error', message: 'Registration error:', error: err });
       toast({
         variant: 'destructive',
         title: 'Regisztráció sikertelen',

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { reportError } from '@/lib/errorReporter';
 
 export function useActivePreset(companyId: string | undefined) {
   const [activePresetId, setActivePresetId] = useState<string | undefined>(undefined);
@@ -14,7 +15,7 @@ export function useActivePreset(companyId: string | undefined) {
         .select('*');
         
       if (error) {
-        console.error('Error loading presets:', error);
+        reportError({ type: 'db_query', component: 'useActivePreset', action: 'error', message: 'Error loading presets:', error: error });
         return [];
       }
       

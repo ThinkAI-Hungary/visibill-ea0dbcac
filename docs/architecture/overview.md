@@ -1,6 +1,6 @@
 # Visibill — Architecture Overview
 
-> **Verzió:** 1.1 | **Dátum:** 2026-06-11  
+> **Verzió:** 1.2 | **Dátum:** 2026-06-14  
 > **Kapcsolódó:** [Business Overview](../business/overview.md) · [PRD](../product/prd.md) · [Design System](../design/00-overview.md)
 
 ---
@@ -108,5 +108,6 @@ Frontend (React Query invalidation → friss adat)
 | [frontend-state-management.md](./frontend-state-management.md) | React Context, React Query, Realtime invalidáció |
 | [frontend-auth-onboarding.md](./frontend-auth-onboarding.md) | Auth flow, session management, onboarding |
 | [frontend-performance.md](./frontend-performance.md) | Code splitting, prefetch, memoizáció |
+| [error-logging-system.md](./error-logging-system.md) | Centralizált error logging & dashboard rendszer |
 | [../business/decisions/034-worker-pipeline.md](../business/decisions/034-worker-pipeline.md) | Worker pipeline üzleti scope |
 | [../business/decisions/006-tech-stack.md](../business/decisions/006-tech-stack.md) | Üzleti tech stack döntés |
