@@ -82,6 +82,22 @@ export function ProtectedLayout() {
     return null;
   }
 
+  // Sign-out in progress — render ONLY the overlay, nothing behind it.
+  // Without this, the empty dashboard layout flashes behind the 95%-opacity overlay
+  // because user/companies are already cleared but isSigningOut is still true.
+  if (isSigningOut) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 rounded-full border-4 border-primary border-r-transparent animate-spin" />
+          <p className="text-sm font-medium text-muted-foreground animate-pulse">
+            Kijelentkezés...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Fresh user with no companies: skip sidebar entirely to avoid
   // the visual flash (sidebar → darken → onboarding modal).
   const hasNoCompanies = !companyLoading && companies.length === 0;
@@ -103,18 +119,6 @@ export function ProtectedLayout() {
 
       {/* Floating Feedback Button — always visible on all protected pages */}
       <FeedbackFab />
-
-      {/* Sign-Out Overlay */}
-      {isSigningOut && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/95 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-10 w-10 rounded-full border-4 border-primary border-r-transparent animate-spin" />
-            <p className="text-sm font-medium text-muted-foreground animate-pulse">
-              Kijelentkezés...
-            </p>
-          </div>
-        </div>
-      )}
     </>
   );
 }
