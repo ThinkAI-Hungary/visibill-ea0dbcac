@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Download, Upload, CheckCircle2, Clock,
-  AlertTriangle, Search, Plus, Loader2, Send, XCircle, Filter
+  AlertTriangle, Search, Plus, Loader2, Send, XCircle, Filter, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ExportButton } from '@/components/accounty/ExportButton';
@@ -14,6 +14,7 @@ import {
 } from '@/hooks/usePayrollData';
 import { useAccountyClients } from '@/hooks/useAccountyData';
 import { generateFiling08Xml, downloadXml, type Filing08Data, type Filing08EmployeeLine } from '@/lib/payroll/filingGenerator';
+import { exportPdf } from '@/lib/exportPdf';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -156,20 +157,39 @@ export default function FilingsPage() {
 
       const xml = generateFiling08Xml(filingData);
 
-      // Save to DB
-      const { error: saveErr } = await supabase
+      // Check if a draft/generated filing already exists for this period (never overwrite submitted ones)
+      const { data: existing } = await supabase
         .from('accounty_filings')
-        .insert({
-          company_id: companyId,
-          filing_type: '08e',
-          period_year: genYear,
-          period_month: genMonth,
-          status: 'generated',
-          xml_data: xml,
-          channel: 'onya',
-        });
+        .select('id')
+        .eq('company_id', companyId!)
+        .eq('filing_type', '08')
+        .eq('period_year', genYear)
+        .eq('period_month', genMonth)
+        .in('status', ['draft', 'generated'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (saveErr) throw saveErr;
+      if (existing) {
+        const { error: upErr } = await supabase
+          .from('accounty_filings')
+          .update({ xml_data: xml, status: 'generated' })
+          .eq('id', existing.id);
+        if (upErr) throw upErr;
+      } else {
+        const { error: saveErr } = await supabase
+          .from('accounty_filings')
+          .insert({
+            company_id: companyId,
+            filing_type: '08',
+            period_year: genYear,
+            period_month: genMonth,
+            status: 'generated',
+            xml_data: xml,
+            channel: 'onya',
+          });
+        if (saveErr) throw saveErr;
+      }
 
       // Download XML
       downloadXml(xml, `NAV_08_${company?.name?.replace(/\s/g, '_') || 'ceg'}_${genYear}_${String(genMonth).padStart(2, '0')}.xml`);
@@ -405,21 +425,83 @@ export default function FilingsPage() {
                         {filing.submitted_at ? new Date(filing.submitted_at).toLocaleDateString('hu-HU') : '–'}
                       </td>
                       <td className="px-5 py-3 text-right">
-                        {filing.xml_data && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              downloadXml(
-                                filing.xml_data!,
-                                `NAV_${filing.filing_type}_${filing.period_year}_${String(filing.period_month || 0).padStart(2, '0')}.xml`
-                              );
-                            }}
-                            className="h-7 px-2 text-xs"
-                          >
-                            <Download className="w-3 h-3 mr-1" /> XML
-                          </Button>
-                        )}
+                        <div className="flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
+                          {filing.xml_data && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  // Parse xml_data to extract summary for PDF
+                                  const period = `${filing.period_year}/${filing.period_month ? String(filing.period_month).padStart(2, '0') : '-'}`;
+                                  const typeLabel = FILING_TYPES[filing.filing_type]?.label || filing.filing_type;
+                                  const statusLabel = STATUS_MAP[filing.status]?.label || filing.status;
+
+                                  // Try to parse employee data from xml_data
+                                  let rows: string[][] = [];
+                                  try {
+                                    // xml_data might be JSON (from 08E generator) or raw XML
+                                    const parsed = JSON.parse(filing.xml_data!);
+                                    if (parsed.name) {
+                                      rows = [[parsed.name, parsed.tajNumber || '-', parsed.changeType || '-', parsed.effectiveDate || '-']];
+                                    }
+                                  } catch {
+                                    // It's XML, extract a summary line
+                                    const empCount = (filing.xml_data!.match(/<Foglalkoztatott>/g) || []).length || 1;
+                                    rows = [[`${empCount} foglalkoztatott`, period, statusLabel, filing.nav_receipt_id || '-']];
+                                  }
+
+                                  exportPdf(`NAV_${filing.filing_type}_${period.replace('/', '_')}`, {
+                                    title: `${typeLabel} — Bevallás összefoglaló`,
+                                    subtitle: `${company?.name || '-'} | Időszak: ${period} | Státusz: ${statusLabel}`,
+                                    headers: rows[0]?.length === 4 && rows[0][1]?.includes('-') 
+                                      ? ['Név', 'TAJ szám', 'Típus', 'Hatályos dátum']
+                                      : ['Tartalom', 'Időszak', 'Státusz', 'NAV azonosító'],
+                                    rows,
+                                  });
+                                }}
+                                className="h-7 px-2 text-xs"
+                              >
+                                <Download className="w-3 h-3 mr-1" /> PDF
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  downloadXml(
+                                    filing.xml_data!,
+                                    `NAV_${filing.filing_type}_${filing.period_year}_${String(filing.period_month || 0).padStart(2, '0')}.xml`
+                                  );
+                                }}
+                                className="h-7 px-2 text-xs"
+                              >
+                                <Download className="w-3 h-3 mr-1" /> XML
+                              </Button>
+                            </>
+                          )}
+                          {(filing.status === 'draft' || filing.status === 'generated') && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                if (!confirm('Biztosan törölni szeretnéd ezt a bevallást?')) return;
+                                const { error } = await supabase
+                                  .from('accounty_filings')
+                                  .delete()
+                                  .eq('id', filing.id);
+                                if (error) {
+                                  toast({ variant: 'destructive', title: 'Hiba', description: error.message });
+                                } else {
+                                  toast({ title: 'Törölve', description: 'A bevallás sikeresen törölve.' });
+                                  queryClient.invalidateQueries({ queryKey: ['payroll', 'filings', companyId] });
+                                }
+                              }}
+                              className="h-7 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-500/10"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

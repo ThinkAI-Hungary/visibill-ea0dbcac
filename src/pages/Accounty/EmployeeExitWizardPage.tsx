@@ -7,7 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useEmployeeJobs } from '@/hooks/useAccountyData';
+import { usePayrollEmployments } from '@/hooks/usePayrollData';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -33,10 +33,13 @@ export default function EmployeeExitWizardPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: jobs, isLoading } = useEmployeeJobs(id || '', empId || '');
+  const { data: employments = [], isLoading } = usePayrollEmployments(empId || '');
   const [saving, setSaving] = useState(false);
 
-  const activeJob = (jobs || []).find(j => j.status === 'active');
+  // Find active employment, or fall back to any non-terminated, or the first one
+  const activeJob = employments.find(e => e.status === 'active')
+    || employments.find(e => e.status !== 'terminated')
+    || employments[0];
 
   const [step, setStep] = useState(0);
   const [reason, setReason] = useState('');
@@ -46,7 +49,7 @@ export default function EmployeeExitWizardPage() {
   const [notes, setNotes] = useState('');
   const [checkedDocs, setCheckedDocs] = useState<Set<string>>(new Set());
 
-  const leavePayAmount = activeJob ? Number(leavePayDays) * Math.round(activeJob.baseSalary / 22) : 0;
+  const leavePayAmount = activeJob ? Number(leavePayDays) * Math.round((activeJob.base_salary || 0) / 22) : 0;
 
   const canNext = () => {
     if (step === 0) return !!reason;
@@ -64,7 +67,13 @@ export default function EmployeeExitWizardPage() {
         .update({
           status: 'terminated',
           end_date: lastDay,
-          termination_reason: reason,
+          metadata: {
+            termination_reason: reason,
+            termination_notes: notes || undefined,
+            terminated_at: new Date().toISOString(),
+            severance_pay: severancePay,
+            leave_pay_days: Number(leavePayDays),
+          },
           updated_at: new Date().toISOString(),
         })
         .eq('id', activeJob.id);
@@ -72,13 +81,13 @@ export default function EmployeeExitWizardPage() {
 
       // 2. Generate 08E kijelentés filing
       const rowData = {
-        name: activeJob.position || '',
+        name: activeJob.job_title || '',
         tajNumber: '',
         changeType: 'kijelentes',
         changeCode: '02',
         effectiveDate: lastDay,
-        feor: activeJob.feor || '',
-        weeklyHours: 40,
+        feor: activeJob.feor_code || '',
+        weeklyHours: activeJob.weekly_hours || 40,
         insured: true,
       };
       await supabase.from('accounty_filings').insert({
@@ -95,7 +104,7 @@ export default function EmployeeExitWizardPage() {
       queryClient.invalidateQueries({ queryKey: ['payroll'] });
       queryClient.invalidateQueries({ queryKey: ['accounty'] });
 
-      toast({ title: 'Kilépés rögzítve', description: `${activeJob.position} — Utolsó nap: ${lastDay}. 08E kijelentés generálva.` });
+      toast({ title: 'Kilépés rögzítve', description: `${activeJob.job_title || 'Jogviszony'} — Utolsó nap: ${lastDay}. 08E kijelentés generálva.` });
       navigate(`/accounty/payroll/${id}/employees/${empId}/exit-docs`);
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Hiba', description: err.message });
@@ -128,7 +137,7 @@ export default function EmployeeExitWizardPage() {
         <div className="p-2.5 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl shadow-lg"><UserX className="w-5 h-5 text-white" /></div>
         <div>
           <h1 className="text-2xl font-bold">Kilépési varázsló</h1>
-          <p className="text-sm text-slate-500">{activeJob.position} — {activeJob.feor}</p>
+          <p className="text-sm text-slate-500">{activeJob.job_title || activeJob.employment_type} — {activeJob.feor_code}</p>
         </div>
       </div>
 
@@ -182,7 +191,7 @@ export default function EmployeeExitWizardPage() {
           <div>
             <label className="text-xs text-slate-500 mb-1 block">Szabadság megváltás (napok)</label>
             <input type="number" min={0} value={leavePayDays} onChange={e => setLeavePayDays(e.target.value)} className="w-full max-w-xs px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono" />
-            <p className="text-[10px] text-slate-400 mt-1">Napi bér: {activeJob ? Math.round(activeJob.baseSalary / 22).toLocaleString('hu-HU') : 0} Ft | Megváltás: {leavePayAmount.toLocaleString('hu-HU')} Ft</p>
+            <p className="text-[10px] text-slate-400 mt-1">Napi bér: {activeJob ? Math.round((activeJob.base_salary || 0) / 22).toLocaleString('hu-HU') : 0} Ft | Megváltás: {leavePayAmount.toLocaleString('hu-HU')} Ft</p>
           </div>
           <div className="flex items-center justify-between p-4 rounded-xl border border-border">
             <div><p className="text-sm font-bold">Végkielégítés</p><p className="text-xs text-slate-500">Mt. 77. § szerint</p></div>
@@ -233,7 +242,7 @@ export default function EmployeeExitWizardPage() {
         <div className="bg-card rounded-xl border border-border p-6 space-y-4">
           <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300">Összesítés</h2>
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <div><p className="text-slate-500 text-xs">Munkavállaló:</p><p className="font-bold">{activeJob.position}</p></div>
+            <div><p className="text-slate-500 text-xs">Munkavállaló:</p><p className="font-bold">{activeJob.job_title || activeJob.employment_type}</p></div>
             <div><p className="text-slate-500 text-xs">Kilépés oka:</p><p className="font-bold">{reason}</p></div>
             <div><p className="text-slate-500 text-xs">Utolsó munkanap:</p><p className="font-bold">{lastDay}</p></div>
             <div><p className="text-slate-500 text-xs">Szabadság megváltás:</p><p className="font-bold">{leavePayDays} nap ({leavePayAmount.toLocaleString('hu-HU')} Ft)</p></div>

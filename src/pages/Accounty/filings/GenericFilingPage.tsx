@@ -270,6 +270,24 @@ export default function GenericFilingPage() {
             getRows={() => allRows.map(r => [r.label, getValue(r.key)])}
             size="sm"
           />
+          <Button variant="outline" size="sm" className="gap-1.5 text-sm" onClick={() => {
+            const xmlSections = config.sections.map(s =>
+              `  <${s.title.replace(/\s+/g, '_')}>\n` +
+              s.rows.map(r => `    <${r.key}>${getValue(r.key) || ''}</${r.key}>`).join('\n') +
+              `\n  </${s.title.replace(/\s+/g, '_')}>`
+            ).join('\n');
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<${config.dbType} xmlns="http://nav.gov.hu/bevallas/${config.dbType}" verzio="2026.1">\n  <BevallasAdatok>\n    <Tipus>${config.dbType}</Tipus>\n    <GeneraltDatum>${new Date().toISOString().slice(0, 10)}</GeneraltDatum>\n    <Foglalkoztato>${company?.name || ''}</Foglalkoztato>\n    <Adoszam>${company?.taxNumber || ''}</Adoszam>\n  </BevallasAdatok>\n${xmlSections}\n</${config.dbType}>`;
+            const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${filingType}_${company?.name || 'ceg'}_${new Date().toISOString().slice(0, 10)}.xml`;
+            a.click();
+            URL.revokeObjectURL(url);
+            toast({ title: 'XML letöltve', description: `${config.title} XML exportálva.` });
+          }}>
+            <Download className="w-4 h-4" /> XML
+          </Button>
           <Button variant="outline" className="gap-1.5 text-sm" onClick={handleSave} disabled={saving}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? 'Mentés...' : 'Mentés'}

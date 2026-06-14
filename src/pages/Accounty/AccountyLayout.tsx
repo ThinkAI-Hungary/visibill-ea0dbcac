@@ -463,17 +463,25 @@ export default function AccountyLayout() {
                                 const isPayrollActive = pathname.startsWith(basePath);
                                 return (
                                   <li key={client.id}>
-                                    <button
-                                      onClick={() => togglePayrollClient(client.companyId)}
-                                      className={cn(
-                                        "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-4 text-left text-xs transition-colors",
-                                        isPayrollActive ? "text-primary font-medium" : "text-sidebar-foreground/70 hover:text-primary"
-                                      )}
-                                    >
-                                      <Building2 className="h-3.5 w-3.5 shrink-0" />
-                                      <span className="truncate flex-1">{client.name}</span>
-                                      <ChevronRight className={cn("h-3 w-3 transition-transform duration-200", isExpanded ? 'rotate-90' : '')} />
-                                    </button>
+                                    <div className={cn(
+                                      "flex w-full items-center rounded-md pl-4 text-xs transition-colors",
+                                      isPayrollActive ? "text-primary font-medium" : "text-sidebar-foreground/70 hover:text-primary"
+                                    )}>
+                                      <Link
+                                        to={`/accounty/payroll/${client.companyId}`}
+                                        className="flex items-center gap-2 flex-1 min-w-0 py-1.5 px-2 rounded-l-md hover:bg-primary/10 transition-colors"
+                                      >
+                                        <Building2 className="h-3.5 w-3.5 shrink-0" />
+                                        <span className="truncate">{client.name}</span>
+                                      </Link>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); togglePayrollClient(client.companyId); }}
+                                        className="p-1.5 rounded-r-md hover:bg-primary/10 transition-colors shrink-0"
+                                        title={isExpanded ? 'Almenü összecsukása' : 'Almenü kinyitása'}
+                                      >
+                                        <ChevronRight className={cn("h-3 w-3 transition-transform duration-200", isExpanded ? 'rotate-90' : '')} />
+                                      </button>
+                                    </div>
                                     {isExpanded && (
                                       <ul className="ml-4 flex flex-col gap-0.5">
                                         {[

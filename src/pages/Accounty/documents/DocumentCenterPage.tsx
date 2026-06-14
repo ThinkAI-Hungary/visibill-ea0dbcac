@@ -7,9 +7,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useAccountyDocuments, type AccountyDocument } from '@/hooks/useAccountyData';
+import { useAccountyDocuments, useGenerateDocuments, type AccountyDocument } from '@/hooks/useAccountyData';
 import { ExportButton } from '@/components/accounty/ExportButton';
-import { exportPdf } from '@/lib/exportPdf';
+import { useToast } from '@/components/ui/use-toast';
 
 // Document categories — these are static navigation items, not user data
 const DOC_CATEGORIES = [
@@ -25,7 +25,9 @@ const DOC_CATEGORIES = [
 
 export default function DocumentCenterPage() {
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
   const { data: allDocs, isLoading } = useAccountyDocuments(id || '');
+  const generateDocs = useGenerateDocuments();
   const [generatingAll, setGeneratingAll] = useState(false);
 
   const docList = allDocs || [];
@@ -58,17 +60,34 @@ export default function DocumentCenterPage() {
           <Link to={`/accounty/payroll/${id}/documents/all`}>
             <Button variant="outline" className="gap-1.5"><Eye className="w-4 h-4" /> Összes dokumentum</Button>
           </Link>
+          <Button
+            variant="outline"
+            className="gap-1.5"
+            onClick={async () => {
+              setGeneratingAll(true);
+              try {
+                await generateDocs.mutateAsync({ companyId: id || '', docType: 'all' });
+                toast({ title: 'Sikeres generálás', description: 'Az összes dokumentum generálása befejeződött.', variant: 'default' });
+              } catch (error: any) {
+                toast({ title: 'Hiba a generálás során', description: error.message || 'Kérjük próbálja újra később.', variant: 'destructive' });
+              } finally {
+                setGeneratingAll(false);
+              }
+            }}
+            disabled={generatingAll || generateDocs.isPending}
+          >
+            {(generatingAll || generateDocs.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            {(generatingAll || generateDocs.isPending) ? 'Generálás...' : 'Generálás'}
+          </Button>
           <ExportButton
             filename="dokumentum_kozpont"
             headers={['Típus', 'Dokumentumok', 'Kész']}
             getRows={() => DOC_CATEGORIES.map(c => [c.title, countByType(c.id), readyByType(c.id)])}
             size="sm"
+            pdfOptions={{
+              title: 'Dokumentum-központ összesítő',
+            }}
           />
-          <Button variant="outline" className="gap-1.5" onClick={() => exportPdf('dokumentum_kozpont', {
-            title: 'Dokumentum-központ összesítő',
-            headers: ['Típus', 'Dokumentumok (db)', 'Kész (db)'],
-            rows: DOC_CATEGORIES.map(c => [c.title, countByType(c.id), readyByType(c.id)]),
-          })}><Download className="w-4 h-4" /> PDF letöltés</Button>
         </div>
       </div>
 
@@ -112,9 +131,27 @@ export default function DocumentCenterPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="px-5 pb-4 flex gap-2">
-                    <Button variant="outline" size="sm" className="text-xs gap-1" disabled={count === 0}><Eye className="w-3 h-3" /> Előnézet</Button>
-                    <Button variant="outline" size="sm" className="text-xs gap-1" disabled={count === 0}><Download className="w-3 h-3" /> Letöltés</Button>
+                  <div className="px-5 pb-4 flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="text-xs gap-1" disabled={count === 0} onClick={(e) => { e.preventDefault(); window.location.href = `/accounty/payroll/${id}/documents/${cat.route}`; }}><Eye className="w-3 h-3" /> Előnézet</Button>
+                    <Button variant="outline" size="sm" className="text-xs gap-1" disabled={count === 0} onClick={(e) => { e.preventDefault(); window.location.href = `/accounty/payroll/${id}/documents/${cat.route}`; }}><Download className="w-3 h-3" /> Letöltés</Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-xs gap-1 ml-auto text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        toast({ title: 'Generálás indítva', description: `${cat.title} dokumentumok elkészítése folyamatban.` });
+                        try {
+                          await generateDocs.mutateAsync({ companyId: id || '', docType: cat.id });
+                          toast({ title: 'Kész', description: `${cat.title} dokumentumok sikeresen generálva.` });
+                        } catch (error: any) {
+                          toast({ title: 'Hiba a generálás során', description: error.message || 'Sikertelen generálás.', variant: 'destructive' });
+                        }
+                      }}
+                      disabled={generateDocs.isPending}
+                    >
+                      <RefreshCw className={cn("w-3 h-3", generateDocs.isPending && generateDocs.variables?.docType === cat.id && "animate-spin")} /> Generálás
+                    </Button>
                   </div>
                 </Link>
               );

@@ -795,7 +795,7 @@ export default function AccountyApp() {
           >
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-card rounded-xl p-6 border border-border shadow-soft flex flex-col justify-center">
-              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Zárási státusz (Május):</h3>
+              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">{`Zárási státusz (${new Date().toLocaleDateString('hu-HU', { month: 'long' }).replace(/^./, c => c.toUpperCase())}):`}</h3>
               <div className="flex items-baseline gap-4">
                 <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">{dynamicKpiStats.zarasiSzazalek}%</span>
                 <span className="text-sm font-semibold text-primary">aktív</span>

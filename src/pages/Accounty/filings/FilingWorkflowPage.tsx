@@ -67,6 +67,50 @@ export default function FilingWorkflowPage() {
     if (filing.xml_data) {
       try { parsedXml = JSON.parse(filing.xml_data); } catch { parsedXml = { rawXml: filing.xml_data }; }
     }
+
+    // Parse XML employee data if rawXml
+    let xmlMeta: { bevallasIdoszak: string | null; bevallasTipus: string | null; benyujtasDatuma: string | null; companyName: string | null; totalGross: number; totalSzja: number; totalTb: number; totalSzocho: number; empCount: number } | null = null;
+    let xmlEmployees: { name: string; taj: string; grossSalary: string; szja: string; tb: string; szocho: string; net: string }[] = [];
+
+    if (parsedXml.rawXml) {
+      const xml = parsedXml.rawXml as string;
+      const getTag = (tag: string) => {
+        const m = xml.match(new RegExp(`<${tag}>([^<]*)</${tag}>`));
+        return m ? m[1] : null;
+      };
+
+      xmlMeta = {
+        bevallasIdoszak: getTag('BevallasIdoszak'),
+        bevallasTipus: getTag('BevallasTipus'),
+        benyujtasDatuma: getTag('BenyujtasDatuma'),
+        companyName: getTag('Nev'),
+        totalGross: parseInt(getTag('OsszBruttoJovedelem') || '0') || 0,
+        totalSzja: parseInt(getTag('OsszSZJA') || '0') || 0,
+        totalTb: parseInt(getTag('OsszTBJarultek') || '0') || 0,
+        totalSzocho: parseInt(getTag('OsszSZOCHO') || '0') || 0,
+        empCount: parseInt(getTag('FoglalkoztatottakSzama') || '0') || 0,
+      };
+
+      // Extract Tetelsor blocks (the actual employee lines)
+      const re = new RegExp(`<Tetelsor[^>]*>(.*?)</Tetelsor>`, 'gs');
+      let m;
+      while ((m = re.exec(xml)) !== null) {
+        const block = m[1];
+        const get = (t: string) => { const m2 = block.match(new RegExp(`<${t}>([^<]*)</${t}>`)); return m2 ? m2[1] : '–'; };
+        const lastName = get('Vezeteknev');
+        const firstName = get('Keresztnev');
+        xmlEmployees.push({
+          name: `${lastName} ${firstName}`,
+          taj: get('TAJ'),
+          grossSalary: get('BruttoJovedelem'),
+          szja: get('SZJAOsszeg'),
+          tb: get('TBJarulekOsszeg'),
+          szocho: get('SZOCHOOsszeg'),
+          net: get('Netto'),
+        });
+      }
+    }
+
     return {
       type: filing.filing_type,
       typeLabel: FILING_TYPE_LABELS[filing.filing_type] || filing.filing_type,
@@ -76,6 +120,8 @@ export default function FilingWorkflowPage() {
       navReceiptId: filing.nav_receipt_id,
       submittedAt: filing.submitted_at,
       data: parsedXml,
+      xmlMeta,
+      xmlEmployees,
     };
   }, [filing]);
 
@@ -167,22 +213,111 @@ export default function FilingWorkflowPage() {
                 <div><span className="text-slate-500">Adóalany neve:</span> <strong>{company?.name || '–'}</strong></div>
                 <div><span className="text-slate-500">Adószám:</span> <strong>{company?.taxNumber || '–'}</strong></div>
               </div>
-              {filingData?.data?.rawXml ? (
-                <div className="border-t border-border pt-4">
-                  <p className="text-[10px] text-slate-400 uppercase font-bold mb-2">XML tartalom (részlet)</p>
-                  <pre className="text-[10px] text-slate-600 dark:text-slate-400 overflow-auto max-h-40 bg-slate-50 dark:bg-slate-900 p-3 rounded">
-                    {filingData.data.rawXml.slice(0, 800)}
-                    {filingData.data.rawXml.length > 800 ? '\n...' : ''}
-                  </pre>
+              {filingData?.xmlMeta && (
+                <div className="border-t border-border pt-4 space-y-4">
+                  <div className="grid grid-cols-3 gap-3 text-xs">
+                    {filingData.xmlMeta.bevallasIdoszak && (
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3">
+                        <p className="text-[10px] text-slate-400 uppercase font-bold">Bevallási időszak</p>
+                        <p className="font-bold mt-0.5">{filingData.xmlMeta.bevallasIdoszak}</p>
+                      </div>
+                    )}
+                    {filingData.xmlMeta.bevallasTipus && (
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3">
+                        <p className="text-[10px] text-slate-400 uppercase font-bold">Típus</p>
+                        <p className="font-bold mt-0.5">{filingData.xmlMeta.bevallasTipus === 'M' ? 'Normál' : filingData.xmlMeta.bevallasTipus === 'H' ? 'Helyesbítő' : filingData.xmlMeta.bevallasTipus === 'O' ? 'Önellenőrzés' : filingData.xmlMeta.bevallasTipus}</p>
+                      </div>
+                    )}
+                    {filingData.xmlMeta.benyujtasDatuma && (
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3">
+                        <p className="text-[10px] text-slate-400 uppercase font-bold">Benyújtás dátuma</p>
+                        <p className="font-bold mt-0.5">{filingData.xmlMeta.benyujtasDatuma}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Summary totals */}
+                  {filingData.xmlMeta.totalGross > 0 && (
+                    <div className="grid grid-cols-4 gap-3 text-xs">
+                      <div className="bg-blue-50 dark:bg-blue-500/10 rounded-lg p-3">
+                        <p className="text-[10px] text-blue-400 uppercase font-bold">Össz. bruttó</p>
+                        <p className="font-bold mt-0.5 text-blue-700 dark:text-blue-300">{fmt(filingData.xmlMeta.totalGross)}</p>
+                      </div>
+                      <div className="bg-amber-50 dark:bg-amber-500/10 rounded-lg p-3">
+                        <p className="text-[10px] text-amber-400 uppercase font-bold">Össz. SZJA</p>
+                        <p className="font-bold mt-0.5 text-amber-700 dark:text-amber-300">{fmt(filingData.xmlMeta.totalSzja)}</p>
+                      </div>
+                      <div className="bg-violet-50 dark:bg-violet-500/10 rounded-lg p-3">
+                        <p className="text-[10px] text-violet-400 uppercase font-bold">Össz. TB</p>
+                        <p className="font-bold mt-0.5 text-violet-700 dark:text-violet-300">{fmt(filingData.xmlMeta.totalTb)}</p>
+                      </div>
+                      <div className="bg-teal-50 dark:bg-teal-500/10 rounded-lg p-3">
+                        <p className="text-[10px] text-teal-400 uppercase font-bold">Össz. SZOCHO</p>
+                        <p className="font-bold mt-0.5 text-teal-700 dark:text-teal-300">{fmt(filingData.xmlMeta.totalSzocho)}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {filingData.xmlEmployees.length > 0 ? (
+                    <div>
+                      <p className="text-[10px] text-slate-400 uppercase font-bold mb-2">
+                        Foglalkoztatottak ({filingData.xmlEmployees.length} fő)
+                      </p>
+                      <div className="overflow-x-auto border border-border rounded-lg">
+                        <table className="w-full text-[11px]">
+                          <thead>
+                            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-border">
+                              <th className="px-3 py-2 text-left font-bold text-slate-500">Név</th>
+                              <th className="px-3 py-2 text-left font-bold text-slate-500">TAJ szám</th>
+                              <th className="px-3 py-2 text-right font-bold text-slate-500">Bruttó</th>
+                              <th className="px-3 py-2 text-right font-bold text-slate-500">SZJA</th>
+                              <th className="px-3 py-2 text-right font-bold text-slate-500">TB</th>
+                              <th className="px-3 py-2 text-right font-bold text-slate-500">SZOCHO</th>
+                              <th className="px-3 py-2 text-right font-bold text-slate-500">Nettó</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border/50">
+                            {filingData.xmlEmployees.map((emp, i) => (
+                              <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                <td className="px-3 py-2 font-medium">{emp.name}</td>
+                                <td className="px-3 py-2 font-mono text-slate-500">{emp.taj}</td>
+                                <td className="px-3 py-2 text-right font-mono">{fmt(parseInt(emp.grossSalary) || 0)}</td>
+                                <td className="px-3 py-2 text-right font-mono">{fmt(parseInt(emp.szja) || 0)}</td>
+                                <td className="px-3 py-2 text-right font-mono">{fmt(parseInt(emp.tb) || 0)}</td>
+                                <td className="px-3 py-2 text-right font-mono">{fmt(parseInt(emp.szocho) || 0)}</td>
+                                <td className="px-3 py-2 text-right font-mono font-bold">{fmt(parseInt(emp.net) || 0)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr className="bg-slate-100 dark:bg-slate-800 border-t-2 border-border font-bold">
+                              <td className="px-3 py-2" colSpan={2}>Összesen</td>
+                              <td className="px-3 py-2 text-right font-mono">{fmt(filingData.xmlEmployees.reduce((s, e) => s + (parseInt(e.grossSalary) || 0), 0))}</td>
+                              <td className="px-3 py-2 text-right font-mono">{fmt(filingData.xmlEmployees.reduce((s, e) => s + (parseInt(e.szja) || 0), 0))}</td>
+                              <td className="px-3 py-2 text-right font-mono">{fmt(filingData.xmlEmployees.reduce((s, e) => s + (parseInt(e.tb) || 0), 0))}</td>
+                              <td className="px-3 py-2 text-right font-mono">{fmt(filingData.xmlEmployees.reduce((s, e) => s + (parseInt(e.szocho) || 0), 0))}</td>
+                              <td className="px-3 py-2 text-right font-mono">{fmt(filingData.xmlEmployees.reduce((s, e) => s + (parseInt(e.net) || 0), 0))}</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center text-slate-400 py-3 text-xs">
+                      A bevallás foglalkoztatotti adatokat tartalmaz.
+                    </div>
+                  )}
                 </div>
-              ) : filingData?.data?.name ? (
+              )}
+              {!filingData?.xmlMeta && filingData?.data?.name && (
                 <div className="border-t border-border pt-4 space-y-1.5">
                   <div className="flex justify-between"><span>Munkavállaló:</span><span className="font-bold">{filingData.data.name}</span></div>
                   <div className="flex justify-between"><span>TAJ szám:</span><span className="font-bold">{filingData.data.tajNumber || '–'}</span></div>
                   <div className="flex justify-between"><span>Változáskód:</span><span className="font-bold">{filingData.data.changeCode || '–'}</span></div>
                   <div className="flex justify-between"><span>Hatályba lépés:</span><span className="font-bold">{filingData.data.effectiveDate || '–'}</span></div>
                 </div>
-              ) : (
+              )}
+              {!filingData?.xmlMeta && !filingData?.data?.name && (
                 <div className="border-t border-border pt-4 text-center text-slate-400">
                   <p>Nincs részletes adat ehhez a bevalláshoz.</p>
                 </div>
@@ -190,12 +325,33 @@ export default function FilingWorkflowPage() {
             </div>
           </div>
           <div className="flex justify-between">
-            <Button variant="outline" className="gap-1.5" onClick={() => exportPdf(`bevallas_${filing?.filing_type || 'pdf'}`, {
-              title: `Bevallás előnézet — ${filing?.filing_type?.toUpperCase() || ''}`,
-              subtitle: `Időszak: ${filing?.period_year || ''}/${String(filing?.period_month || '').padStart(2, '0')}`,
-              headers: ['Mező', 'Érték'],
-              rows: Object.entries(parsedXml || {}).map(([k, v]) => [k, String(v)]),
-            })}><Download className="w-4 h-4" /> PDF letöltés</Button>
+            <Button variant="outline" className="gap-1.5" onClick={() => {
+              const fd = filingData?.data || {};
+              let pdfRows: string[][] = [];
+
+              if (fd.rawXml) {
+                // Parse XML for PDF export too
+                const xml = fd.rawXml as string;
+                const getTag = (tag: string) => { const m = xml.match(new RegExp(`<${tag}>([^<]*)</${tag}>`)); return m ? m[1] : '–'; };
+                pdfRows = [
+                  ['Adóalany', company?.name || '–'],
+                  ['Adószám', company?.taxNumber || '–'],
+                  ['Bevallási időszak', getTag('BevallasIdoszak')],
+                  ['Típus', getTag('BevallasTipus') === 'N' ? 'Normál' : getTag('BevallasTipus')],
+                  ['Benyújtás dátuma', getTag('BenyujtasDatuma')],
+                  ['Foglalkoztatottak száma', String((xml.match(/<Foglalkoztatott>/g) || []).length)],
+                ];
+              } else {
+                pdfRows = Object.entries(fd).filter(([k]) => k !== 'rawXml').map(([k, v]) => [k, String(v)]);
+              }
+
+              exportPdf(`bevallas_${filing?.filing_type || 'pdf'}`, {
+                title: `${filingData?.typeLabel || 'Bevallás'} — Összefoglaló`,
+                subtitle: `${company?.name || '-'} | Időszak: ${filing?.period_year || ''}/${String(filing?.period_month || '').padStart(2, '0')}`,
+                headers: ['Mező', 'Érték'],
+                rows: pdfRows,
+              });
+            }}><Download className="w-4 h-4" /> PDF letöltés</Button>
             <Button onClick={() => setStep('sign')} className="gap-1.5 bg-indigo-600 hover:bg-indigo-700">
               Tovább az aláíráshoz <Stamp className="w-4 h-4" />
             </Button>

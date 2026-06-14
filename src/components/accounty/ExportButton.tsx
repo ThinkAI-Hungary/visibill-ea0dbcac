@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Download, ChevronDown, FileSpreadsheet, FileText } from 'lucide-react';
+import { Download, ChevronDown, FileSpreadsheet, FileText, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { exportData, type ExportFormat } from '@/lib/exportCsv';
+import { exportPdf, type PdfExportOptions } from '@/lib/exportPdf';
 import { cn } from '@/lib/utils';
 
 interface ExportButtonProps {
@@ -12,6 +13,8 @@ interface ExportButtonProps {
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'default' | 'sm' | 'lg';
   className?: string;
+  /** Optional PDF export options. If provided, adds a PDF option to the dropdown. */
+  pdfOptions?: Omit<PdfExportOptions, 'headers' | 'rows'>;
 }
 
 export function ExportButton({
@@ -22,6 +25,7 @@ export function ExportButton({
   variant = 'outline',
   size = 'default',
   className,
+  pdfOptions,
 }: ExportButtonProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -36,6 +40,17 @@ export function ExportButton({
 
   const handleExport = (format: ExportFormat) => {
     exportData(filename, headers, getRows(), format);
+    setOpen(false);
+  };
+
+  const handlePdfExport = () => {
+    const rows = getRows();
+    exportPdf(filename, {
+      ...pdfOptions,
+      title: pdfOptions?.title || filename,
+      headers,
+      rows,
+    });
     setOpen(false);
   };
 
@@ -72,6 +87,17 @@ export function ExportButton({
             <div>
               <p className="font-medium text-slate-900 dark:text-slate-100">CSV (.csv)</p>
               <p className="text-[10px] text-slate-400">Szöveges, pontosvesszővel tagolt</p>
+            </div>
+          </button>
+          <div className="border-t border-border" />
+          <button
+            onClick={handlePdfExport}
+            className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-sm hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-left"
+          >
+            <FileDown className="w-4 h-4 text-red-600" />
+            <div>
+              <p className="font-medium text-slate-900 dark:text-slate-100">PDF (.pdf)</p>
+              <p className="text-[10px] text-slate-400">Nyomtatható dokumentum</p>
             </div>
           </button>
         </div>

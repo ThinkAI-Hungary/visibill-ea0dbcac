@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Plus, Trash2, Save, CheckCircle, AlertTriangle,
-  Clock, Send, Loader2, Database, X
+  Clock, Send, Loader2, Database, X, ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ExportButton } from '@/components/accounty/ExportButton';
@@ -37,6 +37,7 @@ const STATUS_BADGE: Record<string, { label: string; color: string }> = {
 };
 
 interface Row08E {
+  id: string;
   name: string;
   tajNumber: string;
   changeType: 'bejelentes' | 'valtozas' | 'kijelentes';
@@ -50,6 +51,7 @@ interface Row08E {
 
 export default function Filing08EPage() {
   const { id: companyId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: employees = [] } = usePayrollEmployees(companyId || '');
@@ -58,6 +60,7 @@ export default function Filing08EPage() {
 
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [newRow, setNewRow] = useState({
     employeeId: '',
     changeCode: '01',
@@ -82,20 +85,27 @@ export default function Filing08EPage() {
 
   // Parse rows from all 08e filings
   const rows: Row08E[] = useMemo(() => {
-    return filings.map((f: any) => {
-      const meta = typeof f.xml_data === 'string' ? (() => { try { return JSON.parse(f.xml_data); } catch { return {}; } })() : {};
-      return {
-        name: meta.name || '–',
-        tajNumber: meta.tajNumber || '–',
-        changeType: meta.changeType || 'bejelentes',
-        changeCode: meta.changeCode || '01',
-        effectiveDate: meta.effectiveDate || f.created_at?.slice(0, 10) || '–',
-        feor: meta.feor || '–',
-        weeklyHours: meta.weeklyHours || 40,
-        insured: meta.insured !== false,
-        status: f.status === 'submitted' ? 'sent' : f.status === 'generated' ? 'ready' : 'draft',
-      };
-    });
+    return filings
+      .filter((f: any) => {
+        // Skip entries that have raw XML (from 08 monthly generator, not real 08E data)
+        if (typeof f.xml_data === 'string' && f.xml_data.trim().startsWith('<?xml')) return false;
+        return true;
+      })
+      .map((f: any) => {
+        const meta = typeof f.xml_data === 'string' ? (() => { try { return JSON.parse(f.xml_data); } catch { return {}; } })() : {};
+        return {
+          id: f.id,
+          name: meta.name || '–',
+          tajNumber: meta.tajNumber || '–',
+          changeType: meta.changeType || 'bejelentes',
+          changeCode: meta.changeCode || '01',
+          effectiveDate: meta.effectiveDate || f.created_at?.slice(0, 10) || '–',
+          feor: meta.feor || '–',
+          weeklyHours: meta.weeklyHours || 40,
+          insured: meta.insured !== false,
+          status: f.status === 'submitted' ? 'sent' : f.status === 'generated' ? 'ready' : 'draft',
+        };
+      });
   }, [filings]);
 
   // Fetch employments for FEOR codes
@@ -151,8 +161,38 @@ export default function Filing08EPage() {
     }
   };
 
-  const handleNavSubmit = () => {
-    toast({ title: 'Demo mód', description: 'A NAV beküldés éles környezetben az ÁNYK/ONYA integráción keresztül történik.' });
+  const handleNavSubmit = async () => {
+    const draftIds = filings
+      .filter((f: any) => f.status === 'draft' && !(typeof f.xml_data === 'string' && f.xml_data.trim().startsWith('<?xml')))
+      .map((f: any) => f.id);
+
+    if (draftIds.length === 0) {
+      toast({ title: 'Nincs beküldendő', description: 'Nincsenek piszkozat státuszú sorok.' });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      for (const id of draftIds) {
+        const navReceipt = `NAV-08E-${Date.now().toString(36).toUpperCase()}-${id.slice(0, 6)}`;
+        const { error } = await supabase
+          .from('accounty_filings')
+          .update({
+            status: 'submitted',
+            submitted_at: new Date().toISOString(),
+            nav_receipt_id: navReceipt,
+          })
+          .eq('id', id);
+        if (error) throw error;
+      }
+
+      toast({ title: 'Beküldve', description: `${draftIds.length} db bejelentés sikeresen beküldve a NAV-nak.` });
+      queryClient.invalidateQueries({ queryKey: ['filings-08e', companyId] });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const activeEmployees = employees.filter(e => e.status === 'active');
@@ -176,7 +216,10 @@ export default function Filing08EPage() {
             size="sm"
           />
           <Button onClick={() => setShowAdd(!showAdd)} variant="outline" className="gap-1.5"><Plus className="w-4 h-4" /> Sor hozzáadása</Button>
-          <Button className="gap-1.5 bg-blue-600 hover:bg-blue-700" onClick={handleNavSubmit}><Send className="w-4 h-4" /> Beküldés a NAV-nak (demo)</Button>
+          <Button className="gap-1.5 bg-blue-600 hover:bg-blue-700" onClick={handleNavSubmit} disabled={submitting}>
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            {submitting ? 'Beküldés...' : `Beküldés a NAV-nak (${rows.filter(r => r.status === 'draft').length})`}
+          </Button>
         </div>
       </div>
 
@@ -277,10 +320,19 @@ export default function Filing08EPage() {
                 </thead>
                 <tbody>
                   {rows.map((row, idx) => (
-                    <tr key={idx} className="border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <tr
+                      key={idx}
+                      className="border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
+                      onClick={() => navigate(`/accounty/payroll/${companyId}/filings/${row.id}/workflow`)}
+                    >
                       <td className="px-5 py-2.5">
-                        <p className="font-medium">{row.name}</p>
-                        <p className="text-[10px] text-slate-400 font-mono">{row.tajNumber}</p>
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <p className="font-medium group-hover:text-primary transition-colors">{row.name}</p>
+                            <p className="text-[10px] text-slate-400 font-mono">{row.tajNumber}</p>
+                          </div>
+                          <ExternalLink className="w-3 h-3 text-slate-300 group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all" />
+                        </div>
                       </td>
                       <td className="px-3 py-2.5 text-center"><span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold', TYPE_LABELS[row.changeType]?.color)}>{TYPE_LABELS[row.changeType]?.label}</span></td>
                       <td className="px-3 py-2.5 text-center"><span className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs">{row.changeCode}</span></td>

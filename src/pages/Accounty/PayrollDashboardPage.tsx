@@ -429,7 +429,7 @@ export default function PayrollDashboardPage() {
                         f.status === 'error' ? 'bg-red-100 text-red-700 dark:bg-red-900/40' :
                         'bg-slate-100 text-slate-600 dark:bg-slate-800'
                       )}>
-                        {f.status}
+                        {({ draft: 'Tervezet', generated: 'Generálva', submitted: 'Beküldve', accepted: 'Elfogadva', rejected: 'Elutasítva', error: 'Hiba' } as Record<string, string>)[f.status] || f.status}
                       </span>
                     </td>
                     <td className="px-5 py-3 text-sm text-slate-500 dark:text-slate-400">

@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, FileText, Download, Send, Clock,
-  Loader2, Database, Users
+  Loader2, Database, Users, Eye, FileCode
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ExportButton } from '@/components/accounty/ExportButton';
@@ -12,16 +12,22 @@ import {
 } from '@/hooks/usePayrollData';
 import { useAccountyClients } from '@/hooks/useAccountyData';
 import { useToast } from '@/hooks/use-toast';
+import { generateFiling08Xml, downloadXml } from '@/lib/payroll/filingGenerator';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 const fmt = (n: number) => n.toLocaleString('hu-HU') + ' Ft';
 const MONTHS = ['Jan', 'Feb', 'Már', 'Ápr', 'Máj', 'Jún', 'Júl', 'Aug', 'Szep', 'Okt', 'Nov', 'Dec'];
 
 export default function Filing2608Page() {
   const { id: companyId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
 
   const { data: clients } = useAccountyClients();
   const { data: cycles = [] } = usePayrollCycles(companyId || '');
@@ -77,6 +83,117 @@ export default function Filing2608Page() {
       };
     });
   }, [calculations, employees]);
+
+  const buildFilingXml = () => {
+    const totalGross = calculations.reduce((s, c) => s + (c.gross_salary || 0), 0);
+    const totalSzja = calculations.reduce((s, c) => s + (c.szja_amount || 0), 0);
+    const totalTb = calculations.reduce((s, c) => s + (c.tb_amount || 0), 0);
+    const totalSzocho = calculations.reduce((s, c) => s + (c.szocho_amount || 0), 0);
+
+    return generateFiling08Xml({
+      companyName: company?.name || '–',
+      companyTaxNumber: company?.taxNumber || '00000000-0-00',
+      companyAddress: '',
+      year: selectedYear,
+      month: selectedMonth,
+      totalGrossSalary: totalGross,
+      totalSzja,
+      totalTb,
+      totalSzocho,
+      totalEho: 0,
+      employees: mlapRows.map(m => {
+        const emp = employees.find(e => `${e.last_name} ${e.first_name}`.trim() === m.name);
+        return {
+          tajNumber: m.tajNumber,
+          taxId: '',
+          lastName: m.name.split(' ')[0] || '',
+          firstName: m.name.split(' ').slice(1).join(' ') || '',
+          birthDate: '',
+          mothersName: '',
+          jobCode: '1101',
+          insuranceStart: '',
+          weeklyHours: 40,
+          grossSalary: m.grossSalary,
+          taxBase: m.grossSalary,
+          szjaAmount: m.szja,
+          tbBase: m.grossSalary,
+          tbAmount: m.tb,
+          szochoBase: m.grossSalary,
+          szochoAmount: m.szocho,
+          familyCreditUsed: 0,
+          under25CreditUsed: 0,
+          newMotherCreditUsed: 0,
+          szochoCreditUsed: 0,
+          netSalary: m.netSalary,
+        };
+      }),
+      filingType: 'normal',
+      submittedBy: 'Accounty rendszer',
+      submittedAt: new Date().toISOString(),
+    });
+  };
+
+  const handleXmlExport = () => {
+    const xml = buildFilingXml();
+    downloadXml(xml, `2608_${company?.name || 'ceg'}_${selectedYear}_${String(selectedMonth).padStart(2, '0')}.xml`);
+    toast({ title: 'XML letöltve', description: 'A 2608-as bevallás XML fájl letöltődött.' });
+  };
+
+  const handlePreview = async () => {
+    setGenerating(true);
+    try {
+      const xml = buildFilingXml();
+
+      // Check if a draft/generated filing already exists for this period (never overwrite submitted ones)
+      const { data: existing } = await supabase
+        .from('accounty_filings')
+        .select('id')
+        .eq('company_id', companyId!)
+        .eq('filing_type', '2608')
+        .eq('period_year', selectedYear)
+        .eq('period_month', selectedMonth)
+        .in('status', ['draft', 'generated'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let filingId: string;
+
+      if (existing) {
+        // Update existing
+        const { error } = await supabase
+          .from('accounty_filings')
+          .update({ xml_data: xml, status: 'generated' })
+          .eq('id', existing.id);
+        if (error) throw error;
+        filingId = existing.id;
+      } else {
+        // Create new
+        const { data: inserted, error } = await supabase
+          .from('accounty_filings')
+          .insert({
+            company_id: companyId,
+            filing_type: '2608',
+            period_year: selectedYear,
+            period_month: selectedMonth,
+            status: 'generated',
+            xml_data: xml,
+            channel: 'onya',
+          })
+          .select('id')
+          .single();
+        if (error) throw error;
+        filingId = inserted.id;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['payroll', 'filings'] });
+      navigate(`/accounty/payroll/${companyId}/filings/${filingId}/workflow`);
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const handleNavSubmit = () => {
     toast({ title: 'Demo mód', description: 'A NAV beküldés éles környezetben az ÁNYK/ONYA integráción keresztül történik.' });
@@ -238,6 +355,13 @@ export default function Filing2608Page() {
 
           {/* Actions */}
           <div className="flex justify-end gap-2">
+            <Button variant="outline" className="gap-1.5" onClick={handleXmlExport}>
+              <FileCode className="w-4 h-4" /> XML letöltés
+            </Button>
+            <Button variant="outline" className="gap-1.5" onClick={handlePreview} disabled={generating}>
+              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+              {generating ? 'Generálás...' : 'Előnézet & Beküldés'}
+            </Button>
             <Button variant="outline" className="gap-1.5" onClick={handleNavSubmit}><Send className="w-4 h-4" /> Beküldés NAV-nak (demo)</Button>
           </div>
         </>

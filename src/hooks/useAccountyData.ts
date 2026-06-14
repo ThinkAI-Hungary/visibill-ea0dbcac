@@ -2664,7 +2664,7 @@ export function useAccountyDocuments(companyId: string, docType?: string) {
     queryKey: ['accounty-documents', companyId, docType],
     queryFn: async (): Promise<AccountyDocument[]> => {
       let q = supabase.from('accounty_documents').select('*').eq('company_id', companyId);
-      if (docType) q = q.eq('doc_type', docType);
+      if (docType && docType !== 'all') q = q.eq('doc_type', docType);
       const { data, error } = await q.order('created_at', { ascending: false });
       if (error) throw error;
       return (data || []).map(r => ({
@@ -2675,5 +2675,129 @@ export function useAccountyDocuments(companyId: string, docType?: string) {
       }));
     },
     enabled: !!companyId,
+  });
+}
+
+export function useGenerateDocuments() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ companyId, docType }: { companyId: string; docType: string }) => {
+      // 1. Get latest cycle
+      const { data: cycles } = await supabase
+        .from('accounty_payroll_cycles')
+        .select('id, year, month')
+        .eq('company_id', companyId)
+        .order('year', { ascending: false })
+        .order('month', { ascending: false })
+        .limit(1);
+
+      if (!cycles || cycles.length === 0) throw new Error('Nincs számfejtési ciklus a céghez.');
+      const currentCycle = cycles[0];
+      const period = `${currentCycle.year}-${String(currentCycle.month).padStart(2, '0')}`;
+
+      // 2. Get calculations
+      const { data: calculations } = await supabase
+        .from('accounty_payroll_calculations')
+        .select('*, accounty_employments(employee_id)')
+        .eq('cycle_id', currentCycle.id);
+
+      if (!calculations || calculations.length === 0) {
+        throw new Error('Nincsenek számfejtési adatok a legutóbbi ciklushoz.');
+      }
+
+      const typesToGenerate = docType === 'all' 
+        ? ['payslip', 'transfer', 'e-payslip', 'cash', 'garnishment', 'cafeteria', 'summary', 'certificate']
+        : [docType];
+
+      const docs = [];
+      for (const t of typesToGenerate) {
+        // Company-level documents
+        if (['summary', 'cash', 'cafeteria', 'garnishment', 'certificate'].includes(t)) {
+          let title = '';
+          if (t === 'summary') title = 'Munkáltatói összesítő';
+          if (t === 'cash') title = 'Készpénzes kifizetési lista';
+          if (t === 'cafeteria') title = 'Cafeteria feltöltési fájlok';
+          if (t === 'garnishment') title = 'Letiltások jegyzéke';
+          if (t === 'certificate') title = 'Igazolások';
+          
+          docs.push({
+            company_id: companyId,
+            employee_id: null,
+            title: `${title} - ${period}`,
+            doc_type: t,
+            status: 'generated',
+            period,
+            generated_at: new Date().toISOString()
+          });
+        } else {
+          // Employee-level documents
+          for (const calc of calculations) {
+            const meta = calc.metadata as any;
+            const empName = meta?.employee_name || 'Ismeretlen';
+            const empId = (calc.accounty_employments as any)?.employee_id || meta?.employee_id;
+
+            if (!empId) {
+              console.warn('Skipping calculation due to missing employee_id', calc.id);
+              continue;
+            }
+
+            let title = '';
+            if (t === 'payslip') title = `${empName} - Bérjegyzék`;
+            if (t === 'transfer') title = `${empName} - Utalási lista`;
+            if (t === 'e-payslip') title = `${empName} - E-bérjegyzék`;
+
+            docs.push({
+              company_id: companyId,
+              employee_id: empId,
+              title: title,
+              doc_type: t,
+              status: 'generated',
+              period,
+              generated_at: new Date().toISOString()
+            });
+          }
+        }
+      }
+
+      // Delete existing to avoid duplicates
+      await supabase.from('accounty_documents').delete().eq('company_id', companyId).eq('period', period).in('doc_type', typesToGenerate);
+
+      const { error } = await supabase.from('accounty_documents').insert(docs);
+      if (error) throw error;
+
+      // If generating transfers, also populate accounty_transfers table
+      if (typesToGenerate.includes('transfer')) {
+        // Clean existing transfers for this period
+        await supabase.from('accounty_transfers').delete().eq('company_id', companyId).eq('period', period);
+        
+        const transferRecords = calculations.map(calc => {
+          const meta = calc.metadata as any;
+          const empName = meta?.employee_name || 'Ismeretlen';
+          const empId = (calc.accounty_employments as any)?.employee_id || meta?.employee_id;
+          return {
+            company_id: companyId,
+            employee_id: empId || null,
+            employee_name: empName,
+            bank_account: meta?.bank_account || '',
+            net_salary: calc.net_salary || 0,
+            period,
+            status: 'approved',
+          };
+        }).filter(t => t.net_salary > 0);
+
+        if (transferRecords.length > 0) {
+          await supabase.from('accounty_transfers').insert(transferRecords);
+        }
+      }
+
+      return { companyId, docType };
+    },
+    onSuccess: (vars) => {
+      qc.invalidateQueries({ queryKey: ['accounty-documents', vars.companyId] });
+      qc.invalidateQueries({ queryKey: ['transfers', vars.companyId] });
+      if (vars.docType !== 'all') {
+        qc.invalidateQueries({ queryKey: ['accounty-documents', vars.companyId, vars.docType] });
+      }
+    }
   });
 }

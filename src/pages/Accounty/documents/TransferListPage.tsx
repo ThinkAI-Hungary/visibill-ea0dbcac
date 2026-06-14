@@ -1,45 +1,54 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
-  ArrowLeft, CreditCard, Download, CheckCircle, AlertTriangle,
-  Copy, Eye, RefreshCw, Send, Building, Users, Loader2, Database
+  ArrowLeft, CreditCard, Download, CheckCircle,
+  Eye, Loader2, Database
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import { cn } from '@/lib/utils';
 import { useTransfers, type Transfer } from '@/hooks/useAccountyData';
-import { useToast } from '@/hooks/use-toast';
-import { exportPdf } from '@/lib/exportPdf';
-import { exportToCsv } from '@/lib/exportCsv';
+import { useAccountyClients } from '@/hooks/useAccountyData';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { generateTransferPdf } from '@/lib/documentPdfs';
+import { usePayrollCycles, usePayrollCalculations } from '@/hooks/usePayrollData';
 
 export default function TransferListPage() {
   const { id } = useParams<{ id: string }>();
   const currentPeriod = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
   const { data: transfers, isLoading } = useTransfers(id || '', currentPeriod);
-  const [exportFormat, setExportFormat] = useState<'mt940' | 'sepa' | 'csv'>('sepa');
-  const [generated, setGenerated] = useState(false);
-  const { toast } = useToast();
+  const { data: clients } = useAccountyClients();
+  const { data: cycles = [] } = usePayrollCycles(id || '');
+  const company = clients?.find(c => c.id === id);
+
+  const currentCycle = cycles.find(c => c.year === new Date().getFullYear() && c.month === new Date().getMonth() + 1) || cycles[0];
+  const { data: calculations = [] } = usePayrollCalculations(currentCycle?.id || '');
+
+  const [exportFormat, setExportFormat] = useState<'sepa' | 'mt940'>('sepa');
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const transferList = transfers || [];
   const fmt = (n: number) => n.toLocaleString('hu-HU');
   const readyCount = transferList.filter(t => t.status === 'approved').length;
   const totalAmount = transferList.filter(t => t.status === 'approved').reduce((s, t) => s + t.netSalary, 0);
 
-  const handleGenerate = () => {
-    if (exportFormat === 'csv') {
-      exportToCsv(`utalasi_lista_${currentPeriod}`, ['Kedvezményezett', 'Bankszámla', 'Nettó (Ft)', 'Státusz'],
-        transferList.map(t => [t.employeeName, t.bankAccount || '', t.netSalary, t.status]));
+  const handleExportFormat = () => {
+    if (transferList.length === 0) return;
+    if (exportFormat === 'sepa') {
+      downloadSepaXml(transferList, company?.name || '', currentPeriod);
     } else {
-      exportPdf(`utalasi_lista_${currentPeriod}`, {
-        title: `Utalási lista — ${currentPeriod}`,
-        subtitle: `Formátum: ${exportFormat.toUpperCase()}`,
-        headers: ['Kedvezményezett', 'Bankszámla', 'Nettó összeg (Ft)', 'Státusz'],
-        rows: transferList.map(t => [t.employeeName, t.bankAccount || '–', fmt(t.netSalary), t.status === 'approved' ? 'Jóváhagyva' : t.status]),
-        footer: { label: 'Összes nettó', value: fmt(totalAmount) + ' Ft' },
-      });
+      downloadMt940(transferList, company?.name || '', currentPeriod);
     }
-    setGenerated(true);
-    setTimeout(() => setGenerated(false), 2000);
+  };
+
+  const handlePreview = () => {
+    if (calculations.length === 0) return;
+    const url = generateTransferPdf({
+      companyName: company?.name || '–',
+      period: currentCycle ? `${currentCycle.year}/${String(currentCycle.month).padStart(2, '0')}` : currentPeriod,
+      calculations: calculations as any[],
+    });
+    setPreviewUrl(url);
   };
 
   return (
@@ -54,18 +63,22 @@ export default function TransferListPage() {
           </div>
         </div>
         <div className="flex gap-2 items-center">
+          <Button variant="outline" className="gap-1.5" onClick={handlePreview} disabled={calculations.length === 0}>
+            <Eye className="w-4 h-4" /> Megtekintés
+          </Button>
           <select value={exportFormat} onChange={e => setExportFormat(e.target.value as any)} className="px-3 py-2 rounded-lg border border-border bg-background text-sm">
-            <option value="sepa">SEPA XML</option><option value="mt940">MT940</option><option value="csv">CSV (egyedi)</option>
+            <option value="sepa">SEPA XML</option><option value="mt940">MT940</option>
           </select>
-          <Button onClick={handleGenerate} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700" disabled={transferList.length === 0}>
-            {generated ? <CheckCircle className="w-4 h-4" /> : <Download className="w-4 h-4" />}
-            {generated ? 'Letöltve' : `Exportálás (${exportFormat.toUpperCase()})`}
+          <Button onClick={handleExportFormat} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700" disabled={transferList.length === 0}>
+            <Download className="w-4 h-4" />
+            Exportálás ({exportFormat.toUpperCase()})
           </Button>
           <ExportButton
             filename={`utalasi_lista_${currentPeriod}`}
             headers={['Kedvezményezett', 'Bankszámla', 'Nettó (Ft)', 'Státusz']}
             getRows={() => transferList.map(t => [t.employeeName, t.bankAccount || '', t.netSalary, t.status])}
             size="sm"
+            pdfOptions={{ title: `Utalási lista — ${currentPeriod}` }}
           />
         </div>
       </div>
@@ -102,7 +115,7 @@ export default function TransferListPage() {
               </thead>
               <tbody>
                 {transferList.map(t => (
-                  <tr key={t.id} className={cn('border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50', t.status === 'pending' && 'bg-yellow-50/30')}>
+                  <tr key={t.id} className={cn('border-b border-border/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer', t.status === 'pending' && 'bg-yellow-50/30')} onClick={handlePreview}>
                     <td className="px-5 py-2.5 font-medium">{t.employeeName}</td>
                     <td className="px-3 py-2.5 font-mono text-xs">{t.bankAccount || '—'}</td>
                     <td className="px-3 py-2.5 text-right font-mono font-bold text-emerald-600">{fmt(t.netSalary)}</td>
@@ -125,6 +138,118 @@ export default function TransferListPage() {
           </div>
         </>
       )}
+
+      <Dialog open={!!previewUrl} onOpenChange={(open) => !open && setPreviewUrl(null)}>
+        <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 py-4 border-b border-border">
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-emerald-500" />
+              Utalási lista — {currentPeriod}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 w-full bg-slate-200 dark:bg-slate-900">
+            {previewUrl && (
+              <iframe src={previewUrl} className="w-full h-full border-0" title="Utalási lista megtekintő" />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
+
+// ─── SEPA XML Generator ──────────────────────────────────────────────
+function downloadSepaXml(transfers: Transfer[], companyName: string, period: string) {
+  const msgId = `MSG-${period}-${Date.now()}`;
+  const date = new Date().toISOString().slice(0, 10);
+  const totalAmount = transfers.filter(t => t.status === 'approved').reduce((s, t) => s + t.netSalary, 0);
+  const approvedTransfers = transfers.filter(t => t.status === 'approved');
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.09">
+  <CstmrCdtTrfInitn>
+    <GrpHdr>
+      <MsgId>${msgId}</MsgId>
+      <CreDtTm>${new Date().toISOString()}</CreDtTm>
+      <NbOfTxs>${approvedTransfers.length}</NbOfTxs>
+      <CtrlSum>${totalAmount.toFixed(2)}</CtrlSum>
+      <InitgPty>
+        <Nm>${escapeXml(companyName)}</Nm>
+      </InitgPty>
+    </GrpHdr>
+    <PmtInf>
+      <PmtInfId>PMT-${period}</PmtInfId>
+      <PmtMtd>TRF</PmtMtd>
+      <NbOfTxs>${approvedTransfers.length}</NbOfTxs>
+      <CtrlSum>${totalAmount.toFixed(2)}</CtrlSum>
+      <ReqdExctnDt>
+        <Dt>${date}</Dt>
+      </ReqdExctnDt>
+      <Dbtr>
+        <Nm>${escapeXml(companyName)}</Nm>
+      </Dbtr>
+      <DbtrAcct>
+        <Id><IBAN>HU00000000000000000000000000</IBAN></Id>
+      </DbtrAcct>
+      <DbtrAgt>
+        <FinInstnId><BIC>OTPVHUHB</BIC></FinInstnId>
+      </DbtrAgt>
+${approvedTransfers.map((t, i) => `      <CdtTrfTxInf>
+        <PmtId><EndToEndId>E2E-${period}-${String(i + 1).padStart(4, '0')}</EndToEndId></PmtId>
+        <Amt><InstdAmt Ccy="HUF">${t.netSalary.toFixed(2)}</InstdAmt></Amt>
+        <CdtrAgt>
+          <FinInstnId><BIC>OTPVHUHB</BIC></FinInstnId>
+        </CdtrAgt>
+        <Cdtr>
+          <Nm>${escapeXml(t.employeeName)}</Nm>
+        </Cdtr>
+        <CdtrAcct>
+          <Id><IBAN>${t.bankAccount || 'HU00000000000000000000000000'}</IBAN></Id>
+        </CdtrAcct>
+        <RmtInf><Ustrd>Berfizetés ${period}</Ustrd></RmtInf>
+      </CdtTrfTxInf>`).join('\n')}
+    </PmtInf>
+  </CstmrCdtTrfInitn>
+</Document>`;
+
+  downloadFile(`sepa_${period}.xml`, xml, 'application/xml');
+}
+
+// ─── MT940 Generator ─────────────────────────────────────────────────
+function downloadMt940(transfers: Transfer[], companyName: string, period: string) {
+  const date = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+  const totalDebit = transfers.filter(t => t.status === 'approved').reduce((s, t) => s + t.netSalary, 0);
+  const approvedTransfers = transfers.filter(t => t.status === 'approved');
+
+  const lines = [
+    `{1:F01OTPVHUHBAXXX0000000000}`,
+    `{2:O940${date}0000OTPVHUHBAXXX00000000000000000000N}`,
+    `{4:`,
+    `:20:STMT${period.replace('-', '')}`,
+    `:25:HU00000000000000000000000000`,
+    `:28C:1/1`,
+    `:60F:C${date}HUF${totalDebit.toFixed(2).replace('.', ',')}`,
+    ...approvedTransfers.map((t, i) => [
+      `:61:${date}D${t.netSalary.toFixed(2).replace('.', ',')}NTRF${String(i + 1).padStart(4, '0')}`,
+      `:86:Berfizetés / ${t.employeeName} / ${t.bankAccount || '-'}`,
+    ]).flat(),
+    `:62F:C${date}HUF0,00`,
+    `-}`,
+  ];
+
+  downloadFile(`mt940_${period}.sta`, lines.join('\r\n'), 'text/plain');
+}
+
+function escapeXml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function downloadFile(filename: string, content: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
