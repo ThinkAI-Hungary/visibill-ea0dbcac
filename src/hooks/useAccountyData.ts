@@ -970,6 +970,8 @@ export interface CompanyInvoice {
   vatAmount: number;
   status: InvoiceStatus;
   type: 'bejovo' | 'kimeno';
+  isReverseCharge?: boolean;
+  reverseChargeCategory?: string | null;
 }
 
 const mapDbStatus = (s: string | null): InvoiceStatus => {
@@ -990,7 +992,7 @@ export function useCompanyInvoices(companyId: string) {
       // 1. Uploaded invoices (bizonylatsorszam = was szamlaszam, renamed in migration)
       const { data: uploaded, error: err1 } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, elado_nev, vevo_nev, kibocsatas_datuma, brutto_vegosszeg, afa_osszeg_osszesen, adoalap_osszesen, statusz, invoice_direction')
+        .select('id, bizonylatsorszam, elado_nev, vevo_nev, kibocsatas_datuma, brutto_vegosszeg, afa_osszeg_osszesen, adoalap_osszesen, statusz, invoice_direction, forditott_adozas, reverse_charge_category')
         .eq('company_id', companyId)
         .order('kibocsatas_datuma', { ascending: false })
         .limit(500);
@@ -999,7 +1001,7 @@ export function useCompanyInvoices(companyId: string) {
       // 2. NAV invoices
       const { data: navData, error: err2 } = await supabase
         .from('nav_invoices')
-        .select('id, invoice_number, supplier_name, customer_name, invoice_issue_date, invoice_gross_amount, invoice_vat_amount, invoice_direction')
+        .select('id, invoice_number, supplier_name, customer_name, invoice_issue_date, invoice_gross_amount, invoice_vat_amount, invoice_direction, is_reverse_charge, reverse_charge_category')
         .eq('company_id', companyId)
         .order('invoice_issue_date', { ascending: false })
         .limit(500);
@@ -1021,6 +1023,8 @@ export function useCompanyInvoices(companyId: string) {
           vatAmount: Number(inv.afa_osszeg_osszesen) || 0,
           status: mapDbStatus(inv.statusz),
           type: isInbound ? 'bejovo' : 'kimeno',
+          isReverseCharge: inv.forditott_adozas === true,
+          reverseChargeCategory: inv.reverse_charge_category || null,
         });
       }
 
@@ -1038,6 +1042,8 @@ export function useCompanyInvoices(companyId: string) {
           vatAmount: Number(nav.invoice_vat_amount) || 0,
           status: 'Feldolgozott',
           type: isInbound ? 'bejovo' : 'kimeno',
+          isReverseCharge: (nav as any).is_reverse_charge === true,
+          reverseChargeCategory: (nav as any).reverse_charge_category || null,
         });
       }
 

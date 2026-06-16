@@ -92,10 +92,13 @@ function VatCodeConfigTab() {
       if (!selectedCompany?.id) throw new Error('No company');
       const { error } = await supabase.rpc('seed_default_vat_codes', { p_company_id: selectedCompany.id });
       if (error) throw error;
+      // Also seed FAD-specific VAT codes
+      const { error: fadError } = await supabase.rpc('seed_fad_vat_codes', { p_company_id: selectedCompany.id });
+      if (fadError) console.warn('FAD seed warning:', fadError.message);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['vat_codes'] });
-      toast({ title: 'Alapértelmezett áfakódok betöltve' });
+      toast({ title: 'Alapértelmezett áfakódok betöltve', description: 'FAD (fordított adózás) kódok is hozzáadva' });
     },
     onError: (e: any) => toast({ title: 'Hiba', description: e.message, variant: 'destructive' }),
   });

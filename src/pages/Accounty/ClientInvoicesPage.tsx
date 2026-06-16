@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Cloud, Clock, Calendar, Download, Settings, Check } from 'lucide-react';
+import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Cloud, Clock, Calendar, Download, Settings, Check, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,6 +24,7 @@ export default function ClientInvoicesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [fadFilter, setFadFilter] = useState(false);
   
   const [isNavSyncOpen, setIsNavSyncOpen] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -37,7 +38,8 @@ export default function ClientInvoicesPage() {
                           inv.partnerName.toLowerCase().includes(searchQuery.toLowerCase());
       const matchStatus = statusFilter === 'all' || inv.status === statusFilter;
       const matchType = typeFilter === 'all' || inv.type === typeFilter;
-      return matchSearch && matchStatus && matchType;
+      const matchFad = !fadFilter || inv.isReverseCharge === true;
+      return matchSearch && matchStatus && matchType && matchFad;
     });
   }, [invoicesData, searchQuery, statusFilter, typeFilter]);
 
@@ -64,6 +66,8 @@ export default function ClientInvoicesPage() {
 
   const totalGross = filteredInvoices.reduce((sum, inv) => sum + inv.grossAmount, 0);
   const totalVat = filteredInvoices.reduce((sum, inv) => sum + inv.vatAmount, 0);
+  const fadCount = filteredInvoices.filter(inv => inv.isReverseCharge).length;
+  const fadNetTotal = filteredInvoices.filter(inv => inv.isReverseCharge).reduce((sum, inv) => sum + (inv.grossAmount - inv.vatAmount), 0);
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500 pb-12">
@@ -276,6 +280,20 @@ export default function ClientInvoicesPage() {
                 <SelectItem value="Problémás">Problémás</SelectItem>
               </SelectContent>
             </Select>
+
+            <button
+              onClick={() => setFadFilter(!fadFilter)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 h-10 rounded-md border text-xs font-semibold transition-colors',
+                fadFilter
+                  ? 'bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-950/30 dark:border-amber-700 dark:text-amber-400'
+                  : 'bg-card border-border text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+              )}
+            >
+              <ShieldAlert className="w-3.5 h-3.5" />
+              FAD
+              {fadCount > 0 && <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 text-[10px] font-bold">{fadCount}</span>}
+            </button>
           </div>
         </div>
 
@@ -314,7 +332,14 @@ export default function ClientInvoicesPage() {
                     <td className="px-6 py-4 text-slate-900 dark:text-slate-100 font-semibold text-right">{formatCurrency(inv.grossAmount)}</td>
                     <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-right">{formatCurrency(inv.vatAmount)}</td>
                     <td className="px-6 py-4">
-                      {getStatusBadge(inv.status)}
+                      <div className="flex items-center gap-1.5">
+                        {getStatusBadge(inv.status)}
+                        {inv.isReverseCharge && (
+                          <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold border border-amber-500/20 whitespace-nowrap">
+                            FAD
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <DropdownMenu>
@@ -348,6 +373,13 @@ export default function ClientInvoicesPage() {
           <div>Számlák: <span className="font-bold text-slate-900 dark:text-slate-100">{filteredInvoices.length}</span></div>
           <div>Összesen: <span className="font-bold text-slate-900 dark:text-slate-100">{formatCurrency(totalGross)}</span></div>
           <div>ÁFA: <span className="font-bold text-slate-900 dark:text-slate-100">{formatCurrency(totalVat)}</span></div>
+          {fadCount > 0 && (
+            <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20">
+              <ShieldAlert className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+              <span className="text-amber-700 dark:text-amber-400 font-semibold">{fadCount} FAD számla</span>
+              <span className="text-amber-600/70 dark:text-amber-400/70">({formatCurrency(fadNetTotal)} nettó)</span>
+            </div>
+          )}
         </div>
 
       </div>
