@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
@@ -105,6 +105,7 @@ export function InvoiceItemsDialog({
       return (data || []) as InvoiceLineItem[];
     },
     enabled: open && !!invoiceId,
+    placeholderData: keepPreviousData,
   });
 
   // ── Query existing fixed assets linked to this invoice to prevent duplicates ──
@@ -258,7 +259,7 @@ export function InvoiceItemsDialog({
               <div className="flex items-center justify-center py-12">
                 <LoadingSpinner />
               </div>
-            ) : items.length === 0 ? (
+            ) : items.length === 0 && open ? (
               <div className="text-center py-12 text-muted-foreground">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
                   <Package className="h-8 w-8 opacity-50" />
@@ -268,7 +269,7 @@ export function InvoiceItemsDialog({
                   A tételek automatikusan lekérésre kerülnek a következő szinkronizáláskor.
                 </p>
               </div>
-            ) : (
+            ) : items.length === 0 ? null : (
               <div className="rounded-lg border border-border/50 overflow-hidden">
                 <Table>
                   <TableHeader>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -93,6 +93,7 @@ const InvoicesPage = () => {
   const [selectedNavInvoice, setSelectedNavInvoice] = useState<NavInvoice | null>(null);
   const [selectedSubmittedForItems, setSelectedSubmittedForItems] = useState<SubmittedInvoice | null>(null);
   const [filesDialogOpen, setFilesDialogOpen] = useState(false);
+  const dialogClosingRef = useRef(false); // prevents URL effect re-trigger during close
 
   // Issue date popover states (shared across tabs)
   const [issueDateFromOpen, setIssueDateFromOpen] = useState(false);
@@ -263,6 +264,9 @@ const InvoicesPage = () => {
     if (!invoiceIdFromUrl || !enabled) return;
     // Skip if action is 'files' — that opens a different dialog
     if (actionFromUrl === 'files') return;
+    // Skip if a dialog is already open or just closed (prevents re-trigger during close cycle)
+    if (itemsDialogOpen || submittedItemsDialogOpen || imageDialogOpen || editDialogOpen) return;
+    if (dialogClosingRef.current) return;
 
     // No action → just expand the row
     if (!actionFromUrl) {
@@ -1852,27 +1856,31 @@ const InvoicesPage = () => {
         onSave={handleEditSave}
       />
 
-      <InvoiceItemsDialog
-        open={itemsDialogOpen}
-        onOpenChange={(open) => { setItemsDialogOpen(open); if (!open) { setSelectedNavInvoice(null); setInvoiceParam(null); } }}
-        invoiceId={selectedNavInvoice?.id || ''}
-        invoiceNumber={selectedNavInvoice?.invoice_number || ''}
-        currency={selectedNavInvoice?.currency || 'HUF'}
-        source="nav"
-        invoiceDate={selectedNavInvoice?.invoice_issue_date || undefined}
-        supplierName={selectedNavInvoice?.supplier_name || undefined}
-      />
+      {(itemsDialogOpen || selectedNavInvoice) && (
+        <InvoiceItemsDialog
+          open={itemsDialogOpen}
+          onOpenChange={(open) => { setItemsDialogOpen(open); if (!open) { dialogClosingRef.current = true; setTimeout(() => { setInvoiceParam(null); setSelectedNavInvoice(null); dialogClosingRef.current = false; }, 500); } }}
+          invoiceId={selectedNavInvoice?.id || ''}
+          invoiceNumber={selectedNavInvoice?.invoice_number || ''}
+          currency={selectedNavInvoice?.currency || 'HUF'}
+          source="nav"
+          invoiceDate={selectedNavInvoice?.invoice_issue_date || undefined}
+          supplierName={selectedNavInvoice?.supplier_name || undefined}
+        />
+      )}
 
-      <InvoiceItemsDialog
-        open={submittedItemsDialogOpen}
-        onOpenChange={(open) => { setSubmittedItemsDialogOpen(open); if (!open) { setSelectedSubmittedForItems(null); setInvoiceParam(null); } }}
-        invoiceId={selectedSubmittedForItems?.id || ''}
-        invoiceNumber={selectedSubmittedForItems?.bizonylatsorszam || ''}
-        currency={selectedSubmittedForItems?.penznem || 'HUF'}
-        source="submitted"
-        invoiceDate={selectedSubmittedForItems?.kibocsatas_datuma || undefined}
-        supplierName={selectedSubmittedForItems?.elado_nev || undefined}
-      />
+      {(submittedItemsDialogOpen || selectedSubmittedForItems) && (
+        <InvoiceItemsDialog
+          open={submittedItemsDialogOpen}
+          onOpenChange={(open) => { setSubmittedItemsDialogOpen(open); if (!open) { dialogClosingRef.current = true; setTimeout(() => { setInvoiceParam(null); setSelectedSubmittedForItems(null); dialogClosingRef.current = false; }, 500); } }}
+          invoiceId={selectedSubmittedForItems?.id || ''}
+          invoiceNumber={selectedSubmittedForItems?.bizonylatsorszam || ''}
+          currency={selectedSubmittedForItems?.penznem || 'HUF'}
+          source="submitted"
+          invoiceDate={selectedSubmittedForItems?.kibocsatas_datuma || undefined}
+          supplierName={selectedSubmittedForItems?.elado_nev || undefined}
+        />
+      )}
     </div>
   );
 };
