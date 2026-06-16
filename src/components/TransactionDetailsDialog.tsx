@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { computeMatchStatus, getPaymentStatusBadge } from '@/hooks/useComputedStatus';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -410,6 +410,48 @@ export const TransactionDetailsDialog = ({
     }
   };
 
+  // ── Override logging for few-shot learning ──
+  const logMatchOverride = async (
+    correctedInvoiceId: string | null,
+    correctedMatchType: string,
+  ) => {
+    if (!transaction || !companyId) return;
+    try {
+      // Get the original partner name from currently matched invoice
+      const originalPartner = matchedInvoice?.elado_nev
+        || matchedNavInvoice?.supplier_name
+        || matchedNavInvoice?.customer_name
+        || matchedSalary?.név
+        || matchedSalary?.munkavallalo_neve
+        || null;
+
+      // Get the corrected partner name from the selected invoice in availableInvoices
+      const correctedInv = correctedInvoiceId
+        ? availableInvoices.find(inv => inv.id === correctedInvoiceId)
+        : null;
+      const correctedPartner = correctedInv?.elado_nev || null;
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      await supabase.from('match_overrides_log').insert({
+        company_id: companyId,
+        transaction_id: transaction.id,
+        original_invoice_id: transaction.matched_invoice_id || null,
+        original_match_type: transaction.match_type || null,
+        corrected_invoice_id: correctedInvoiceId,
+        corrected_match_type: correctedMatchType,
+        transaction_description: transaction.description || '',
+        transaction_amount: transaction.amount,
+        original_partner_name: originalPartner,
+        corrected_partner_name: correctedPartner,
+        created_by: user?.id || null,
+      });
+    } catch (e) {
+      // Fire-and-forget: don't block the main flow
+      console.warn('Failed to log match override:', e);
+    }
+  };
+
   const handleMatch = async () => {
     if (!transaction || !selectedInvoiceId) return;
 
@@ -426,6 +468,9 @@ export const TransactionDetailsDialog = ({
         .eq('id', transaction.id);
 
       if (error) throw error;
+
+      // Log the override for AI learning (fire-and-forget)
+      logMatchOverride(selectedInvoiceId, 'manual');
 
       toast({ title: 'Tranzakció sikeresen párosítva!' });
       onUpdate();
@@ -601,6 +646,9 @@ export const TransactionDetailsDialog = ({
         });
 
       if (error) throw error;
+
+      // Log the override for AI learning (fire-and-forget)
+      logMatchOverride(selectedInvoiceId, 'manual_extra');
 
       toast({ title: 'További számla sikeresen hozzáadva!' });
       setShowAddExtraMatch(false);
