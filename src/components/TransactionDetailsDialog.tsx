@@ -433,7 +433,7 @@ export const TransactionDetailsDialog = ({
 
       const { data: { user } } = await supabase.auth.getUser();
 
-      await supabase.from('match_overrides_log').insert({
+      await supabase.from('match_transaction_overrides_log').insert({
         company_id: companyId,
         transaction_id: transaction.id,
         original_invoice_id: transaction.matched_invoice_id || null,
