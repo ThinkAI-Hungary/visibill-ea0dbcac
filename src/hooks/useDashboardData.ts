@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useRef } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
@@ -300,21 +300,90 @@ export function useDashboardData() {
     placeholderData: keepPreviousData,
   });
 
-  // ── Petty cash ──
-  const { data: pettyCashBalance = null } = useQuery<number | null>({
-    queryKey: queryKeys.dashboardPettyCash(companyId),
+  // ── Petty cash (multi-register) ──
+  const { data: pettyCashBalances = [] } = useQuery<{ currency: string; balance: number }[]>({
+    queryKey: queryKeys.pettyCashSummary(companyId),
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_petty_cash_balance', {
+      const { data, error } = await supabase.rpc('get_petty_cash_summary', {
         p_company_id: companyId,
       });
       if (error) throw error;
-      const row = data?.[0];
-      if (!row || !row.has_settings) return null;
-      return Number(row.balance);
+      // Aggregate across all registers by currency
+      const byCurrency: Record<string, number> = {};
+      ((data || []) as any[]).forEach((row: any) => {
+        const cur = row.currency || 'HUF';
+        byCurrency[cur] = (byCurrency[cur] || 0) + Number(row.current_balance || 0);
+      });
+      return Object.entries(byCurrency)
+        .map(([currency, balance]) => ({ currency, balance }))
+        .sort((a, b) => a.currency === 'HUF' ? -1 : b.currency === 'HUF' ? 1 : a.currency.localeCompare(b.currency));
     },
     enabled: !!user && !!companyId,
     placeholderData: keepPreviousData,
   });
+
+  // ── FX Differences (devizás árfolyam-különbözet) ──
+  // Auto-fetches MNB rates if the daily_exchange_rates table is empty.
+  const fxRatesFetchedRef = useRef(false);
+
+  const { data: fxDifferences = [], refetch: refetchFx } = useQuery<any[]>({
+    queryKey: queryKeys.fxDifferences(companyId, dateFromFormatted, dateToFormatted),
+    queryFn: async () => {
+      // 1. Check if daily_exchange_rates has any data
+      const { count } = await supabase
+        .from('daily_exchange_rates' as any)
+        .select('id', { count: 'exact', head: true })
+        .limit(1);
+
+      // 2. If no rates exist and we haven't tried fetching yet, auto-fetch from MNB
+      if ((count === null || count === 0) && !fxRatesFetchedRef.current) {
+        fxRatesFetchedRef.current = true;
+        console.log('[FX] No MNB rates found, auto-fetching...');
+        try {
+          const { data: session } = await supabase.auth.getSession();
+          const token = session?.session?.access_token;
+          if (token) {
+            await supabase.functions.invoke('fetch-mnb-rates', {
+              headers: { Authorization: `Bearer ${token}` },
+              body: {
+                date_from: `${new Date().getFullYear() - 1}-01-01`,
+                date_to: new Date().toISOString().split('T')[0],
+              },
+            });
+            console.log('[FX] MNB rates fetched successfully');
+          }
+        } catch (e) {
+          console.warn('[FX] Failed to auto-fetch MNB rates:', e);
+        }
+      }
+
+      // 3. Now query the actual FX differences
+      const { data, error } = await supabase.rpc('get_fx_differences', {
+        p_company_id: companyId,
+        p_date_from: dateFromFormatted,
+        p_date_to: dateToFormatted,
+      });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!user && !!companyId,
+    placeholderData: keepPreviousData,
+  });
+
+  // ── FX Monthly Summary (havi összesítés) ──
+  const fxMonthlySummary = useMemo(() => {
+    const months: Record<string, { month: string; gain: number; loss: number; net: number; count: number }> = {};
+    (fxDifferences || []).forEach((row: any) => {
+      const m = row.settlement_month || 'unknown';
+      if (!months[m]) months[m] = { month: m, gain: 0, loss: 0, net: 0, count: 0 };
+      const diff = Number(row.fx_difference || 0);
+      if (diff > 0) months[m].gain += diff;
+      else months[m].loss += diff;
+      months[m].net += diff;
+      months[m].count += 1;
+    });
+    return Object.values(months).sort((a, b) => a.month.localeCompare(b.month));
+  }, [fxDifferences]);
 
   // ── Analytics raw data (always full current year) ──
   const { data: analyticsRaw, isLoading: analyticsLoading } = useQuery({
@@ -688,7 +757,9 @@ export function useDashboardData() {
     metrics,
     metricsLoading,
     navVatData,
-    pettyCashBalance,
+    pettyCashBalances,
+    fxDifferences,
+    fxMonthlySummary,
     invoices,
     analyticsLoading,
     vatBreakdown,

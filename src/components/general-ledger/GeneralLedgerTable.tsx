@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, forwardRef, useImperativeHandle, useEffect, useRef, useDeferredValue } from 'react';
+import React, { useState, useMemo, forwardRef, useImperativeHandle, useEffect, useRef, useDeferredValue } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -382,8 +382,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     const leaves = tableData.filter(d => !d.hasChildren);
     const totalDebit = leaves.filter(d => d.balance > 0).reduce((s, d) => s + d.balance, 0);
     const totalCredit = leaves.filter(d => d.balance < 0).reduce((s, d) => s + Math.abs(d.balance), 0);
-    const totalItemCount = dbItems?.length || 0;
-    const classifiedItemCount = totalItemCount - orphanCount;
+    const aiItems = dbItems?.filter(i => i.source_table !== 'journal_entry') || [];
+    const totalItemCount = aiItems.length;
+    const aiOrphanCount = aiItems.filter(i => i.gl_account_id === '00000000-0000-0000-0000-000000000000' && !i.is_excluded).length;
+    const classifiedItemCount = totalItemCount - aiOrphanCount;
     onStatsChange({ accountCount: tableData.length, leafCount: leaves.length, totalDebit, totalCredit, classifiedItems: classifiedItemCount, totalItems: totalItemCount });
   }, [tableData, onStatsChange, dbItems, orphanCount]);
   

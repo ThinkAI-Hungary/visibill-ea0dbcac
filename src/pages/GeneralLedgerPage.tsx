@@ -12,7 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2 } from 'lucide-react';
+import { Download, UploadCloud, Database, Bot, Loader2, Search, FileText, ChevronDown, Eye, Printer, Maximize2, Minimize2, FileUp, Trash2 } from 'lucide-react';
+import { UploadAuditXmlModal } from '@/components/general-ledger/UploadAuditXmlModal';
+import { AuditImportHistoryModal } from '@/components/general-ledger/AuditImportHistoryModal';
 import GeneralLedgerTable, { GeneralLedgerTableRef } from '@/components/general-ledger/GeneralLedgerTable';
 import { UploadChartOfAccountsModal } from '@/components/general-ledger/UploadChartOfAccountsModal';
 import { ManagePresetsModal } from '@/components/general-ledger/ManagePresetsModal';
@@ -33,11 +35,33 @@ export default function GeneralLedgerPage() {
   const [partnerBreakdown, setPartnerBreakdown] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [manageModalOpen, setManageModalOpen] = useState(false);
+  const [auditXmlModalOpen, setAuditXmlModalOpen] = useState(false);
+  const [auditHistoryOpen, setAuditHistoryOpen] = useState(false);
   const [isAIRunning, setIsAIRunning] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
   const [glStats, setGlStats] = useState<{ accountCount: number; leafCount: number; totalDebit: number; totalCredit: number; classifiedItems: number; totalItems: number } | null>(null);
   const tableRef = useRef<GeneralLedgerTableRef>(null);
   const handleStatsChange = useCallback((stats: typeof glStats) => setGlStats(stats), []);
+
+  // ── Audit imports: auto-detect completed import ──
+  const { data: auditImports } = useQuery({
+    queryKey: ['auditImports', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      const { data, error } = await supabase
+        .from('gl_audit_imports')
+        .select('id, file_name, period_start, period_end, processing_status, entry_count, source_program, imported_at, error_message')
+        .eq('company_id', selectedCompany.id)
+        .order('imported_at', { ascending: false });
+      if (error) return [];
+      return data || [];
+    },
+    enabled: !!selectedCompany?.id,
+    refetchInterval: 10000,
+  });
+
+  // Auto-use the latest completed import (no toggle needed)
+  const activeAuditImport = auditImports?.find(i => i.processing_status === 'completed') || null;
 
   // ── URL deep-linking for modals ──
   const [searchParams, setSearchParams] = useSearchParams();
@@ -191,6 +215,7 @@ export default function GeneralLedgerPage() {
       />
 
       <div className="flex flex-col gap-3 print:hidden">
+
           {/* Preset Selector & Action */}
           <div className="flex items-center justify-end gap-3 bg-card p-3 rounded-xl border border-border shadow-sm">
             <div className="flex items-center gap-2">
@@ -222,6 +247,14 @@ export default function GeneralLedgerPage() {
               <Button onClick={handleOpenUpload} size="sm" className="h-9 gap-2">
                 <UploadCloud className="w-4 h-4" />
                 <span>Új feltöltése</span>
+              </Button>
+              <Button onClick={() => setAuditXmlModalOpen(true)} size="sm" variant="outline" className="h-9 gap-2">
+                <FileUp className="w-4 h-4" />
+                <span>XML Import</span>
+              </Button>
+              <Button onClick={() => setAuditHistoryOpen(true)} size="sm" variant="outline" className="h-9 gap-2">
+                <FileText className="w-4 h-4" />
+                <span>XML Importok</span>
               </Button>
               <Button 
                 onClick={handleRunAI} 
@@ -280,12 +313,12 @@ export default function GeneralLedgerPage() {
               <div><div className="text-lg font-bold tabular-nums">{glStats.leafCount}</div><div className="text-[11px] text-muted-foreground">Analitikus számlák</div></div>
             </div>
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
-              <div className="bg-emerald-500/10 text-emerald-600 p-2 rounded-lg"><Download className="w-4 h-4 rotate-180" /></div>
-              <div><div className="text-lg font-bold tabular-nums text-emerald-600">{fmtHuf(glStats.totalDebit)}</div><div className="text-[11px] text-muted-foreground">Tartozik (Ft)</div></div>
+              <div className="bg-orange-500/10 text-orange-500 p-2 rounded-lg"><Download className="w-4 h-4 rotate-180" /></div>
+              <div><div className="text-lg font-bold tabular-nums">{fmtHuf(glStats.totalDebit)}</div><div className="text-[11px] text-muted-foreground">Tartozik (Ft)</div></div>
             </div>
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
-              <div className="bg-red-500/10 text-red-500 p-2 rounded-lg"><Download className="w-4 h-4" /></div>
-              <div><div className="text-lg font-bold tabular-nums text-red-500">{fmtHuf(glStats.totalCredit)}</div><div className="text-[11px] text-muted-foreground">Követel (Ft)</div></div>
+              <div className="bg-sky-500/10 text-sky-500 p-2 rounded-lg"><Download className="w-4 h-4" /></div>
+              <div><div className="text-lg font-bold tabular-nums">{fmtHuf(glStats.totalCredit)}</div><div className="text-[11px] text-muted-foreground">Követel (Ft)</div></div>
             </div>
           </div>
           {/* ── Classification Progress Bar (F2) ── */}
@@ -355,7 +388,14 @@ export default function GeneralLedgerPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <GeneralLedgerTable ref={tableRef} presetId={activePresetId} dateFrom={dateFrom} dateTo={dateTo} globalSearch={globalSearch} onStatsChange={handleStatsChange} />
+          <GeneralLedgerTable
+            ref={tableRef}
+            presetId={activePresetId}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            globalSearch={globalSearch}
+            onStatsChange={handleStatsChange}
+          />
         </CardContent>
       </Card>
 
@@ -368,11 +408,24 @@ export default function GeneralLedgerPage() {
         }}
       />
 
+      <UploadAuditXmlModal
+        open={auditXmlModalOpen}
+        onOpenChange={setAuditXmlModalOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['auditImports'] });
+        }}
+      />
+
       <ManagePresetsModal
         open={manageModalOpen}
         onOpenChange={handleCloseManage}
         presets={presets || []}
         companyId={selectedCompany?.id}
+      />
+
+      <AuditImportHistoryModal
+        open={auditHistoryOpen}
+        onOpenChange={setAuditHistoryOpen}
       />
 
       {/* F5: Print Preview Dialog */}

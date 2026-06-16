@@ -1,6 +1,6 @@
 # Visibill — Architecture Overview
 
-> **Verzió:** 1.2 | **Dátum:** 2026-06-14  
+> **Verzió:** 1.3 | **Dátum:** 2026-06-16  
 > **Kapcsolódó:** [Business Overview](../business/overview.md) · [PRD](../product/prd.md) · [Design System](../design/00-overview.md)
 
 ---
@@ -33,8 +33,9 @@ A Visibill egy három rétegű rendszer:
 │  ├─────────────────────────────────────────┤ │
 │  │  Storage (számla képek, PDF-ek)         │ │
 │  ├─────────────────────────────────────────┤ │
-│  │  Edge Functions (46 Deno function)      │ │
+│  │  Edge Functions (47 Deno function)      │ │
 │  │   • NAV sync, email, trigger-ek         │ │
+│  │   • MNB árfolyam letöltés (SOAP API)    │ │
 │  │   • CORS, auth validation               │ │
 │  └─────────────────────────────────────────┘ │
 │  Hosting: Supabase Cloud                      │
@@ -80,6 +81,44 @@ DB UPDATE (feldolgozott adatok)      DB UPDATE (párosított tételek)
   │
   ▼
 Frontend (React Query invalidation → friss adat)
+```
+
+### XML főkönyvi import
+
+```
+XML feltöltés (frontend)
+  │
+  ▼
+Supabase Storage (`gl_uploads` bucket)
+  │
+  ▼
+Edge Function (process-gl-upload)
+  │
+  ├── XML parsing (RLB/Novitax/Kulcs-Soft/KÖKÉNY)
+  ├── Számlatükör importálás (gl_accounts)
+  └── Tétel import (gl_entries)
+  │
+  ▼
+Eredménykimutatás + Mérleg + Beszámoló oldalak
+```
+
+### MNB árfolyam szinkronizálás
+
+```
+Dashboard betöltés (auto-trigger, ha üres a daily_exchange_rates tábla)
+  │
+  ▼
+Edge Function (fetch-mnb-rates)
+  │
+  ├── MNB SOAP API hívás (http://www.mnb.hu/arfolyamok.asmx)
+  ├── XML válasz parsing (13 deviza, napi szinten)
+  └── Upsert: daily_exchange_rates (onConflict: rate_date, currency, source)
+  │
+  ▼
+RPC: get_fx_differences (számla teljesítés vs. befolyás árfolyam összehasonlítás)
+  │
+  ▼
+Dashboard: FxDifferencesSection (KPI kártyák + bar chart + tételszintű tábla)
 ```
 
 ---

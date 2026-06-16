@@ -4,12 +4,17 @@ import { Upload, ArrowUpRight, ArrowDownLeft, TrendingUp, Banknote, Wallet, Euro
 import { formatCurrency } from '@/lib/utils';
 import type { DashboardMetrics as Metrics, NavVatData } from '@/hooks/useDashboardData';
 
+interface PettyCashCurrencyBalance {
+  currency: string;
+  balance: number;
+}
+
 interface DashboardMetricsProps {
   metrics: Metrics;
   navVatData: NavVatData | undefined;
   showBrutto: boolean;
   selectedCurrency: string;
-  pettyCashBalance: number | null;
+  pettyCashBalances: PettyCashCurrencyBalance[];
   convertToSelectedCurrency: (amount: number, fromCurrency: string, selectedCurrency: string) => number;
 }
 
@@ -18,7 +23,7 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
   navVatData,
   showBrutto,
   selectedCurrency,
-  pettyCashBalance,
+  pettyCashBalances,
   convertToSelectedCurrency,
 }: DashboardMetricsProps) {
   let payableVat = 0;
@@ -74,10 +79,14 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
       />
       <MetricCard
         title="Házipénztár"
-        value={formatCurrency(pettyCashBalance ?? 0)}
-        description="Aktuális készpénz egyenleg"
+        value={
+          pettyCashBalances.length > 0
+            ? pettyCashBalances.map(b => formatCurrency(Math.round(b.currency === 'HUF' ? Math.round(b.balance / 5) * 5 : b.balance * 100) / (b.currency === 'HUF' ? 1 : 100), b.currency)).join(' | ')
+            : '—'
+        }
+        description="Összesített készpénz egyenleg"
         icon={Banknote}
-        variant={pettyCashBalance !== null && pettyCashBalance >= 0 ? 'success' : 'destructive'}
+        variant={pettyCashBalances.length > 0 && pettyCashBalances.every(b => b.balance >= 0) ? 'success' : pettyCashBalances.length === 0 ? 'default' : 'destructive'}
       />
       <MetricCard
         title={`Kiadás (${showBrutto ? 'bruttó' : 'nettó'})`}

@@ -1,6 +1,6 @@
 # Visibill — Product Requirements: Döntések
 
-> **Utoljára frissítve:** 2026-06-08  
+> **Utoljára frissítve:** 2026-06-16  
 > **Összesen:** 33 döntés | ✅ Decided: 30 | ⛔ Superseded: 2 | 🔴 Open: 1
 
 ---
@@ -43,7 +43,7 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 |---|--------|---------|------|
 | P-016 | Tranzakció lista + futár tab | ✅ Decided | [P-016](./P-016-transaction-list.md) |
 | P-017 | AI párosítás megjelenítés (confidence + reason) | ✅ Decided | [P-017](./P-017-matching-display.md) |
-| P-018 | Manuális párosítás felülírás | ✅ Decided | [P-018](./P-018-manual-matching.md) |
+| P-018 | Manuális párosítás felülírás + ML tanulás + deviza-tudatos | ✅ Decided | [P-018](./P-018-manual-matching.md) |
 
 ## 📒 Főkönyv & Riportok
 
@@ -65,7 +65,7 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| P-025 | Settings oldal struktúra (4 szekció) | ✅ Decided | [P-025](./P-025-settings-structure.md) |
+| P-025 | Settings oldal struktúra (5 szekció + FX beállítások) | ✅ Decided | [P-025](./P-025-settings-structure.md) |
 | P-026 | Cégprofil adatok (alap + alias + telephely) | ✅ Decided | [P-026](./P-026-company-profile.md) |
 | P-027 | Csapattagok kezelés (share token) | ✅ Decided | [P-027](./P-027-team-management.md) |
 

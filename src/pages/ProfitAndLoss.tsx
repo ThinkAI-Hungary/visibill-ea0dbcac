@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText, Maximize2, Minimize2, ClipboardCopy, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText, Maximize2, Minimize2, ClipboardCopy, ExternalLink, AlertTriangle, Wand2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
@@ -29,7 +29,40 @@ import { reportError } from '@/lib/errorReporter';
 
 
 
-function PnlMappingTab({ presetId }: { presetId?: string }) {
+// ── Default PnL mapping rules based on Hungarian Sztv. "A" variant ──
+const DEFAULT_PNL_RULES: Array<{ prefix: string; pnlId: string; label: string }> = [
+  // 5. Költségnemek
+  { prefix: '51', pnlId: '00000000-0000-0000-0000-000000000400', label: 'IV. Anyagjellegű' },
+  { prefix: '52', pnlId: '00000000-0000-0000-0000-000000000400', label: 'IV. Anyagjellegű' },
+  { prefix: '53', pnlId: '00000000-0000-0000-0000-000000000400', label: 'IV. Anyagjellegű' },
+  { prefix: '54', pnlId: '00000000-0000-0000-0000-000000000500', label: 'V. Személyi' },
+  { prefix: '55', pnlId: '00000000-0000-0000-0000-000000000500', label: 'V. Személyi' },
+  { prefix: '56', pnlId: '00000000-0000-0000-0000-000000000500', label: 'V. Személyi' },
+  { prefix: '57', pnlId: '00000000-0000-0000-0000-000000000600', label: 'VI. ÉCS' },
+  { prefix: '58', pnlId: '00000000-0000-0000-0000-000000000200', label: 'II. Aktivált saját' },
+  // 8. Értékesítés elszámolt önköltsége és ráfordítások
+  { prefix: '81', pnlId: '00000000-0000-0000-0000-000000000400', label: 'IV. Anyagjellegű' },
+  { prefix: '82', pnlId: '00000000-0000-0000-0000-000000000500', label: 'V. Személyi' },
+  { prefix: '83', pnlId: '00000000-0000-0000-0000-000000000600', label: 'VI. ÉCS' },
+  { prefix: '84', pnlId: '00000000-0000-0000-0000-000000000700', label: 'VII. Egyéb ráford.' },
+  { prefix: '85', pnlId: '00000000-0000-0000-0000-000000000700', label: 'VII. Egyéb ráford.' },
+  { prefix: '86', pnlId: '00000000-0000-0000-0000-000000000700', label: 'VII. Egyéb ráford.' },
+  { prefix: '87', pnlId: '00000000-0000-0000-0000-000000001000', label: 'IX. Pénzügyi ráford.' },
+  { prefix: '88', pnlId: '00000000-0000-0000-0000-000000000700', label: 'VII. Egyéb ráford.' },
+  { prefix: '89', pnlId: '00000000-0000-0000-0000-000000001300', label: 'X. Adófizetési' },
+  // 9. Értékesítés árbevétele és bevételek
+  { prefix: '91', pnlId: '00000000-0000-0000-0000-000000000100', label: 'I. Árbevétel' },
+  { prefix: '92', pnlId: '00000000-0000-0000-0000-000000000100', label: 'I. Árbevétel' },
+  { prefix: '93', pnlId: '00000000-0000-0000-0000-000000000100', label: 'I. Árbevétel' },
+  { prefix: '94', pnlId: '00000000-0000-0000-0000-000000000100', label: 'I. Árbevétel' },
+  { prefix: '95', pnlId: '00000000-0000-0000-0000-000000000100', label: 'I. Árbevétel' },
+  { prefix: '96', pnlId: '00000000-0000-0000-0000-000000000300', label: 'III. Egyéb bevétel' },
+  { prefix: '97', pnlId: '00000000-0000-0000-0000-000000000900', label: 'VIII. Pénzügyi bev.' },
+  // 98. Rendkívüli bevételek (2016 után → III. Egyéb bevételek)
+  { prefix: '98', pnlId: '00000000-0000-0000-0000-000000000300', label: 'III. Egyéb bevétel' },
+];
+
+function PnlMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGenericPreset?: boolean }) {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -127,6 +160,41 @@ function PnlMappingTab({ presetId }: { presetId?: string }) {
     setHasChanges(true);
   };
 
+  const handleAutoAssign = () => {
+    if (!glAccounts) return;
+    const newMappings: Record<string, string> = { ...mappings };
+    const cleanId = (id: string) => id ? String(id).replace(/\./g, '') : '';
+    let assignedCount = 0;
+
+    glAccounts.forEach(gl => {
+      const clean = cleanId(gl.gl_number);
+      // Only map leaf accounts (no children)
+      const hasChildren = glAccounts.some(other => {
+        const otherClean = cleanId(other.gl_number);
+        return otherClean.startsWith(clean) && otherClean !== clean;
+      });
+      if (hasChildren) return;
+
+      // Find matching rule (longest prefix match)
+      let bestRule: typeof DEFAULT_PNL_RULES[0] | null = null;
+      for (const rule of DEFAULT_PNL_RULES) {
+        if (clean.startsWith(rule.prefix)) {
+          if (!bestRule || rule.prefix.length > bestRule.prefix.length) {
+            bestRule = rule;
+          }
+        }
+      }
+      if (bestRule) {
+        newMappings[gl.id] = bestRule.pnlId;
+        assignedCount++;
+      }
+    });
+
+    setMappings(newMappings);
+    setHasChanges(true);
+    toast({ title: 'Automatikus hozzárendelés kész', description: `${assignedCount} főkönyvi szám hozzárendelve a Sztv. "A" változat szerint. Ellenőrizd és mentsd el!` });
+  };
+
   const toggleRow = (id: string, hasChildren: boolean) => {
     if (!hasChildren) return;
     setExpandedRowIds(prev => {
@@ -178,14 +246,26 @@ function PnlMappingTab({ presetId }: { presetId?: string }) {
           <h3 className="text-lg font-medium">Főkönyvi számok párosítása</h3>
           <p className="text-sm text-muted-foreground">Rendeld hozzá az aktuális számlatükör elemeit az Eredménykimutatás hivatalos soraihoz.</p>
         </div>
-        <Button 
-          onClick={() => saveMutation.mutate()} 
-          disabled={!hasChanges || saveMutation.isPending}
-          className="gap-2"
-        >
-          {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          Mentés
-        </Button>
+        <div className="flex items-center gap-2">
+          {isGenericPreset && (
+            <Button
+              variant="outline"
+              onClick={handleAutoAssign}
+              className="gap-2"
+            >
+              <Wand2 className="w-4 h-4" />
+              Alapértelmezett hozzárendelés
+            </Button>
+          )}
+          <Button 
+            onClick={() => saveMutation.mutate()} 
+            disabled={!hasChanges || saveMutation.isPending}
+            className="gap-2"
+          >
+            {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Mentés
+          </Button>
+        </div>
       </div>
 
       <div className="border rounded-md">
@@ -899,7 +979,7 @@ export default function ProfitAndLoss() {
               </div>
             </CardHeader>
             <CardContent className="pt-6">
-              <PnlMappingTab presetId={activePresetId} />
+              <PnlMappingTab presetId={activePresetId} isGenericPreset={presets?.find(p => p.id === activePresetId)?.type === 'generic'} />
             </CardContent>
           </Card>
         </TabsContent>

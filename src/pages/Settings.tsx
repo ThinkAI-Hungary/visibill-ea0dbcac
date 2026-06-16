@@ -242,6 +242,89 @@ function CompanyMembersCard({ companyId, companyName, ownerId, isOwnerOrAdmin, t
   );
 }
 
+function FxSettingsCard({ companyId, toast }: { companyId: string; toast: any }) {
+  const queryClient = useQueryClient();
+  const [saving, setSaving] = useState(false);
+
+  const { data: fxSettings, isLoading } = useQuery({
+    queryKey: queryKeys.fxSettings(companyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('company_fx_settings' as any)
+        .select('*')
+        .eq('company_id', companyId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const [rateSource, setRateSource] = useState('MNB');
+
+  useEffect(() => {
+    if (fxSettings?.rate_source) setRateSource(fxSettings.rate_source);
+  }, [fxSettings]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      if (fxSettings) {
+        const { error } = await supabase
+          .from('company_fx_settings' as any)
+          .update({ rate_source: rateSource, updated_at: new Date().toISOString() } as any)
+          .eq('company_id', companyId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('company_fx_settings' as any)
+          .insert({ company_id: companyId, rate_source: rateSource } as any);
+        if (error) throw error;
+      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.fxSettings(companyId) });
+      toast({ title: 'Siker', description: 'Árfolyam beállítások mentve.' });
+    } catch (err: any) {
+      toast({ title: 'Hiba', description: err.message || 'Nem sikerült menteni.', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (isLoading) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Building2 className="h-5 w-5" />
+          Árfolyam-forrás
+        </CardTitle>
+        <CardDescription>
+          Melyik intézmény napi árfolyamát használja a rendszer a devizás árfolyam-különbözet számításhoz?
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center gap-3">
+          <select
+            value={rateSource}
+            onChange={(e) => setRateSource(e.target.value)}
+            className="flex h-10 w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="MNB">MNB (Magyar Nemzeti Bank)</option>
+            <option value="ECB" disabled>EKB (Európai Központi Bank) — hamarosan</option>
+            <option value="BANK" disabled>Számlavezető bank — hamarosan</option>
+          </select>
+          <Button onClick={save} disabled={saving} size="sm">
+            {saving ? 'Mentés...' : 'Mentés'}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          Az MNB napi árfolyama a számviteli szabályok szerint a leggyakoribb választás.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Types ──
 
 interface Profile { name: string; company: string; position: string; avatar_url: string; }
@@ -433,6 +516,9 @@ export default function Settings() {
             )}
             {selectedCompany && (
               <CompanyMembersCard companyId={selectedCompany.id} companyName={selectedCompany.name} ownerId={selectedCompany.owner_id} isOwnerOrAdmin={isAdmin} toast={toast} />
+            )}
+            {selectedCompany && (
+              <FxSettingsCard companyId={selectedCompany.id} toast={toast} />
             )}
           </BusinessSection>
         </TabsContent>

@@ -36,6 +36,7 @@ export function useDashboardPreferences() {
   const [selectedCurrency, setSelectedCurrency] = useState<string>('HUF');
   const [vatSectionOpen, setVatSectionOpen] = useState(true);
   const [revenueSectionOpen, setRevenueSectionOpen] = useState(true);
+  const [fxSectionOpen, setFxSectionOpen] = useState(true);
 
   const setShowBrutto = useCallback((v: boolean) => {
     setShowBruttoRaw(v);
@@ -61,5 +62,7 @@ export function useDashboardPreferences() {
     setVatSectionOpen,
     revenueSectionOpen,
     setRevenueSectionOpen,
+    fxSectionOpen,
+    setFxSectionOpen,
   };
 }

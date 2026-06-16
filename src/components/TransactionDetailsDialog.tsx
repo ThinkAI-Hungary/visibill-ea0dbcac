@@ -704,14 +704,47 @@ export const TransactionDetailsDialog = ({
     // When no search: only show invoices within tolerance of transaction amount
     if (!search) {
       if (txAmt > 0) {
-        list = list.filter(inv => {
-          const invHuf = Math.abs(toHuf(inv.brutto_vegosszeg || 0, inv.penznem));
-          const diff = Math.abs(invHuf - txAmt);
+        const txCcy = (transaction?.currency || 'HUF').toUpperCase();
+
+        const filtered = list.filter(inv => {
+          const invCcy = (inv.penznem || 'HUF').toUpperCase();
+          const isSameCcy = txCcy === invCcy;
+
+          // Compare in the same unit
+          const invAmt = isSameCcy
+            ? Math.abs(inv.brutto_vegosszeg || 0)
+            : Math.abs(toHuf(inv.brutto_vegosszeg || 0, inv.penznem));
+          const txComp = isSameCcy
+            ? txAmt
+            : toHuf(txAmt, transaction?.currency);
+
+          const diff = Math.abs(invAmt - txComp);
           // Use wider tolerance (50%) for cross-currency, 30% for same currency
-          const isCrossCurrency = (inv.penznem || 'HUF').toUpperCase() !== (transaction?.currency || 'HUF').toUpperCase();
-          const tolerance = isCrossCurrency ? 0.50 : 0.30;
-          return diff / txAmt <= tolerance;
+          const tolerance = isSameCcy ? 0.30 : 0.50;
+          return diff / txComp <= tolerance;
         });
+
+        // Always show at least 10 invoices (sorted by proximity) so the UI
+        // never appears completely empty — which can confuse users.
+        const MIN_SHOW = 10;
+        if (filtered.length >= MIN_SHOW) {
+          list = filtered;
+        } else {
+          // Sort full list by amount proximity, take top MIN_SHOW
+          // Prioritize same-currency invoices
+          const sorted = [...list].sort((a, b) => {
+            const aSame = (a.penznem || 'HUF').toUpperCase() === txCcy;
+            const bSame = (b.penznem || 'HUF').toUpperCase() === txCcy;
+            // Same-currency invoices come first
+            if (aSame !== bSame) return aSame ? -1 : 1;
+
+            const aAmt = aSame ? Math.abs(a.brutto_vegosszeg || 0) : toHuf(Math.abs(a.brutto_vegosszeg || 0), a.penznem);
+            const bAmt = bSame ? Math.abs(b.brutto_vegosszeg || 0) : toHuf(Math.abs(b.brutto_vegosszeg || 0), b.penznem);
+            const txComp = aSame ? txAmt : toHuf(txAmt, transaction?.currency);
+            return Math.abs(aAmt - txComp) - Math.abs(bAmt - txComp);
+          });
+          list = sorted.slice(0, Math.max(MIN_SHOW, filtered.length));
+        }
       }
     } else {
       // When searching: match text, no amount filter
@@ -737,12 +770,21 @@ export const TransactionDetailsDialog = ({
       });
     }
 
-    // Always sort by proximity to transaction amount (FX-converted to HUF)
+    // Always sort by proximity to transaction amount (currency-aware)
+    const txCcyFinal = (transaction?.currency || 'HUF').toUpperCase();
     list.sort((a, b) => {
-      const aHuf = Math.abs(toHuf(a.brutto_vegosszeg || 0, a.penznem));
-      const bHuf = Math.abs(toHuf(b.brutto_vegosszeg || 0, b.penznem));
-      const diffA = Math.abs(aHuf - txAmt);
-      const diffB = Math.abs(bHuf - txAmt);
+      const aCcy = (a.penznem || 'HUF').toUpperCase();
+      const bCcy = (b.penznem || 'HUF').toUpperCase();
+      // Same-currency invoices get priority
+      const aSame = aCcy === txCcyFinal;
+      const bSame = bCcy === txCcyFinal;
+      if (aSame !== bSame) return aSame ? -1 : 1;
+
+      const aAmt = aSame ? Math.abs(a.brutto_vegosszeg || 0) : toHuf(Math.abs(a.brutto_vegosszeg || 0), a.penznem);
+      const bAmt = bSame ? Math.abs(b.brutto_vegosszeg || 0) : toHuf(Math.abs(b.brutto_vegosszeg || 0), b.penznem);
+      const txComp = aSame ? txAmt : toHuf(txAmt, transaction?.currency);
+      const diffA = Math.abs(aAmt - txComp);
+      const diffB = Math.abs(bAmt - txComp);
       return diffA - diffB;
     });
 
@@ -1228,13 +1270,32 @@ export const TransactionDetailsDialog = ({
                     {filteredInvoices.map((invoice) => {
                       const isSelected = selectedInvoiceId === invoice.id;
                       const invoiceAmt = invoice.brutto_vegosszeg || 0;
-                      const invoiceHuf = toHuf(Math.abs(invoiceAmt), invoice.penznem);
+                      const txCurrency = (transaction.currency || 'HUF').toUpperCase();
+                      const invCurrency = (invoice.penznem || 'HUF').toUpperCase();
+                      const isSameCurrency = txCurrency === invCurrency;
+
+                      // Compare in the same unit: if same currency, compare directly;
+                      // otherwise convert both to HUF for comparison
                       const txAbs = Math.abs(transactionAmount);
-                      const diff = invoiceHuf - txAbs;
+                      let compareInvAmt: number;
+                      let compareTxAmt: number;
+                      let diffCurrency: string;
+
+                      if (isSameCurrency) {
+                        compareInvAmt = Math.abs(invoiceAmt);
+                        compareTxAmt = txAbs;
+                        diffCurrency = invCurrency;
+                      } else {
+                        compareInvAmt = toHuf(Math.abs(invoiceAmt), invoice.penznem);
+                        compareTxAmt = toHuf(txAbs, transaction.currency);
+                        diffCurrency = 'HUF';
+                      }
+
+                      const diff = compareInvAmt - compareTxAmt;
                       const absDiff = Math.abs(diff);
-                      const isExact = absDiff < 1;
-                      const isNear = !isExact && txAbs > 0 && absDiff < txAbs * 0.05;
-                      const pctDiff = txAbs > 0 ? (absDiff / txAbs * 100) : 0;
+                      const isExact = absDiff < (isSameCurrency ? 0.01 : 1);
+                      const isNear = !isExact && compareTxAmt > 0 && absDiff < compareTxAmt * 0.05;
+                      const pctDiff = compareTxAmt > 0 ? (absDiff / compareTxAmt * 100) : 0;
 
                       const partnerName = invoice.elado_nev?.toLowerCase() || '';
                       const txDesc = transaction.description?.toLowerCase() || '';
@@ -1308,7 +1369,7 @@ export const TransactionDetailsDialog = ({
                                 </Badge>
                               ) : (
                                 <span className="text-[10px] text-muted-foreground/60 mt-0.5 block">
-                                  {diff > 0 ? '+' : ''}{formatCurrency(diff, 'HUF')}
+                                  {diff > 0 ? '+' : ''}{formatCurrency(diff, diffCurrency)}
                                 </span>
                               )}
                             </div>

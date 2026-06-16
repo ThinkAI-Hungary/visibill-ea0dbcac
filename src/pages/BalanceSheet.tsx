@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2, ReceiptText, ClipboardCopy } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, FileText, CheckCircle2, AlertTriangle, Lock, Maximize2, Minimize2, ReceiptText, ClipboardCopy, Wand2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
@@ -24,8 +24,134 @@ import { exportBsExcel } from '@/lib/bsExport';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { reportError } from '@/lib/errorReporter';
 
+// ── Default BS mapping rules based on Hungarian Sztv. "A" variant ──
+// Maps GL account prefixes (class 1-4) to bs_structure arabic/roman leaf rows
+const DEFAULT_BS_RULES: Array<{ prefix: string; bsId: string; label: string }> = [
+  // 1. Befektetett eszközök
+  // A/I. Immateriális javak
+  { prefix: '111', bsId: '00000000-0000-0000-0001-000000000111', label: 'A/I/1. Alapítás-átszervezés' },
+  { prefix: '112', bsId: '00000000-0000-0000-0001-000000000112', label: 'A/I/2. Kísérleti fejlesztés' },
+  { prefix: '113', bsId: '00000000-0000-0000-0001-000000000113', label: 'A/I/3. Vagyoni értékű jogok' },
+  { prefix: '114', bsId: '00000000-0000-0000-0001-000000000114', label: 'A/I/4. Szellemi termékek' },
+  { prefix: '115', bsId: '00000000-0000-0000-0001-000000000115', label: 'A/I/5. Üzleti vagy cégérték' },
+  { prefix: '116', bsId: '00000000-0000-0000-0001-000000000116', label: 'A/I/6. Immat. javak előleg' },
+  { prefix: '117', bsId: '00000000-0000-0000-0001-000000000117', label: 'A/I/7. Immat. javak értékh.' },
+  { prefix: '118', bsId: '00000000-0000-0000-0001-000000000111', label: 'A/I/1. (terv felüli ÉCS)' },
+  { prefix: '119', bsId: '00000000-0000-0000-0001-000000000111', label: 'A/I/1. (értékvesztés)' },
+  // A/II. Tárgyi eszközök
+  { prefix: '121', bsId: '00000000-0000-0000-0001-000000000121', label: 'A/II/1. Földterület' },
+  { prefix: '122', bsId: '00000000-0000-0000-0001-000000000121', label: 'A/II/1. Épületek' },
+  { prefix: '123', bsId: '00000000-0000-0000-0001-000000000121', label: 'A/II/1. Épít. jogok' },
+  { prefix: '124', bsId: '00000000-0000-0000-0001-000000000122', label: 'A/II/2. Műszaki berend.' },
+  { prefix: '125', bsId: '00000000-0000-0000-0001-000000000123', label: 'A/II/3. Egyéb berend.' },
+  { prefix: '126', bsId: '00000000-0000-0000-0001-000000000124', label: 'A/II/4. Tenyészállatok' },
+  { prefix: '127', bsId: '00000000-0000-0000-0001-000000000125', label: 'A/II/5. Beruházások' },
+  { prefix: '128', bsId: '00000000-0000-0000-0001-000000000126', label: 'A/II/6. Beruházás előleg' },
+  { prefix: '129', bsId: '00000000-0000-0000-0001-000000000127', label: 'A/II/7. Tárgyi eszk. értékh.' },
+  { prefix: '13', bsId: '00000000-0000-0000-0001-000000000121', label: 'A/II/1. Ingatlanok (ÉCS)' },
+  { prefix: '14', bsId: '00000000-0000-0000-0001-000000000122', label: 'A/II/2. Műszaki (ÉCS)' },
+  { prefix: '15', bsId: '00000000-0000-0000-0001-000000000123', label: 'A/II/3. Egyéb (ÉCS)' },
+  { prefix: '16', bsId: '00000000-0000-0000-0001-000000000125', label: 'A/II/5. Beruházások (ÉCS)' },
+  // A/III. Befektetett pénzügyi eszközök
+  { prefix: '17', bsId: '00000000-0000-0000-0001-000000000131', label: 'A/III/1. Tartós részesedés' },
+  { prefix: '18', bsId: '00000000-0000-0000-0001-000000000135', label: 'A/III/5. Egyéb tartós kölcsön' },
+  { prefix: '19', bsId: '00000000-0000-0000-0001-000000000136', label: 'A/III/6. Tartós hitelvisz. ép.' },
+  // 2. Készletek → B/I.
+  { prefix: '211', bsId: '00000000-0000-0000-0001-000000000211', label: 'B/I/1. Anyagok' },
+  { prefix: '212', bsId: '00000000-0000-0000-0001-000000000211', label: 'B/I/1. Anyagok' },
+  { prefix: '214', bsId: '00000000-0000-0000-0001-000000000211', label: 'B/I/1. Anyagok' },
+  { prefix: '21', bsId: '00000000-0000-0000-0001-000000000211', label: 'B/I/1. Anyagok' },
+  { prefix: '22', bsId: '00000000-0000-0000-0001-000000000211', label: 'B/I/1. Anyagok' },
+  { prefix: '23', bsId: '00000000-0000-0000-0001-000000000212', label: 'B/I/2. Befejezetlen term.' },
+  { prefix: '24', bsId: '00000000-0000-0000-0001-000000000213', label: 'B/I/3. Növendékállatok' },
+  { prefix: '25', bsId: '00000000-0000-0000-0001-000000000214', label: 'B/I/4. Késztermékek' },
+  { prefix: '26', bsId: '00000000-0000-0000-0001-000000000215', label: 'B/I/5. Áruk' },
+  { prefix: '27', bsId: '00000000-0000-0000-0001-000000000215', label: 'B/I/5. Áruk (közvetített)' },
+  { prefix: '28', bsId: '00000000-0000-0000-0001-000000000216', label: 'B/I/6. Készletek előleg' },
+  { prefix: '29', bsId: '00000000-0000-0000-0001-000000000211', label: 'B/I/1. (értékvesztés)' },
+  // 3. Követelések, értékpapírok, pénzeszközök
+  { prefix: '311', bsId: '00000000-0000-0000-0001-000000000221', label: 'B/II/1. Vevők' },
+  { prefix: '312', bsId: '00000000-0000-0000-0001-000000000221', label: 'B/II/1. Vevők' },
+  { prefix: '313', bsId: '00000000-0000-0000-0001-000000000221', label: 'B/II/1. Vevők' },
+  { prefix: '314', bsId: '00000000-0000-0000-0001-000000000221', label: 'B/II/1. Vevők' },
+  { prefix: '315', bsId: '00000000-0000-0000-0001-000000000221', label: 'B/II/1. Vevők' },
+  { prefix: '316', bsId: '00000000-0000-0000-0001-000000000222', label: 'B/II/2. Követelés kapcsolt' },
+  { prefix: '317', bsId: '00000000-0000-0000-0001-000000000223', label: 'B/II/3. Követelés egyéb rész.' },
+  { prefix: '318', bsId: '00000000-0000-0000-0001-000000000221', label: 'B/II/1. Vevők (értékv.)' },
+  { prefix: '319', bsId: '00000000-0000-0000-0001-000000000221', label: 'B/II/1. Vevők (értékv.)' },
+  { prefix: '32', bsId: '00000000-0000-0000-0001-000000000224', label: 'B/II/4. Váltókövetelések' },
+  { prefix: '33', bsId: '00000000-0000-0000-0001-000000000225', label: 'B/II/5. Egyéb követelések' },
+  { prefix: '34', bsId: '00000000-0000-0000-0001-000000000225', label: 'B/II/5. Egyéb követelések' },
+  { prefix: '35', bsId: '00000000-0000-0000-0001-000000000225', label: 'B/II/5. Egyéb követelések' },
+  { prefix: '36', bsId: '00000000-0000-0000-0001-000000000225', label: 'B/II/5. Egyéb követelések' },
+  // B/III. Értékpapírok
+  { prefix: '371', bsId: '00000000-0000-0000-0001-000000000231', label: 'B/III/1. Részesedés kapcsolt' },
+  { prefix: '372', bsId: '00000000-0000-0000-0001-000000000232', label: 'B/III/2. Egyéb részesedés' },
+  { prefix: '373', bsId: '00000000-0000-0000-0001-000000000233', label: 'B/III/3. Saját részvények' },
+  { prefix: '374', bsId: '00000000-0000-0000-0001-000000000234', label: 'B/III/4. Forg. célú ép.' },
+  { prefix: '375', bsId: '00000000-0000-0000-0001-000000000234', label: 'B/III/4. Ép. elszámolási' },
+  { prefix: '379', bsId: '00000000-0000-0000-0001-000000000235', label: 'B/III/5. Ép. értékv.' },
+  // B/IV. Pénzeszközök
+  { prefix: '381', bsId: '00000000-0000-0000-0001-000000000241', label: 'B/IV/1. Pénztár' },
+  { prefix: '382', bsId: '00000000-0000-0000-0001-000000000241', label: 'B/IV/1. Valutapénztár' },
+  { prefix: '383', bsId: '00000000-0000-0000-0001-000000000241', label: 'B/IV/1. Csekkek' },
+  { prefix: '384', bsId: '00000000-0000-0000-0001-000000000242', label: 'B/IV/2. Betétszámla' },
+  { prefix: '385', bsId: '00000000-0000-0000-0001-000000000242', label: 'B/IV/2. Elkülönített betét' },
+  { prefix: '386', bsId: '00000000-0000-0000-0001-000000000242', label: 'B/IV/2. Devizabetét' },
+  { prefix: '389', bsId: '00000000-0000-0000-0001-000000000242', label: 'B/IV/2. Átvezetési' },
+  // C. Aktív időbeli elhatárolások
+  { prefix: '391', bsId: '00000000-0000-0000-0001-000000000301', label: 'C/1. Bevétel aktív elhat.' },
+  { prefix: '392', bsId: '00000000-0000-0000-0001-000000000302', label: 'C/2. Költség aktív elhat.' },
+  { prefix: '393', bsId: '00000000-0000-0000-0001-000000000303', label: 'C/3. Halasztott ráford.' },
+  { prefix: '399', bsId: '00000000-0000-0000-0001-000000000301', label: 'C/1. Aktív elhat. értékv.' },
+  // 4. Források
+  // D. Saját tőke
+  { prefix: '411', bsId: '00000000-0000-0000-0001-000000001110', label: 'D/I. Jegyzett tőke' },
+  { prefix: '412', bsId: '00000000-0000-0000-0001-000000001130', label: 'D/III. Tőketartalék' },
+  { prefix: '413', bsId: '00000000-0000-0000-0001-000000001140', label: 'D/IV. Eredménytartalék' },
+  { prefix: '414', bsId: '00000000-0000-0000-0001-000000001150', label: 'D/V. Lekötött tartalék' },
+  { prefix: '417', bsId: '00000000-0000-0000-0001-000000001160', label: 'D/VI. Értékelési tartalék' },
+  { prefix: '419', bsId: '00000000-0000-0000-0001-000000001170', label: 'D/VII. Mérleg sz. eredmény' },
+  // E. Céltartalékok
+  { prefix: '421', bsId: '00000000-0000-0000-0001-000000001201', label: 'E/1. Céltartalék kötelez.' },
+  { prefix: '422', bsId: '00000000-0000-0000-0001-000000001202', label: 'E/2. Céltartalék jövőbeni' },
+  { prefix: '429', bsId: '00000000-0000-0000-0001-000000001203', label: 'E/3. Egyéb céltartalék' },
+  // F. Kötelezettségek
+  // F/I. Hátrasorolt
+  { prefix: '431', bsId: '00000000-0000-0000-0001-000000001311', label: 'F/I/1. Hátrasorolt kapcsolt' },
+  { prefix: '432', bsId: '00000000-0000-0000-0001-000000001312', label: 'F/I/2. Hátrasorolt egyéb r.' },
+  { prefix: '433', bsId: '00000000-0000-0000-0001-000000001313', label: 'F/I/3. Hátrasorolt egyéb g.' },
+  // F/II. Hosszú lejáratú
+  { prefix: '441', bsId: '00000000-0000-0000-0001-000000001321', label: 'F/II/1. Hosszú kölcsönök' },
+  { prefix: '442', bsId: '00000000-0000-0000-0001-000000001322', label: 'F/II/2. Átváltoz. kötvény' },
+  { prefix: '443', bsId: '00000000-0000-0000-0001-000000001323', label: 'F/II/3. Kötvénykibocsátás' },
+  { prefix: '444', bsId: '00000000-0000-0000-0001-000000001324', label: 'F/II/4. Beruh. hitelek' },
+  { prefix: '445', bsId: '00000000-0000-0000-0001-000000001325', label: 'F/II/5. Egyéb hosszú hitel' },
+  { prefix: '446', bsId: '00000000-0000-0000-0001-000000001326', label: 'F/II/6. Tartós kapcs. köt.' },
+  { prefix: '447', bsId: '00000000-0000-0000-0001-000000001327', label: 'F/II/7. Tartós egyéb r. köt.' },
+  { prefix: '448', bsId: '00000000-0000-0000-0001-000000001328', label: 'F/II/8. Egyéb hosszú köt.' },
+  { prefix: '449', bsId: '00000000-0000-0000-0001-000000001328', label: 'F/II/8. Egyéb hosszú köt.' },
+  // F/III. Rövid lejáratú
+  { prefix: '451', bsId: '00000000-0000-0000-0001-000000001331', label: 'F/III/1. Rövid kölcsönök' },
+  { prefix: '452', bsId: '00000000-0000-0000-0001-000000001332', label: 'F/III/2. Rövid hitelek' },
+  { prefix: '453', bsId: '00000000-0000-0000-0001-000000001333', label: 'F/III/3. Vevői előlegek' },
+  { prefix: '454', bsId: '00000000-0000-0000-0001-000000001334', label: 'F/III/4. Szállítók' },
+  { prefix: '455', bsId: '00000000-0000-0000-0001-000000001334', label: 'F/III/4. Beruh. szállítók' },
+  { prefix: '456', bsId: '00000000-0000-0000-0001-000000001334', label: 'F/III/4. Faktoring tart.' },
+  { prefix: '457', bsId: '00000000-0000-0000-0001-000000001335', label: 'F/III/5. Váltótartozások' },
+  { prefix: '458', bsId: '00000000-0000-0000-0001-000000001336', label: 'F/III/6. Rövid kapcs. köt.' },
+  { prefix: '459', bsId: '00000000-0000-0000-0001-000000001337', label: 'F/III/7. Rövid egyéb r. köt.' },
+  { prefix: '46', bsId: '00000000-0000-0000-0001-000000001338', label: 'F/III/8. Egyéb rövid köt.' },
+  { prefix: '47', bsId: '00000000-0000-0000-0001-000000001338', label: 'F/III/8. Egyéb rövid köt.' },
+  // G. Passzív időbeli elhatárolások
+  { prefix: '481', bsId: '00000000-0000-0000-0001-000000001401', label: 'G/1. Bevétel passzív elhat.' },
+  { prefix: '482', bsId: '00000000-0000-0000-0001-000000001402', label: 'G/2. Költség passzív elhat.' },
+  { prefix: '483', bsId: '00000000-0000-0000-0001-000000001403', label: 'G/3. Halasztott bevételek' },
+  // 49. Záró számlák — nem kell mérlegbe (belső technikai)
+];
+
 // ─── Mapping Tab ───
-function BsMappingTab({ presetId }: { presetId?: string }) {
+function BsMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGenericPreset?: boolean }) {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -99,6 +225,41 @@ function BsMappingTab({ presetId }: { presetId?: string }) {
     setHasChanges(true);
   };
 
+  const handleAutoAssign = () => {
+    if (!glAccounts) return;
+    const newMappings: Record<string, string> = { ...mappings };
+    const cleanGl = (id: string) => id ? String(id).replace(/\./g, '') : '';
+    let assignedCount = 0;
+
+    glAccounts.forEach(gl => {
+      const clean = gl.gl_number.split('-')[0].replace(/\./g, '');
+      // Only map leaf accounts (no children)
+      const hasChildren = glAccounts.some(other => {
+        const otherClean = cleanGl(other.gl_number);
+        return otherClean.startsWith(cleanGl(gl.gl_number)) && otherClean !== cleanGl(gl.gl_number);
+      });
+      if (hasChildren) return;
+
+      // Find matching rule (longest prefix match)
+      let bestRule: typeof DEFAULT_BS_RULES[0] | null = null;
+      for (const rule of DEFAULT_BS_RULES) {
+        if (clean.startsWith(rule.prefix)) {
+          if (!bestRule || rule.prefix.length > bestRule.prefix.length) {
+            bestRule = rule;
+          }
+        }
+      }
+      if (bestRule) {
+        newMappings[gl.id] = bestRule.bsId;
+        assignedCount++;
+      }
+    });
+
+    setMappings(newMappings);
+    setHasChanges(true);
+    toast({ title: 'Automatikus hozzárendelés kész', description: `${assignedCount} főkönyvi szám hozzárendelve a Sztv. "A" változat szerint. Ellenőrizd és mentsd el!` });
+  };
+
   const toggleRow = (id: string, hasChildren: boolean) => {
     if (!hasChildren) return;
     setExpandedRowIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
@@ -160,7 +321,13 @@ function BsMappingTab({ presetId }: { presetId?: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end mb-4">
+      <div className="flex items-center gap-2 justify-end mb-4">
+        {isGenericPreset && (
+          <Button variant="outline" onClick={handleAutoAssign} className="gap-2">
+            <Wand2 className="w-4 h-4" />
+            Alapértelmezett hozzárendelés
+          </Button>
+        )}
         <Button onClick={() => saveMutation.mutate()} disabled={!hasChanges || saveMutation.isPending} className="gap-2">
           {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Mentés
@@ -328,9 +495,12 @@ function BsViewTab({ presetId }: { presetId?: string }) {
     const balanceMap: Record<string, number> = {};
 
     // First pass: leaf balances
+    // Liabilities section: negate because GL credit balances are negative,
+    // but the balance sheet displays both sides as positive values
     bsData.forEach(row => {
       if (row.type === 'arabic' || (row.type === 'roman' && !bsData.some(r => r.parent_id === row.bs_structure_id))) {
-        balanceMap[row.bs_structure_id] = Number(row.current_balance) || 0;
+        const raw = Number(row.current_balance) || 0;
+        balanceMap[row.bs_structure_id] = row.section === 'liabilities' ? -raw : raw;
       }
     });
 
@@ -339,9 +509,8 @@ function BsViewTab({ presetId }: { presetId?: string }) {
       const children = bsData.filter(r => r.parent_id === roman.bs_structure_id);
       if (children.length > 0) {
         balanceMap[roman.bs_structure_id] = children.reduce((s, c) => s + (balanceMap[c.bs_structure_id] || 0), 0);
-      } else {
-        balanceMap[roman.bs_structure_id] = Number(roman.current_balance) || 0;
       }
+      // Leaf romans already handled in first pass — do NOT overwrite
     });
 
     // Letter = sum of roman children
@@ -544,7 +713,7 @@ function BsViewTab({ presetId }: { presetId?: string }) {
                     </div>
                     <div className="col-span-2"></div>
                     <div className="col-span-2"></div>
-                    <div className="col-span-2 text-right text-muted-foreground tabular-nums">{formatValue(gl.balance)}</div>
+                    <div className="col-span-2 text-right text-muted-foreground tabular-nums">{formatValue(row.section === 'liabilities' ? -gl.balance : gl.balance)}</div>
                   </div>
 
                   {/* Level 2: Transactions */}
@@ -562,7 +731,7 @@ function BsViewTab({ presetId }: { presetId?: string }) {
                           </div>
                           <div className="col-span-2"></div>
                           <div className="col-span-2 text-right tabular-nums">
-                            {formatValue(item.amount || 0)}
+                            {formatValue(row.section === 'liabilities' ? -(item.amount || 0) : (item.amount || 0))}
                           </div>
                         </div>
                       ))}
@@ -775,7 +944,8 @@ export default function BalanceSheet() {
 
     bsData.forEach(row => {
       if (row.type === 'arabic' || (row.type === 'roman' && !bsData.some(r => r.parent_id === row.bs_structure_id))) {
-        balanceMap[row.bs_structure_id] = Number(row.current_balance) || 0;
+        const raw = Number(row.current_balance) || 0;
+        balanceMap[row.bs_structure_id] = row.section === 'liabilities' ? -raw : raw;
       }
     });
 
@@ -783,8 +953,6 @@ export default function BalanceSheet() {
       const children = bsData.filter(r => r.parent_id === roman.bs_structure_id);
       if (children.length > 0) {
         balanceMap[roman.bs_structure_id] = children.reduce((s, c) => s + (balanceMap[c.bs_structure_id] || 0), 0);
-      } else {
-        balanceMap[roman.bs_structure_id] = Number(roman.current_balance) || 0;
       }
     });
 
@@ -888,7 +1056,7 @@ export default function BalanceSheet() {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="pt-6"><BsMappingTab presetId={activePresetId} /></CardContent>
+            <CardContent className="pt-6"><BsMappingTab presetId={activePresetId} isGenericPreset={presets?.find(p => p.id === activePresetId)?.type === 'generic'} /></CardContent>
           </Card>
         </TabsContent>
       </Tabs>

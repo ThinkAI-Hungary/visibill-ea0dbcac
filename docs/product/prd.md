@@ -1,6 +1,6 @@
 # Visibill — Product Requirements Document (PRD)
 
-> **Verzió:** 1.1 | **Dátum:** 2026-05-16  
+> **Verzió:** 1.2 | **Dátum:** 2026-06-16  
 > **Kapcsolódó:** [Information Architecture](./information-architecture.md) · [Product Decisions](./decisions/index.md)
 
 ---
@@ -45,8 +45,9 @@ A központi áttekintő és az alkalmazás navigációs struktúrája.
 
 | Funkció | Leírás | Ref |
 |---------|--------|-----|
-| Dashboard | Fix elrendezésű widgetek: metrikák, ÁFA, párosítatlan tételek, számla státuszok, bevétel/kiadás chart, legutóbbi számlák, előfizetés | [P-005](./decisions/P-005-dashboard-layout.md) |
+| Dashboard | Fix elrendezésű widgetek: metrikák, ÁFA, árfolyam-különbözetek, párosítatlan tételek, számla státuszok, bevétel/kiadás chart, legutóbbi számlák, előfizetés | [P-005](./decisions/P-005-dashboard-layout.md) |
 | Dashboard Preferences | Valuta váltó (HUF/EUR/USD), bruttó/nettó toggle, collapsible szekciók | [P-005](./decisions/P-005-dashboard-layout.md) |
+| Árfolyam-különbözetek | Devizás számlák teljesítés vs. befolyás közötti MNB árfolyamkülönbözet: KPI kártyák, havi bar chart, tételszintű lebontás, TAO hatás becslés. Csak párosított (tranzakcióhoz rendelt) devizás tételekre. | — |
 | Testreszabhatóság | Nincs widget drag & drop vagy hide/show — a preferences elegendőek | [P-009](./decisions/P-009-dashboard-customization.md) |
 | Sidebar Navigáció | 19 menüpont → collapsible kategóriákba csoportosítva (7 csoport) | [P-006](./decisions/P-006-sidebar-structure.md) |
 | Globális Dátumszűrő | Minden oldal azonos dátum kontextusban működik (GlobalDatePicker) | [IA](./information-architecture.md) |
@@ -83,7 +84,8 @@ Banki tranzakciók importálása, AI-alapú párosítás számlákkal, manuális
 |---------|--------|-----|
 | Tranzakció Lista | Táblázat + futár riport tab ugyanazon az oldalon. Szűrők: dátum, összeg, típus, párosítási státusz. | [P-016](./decisions/P-016-transaction-list.md) |
 | AI Párosítás Megjelenítés | Confidence score + match type + gl_reasoning DB-ben tárolva. Részletek dialógusban (TransactionDetailsDialog). Lista nézetben vizuális confidence megjelenítés: TODO. | [P-017](./decisions/P-017-matching-display.md) |
-| Manuális Felülírás | Dialógusban keresés + hozzárendelés, is_verified flag, minden felülírás audit logban. | [P-018](./decisions/P-018-manual-matching.md) |
+| Manuális Felülírás | Dialógusban keresés + hozzárendelés, is_verified flag, minden felülírás audit logban (`match_transaction_overrides_log` tábla). Deviza-tudatos összeg-összehasonlítás: azonos pénznemű tranzakció↔számla direkt összehasonlítás, eltérő devizánál HUF konverzió. Minimum 10 számla megjelenítés összeg-proximítás szerint. | [P-018](./decisions/P-018-manual-matching.md) |
+| ML tanulás | Felhasználói felülírásokból tanul: `match_transaction_overrides_log` tábla → partner név, összeg, típus pattern-ek rögzítése. A worker pipeline a jövőben ezeket a mintákat használja az AI párosítás pontosságának javítására. | — |
 | Futár Riportok | GLS, MPL, Mixpack CSV import + parsing (3 futár tab) | — |
 
 ---
@@ -95,8 +97,9 @@ Főkönyvi kategorizálás, pénzügyi kimutatások és éves beszámoló.
 | Funkció | Leírás | Ref |
 |---------|--------|-----|
 | GL Javaslat | AI-alapú GL szám javaslat confidence-szel és indoklással. Manuális elfogadás szükséges — nincs auto-accept. | [P-019](./decisions/P-019-gl-suggestion.md) |
-| Eredménykimutatás | P&L oldal — bevételek és kiadások kimutatása | — |
-| Mérleg | Balance Sheet oldal — eszközök és források | — |
+| XML Főkönyv Import | Könyvelőprogram által exportált XML főkönyvi kivonat feltöltése és feldolgozása. Támogatott formátumok: RLB/Novitax/Kulcs-Soft/KÖKÉNY. Automatikus számlatükör + tétel importálás `gl_uploads` táblába, audit trail-lel. | — |
+| Eredménykimutatás | P&L oldal — bevételek és kiadások kimutatása. Főkönyvi adat (XML importból) és NAV számlaalapú összesítés. Szekció-szintű részletezés, korrekciók kezelése. | — |
+| Mérleg | Balance Sheet oldal — eszközök és források. Főkönyvi adat (XML importból) és NAV számlaalapú összeállítás. Társasági adó és osztalék kalkuláció. | — |
 | Beszámoló | Workflow: draft → validated → finalized → submitted. 19 kiegészítő melléklet sablon. Frozen data snapshot véglegesítéskor. | [P-020](./decisions/P-020-report-workflow.md) |
 | Export | CSV (gépi feldolgozás) + PDF (nyomtatás, megosztás). Excel nem prioritás. | [P-021](./decisions/P-021-export-formats.md) |
 
@@ -122,9 +125,10 @@ Cég és felhasználói beállítások, csapatkezelés.
 
 | Funkció | Leírás | Ref |
 |---------|--------|-----|
-| Settings Struktúra | 4 szekció egy oldalon: Business, Profile, Security, System | [P-025](./decisions/P-025-settings-structure.md) |
+| Settings Struktúra | 5 szekció egy oldalon: Business, Profile, Notifications, Security, System | [P-025](./decisions/P-025-settings-structure.md) |
 | Cégprofil | Cégnév, adószám, cím, email alias kezelés, share token, telephely (HQ/branch) | [P-026](./decisions/P-026-company-profile.md) |
-| Csapattagok | Share token alapú csatlakozás. Nincs email meghívás, nincs tag kezelés panel. | [P-027](./decisions/P-027-team-management.md) |
+| Árfolyam-forrás | Cégenkénti beállítás: melyik árfolyamforrás (MNB/EKB/Bank) legyen a devizás különbözet számításnál. `company_fx_settings` tábla. | — |
+| Csapattagok | Share token alapú csatlakozás + tag meghívás email-lel. Tag eltávolítás admin jogosultsággal. | [P-027](./decisions/P-027-team-management.md) |
 
 > **Megjegyzés:** A korábbi Stripe-alapú előfizetés rendszer (Pricing oldal, SubscriptionContext, limit kezelés) eltávolítva 2026-06-07-én. Az értékesítés egyszeri díjas modellre vált — lásd [004-pricing-model.md](../business/decisions/004-pricing-model.md).
 
@@ -138,6 +142,9 @@ Cég és felhasználói beállítások, csapatkezelés.
 | Multi-file batch upload | 2.3 Számla | P-013 |
 | Bulk actions (checkbox) | 2.3 Számla | P-015 |
 | CSV + PDF export | 2.5 Riportok | P-021 |
+| ML model tanítás felülírásokból | 2.4 Tranzakció | — |
+| EKB/bank árfolyam integráció | 2.2 Dashboard | — |
+| Éves árfolyam-átértékelés | 2.5 Riportok | — |
 
 ---
 
