@@ -1,7 +1,8 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+﻿import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { reportError } from '@/lib/errorReporter';
 
 interface InvoiceForDialog {
   id: string;
@@ -27,7 +28,7 @@ const InvoiceImageDialog = ({ invoice, open, onClose }: InvoiceImageDialogProps)
   const getInvoiceIdentifier = (invoice: InvoiceForDialog) => {
     if (invoice.bizonylatsorszam) return invoice.bizonylatsorszam;
     if (invoice.dokumentum_azonosito) return invoice.dokumentum_azonosito;
-    if (invoice.invoice_type === 'egyszerusitett_szamla') return 'Egyszerűsített számla';
+    if (invoice.invoice_type) return INVOICE_TYPE_LABELS[invoice.invoice_type] || invoice.invoice_type;
     return 'N/A';
   };
 
@@ -94,7 +95,7 @@ const InvoiceImageDialog = ({ invoice, open, onClose }: InvoiceImageDialogProps)
                         title={`Számla: ${getInvoiceIdentifier(invoice)}`}
                         onLoad={() => setIsLoading(false)}
                         onError={() => {
-                          console.error('PDF iframe error:', displayUrl);
+                          reportError({ type: 'db_query', component: 'InvoiceImageDialog', action: 'error', message: 'PDF iframe error:', error: displayUrl });
                           setImageError(true);
                           setIsLoading(false);
                         }}
@@ -118,7 +119,7 @@ const InvoiceImageDialog = ({ invoice, open, onClose }: InvoiceImageDialogProps)
                         className="w-full h-auto rounded"
                         onLoad={() => setIsLoading(false)}
                         onError={(e) => {
-                          console.error('Image load error:', displayUrl, e);
+                          reportError({ type: 'db_query', component: 'InvoiceImageDialog', action: 'error', message: 'Image load error:', error: displayUrl, e });
                           setImageError(true);
                           setIsLoading(false);
                         }}

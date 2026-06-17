@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { ASSET_STATUS_LABELS, ASSET_STATUS_COLORS } from '@/types/fixed-assets';
 import type { FixedAsset } from '@/types/fixed-assets';
+import { reportError } from '@/lib/errorReporter';
 
 interface InventoryCheckDialogProps {
   open: boolean;
@@ -90,7 +91,7 @@ export function InventoryCheckDialog({ open, onOpenChange, assets }: InventoryCh
           .update({ status: 'missing', updated_at: new Date().toISOString() })
           .in('id', missingIds);
 
-        if (updateError) console.error('Missing status update error:', updateError);
+        if (updateError) reportError({ type: 'db_query', component: 'InventoryCheckDialog', action: 'error', message: 'Missing status update error:', error: updateError });
 
         // Log missing events
         const missingEvents = missingIds.map(assetId => ({

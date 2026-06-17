@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+﻿import React, { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
+import { reportError } from '@/lib/errorReporter';
 
 interface UploadModalProps {
   open: boolean;
@@ -98,7 +99,7 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
           .single();
 
         if (presetError || !presetData) {
-          console.error(presetError);
+          reportError({ type: 'upload', component: 'UploadChartOfAccountsModal', action: 'error', message: String(presetError), error: presetError });
           throw new Error(`Hiba a sablon létrehozása során: ${presetError?.message || 'Ismeretlen hiba'}`);
         }
 
@@ -149,7 +150,7 @@ export function UploadChartOfAccountsModal({ open, onOpenChange, onSuccess }: Up
           const chunk = insertData.slice(i, i + chunkSize);
           const { error: insertError } = await supabase.from('gl_accounts').insert(chunk);
           if (insertError) {
-            console.error(insertError);
+            reportError({ type: 'upload', component: 'UploadChartOfAccountsModal', action: 'error', message: String(insertError), error: insertError });
             throw new Error("Hiba a főkönyvi tételek mentésekor.");
           }
         }

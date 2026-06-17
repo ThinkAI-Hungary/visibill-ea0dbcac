@@ -14,25 +14,33 @@ Ez a design rendszer nem egyetlen alkalmazásra, hanem az **eaisybill termékcsa
 
 ## Tartalomjegyzék — Design Dokumentáció
 
-Ez a `docs/design/` mappa tartalmazza az eaisybill platform teljes UI/UX design rendszerének dokumentációját:
+Ez a `docs/design/` mappa tartalmazza az eaisybill platform **vizuális design rendszerének** dokumentációját:
 
 | # | Dokumentum | Leírás |
 |---|------------|--------|
 | 00 | [Áttekintés](./00-overview.md) | Ez a fájl — tartalomjegyzék és magasszintű összefoglaló |
-| 01 | [Tech Stack & Architektúra](./01-tech-stack.md) | Használt technológiák, build rendszer, projekt struktúra |
 | 02 | [Design Tokens & Színrendszer](./02-design-tokens.md) | CSS változók, HSL színpaletta, sötét/világos mód |
 | 03 | [Tipográfia & Ikonok](./03-typography-icons.md) | Betűtípusok, méretezés, Lucide ikonok |
 | 04 | [Komponens Könyvtár](./04-component-library.md) | shadcn/ui komponensek, egyedi komponensek, variánsok |
 | 05 | [Layout & Navigáció](./05-layout-navigation.md) | App shell, sidebar, collapsible nav groups, scoped routing |
-| 06 | [Állapotkezelés & Kontextusok](./06-state-management.md) | React Context-ek, React Query, URL state |
 | 07 | [Betöltés & Skeleton Patternek](./07-loading-patterns.md) | Loading spinnerek, skeleton-ök, lazy loading |
 | 08 | [Interakciók & Animációk](./08-interactions-animations.md) | Hover, transition, page-animate, micro-animációk |
 | 09 | [Hibakezelés & Feedback](./09-error-handling-feedback.md) | Error boundary, toast, validation, empty state |
 | 10 | [Accessibility & UX Patternek](./10-accessibility-ux.md) | Keyboard nav, focus management, a11y patternek |
 | 11 | [Adatmegjelenítés & Táblázatok](./11-data-display-tables.md) | Táblázat stílus, pagination, chart-ok, pénzügyi számok |
 | 12 | [Dialógusok & Felugró ablakok](./12-dialogs-modals.md) | Dialog, Sheet, Popover, Drawer patternek |
-| 13 | [Autentikáció & Onboarding](./13-auth-onboarding.md) | Login flow, regisztráció, onboarding wizard |
-| 14 | [Teljesítmény Optimalizáció](./14-performance.md) | Code splitting, prefetch, memoizáció, query cache |
+| — | [App Mode Switcher Koncepciók](./app-mode-switcher-concepts.md) | ⏳ 10 design koncepció az eaisybill↔Accounty váltóhoz (döntésre vár) |
+
+### Átkerült a `docs/architecture/` mappába
+
+Az alábbi dokumentumok architekturális tartalmúak, ezért átkerültek:
+
+| Eredeti | Új hely | Leírás |
+|---------|---------|--------|
+| ~~01-tech-stack~~ | [frontend-tech-stack.md](../architecture/frontend-tech-stack.md) | Tech stack, build, provider hierarchy |
+| ~~06-state-management~~ | [frontend-state-management.md](../architecture/frontend-state-management.md) | React Context, React Query, Realtime |
+| ~~13-auth-onboarding~~ | [frontend-auth-onboarding.md](../architecture/frontend-auth-onboarding.md) | Auth flow, session, onboarding wizard |
+| ~~14-performance~~ | [frontend-performance.md](../architecture/frontend-performance.md) | Code splitting, prefetch, memoizáció |
 
 ---
 

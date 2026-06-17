@@ -62,6 +62,14 @@ export const queryKeys = {
     ['pettyCashSettings', companyId] as const,
   pettyCashEntries: (companyId: string) =>
     ['pettyCashEntries', companyId] as const,
+  pettyCashRegisters: (companyId: string) =>
+    ['pettyCashRegisters', companyId] as const,
+  pettyCashOpeningBalances: (registerId: string) =>
+    ['pettyCashOpeningBalances', registerId] as const,
+  pettyCashRoutingRules: (companyId: string) =>
+    ['pettyCashRoutingRules', companyId] as const,
+  pettyCashSummary: (companyId: string) =>
+    ['pettyCashSummary', companyId] as const,
 
   // ── Partners ──
   partners: (companyId: string) =>
@@ -106,6 +114,12 @@ export const queryKeys = {
   // ── Dashboard Petty Cash ──
   dashboardPettyCash: (companyId: string) =>
     ['dashboardPettyCash', companyId] as const,
+
+  // ── FX Differences ──
+  fxDifferences: (companyId: string, dateFrom: string, dateTo: string) =>
+    ['fxDifferences', companyId, dateFrom, dateTo] as const,
+  fxSettings: (companyId: string) =>
+    ['fxSettings', companyId] as const,
 
   // ── Upload History ──
   uploadHistory: (companyId: string, activeTab: string, dateFrom: string, dateTo: string) =>

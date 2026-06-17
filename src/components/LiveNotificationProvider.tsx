@@ -1,8 +1,9 @@
-import { useEffect, useRef, useCallback } from 'react';
+﻿import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
+import { reportError } from '@/lib/errorReporter';
 
 /**
  * Global Realtime listener that:
@@ -53,7 +54,7 @@ export function LiveNotificationProvider() {
         .single();
       if (data?.file_name) fileName = data.file_name;
     } catch (err) {
-      console.error('[RealtimeSync] File lookup failed:', err);
+      reportError({ type: 'db_query', component: 'LiveNotificationProvider', action: 'error', message: '[RealtimeSync] File lookup failed:', error: err });
     }
 
     toast({
@@ -181,7 +182,7 @@ export function LiveNotificationProvider() {
         (payload) => {
           if (!isMyCompany(payload)) return;
           invalidate('uploadHistory', 'submittedInvoices', 'filteredSubmittedInvoices');
-          // Show notification when processing_status changes to 'completed'
+          // Show notification when processing_status changes to 'processed' (invoice pipeline)
           if (payload.eventType === 'UPDATE') {
             const row = payload.new as any;
             const oldRow = payload.old as any;
@@ -417,15 +418,41 @@ export function LiveNotificationProvider() {
 
     channelRef.current = channel;
 
-    // Reconnect on tab visibility change
+    // Reconnect on tab visibility change + conditional cache invalidation
+    const hiddenAtRef_local = { current: null as number | null };
+
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible' && channelRef.current) {
-        const state = channelRef.current.state;
-        if (state !== 'joined' && state !== 'joining') {
-          console.log('[RealtimeSync] Reconnecting on tab focus...');
-          channelRef.current.subscribe();
-        }
-        // Broad invalidation on tab refocus to catch any missed events
+      if (document.visibilityState === 'hidden') {
+        hiddenAtRef_local.current = Date.now();
+        return;
+      }
+
+      // visible — user came back
+      if (!channelRef.current) return;
+
+      const awayMs = hiddenAtRef_local.current ? Date.now() - hiddenAtRef_local.current : 0;
+      hiddenAtRef_local.current = null;
+      const channelState = channelRef.current.state;
+
+      // 1. Reconnect if channel disconnected (unchanged behavior)
+      if (channelState !== 'joined' && channelState !== 'joining') {
+        console.log('[RealtimeSync] Reconnecting on tab focus...');
+        channelRef.current.subscribe();
+      }
+
+      // 2. Decide on invalidation:
+      //    - Channel was disconnected → always invalidate (may have missed events)
+      //    - Channel joined BUT away > 2 minutes → invalidate (browser may
+      //      have throttled/dropped WS frames)
+      //    - Channel joined AND away ≤ 2 minutes → skip (Realtime kept up)
+      const STALE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
+      const wasDisconnected = channelState !== 'joined' && channelState !== 'joining';
+
+      if (wasDisconnected || awayMs > STALE_THRESHOLD_MS) {
+        console.log(
+          `[RealtimeSync] Tab refocus invalidation: away=${Math.round(awayMs / 1000)}s, ` +
+          `channel=${channelState}, invalidating caches`
+        );
         invalidate(
           'salaries', 'salary_files', 'submittedInvoices', 'linkedInvoices',
           'navInvoices', 'filteredNavInvoices', 'filteredSubmittedInvoices',
@@ -436,6 +463,11 @@ export function LiveNotificationProvider() {
           'pettyCashEntries', 'dashboardPettyCash',
           'categories', 'dunning-sends', 'syncLogs',
           'invoiceItems',
+        );
+      } else {
+        console.debug(
+          `[RealtimeSync] Tab refocus skipped: away=${Math.round(awayMs / 1000)}s, ` +
+          `channel=${channelState} — Realtime kept up`
         );
       }
     };

@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+﻿import { useQuery } from '@tanstack/react-query';
+import { reportError } from '@/lib/errorReporter';
 
 interface ExchangeRatesResponse {
   rates: Record<string, number>;
@@ -34,7 +35,7 @@ export const useExchangeRates = () => {
 
         return hufMultipliers;
       } catch (error) {
-        console.error('Error fetching exchange rates:', error);
+        reportError({ type: 'db_query', component: 'useExchangeRates', action: 'error', message: 'Error fetching exchange rates:', error: error });
         // Fallback to safe defaults if API is down
         return {
           HUF: 1,

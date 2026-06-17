@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import Joyride, { 
   CallBackProps, 
   STATUS, 
@@ -9,6 +9,7 @@ import Joyride, {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProductTourTooltip } from './ProductTourTooltip';
+import { reportError } from '@/lib/errorReporter';
 
 interface ProductTourProps {
   run: boolean;
@@ -123,7 +124,7 @@ export function ProductTour({ run, onComplete }: ProductTourProps) {
             .update({ has_completed_tour: true })
             .eq('user_id', user.id);
         } catch (error) {
-          console.error('Failed to update tour status:', error);
+          reportError({ type: 'db_query', component: 'ProductTour', action: 'error', message: 'Failed to update tour status:', error: error });
         }
       }
       onComplete();
@@ -146,7 +147,7 @@ export function ProductTour({ run, onComplete }: ProductTourProps) {
             .update({ has_completed_tour: true })
             .eq('user_id', user.id);
         } catch (error) {
-          console.error('Failed to update tour status:', error);
+          reportError({ type: 'db_query', component: 'ProductTour', action: 'error', message: 'Failed to update tour status:', error: error });
         }
       }
       onComplete();

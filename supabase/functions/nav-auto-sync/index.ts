@@ -86,15 +86,28 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('🤖 Starting automatic NAV synchronization');
+    // Parse request body for optional parameters
+    let requestBody: any = {};
+    try { requestBody = await req.json(); } catch { /* empty body is fine */ }
+    
+    const depth = requestBody.depth || 0;
+    const detailsOnly = requestBody.detailsOnly || false;
+    const MAX_DEPTH = 10; // Safety cap: max 10 self-reinvocations
+
+    if (depth >= MAX_DEPTH) {
+      console.log(`🛑 Max reinvocation depth (${MAX_DEPTH}) reached. Stopping.`);
+      return new Response(
+        JSON.stringify({ success: true, message: `Max depth ${MAX_DEPTH} reached`, depth }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`🤖 Starting automatic NAV synchronization (depth: ${depth}, detailsOnly: ${detailsOnly})`);
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-    // Create admin client with service role
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    // Get all companies with validated NAV credentials
     const { data: companiesWithCreds, error: companiesError } = await supabase
       .from('user_nav_credentials')
       .select('user_id, company_id, nav_username')
@@ -102,18 +115,12 @@ Deno.serve(async (req) => {
       .not('company_id', 'is', null);
 
     if (companiesError) {
-      console.error('Error fetching companies with credentials:', companiesError);
       throw new Error(`Failed to fetch companies: ${companiesError.message}`);
     }
 
     if (!companiesWithCreds || companiesWithCreds.length === 0) {
-      console.log('ℹ️ No companies with valid NAV credentials found');
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'No companies to sync',
-          companies_processed: 0 
-        }),
+        JSON.stringify({ success: true, message: 'No companies to sync', companies_processed: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -127,24 +134,21 @@ Deno.serve(async (req) => {
       details: [] as any[]
     };
 
-    // Calculate date range (last 90 days)
     const dateTo = new Date();
     const dateFrom = new Date();
     dateFrom.setDate(dateFrom.getDate() - 90);
-
     const dateToStr = dateTo.toISOString().split('T')[0];
     const dateFromStr = dateFrom.toISOString().split('T')[0];
 
-    // Get webhook URL for consolidated calls
     const webhookUrl = Deno.env.get('NAV_INVOICES_KATEGORIZALAS_WEBHOOK_URL');
-    console.log(`📤 Webhook URL: ${webhookUrl ? `SET (ends: ...${webhookUrl.slice(-30)})` : 'NOT SET'}`);
+    if (!detailsOnly) {
+      console.log(`📤 Webhook URL: ${webhookUrl ? `SET (ends: ...${webhookUrl.slice(-30)})` : 'NOT SET'}`);
+    }
 
-    // Process each company with rate limiting
     for (const company of companiesWithCreds) {
       console.log(`\n👤 Processing company: ${company.company_id} (user: ${company.user_id})`);
 
       try {
-        // Get credentials via RPC - pass company_id for multi-tenant lookup
         const { data: credsData, error: credsError } = await supabase.rpc('get_nav_credentials', {
           p_user_id: company.user_id,
           p_company_id: company.company_id
@@ -153,104 +157,125 @@ Deno.serve(async (req) => {
         if (credsError || !credsData) {
           throw new Error(`Failed to get credentials: ${credsError?.message || 'No data'}`);
         }
-
-        // Check if credentials lookup returned an error
         if (credsData.error) {
           throw new Error(`Credentials lookup failed: ${credsData.error}`);
         }
 
         const credentials = credsData as NavCredentials;
 
-        // Sync OUTBOUND invoices - returns invoice numbers
-        const outboundInvoiceNumbers = await syncInvoices(supabase, company.user_id, company.company_id, credentials, 'OUTBOUND', dateFromStr, dateToStr);
-        console.log(`✅ OUTBOUND sync completed for company ${company.company_id}: ${outboundInvoiceNumbers?.length || 0} invoices`);
+        if (detailsOnly) {
+          // ===== DETAILS-ONLY MODE: skip digest, just fetch remaining details =====
+          const navApiUrl = 'https://api.onlineszamla.nav.gov.hu/invoiceService/v3';
+          const token = await getNavToken(credentials, navApiUrl);
 
-        // Sync INBOUND invoices - returns invoice numbers
-        const inboundInvoiceNumbers = await syncInvoices(supabase, company.user_id, company.company_id, credentials, 'INBOUND', dateFromStr, dateToStr);
-        console.log(`✅ INBOUND sync completed for company ${company.company_id}: ${inboundInvoiceNumbers?.length || 0} invoices`);
-
-        // Trigger single consolidated webhook for this company
-        const allInvoiceNumbers = [...(outboundInvoiceNumbers || []), ...(inboundInvoiceNumbers || [])];
-        
-        if (webhookUrl && webhookUrl.startsWith('http') && allInvoiceNumbers.length > 0) {
-          try {
-            // Fetch only uncategorized invoices (missing category_id OR project_id) for AI categorization
-            const { data: invoicesWithItems } = await supabase
-              .from('nav_invoices')
-              .select(`
-                id,
-                invoice_number,
-                invoice_direction,
-                supplier_name,
-                customer_name,
-                company_id,
-                category_id,
-                project_id,
-                nav_invoice_items (
-                  line_description,
-                  product_code,
-                  net_amount
-                )
-              `)
-              .in('invoice_number', allInvoiceNumbers)
-              .eq('user_id', company.user_id)
-              .eq('company_id', company.company_id)
-              .or('category_id.is.null,project_id.is.null');
-            
-            // Only call webhook if there are uncategorized invoices
-            if (invoicesWithItems && invoicesWithItems.length > 0) {
-              const payload = {
-                syncType: 'automatic',
-                userId: company.user_id,
-                companyId: company.company_id,
-                invoiceDirections: ['OUTBOUND', 'INBOUND'],
-                outboundCount: outboundInvoiceNumbers?.length || 0,
-                inboundCount: inboundInvoiceNumbers?.length || 0,
-                totalCount: invoicesWithItems.length,
-                filteredMessage: 'Only uncategorized invoices sent',
-                invoices: invoicesWithItems
-              };
-              
-              // Fire-and-forget webhook call
-              fetch(webhookUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-              }).catch(err => console.error(`📤 N8N webhook failed:`, err));
-              
-              console.log(`📤 N8N webhook: ${invoicesWithItems.length} uncategorized invoices sent (company: ${company.company_id})`);
-            } else {
-              console.log(`⏭️ N8N webhook skipped: all invoices already categorized (company: ${company.company_id})`);
-            }
-          } catch (webhookError) {
-            console.error('Webhook prep failed:', webhookError);
+          for (const direction of ['OUTBOUND', 'INBOUND'] as const) {
+            const count = await fetchInvoiceDetails(
+              supabase, company.user_id, company.company_id,
+              credentials, token, navApiUrl, direction
+            );
+            console.log(`🔍 Detail-only ${direction}: ${count} invoices processed`);
           }
-        }
 
-        results.successful++;
-        results.details.push({
-          company_id: company.company_id,
-          user_id: company.user_id,
-          username: company.nav_username,
-          status: 'success',
-          outbound_count: outboundInvoiceNumbers?.length || 0,
-          inbound_count: inboundInvoiceNumbers?.length || 0
-        });
+          results.successful++;
+          results.details.push({
+            company_id: company.company_id,
+            status: 'success',
+            mode: 'details_only'
+          });
+
+        } else {
+          // ===== FULL SYNC MODE: digest + details + webhook =====
+          const outboundInvoiceNumbers = await syncInvoices(supabase, company.user_id, company.company_id, credentials, 'OUTBOUND', dateFromStr, dateToStr);
+          console.log(`✅ OUTBOUND sync completed for company ${company.company_id}: ${outboundInvoiceNumbers?.length || 0} invoices`);
+
+          const inboundInvoiceNumbers = await syncInvoices(supabase, company.user_id, company.company_id, credentials, 'INBOUND', dateFromStr, dateToStr);
+          console.log(`✅ INBOUND sync completed for company ${company.company_id}: ${inboundInvoiceNumbers?.length || 0} invoices`);
+
+          // Trigger webhook for uncategorized invoices
+          const allInvoiceNumbers = [...(outboundInvoiceNumbers || []), ...(inboundInvoiceNumbers || [])];
+          
+          if (webhookUrl && webhookUrl.startsWith('http') && allInvoiceNumbers.length > 0) {
+            try {
+              const { data: invoicesWithItems } = await supabase
+                .from('nav_invoices')
+                .select(`
+                  id, invoice_number, invoice_direction, supplier_name, customer_name,
+                  company_id, category_id, project_id,
+                  nav_invoice_items ( line_description, product_code, net_amount )
+                `)
+                .in('invoice_number', allInvoiceNumbers)
+                .eq('user_id', company.user_id)
+                .eq('company_id', company.company_id)
+                .or('category_id.is.null,project_id.is.null');
+              
+              if (invoicesWithItems && invoicesWithItems.length > 0) {
+                fetch(webhookUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    syncType: 'automatic', userId: company.user_id, companyId: company.company_id,
+                    invoiceDirections: ['OUTBOUND', 'INBOUND'],
+                    outboundCount: outboundInvoiceNumbers?.length || 0,
+                    inboundCount: inboundInvoiceNumbers?.length || 0,
+                    totalCount: invoicesWithItems.length,
+                    filteredMessage: 'Only uncategorized invoices sent',
+                    invoices: invoicesWithItems
+                  })
+                }).catch(err => console.error(`📤 N8N webhook failed:`, err));
+                console.log(`📤 N8N webhook: ${invoicesWithItems.length} uncategorized invoices sent`);
+              } else {
+                console.log(`⏭️ N8N webhook skipped: all invoices already categorized`);
+              }
+            } catch (webhookError) {
+              console.error('Webhook prep failed:', webhookError);
+            }
+          }
+
+          results.successful++;
+          results.details.push({
+            company_id: company.company_id,
+            status: 'success',
+            outbound_count: outboundInvoiceNumbers?.length || 0,
+            inbound_count: inboundInvoiceNumbers?.length || 0
+          });
+        }
 
       } catch (error) {
         console.error(`❌ Error syncing company ${company.company_id}:`, error);
         results.failed++;
         results.details.push({
           company_id: company.company_id,
-          user_id: company.user_id,
-          username: company.nav_username,
           status: 'failed',
           error: error.message
         });
       }
 
-      // Rate limiting: 200ms delay between companies (max 5/second)
       await delay(200);
+    }
+
+    // ===== SELF-REINVOCATION: check if more details need fetching =====
+    const { count: remainingDetails } = await supabase
+      .from('nav_invoices')
+      .select('id', { count: 'exact', head: true })
+      .or('details_fetched.is.null,details_fetched.eq.false');
+
+    if (remainingDetails && remainingDetails > 0) {
+      console.log(`🔄 ${remainingDetails} invoices still need details. Re-invoking (depth ${depth + 1})...`);
+      
+      // Fire-and-forget: call ourselves again after 5 seconds
+      const selfUrl = `${supabaseUrl}/functions/v1/nav-auto-sync`;
+      setTimeout(() => {
+        fetch(selfUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceRoleKey}`
+          },
+          body: JSON.stringify({ depth: depth + 1, detailsOnly: true })
+        }).catch(err => console.error('Self-reinvocation failed:', err));
+      }, 5000);
+    } else {
+      console.log('✅ All invoice details are up to date.');
     }
 
     console.log('\n📈 Sync Summary:', results);
@@ -258,8 +283,10 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Automatic sync completed',
-        results 
+        message: detailsOnly ? 'Details-only sync completed' : 'Automatic sync completed',
+        results,
+        depth,
+        remainingDetails: remainingDetails || 0
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -267,14 +294,8 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('💥 Unexpected error during automatic sync:', error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message 
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify({ success: false, error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
@@ -356,9 +377,9 @@ async function syncInvoices(
       console.log(`📆 Processing chunk: ${chunk.from} to ${chunk.to}`);
       
       let currentPage = 1;
-      const maxPages = 3;
+      const MAX_SAFETY_PAGES = 50; // Safety cap to prevent infinite loops
 
-      while (currentPage <= maxPages) {
+      while (currentPage <= MAX_SAFETY_PAGES) {
         const invoices = await queryInvoiceDigest(
           credentials,
           token,
@@ -376,8 +397,17 @@ async function syncInvoices(
         allInvoices = [...allInvoices, ...invoices];
         console.log(`📄 Chunk ${chunk.from}-${chunk.to}, Page ${currentPage}: ${invoices.length} invoices`);
 
+        // If we got fewer than 100 invoices, this is the last page
+        if (invoices.length < 100) {
+          break;
+        }
+
         currentPage++;
         await delay(100); // Small delay between pages
+      }
+
+      if (currentPage > MAX_SAFETY_PAGES) {
+        console.warn(`⚠️ Hit safety page limit (${MAX_SAFETY_PAGES}) for chunk ${chunk.from}-${chunk.to} ${direction}`);
       }
       
       // Small delay between chunks to avoid rate limiting
@@ -411,23 +441,45 @@ async function syncInvoices(
 
       // Deduplicate by invoice_number to prevent
       // "ON CONFLICT DO UPDATE command cannot affect row a second time" error.
+      // Normalize keys: trim whitespace + case-insensitive to match PostgreSQL collation.
       // NAV API can return the same invoice in overlapping date chunks or pages.
       const seenNumbers = new Map<string, typeof invoicesToInsertRaw[0]>();
+      let skippedEmpty = 0;
       for (const inv of invoicesToInsertRaw) {
-        seenNumbers.set(inv.invoice_number, inv); // last occurrence wins
+        const raw = (inv.invoice_number || '').trim();
+        if (!raw) {
+          skippedEmpty++;
+          continue;
+        }
+        inv.invoice_number = raw; // store trimmed version
+        const normalizedKey = raw.toUpperCase();
+        seenNumbers.set(normalizedKey, inv); // last occurrence wins
       }
       const invoicesToInsert = Array.from(seenNumbers.values());
 
-      if (invoicesToInsertRaw.length !== invoicesToInsert.length) {
-        console.log(`⚠️ Deduplicated ${invoicesToInsertRaw.length - invoicesToInsert.length} duplicate invoice numbers`);
+      if (skippedEmpty > 0) {
+        console.warn(`⚠️ Skipped ${skippedEmpty} invoices with empty invoice_number`);
+      }
+      if (invoicesToInsertRaw.length !== invoicesToInsert.length + skippedEmpty) {
+        console.log(`⚠️ Deduplicated ${invoicesToInsertRaw.length - invoicesToInsert.length - skippedEmpty} duplicate invoice numbers`);
       }
 
-      const { error: upsertError } = await supabase
-        .from('nav_invoices')
-        .upsert(invoicesToInsert, {
-          onConflict: 'company_id,invoice_number',
-          ignoreDuplicates: false
-        });
+      // Upsert in batches to avoid PostgreSQL batch-level conflicts
+      const UPSERT_BATCH_SIZE = 100;
+      let upsertError: any = null;
+      for (let i = 0; i < invoicesToInsert.length; i += UPSERT_BATCH_SIZE) {
+        const batch = invoicesToInsert.slice(i, i + UPSERT_BATCH_SIZE);
+        const { error } = await supabase
+          .from('nav_invoices')
+          .upsert(batch, {
+            onConflict: 'company_id,invoice_number',
+            ignoreDuplicates: false
+          });
+        if (error) {
+          upsertError = error;
+          break;
+        }
+      }
 
       if (upsertError) {
         throw new Error(`Failed to upsert invoices: ${upsertError.message}`);
@@ -515,15 +567,24 @@ async function fetchInvoiceDetails(
     return 0;
   }
 
-  console.log(`🔍 Fetching details for ALL ${invoicesNeedingDetails.length} ${direction} invoices`);
+  console.log(`🔍 Fetching details for ${invoicesNeedingDetails.length} ${direction} invoices (time-budgeted)`);
 
   let successCount = 0;
+  const detailFetchStart = Date.now();
+  const DETAIL_FETCH_TIME_BUDGET_MS = 60_000; // Max 60 seconds for detail fetching
 
   // Process invoices with limited parallelism (max 3 concurrent)
   // and rate limiting (500ms between batches)
   const batchSize = 3;
   
   for (let i = 0; i < invoicesNeedingDetails.length; i += batchSize) {
+    // Check time budget before starting a new batch
+    if (Date.now() - detailFetchStart > DETAIL_FETCH_TIME_BUDGET_MS) {
+      const remaining = invoicesNeedingDetails.length - i;
+      console.log(`⏱️ Detail fetch time budget exhausted (${DETAIL_FETCH_TIME_BUDGET_MS / 1000}s). ${remaining} invoices deferred to next sync.`);
+      break;
+    }
+
     const batch = invoicesNeedingDetails.slice(i, i + batchSize);
     
     const batchPromises = batch.map(async (invoice: any) => {
@@ -612,6 +673,9 @@ async function fetchInvoiceDetails(
       await delay(500);
     }
   }
+
+  const elapsed = Math.round((Date.now() - detailFetchStart) / 1000);
+  console.log(`🔍 Detail fetch completed: ${successCount}/${invoicesNeedingDetails.length} in ${elapsed}s`);
 
   return successCount;
 }

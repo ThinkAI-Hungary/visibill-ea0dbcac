@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import UploadHistory from '@/components/UploadHistory';
+import { reportError } from '@/lib/errorReporter';
 
 const ManualUpload = () => {
   const [selectedInvoiceFiles, setSelectedInvoiceFiles] = useState<File[]>([]);
@@ -248,7 +249,7 @@ const ManualUpload = () => {
       .upload(fileName, file);
 
     if (error) {
-      console.error('Storage upload error:', error);
+      reportError({ type: 'upload', component: 'ManualUpload', action: 'error', message: 'Storage upload error:', error: error });
       throw new Error(`Fájl feltöltési hiba: ${error.message}`);
     }
 
@@ -263,13 +264,14 @@ const ManualUpload = () => {
   const checkDuplicateFile = async (fileName: string, table: 'invoice_uploads' | 'transaction_uploads'): Promise<boolean> => {
     if (!selectedCompany?.id) return false;
 
+    const doneStatus = table === 'invoice_uploads' ? 'processed' : 'completed';
     const { data } = await supabase
       .from(table)
       .select('id, file_name')
       .eq('company_id', selectedCompany.id)
       .eq('file_name', fileName)
       .eq('upload_status', 'uploaded')
-      .eq('processing_status', 'completed')
+      .eq('processing_status', doneStatus)
       .limit(1);
 
     return (data && data.length > 0);
@@ -318,7 +320,7 @@ const ManualUpload = () => {
           const storagePath = extractStoragePath(fileUrl, 'invoice-uploads') || '';
           storageResults.push({ file, fileUrl, storagePath });
         } catch (fileError) {
-          console.error(`Storage upload failed for ${file.name}:`, fileError);
+          reportError({ type: 'upload', component: 'ManualUpload', action: 'storage_upload', message: `Storage upload failed for ${file.name}`, error: fileError, context: { fileName: file.name } });
         }
       }
 
@@ -345,7 +347,7 @@ const ManualUpload = () => {
         .select();
 
       if (batchError) {
-        console.error('Batch insert error:', batchError);
+        reportError({ type: 'upload', component: 'ManualUpload', action: 'error', message: 'Batch insert error:', error: batchError });
         if (handleRateLimitError(batchError)) { setUploading(false); return; }
         // Rollback all storage uploads
         const paths = storageResults.map(r => r.storagePath).filter(Boolean);
@@ -369,7 +371,7 @@ const ManualUpload = () => {
       setSelectedInvoiceFiles([]);
       delayedUploadHistoryInvalidation();
     } catch (error) {
-      console.error('Upload error:', error);
+      reportError({ type: 'upload', component: 'ManualUpload', action: 'error', message: 'Upload error:', error: error });
       toast({
         variant: "destructive", title: "Feltöltés sikertelen",
         description: error instanceof Error ? error.message : "Hiba történt a fájlok feltöltése során. Kérlek próbáld újra."
@@ -447,7 +449,7 @@ const ManualUpload = () => {
       setSelectedBankFiles([]);
       delayedUploadHistoryInvalidation();
     } catch (error) {
-      console.error('Bank statement upload error:', error);
+      reportError({ type: 'upload', component: 'ManualUpload', action: 'error', message: 'Bank statement upload error:', error: error });
       toast({ variant: "destructive", title: "Feltöltés sikertelen", description: "Hiba történt a bankkivonatok feltöltése során. Kérlek próbáld újra." });
     } finally {
       setUploading(false);
@@ -484,7 +486,7 @@ const ManualUpload = () => {
           const storagePath = extractStoragePath(fileUrl, 'invoice-uploads') || '';
           storageResults.push({ file, fileUrl, storagePath });
         } catch (fileError) {
-          console.error(`Storage upload failed for ${file.name}:`, fileError);
+          reportError({ type: 'upload', component: 'ManualUpload', action: 'storage_upload', message: `Storage upload failed for ${file.name}`, error: fileError, context: { fileName: file.name } });
         }
       }
 
@@ -512,7 +514,7 @@ const ManualUpload = () => {
         .select();
 
       if (batchError) {
-        console.error('Batch insert error:', batchError);
+        reportError({ type: 'upload', component: 'ManualUpload', action: 'error', message: 'Batch insert error:', error: batchError });
         if (handleRateLimitError(batchError)) { setUploading(false); return; }
         const paths = storageResults.map(r => r.storagePath).filter(Boolean);
         if (paths.length > 0) await supabase.storage.from('invoice-uploads').remove(paths);
@@ -533,7 +535,7 @@ const ManualUpload = () => {
       setSelectedSalaryFiles([]);
       delayedUploadHistoryInvalidation();
     } catch (error) {
-      console.error('Salary upload error:', error);
+      reportError({ type: 'upload', component: 'ManualUpload', action: 'error', message: 'Salary upload error:', error: error });
       toast({ variant: "destructive", title: "Feltöltés sikertelen", description: "Hiba történt a bérek/járulékok feltöltése során. Kérlek próbáld újra." });
     } finally {
       setUploading(false);
@@ -644,7 +646,7 @@ const ManualUpload = () => {
       setSelectedBankHint('auto');
       delayedUploadHistoryInvalidation();
     } catch (error) {
-      console.error('Transaction upload error:', error);
+      reportError({ type: 'upload', component: 'ManualUpload', action: 'error', message: 'Transaction upload error:', error: error });
       processingToast.dismiss();
       toast({ variant: "destructive", title: "Feltöltés sikertelen", description: "Hiba történt a tranzakciók feltöltése során. Kérlek próbáld újra." });
     } finally {
@@ -738,7 +740,7 @@ const ManualUpload = () => {
       setSelectedReportFiles([]);
       delayedUploadHistoryInvalidation();
     } catch (error) {
-      console.error('Report upload error:', error);
+      reportError({ type: 'upload', component: 'ManualUpload', action: 'error', message: 'Report upload error:', error: error });
       toast({ variant: "destructive", title: "Feltöltés sikertelen", description: "Hiba történt a riport feltöltése során." });
     } finally {
       setUploading(false);

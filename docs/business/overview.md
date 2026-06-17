@@ -89,8 +89,9 @@ Az év végén a rendszer az összegyűjtött adatokból elkészíti:
 | **Bérek & járulékok** | Bérjegyzék feldolgozás, bérköltség nyilvántartás | Cégvezetők |
 | **Munkaidő nyilvántartás** | Dolgozók munkaideje, szabadságkezelés | HR / cégvezetők |
 | **Futárszolgálat riportok** | GLS, MPL, DPD, FoxPost stb. elszámolások | E-commerce cégek |
-| **Házipénztár** | Készpénzes tranzakciók kezelése | Kiskereskedelmi cégek |
-| **Árfolyamok** | Többvalutás tranzakciók, MNB árfolyamok | Exportáló cégek |
+| **Házipénztár** | Több regiszter (pénztár), több deviza, alapertelm. regiszter, szabály-alapú tr. elosztás | Kiskereskedelmi cégek |
+| **Árfolyamok** | MNB napi árfolyamok (SOAP API, auto-sync), devizás árfolyam-különbözet dashboard | Exportáló cégek |
+| **XML főkönyv import** | Könyvelőprogram XML főkönyvi kivonat feltöltés és feldolgozás | Könyvelők |
 
 ---
 
@@ -130,8 +131,9 @@ A Visibill egyszeri vásárlással érhető el. A felhasználó megvásárolja a
 - ✅ Teljes számla-feldolgozási pipeline (OCR + AI)
 - ✅ NAV Online Számla v3 integráció (bejövő + kimenő)
 - ✅ Banki tranzakció import és AI párosítás
-- ✅ Főkönyvi rendszer AI kategorizálással
-- ✅ Eredménykimutatás, mérleg, éves beszámoló
+- ✅ Főkönyvi rendszer AI kategórizálással
+- ✅ XML főkönyv import (RLB/Novitax/Kulcs-Soft/KÖKÉNY)
+- ✅ Eredménykimutatás, mérleg, éves beszámoló (főkönyvi + NAV adat alapú)
 - ✅ Tárgyi eszköz nyilvántartás (11 TAO sablon)
 - ✅ Kintlévőség kezelés és fizetési felszólítás
 - ✅ Futárszolgálat riport feldolgozás (6 szolgáltató)
@@ -141,6 +143,10 @@ A Visibill egyszeri vásárlással érhető el. A felhasználó megvásárolja a
 - ✅ Accounty modul (könyvelő iroda nézet)
 - ✅ ÁFA bevallás modul
 - ✅ Payroll (bérszámfejtés) modul
+- ✅ Házipénztár multi-regiszter támogatás (több pénztár, több deviza, szabályok)
+- ✅ MNB árfolyam integráció (SOAP API, auto-sync)
+- ✅ Devizás árfolyam-különbözet dashboard
+- ✅ Tranzakció párosítás ML tanulás (felülírás audit log)
 
 ### Amin még dolgozunk
 - 🟡 Árazási modell véglegesítése (egyszeri díj struktúra)

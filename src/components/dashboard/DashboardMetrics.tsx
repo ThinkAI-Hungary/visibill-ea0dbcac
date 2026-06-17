@@ -4,12 +4,17 @@ import { Upload, ArrowUpRight, ArrowDownLeft, TrendingUp, Banknote, Wallet, Euro
 import { formatCurrency } from '@/lib/utils';
 import type { DashboardMetrics as Metrics, NavVatData } from '@/hooks/useDashboardData';
 
+interface PettyCashCurrencyBalance {
+  currency: string;
+  balance: number;
+}
+
 interface DashboardMetricsProps {
   metrics: Metrics;
   navVatData: NavVatData | undefined;
   showBrutto: boolean;
   selectedCurrency: string;
-  pettyCashBalance: number | null;
+  pettyCashBalances: PettyCashCurrencyBalance[];
   convertToSelectedCurrency: (amount: number, fromCurrency: string, selectedCurrency: string) => number;
 }
 
@@ -18,7 +23,7 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
   navVatData,
   showBrutto,
   selectedCurrency,
-  pettyCashBalance,
+  pettyCashBalances,
   convertToSelectedCurrency,
 }: DashboardMetricsProps) {
   let payableVat = 0;
@@ -37,6 +42,16 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
   const unpaidInboundData = showBrutto ? navVatData?.unpaidInboundGross : navVatData?.unpaidInboundNet;
   const unpaidOutboundData = showBrutto ? navVatData?.unpaidOutboundGross : navVatData?.unpaidOutboundNet;
 
+  // Helper to filter out zero-value currencies and format the remaining ones
+  const formatMultiCurrency = (data: Record<string, number> | undefined) => {
+    if (!data || Object.keys(data).length === 0) return '0 Ft';
+    const activeEntries = Object.entries(data).filter(([_, amount]) => Math.abs(amount) > 0.01);
+    if (activeEntries.length === 0) return '0 Ft';
+    return activeEntries
+      .map(([currency, amount]) => formatCurrency(amount, currency))
+      .join(' | ');
+  };
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-stretch">
       <MetricCard
@@ -48,46 +63,32 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
       />
       <MetricCard
         title={`Bevétel (${showBrutto ? 'bruttó' : 'nettó'})`}
-        value={
-          revenueData && Object.keys(revenueData).length > 0
-            ? Object.entries(revenueData)
-                .map(([currency, amount]) => formatCurrency(amount, currency))
-                .join(' | ')
-            : '0 Ft'
-        }
+        value={formatMultiCurrency(revenueData)}
         description="NAV OUTBOUND"
         icon={ArrowUpRight}
         variant="success"
       />
       <MetricCard
         title={`Kintlévőség (${showBrutto ? 'bruttó' : 'nettó'})`}
-        value={
-          unpaidOutboundData && Object.keys(unpaidOutboundData).length > 0
-            ? Object.entries(unpaidOutboundData)
-                .map(([currency, amount]) => formatCurrency(amount, currency))
-                .join(' | ')
-            : '0 Ft'
-        }
+        value={formatMultiCurrency(unpaidOutboundData)}
         description="Kifizetetlen kimenő számlák"
         icon={TrendingUp}
         variant="info"
       />
       <MetricCard
         title="Házipénztár"
-        value={formatCurrency(pettyCashBalance ?? 0)}
-        description="Aktuális készpénz egyenleg"
+        value={
+          pettyCashBalances.length > 0
+            ? pettyCashBalances.map(b => formatCurrency(Math.round(b.currency === 'HUF' ? Math.round(b.balance / 5) * 5 : b.balance * 100) / (b.currency === 'HUF' ? 1 : 100), b.currency)).join(' | ')
+            : '—'
+        }
+        description="Összesített készpénz egyenleg"
         icon={Banknote}
-        variant={pettyCashBalance !== null && pettyCashBalance >= 0 ? 'success' : 'destructive'}
+        variant={pettyCashBalances.length > 0 && pettyCashBalances.every(b => b.balance >= 0) ? 'success' : pettyCashBalances.length === 0 ? 'default' : 'destructive'}
       />
       <MetricCard
         title={`Kiadás (${showBrutto ? 'bruttó' : 'nettó'})`}
-        value={
-          expensesData && Object.keys(expensesData).length > 0
-            ? Object.entries(expensesData)
-                .map(([currency, amount]) => formatCurrency(amount, currency))
-                .join(' | ')
-            : '0 Ft'
-        }
+        value={formatMultiCurrency(expensesData)}
         description="NAV INBOUND"
         icon={ArrowDownLeft}
         variant="destructive"
@@ -101,13 +102,7 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
       />
       <MetricCard
         title={`Szállítói köt. (${showBrutto ? 'bruttó' : 'nettó'})`}
-        value={
-          unpaidInboundData && Object.keys(unpaidInboundData).length > 0
-            ? Object.entries(unpaidInboundData)
-                .map(([currency, amount]) => formatCurrency(amount, currency))
-                .join(' | ')
-            : '0 Ft'
-        }
+        value={formatMultiCurrency(unpaidInboundData)}
         description="Kifizetetlen bejövő számlák"
         icon={Wallet}
         variant="destructive"

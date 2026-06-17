@@ -14,6 +14,7 @@ import { format, subDays, addDays } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { useScopedNavigate } from '@/lib/navigation';
 import { InvoiceDetailPopup } from '@/components/InvoiceDetailPopup';
+import { reportError } from '@/lib/errorReporter';
 
 interface Transaction {
   id: string;
@@ -208,7 +209,7 @@ export const TransactionDetailsDialog = ({
         }
       }
     } catch (error) {
-      console.error('Error fetching matched invoice:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error fetching matched invoice:', error: error });
       setMatchedInvoice(null);
       setMatchedNavInvoice(null);
     } finally {
@@ -228,7 +229,7 @@ export const TransactionDetailsDialog = ({
       if (error) throw error;
       setMatchedCourierReports(data || []);
     } catch (error) {
-      console.error('Error fetching courier reports:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error fetching courier reports:', error: error });
       setMatchedCourierReports([]);
     }
   };
@@ -241,61 +242,101 @@ export const TransactionDetailsDialog = ({
       const transactionDate = new Date(transaction.transaction_date);
       const dateFrom = format(subDays(transactionDate, 180), 'yyyy-MM-dd');
       const dateTo = format(addDays(transactionDate, 30), 'yyyy-MM-dd');
-      const txAmount = Math.abs(transaction.amount);
 
-      // 1. Fetch from invoices table (wide date range, no match filter)
-      const { data: invoices } = await supabase
-        .from('invoices')
-        .select('id, bizonylatsorszam, brutto_vegosszeg, elado_nev, penznem, kibocsatas_datuma')
-        .eq('company_id', companyId)
-        .gte('kibocsatas_datuma', dateFrom)
-        .lte('kibocsatas_datuma', dateTo)
-        .order('kibocsatas_datuma', { ascending: false })
-        .limit(200);
+      // 1. Fetch candidate invoices from both tables (2 parallel queries)
+      const [{ data: invoices }, { data: navInvoices }] = await Promise.all([
+        supabase
+          .from('invoices')
+          .select('id, bizonylatsorszam, brutto_vegosszeg, elado_nev, penznem, kibocsatas_datuma')
+          .eq('company_id', companyId)
+          .gte('kibocsatas_datuma', dateFrom)
+          .lte('kibocsatas_datuma', dateTo)
+          .order('kibocsatas_datuma', { ascending: false })
+          .limit(200),
+        supabase
+          .from('nav_invoices')
+          .select('id, invoice_number, invoice_gross_amount, supplier_name, customer_name, currency, invoice_issue_date, invoice_direction')
+          .eq('company_id', companyId)
+          .gte('invoice_issue_date', dateFrom)
+          .lte('invoice_issue_date', dateTo)
+          .order('invoice_issue_date', { ascending: false })
+          .limit(200),
+      ]);
 
-      // 2. Fetch from nav_invoices table (no transaction_id filter - allow already matched)
-      const { data: navInvoices } = await supabase
-        .from('nav_invoices')
-        .select('id, invoice_number, invoice_gross_amount, supplier_name, customer_name, currency, invoice_issue_date, invoice_direction')
-        .eq('company_id', companyId)
-        .gte('invoice_issue_date', dateFrom)
-        .lte('invoice_issue_date', dateTo)
-        .order('invoice_issue_date', { ascending: false })
-        .limit(200);
+      // 2. Collect ALL invoice IDs (submitted + NAV) to batch-fetch matched transactions
+      const allInvoiceIds = [
+        ...(invoices || []).map(i => i.id),
+        ...(navInvoices || []).map(n => n.id),
+      ];
 
-      // 3. Combine into unified list
+      // 3. Build cross-reference maps: submitted bizonylatsorszam ↔ NAV invoice_number
+      // So we can compute "already paid" via counterpart invoices too
+      const submittedByNumber = new Map<string, string[]>();
+      (invoices || []).forEach(inv => {
+        if (inv.bizonylatsorszam) {
+          const existing = submittedByNumber.get(inv.bizonylatsorszam) || [];
+          existing.push(inv.id);
+          submittedByNumber.set(inv.bizonylatsorszam, existing);
+        }
+      });
+      const navByNumber = new Map<string, string[]>();
+      (navInvoices || []).forEach(nav => {
+        if (nav.invoice_number) {
+          const existing = navByNumber.get(nav.invoice_number) || [];
+          existing.push(nav.id);
+          navByNumber.set(nav.invoice_number, existing);
+        }
+      });
+
+      // Add cross-referenced IDs to the batch
+      (invoices || []).forEach(inv => {
+        if (inv.bizonylatsorszam) {
+          const navIds = navByNumber.get(inv.bizonylatsorszam);
+          if (navIds) allInvoiceIds.push(...navIds);
+        }
+      });
+      (navInvoices || []).forEach(nav => {
+        if (nav.invoice_number) {
+          const subIds = submittedByNumber.get(nav.invoice_number);
+          if (subIds) allInvoiceIds.push(...subIds);
+        }
+      });
+
+      // 4. Single batch query: fetch ALL transactions matched to ANY of these invoice IDs
+      const uniqueIds = [...new Set(allInvoiceIds)];
+      const paidByInvoiceId = new Map<string, number>();
+
+      if (uniqueIds.length > 0) {
+        // Batch in chunks of 500 to avoid URL length limits
+        const CHUNK = 500;
+        for (let i = 0; i < uniqueIds.length; i += CHUNK) {
+          const chunk = uniqueIds.slice(i, i + CHUNK);
+          const { data: matchedTxs } = await supabase
+            .from('transactions')
+            .select('matched_invoice_id, amount')
+            .in('matched_invoice_id', chunk);
+
+          (matchedTxs || []).forEach(tx => {
+            if (tx.matched_invoice_id) {
+              const prev = paidByInvoiceId.get(tx.matched_invoice_id) || 0;
+              paidByInvoiceId.set(tx.matched_invoice_id, prev + Math.abs(tx.amount || 0));
+            }
+          });
+        }
+      }
+
+      // 5. Build combined list with already_paid computed via Map lookups (no extra queries)
       const combined: AvailableInvoice[] = [];
 
       for (const inv of (invoices || [])) {
-        let alreadyPaid = 0;
-
-        // 1. Direct match to this submitted invoice ID
-        const { data: directMatchedTx } = await supabase
-          .from('transactions')
-          .select('amount')
-          .eq('matched_invoice_id', inv.id);
-
-        alreadyPaid += (directMatchedTx || []).reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
-
-        // 2. Also check matches via corresponding NAV invoice (same invoice number)
+        let alreadyPaid = paidByInvoiceId.get(inv.id) || 0;
+        // Add payments via NAV counterpart
         if (inv.bizonylatsorszam) {
-          const { data: navInv } = await supabase
-            .from('nav_invoices')
-            .select('id')
-            .eq('company_id', companyId)
-            .eq('invoice_number', inv.bizonylatsorszam);
-
-          if (navInv && navInv.length > 0) {
-            const navIds = navInv.map(n => n.id);
-            const { data: navMatchedTx } = await supabase
-              .from('transactions')
-              .select('amount')
-              .in('matched_invoice_id', navIds);
-
-            alreadyPaid += (navMatchedTx || []).reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
+          const navIds = navByNumber.get(inv.bizonylatsorszam);
+          if (navIds) {
+            navIds.forEach(nid => { alreadyPaid += paidByInvoiceId.get(nid) || 0; });
           }
         }
-
         combined.push({
           id: inv.id,
           bizonylatsorszam: inv.bizonylatsorszam,
@@ -309,35 +350,14 @@ export const TransactionDetailsDialog = ({
       }
 
       for (const nav of (navInvoices || [])) {
-        let navAlreadyPaid = 0;
-
-        // 1. Direct match to this NAV invoice ID
-        const { data: navDirectTx } = await supabase
-          .from('transactions')
-          .select('amount')
-          .eq('matched_invoice_id', nav.id);
-
-        navAlreadyPaid += (navDirectTx || []).reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
-
-        // 2. Cross-ref via submitted invoice with same number
+        let navAlreadyPaid = paidByInvoiceId.get(nav.id) || 0;
+        // Add payments via submitted counterpart
         if (nav.invoice_number) {
-          const { data: subInv } = await supabase
-            .from('invoices')
-            .select('id')
-            .eq('company_id', companyId)
-            .eq('bizonylatsorszam', nav.invoice_number);
-
-          if (subInv && subInv.length > 0) {
-            const subIds = subInv.map(s => s.id);
-            const { data: subMatchedTx } = await supabase
-              .from('transactions')
-              .select('amount')
-              .in('matched_invoice_id', subIds);
-
-            navAlreadyPaid += (subMatchedTx || []).reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
+          const subIds = submittedByNumber.get(nav.invoice_number);
+          if (subIds) {
+            subIds.forEach(sid => { navAlreadyPaid += paidByInvoiceId.get(sid) || 0; });
           }
         }
-
         const navBrutto = Math.abs(nav.invoice_gross_amount || 0);
         combined.push({
           id: nav.id,
@@ -355,7 +375,7 @@ export const TransactionDetailsDialog = ({
 
       setAvailableInvoices(combined);
     } catch (error) {
-      console.error('Error fetching invoices:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error fetching invoices:', error: error });
       toast({ title: 'Hiba a számlák betöltésekor', variant: 'destructive' });
     } finally {
       setLoadingAvailable(false);
@@ -383,10 +403,52 @@ export const TransactionDetailsDialog = ({
       onUpdate();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error verifying transaction:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error verifying transaction:', error: error });
       toast({ title: 'Hiba a jóváhagyás során', variant: 'destructive' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  // ── Override logging for few-shot learning ──
+  const logMatchOverride = async (
+    correctedInvoiceId: string | null,
+    correctedMatchType: string,
+  ) => {
+    if (!transaction || !companyId) return;
+    try {
+      // Get the original partner name from currently matched invoice
+      const originalPartner = matchedInvoice?.elado_nev
+        || matchedNavInvoice?.supplier_name
+        || matchedNavInvoice?.customer_name
+        || matchedSalary?.név
+        || matchedSalary?.munkavallalo_neve
+        || null;
+
+      // Get the corrected partner name from the selected invoice in availableInvoices
+      const correctedInv = correctedInvoiceId
+        ? availableInvoices.find(inv => inv.id === correctedInvoiceId)
+        : null;
+      const correctedPartner = correctedInv?.elado_nev || null;
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      await supabase.from('match_transaction_overrides_log').insert({
+        company_id: companyId,
+        transaction_id: transaction.id,
+        original_invoice_id: transaction.matched_invoice_id || null,
+        original_match_type: transaction.match_type || null,
+        corrected_invoice_id: correctedInvoiceId,
+        corrected_match_type: correctedMatchType,
+        transaction_description: transaction.description || '',
+        transaction_amount: transaction.amount,
+        original_partner_name: originalPartner,
+        corrected_partner_name: correctedPartner,
+        created_by: user?.id || null,
+      });
+    } catch (e) {
+      // Fire-and-forget: don't block the main flow
+      console.warn('Failed to log match override:', e);
     }
   };
 
@@ -407,11 +469,14 @@ export const TransactionDetailsDialog = ({
 
       if (error) throw error;
 
+      // Log the override for AI learning (fire-and-forget)
+      logMatchOverride(selectedInvoiceId, 'manual');
+
       toast({ title: 'Tranzakció sikeresen párosítva!' });
       onUpdate();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error matching transaction:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error matching transaction:', error: error });
       toast({ title: 'Hiba a párosítás mentésekor', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -438,7 +503,7 @@ export const TransactionDetailsDialog = ({
       onUpdate();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error unmatching transaction:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error unmatching transaction:', error: error });
       toast({ title: 'Hiba a párosítás megszüntetésekor', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -465,7 +530,7 @@ export const TransactionDetailsDialog = ({
       onUpdate();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error marking no invoice:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error marking no invoice:', error: error });
       toast({ title: 'Hiba a jelölés mentésekor', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -492,7 +557,7 @@ export const TransactionDetailsDialog = ({
       onUpdate();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error marking invoice missing:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error marking invoice missing:', error: error });
       toast({ title: 'Hiba a jelölés mentésekor', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -517,7 +582,7 @@ export const TransactionDetailsDialog = ({
       onUpdate();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error reverting status:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error reverting status:', error: error });
       toast({ title: 'Hiba a visszavonás során', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -582,6 +647,9 @@ export const TransactionDetailsDialog = ({
 
       if (error) throw error;
 
+      // Log the override for AI learning (fire-and-forget)
+      logMatchOverride(selectedInvoiceId, 'manual_extra');
+
       toast({ title: 'További számla sikeresen hozzáadva!' });
       setShowAddExtraMatch(false);
       setSelectedInvoiceId(null);
@@ -592,7 +660,7 @@ export const TransactionDetailsDialog = ({
       if (error?.code === '23505') {
         toast({ title: 'Ez a számla már hozzá van rendelve ehhez a tranzakcióhoz', variant: 'destructive' });
       } else {
-        console.error('Error adding extra match:', error);
+        reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error adding extra match:', error: error });
         toast({ title: 'Hiba a számla hozzáadásakor', variant: 'destructive' });
       }
     } finally {
@@ -614,7 +682,7 @@ export const TransactionDetailsDialog = ({
       fetchExtraMatches();
       onUpdate();
     } catch (error) {
-      console.error('Error removing extra match:', error);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'error', message: 'Error removing extra match:', error: error });
       toast({ title: 'Hiba az eltávolításkor', variant: 'destructive' });
     } finally {
       setSaving(false);
@@ -636,14 +704,47 @@ export const TransactionDetailsDialog = ({
     // When no search: only show invoices within tolerance of transaction amount
     if (!search) {
       if (txAmt > 0) {
-        list = list.filter(inv => {
-          const invHuf = Math.abs(toHuf(inv.brutto_vegosszeg || 0, inv.penznem));
-          const diff = Math.abs(invHuf - txAmt);
+        const txCcy = (transaction?.currency || 'HUF').toUpperCase();
+
+        const filtered = list.filter(inv => {
+          const invCcy = (inv.penznem || 'HUF').toUpperCase();
+          const isSameCcy = txCcy === invCcy;
+
+          // Compare in the same unit
+          const invAmt = isSameCcy
+            ? Math.abs(inv.brutto_vegosszeg || 0)
+            : Math.abs(toHuf(inv.brutto_vegosszeg || 0, inv.penznem));
+          const txComp = isSameCcy
+            ? txAmt
+            : toHuf(txAmt, transaction?.currency);
+
+          const diff = Math.abs(invAmt - txComp);
           // Use wider tolerance (50%) for cross-currency, 30% for same currency
-          const isCrossCurrency = (inv.penznem || 'HUF').toUpperCase() !== (transaction?.currency || 'HUF').toUpperCase();
-          const tolerance = isCrossCurrency ? 0.50 : 0.30;
-          return diff / txAmt <= tolerance;
+          const tolerance = isSameCcy ? 0.30 : 0.50;
+          return diff / txComp <= tolerance;
         });
+
+        // Always show at least 10 invoices (sorted by proximity) so the UI
+        // never appears completely empty — which can confuse users.
+        const MIN_SHOW = 10;
+        if (filtered.length >= MIN_SHOW) {
+          list = filtered;
+        } else {
+          // Sort full list by amount proximity, take top MIN_SHOW
+          // Prioritize same-currency invoices
+          const sorted = [...list].sort((a, b) => {
+            const aSame = (a.penznem || 'HUF').toUpperCase() === txCcy;
+            const bSame = (b.penznem || 'HUF').toUpperCase() === txCcy;
+            // Same-currency invoices come first
+            if (aSame !== bSame) return aSame ? -1 : 1;
+
+            const aAmt = aSame ? Math.abs(a.brutto_vegosszeg || 0) : toHuf(Math.abs(a.brutto_vegosszeg || 0), a.penznem);
+            const bAmt = bSame ? Math.abs(b.brutto_vegosszeg || 0) : toHuf(Math.abs(b.brutto_vegosszeg || 0), b.penznem);
+            const txComp = aSame ? txAmt : toHuf(txAmt, transaction?.currency);
+            return Math.abs(aAmt - txComp) - Math.abs(bAmt - txComp);
+          });
+          list = sorted.slice(0, Math.max(MIN_SHOW, filtered.length));
+        }
       }
     } else {
       // When searching: match text, no amount filter
@@ -669,12 +770,21 @@ export const TransactionDetailsDialog = ({
       });
     }
 
-    // Always sort by proximity to transaction amount (FX-converted to HUF)
+    // Always sort by proximity to transaction amount (currency-aware)
+    const txCcyFinal = (transaction?.currency || 'HUF').toUpperCase();
     list.sort((a, b) => {
-      const aHuf = Math.abs(toHuf(a.brutto_vegosszeg || 0, a.penznem));
-      const bHuf = Math.abs(toHuf(b.brutto_vegosszeg || 0, b.penznem));
-      const diffA = Math.abs(aHuf - txAmt);
-      const diffB = Math.abs(bHuf - txAmt);
+      const aCcy = (a.penznem || 'HUF').toUpperCase();
+      const bCcy = (b.penznem || 'HUF').toUpperCase();
+      // Same-currency invoices get priority
+      const aSame = aCcy === txCcyFinal;
+      const bSame = bCcy === txCcyFinal;
+      if (aSame !== bSame) return aSame ? -1 : 1;
+
+      const aAmt = aSame ? Math.abs(a.brutto_vegosszeg || 0) : toHuf(Math.abs(a.brutto_vegosszeg || 0), a.penznem);
+      const bAmt = bSame ? Math.abs(b.brutto_vegosszeg || 0) : toHuf(Math.abs(b.brutto_vegosszeg || 0), b.penznem);
+      const txComp = aSame ? txAmt : toHuf(txAmt, transaction?.currency);
+      const diffA = Math.abs(aAmt - txComp);
+      const diffB = Math.abs(bAmt - txComp);
       return diffA - diffB;
     });
 
@@ -1160,13 +1270,32 @@ export const TransactionDetailsDialog = ({
                     {filteredInvoices.map((invoice) => {
                       const isSelected = selectedInvoiceId === invoice.id;
                       const invoiceAmt = invoice.brutto_vegosszeg || 0;
-                      const invoiceHuf = toHuf(Math.abs(invoiceAmt), invoice.penznem);
+                      const txCurrency = (transaction.currency || 'HUF').toUpperCase();
+                      const invCurrency = (invoice.penznem || 'HUF').toUpperCase();
+                      const isSameCurrency = txCurrency === invCurrency;
+
+                      // Compare in the same unit: if same currency, compare directly;
+                      // otherwise convert both to HUF for comparison
                       const txAbs = Math.abs(transactionAmount);
-                      const diff = invoiceHuf - txAbs;
+                      let compareInvAmt: number;
+                      let compareTxAmt: number;
+                      let diffCurrency: string;
+
+                      if (isSameCurrency) {
+                        compareInvAmt = Math.abs(invoiceAmt);
+                        compareTxAmt = txAbs;
+                        diffCurrency = invCurrency;
+                      } else {
+                        compareInvAmt = toHuf(Math.abs(invoiceAmt), invoice.penznem);
+                        compareTxAmt = toHuf(txAbs, transaction.currency);
+                        diffCurrency = 'HUF';
+                      }
+
+                      const diff = compareInvAmt - compareTxAmt;
                       const absDiff = Math.abs(diff);
-                      const isExact = absDiff < 1;
-                      const isNear = !isExact && txAbs > 0 && absDiff < txAbs * 0.05;
-                      const pctDiff = txAbs > 0 ? (absDiff / txAbs * 100) : 0;
+                      const isExact = absDiff < (isSameCurrency ? 0.01 : 1);
+                      const isNear = !isExact && compareTxAmt > 0 && absDiff < compareTxAmt * 0.05;
+                      const pctDiff = compareTxAmt > 0 ? (absDiff / compareTxAmt * 100) : 0;
 
                       const partnerName = invoice.elado_nev?.toLowerCase() || '';
                       const txDesc = transaction.description?.toLowerCase() || '';
@@ -1240,7 +1369,7 @@ export const TransactionDetailsDialog = ({
                                 </Badge>
                               ) : (
                                 <span className="text-[10px] text-muted-foreground/60 mt-0.5 block">
-                                  {diff > 0 ? '+' : ''}{formatCurrency(diff, 'HUF')}
+                                  {diff > 0 ? '+' : ''}{formatCurrency(diff, diffCurrency)}
                                 </span>
                               )}
                             </div>

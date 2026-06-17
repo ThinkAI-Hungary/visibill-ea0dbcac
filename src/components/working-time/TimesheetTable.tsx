@@ -29,6 +29,8 @@ interface TimesheetTableProps {
   workStartTime: string;   // e.g. "08:00"
   workEndTime: string;      // e.g. "16:30"
   projectNames: Record<string, string>;
+  employeeRates?: { user_id: string | null; employee_name: string }[];
+  isAdmin?: boolean;
 }
 
 const STATUS_CONFIG = {
@@ -65,6 +67,8 @@ export function TimesheetTable({
   workStartTime,
   workEndTime,
   projectNames,
+  employeeRates = [],
+  isAdmin = false,
 }: TimesheetTableProps) {
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
@@ -84,6 +88,17 @@ export function TimesheetTable({
   const totalHours = monthEntries.reduce((s, e) => s + Number(e.hours), 0);
 
   const toggleSort = () => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+
+  // Create a fast map for user_id to employee name mapping
+  const userNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    employeeRates.forEach((r) => {
+      if (r.user_id) {
+        map[r.user_id] = r.employee_name;
+      }
+    });
+    return map;
+  }, [employeeRates]);
 
   if (monthEntries.length === 0) {
     return (
@@ -122,6 +137,7 @@ export function TimesheetTable({
                   )}
                 </Button>
               </TableHead>
+              {isAdmin && <TableHead className="min-w-[120px]">Dolgozó</TableHead>}
               <TableHead className="w-[100px] text-center">Kezdete</TableHead>
               <TableHead className="w-[100px] text-center">Vége</TableHead>
               <TableHead className="w-[80px] text-right">Órák</TableHead>
@@ -133,7 +149,7 @@ export function TimesheetTable({
           </TableHeader>
           <TableBody>
             {monthEntries.map((entry) => {
-              const statusCfg = STATUS_CONFIG[entry.status];
+              const statusCfg = STATUS_CONFIG[entry.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.draft;
               const isAbsence = !!entry.absence_type;
               const startTime = isAbsence ? '—' : workStartTime;
               const endTime = isAbsence
@@ -144,6 +160,7 @@ export function TimesheetTable({
                   ? format(parseISO(entry.updated_at), 'yyyy.MM.dd. HH:mm')
                   : null;
               const projName = entry.project_id ? projectNames[entry.project_id] || '—' : null;
+              const employeeName = entry.user_id ? userNameMap[entry.user_id] || 'Ismeretlen' : '—';
 
               return (
                 <TableRow
@@ -160,6 +177,13 @@ export function TimesheetTable({
                       {format(parseISO(entry.date), 'yyyy.MM.dd. (EEEE)', { locale: hu })}
                     </div>
                   </TableCell>
+
+                  {/* Employee (Admin Only) */}
+                  {isAdmin && (
+                    <TableCell className="font-semibold text-foreground truncate max-w-[140px]">
+                      {employeeName}
+                    </TableCell>
+                  )}
 
                   {/* Start */}
                   <TableCell className="text-center font-mono tabular-nums text-muted-foreground">
@@ -208,6 +232,7 @@ export function TimesheetTable({
           <TableFooter>
             <TableRow className="font-semibold">
               <TableCell>Összesen</TableCell>
+              {isAdmin && <TableCell />}
               <TableCell />
               <TableCell />
               <TableCell className="text-right font-mono tabular-nums text-primary">

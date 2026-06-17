@@ -159,6 +159,10 @@ Egységes lapozó komponens az összes táblázathoz:
 
 **Layout:** `Találatok (500) | ⟨⟨ ⟨ 1 2 3 4 5 ⟩ ⟩⟩ | Oldalméret [50▾]`
 
+**KPI-aware paginálás:** A számlák oldalon a `totalPages` dinamikusan számolt:
+- KPI szűrő inaktív → szerver-oldali `navTotalPages` (Supabase `.range()`)
+- KPI szűrő aktív → `Math.ceil(kpiFilteredTotalItems / pageSize)` — kliens-oldali
+
 ### Copyable Cell
 **Fájl:** `ui/copyable-cell.tsx`
 

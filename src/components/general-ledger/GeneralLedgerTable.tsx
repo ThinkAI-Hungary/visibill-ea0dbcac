@@ -34,6 +34,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useCompany } from '@/contexts/CompanyContext';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { reportError } from '@/lib/errorReporter';
 
 interface LedgerItem {
   id: string; // Fők.szám
@@ -147,7 +148,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       });
       
       if (error) {
-        console.error("Error fetching GL balances:", error);
+        reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching GL balances:', error: error });
         return [];
       }
       
@@ -171,7 +172,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         p_exchange_rates: exchangeRates || {}
       });
       if (error) {
-        console.error("Error fetching GL items:", error);
+        reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Error fetching GL items:', error: error });
         return [];
       }
       return data || [];
@@ -221,7 +222,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     
     if (error || data === false) {
        const errMsg = error?.message || "SQL Exception (csendben elfojtva). Ellenőrizd a függvényt.";
-       console.error("Hiba módosításkor:", error || "SQL Exception caught inside RPC. Check logs.");
+       reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Hiba módosításkor:', error: error || "SQL Exception caught inside RPC. Check logs." });
        toast({ title: 'Hiba a mentés során', description: errMsg, variant: 'destructive' });
     } else {
        toast({ title: 'Sikeres módosítás', description: `${itemsToUpdate.length} tétel sikeresen felülírva.`, className: 'bg-green-50 text-green-900 border-green-200' });
@@ -381,8 +382,10 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     const leaves = tableData.filter(d => !d.hasChildren);
     const totalDebit = leaves.filter(d => d.balance > 0).reduce((s, d) => s + d.balance, 0);
     const totalCredit = leaves.filter(d => d.balance < 0).reduce((s, d) => s + Math.abs(d.balance), 0);
-    const totalItemCount = dbItems?.length || 0;
-    const classifiedItemCount = totalItemCount - orphanCount;
+    const aiItems = dbItems?.filter(i => i.source_table !== 'journal_entry') || [];
+    const totalItemCount = aiItems.length;
+    const aiOrphanCount = aiItems.filter(i => i.gl_account_id === '00000000-0000-0000-0000-000000000000' && !i.is_excluded).length;
+    const classifiedItemCount = totalItemCount - aiOrphanCount;
     onStatsChange({ accountCount: tableData.length, leafCount: leaves.length, totalDebit, totalCredit, classifiedItems: classifiedItemCount, totalItems: totalItemCount });
   }, [tableData, onStatsChange, dbItems, orphanCount]);
   
@@ -432,12 +435,12 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
         } as any);
 
       if (error) {
-        console.error("GL queue insert hiba:", error);
+        reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'GL queue insert hiba:', error: error });
       } else {
         handleRefetchAll();
       }
     } catch (e) {
-      console.error("Hiba az AI átsorolás közben:", e);
+      reportError({ type: 'db_query', component: 'GeneralLedgerTable', action: 'error', message: 'Hiba az AI átsorolás közben:', error: e });
     } finally {
       setIsAiReclassifying(false);
     }

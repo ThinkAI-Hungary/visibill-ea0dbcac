@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Lock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { reportAuthError } from '@/lib/errorReporter';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
@@ -53,7 +54,7 @@ const ResetPassword = () => {
       toast({ title: 'Jelszó sikeresen megváltoztatva!' });
       navigate('/');
     } catch (error: any) {
-      console.error('Password reset error:', error);
+      reportAuthError('ResetPassword', 'update_password', error.message || 'Password reset error', error);
       toast({ title: error.message || 'Hiba történt a jelszó visszaállítása során', variant: 'destructive' });
     } finally {
       setLoading(false);

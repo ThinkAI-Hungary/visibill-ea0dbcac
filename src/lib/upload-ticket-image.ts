@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { reportError } from '@/lib/errorReporter';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = [
@@ -31,7 +32,10 @@ export async function uploadTicketImage(
     upsert: false,
   });
 
-  if (error) throw error;
+  if (error) {
+    reportError({ type: 'upload', component: 'uploadTicketImage', action: 'storageUpload', message: 'Ticket attachment upload failed', error, context: { ticketId, fileType: file.type, fileSize: file.size } });
+    throw error;
+  }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;

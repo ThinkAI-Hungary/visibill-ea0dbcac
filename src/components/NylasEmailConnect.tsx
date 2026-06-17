@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Mail, CheckCircle, X, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { reportError } from '@/lib/errorReporter';
 
 interface NylasToken {
   id: string;
@@ -41,7 +42,7 @@ const NylasEmailConnect: React.FC<NylasEmailConnectProps> = ({ onConnectionUpdat
       
       setTokens(data.tokens || []);
     } catch (error: any) {
-      console.error('Error fetching tokens:', error);
+      reportError({ type: 'db_query', component: 'NylasEmailConnect', action: 'error', message: 'Error fetching tokens:', error: error });
       toast({
         variant: "destructive",
         title: "Hiba",
@@ -106,7 +107,7 @@ const NylasEmailConnect: React.FC<NylasEmailConnectProps> = ({ onConnectionUpdat
       }, 1000);
 
     } catch (error: any) {
-      console.error('Error initiating OAuth:', error);
+      reportError({ type: 'db_query', component: 'NylasEmailConnect', action: 'error', message: 'Error initiating OAuth:', error: error });
       toast({
         variant: "destructive",
         title: "Kapcsolódási hiba",
@@ -136,7 +137,7 @@ const NylasEmailConnect: React.FC<NylasEmailConnectProps> = ({ onConnectionUpdat
       fetchTokens();
       onConnectionUpdate?.();
     } catch (error: any) {
-      console.error('Error disconnecting email:', error);
+      reportError({ type: 'db_query', component: 'NylasEmailConnect', action: 'error', message: 'Error disconnecting email:', error: error });
       toast({
         variant: "destructive",
         title: "Lekapcsolási hiba",

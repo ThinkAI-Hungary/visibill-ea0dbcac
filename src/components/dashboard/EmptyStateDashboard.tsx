@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+﻿import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle, Users, LogOut } from 'lucide-react';
 import { useState, useMemo } from 'react';
@@ -12,6 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { reportError } from '@/lib/errorReporter';
 
 interface OnboardingProject {
   name: string;
@@ -135,9 +136,8 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
   const isStep4Valid = true;
 
   const handleAddProject = () => {
-    if (!newProjectName.trim() || !newProjectClient.trim()) {
-      if (!newProjectName.trim()) toast({ title: 'A projekt neve kötelező!', variant: 'destructive' });
-      if (!newProjectClient.trim()) toast({ title: 'Az ügyfél neve kötelező!', variant: 'destructive' });
+    if (!newProjectName.trim()) {
+      toast({ title: 'A projekt neve kötelező!', variant: 'destructive' });
       return;
     }
 
@@ -213,7 +213,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
         toast({ title: data?.error || data?.message || 'NAV validálás sikertelen', variant: 'destructive' });
       }
     } catch (error: any) {
-      console.error('NAV validation error:', error);
+      reportError({ type: 'db_query', component: 'EmptyStateDashboard', action: 'error', message: 'NAV validation error:', error: error });
       setNavValidationStatus('invalid');
       setNavValidationError(error.message || 'Hiba történt a validálás során');
       toast({ title: error.message || 'NAV validálás sikertelen', variant: 'destructive' });
@@ -313,7 +313,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
 
           if (navError || navData?.error) {
             const navMsg = navError?.message || navData?.error || 'Ismeretlen NAV hiba';
-            console.error('NAV credentials save error:', navMsg);
+            reportError({ type: 'db_query', component: 'EmptyStateDashboard', action: 'error', message: 'NAV credentials save error:', error: navMsg });
             // Don't throw - company is created, but inform the user
             toast({
               title: 'NAV mentési figyelmeztetés',
@@ -409,7 +409,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
       // Trigger the product tour after successful onboarding
       onOnboardingComplete?.();
     } catch (error: any) {
-      console.error('Error during onboarding:', error);
+      reportError({ type: 'db_query', component: 'EmptyStateDashboard', action: 'error', message: 'Error during onboarding:', error: error });
       const msg = error?.message || error?.details || JSON.stringify(error);
       toast({ title: 'Hiba történt a beállítás során', description: msg, variant: 'destructive' });
 
@@ -467,7 +467,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
       toast({ title: 'Sikeresen csatlakoztál a céghez!' });
       onOnboardingComplete?.();
     } catch (error: any) {
-      console.error('Error joining company:', error);
+      reportError({ type: 'db_query', component: 'EmptyStateDashboard', action: 'error', message: 'Error joining company:', error: error });
       const msg = error?.message || error?.details || JSON.stringify(error);
       toast({ title: 'Hiba történt a csatlakozás során', description: msg, variant: 'destructive' });
     } finally {
@@ -568,7 +568,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
             <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/50">
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{project.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{project.client_name}</p>
+                <p className="text-xs text-muted-foreground truncate">{project.client_name || <span className="italic">Nincs ügyfél</span>}</p>
               </div>
               <Button
                 variant="ghost"
@@ -603,7 +603,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Ügyfél neve *</Label>
+            <Label className="text-xs">Ügyfél neve</Label>
             <Input
               value={newProjectClient}
               onChange={(e) => setNewProjectClient(e.target.value)}
@@ -642,7 +642,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
           variant="outline"
           size="sm"
           className="w-full"
-          disabled={!newProjectName.trim() || !newProjectClient.trim()}
+          disabled={!newProjectName.trim()}
         >
           <Plus className="h-4 w-4 mr-2" />
           Projekt hozzáadása

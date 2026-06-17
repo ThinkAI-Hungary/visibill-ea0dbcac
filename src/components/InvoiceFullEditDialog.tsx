@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+﻿import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -14,6 +14,7 @@ import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
 import { Plus, Trash2, FileText, ListOrdered } from 'lucide-react';
+import { reportError } from '@/lib/errorReporter';
 
 interface Category {
   id: string;
@@ -276,7 +277,7 @@ const InvoiceFullEditDialog = ({ invoice, categories, projects, open, onClose, o
       onSave();
       onClose();
     } catch (error) {
-      console.error('Error updating invoice:', error);
+      reportError({ type: 'db_query', component: 'InvoiceFullEditDialog', action: 'error', message: 'Error updating invoice:', error: error });
       toast({ title: 'Nem sikerült menteni a változtatásokat', variant: 'destructive' });
     } finally {
       setIsSaving(false);

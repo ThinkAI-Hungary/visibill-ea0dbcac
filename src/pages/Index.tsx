@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import DashboardWelcome from '@/components/dashboard/DashboardWelcome';
 import DashboardMetrics from '@/components/dashboard/DashboardMetrics';
 import VatSection from '@/components/dashboard/VatSection';
+import FxDifferencesSection from '@/components/dashboard/FxDifferencesSection';
 import RevenueExpensesChart from '@/components/dashboard/RevenueExpensesChart';
 import RecentInvoices from '@/components/dashboard/RecentInvoices';
 import ProjectBreakdown from '@/components/dashboard/ProjectBreakdown';
@@ -63,7 +64,8 @@ const Index = () => {
     dateFrom, dateTo,
     profile, tourCompleted,
     metrics, metricsLoading,
-    navVatData, pettyCashBalance,
+    navVatData, pettyCashBalances,
+    fxDifferences, fxMonthlySummary,
     invoices, analyticsLoading,
     vatBreakdown, exchangeRates,
     categoryBreakdownData,
@@ -124,7 +126,7 @@ const Index = () => {
             navVatData={navVatData}
             showBrutto={prefs.showBrutto}
             selectedCurrency={prefs.selectedCurrency}
-            pettyCashBalance={pettyCashBalance}
+            pettyCashBalances={pettyCashBalances}
             convertToSelectedCurrency={convertToSelectedCurrency}
           />
         )}
@@ -137,6 +139,13 @@ const Index = () => {
           convertToSelectedCurrency={convertToSelectedCurrency}
           vatSectionOpen={prefs.vatSectionOpen}
           onVatSectionOpenChange={prefs.setVatSectionOpen}
+        />
+
+        <FxDifferencesSection
+          fxDifferences={fxDifferences}
+          fxMonthlySummary={fxMonthlySummary}
+          isOpen={prefs.fxSectionOpen}
+          onOpenChange={prefs.setFxSectionOpen}
         />
 
         <UnmatchedSection />

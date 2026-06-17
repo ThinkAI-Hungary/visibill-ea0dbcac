@@ -181,7 +181,7 @@ Globális Supabase Realtime listener a `ProtectedLayout`-ban mountolva:
 | `salary` | INSERT | Toast + cache invalidation |
 | `salary_files` | UPDATE (→completed) | Toast + cache invalidation |
 | `invoices` | INSERT | Toast (upload ID-nként deduplikálva) |
-| `invoice_uploads` | UPDATE (→completed) | Toast |
+| `invoice_uploads` | UPDATE (→processed) | Toast |
 | `nav_invoices` | * | Cache invalidation |
 | `transactions` | INSERT | Toast + azonnali cache frissítés |
 | `transaction_uploads` | UPDATE (→completed) | Toast + force invalidation |
@@ -202,16 +202,19 @@ const invalidate = (...keys: string[]) => {
 };
 ```
 
-### Tab Visibility Reconnect
+### Tab Visibility — Feltételes Cache Invalidáció
 
-```tsx
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    // 1. Reconnect Realtime channel if disconnected
-    // 2. Broad cache invalidation (catch missed events)
-  }
-});
+A `visibilitychange` event-re a provider **feltételesen** invalidálja a cache-t:
+
 ```
+Tab háttérbe kerül (hidden) → timestamp mentése
+Tab visszajön (visible) →
+  ├─ Csatorna leszakadt (state ≠ joined) → Reconnect + MINDIG invalidál
+  ├─ Csatorna aktív ÉS távollét > 2 perc → Invalidál (browser throttle kockázat)
+  └─ Csatorna aktív ÉS távollét ≤ 2 perc → SKIP (nincs felesleges re-render)
+```
+
+> **Fix:** `07a1723` (2026-06-11) — korábban feltétel nélkül invalidált ~30 query-t minden tab visszaváltáskor, ami zavaró UI villanást okozott.
 
 ---
 
@@ -231,13 +234,31 @@ const [tab, setTab] = useUrlTab('invoices', 'outbound_nav', VALID_TABS);
 | **Search megőrzés** | `location.search` megmarad tab váltáskor |
 | **Microtask defer** | `queueMicrotask()` — megelőzi a mid-render setState hibákat |
 
+### Invoice Filter URL Sync
+
+**Fájlok:** `hooks/useInvoiceFilters.ts` + `pages/InvoicesPage.tsx`
+
+A számla oldal összes szűrőjét URL query params-ként szinkronizálja, lehetővé téve a link megosztást:
+
+| Elem | Kezelés |
+|------|---------|
+| **Initializálás** | `useInvoiceFilters`: `useState(() => searchParams.get(...))` — URL-ből olvas |
+| **Szinkronizálás** | `InvoicesPage`: egységes `useEffect` → `setSearchParams()` |
+| **Nem-default only** | Csak az alapértéktől eltérő értékek kerülnek az URL-be |
+| **Param kulcsok** | Rövid kulcsok: `q`, `cur`, `idf`, `idt`, `kpi`, `sf`, `sd`, `p`, `ps` stb. |
+| **Exportált konstansok** | `FILTER_URL_KEYS`, `defaultFilters` (`useInvoiceFilters.ts`) |
+| **KPI filter** | Kattintható KPI kártyák: `?kpi=matched\|suggested\|unmatched` |
+| **KPI paginálás** | KPI aktív → **kliens-oldali** paginálás a teljes adathalmazból (`navInvoicesLookup`). KPI inaktív → szerver-oldali paginálás. |
+| **KPI totalPages** | `kpiFilteredNavTotalPages` / `kpiFilteredSubmittedTotalPages` — KPI szűrt darabszámból számolt oldalszám |
+| **KPI tab váltás** | KPI szűrő **megmarad** tab váltásnál; csak explicit user action törli |
+| **Megőrzés** | `?invoice=` és `?action=` parametérek megőrződnek |
+
 ### useFilterPersistence Hook
 
 **Fájl:** `hooks/useFilterPersistence.ts`
 
 Szűrő állapot localStorage-ba mentése oldalanként.
 
----
 
 ## Custom Hookek Áttekintése
 
@@ -249,7 +270,7 @@ Szűrő állapot localStorage-ba mentése oldalanként.
 | `useIdleTimeout` | Inaktivitás detektálás |
 | `useDashboardData` | Dashboard KPI-k (26KB hook!) |
 | `useInvoiceData` | Számla lekérdezések |
-| `useInvoiceFilters` | Számla szűrők állapota |
+| `useInvoiceFilters` | Számla szűrők állapota + URL query param szinkron |
 | `useInvoiceMutations` | Számla CRUD műveletek |
 | `useTransactionData` | Tranzakció lekérdezések |
 | `useKintlevoData` | Kintlévőség adatok |

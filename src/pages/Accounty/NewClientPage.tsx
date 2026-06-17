@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { exportReceiptPdf } from '@/lib/exportPdf';
+import { reportError } from '@/lib/errorReporter';
 
 export default function NewClientPage() {
   const navigate = useNavigate();
@@ -149,7 +150,7 @@ export default function NewClientPage() {
           queryClient.invalidateQueries({ queryKey: ['accounty-clients'] });
           queryClient.invalidateQueries({ queryKey: ['accounty-kpis'] });
         } catch (err) {
-          console.error('Failed to create client assignment:', err);
+          reportError({ type: 'db_query', component: 'NewClientPage', action: 'error', message: 'Failed to create client assignment:', error: err });
         }
       }
       setStep(3);

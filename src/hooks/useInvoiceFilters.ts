@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useDeferredValue } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { NavInvoice, SubmittedInvoice, Partner, Category, Project } from './useInvoiceData';
@@ -20,7 +21,7 @@ export interface InvoiceFilters {
   paymentMethod: string;
 }
 
-const defaultFilters: InvoiceFilters = {
+export const defaultFilters: InvoiceFilters = {
   search: '',
   issueDateFrom: '',
   issueDateTo: '',
@@ -34,6 +35,21 @@ const defaultFilters: InvoiceFilters = {
   paymentMethod: 'all',
 };
 
+// URL query param keys for each filter (short keys for clean URLs)
+export const FILTER_URL_KEYS: Record<keyof InvoiceFilters, string> = {
+  search: 'q',
+  issueDateFrom: 'idf',
+  issueDateTo: 'idt',
+  amountMin: 'amin',
+  amountMax: 'amax',
+  currency: 'cur',
+  paid: 'paid',
+  submitted: 'sub',
+  project: 'proj',
+  category: 'cat',
+  paymentMethod: 'pm',
+};
+
 export function useInvoiceFilters(
   companyId: string,
   enabled: boolean,
@@ -44,14 +60,41 @@ export function useInvoiceFilters(
   projects: Project[],
   activeTab: InvoiceTab
 ) {
-  // Single shared filter state across all tabs
-  const [filters, setFilters] = useState<InvoiceFilters>(defaultFilters);
-  const [sortField, setSortField] = useState<string>('invoice_issue_date');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [navPageSize, setNavPageSize] = useState(50);
-  const [submittedPageSize, setSubmittedPageSize] = useState(50);
-  const [navCurrentPage, setNavCurrentPage] = useState(1);
-  const [submittedCurrentPage, setSubmittedCurrentPage] = useState(1);
+  const [searchParams] = useSearchParams();
+
+  // Initialize all state from URL searchParams (enables link sharing)
+  const [filters, setFilters] = useState<InvoiceFilters>(() => {
+    const initial = { ...defaultFilters };
+    for (const [key, urlKey] of Object.entries(FILTER_URL_KEYS)) {
+      const value = searchParams.get(urlKey);
+      if (value !== null) {
+        initial[key as keyof InvoiceFilters] = value;
+      }
+    }
+    return initial;
+  });
+  const [sortField, setSortField] = useState<string>(() =>
+    searchParams.get('sf') || 'invoice_issue_date'
+  );
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(() =>
+    (searchParams.get('sd') as 'asc' | 'desc') || 'desc'
+  );
+  const [navPageSize, setNavPageSize] = useState(() => {
+    const ps = searchParams.get('ps');
+    return ps ? (parseInt(ps, 10) || 50) : 50;
+  });
+  const [submittedPageSize, setSubmittedPageSize] = useState(() => {
+    const ps = searchParams.get('ps');
+    return ps ? (parseInt(ps, 10) || 50) : 50;
+  });
+  const [navCurrentPage, setNavCurrentPage] = useState(() => {
+    const p = searchParams.get('p');
+    return p ? (parseInt(p, 10) || 1) : 1;
+  });
+  const [submittedCurrentPage, setSubmittedCurrentPage] = useState(() => {
+    const p = searchParams.get('p');
+    return p ? (parseInt(p, 10) || 1) : 1;
+  });
 
   // Debounce search with useDeferredValue (single search)
   const deferredSearch = useDeferredValue(filters.search);

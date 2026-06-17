@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Error Control Panel — Layout Mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f1a;
+    --bg-card: #111827;
+    --bg-card-hover: #1a2235;
+    --bg-muted: #1e293b;
+    --border: #1e3a5f30;
+    --border-hover: #1e3a5f60;
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #475569;
+    --primary: #10b981;
+    --primary-dim: #10b98130;
+    --primary-hover: #34d399;
+    --destructive: #ef4444;
+    --amber: #f59e0b;
+    --amber-bg: rgba(245,158,11,0.12);
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.12);
+    --orange: #f97316;
+    --orange-bg: rgba(249,115,22,0.12);
+    --blue: #3b82f6;
+    --blue-bg: rgba(59,130,246,0.12);
+    --purple: #a855f7;
+    --purple-bg: rgba(168,85,247,0.12);
+    --rose: #f43f5e;
+    --rose-bg: rgba(244,63,94,0.12);
+    --slate: #94a3b8;
+    --slate-bg: rgba(148,163,184,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #050810;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* Navigation */
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(5,8,16,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .nav h1 { font-size: 18px; font-weight: 600; }
+  .nav .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+
+  /* Section wrapper */
+  .concept {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    border-bottom: 2px dashed var(--border);
+  }
+  .concept:last-child { border-bottom: none; }
+  .concept-header {
+    margin-bottom: 24px;
+  }
+  .concept-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--primary-dim);
+    color: var(--primary);
+    font-weight: 700; font-size: 14px;
+    margin-right: 12px;
+  }
+  .concept-title {
+    font-size: 22px; font-weight: 700;
+    display: inline; vertical-align: middle;
+  }
+  .concept-desc {
+    margin-top: 8px;
+    color: var(--text-muted); font-size: 14px;
+    max-width: 700px;
+  }
+  .concept-tags { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    padding: 2px 10px; border-radius: 100px;
+    font-size: 11px; font-weight: 500;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  .tag.pro { background: rgba(16,185,129,0.1); color: var(--primary); border-color: rgba(16,185,129,0.3); }
+  .tag.con { background: rgba(239,68,68,0.1); color: var(--red); border-color: rgba(239,68,68,0.3); }
+
+  /* Mockup container */
+  .mockup {
+    background: var(--bg);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  /* Shared components */
+  .kpi-grid { display: grid; gap: 12px; }
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .kpi-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .kpi-val { font-size: 24px; font-weight: 700; }
+  .kpi-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 6px;
+    font-size: 10px; font-weight: 600;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); border-color: rgba(245,158,11,0.25); }
+  .badge-red { background: var(--red-bg); color: var(--red); border-color: rgba(239,68,68,0.25); }
+  .badge-orange { background: var(--orange-bg); color: var(--orange); border-color: rgba(249,115,22,0.25); }
+  .badge-blue { background: var(--blue-bg); color: var(--blue); border-color: rgba(59,130,246,0.25); }
+  .badge-rose { background: var(--rose-bg); color: var(--rose); border-color: rgba(244,63,94,0.25); }
+  .badge-slate { background: var(--slate-bg); color: var(--slate); border-color: rgba(148,163,184,0.25); }
+  .badge-outline { border: 1px solid var(--border); color: var(--text-muted); background: transparent; }
+
+  .search-input {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px 6px 32px;
+    color: var(--text);
+    font-size: 12px;
+    outline: none;
+    width: 100%;
+  }
+  .search-input::placeholder { color: var(--text-dim); }
+  .search-input:focus { border-color: var(--primary); }
+
+  .select-input {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: var(--text);
+    font-size: 12px;
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 8px;
+    font-size: 12px; font-weight: 500;
+    cursor: pointer; border: none;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--primary); color: #000; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-ghost { background: transparent; color: var(--text-muted); }
+  .btn-ghost:hover { background: var(--bg-muted); color: var(--text); }
+  .btn-destructive { background: rgba(239,68,68,0.15); color: var(--red); }
+  .btn-destructive:hover { background: rgba(239,68,68,0.25); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+  .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+  .file-link { color: var(--primary); text-decoration: none; font-size: 12px; }
+  .file-link:hover { color: var(--primary-hover); }
+
+  .err-msg { color: var(--text-dim); font-size: 11px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; color: var(--text-muted); font-weight: 500; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 16px; border-bottom: 1px solid rgba(30,58,95,0.15); }
+  tr:hover td { background: var(--bg-card-hover); }
+
+  .checkbox { width: 14px; height: 14px; accent-color: var(--primary); cursor: pointer; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--text-dim); border-radius: 3px; }
+
+  /* -- Concept-specific styles -- */
+
+  /* C2: Split Panel */
+  .c2-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 600px; }
+  .c2-sidebar { background: var(--bg-card); border-right: 1px solid var(--border); padding: 20px; }
+  .c2-sidebar h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 12px; }
+  .c2-filter-group { margin-bottom: 20px; }
+  .c2-filter-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; border-radius: 8px;
+    cursor: pointer; font-size: 12px; color: var(--text-muted);
+    transition: all 0.15s;
+  }
+  .c2-filter-item:hover { background: var(--bg-muted); color: var(--text); }
+  .c2-filter-item.active { background: var(--primary-dim); color: var(--primary); }
+  .c2-count {
+    font-size: 10px; font-weight: 600;
+    background: var(--bg-muted); padding: 1px 7px; border-radius: 100px;
+  }
+  .c2-filter-item.active .c2-count { background: rgba(16,185,129,0.2); }
+  .c2-main { padding: 20px; overflow: auto; }
+
+  /* C3: Tabs */
+  .c3-tabs { display: flex; gap: 6px; padding: 16px 20px; border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .c3-tab {
+    padding: 6px 16px; border-radius: 100px; font-size: 12px; font-weight: 500;
+    cursor: pointer; white-space: nowrap;
+    background: transparent; color: var(--text-muted);
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+  .c3-tab:hover { border-color: var(--text-dim); color: var(--text); }
+  .c3-tab.active { background: var(--primary-dim); color: var(--primary); border-color: rgba(16,185,129,0.4); }
+  .c3-tab .tab-count { font-size: 10px; opacity: 0.7; margin-left: 4px; }
+
+  /* C4: Card Grid */
+  .c4-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; padding: 20px; }
+  .c4-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .c4-card:hover { border-color: var(--border-hover); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .c4-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+  .c4-card-file { color: var(--primary); font-weight: 500; font-size: 13px; margin-bottom: 4px; }
+  .c4-card-meta { font-size: 11px; color: var(--text-dim); }
+  .c4-card-error {
+    font-size: 11px; color: var(--text-muted);
+    background: var(--bg-muted); border-radius: 8px;
+    padding: 8px 10px; margin-top: 10px;
+    max-height: 60px; overflow: hidden;
+    line-height: 1.6;
+  }
+  .c4-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+
+  /* C5: Compact */
+  .c5-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .c5-stat {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .c5-stat-val { font-weight: 700; font-size: 16px; }
+  .c5-stat-label { color: var(--text-muted); font-size: 11px; }
+  .c5-filters { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .c5-table td { padding: 8px 12px; font-size: 11px; }
+  .c5-table th { padding: 8px 12px; font-size: 11px; }
+  .c5-severity {
+    width: 3px; height: 24px; border-radius: 2px;
+  }
+
+  /* C6: Timeline */
+  .c6-timeline { padding: 20px 20px 20px 40px; position: relative; }
+  .c6-timeline::before {
+    content: ''; position: absolute;
+    left: 52px; top: 0; bottom: 0;
+    width: 2px; background: var(--border);
+  }
+  .c6-group { margin-bottom: 24px; position: relative; }
+  .c6-date {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    padding: 4px 0; margin-bottom: 8px;
+    position: relative;
+    padding-left: 28px;
+  }
+  .c6-date::before {
+    content: ''; position: absolute;
+    left: 10px; top: 50%; transform: translateY(-50%);
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--primary);
+    border: 2px solid var(--bg);
+  }
+  .c6-items { padding-left: 28px; }
+  .c6-item {
+    display: grid; grid-template-columns: 50px 1fr auto;
+    align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: 10px;
+    margin-bottom: 4px;
+    transition: background 0.15s;
+  }
+  .c6-item:hover { background: var(--bg-card-hover); }
+  .c6-time { font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .c6-item-content { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .c6-item-file { color: var(--primary); font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .c6-item-company { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+  <div class="dot"></div>
+  <h1>Error Control Panel — Layout Mockups</h1>
+  <span style="margin-left:auto;font-size:12px;color:var(--text-dim)">6 koncepció</span>
+</nav>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CONCEPT 1: Current Layout (reference) -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="concept">
+  <div class="concept-header">
+    <span class="concept-num">1</span>
+    <h2 class="concept-title">Jelenlegi layout (referencia)</h2>
+    <p class="concept-desc">A mostani implementáció — KPI kártyák felül, alatta szűrők + táblázat. Lineáris, egyszerű, működik.</p>
+    <div class="concept-tags">
+      <span class="tag pro">✓ Átlátható</span>
+      <span class="tag pro">✓ Gyors scan</span>
+      <span class="tag con">✗ KPI-k sok helyet foglalnak</span>
+      <span class="tag con">✗ Szűrők nem láthatóak kis kijelzőn</span>
+    </div>
+  </div>
+  <div class="mockup">
+    <div style="padding:20px;">
+      <div class="kpi-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom:20px;">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:rgba(245,158,11,0.15);color:var(--amber)">⚠</div>
+          <div><div class="kpi-val">79</div><div class="kpi-label">Összes hiba</div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:rgba(59,130,246,0.15);color:var(--blue)">⏱</div>
+          <div><div class="kpi-val">0</div><div class="kpi-label">Utolsó 24 óra</div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:rgba(168,85,247,0.15);color:var(--purple)">🏢</div>
+          <div><div class="kpi-val" style="font-size:16px">Think AI Kft</div><div class="kpi-label">Legérintettebb cég — 60 hiba</div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:rgba(16,185,129,0.15);color:var(--primary)">⚡</div>
+          <div><div class="kpi-val">44</div><div class="kpi-label">Nem beazonosítható</div></div>
+        </div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+        <div style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);flex-wrap:wrap;">
+          <div style="position:relative;flex:1;min-width:180px;">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:12px">🔍</span>
+            <input class="search-input" placeholder="Keresés..." />
+          </div>
+          <select class="select-input"><option>Minden forrás</option></select>
+          <select class="select-input"><option>Minden típus</option></select>
+          <span style="font-size:11px;color:var(--text-dim)">Tól:</span>
+          <input type="date" class="select-input" style="width:130px" />
+          <span style="font-size:11px;color:var(--text-dim)">Ig:</span>
+          <input type="date" class="select-input" style="width:130px" />
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:32px"><input type="checkbox" class="checkbox" /></th>
+              <th style="width:28px"></th>
+              <th>Dátum ↓</th><th>Cég</th><th>Forrás</th><th>Típus</th><th>Fájl</th><th>Hibaüzenet</th><th style="width:60px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><input type="checkbox" class="checkbox" /></td><td style="color:var(--text-dim)">▸</td><td style="white-space:nowrap;font-variant-numeric:tabular-nums">2026.06.11. <span style="color:var(--text-dim)">17:47</span></td><td>Think AI Kft</td><td><span class="badge badge-outline">Számla</span></td><td><span class="badge badge-orange">Extrakciós hiba</span></td><td><a class="file-link">178116934661-8wciw...</a></td><td class="err-msg">Extraction error: 6 validation errors fo...</td><td style="color:var(--text-dim)">🔄 🗑</td></tr>
+            <tr><td><input type="checkbox" class="checkbox" /></td><td style="color:var(--text-dim)">▸</td><td style="white-space:nowrap;font-variant-numeric:tabular-nums">2026.06.11. <span style="color:var(--text-dim)">15:49</span></td><td>Think AI Kft</td><td><span class="badge badge-outline">Számla</span></td><td><span class="badge badge-orange">Extrakciós hiba</span></td><td><a class="file-link">1781176936669-g3w8i...</a></td><td class="err-msg">Extraction error: 6 validation errors fo...</td><td style="color:var(--text-dim)">🔄 🗑</td></tr>
+            <tr><td><input type="checkbox" class="checkbox" /></td><td style="color:var(--text-dim)">▸</td><td style="white-space:nowrap;font-variant-numeric:tabular-nums">2026.06.05. <span style="color:var(--text-dim)">12:47</span></td><td>Think AI Kft</td><td><span class="badge badge-outline">Tranzakció</span></td><td><span class="badge badge-slate">Üres tartalom</span></td><td><a class="file-link">Visibill_összefoglaló...</a></td><td class="err-msg">Nem található érvényes tranzakció a f...</td><td style="color:var(--text-dim)">🔄 🗑</td></tr>
+            <tr><td><input type="checkbox" class="checkbox" /></td><td style="color:var(--text-dim)">▸</td><td style="white-space:nowrap;font-variant-numeric:tabular-nums">2026.05.15. <span style="color:var(--text-dim)">11:27</span></td><td>Mauroni Events KFT.</td><td><span class="badge badge-outline">Számla</span></td><td><span class="badge badge-amber">Nem beazonosítható</span></td><td><a class="file-link">attachment-1</a></td><td class="err-msg">Nem beazonosítható: (no message)</td><td style="color:var(--text-dim)">🔄 🗑</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CONCEPT 2: Split Panel with Sidebar Filters -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="concept">
+  <div class="concept-header">
+    <span class="concept-num">2</span>
+    <h2 class="concept-title">Split Panel — Oldalsáv szűrőkkel</h2>
+    <p class="concept-desc">Bal oldali fix sáv a szűrőkkel és KPI összefoglalóval, jobb oldalon a táblázat. A szűrők mindig láthatóak maradnak scrollozás közben is.</p>
+    <div class="concept-tags">
+      <span class="tag pro">✓ Szűrők mindig láthatóak</span>
+      <span class="tag pro">✓ Több tér a táblázatnak</span>
+      <span class="tag pro">✓ Kategóriák vizuálisan kiemeltek</span>
+      <span class="tag con">✗ Kis kijelzőn kevesebb hely</span>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="c2-layout">
+      <div class="c2-sidebar">
+        <!-- Summary -->
+        <div style="text-align:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+          <div style="font-size:36px;font-weight:700;color:var(--amber)">79</div>
+          <div style="font-size:11px;color:var(--text-muted)">aktív hiba</div>
+          <div style="margin-top:6px;font-size:11px;color:var(--text-dim)">0 az utolsó 24 órában</div>
+        </div>
+
+        <div class="c2-filter-group">
+          <h3>Forrás</h3>
+          <div class="c2-filter-item active">
+            <span>📄 Számla</span> <span class="c2-count">76</span>
+          </div>
+          <div class="c2-filter-item">
+            <span>🏦 Tranzakció</span> <span class="c2-count">1</span>
+          </div>
+          <div class="c2-filter-item">
+            <span>📊 Főkönyv</span> <span class="c2-count">2</span>
+          </div>
+          <div class="c2-filter-item" style="opacity:0.4">
+            <span>📑 Riport</span> <span class="c2-count">0</span>
+          </div>
+          <div class="c2-filter-item" style="opacity:0.4">
+            <span>🏛 NAV szinkron</span> <span class="c2-count">0</span>
+          </div>
+        </div>
+
+        <div class="c2-filter-group">
+          <h3>Hibatípus</h3>
+          <div class="c2-filter-item">
+            <span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--amber)"></span> Nem beazonosítható</span> <span class="c2-count">44</span>
+          </div>
+          <div class="c2-filter-item">
+            <span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--red)"></span> OCR hiba</span> <span class="c2-count">16</span>
+          </div>
+          <div class="c2-filter-item">
+            <span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--orange)"></span> Extrakciós hiba</span> <span class="c2-count">13</span>
+          </div>
+          <div class="c2-filter-item">
+            <span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--rose)"></span> API / DB hiba</span> <span class="c2-count">2</span>
+          </div>
+          <div class="c2-filter-item">
+            <span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--blue)"></span> Duplikátum</span> <span class="c2-count">1</span>
+          </div>
+          <div class="c2-filter-item">
+            <span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--slate)"></span> Üres tartalom</span> <span class="c2-count">1</span>
+          </div>
+        </div>
+
+        <div class="c2-filter-group">
+          <h3>Cég</h3>
+          <div class="c2-filter-item">
+            <span>Think AI Kft</span> <span class="c2-count">60</span>
+          </div>
+          <div class="c2-filter-item">
+            <span>Kubát Szolgáltató</span> <span class="c2-count">10</span>
+          </div>
+          <div class="c2-filter-item">
+            <span>Mauroni Events</span> <span class="c2-count">5</span>
+          </div>
+          <div class="c2-filter-item">
+            <span>Bosnyák Gergő</span> <span class="c2-count">2</span>
+          </div>
+        </div>
+      </div>
+      <div class="c2-main">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <div style="position:relative;flex:1;">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:12px">🔍</span>
+            <input class="search-input" placeholder="Keresés fájlnév, cég, hibaüzenet..." />
+          </div>
+          <button class="btn btn-destructive">🗑 2 kijelölt törlése</button>
+          <button class="btn btn-outline">🔄 Újraküldés</button>
+        </div>
+        <table>
+          <thead><tr>
+            <th style="width:32px"><input type="checkbox" class="checkbox" /></th>
+            <th>Dátum ↓</th><th>Cég</th><th>Típus</th><th>Fájl</th><th>Hibaüzenet</th><th style="width:60px"></th>
+          </tr></thead>
+          <tbody>
+            <tr><td><input type="checkbox" class="checkbox" checked /></td><td style="font-variant-numeric:tabular-nums">06.11. <span style="color:var(--text-dim)">17:47</span></td><td style="font-size:11px">Think AI Kft</td><td><span class="badge badge-orange">Extrakciós</span></td><td><a class="file-link">178116934661-8wciw...</a></td><td class="err-msg">Extraction error: 6 validation...</td><td style="color:var(--text-dim)">🔄 🗑</td></tr>
+            <tr><td><input type="checkbox" class="checkbox" checked /></td><td style="font-variant-numeric:tabular-nums">06.11. <span style="color:var(--text-dim)">15:49</span></td><td style="font-size:11px">Think AI Kft</td><td><span class="badge badge-orange">Extrakciós</span></td><td><a class="file-link">1781176936669-g3w8i...</a></td><td class="err-msg">Extraction error: 6 validation...</td><td style="color:var(--text-dim)">🔄 🗑</td></tr>
+            <tr><td><input type="checkbox" class="checkbox" /></td><td style="font-variant-numeric:tabular-nums">06.05. <span style="color:var(--text-dim)">12:47</span></td><td style="font-size:11px">Think AI Kft</td><td><span class="badge badge-slate">Üres tart.</span></td><td><a class="file-link">Visibill_összefoglaló...</a></td><td class="err-msg">Nem található érvényes...</td><td style="color:var(--text-dim)">🔄 🗑</td></tr>
+            <tr><td><input type="checkbox" class="checkbox" /></td><td style="font-variant-numeric:tabular-nums">06.04. <span style="color:var(--text-dim)">14:02</span></td><td style="font-size:11px">Kubát Szolgáltató Kft.</td><td><span class="badge badge-orange">Extrakciós</span></td><td><a class="file-link">Dr.SOMLÓ TAMÁS DR...</a></td><td class="err-msg">Extraction error: 1 validation...</td><td style="color:var(--text-dim)">🔄 🗑</td></tr>
+            <tr><td><input type="checkbox" class="checkbox" /></td><td style="font-variant-numeric:tabular-nums">05.15. <span style="color:var(--text-dim)">11:27</span></td><td style="font-size:11px">Mauroni Events KFT.</td><td><span class="badge badge-amber">Nem beaz.</span></td><td><a class="file-link">attachment-1</a></td><td class="err-msg">Nem beazonosítható: (no message)</td><td style="color:var(--text-dim)">🔄 🗑</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CONCEPT 3: Tabbed Categories -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="concept">
+  <div class="concept-header">
+    <span class="concept-num">3</span>
+    <h2 class="concept-title">Fül-alapú kategóriák (Pill Tabs)</h2>
+    <p class="concept-desc">A hibatípus szűrés pill tab-okkal történik a táblázat felett, vizuálisan hangsúlyozva a kategóriákat. KPI-k inline, kompakt formában.</p>
+    <div class="concept-tags">
+      <span class="tag pro">✓ Egyetlen kattintás a szűréshez</span>
+      <span class="tag pro">✓ Azonnali áttekintés számokkal</span>
+      <span class="tag pro">✓ Kompaktabb mint a KPI grid</span>
+      <span class="tag con">✗ Sok tab esetén scrollozni kell</span>
+    </div>
+  </div>
+  <div class="mockup">
+    <div style="padding:16px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:baseline;gap:8px;">
+        <span style="font-size:28px;font-weight:700;color:var(--amber)">79</span>
+        <span style="font-size:12px;color:var(--text-muted)">hiba</span>
+      </div>
+      <div style="width:1px;height:24px;background:var(--border)"></div>
+      <div>
+        <div style="font-size:11px;color:var(--text-dim)">Legérintettebb</div>
+        <div style="font-size:12px;font-weight:500">Think AI Kft <span style="color:var(--text-dim)">(60)</span></div>
+      </div>
+      <div style="width:1px;height:24px;background:var(--border)"></div>
+      <div>
+        <div style="font-size:11px;color:var(--text-dim)">24h</div>
+        <div style="font-size:12px;font-weight:500;color:var(--primary)">0 új</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <div style="position:relative;width:220px;">
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:12px">🔍</span>
+          <input class="search-input" placeholder="Keresés..." />
+        </div>
+        <select class="select-input"><option>Minden forrás</option></select>
+      </div>
+    </div>
+    <div class="c3-tabs">
+      <div class="c3-tab active">Mind <span class="tab-count">79</span></div>
+      <div class="c3-tab" style="border-color:rgba(245,158,11,0.3)">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--amber);display:inline-block;margin-right:4px"></span>
+        Nem beazonosítható <span class="tab-count">44</span>
+      </div>
+      <div class="c3-tab" style="border-color:rgba(239,68,68,0.3)">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--red);display:inline-block;margin-right:4px"></span>
+        OCR hiba <span class="tab-count">16</span>
+      </div>
+      <div class="c3-tab" style="border-color:rgba(249,115,22,0.3)">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--orange);display:inline-block;margin-right:4px"></span>
+        Extrakciós <span class="tab-count">13</span>
+      </div>
+      <div class="c3-tab" style="border-color:rgba(244,63,94,0.3)">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--rose);display:inline-block;margin-right:4px"></span>
+        API / DB <span class="tab-count">2</span>
+      </div>
+      <div class="c3-tab">Duplikátum <span class="tab-count">1</span></div>
+      <div class="c3-tab">Üres <span class="tab-count">1</span></div>
+      <div class="c3-tab">Egyéb <span class="tab-count">2</span></div>
+    </div>
+    <table>
+      <thead><tr>
+        <th style="width:32px"><input type="checkbox" class="checkbox" /></th>
+        <th>Dátum ↓</th><th>Cég</th><th>Forrás</th><th>Típus</th><th>Fájl</th><th>Hibaüzenet</th><th style="width:60px"></th>
+      </tr></thead>
+      <tbody>
+        <tr><td><input type="checkbox" class="checkbox" /></td><td style="font-variant-numeric:tabular-nums">2026.06.11. <span style="color:var(--text-dim)">17:47</span></td><td>Think AI Kft</td><td><span class="badge badge-outline">Számla</span></td><td><span class="badge badge-orange">Extrakciós hiba</span></td><td><a class="file-link">178116934661-8wciw...</a></td><td class="err-msg">Extraction error: 6 validation errors fo...</td><td style="color:var(--text-dim)">🔄 🗑</td></tr>
+        <tr><td><input type="checkbox" class="checkbox" /></td><td style="font-variant-numeric:tabular-nums">2026.06.05. <span style="color:var(--text-dim)">12:47</span></td><td>Think AI Kft</td><td><span class="badge badge-outline">Tranzakció</span></td><td><span class="badge badge-slate">Üres tartalom</span></td><td><a class="file-link">Visibill_összefoglaló...</a></td><td class="err-msg">Nem található érvényes tranzakció...</td><td style="color:var(--text-dim)">🔄 🗑</td></tr>
+        <tr><td><input type="checkbox" class="checkbox" /></td><td style="font-variant-numeric:tabular-nums">2026.06.04. <span style="color:var(--text-dim)">14:01</span></td><td>Kubát Szolgáltató Kft.</td><td><span class="badge badge-outline">Számla</span></td><td><span class="badge badge-orange">Extrakciós hiba</span></td><td><a class="file-link">Jysk A27000001-1737...</a></td><td class="err-msg">Extraction error: 1 validation error...</td><td style="color:var(--text-dim)">🔄 🗑</td></tr>
+        <tr><td><input type="checkbox" class="checkbox" /></td><td style="font-variant-numeric:tabular-nums">2026.05.15. <span style="color:var(--text-dim)">08:50</span></td><td>Think AI Kft</td><td><span class="badge badge-outline">Számla</span></td><td><span class="badge badge-amber">Nem beazonosítható</span></td><td><a class="file-link">image002.pdf</a></td><td class="err-msg">Nem beazonosítható: (no message)</td><td style="color:var(--text-dim)">🔄 🗑</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CONCEPT 4: Card Grid -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="concept">
+  <div class="concept-header">
+    <span class="concept-num">4</span>
+    <h2 class="concept-title">Kártya Grid nézet</h2>
+    <p class="concept-desc">Minden hiba saját kártyát kap a részletekkel. Vizuálisabb, több információ látszik egyszerre, de kevesebb sor fér ki.</p>
+    <div class="concept-tags">
+      <span class="tag pro">✓ Részletes előnézet</span>
+      <span class="tag pro">✓ Modern megjelenés</span>
+      <span class="tag pro">✓ Mobil-barát</span>
+      <span class="tag con">✗ Kevesebb elem látszik egyszerre</span>
+      <span class="tag con">✗ Nehezebb bulk műveletek</span>
+    </div>
+  </div>
+  <div class="mockup">
+    <div style="padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);flex-wrap:wrap;">
+      <div style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px">
+        <span style="color:var(--amber)">⚠</span> 79 hiba
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <div style="position:relative;width:200px;">
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:12px">🔍</span>
+          <input class="search-input" placeholder="Keresés..." />
+        </div>
+        <select class="select-input"><option>Minden forrás</option></select>
+        <select class="select-input"><option>Minden típus</option></select>
+        <div style="display:flex;gap:2px;background:var(--bg-muted);border-radius:8px;padding:2px">
+          <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;background:var(--bg-card)">📋 Lista</button>
+          <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;background:var(--primary-dim);color:var(--primary)">⊞ Grid</button>
+        </div>
+      </div>
+    </div>
+    <div class="c4-grid">
+      <!-- Card 1 -->
+      <div class="c4-card">
+        <div class="c4-card-header">
+          <div>
+            <div class="c4-card-file">178116934661-8wciw...</div>
+            <div class="c4-card-meta">Think AI Kft · 2026.06.11. 17:47</div>
+          </div>
+          <span class="badge badge-orange">Extrakciós hiba</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <span class="badge badge-outline">Számla</span>
+        </div>
+        <div class="c4-card-error">Extraction error: 6 validation errors for SimaSzamlaOutput\nbizonylatsorszam Value error, Invoice number...</div>
+        <div class="c4-card-footer">
+          <input type="checkbox" class="checkbox" />
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-outline" style="padding:4px 10px">🔄 Újra</button>
+            <button class="btn btn-ghost" style="padding:4px 8px;color:var(--text-dim)">🗑</button>
+          </div>
+        </div>
+      </div>
+      <!-- Card 2 -->
+      <div class="c4-card">
+        <div class="c4-card-header">
+          <div>
+            <div class="c4-card-file">Visibill_összefoglaló.csv</div>
+            <div class="c4-card-meta">Think AI Kft · 2026.06.05. 12:47</div>
+          </div>
+          <span class="badge badge-slate">Üres tartalom</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <span class="badge badge-outline">Tranzakció</span>
+        </div>
+        <div class="c4-card-error">Nem található érvényes tranzakció a fájlban.</div>
+        <div class="c4-card-footer">
+          <input type="checkbox" class="checkbox" />
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-outline" style="padding:4px 10px">🔄 Újra</button>
+            <button class="btn btn-ghost" style="padding:4px 8px;color:var(--text-dim)">🗑</button>
+          </div>
+        </div>
+      </div>
+      <!-- Card 3 -->
+      <div class="c4-card">
+        <div class="c4-card-header">
+          <div>
+            <div class="c4-card-file">attachment-1</div>
+            <div class="c4-card-meta">Mauroni Events KFT. · 2026.05.15. 11:27</div>
+          </div>
+          <span class="badge badge-amber">Nem beazonosítható</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <span class="badge badge-outline">Számla</span>
+        </div>
+        <div class="c4-card-error">Nem beazonosítható: (no message)</div>
+        <div class="c4-card-footer">
+          <input type="checkbox" class="checkbox" />
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-outline" style="padding:4px 10px">🔄 Újra</button>
+            <button class="btn btn-ghost" style="padding:4px 8px;color:var(--text-dim)">🗑</button>
+          </div>
+        </div>
+      </div>
+      <!-- Card 4 -->
+      <div class="c4-card">
+        <div class="c4-card-header">
+          <div>
+            <div class="c4-card-file">image002.pdf</div>
+            <div class="c4-card-meta">Think AI Kft · 2026.05.15. 08:50</div>
+          </div>
+          <span class="badge badge-amber">Nem beazonosítható</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <span class="badge badge-outline">Számla</span>
+        </div>
+        <div class="c4-card-error">Nem beazonosítható: (no message)</div>
+        <div class="c4-card-footer">
+          <input type="checkbox" class="checkbox" />
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-outline" style="padding:4px 10px">🔄 Újra</button>
+            <button class="btn btn-ghost" style="padding:4px 8px;color:var(--text-dim)">🗑</button>
+          </div>
+        </div>
+      </div>
+      <!-- Card 5 -->
+      <div class="c4-card">
+        <div class="c4-card-header">
+          <div>
+            <div class="c4-card-file">Dr.SOMLÓ TAMÁS DR-...</div>
+            <div class="c4-card-meta">Kubát Szolgáltató Kft. · 2026.06.04. 14:02</div>
+          </div>
+          <span class="badge badge-orange">Extrakciós hiba</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <span class="badge badge-outline">Számla</span>
+        </div>
+        <div class="c4-card-error">Extraction error: 1 validation error for SimaSzamlaOutput elado_nev Input should be a valid string...</div>
+        <div class="c4-card-footer">
+          <input type="checkbox" class="checkbox" />
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-outline" style="padding:4px 10px">🔄 Újra</button>
+            <button class="btn btn-ghost" style="padding:4px 8px;color:var(--text-dim)">🗑</button>
+          </div>
+        </div>
+      </div>
+      <!-- Card 6 -->
+      <div class="c4-card">
+        <div class="c4-card-header">
+          <div>
+            <div class="c4-card-file">Receipt-2452-5770-96...</div>
+            <div class="c4-card-meta">Think AI Kft · 2026.05.10. 14:30</div>
+          </div>
+          <span class="badge badge-red">OCR hiba</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <span class="badge badge-outline">Számla</span>
+        </div>
+        <div class="c4-card-error">OCR (markitdown) failed and no pre-existing OCR text found.</div>
+        <div class="c4-card-footer">
+          <input type="checkbox" class="checkbox" />
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-outline" style="padding:4px 10px">🔄 Újra</button>
+            <button class="btn btn-ghost" style="padding:4px 8px;color:var(--text-dim)">🗑</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CONCEPT 5: Compact Dashboard with Inline Stats -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="concept">
+  <div class="concept-header">
+    <span class="concept-num">5</span>
+    <h2 class="concept-title">Kompakt Dashboard — Inline statisztikák + severity bar</h2>
+    <p class="concept-desc">Felső sáv az összes szűrővel és statisztikával, alatta a táblázat bal szélén színes severity sávval. Minden egy sorban, maximális tér a táblázatnak.</p>
+    <div class="concept-tags">
+      <span class="tag pro">✓ Legtöbb sor fér ki</span>
+      <span class="tag pro">✓ Severity vizuálisan azonnali</span>
+      <span class="tag pro">✓ Professzionális, „ops dashboard" hatás</span>
+      <span class="tag con">✗ Kevesebb részlet KPI-kből</span>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="c5-header">
+      <div class="c5-stat" style="border-left:3px solid var(--amber)">
+        <div>
+          <div class="c5-stat-val">79</div>
+          <div class="c5-stat-label">Összes</div>
+        </div>
+      </div>
+      <div class="c5-stat" style="border-left:3px solid var(--primary)">
+        <div>
+          <div class="c5-stat-val">0</div>
+          <div class="c5-stat-label">24h</div>
+        </div>
+      </div>
+      <div class="c5-stat">
+        <div>
+          <div style="font-size:12px;font-weight:600">Think AI Kft</div>
+          <div class="c5-stat-label">Legtöbb (60)</div>
+        </div>
+      </div>
+
+      <!-- Distribution mini bar -->
+      <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;flex:1;min-width:100px;max-width:200px;gap:1px">
+        <div style="flex:44;background:var(--amber)" title="Nem beazonosítható: 44"></div>
+        <div style="flex:16;background:var(--red)" title="OCR: 16"></div>
+        <div style="flex:13;background:var(--orange)" title="Extrakciós: 13"></div>
+        <div style="flex:2;background:var(--rose)" title="API: 2"></div>
+        <div style="flex:1;background:var(--blue)" title="Duplikátum: 1"></div>
+        <div style="flex:3;background:var(--slate)" title="Egyéb: 3"></div>
+      </div>
+
+      <div class="c5-filters">
+        <div style="position:relative;width:180px;">
+          <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:11px">🔍</span>
+          <input class="search-input" placeholder="Keresés..." style="padding-left:28px" />
+        </div>
+        <select class="select-input" style="font-size:11px"><option>Forrás ▾</option></select>
+        <select class="select-input" style="font-size:11px"><option>Típus ▾</option></select>
+      </div>
+    </div>
+    <table class="c5-table">
+      <thead><tr>
+        <th style="width:28px"><input type="checkbox" class="checkbox" /></th>
+        <th style="width:4px"></th>
+        <th>Dátum ↓</th><th>Cég</th><th>Forrás</th><th>Típus</th><th>Fájl</th><th>Hibaüzenet</th><th style="width:50px"></th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td><input type="checkbox" class="checkbox" /></td>
+          <td style="padding:0"><div class="c5-severity" style="background:var(--orange)"></div></td>
+          <td style="font-variant-numeric:tabular-nums;white-space:nowrap">06.11. <span style="color:var(--text-dim)">17:47</span></td>
+          <td>Think AI Kft</td>
+          <td><span class="badge badge-outline">Számla</span></td>
+          <td><span class="badge badge-orange" style="font-size:10px">Extrakciós</span></td>
+          <td><a class="file-link" style="font-size:11px">178116934661-8wciw...</a></td>
+          <td class="err-msg" style="font-size:10px">Extraction error: 6 validation...</td>
+          <td style="color:var(--text-dim);font-size:11px">🔄 🗑</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox" /></td>
+          <td style="padding:0"><div class="c5-severity" style="background:var(--amber)"></div></td>
+          <td style="font-variant-numeric:tabular-nums;white-space:nowrap">05.15. <span style="color:var(--text-dim)">11:27</span></td>
+          <td>Mauroni Events</td>
+          <td><span class="badge badge-outline">Számla</span></td>
+          <td><span class="badge badge-amber" style="font-size:10px">Nem beaz.</span></td>
+          <td><a class="file-link" style="font-size:11px">attachment-1</a></td>
+          <td class="err-msg" style="font-size:10px">Nem beazonosítható: (no message)</td>
+          <td style="color:var(--text-dim);font-size:11px">🔄 🗑</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox" /></td>
+          <td style="padding:0"><div class="c5-severity" style="background:var(--red)"></div></td>
+          <td style="font-variant-numeric:tabular-nums;white-space:nowrap">05.15. <span style="color:var(--text-dim)">08:50</span></td>
+          <td>Think AI Kft</td>
+          <td><span class="badge badge-outline">Számla</span></td>
+          <td><span class="badge badge-red" style="font-size:10px">OCR hiba</span></td>
+          <td><a class="file-link" style="font-size:11px">image002.pdf</a></td>
+          <td class="err-msg" style="font-size:10px">OCR (markitdown) failed and no pre...</td>
+          <td style="color:var(--text-dim);font-size:11px">🔄 🗑</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox" /></td>
+          <td style="padding:0"><div class="c5-severity" style="background:var(--rose)"></div></td>
+          <td style="font-variant-numeric:tabular-nums;white-space:nowrap">05.04. <span style="color:var(--text-dim)">09:15</span></td>
+          <td>Think AI Kft</td>
+          <td><span class="badge badge-outline">Főkönyv</span></td>
+          <td><span class="badge badge-rose" style="font-size:10px">API / DB</span></td>
+          <td><span style="color:var(--text-dim);font-size:11px">—</span></td>
+          <td class="err-msg" style="font-size:10px">APIError: PGRST202 Could not find...</td>
+          <td style="color:var(--text-dim);font-size:11px">🔄 🗑</td>
+        </tr>
+        <tr>
+          <td><input type="checkbox" class="checkbox" /></td>
+          <td style="padding:0"><div class="c5-severity" style="background:var(--blue)"></div></td>
+          <td style="font-variant-numeric:tabular-nums;white-space:nowrap">04.28. <span style="color:var(--text-dim)">16:03</span></td>
+          <td>Think AI Kft</td>
+          <td><span class="badge badge-outline">Számla</span></td>
+          <td><span class="badge badge-blue" style="font-size:10px">Duplikátum</span></td>
+          <td><a class="file-link" style="font-size:11px">Invoice-SMBD-2026-1.pdf</a></td>
+          <td class="err-msg" style="font-size:10px">duplicate key value violates unique...</td>
+          <td style="color:var(--text-dim);font-size:11px">🔄 🗑</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border)">
+      <span style="font-size:11px;color:var(--text-dim)">1-25 / 79</span>
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-ghost" style="padding:4px 8px">‹</button>
+        <span style="font-size:11px;color:var(--text-muted);padding:4px 8px">1/4</span>
+        <button class="btn btn-ghost" style="padding:4px 8px">›</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- CONCEPT 6: Grouped Timeline -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="concept">
+  <div class="concept-header">
+    <span class="concept-num">6</span>
+    <h2 class="concept-title">Csoportosított Timeline nézet</h2>
+    <p class="concept-desc">Napok szerint csoportosított időrendi nézet, vizuális timeline vonallal. Természetesebb „mi történt" áttekintés, jó incident review-hoz.</p>
+    <div class="concept-tags">
+      <span class="tag pro">✓ Időrendi történet</span>
+      <span class="tag pro">✓ Mintázatok felismerése (batchek)</span>
+      <span class="tag pro">✓ Vizuálisan élénk</span>
+      <span class="tag con">✗ Nehezebb bulk kijelölés</span>
+      <span class="tag con">✗ Sok nap esetén hosszú scroll</span>
+    </div>
+  </div>
+  <div class="mockup">
+    <div style="padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);flex-wrap:wrap">
+      <span style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px"><span style="color:var(--amber)">⚠</span> 79 feldolgozási hiba</span>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <div style="position:relative;width:200px;">
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:12px">🔍</span>
+          <input class="search-input" placeholder="Keresés..." />
+        </div>
+        <select class="select-input"><option>Minden típus</option></select>
+        <select class="select-input"><option>Minden cég</option></select>
+      </div>
+    </div>
+    <div class="c6-timeline">
+      <!-- Day 1 -->
+      <div class="c6-group">
+        <div class="c6-date">2026. június 11. <span style="color:var(--text-dim);font-weight:400;font-size:11px">— 5 hiba</span></div>
+        <div class="c6-items">
+          <div class="c6-item">
+            <div class="c6-time">17:47</div>
+            <div class="c6-item-content">
+              <span class="badge badge-orange" style="font-size:10px">Extrakciós</span>
+              <span class="c6-item-file">178116934661-8wciw...</span>
+              <span class="c6-item-company">Think AI Kft</span>
+            </div>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px">🔄</button>
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px;color:var(--text-dim)">🗑</button>
+            </div>
+          </div>
+          <div class="c6-item">
+            <div class="c6-time">15:49</div>
+            <div class="c6-item-content">
+              <span class="badge badge-orange" style="font-size:10px">Extrakciós</span>
+              <span class="c6-item-file">1781176936669-g3w8i...</span>
+              <span class="c6-item-company">Think AI Kft</span>
+            </div>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px">🔄</button>
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px;color:var(--text-dim)">🗑</button>
+            </div>
+          </div>
+          <div class="c6-item">
+            <div class="c6-time">13:22</div>
+            <div class="c6-item-content">
+              <span class="badge badge-orange" style="font-size:10px">Extrakciós</span>
+              <span class="c6-item-file">178116934661-8wciw...</span>
+              <span class="c6-item-company">Think AI Kft</span>
+            </div>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px">🔄</button>
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px;color:var(--text-dim)">🗑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Day 2 -->
+      <div class="c6-group">
+        <div class="c6-date">2026. június 5. <span style="color:var(--text-dim);font-weight:400;font-size:11px">— 1 hiba</span></div>
+        <div class="c6-items">
+          <div class="c6-item">
+            <div class="c6-time">12:47</div>
+            <div class="c6-item-content">
+              <span class="badge badge-slate" style="font-size:10px">Üres tart.</span>
+              <span class="c6-item-file">Visibill_összefoglaló.csv</span>
+              <span class="c6-item-company">Think AI Kft</span>
+            </div>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px">🔄</button>
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px;color:var(--text-dim)">🗑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Day 3 -->
+      <div class="c6-group">
+        <div class="c6-date">2026. június 4. <span style="color:var(--text-dim);font-weight:400;font-size:11px">— 4 hiba</span></div>
+        <div class="c6-items">
+          <div class="c6-item">
+            <div class="c6-time">14:02</div>
+            <div class="c6-item-content">
+              <span class="badge badge-orange" style="font-size:10px">Extrakciós</span>
+              <span class="c6-item-file">Dr.SOMLÓ TAMÁS DR-...</span>
+              <span class="c6-item-company">Kubát Szolgáltató Kft.</span>
+            </div>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px">🔄</button>
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px;color:var(--text-dim)">🗑</button>
+            </div>
+          </div>
+          <div class="c6-item">
+            <div class="c6-time">14:01</div>
+            <div class="c6-item-content">
+              <span class="badge badge-orange" style="font-size:10px">Extrakciós</span>
+              <span class="c6-item-file">Jysk A27000001-1737...</span>
+              <span class="c6-item-company">Kubát Szolgáltató Kft.</span>
+            </div>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px">🔄</button>
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px;color:var(--text-dim)">🗑</button>
+            </div>
+          </div>
+          <div class="c6-item">
+            <div class="c6-time">14:01</div>
+            <div class="c6-item-content">
+              <span class="badge badge-orange" style="font-size:10px">Extrakciós</span>
+              <span class="c6-item-file">Bestbyte Kft.-10610D...</span>
+              <span class="c6-item-company">Kubát Szolgáltató Kft.</span>
+            </div>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px">🔄</button>
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px;color:var(--text-dim)">🗑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Day 4 -->
+      <div class="c6-group">
+        <div class="c6-date">2026. május 15. <span style="color:var(--text-dim);font-weight:400;font-size:11px">— 6 hiba</span></div>
+        <div class="c6-items">
+          <div class="c6-item">
+            <div class="c6-time">11:27</div>
+            <div class="c6-item-content">
+              <span class="badge badge-amber" style="font-size:10px">Nem beaz.</span>
+              <span class="c6-item-file">attachment-1</span>
+              <span class="c6-item-company">Mauroni Events KFT.</span>
+            </div>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px">🔄</button>
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px;color:var(--text-dim)">🗑</button>
+            </div>
+          </div>
+          <div class="c6-item">
+            <div class="c6-time">11:19</div>
+            <div class="c6-item-content">
+              <span class="badge badge-amber" style="font-size:10px">Nem beaz.</span>
+              <span class="c6-item-file">attachment-1</span>
+              <span class="c6-item-company">Mauroni Events KFT.</span>
+            </div>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px">🔄</button>
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px;color:var(--text-dim)">🗑</button>
+            </div>
+          </div>
+          <div class="c6-item">
+            <div class="c6-time">08:50</div>
+            <div class="c6-item-content">
+              <span class="badge badge-red" style="font-size:10px">OCR hiba</span>
+              <span class="c6-item-file">image002.pdf</span>
+              <span class="c6-item-company">Think AI Kft</span>
+            </div>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px">🔄</button>
+              <button class="btn btn-ghost" style="padding:2px 6px;font-size:11px;color:var(--text-dim)">🗑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

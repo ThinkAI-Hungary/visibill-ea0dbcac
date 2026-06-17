@@ -1,4 +1,4 @@
-import { useCompany, Company } from '@/contexts/CompanyContext';
+﻿import { useCompany, Company } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, Plus, Pencil, Trash2 } from 'lucide-react';
@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { extractPageSegment, generateScopedPath } from '@/lib/navigation';
+import { reportError } from '@/lib/errorReporter';
 
 const CompanySelector = () => {
   const { companies, selectedCompany, setSelectedCompany, refreshCompanies, loading } = useCompany();
@@ -90,7 +91,7 @@ const CompanySelector = () => {
       setIsCreateDialogOpen(false);
       toast({ title: 'Cég sikeresen létrehozva!' });
     } catch (error: any) {
-      console.error('Error creating company:', error);
+      reportError({ type: 'db_query', component: 'CompanySelector', action: 'error', message: 'Error creating company:', error: error });
       const msg = error?.message || error?.details || JSON.stringify(error);
       toast({ title: 'Hiba történt a cég létrehozása során', description: msg, variant: 'destructive' });
     } finally {
@@ -143,7 +144,7 @@ const CompanySelector = () => {
       setIsCreateDialogOpen(false);
       toast({ title: 'Sikeresen csatlakoztál a céghez!' });
     } catch (error: any) {
-      console.error('Error joining company:', error);
+      reportError({ type: 'db_query', component: 'CompanySelector', action: 'error', message: 'Error joining company:', error: error });
       const msg = error?.message || error?.details || JSON.stringify(error);
       toast({ title: 'Hiba történt a csatlakozás során', description: msg, variant: 'destructive' });
     } finally {
@@ -193,7 +194,7 @@ const CompanySelector = () => {
       setEditingCompany(null);
       toast({ title: 'Cég sikeresen frissítve!' });
     } catch (error: any) {
-      console.error('Error updating company:', error);
+      reportError({ type: 'db_query', component: 'CompanySelector', action: 'error', message: 'Error updating company:', error: error });
       const msg = error?.message || error?.details || JSON.stringify(error);
       toast({ title: 'Hiba történt a cég frissítése során', description: msg, variant: 'destructive' });
     } finally {
@@ -246,7 +247,7 @@ const CompanySelector = () => {
 
       toast({ title: 'Cég sikeresen törölve!' });
     } catch (error: any) {
-      console.error('Error deleting company:', error);
+      reportError({ type: 'db_query', component: 'CompanySelector', action: 'error', message: 'Error deleting company:', error: error });
       const msg = error?.message || error?.details || JSON.stringify(error);
       toast({ title: 'Hiba történt a cég törlése során', description: msg || 'Lehet, hogy vannak még hozzá kapcsolódó adatok.', variant: 'destructive' });
     } finally {

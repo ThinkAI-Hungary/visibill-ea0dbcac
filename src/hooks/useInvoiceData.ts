@@ -16,6 +16,7 @@ export interface TransactionRecord {
   confidence_score: number | null;
   match_type: string | null;
   is_verified: boolean | null;
+  reason: string | null;
 }
 
 export interface NavInvoice {
@@ -200,12 +201,39 @@ export function useInvoiceData(
     queryFn: async () => {
       const { data } = await supabase
         .from('transactions')
-        .select('id, matched_invoice_id, transaction_date, amount, description, currency, type, confidence_score, match_type, is_verified')
+        .select('id, matched_invoice_id, transaction_date, amount, description, currency, type, confidence_score, match_type, is_verified, reason')
         .eq('company_id', companyId)
         .not('matched_invoice_id', 'is', null);
       return (data || []) as TransactionRecord[];
     },
     enabled,
+  });
+
+  // Fetch multi-match join table entries so invoices matched via
+  // transaction_invoice_matches (not just matched_invoice_id) are visible.
+  // We fetch ALL join table rows for the company's matched transactions.
+  const txFingerprint = useMemo(() => allTransactions.length, [allTransactions]);
+  const { data: joinTableMatches = [] } = useQuery({
+    queryKey: ['transactionInvoiceMatches', companyId, txFingerprint],
+    queryFn: async () => {
+      // Re-read allTransactions at query time (not from stale closure)
+      const currentTxIds = allTransactions.map(t => t.id);
+      if (currentTxIds.length === 0) return [];
+
+      // Batch fetch in chunks of 500 to avoid URL length limits
+      const CHUNK = 500;
+      const all: { transaction_id: string; invoice_id: string; invoice_source: string }[] = [];
+      for (let i = 0; i < currentTxIds.length; i += CHUNK) {
+        const chunk = currentTxIds.slice(i, i + CHUNK);
+        const { data } = await supabase
+          .from('transaction_invoice_matches')
+          .select('transaction_id, invoice_id, invoice_source')
+          .in('transaction_id', chunk);
+        if (data) all.push(...data);
+      }
+      return all;
+    },
+    enabled: enabled && allTransactions.length > 0,
   });
 
   // Lightweight NAV lookup for cross-tab matching (submitted ↔ NAV by bizonylatsorszam)
@@ -222,7 +250,7 @@ export function useInvoiceData(
         const to = from + PAGE_SIZE - 1;
         const { data, error } = await supabase
           .from('nav_invoices')
-          .select('id, invoice_number, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, transaction_id, submitted')
+          .select('id, invoice_number, invoice_direction, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, transaction_id, submitted')
           .eq('company_id', companyId)
           .range(from, to)
           .order('invoice_issue_date', { ascending: false })
@@ -243,8 +271,13 @@ export function useInvoiceData(
   });
 
   const matchedInvoiceIds = useMemo(
-    () => new Set(allTransactions.map(t => t.matched_invoice_id).filter(Boolean)),
-    [allTransactions]
+    () => {
+      const ids = new Set(allTransactions.map(t => t.matched_invoice_id).filter(Boolean));
+      // Also include invoice IDs from the join table (multi-match)
+      joinTableMatches.forEach(m => ids.add(m.invoice_id));
+      return ids;
+    },
+    [allTransactions, joinTableMatches]
   );
 
   // Fetch courier reports matched to NAV invoices or transactions for this company
@@ -301,6 +334,7 @@ export function useInvoiceData(
     queryClient.invalidateQueries({ queryKey: ['categories', companyId] });
     queryClient.invalidateQueries({ queryKey: ['projectsList', companyId] });
     queryClient.invalidateQueries({ queryKey: ['invoiceTransactions', companyId] });
+    queryClient.invalidateQueries({ queryKey: ['transactionInvoiceMatches', companyId] });
     queryClient.invalidateQueries({ queryKey: ['filteredNavInvoices', companyId] });
     queryClient.invalidateQueries({ queryKey: ['filteredSubmittedInvoices', companyId] });
   };
@@ -313,6 +347,7 @@ export function useInvoiceData(
     categories,
     projects,
     allTransactions,
+    joinTableMatches,
     navInvoicesLookup,
     matchedInvoiceIds,
     courierReports,

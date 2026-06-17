@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus, Hash, Users } from 'lucide-react';
+import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus, Hash, Users, BarChart3, FileText, Settings, Search } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -23,6 +23,8 @@ import { PartnerCombobox } from '@/components/PartnerCombobox';
 import { SupplierInvoiceAssignment } from '@/components/SupplierInvoiceAssignment';
 import { CopyableCell } from '@/components/ui/copyable-cell';
 import { useProjectLaborCosts } from '@/hooks/useProjectLaborCosts';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { IconPicker, ColorPicker, resolveIcon } from '@/components/IconPicker';
 
 interface Project {
   id?: string;
@@ -35,6 +37,8 @@ interface Project {
   end_date?: string;
   project_code?: string;
   project_type: 'one_time' | 'recurring';
+  icon?: string | null;
+  color?: string | null;
 }
 
 interface ProjectFinancials {
@@ -47,12 +51,20 @@ interface ProjectFinancials {
 const Projects = () => {
   const [loading, setLoading] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [assigningProject, setAssigningProject] = useState<Project | null>(null);
+  const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  
+  // Track active tab for each project (defaulting to 'overview')
+  const [activeTabs, setActiveTabs] = useState<Record<string, 'overview' | 'invoices' | 'settings'>>({});
+  
+  // Track search text for filtering existing assigned invoices
+  const [assignedInvoicesSearch, setAssignedInvoicesSearch] = useState<Record<string, string>>({});
+
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
 
   const emptyProject: Project = {
     name: '',
@@ -63,50 +75,53 @@ const Projects = () => {
     start_date: undefined,
     end_date: undefined,
     project_type: 'one_time',
+    icon: 'FolderOpen',
+    color: 'hsl(217, 91%, 60%)',
   };
 
-  // TanStack Query: fetch projects + financials
+  // Fetch projects + financials + assigned invoices
   const { data: queryData, isLoading: initialLoading } = useQuery({
     queryKey: queryKeys.projects(selectedCompany?.id || ''),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('projects')
-        .select('id, name, description, status, budget, start_date, end_date, project_type, project_code, client_name, company_id, user_id, created_at, updated_at')
+        .select('id, name, description, status, budget, start_date, end_date, project_type, project_code, client_name, company_id, user_id, created_at, updated_at, icon, color')
         .eq('company_id', selectedCompany!.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      const projects = (data || []).map(p => ({
+      const projectsList = (data || []).map(p => ({
         ...p,
         project_type: p.project_type || 'one_time'
       })) as Project[];
 
-      // Fetch project financials from nav_invoices (paginated — bypasses 1000-row limit)
+      // Fetch detailed assigned invoices (bypasses 1000-row limit)
       const PAGE_SIZE = 1000;
-      let invoiceData: any[] = [];
+      let allInvoices: any[] = [];
       let invFrom = 0;
       while (true) {
         const { data: batch, error: invoiceError } = await supabase
           .from('nav_invoices')
-          .select('project_id, invoice_direction, invoice_gross_amount')
+          .select('id, invoice_number, supplier_name, customer_name, invoice_gross_amount, invoice_direction, currency, invoice_issue_date, project_id')
           .eq('company_id', selectedCompany!.id)
           .not('project_id', 'is', null)
           .range(invFrom, invFrom + PAGE_SIZE - 1);
 
         if (invoiceError) throw invoiceError;
-        invoiceData = invoiceData.concat(batch || []);
+        allInvoices = allInvoices.concat(batch || []);
         if (!batch || batch.length < PAGE_SIZE) break;
         invFrom += PAGE_SIZE;
       }
 
+      // Group financials
       const financialsMap = new Map<string, { outbound: number; inbound: number }>();
-      (invoiceData || []).forEach((inv: any) => {
+      allInvoices.forEach((inv: any) => {
         if (!inv.project_id) return;
         if (!financialsMap.has(inv.project_id)) {
           financialsMap.set(inv.project_id, { outbound: 0, inbound: 0 });
         }
         const current = financialsMap.get(inv.project_id)!;
-        const amount = inv.invoice_gross_amount || 0;
+        const amount = parseFloat(inv.invoice_gross_amount) || 0;
         if (inv.invoice_direction === 'OUTBOUND') {
           current.outbound += amount;
         } else if (inv.invoice_direction === 'INBOUND') {
@@ -114,14 +129,14 @@ const Projects = () => {
         }
       });
 
-      const financials: ProjectFinancials[] = Array.from(financialsMap.entries()).map(([projectId, data]) => ({
+      const financials: ProjectFinancials[] = Array.from(financialsMap.entries()).map(([projectId, d]) => ({
         projectId,
-        outboundTotal: data.outbound,
-        inboundTotal: data.inbound,
-        profit: data.outbound - data.inbound
+        outboundTotal: d.outbound,
+        inboundTotal: d.inbound,
+        profit: d.outbound - d.inbound
       }));
 
-      return { projects, financials };
+      return { projects: projectsList, financials, invoices: allInvoices };
     },
     enabled: !!user && !!selectedCompany?.id,
     placeholderData: keepPreviousData,
@@ -129,20 +144,50 @@ const Projects = () => {
 
   const projects = queryData?.projects || [];
   const projectFinancials = queryData?.financials || [];
+  const assignedInvoices = queryData?.invoices || [];
   const { getLaborCost } = useProjectLaborCosts();
+
+  // Fetch unassigned invoices for the search bar dropdown
+  const { data: unassignedInvoices = [], refetch: refetchUnassigned } = useQuery({
+    queryKey: ['unassigned-invoices', selectedCompany?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('nav_invoices')
+        .select('id, invoice_number, supplier_name, customer_name, invoice_gross_amount, invoice_direction, currency, invoice_issue_date')
+        .eq('company_id', selectedCompany!.id)
+        .is('project_id', null)
+        .order('invoice_issue_date', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCompany?.id,
+  });
+
+  const modalFilteredUnassigned = useMemo(() => {
+    if (!invoiceSearchQuery.trim()) return unassignedInvoices;
+    const q = invoiceSearchQuery.toLowerCase();
+    return unassignedInvoices.filter(inv =>
+      inv.invoice_number.toLowerCase().includes(q) ||
+      (inv.supplier_name && inv.supplier_name.toLowerCase().includes(q)) ||
+      (inv.customer_name && inv.customer_name.toLowerCase().includes(q))
+    );
+  }, [unassignedInvoices, invoiceSearchQuery]);
 
   const getProjectFinancials = (projectId: string): ProjectFinancials | undefined => {
     return projectFinancials.find(f => f.projectId === projectId);
   };
 
-  const handleSaveProject = async () => {
-    if (!user || !editingProject) return;
+  const handleSaveProject = async (projToSave?: Project) => {
+    const targetProj = projToSave || editingProject;
+    if (!user || !targetProj) return;
 
-    if (!editingProject.name.trim() || !editingProject.client_name.trim()) {
+    if (!targetProj.name.trim()) {
       toast({
         variant: 'destructive',
         title: 'Hiányzó adatok',
-        description: 'A projekt neve és ügyfél neve kötelező!'
+        description: 'A projekt neve kötelező!'
       });
       return;
     }
@@ -150,21 +195,23 @@ const Projects = () => {
     setLoading(true);
 
     try {
-      if (editingProject.id) {
+      if (targetProj.id) {
         // Update existing project
         const { error } = await supabase
           .from('projects')
           .update({
-            name: editingProject.name,
-            description: editingProject.description,
-            client_name: editingProject.client_name,
-            status: editingProject.status,
-            budget: editingProject.budget,
-            start_date: editingProject.start_date,
-            end_date: editingProject.end_date,
-            project_type: editingProject.project_type,
+            name: targetProj.name,
+            description: targetProj.description,
+            client_name: targetProj.client_name,
+            status: targetProj.status,
+            budget: targetProj.budget,
+            start_date: targetProj.start_date,
+            end_date: targetProj.end_date,
+            project_type: targetProj.project_type,
+            icon: targetProj.icon,
+            color: targetProj.color,
           })
-          .eq('id', editingProject.id)
+          .eq('id', targetProj.id)
           .eq('company_id', selectedCompany?.id);
 
         if (error) throw error;
@@ -174,20 +221,22 @@ const Projects = () => {
           description: 'A változtatások sikeresen mentve.'
         });
       } else {
-        // Create new project (project_code is generated server-side)
+        // Create new project
         const { error } = await supabase
           .from('projects')
           .insert({
             user_id: user.id,
             company_id: selectedCompany?.id,
-            name: editingProject.name,
-            description: editingProject.description,
-            client_name: editingProject.client_name,
-            status: editingProject.status,
-            budget: editingProject.budget,
-            start_date: editingProject.start_date,
-            end_date: editingProject.end_date,
-            project_type: editingProject.project_type,
+            name: targetProj.name,
+            description: targetProj.description,
+            client_name: targetProj.client_name,
+            status: targetProj.status,
+            budget: targetProj.budget,
+            start_date: targetProj.start_date,
+            end_date: targetProj.end_date,
+            project_type: targetProj.project_type,
+            icon: targetProj.icon || 'FolderOpen',
+            color: targetProj.color || 'hsl(217, 91%, 60%)',
           });
 
         if (error) throw error;
@@ -246,6 +295,67 @@ const Projects = () => {
     }
   };
 
+  const handleAssignInvoice = async (projectId: string, invoiceId: string) => {
+    try {
+      const { error } = await supabase
+        .from('nav_invoices')
+        .update({ project_id: projectId })
+        .eq('id', invoiceId);
+
+      if (error) {
+        if (error.message?.includes('INVOICE_ALREADY_ASSIGNED::')) {
+          const existingProjectName = error.message.split('::')[1];
+          toast({
+            variant: 'destructive',
+            title: 'Hozzárendelés sikertelen',
+            description: `Ez a számla már a "${existingProjectName}" projekthez van rendelve.`,
+          });
+          return;
+        }
+        throw error;
+      }
+
+      toast({
+        title: 'Számla hozzárendelve',
+        description: 'A számla sikeresen hozzárendelve a projekthez.',
+      });
+
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects(selectedCompany?.id || '') });
+      refetchUnassigned();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Hiba',
+        description: error.message || 'Nem sikerült hozzárendelni a számlát.',
+      });
+    }
+  };
+
+  const handleUnassignInvoice = async (invoiceId: string) => {
+    try {
+      const { error } = await supabase
+        .from('nav_invoices')
+        .update({ project_id: null })
+        .eq('id', invoiceId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Hozzárendelés törölve',
+        description: 'A számla eltávolítva a projektből.',
+      });
+
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects(selectedCompany?.id || '') });
+      refetchUnassigned();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Hiba',
+        description: error.message || 'Nem sikerült eltávolítani a számlát.',
+      });
+    }
+  };
+
   const getStatusLabel = (status: string) => {
     const labels = {
       active: 'Aktív',
@@ -268,6 +378,15 @@ const Projects = () => {
 
   const getProjectTypeLabel = (type: string) => {
     return type === 'recurring' ? 'Ismétlődő' : 'Egyszeri';
+  };
+
+  const getStripeColorClass = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-500';
+      case 'cancelled': return 'bg-red-500';
+      case 'on_hold': return 'bg-yellow-500';
+      default: return 'bg-blue-500';
+    }
   };
 
   if (initialLoading) {
@@ -293,200 +412,29 @@ const Projects = () => {
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <p className="text-muted-foreground">Kezeld az ügyfélprojektjeidet és munkáidat</p>
+            <p className="text-muted-foreground font-medium text-sm">A projekt kártyán tabfülek választják szét az áttekintést és a számla-kezelést</p>
           </div>
           <Button
             onClick={() => {
               setEditingProject(emptyProject);
               setIsCreating(true);
             }}
-            disabled={isCreating || !!editingProject}
           >
             <Plus className="h-4 w-4 mr-2" />
             Új projekt
           </Button>
         </div>
 
-        {/* Create/Edit Form */}
-        {(isCreating || editingProject) && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{editingProject?.id ? 'Projekt szerkesztése' : 'Új projekt létrehozása'}</CardTitle>
-              <CardDescription>
-                Adj meg részleteket az ügyfélprojektről
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Project name */}
-                <div className="space-y-2">
-                  <Label htmlFor="name">Projekt neve *</Label>
-                  <Input
-                    id="name"
-                    placeholder="pl. Weboldal fejlesztés"
-                    value={editingProject?.name || ''}
-                    onChange={(e) => setEditingProject(prev => prev ? { ...prev, name: e.target.value } : null)}
-                  />
-                </div>
 
-                {/* Client selection with PartnerCombobox */}
-                <div className="space-y-2">
-                  <Label htmlFor="client">Ügyfél *</Label>
-                  <PartnerCombobox
-                    value={editingProject?.client_name || ''}
-                    onChange={(name) => setEditingProject(prev => prev ? { ...prev, client_name: name } : null)}
-                    companyId={selectedCompany?.id}
-                    placeholder="Partner keresése..."
-                  />
-                  <p className="text-xs text-muted-foreground flex items-start gap-1">
-                    <Info className="h-3 w-3 mt-0.5 shrink-0" />
-                    Ha nem látod a partnert a listában, akkor küldj be/tölts fel egy olyan számlát, amin az új partner szerepel.
-                  </p>
-                </div>
 
-                {/* Project code (read-only), Type, Status */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Project Code - only show for existing projects */}
-                  <div className="space-y-2">
-                    <Label>Projektkód</Label>
-                    {editingProject?.project_code ? (
-                      <div className="flex items-center gap-2 h-10 px-3 rounded-md border bg-muted">
-                        <Hash className="h-4 w-4 text-muted-foreground" />
-                        <CopyableCell 
-                          value={editingProject.project_code} 
-                          className="font-mono text-sm"
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex items-center h-10 px-3 rounded-md border bg-muted text-muted-foreground text-sm">
-                        Mentés után generálódik
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Project Type */}
-                  <div className="space-y-2">
-                    <Label htmlFor="project_type">Típus</Label>
-                    <Select
-                      value={editingProject?.project_type || 'one_time'}
-                      onValueChange={(value: 'one_time' | 'recurring') => 
-                        setEditingProject(prev => prev ? { ...prev, project_type: value } : null)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="one_time">Egyszeri</SelectItem>
-                        <SelectItem value="recurring">Ismétlődő</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Status */}
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Státusz</Label>
-                    <Select
-                      value={editingProject?.status || 'active'}
-                      onValueChange={(value: any) => setEditingProject(prev => prev ? { ...prev, status: value } : null)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Aktív</SelectItem>
-                        <SelectItem value="completed">Befejezett</SelectItem>
-                        <SelectItem value="on_hold">Szünetel</SelectItem>
-                        <SelectItem value="cancelled">Törölve</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Budget and Dates */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="budget">Költségvetés (HUF)</Label>
-                    <Input
-                      id="budget"
-                      type="number"
-                      placeholder="0"
-                      value={editingProject?.budget || ''}
-                      onChange={(e) => setEditingProject(prev => prev ? { ...prev, budget: e.target.value ? Number(e.target.value) : undefined } : null)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="start_date">Kezdő dátum</Label>
-                    <Input
-                      id="start_date"
-                      type="date"
-                      value={editingProject?.start_date || ''}
-                      onChange={(e) => setEditingProject(prev => prev ? { ...prev, start_date: e.target.value } : null)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="end_date">Befejezés dátuma</Label>
-                    <Input
-                      id="end_date"
-                      type="date"
-                      value={editingProject?.end_date || ''}
-                      onChange={(e) => setEditingProject(prev => prev ? { ...prev, end_date: e.target.value } : null)}
-                    />
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div className="space-y-2">
-                  <Label htmlFor="description">Leírás</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Projekt részletei..."
-                    rows={3}
-                    value={editingProject?.description || ''}
-                    onChange={(e) => setEditingProject(prev => prev ? { ...prev, description: e.target.value } : null)}
-                  />
-                </div>
-
-                {/* Supplier Invoice Assignment - only for existing projects */}
-                {editingProject?.id && selectedCompany && (
-                  <SupplierInvoiceAssignment
-                    projectId={editingProject.id}
-                    projectName={editingProject.name}
-                    companyId={selectedCompany.id}
-                    onAssignmentChange={() => queryClient.invalidateQueries({ queryKey: queryKeys.projects(selectedCompany?.id || '') })}
-                  />
-                )}
-
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setEditingProject(null);
-                      setIsCreating(false);
-                    }}
-                    disabled={loading}
-                  >
-                    Mégse
-                  </Button>
-                  <Button onClick={handleSaveProject} disabled={loading}>
-                    {loading ? 'Mentés...' : 'Mentés'}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Projects List */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* Projects List with Concept 3 tabs styling */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {projects.length === 0 ? (
             <Card className="col-span-full">
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <FolderOpen className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Még nincsenek projektek</h3>
-                <p className="text-muted-foreground text-center mb-4">
+                <p className="text-muted-foreground text-center mb-4 font-medium text-sm">
                   Kezdj el új projekteket létrehozni az ügyfélmunkáid rendszerezéséhez
                 </p>
                 <Button
@@ -503,148 +451,606 @@ const Projects = () => {
           ) : (
             projects.map((project) => {
               const financials = getProjectFinancials(project.id!);
-              
+              const currentTab = activeTabs[project.id!] || 'overview';
+              const projectInvoices = assignedInvoices.filter(inv => inv.project_id === project.id);
+
+              // Calculate budget percentage
+              const budgetPercent = project.budget && project.budget > 0
+                ? Math.min(Math.round(((financials?.inboundTotal || 0) / project.budget) * 100), 100)
+                : 0;
+
+              // Calculate duration percentage
+              let durationDaysTotal = 0;
+              let elapsedPercent = 0;
+              let durationText = 'Nincs megadva';
+              if (project.start_date && project.end_date) {
+                const start = new Date(project.start_date);
+                const end = new Date(project.end_date);
+                const today = new Date();
+                durationDaysTotal = Math.max(0, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+                const elapsedDays = Math.max(0, Math.min(durationDaysTotal, Math.ceil((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))));
+                elapsedPercent = durationDaysTotal > 0 ? Math.round((elapsedDays / durationDaysTotal) * 100) : 0;
+                
+                const months = Math.round(durationDaysTotal / 30.4);
+                durationText = months > 0 ? `${months} hónap` : `${durationDaysTotal} nap`;
+              }
+
+              // Is this card currently inline editing?
+              const isInlineEditing = editingProject?.id === project.id;
+
               return (
-                <Card key={project.id} className="flex flex-col">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-lg truncate">{project.name}</CardTitle>
-                        <CardDescription className="flex items-center gap-1 mt-1">
-                          <Building2 className="h-3 w-3" />
-                          {project.client_name}
-                        </CardDescription>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <Badge variant={getStatusVariant(project.status)}>
-                          {getStatusLabel(project.status)}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {getProjectTypeLabel(project.project_type)}
-                        </Badge>
-                      </div>
-                    </div>
-                    {/* Project code display */}
-                    {project.project_code && (
-                      <div className="mt-2">
-                        <CopyableCell 
-                          value={project.project_code}
-                          className="font-mono text-xs text-muted-foreground"
-                        />
-                      </div>
-                    )}
-                  </CardHeader>
-                  <CardContent className="flex-1 space-y-4">
-                    {project.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {project.description}
-                      </p>
-                    )}
+                <Card key={project.id} className="flex flex-col overflow-hidden border shadow-sm transition-all hover:shadow-md">
+                  <div className="flex flex-1">
+                    {/* Left Stripe color */}
+                    <div 
+                      className="w-1.5 shrink-0" 
+                      style={{ backgroundColor: project.color || 'hsl(217, 91%, 60%)' }}
+                    />
+                    
+                    <div className="flex-1 flex flex-col">
+                      {/* Card Header area */}
+                      <div className="p-4 border-b">
+                        <div className="flex items-start justify-between">
+                          <div className="min-w-0 flex-1 flex items-center gap-3">
+                            {/* Icon container */}
+                            {(() => {
+                              const ProjectIcon = resolveIcon(project.icon);
+                              const iconColor = project.color || 'hsl(217, 91%, 60%)';
+                              return (
+                                <div 
+                                  className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border animate-fade-in"
+                                  style={{ backgroundColor: iconColor + '15', borderColor: iconColor + '30', color: iconColor }}
+                                >
+                                  <ProjectIcon className="h-5 w-5" />
+                                </div>
+                              );
+                            })()}
 
-                    <div className="space-y-2">
-                      {project.budget && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">
-                            {formatCurrency(project.budget, 'HUF')}
-                          </span>
-                        </div>
-                      )}
-                      {project.start_date && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">
-                            {format(new Date(project.start_date), 'yyyy. MM. dd.', { locale: hu })}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Financial Summary */}
-                    <div className="rounded-lg bg-muted/50 p-3 space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground flex items-center gap-1">
-                          <TrendingUp className="h-3 w-3 text-green-500" />
-                          Bevétel
-                        </span>
-                        <span className="font-medium text-green-600">
-                          {formatCurrency(financials?.outboundTotal || 0, 'HUF')}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground flex items-center gap-1">
-                          <TrendingDown className="h-3 w-3 text-red-500" />
-                          Kiadás
-                        </span>
-                        <span className="font-medium text-red-600">
-                          {formatCurrency(financials?.inboundTotal || 0, 'HUF')}
-                        </span>
-                      </div>
-                      {/* Labor Cost row */}
-                      {(() => {
-                        const labor = getLaborCost(project.id!);
-                        if (!labor || labor.total_labor_cost === 0) return null;
-                        return (
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground flex items-center gap-1">
-                              <Users className="h-3 w-3 text-purple-500" />
-                              Bérköltség
-                            </span>
-                            <span className="font-medium text-purple-600">
-                              {formatCurrency(labor.total_labor_cost, 'HUF')}
-                              <span className="text-xs text-muted-foreground ml-1">
-                                ({labor.total_hours}h)
-                              </span>
-                            </span>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="text-base font-semibold truncate text-foreground">{project.name}</h3>
+                              <div className="flex flex-wrap gap-x-2 gap-y-0.5 items-center mt-1 text-xs text-muted-foreground font-medium">
+                                <span className="font-mono">{project.project_code || 'Kód nélkül'}</span>
+                                <span>•</span>
+                                <span>{project.client_name || 'Belső projekt'}</span>
+                                {project.start_date && (
+                                  <>
+                                    <span>•</span>
+                                    <span>
+                                      {format(new Date(project.start_date), 'yyyy.MM')} – {project.end_date ? format(new Date(project.end_date), 'yyyy.MM') : ''}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        );
-                      })()}
-                      <div className="border-t pt-2 flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground flex items-center gap-1">
-                          {(financials?.profit || 0) > 0 ? (
-                            <TrendingUp className="h-3 w-3" />
-                          ) : (financials?.profit || 0) < 0 ? (
-                            <TrendingDown className="h-3 w-3" />
-                          ) : (
-                            <Minus className="h-3 w-3" />
-                          )}
-                          Eredmény
-                        </span>
-                        <Badge 
-                          variant={(financials?.profit || 0) > 0 ? 'default' : (financials?.profit || 0) < 0 ? 'destructive' : 'secondary'}
-                          className={(financials?.profit || 0) > 0 ? 'bg-green-500/20 text-green-700 border-green-500/30' : ''}
+                          <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
+                            <Badge variant={getStatusVariant(project.status)} className="text-[10px] py-0 px-2 font-semibold">
+                              {getStatusLabel(project.status)}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {/* Inline financials row */}
+                        <div className="flex flex-wrap gap-1.5 mt-3 text-xs font-semibold">
+                          <span className="py-0.5 px-2 rounded-full bg-green-500/10 text-green-700">
+                            ↑ {formatCurrency(financials?.outboundTotal || 0, 'HUF')}
+                          </span>
+                          <span className="py-0.5 px-2 rounded-full bg-red-500/10 text-red-700">
+                            ↓ {formatCurrency(financials?.inboundTotal || 0, 'HUF')}
+                          </span>
+                          <span className="py-0.5 px-2 rounded-full bg-muted text-foreground font-bold border">
+                            = {formatCurrency(financials?.profit || 0, 'HUF')}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Tabs switchers */}
+                      <div className="flex bg-muted/30 border-b text-xs font-semibold">
+                        <button
+                          onClick={() => setActiveTabs(prev => ({ ...prev, [project.id!]: 'overview' }))}
+                          className={`flex-1 py-2 text-center border-b-2 transition-all flex items-center justify-center gap-1.5 ${
+                            currentTab === 'overview'
+                              ? 'text-primary border-primary bg-background'
+                              : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/50'
+                          }`}
                         >
-                          {(financials?.profit || 0) > 0 ? '+' : ''}{formatCurrency(financials?.profit || 0, 'HUF')}
-                        </Badge>
+                          <BarChart3 className="h-3.5 w-3.5" />
+                          Áttekintés
+                        </button>
+                        <button
+                          onClick={() => setActiveTabs(prev => ({ ...prev, [project.id!]: 'invoices' }))}
+                          className={`flex-1 py-2 text-center border-b-2 transition-all flex items-center justify-center gap-1.5 ${
+                            currentTab === 'invoices'
+                              ? 'text-primary border-primary bg-background'
+                              : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/50'
+                          }`}
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          Számlák ({projectInvoices.length})
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingProject({ ...project });
+                          }}
+                          className="flex-1 py-2 text-center border-b-2 transition-all flex items-center justify-center gap-1.5 text-muted-foreground border-transparent hover:text-foreground hover:bg-muted/50"
+                        >
+                          <Settings className="h-3.5 w-3.5" />
+                          Beállítások
+                        </button>
+                      </div>
+
+                      {/* Active Tab Contents */}
+                      <div className="flex-1 flex flex-col p-4 min-h-[260px] justify-between">
+                        {currentTab === 'overview' && (
+                          <div className="space-y-4 flex-1 flex flex-col justify-between">
+                            <div className="grid grid-cols-2 gap-3 text-left">
+                              {/* Budget progress card */}
+                              <div className="bg-muted/40 p-3 rounded-lg border">
+                                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Költségvetés</div>
+                                <div className="text-base font-bold mt-1 text-foreground">
+                                  {project.budget ? formatCurrency(project.budget, 'HUF') : 'Nincs megadva'}
+                                </div>
+                                {project.budget ? (
+                                  <>
+                                    <div className="h-1.5 bg-muted rounded-full mt-2 overflow-hidden border">
+                                      <div
+                                        className={`h-full rounded-full transition-all ${
+                                          budgetPercent > 90 ? 'bg-destructive' : budgetPercent > 70 ? 'bg-yellow-500' : 'bg-primary'
+                                        }`}
+                                        style={{ width: `${budgetPercent}%` }}
+                                      />
+                                    </div>
+                                    <div className="text-[10px] text-muted-foreground mt-1.5 font-medium">
+                                      {budgetPercent}% felhasználva
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="text-[10px] text-muted-foreground mt-2 font-medium">Nincs megadva limit</div>
+                                )}
+                              </div>
+
+                              {/* Duration progress card */}
+                              <div className="bg-muted/40 p-3 rounded-lg border">
+                                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Időtartam</div>
+                                <div className="text-base font-bold mt-1 text-foreground">{durationText}</div>
+                                {project.start_date && project.end_date ? (
+                                  <>
+                                    <div className="h-1.5 bg-muted rounded-full mt-2 overflow-hidden border">
+                                      <div
+                                        className="h-full rounded-full bg-blue-500 transition-all"
+                                        style={{ width: `${elapsedPercent}%` }}
+                                      />
+                                    </div>
+                                    <div className="text-[10px] text-muted-foreground mt-1.5 font-medium flex flex-wrap justify-between items-center gap-1">
+                                      <span>{elapsedPercent}% eltelt</span>
+                                      <span className="text-[9px] font-semibold bg-muted px-1.5 py-0.5 rounded border">
+                                        Határidő: {format(new Date(project.end_date), 'yyyy.MM.dd')}
+                                      </span>
+                                    </div>
+                                  </>
+                                ) : project.end_date ? (
+                                  <div className="text-[10px] text-muted-foreground mt-2 font-medium">
+                                    Határidő: {format(new Date(project.end_date), 'yyyy.MM.dd')}
+                                  </div>
+                                ) : (
+                                  <div className="text-[10px] text-muted-foreground mt-2 font-medium">Nincs határidő megadva</div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Labor Cost display if present */}
+                            {(() => {
+                              const labor = getLaborCost(project.id!);
+                              if (!labor || labor.total_labor_cost === 0) return null;
+                              return (
+                                <div className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-purple-500/5 border border-purple-500/10 text-purple-900 font-semibold mt-1">
+                                  <span className="flex items-center gap-1">
+                                    <Users className="h-3.5 w-3.5 text-purple-600" />
+                                    Munkadíj / Bérköltség:
+                                  </span>
+                                  <span>
+                                    {formatCurrency(labor.total_labor_cost, 'HUF')}
+                                    <span className="text-[10px] text-purple-700/80 font-normal ml-1">
+                                      ({labor.total_hours} óra)
+                                    </span>
+                                  </span>
+                                </div>
+                              );
+                            })()}
+
+                            {project.description && (
+                              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4 border-t pt-3 mt-1 flex-1">
+                                {project.description}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {currentTab === 'invoices' && (
+                          <div className="flex flex-col flex-1 justify-between h-full">
+                            {/* Search bar to filter existing assigned invoices */}
+                            <div className="relative mb-2 shrink-0">
+                              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                              <Input
+                                placeholder="Keresés a hozzárendelt számlák között..."
+                                value={assignedInvoicesSearch[project.id!] || ''}
+                                onChange={(e) => setAssignedInvoicesSearch(prev => ({ ...prev, [project.id!]: e.target.value }))}
+                                className="pl-8 h-8 text-xs bg-background/50"
+                              />
+                            </div>
+
+                            {/* Scrollable list of assigned invoices */}
+                            <div className="overflow-y-auto max-h-[145px] space-y-1.5 pr-1 flex-1">
+                              {(() => {
+                                const searchVal = assignedInvoicesSearch[project.id!] || '';
+                                const filteredProjectInvoices = projectInvoices.filter(inv =>
+                                  inv.invoice_number.toLowerCase().includes(searchVal.toLowerCase()) ||
+                                  (inv.supplier_name && inv.supplier_name.toLowerCase().includes(searchVal.toLowerCase())) ||
+                                  (inv.customer_name && inv.customer_name.toLowerCase().includes(searchVal.toLowerCase()))
+                                );
+
+                                if (filteredProjectInvoices.length === 0) {
+                                  return (
+                                    <div className="text-center py-8 text-xs text-muted-foreground font-medium">
+                                      {projectInvoices.length === 0 
+                                        ? 'Még nincs számla hozzárendelve ehhez a projekthez.'
+                                        : 'Nincs a keresésnek megfelelő számla.'}
+                                    </div>
+                                  );
+                                }
+
+                                return filteredProjectInvoices.map((invoice) => (
+                                  <div
+                                    key={invoice.id}
+                                    className="group flex items-center justify-between p-2 rounded-lg bg-muted/30 border text-xs transition-colors hover:bg-muted/60"
+                                  >
+                                    <div className="flex items-center gap-2 min-w-0 mr-1.5">
+                                      <div
+                                        className={`w-2 h-2 rounded-full shrink-0 ${
+                                          invoice.invoice_direction === 'INBOUND' ? 'bg-blue-500' : 'bg-green-500'
+                                        }`}
+                                      />
+                                      <div className="min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="font-mono font-bold truncate">
+                                            {invoice.invoice_number}
+                                          </span>
+                                          <span className={`text-[9px] py-0 px-1 rounded font-semibold ${
+                                            invoice.invoice_direction === 'INBOUND'
+                                              ? 'bg-blue-100 text-blue-700'
+                                              : 'bg-green-100 text-green-700'
+                                          }`}>
+                                            {invoice.invoice_direction === 'INBOUND' ? 'Bejövő' : 'Kimenő'}
+                                          </span>
+                                        </div>
+                                        <div className="text-[10px] text-muted-foreground truncate">
+                                          {invoice.invoice_direction === 'INBOUND'
+                                            ? (invoice.supplier_name || 'Szállító')
+                                            : (invoice.customer_name || 'Ügyfél')}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <span className="font-semibold text-foreground">
+                                        {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
+                                      </span>
+                                      <button
+                                        onClick={() => handleUnassignInvoice(invoice.id)}
+                                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 p-1 rounded transition-all md:opacity-0 md:group-hover:opacity-100"
+                                        title="Hozzárendelés törlése"
+                                      >
+                                        <X className="h-3.5 w-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+
+                            {/* Invoice assignment button */}
+                            <div className="border-t pt-3 mt-3 shrink-0">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="w-full text-xs flex items-center justify-center gap-1.5"
+                                onClick={() => setAssigningProject(project)}
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                                Számla hozzárendelése
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
-
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => setEditingProject(project)}
-                        disabled={!!editingProject || isCreating}
-                      >
-                        Szerkesztés
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteProject(project.id!)}
-                        disabled={loading}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
+                  </div>
                 </Card>
               );
             })
           )}
         </div>
       </div>
+
+      {/* Edit/Create Project Dialog Modal */}
+      <Dialog open={editingProject !== null} onOpenChange={(open) => {
+        if (!open) {
+          setEditingProject(null);
+          setIsCreating(false);
+        }
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {editingProject?.id ? 'Projekt szerkesztése' : 'Új projekt létrehozása'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingProject?.id 
+                ? 'Módosítsd a projekt adatait és mentsd el a változtatásokat.' 
+                : 'Adj meg részleteket az új ügyfélprojektről.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Projekt neve *</Label>
+              <Input
+                id="edit-name"
+                placeholder="pl. Weboldal fejlesztés"
+                value={editingProject?.name || ''}
+                onChange={(e) => setEditingProject(prev => prev ? { ...prev, name: e.target.value } : null)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Ikon</Label>
+                <div className="flex items-center gap-3">
+                  <IconPicker
+                    value={editingProject?.icon || 'FolderOpen'}
+                    onChange={(icon) => setEditingProject(prev => prev ? { ...prev, icon } : null)}
+                    color={editingProject?.color || 'hsl(217, 91%, 60%)'}
+                  />
+                  <span className="text-xs text-muted-foreground">Ikon választás</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Szín</Label>
+                <div className="flex items-center gap-3">
+                  <ColorPicker
+                    value={editingProject?.color || 'hsl(217, 91%, 60%)'}
+                    onChange={(color) => setEditingProject(prev => prev ? { ...prev, color } : null)}
+                  />
+                  <span className="text-xs text-muted-foreground">Kártya szegély színe</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-client">Partner / Ügyfél</Label>
+              <PartnerCombobox
+                value={editingProject?.client_name || ''}
+                onChange={(name) => setEditingProject(prev => prev ? { ...prev, client_name: name } : null)}
+                companyId={selectedCompany?.id}
+                placeholder="Partner keresése..."
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-project_type">Típus</Label>
+                <Select
+                  value={editingProject?.project_type || 'one_time'}
+                  onValueChange={(value: 'one_time' | 'recurring') => 
+                    setEditingProject(prev => prev ? { ...prev, project_type: value } : null)
+                  }
+                >
+                  <SelectTrigger id="edit-project_type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="one_time">Egyszeri</SelectItem>
+                    <SelectItem value="recurring">Ismétlődő</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-status">Státusz</Label>
+                <Select
+                  value={editingProject?.status || 'active'}
+                  onValueChange={(value: any) => setEditingProject(prev => prev ? { ...prev, status: value } : null)}
+                >
+                  <SelectTrigger id="edit-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Aktív</SelectItem>
+                    <SelectItem value="completed">Befejezett</SelectItem>
+                    <SelectItem value="on_hold">Szünetel</SelectItem>
+                    <SelectItem value="cancelled">Törölve</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-budget">Költségvetés (HUF)</Label>
+                <Input
+                  id="edit-budget"
+                  type="number"
+                  placeholder="0"
+                  value={editingProject?.budget || ''}
+                  onChange={(e) => setEditingProject(prev => prev ? { ...prev, budget: e.target.value ? Number(e.target.value) : undefined } : null)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-start_date">Kezdő dátum</Label>
+                <Input
+                  id="edit-start_date"
+                  type="date"
+                  value={editingProject?.start_date || ''}
+                  onChange={(e) => setEditingProject(prev => prev ? { ...prev, start_date: e.target.value } : null)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-end_date">Befejezés dátuma</Label>
+                <Input
+                  id="edit-end_date"
+                  type="date"
+                  value={editingProject?.end_date || ''}
+                  onChange={(e) => setEditingProject(prev => prev ? { ...prev, end_date: e.target.value } : null)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Leírás</Label>
+              <Textarea
+                id="edit-description"
+                placeholder="Projekt részletei..."
+                rows={3}
+                value={editingProject?.description || ''}
+                onChange={(e) => setEditingProject(prev => prev ? { ...prev, description: e.target.value } : null)}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center pt-4 border-t mt-4">
+            {editingProject?.id ? (
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  handleDeleteProject(editingProject.id!);
+                  setEditingProject(null);
+                }}
+                disabled={loading}
+              >
+                Törlés
+              </Button>
+            ) : (
+              <div />
+            )}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditingProject(null);
+                  setIsCreating(false);
+                }}
+                disabled={loading}
+              >
+                Mégse
+              </Button>
+              <Button onClick={() => handleSaveProject()} disabled={loading}>
+                {loading ? 'Mentés...' : 'Mentés'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Invoice Dialog Modal */}
+      <Dialog open={assigningProject !== null} onOpenChange={(open) => {
+        if (!open) {
+          setAssigningProject(null);
+          setInvoiceSearchQuery('');
+        }
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Számlák hozzárendelése</DialogTitle>
+            <DialogDescription>
+              Válassz ki számlákat a(z) "{assigningProject?.name}" projekthez való hozzárendeléshez.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Számlaszám vagy partner keresése..."
+                value={invoiceSearchQuery}
+                onChange={(e) => setInvoiceSearchQuery(e.target.value)}
+                className="pl-9 h-10"
+              />
+            </div>
+
+            <div className="max-h-[300px] overflow-y-auto border rounded-lg p-1 divide-y bg-background/50">
+              {modalFilteredUnassigned.length === 0 ? (
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  Nincs hozzárendelhető (projekt nélküli) számla.
+                </div>
+              ) : (
+                modalFilteredUnassigned.map((invoice) => (
+                  <div
+                    key={invoice.id}
+                    className="flex justify-between items-center p-2.5 hover:bg-muted/60 transition-colors text-xs"
+                  >
+                    <div className="min-w-0 mr-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono font-bold truncate">
+                          {invoice.invoice_number}
+                        </span>
+                        <Badge
+                          variant="secondary"
+                          className={`text-[9px] px-1.5 py-0 h-4 border-0 ${
+                            invoice.invoice_direction === 'INBOUND'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-green-100 text-green-700'
+                          }`}
+                        >
+                          {invoice.invoice_direction === 'INBOUND' ? 'BE' : 'KI'}
+                        </Badge>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground truncate mt-0.5">
+                        {invoice.invoice_direction === 'INBOUND'
+                          ? (invoice.supplier_name || 'Szállító')
+                          : (invoice.customer_name || 'Ügyfél')}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="font-semibold text-foreground">
+                        {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 px-2 flex items-center gap-1 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                        onClick={async () => {
+                          if (assigningProject?.id) {
+                            await handleAssignInvoice(assigningProject.id, invoice.id);
+                          }
+                        }}
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Hozzáad
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2 border-t mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAssigningProject(null);
+                setInvoiceSearchQuery('');
+              }}
+            >
+              Bezárás
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

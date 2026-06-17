@@ -1,0 +1,128 @@
+# Sztornó Számla Kezelés — Implementációs Terv
+
+## Kontextus
+
+A NAV rendszerben a sztornó számlák `invoice_operation = 'STORNO'` jelöléssel érkeznek, **mindig negatív összegűek**, és egy korábban kiállított számlát érvénytelenítenek. Jelenleg 148 ilyen számla van az adatbázisban — egyiknek sincs `transaction_id`.
+
+**Jelenlegi állapot:**
+- ✅ `invoice_operation` mező létezik a `nav_invoices` táblában (`CREATE` / `MODIFY` / `STORNO`)
+- ✅ A worker klasszifikátor felismeri a `sztorno_szla` típust (beküldött számlák)
+- ❌ Nincs `original_invoice_number` referencia az adatbázisban
+- ❌ A transaction matcher nem kezeli a sztornó logikát
+- ❌ A frontend nem különbözteti meg a sztornó számlákat
+
+## Üzleti szabályok
+
+```
+Eredeti számla (CREATE)        Sztornó számla (STORNO)
+────────────────────────      ──────────────────────────
+Kiállítva: jan. 15              Kiállítva: feb. 10
+Összeg: +500.000 Ft             Összeg: -500.000 Ft
+                                Hivatkozás: "Eredeti: XY-001"
+
+Eset A: Eredeti FIZETVE volt    → Sztornóhoz VISSZAUTALÁS tranzakció kell
+Eset B: Eredeti NEM fizetve     → Sem eredetihez, sem sztornóhoz nem kell tranzakció
+```
+
+## Tervezett módosítások
+
+---
+
+### 1. Adatbázis: `original_invoice_number` mező
+
+#### [NEW] Migration: `add_storno_original_invoice_reference.sql`
+
+```sql
+-- Add column to link storno invoices to their original
+ALTER TABLE nav_invoices
+  ADD COLUMN original_invoice_number TEXT;
+
+-- Index for fast lookup
+CREATE INDEX idx_nav_invoices_original_invoice
+  ON nav_invoices(company_id, original_invoice_number)
+  WHERE original_invoice_number IS NOT NULL;
+```
+
+> [!IMPORTANT]
+> **Kérdés**: A beküldött számlák (`invoices`) táblában is kellene `original_invoice_number`? A worker extractor prompt-ban már létezik egy `eredeti_szamla_sorszama` mező a `sima_szamla` output-ban.
+
+---
+
+### 2. NAV Szinkron: Eredeti számla hivatkozás kinyerése
+
+A NAV API response XML-ből a sztornó számla esetén a `modificationReferenceNumber` tartalmazza az eredeti számla számát. Ezt a NAV szinkronizáló Edge Function-ben kell kinyerni.
+
+#### [MODIFY] Edge Function: `nav-sync` (vagy a releváns szinkronizáló funkció)
+
+A NAV API response-ból kinyerni:
+```
+invoiceData.invoiceReference.originalInvoiceNumber
+// VAGY
+invoiceData.invoiceReference.modifyWithoutMaster (true/false)
+```
+
+és beírni a `nav_invoices.original_invoice_number` mezőbe.
+
+**Backfill**: Futtatni egy egyszeri SQL-t ami a meglévő 148 STORNO számla `original_invoice_number`-jét kitölti a NAV adatokból (ha elérhető).
+
+---
+
+### 3. Worker: Transaction Matcher sztornó logika
+
+#### [MODIFY] `transaction_matcher.py`
+
+**Szabály:**
+1. Ha egy STORNO számla `original_invoice_number`-je megtalálható a `nav_invoices`-ban:
+   - ÉS az eredeti számla `transaction_id IS NOT NULL` (fizetve volt) → keresni kell egy negatív (visszautalás) tranzakciót és párosítani a sztornóval
+   - ÉS az eredeti számla `transaction_id IS NULL` (nem fizetve) → a sztornó sem kap tranzakciót, **de mindkét számla státusza "rendben" kell legyen** (nem hiányzik tranzakció)
+
+---
+
+### 4. Frontend: Sztornó megjelenítés
+
+#### [MODIFY] [InvoicesPage.tsx](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/pages/InvoicesPage.tsx)
+
+- Sztornó számla sor **vizuális jelölése** (piros badge / áthúzás)
+- Ha van `original_invoice_number` → link/tooltip az eredeti számlára
+- KPI összesítés: a sztornó+eredeti pár **külön KPI kategória** vagy kizárva?
+
+#### [MODIFY] [useInvoiceData.ts](file:///d:/ThinkAI/Visibill/eaisybill-prod/src/hooks/useInvoiceData.ts)
+
+- `NavInvoice` type bővítés: `original_invoice_number: string | null`
+- Lookup query bővítés az új mezővel
+
+---
+
+## Open Questions
+
+> [!IMPORTANT]
+> **1. NAV XML hozzáférés:** A NAV szinkronizálás Edge Function-ben vagy a Python worker-ben dolgozzuk fel a sztornó referenciát? A worker-ben könnyebb (Python XML parsing), az Edge Function-ben natívabb (ott jön az adat).
+
+> [!IMPORTANT]  
+> **2. Eredeti számla visszajelölés:** Ha egy számlának STORNO párja van, az eredeti számla is kapjon valamilyen `stornoed = true` flaget? Ez segít a UI-ban (áthúzott megjelenítés), de plusz mező a DB-ben.
+
+> [!IMPORTANT]
+> **3. KPI hatás:** A sztornózott számlapárt (eredeti + sztornó):
+> - a) **kizárjuk** a KPI-ból teljesen (0-ra nettelődik)
+> - b) **külön KPI kártyát** adunk ("Sztornózott: X db")
+> - c) meghagyjuk a jelenlegi KPI-ban de **vizuálisan jelöljük**
+
+> [!IMPORTANT]
+> **4. Beküldött számlák:** A `invoices` (beküldött) táblában a sztornó számlákat is kezelni kell? Ott a worker extractor prompt már kinyeri az `eredeti_szamla_sorszama` mezőt.
+
+> [!WARNING]
+> **5. Scope:** Ez a feature érinti a NAV szinkront, a worker-t, az adatbázist, és a frontend-et. Javaslom szakaszos implementálást:
+> - **Phase 1**: DB + NAV szinkron (original_invoice_number)
+> - **Phase 2**: Frontend vizualizáció
+> - **Phase 3**: Transaction matcher sztornó logika
+
+## Verification Plan
+
+### Automated Tests
+- Worker unit test: sztornó számla + eredeti pár felismerése
+- Transaction matcher: eset A (fizetve → visszautalás) és eset B (nem fizetve → skip)
+
+### Manual Verification
+- NAV szinkron után a STORNO számláknál kitöltött `original_invoice_number`
+- Frontend: sztornó sorok vizuálisan megkülönböztetve
+- KPI számok helyes kezelése sztornó párokkal

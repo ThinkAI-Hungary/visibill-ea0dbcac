@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Mail } from "lucide-react";
+import { reportError } from '@/lib/errorReporter';
 
 interface EmailPreferences {
   invoice_processed: boolean;
@@ -56,7 +57,7 @@ export function EmailPreferences() {
         });
       }
     } catch (error) {
-      console.error('Error loading email preferences:', error);
+      reportError({ type: 'db_query', component: 'EmailPreferences', action: 'error', message: 'Error loading email preferences:', error: error });
       toast({ title: 'Nem sikerült betölteni az email beállításokat', variant: 'destructive' });
     } finally {
       setLoading(false);
@@ -83,7 +84,7 @@ export function EmailPreferences() {
       setPreferences(prev => ({ ...prev, [key]: value }));
       toast({ title: 'Beállítás frissítve' });
     } catch (error) {
-      console.error('Error updating preference:', error);
+      reportError({ type: 'db_query', component: 'EmailPreferences', action: 'error', message: 'Error updating preference:', error: error });
       toast({ title: 'Nem sikerült frissíteni a beállítást', variant: 'destructive' });
     } finally {
       setSaving(false);

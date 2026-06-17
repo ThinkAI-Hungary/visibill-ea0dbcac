@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Check, ChevronsUpDown, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { reportError } from '@/lib/errorReporter';
 
 interface Partner {
   id: string;
@@ -71,7 +72,7 @@ export function PartnerCombobox({
       if (error) throw error;
       setPartners(data || []);
     } catch (error) {
-      console.error('Error loading partners:', error);
+      reportError({ type: 'db_query', component: 'PartnerCombobox', action: 'error', message: 'Error loading partners:', error: error });
     } finally {
       setLoading(false);
     }

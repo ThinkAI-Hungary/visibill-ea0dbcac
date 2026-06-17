@@ -12,6 +12,8 @@ interface UseTimeEntriesOptions {
   /** Date range filter (inclusive) */
   dateFrom?: string;
   dateTo?: string;
+  /** Fetch all company entries (for admin views) */
+  all?: boolean;
 }
 
 export function useTimeEntries(options: UseTimeEntriesOptions = {}) {
@@ -20,8 +22,8 @@ export function useTimeEntries(options: UseTimeEntriesOptions = {}) {
   const queryClient = useQueryClient();
 
   const cacheKey = options.dateFrom && options.dateTo
-    ? `${options.dateFrom}_${options.dateTo}`
-    : options.date || 'all';
+    ? `${options.dateFrom}_${options.dateTo}_${options.all ? 'all' : 'self'}`
+    : `${options.date || 'all'}_${options.all ? 'all' : 'self'}`;
 
   const { data: timeEntries = [], isLoading } = useQuery({
     queryKey: queryKeys.timeEntries(selectedCompany?.id || '', cacheKey),
@@ -30,8 +32,11 @@ export function useTimeEntries(options: UseTimeEntriesOptions = {}) {
         .from('time_entries')
         .select('*')
         .eq('company_id', selectedCompany!.id)
-        .eq('user_id', user!.id)
         .order('date', { ascending: true });
+
+      if (!options.all) {
+        query = query.eq('user_id', user!.id);
+      }
 
       if (options.date) {
         query = query.eq('date', options.date);

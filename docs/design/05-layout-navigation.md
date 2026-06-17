@@ -106,8 +106,10 @@
 | **Formátum** | JSON tömb: `["overview","accounting"]` |
 | **Auto-open** | Navigáláskor az aktív oldal csoportja automatikusan kinyílik |
 | **Active indicator** | Zárt csoportnál 2px teal vonal a fejléc alatt (`bg-primary/60`) |
-| **Animáció** | CSS `grid-template-rows: 0fr/1fr` transition (200ms ease-out) |
+| **Animáció** | CSS `grid-template-rows: 0fr/1fr` + `opacity` transition (200ms ease-out) |
+| **forceMount** | `CollapsibleContent forceMount` — tartalom DOM-ban marad bezárva is, hogy a CSS transition le tudjon futni |
 | **Csoportok közötti gap** | `gap-1` (4px) + `pb-1.5` (6px) a nyitott tartalom alján |
+| **Sub-menü elem behúzás** | `pl-9` (2.25rem) — vizuálisan elkülöníti az elemeket a csoport fejléctől |
 
 ### Collapsed (Icon-only) Mód
 
@@ -240,6 +242,8 @@ A sidebar, TopBar és FAB `print:hidden` class-szal el van rejtve nyomtatáskor.
 |-----------|---------|
 | Main content area | `p-6` (24px) |
 | Sidebar expanded | `p-4` (16px) |
-| Sidebar items | `pl-2` (8px) indented |
+| Sidebar sub-menu items | `pl-6` (24px) — vizuálisan elkülönítve a csoport fejlécektől |
 | Sidebar csoport fejléc | `px-2 py-1.5` |
 | TopBar | `px-6 py-2` |
+
+> **Döntés (2026-06-08):** Sub menü elemek behúzása `pl-2` → `pl-6`-ra növelve, hogy vizuálisan egyértelműen elkülönüljenek a csoport fejlécektől. A `CollapsibleContent`-re `forceMount` attribútum került, hogy a nyitás/csukás CSS animáció simán lefusson.

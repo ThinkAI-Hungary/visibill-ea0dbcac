@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { reportAuthError } from '@/lib/errorReporter';
 
 /**
  * AuthCallback — handles the OAuth redirect from Google (and other providers).
@@ -22,6 +23,7 @@ export default function AuthCallback() {
         const errorDescription = params.get('error_description');
 
         if (errorParam) {
+          reportAuthError('AuthCallback', 'oauth_error', errorDescription || errorParam, undefined, { errorParam, errorDescription });
           setError(errorDescription || errorParam);
           return;
         }
@@ -30,7 +32,7 @@ export default function AuthCallback() {
           // Exchange the authorization code for a session
           const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
-            console.error('Session exchange error:', exchangeError);
+            reportAuthError('AuthCallback', 'session_exchange', exchangeError.message, exchangeError);
             setError(exchangeError.message);
             return;
           }
@@ -47,7 +49,7 @@ export default function AuthCallback() {
         // Success — redirect to dashboard
         navigate('/', { replace: true });
       } catch (err: any) {
-        console.error('Auth callback error:', err);
+        reportAuthError('AuthCallback', 'callback', err.message || 'Auth callback error', err);
         setError(err.message || 'Ismeretlen hiba történt');
       }
     };

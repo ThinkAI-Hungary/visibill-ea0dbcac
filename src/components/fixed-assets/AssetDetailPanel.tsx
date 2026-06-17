@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense, useRef } from 'react';
+﻿import { useState, useEffect, lazy, Suspense, useRef } from 'react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { reportError } from '@/lib/errorReporter';
 
 // Lazy-load dialogs so they don't bloat the initial page chunk
 const TransferDialog = lazy(() => import('./TransferDialog').then(m => ({ default: m.TransferDialog })));
@@ -139,7 +140,7 @@ export function AssetDetailPanel({ asset, events }: AssetDetailPanelProps) {
 
       queryClient.invalidateQueries({ queryKey: ['fixed-asset-detail', asset.id] });
     } catch (err: any) {
-      console.error('Upload error:', err);
+      reportError({ type: 'db_query', component: 'AssetDetailPanel', action: 'error', message: 'Upload error:', error: err });
       toast({ title: 'Hiba a feltöltés során', description: err.message, variant: 'destructive' });
     } finally {
       setUploading(false);
