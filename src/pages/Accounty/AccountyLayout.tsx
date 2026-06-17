@@ -80,7 +80,7 @@ export default function AccountyLayout() {
   // #16 Favicon badge — show missing items count in browser tab
   useEffect(() => {
     const count = kpis?.missingItems ?? 0;
-    document.title = count > 0 ? `(${count}) eaisybooks — eaisybill` : 'eaisybooks — eaisybill';
+    document.title = count > 0 ? `(${count}) eaisybooks` : 'eaisybooks';
     return () => { document.title = 'eaisybill'; };
   }, [kpis?.missingItems]);
 
