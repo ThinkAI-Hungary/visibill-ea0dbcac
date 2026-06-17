@@ -92,53 +92,72 @@ Mielőtt bármit csinálnál, közöld a felhasználóval:
 **Spec ↔ kód eltérés:** [ha a spec mást mond mint a kód → flag-eld]
 ```
 
-## 5. Komplexitás Döntés — Mi Következik?
+## 5. Komplexitás Döntés és Kötelező Ellenőrzési Kapu (Task Gates)
 
-A spec lookup után döntsd el a feladat komplexitását:
+Bármilyen módosítást (legyen az egyszerű vagy komplex) csak az alábbi **Kötelező Implementáció Utáni Ellenőrzési Kapu** (Strict Verification Gate) sikeres teljesítése és bizonyítékai után szabad késznek nyilvánítani a felhasználó felé:
+
+### 🚨 Kötelező Implementáció Utáni Ellenőrzési Kapu (Minden feladatra!)
+
+Az implementáció befejezése után az AI-nak az alábbi lépéseket kell végrehajtania és a kimenetet ellenőriznie, mielőtt átadná a munkát a felhasználónak:
+
+1. **Szintaxis és Típusvizsgálat (Syntax & Type Scan)**:
+   - Futtass lefordítási/típus- és linter ellenőrző parancsokat (pl. `npm run build`, `tsc --noEmit` vagy backend esetén a megfelelő compile/linter parancsot) a módosított fájlokon/workspace-en.
+   - Bármilyen szintaktikai figyelmeztetést, hibát vagy nem használt importot/változót azonnal javítani kell!
+   - *Bizonyíték*: A parancs sikeres (exit code 0) kimenete.
+
+2. **Automatizált Unit / Integrációs Tesztek**:
+   - Ellenőrizd, hogy az új/módosított logika le van-e fedve automatizált tesztekkel. Ha nincsenek tesztek, írj unit/integrációs teszteket a funkcióhoz.
+   - Futtasd le a releváns tesztcsoportot (pl. `npm run test -- <fájlnév>`, `pytest`), és győződj meg róla, hogy minden teszt zöld.
+   - *Bizonyíték*: A teszt futás eredménye (pl. `208 passed`).
+
+3. **Git Diff Audit (Soronkénti Ellenőrzés)**:
+   - Futtass a `git diff`-et a módosított fájlokra, és olvasd át sorról sorra a változtatásokat.
+   - Biztosítsd, hogy **NEM maradt** a kódban ideiglenes debug log (`console.log`, `print`), alert popup, tesztelésre használt hardcode-olt érték vagy félkész placeholder komment.
+
+4. **Specifikációnak Való Megfelelés**:
+   - Menj végig a feladat specifikációján (és a beolvasott dokumentumokon) pontról pontra, és igazold, hogy minden részlet pontosan úgy lett implementálva, ahogy kérték. Kerüld az alul- és a túlimplementálást (YAGNI).
+
+5. **Ellenőrzési Bizonyítékok Dokumentálása (task.md)**:
+   - A `task.md` fájlban a feladatot csak akkor jelöld elvégzettnek (`[x]`), ha közvetlenül a feladat mellé felírod az ellenőrzések pontos eredményét (pl. `tsc clean, 208 tests passed`).
+
+6. **Kód-gráf Frissítés (Graphify)**:
+   - Futtasd le a `graphify update .` parancsot a módosítások után, hogy az AST-alapú keresési és kódegység-megértési tudásbázis mindig teljesen naprakész legyen.
+
+7. **Kontextus Tisztítás (Fájlok bezárása)**:
+   - Zárd be a memóriádból/kontextusodból azokat a fájlokat és tabokat, amelyeket a feladat során megnyitottál, de a további lépésekhez már nem szükségesek. Ez tisztán tartja az AI figyelmi ablakát és megelőzi a hibákat.
+
+---
+
+### Munkamenet folyamata a komplexitás alapján:
 
 ### ✅ Egyszerű módosítás (1-2 fájl, nincs döntési pont)
-
-**Implementáció előtt — Build Baseline:**
-```bash
-npm run build
-```
-→ Ha a build HIBÁS: **javítsd először a meglévő hibákat**, ne adj hozzá újakat.
-→ Ha a build SIKERES: jegyezd meg mint baseline → implementálj.
-
-**Implementáció után — Build Verify (rekurzív):**
-```bash
-npm run build
-```
-→ Ha HIBÁS: **javítsd az összes hibát** → futtasd újra `npm run build` → ismételd amíg SIKERES.
-→ Ha SIKERES: **csak ezután** kérd a user validációt.
-
-> ⚠️ **Az AI NEM jelzi a usernek hogy "kész" amíg a build nem SIKERES.** Rekurzívan javít amíg tiszta a build.
-
-→ User validáció után frissítsd a releváns docs-okat:
-  - Ha EF/RPC érintett: `A-005` és/vagy `A-016` frissítés
-  - Ha UI érintett: releváns design doc frissítés
-  - Ha route változott: `information-architecture.md` frissítés
+- Végezd el a módosításokat.
+- Futtasd le a fenti **Kötelező Ellenőrzési Kaput** (Syntax, Tests, Diff Audit).
+- Frissítsd a releváns dokumentációt:
+  - Ha EF/RPC érintett: `A-005` és/vagy `A-016` frissítése.
+  - Ha UI/UX változás: releváns design dokumentum frissítése.
 
 ### ⚠️ DB/SQL érintettség (migration, RPC, RLS, Edge Function query, Supabase query)
-→ **KÖTELEZŐ: Olvasd be a `visibill-db-checklist` skillt:**
-```
-view_file ~/.gemini/config/skills\visibill-db-checklist\SKILL.md
-```
-→ Használd a megfelelő checklist-et (új tábla / RPC / frontend query / EF query / migration)
+- **KÖTELEZŐ: Olvasd be a `visibill-db-checklist` skillt:**
+  ```
+  view_file ~/.gemini/config/skills\visibill-db-checklist\SKILL.md
+  ```
+- Használd a megfelelő checklist-et (új tábla / RPC / frontend query / EF query / migration), és a fejlesztés után végezd el a **Kötelező Ellenőrzési Kaput**.
 
 ### 🔴 Komplex változás (3+ fájl, új funkció, architektúra döntés, új modul)
-→ **KÖTELEZŐ: Olvasd be a `visibill-feature-planner` skillt:**
-```
-view_file ~/.gemini/config/skills\visibill-feature-planner\SKILL.md
-```
-→ Kövesd a teljes workflow-t: Döntési Mátrix → Implementáció → User Validáció → Docs Frissítés → Graphify
+- **KÖTELEZŐ: Olvasd be a `visibill-feature-planner` skillt:**
+  ```
+  view_file ~/.gemini/config/skills\visibill-feature-planner\SKILL.md
+  ```
+- Kövesd a teljes workflow-t: Döntési Mátrix → Implementáció → **Kötelező Ellenőrzési Kapu** (Syntax, Tests, Diff Audit) → User Validáció → Docs Frissítés → Graphify.
 
 ### 🔴 Komplex + DB érintettség
-→ **KÖTELEZŐ: Olvasd be mindkettőt:**
-```
-view_file ~/.gemini/config/skills\visibill-feature-planner\SKILL.md
-view_file ~/.gemini/config/skills\visibill-db-checklist\SKILL.md
-```
+- **KÖTELEZŐ: Olvasd be mindkét specifikus skillt:**
+  ```
+  view_file ~/.gemini/config/skills\visibill-feature-planner\SKILL.md
+  view_file ~/.gemini/config/skills\visibill-db-checklist\SKILL.md
+  ```
+- Futtasd le a **Kötelező Ellenőrzési Kaput** a fejlesztés minden szakaszában.
 
 > **FONTOS:** A skillek betöltése `view_file` hívással történik, nem opcionális. Ha a komplexitás megköveteli, a skill beolvasása KÖTELEZŐ — enélkül az implementáció nem kezdhető el.
 

@@ -149,7 +149,9 @@ export default function WorkingTimePage() {
     saveMutation: settingsSaveMutation,
   } = useCompanySettings();
 
-  // Time entries for the selected week
+  const { isEmployee, isAdmin } = useUserRole();
+
+  // Time entries for the selected week (personal view)
   const {
     timeEntries,
     isLoading: entriesLoading,
@@ -158,9 +160,18 @@ export default function WorkingTimePage() {
     submitWeekMutation,
   } = useTimeEntries({ dateFrom: monthStartStr, dateTo: monthEndStr });
 
+  // Company-wide time entries (for admin view in Jelenléti ív)
+  const {
+    timeEntries: companyTimeEntries,
+    isLoading: companyEntriesLoading,
+  } = useTimeEntries({
+    dateFrom: monthStartStr,
+    dateTo: monthEndStr,
+    all: isAdmin,
+  });
+
   // Projects for dropdown and name lookup
   const { projects } = useProjectList();
-  const { isEmployee, isAdmin } = useUserRole();
 
   // Count submitted entries for admin badge
   const { data: submittedCount = 0 } = useQuery({
@@ -202,33 +213,50 @@ export default function WorkingTimePage() {
 
   // KPI metrics
   const kpiMetrics = useMemo(() => {
-    const uniqueEmployees = new Set([
-      ...rawEmployeeGroups.map(([name]) => name),
-      ...employeeRates.map((r) => r.employee_name),
-    ]);
+    const monthStr = format(monthDate, 'yyyy-MM');
+    
+    // 1. Calculate cost from active salaries in the currently selected month
+    let totalMonthlyCost = 0;
+    const activeNames = new Set<string>();
+    
+    salaryItems.forEach((item) => {
+      if (item.dátum && item.dátum.startsWith(monthStr) && item.munkavallalo_neve) {
+        activeNames.add(item.munkavallalo_neve);
+        if (item.tipus === 'bér' || item.tipus === 'adó' || item.tipus === 'járulék') {
+          totalMonthlyCost += Number(item.összeg || 0);
+        }
+      }
+    });
 
-    const totalMonthlyCost = employeeRates.reduce(
-      (sum, r) => sum + Number(r.base_salary_cost || 0),
-      0
-    );
-
-    const ratesWithValue = employeeRates.filter(
-      (r) => r.hourly_rate && r.hourly_rate > 0
-    );
-    const avgHourlyRate =
-      ratesWithValue.length > 0
-        ? ratesWithValue.reduce(
-            (sum, r) => sum + Number(r.hourly_rate || 0),
-            0
-          ) / ratesWithValue.length
-        : 0;
-
-    const employeeCount = employeeRates.filter(
+    // 2. Filter employee rates to only active employees in the selected month
+    const activeRates = employeeRates.filter(r => activeNames.has(r.employee_name));
+    
+    const employeeCount = activeRates.filter(
       (r) => r.employee_type === 'employee'
-    ).length;
-    const contractorCount = employeeRates.filter(
+    ).length || activeNames.size; // fallback to activeNames count if not in employee_rates yet
+    
+    const contractorCount = activeRates.filter(
       (r) => r.employee_type === 'contractor'
     ).length;
+
+    // 3. Average hourly rate of active employees in the selected month
+    const activeHourlyRates = Array.from(activeNames).map((name) => {
+      const rateObj = employeeRates.find(r => r.employee_name === name);
+      if (rateObj?.hourly_rate && rateObj.hourly_rate > 0) {
+        return Number(rateObj.hourly_rate);
+      }
+      // Fallback: calculate dynamically from gross cost
+      const empItems = salaryItems.filter(i => i.munkavallalo_neve === name && i.dátum && i.dátum.startsWith(monthStr));
+      const net = empItems.filter(i => i.tipus === 'bér').reduce((s, i) => s + Number(i.összeg), 0);
+      const adó = empItems.filter(i => i.tipus === 'adó').reduce((s, i) => s + Number(i.összeg), 0);
+      const járulék = empItems.filter(i => i.tipus === 'járulék').reduce((s, i) => s + Number(i.összeg), 0);
+      const gross = net + adó + járulék;
+      return gross / (effectiveSettings.monthly_working_hours || 168);
+    });
+
+    const avgHourlyRate = activeHourlyRates.length > 0
+      ? activeHourlyRates.reduce((sum, r) => sum + r, 0) / activeHourlyRates.length
+      : 0;
 
     // Weekly hours from time entries
     const weeklyHours = timeEntries.reduce(
@@ -237,14 +265,14 @@ export default function WorkingTimePage() {
     );
 
     return {
-      totalEmployees: uniqueEmployees.size,
+      totalEmployees: activeNames.size || employeeRates.length,
       employeeCount,
       contractorCount,
       totalMonthlyCost,
       avgHourlyRate,
       weeklyHours,
     };
-  }, [rawEmployeeGroups, employeeRates, timeEntries]);
+  }, [salaryItems, employeeRates, timeEntries, effectiveSettings.monthly_working_hours, monthDate]);
 
   const handleSaveRate = (data: {
     employee_name: string;
@@ -514,11 +542,13 @@ export default function WorkingTimePage() {
 
         <TabsContent value="attendance" className="mt-4">
           <TimesheetTable
-            timeEntries={timeEntries}
+            timeEntries={isAdmin ? companyTimeEntries : timeEntries}
             monthDate={monthDate}
             workStartTime={effectiveSettings.work_start_time}
             workEndTime={effectiveSettings.work_end_time}
             projectNames={projectNames}
+            employeeRates={employeeRates}
+            isAdmin={isAdmin}
           />
         </TabsContent>
 

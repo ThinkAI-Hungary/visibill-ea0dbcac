@@ -87,21 +87,36 @@ export function useSalaryData() {
 
   const metrics = useMemo(() => {
     const totalPayments = salaryItems
-      .filter((item) => (item.tipus === 'bér' || item.tipus === 'járulék') && isSalaryItemPaid(item))
+      .filter((item) => (item.tipus === 'bér' || item.tipus === 'járulék' || item.tipus === 'adó') && isSalaryItemPaid(item))
       .reduce((sum, item) => sum + Number(item.összeg), 0);
+    
     const employeeCount = new Set(
       salaryItems.filter((item) => item.munkavallalo_neve).map((item) => item.munkavallalo_neve)
     ).size;
+    
     const netSalary = salaryItems
       .filter((item) => item.tipus === 'bér')
       .reduce((sum, item) => sum + Number(item.összeg), 0);
-    const employeeNetTotal = salaryItems
-      .filter((item) => item.munkavallalo_neve && item.tipus === 'bér')
-      .reduce((sum, item) => sum + Number(item.összeg), 0);
-    const navTotal = salaryItems
-      .filter((item) => !item.munkavallalo_neve)
-      .reduce((sum, item) => sum + Number(item.összeg), 0);
-    const grossSalary = employeeNetTotal + navTotal;
+    
+    // Calculate gross salary: sum of gross salaries for employees per month, fallback to net if gross is missing
+    const employeeMonthGroups: Record<string, SalaryItem[]> = {};
+    salaryItems.forEach((item) => {
+      if (item.munkavallalo_neve && item.dátum) {
+        const key = `${item.dátum.slice(0, 7)}|${item.munkavallalo_neve}`;
+        if (!employeeMonthGroups[key]) employeeMonthGroups[key] = [];
+        employeeMonthGroups[key].push(item);
+      }
+    });
+
+    const grossSalary = Object.values(employeeMonthGroups).reduce((sum, empItems) => {
+      const grossItem = empItems.find((item) => item.tipus === 'bruttó_bér');
+      if (grossItem) {
+        return sum + Number(grossItem.összeg);
+      }
+      const netItem = empItems.find((item) => item.tipus === 'bér');
+      return sum + (netItem ? Number(netItem.összeg) : 0);
+    }, 0);
+
     return { totalPayments, employeeCount, netSalary, grossSalary };
   }, [salaryItems]);
 

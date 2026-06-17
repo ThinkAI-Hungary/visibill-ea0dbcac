@@ -35,7 +35,10 @@ const StableFallback = () => <div className="h-full w-full" aria-busy="true" />;
  */
 const ContentArea = memo(function ContentArea({ children }: { children?: React.ReactNode }) {
   return (
-    <main className="flex-1 overflow-y-auto bg-background p-6 print:p-0 print:overflow-visible">
+    <main 
+      className="flex-1 overflow-y-auto bg-background p-6 print:p-0 print:overflow-visible"
+      style={{ scrollbarGutter: 'stable' }}
+    >
       <Suspense fallback={<StableFallback />}>
         {children || <Outlet />}
       </Suspense>

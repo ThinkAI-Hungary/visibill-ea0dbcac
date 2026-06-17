@@ -89,57 +89,57 @@ function MonthDetail({ month, rows }: { month: string; rows: FxDifferenceRow[] }
   const [open, setOpen] = useState(false);
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger asChild>
-        <TableRow className="cursor-pointer hover:bg-muted/50 transition-colors">
-          <TableCell className="font-medium">
-            <div className="flex items-center gap-1.5">
-              {open ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
-              {fmtMonth(month)}
+    <>
+      <TableRow 
+        className="cursor-pointer hover:bg-muted/50 transition-colors"
+        onClick={() => setOpen(!open)}
+      >
+        <TableCell className="font-medium">
+          <div className="flex items-center gap-1.5">
+            {open ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+            {fmtMonth(month)}
+          </div>
+        </TableCell>
+        <TableCell className="text-right text-emerald-500 tabular-nums font-medium">
+          {fmtHuf(rows.reduce((s, r) => s + (r.fx_difference > 0 ? r.fx_difference : 0), 0))}
+        </TableCell>
+        <TableCell className="text-right text-destructive tabular-nums font-medium">
+          {fmtHuf(rows.reduce((s, r) => s + (r.fx_difference < 0 ? r.fx_difference : 0), 0))}
+        </TableCell>
+        <TableCell className={`text-right font-bold tabular-nums ${rows.reduce((s, r) => s + r.fx_difference, 0) >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
+          {fmtHuf(rows.reduce((s, r) => s + r.fx_difference, 0))}
+        </TableCell>
+        <TableCell className="text-right text-muted-foreground tabular-nums">{rows.length}</TableCell>
+      </TableRow>
+      
+      {open && rows.map(row => (
+        <TableRow key={`${row.invoice_source}-${row.invoice_id}`} className="bg-muted/20 text-xs animate-in fade-in duration-200">
+          <TableCell className="pl-8">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-[9px] font-mono">{row.currency}</Badge>
+              <span className="font-medium">{row.invoice_number}</span>
             </div>
+            <div className="text-muted-foreground text-[10px] mt-0.5">{row.partner_name || '—'}</div>
           </TableCell>
-          <TableCell className="text-right text-emerald-500 tabular-nums font-medium">
-            {fmtHuf(rows.reduce((s, r) => s + (r.fx_difference > 0 ? r.fx_difference : 0), 0))}
+          <TableCell className="text-right">
+            <div className="tabular-nums">{Math.abs(row.foreign_amount).toLocaleString('hu-HU')} {row.currency}</div>
+            <div className="text-muted-foreground text-[10px]">{row.delivery_date} · {fmtRate(row.delivery_rate)}</div>
           </TableCell>
-          <TableCell className="text-right text-destructive tabular-nums font-medium">
-            {fmtHuf(rows.reduce((s, r) => s + (r.fx_difference < 0 ? r.fx_difference : 0), 0))}
+          <TableCell className="text-right">
+            <div className="tabular-nums">{Math.round(row.delivery_huf).toLocaleString('hu-HU')} Ft</div>
+            <div className="text-muted-foreground text-[10px]">{row.settlement_date} · {fmtRate(row.settlement_rate)}</div>
           </TableCell>
-          <TableCell className={`text-right font-bold tabular-nums ${rows.reduce((s, r) => s + r.fx_difference, 0) >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
-            {fmtHuf(rows.reduce((s, r) => s + r.fx_difference, 0))}
+          <TableCell className={`text-right font-medium tabular-nums ${row.fx_difference >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
+            {fmtHuf(row.fx_difference)}
           </TableCell>
-          <TableCell className="text-right text-muted-foreground tabular-nums">{rows.length}</TableCell>
+          <TableCell className="text-right">
+            <Badge variant={row.fx_difference >= 0 ? 'default' : 'destructive'} className="text-[9px]">
+              {row.fx_difference >= 0 ? 'Nyereség' : 'Veszteség'}
+            </Badge>
+          </TableCell>
         </TableRow>
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        {rows.map(row => (
-          <TableRow key={`${row.invoice_source}-${row.invoice_id}`} className="bg-muted/20 text-xs">
-            <TableCell className="pl-8">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-[9px] font-mono">{row.currency}</Badge>
-                <span className="font-medium">{row.invoice_number}</span>
-              </div>
-              <div className="text-muted-foreground text-[10px] mt-0.5">{row.partner_name || '—'}</div>
-            </TableCell>
-            <TableCell className="text-right">
-              <div className="tabular-nums">{Math.abs(row.foreign_amount).toLocaleString('hu-HU')} {row.currency}</div>
-              <div className="text-muted-foreground text-[10px]">{row.delivery_date} · {fmtRate(row.delivery_rate)}</div>
-            </TableCell>
-            <TableCell className="text-right">
-              <div className="tabular-nums">{Math.round(row.delivery_huf).toLocaleString('hu-HU')} Ft</div>
-              <div className="text-muted-foreground text-[10px]">{row.settlement_date} · {fmtRate(row.settlement_rate)}</div>
-            </TableCell>
-            <TableCell className={`text-right font-medium tabular-nums ${row.fx_difference >= 0 ? 'text-emerald-500' : 'text-destructive'}`}>
-              {fmtHuf(row.fx_difference)}
-            </TableCell>
-            <TableCell className="text-right">
-              <Badge variant={row.fx_difference >= 0 ? 'default' : 'destructive'} className="text-[9px]">
-                {row.fx_difference >= 0 ? 'Nyereség' : 'Veszteség'}
-              </Badge>
-            </TableCell>
-          </TableRow>
-        ))}
-      </CollapsibleContent>
-    </Collapsible>
+      ))}
+    </>
   );
 }
 

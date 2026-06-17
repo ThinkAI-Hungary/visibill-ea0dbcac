@@ -42,6 +42,16 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
   const unpaidInboundData = showBrutto ? navVatData?.unpaidInboundGross : navVatData?.unpaidInboundNet;
   const unpaidOutboundData = showBrutto ? navVatData?.unpaidOutboundGross : navVatData?.unpaidOutboundNet;
 
+  // Helper to filter out zero-value currencies and format the remaining ones
+  const formatMultiCurrency = (data: Record<string, number> | undefined) => {
+    if (!data || Object.keys(data).length === 0) return '0 Ft';
+    const activeEntries = Object.entries(data).filter(([_, amount]) => Math.abs(amount) > 0.01);
+    if (activeEntries.length === 0) return '0 Ft';
+    return activeEntries
+      .map(([currency, amount]) => formatCurrency(amount, currency))
+      .join(' | ');
+  };
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-stretch">
       <MetricCard
@@ -53,26 +63,14 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
       />
       <MetricCard
         title={`Bevétel (${showBrutto ? 'bruttó' : 'nettó'})`}
-        value={
-          revenueData && Object.keys(revenueData).length > 0
-            ? Object.entries(revenueData)
-                .map(([currency, amount]) => formatCurrency(amount, currency))
-                .join(' | ')
-            : '0 Ft'
-        }
+        value={formatMultiCurrency(revenueData)}
         description="NAV OUTBOUND"
         icon={ArrowUpRight}
         variant="success"
       />
       <MetricCard
         title={`Kintlévőség (${showBrutto ? 'bruttó' : 'nettó'})`}
-        value={
-          unpaidOutboundData && Object.keys(unpaidOutboundData).length > 0
-            ? Object.entries(unpaidOutboundData)
-                .map(([currency, amount]) => formatCurrency(amount, currency))
-                .join(' | ')
-            : '0 Ft'
-        }
+        value={formatMultiCurrency(unpaidOutboundData)}
         description="Kifizetetlen kimenő számlák"
         icon={TrendingUp}
         variant="info"
@@ -90,13 +88,7 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
       />
       <MetricCard
         title={`Kiadás (${showBrutto ? 'bruttó' : 'nettó'})`}
-        value={
-          expensesData && Object.keys(expensesData).length > 0
-            ? Object.entries(expensesData)
-                .map(([currency, amount]) => formatCurrency(amount, currency))
-                .join(' | ')
-            : '0 Ft'
-        }
+        value={formatMultiCurrency(expensesData)}
         description="NAV INBOUND"
         icon={ArrowDownLeft}
         variant="destructive"
@@ -110,13 +102,7 @@ const DashboardMetrics = React.memo(function DashboardMetrics({
       />
       <MetricCard
         title={`Szállítói köt. (${showBrutto ? 'bruttó' : 'nettó'})`}
-        value={
-          unpaidInboundData && Object.keys(unpaidInboundData).length > 0
-            ? Object.entries(unpaidInboundData)
-                .map(([currency, amount]) => formatCurrency(amount, currency))
-                .join(' | ')
-            : '0 Ft'
-        }
+        value={formatMultiCurrency(unpaidInboundData)}
         description="Kifizetetlen bejövő számlák"
         icon={Wallet}
         variant="destructive"

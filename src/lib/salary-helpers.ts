@@ -42,7 +42,12 @@ export const getTypeBadge = (tipus: string | null) => {
 };
 
 export function isSalaryItemPaid(item: SalaryItem): boolean {
-  return !!item.transaction_id || item.fizetesi_mod === 'készpénz';
+  return (
+    !!item.transaction_id ||
+    item.fizetesi_mod === 'készpénz' ||
+    item.statusz?.toLowerCase() === 'paid' ||
+    item.statusz?.toLowerCase() === 'fizetve'
+  );
 }
 
 export const getStatusBadge = (item: SalaryItem) => {
