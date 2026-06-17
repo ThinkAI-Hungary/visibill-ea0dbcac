@@ -319,7 +319,6 @@ export const AppSidebar = React.memo(function AppSidebar() {
                 <span className="font-bold text-primary">ai</span>
                 <span className="font-medium text-foreground/80">sy</span>
                 <span className="font-medium text-primary">books</span>
-                <span className="absolute -bottom-1.5 left-0 right-0 h-[2px] rounded-full bg-primary" />
               </Link>
             </div>
           ) : (
