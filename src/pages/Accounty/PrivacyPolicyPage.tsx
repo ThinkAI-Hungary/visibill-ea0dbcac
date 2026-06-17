@@ -29,7 +29,7 @@ export function hasPrivacyConsent(): boolean {
 const sections = [
   {
     title: '1. Az adatkezelő',
-    content: 'Az Accounty könyvelőiroda-kezelő szoftver üzemeltetője kezeli az Ön személyes adatait a GDPR (EU 2016/679 rendelet) és az információs önrendelkezési jogról szóló 2011. évi CXII. törvény (Infotv.) rendelkezéseinek megfelelően.',
+    content: 'Az eaisybooks könyvelőiroda-kezelő szoftver üzemeltetője kezeli az Ön személyes adatait a GDPR (EU 2016/679 rendelet) és az információs önrendelkezési jogról szóló 2011. évi CXII. törvény (Infotv.) rendelkezéseinek megfelelően.',
   },
   {
     title: '2. Kezelt adatok köre',
@@ -57,7 +57,7 @@ const sections = [
   },
   {
     title: '8. Kapcsolat',
-    content: 'Adatvédelmi kérdésekkel kapcsolatban forduljon hozzánk:\n• E-mail: support@accounty.hu\n• Az alkalmazáson belül: Beállítások → Biztonság → GDPR',
+    content: 'Adatvédelmi kérdésekkel kapcsolatban forduljon hozzánk:\n• E-mail: support@eaisybooks.hu\n• Az alkalmazáson belül: Beállítások → Biztonság → GDPR',
   },
 ];
 
@@ -126,7 +126,7 @@ export default function PrivacyPolicyPage() {
       {!accepted && (
         <div className="sticky bottom-4 bg-card/95 backdrop-blur border border-border rounded-xl p-4 shadow-lg flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Az Accounty használatával elfogadja az adatkezelési tájékoztatót.
+            Az eaisybooks használatával elfogadja az adatkezelési tájékoztatót.
           </p>
           <Button onClick={handleAccept} className="gap-1.5 bg-primary hover:bg-primary/90">
             <CheckCircle2 className="w-4 h-4" />

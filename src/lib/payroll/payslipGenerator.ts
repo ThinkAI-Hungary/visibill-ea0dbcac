@@ -201,7 +201,7 @@ export function generatePayslipHtml(data: PayslipData): string {
   </div>
 
   <div class="footer">
-    Ez a bérjegyzék a foglalkoztatott személyes adatait tartalmazza, kezelése bizalmas. · Generálva: ${new Date().toISOString().slice(0, 10)} · Accounty Bérszámfejtés
+    Ez a bérjegyzék a foglalkoztatott személyes adatait tartalmazza, kezelése bizalmas. · Generálva: ${new Date().toISOString().slice(0, 10)} · eaisybooks Bérszámfejtés
   </div>
 </div>
 </body>

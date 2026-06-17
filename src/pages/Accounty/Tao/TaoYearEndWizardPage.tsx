@@ -627,7 +627,7 @@ export default function TaoYearEndWizardPage() {
   <tr class="total"><td>Fizetendő TAO</td><td>${fmt(computed.payableTax)} Ft</td></tr>
 </table>
 <div class="footer">
-  Generálva: Accounty TAO modul — ${new Date().toISOString()}<br>
+  Generálva: eaisybooks TAO modul — ${new Date().toISOString()}<br>
   Ez a dokumentum nem helyettesíti a NAV felé benyújtandó hivatalos 29-es bevallást.
 </div>
 </body></html>`;

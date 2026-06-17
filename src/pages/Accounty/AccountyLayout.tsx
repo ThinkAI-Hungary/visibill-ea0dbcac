@@ -80,7 +80,7 @@ export default function AccountyLayout() {
   // #16 Favicon badge — show missing items count in browser tab
   useEffect(() => {
     const count = kpis?.missingItems ?? 0;
-    document.title = count > 0 ? `(${count}) Accounty — eaisybill` : 'Accounty — eaisybill';
+    document.title = count > 0 ? `(${count}) eaisybooks — eaisybill` : 'eaisybooks — eaisybill';
     return () => { document.title = 'eaisybill'; };
   }, [kpis?.missingItems]);
 
@@ -243,8 +243,9 @@ export default function AccountyLayout() {
                 <span className="font-bold text-primary">ai</span>
               </Link>
               <div className="w-4 h-px bg-muted-foreground/30 rounded-full" />
-              <Link to="/accounty" className="text-2xl font-black bg-gradient-to-br from-red-500 via-red-600 to-red-700 bg-clip-text text-transparent tracking-tight hover:opacity-80 transition-opacity" title="Accounty">
-                A
+              <Link to="/accounty" className="text-2xl tracking-tight hover:opacity-80 transition-opacity" title="eaisybooks">
+                <span className="font-medium text-foreground/80">e</span>
+                <span className="font-bold text-primary">ai</span>
               </Link>
             </div>
           ) : (
@@ -256,9 +257,12 @@ export default function AccountyLayout() {
                 <span className="font-medium text-primary">bill</span>
               </Link>
               <span className="text-xl font-light text-muted-foreground">|</span>
-              <Link to="/accounty" className="relative text-2xl font-black bg-gradient-to-br from-red-500 via-red-600 to-red-700 bg-clip-text text-transparent tracking-tight hover:opacity-80 transition-opacity">
-                Accounty
-                <span className="absolute -bottom-1.5 left-0 right-0 h-[2px] rounded-full bg-gradient-to-r from-red-500 via-red-600 to-red-700" />
+              <Link to="/accounty" className="relative text-2xl tracking-tight select-none hover:opacity-80 transition-opacity">
+                <span className="font-medium text-foreground/80">e</span>
+                <span className="font-bold text-primary">ai</span>
+                <span className="font-medium text-foreground/80">sy</span>
+                <span className="font-medium text-primary">books</span>
+                <span className="absolute -bottom-1.5 left-0 right-0 h-[2px] rounded-full bg-primary" />
               </Link>
             </div>
           )}

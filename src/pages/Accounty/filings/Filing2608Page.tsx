@@ -128,7 +128,7 @@ export default function Filing2608Page() {
         };
       }),
       filingType: 'normal',
-      submittedBy: 'Accounty rendszer',
+      submittedBy: 'eaisybooks rendszer',
       submittedAt: new Date().toISOString(),
     });
   };

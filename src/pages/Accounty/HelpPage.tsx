@@ -19,7 +19,7 @@ interface FaqItem { q: string; a: string; }
 
 const faqs: FaqItem[] = [
   { q: 'Hogyan adok hozzá új ügyfelet?', a: 'A Portfólió oldalon kattints az "Új ügyfél" gombra. Add meg a cég nevét és adószámát, majd a rendszer automatikusan lekéri a NAV adatait és beállítja a cég profilját.' },
-  { q: 'Hogyan működik a hiányzó számlák észlelése?', a: 'Az Accounty összeveti a NAV Online Számla rendszeréből érkező adatokat a könyvelőrendszerbe rögzített számlákkal. Ha egy NAV-ban szereplő számla nincs a rendszerben, automatikusan "hiányzó" státuszt kap.' },
+  { q: 'Hogyan működik a hiányzó számlák észlelése?', a: 'Az eaisybooks összeveti a NAV Online Számla rendszeréből érkező adatokat a könyvelőrendszerbe rögzített számlákkal. Ha egy NAV-ban szereplő számla nincs a rendszerben, automatikusan "hiányzó" státuszt kap.' },
   { q: 'Mi a különbség a "Kritikus" és "Felszólított" státusz között?', a: '"Kritikus": a hiányzó számla már régóta bekéretlen és sürgős beavatkozást igényel. "Felszólított": a rendszer már küldött emlékeztetőt az ügyfélnek, de még nem érkezett válasz.' },
   { q: 'Hogyan működik az adó naptár?', a: 'Az adó naptár automatikusan generálja a havi/negyedéves/éves adóbevallási határidőket minden ügyfeledhez. Piros jelzést kap, ha közeledik a határidő, zöldet ha teljesítve van.' },
   { q: 'Hogyan exportálok riportot?', a: 'A Riportok oldalon válaszd ki a kívánt riport típust, szűrd le az időszakot és ügyfeleket, majd kattints az "Export CSV" vagy "Export PDF" gombra.' },
@@ -143,7 +143,7 @@ interface VideoTutorial {
 }
 
 const videoTutorials: VideoTutorial[] = [
-  { title: 'Első lépések az Accounty-ban', description: 'Bemutatjuk az Accounty felületét, navigációt és az alapvető funkciókat.', duration: '5:30', category: 'Alapok' },
+  { title: 'Első lépések az eaisybooks-ban', description: 'Bemutatjuk az eaisybooks felületét, navigációt és az alapvető funkciókat.', duration: '5:30', category: 'Alapok' },
   { title: 'Ügyfél hozzáadása és beállítása', description: 'Hogyan adj hozzá új ügyfelet adószám alapján, és állítsd be a profilját.', duration: '3:45', category: 'Alapok' },
   { title: 'Hiányzó számlák kezelése', description: 'NAV szinkronizáció, hiányok felismerése, AI hívás és Magic Link használata.', duration: '7:20', category: 'Számlák' },
   { title: 'Bérszámfejtés modul használata', description: 'Foglalkoztatottak kezelése, havi bérszámfejtés és NAV bevallás.', duration: '8:15', category: 'Bérszámfejtés' },
@@ -280,7 +280,7 @@ export default function HelpPage() {
           </div>
           Segítség & Dokumentáció
         </h1>
-        <p className="text-sm text-muted-foreground mt-2">Minden, amit az Accounty modulról tudnod kell</p>
+        <p className="text-sm text-muted-foreground mt-2">Minden, amit az eaisybooks modulról tudnod kell</p>
       </div>
 
       {/* Search */}
@@ -467,10 +467,10 @@ export default function HelpPage() {
                 Kapcsolat
               </h3>
               <div className="space-y-3">
-                <a href="mailto:support@accounty.hu" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors group">
+                <a href="mailto:support@eaisybooks.hu" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors group">
                   <Mail className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   <div>
-                    <p className="text-sm font-medium text-foreground">support@accounty.hu</p>
+                    <p className="text-sm font-medium text-foreground">support@eaisybooks.hu</p>
                     <p className="text-xs text-muted-foreground">Email támogatás</p>
                   </div>
                 </a>
@@ -593,7 +593,7 @@ export default function HelpPage() {
       {activeTab === 'videos' && (
         <div className="space-y-4 animate-in fade-in duration-300">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Videós útmutatók az Accounty használatához.</p>
+            <p className="text-sm text-muted-foreground">Videós útmutatók az eaisybooks használatához.</p>
             <Badge variant="outline" className="gap-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 border-0">
               <Construction className="h-3 w-3" />
               Tartalom fejlesztés alatt

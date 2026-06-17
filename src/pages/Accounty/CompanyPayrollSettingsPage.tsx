@@ -480,7 +480,7 @@ export default function CompanyPayrollSettingsPage() {
                 <p className="text-sm font-bold mt-1">{taxProfile?.isKiva ? ' Igen' : ' Nem'}</p>
               </div>
             </div>
-            <p className="text-[10px] text-slate-400">Az adózási profilt az Accounty Portfólió → Cégadatok oldalon módosíthatod.</p>
+            <p className="text-[10px] text-slate-400">Az adózási profilt az eaisybooks Portfólió → Cégadatok oldalon módosíthatod.</p>
           </div>
         </div>
       )}

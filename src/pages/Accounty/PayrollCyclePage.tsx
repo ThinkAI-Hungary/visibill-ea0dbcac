@@ -213,7 +213,7 @@ export default function PayrollCyclePage() {
       month: cycle.month,
       dueDate: new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
       senderName: user?.user_metadata?.name || 'Könyvelő',
-      senderCompany: 'Accounty',
+      senderCompany: 'eaisybooks',
     });
   };
 

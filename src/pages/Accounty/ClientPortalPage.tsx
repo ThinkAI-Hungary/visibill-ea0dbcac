@@ -582,7 +582,7 @@ export default function ClientPortalPage() {
               Ez a link egyedi az Ön számára. Kérjük, ne ossza meg másokkal.
             </p>
             <p className="text-[10px] text-slate-500/60">
-              Powered by Accounty · {new Date().getFullYear()}
+              Powered by eaisybooks · {new Date().getFullYear()}
             </p>
           </div>
         </div>

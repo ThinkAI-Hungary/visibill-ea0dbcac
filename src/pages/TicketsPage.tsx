@@ -224,8 +224,11 @@ export default function TicketsPage() {
                           <span className="text-primary">bill</span>
                         </span>
                       ) : ticket.service === 'accounty' ? (
-                        <span className="text-xs font-black bg-gradient-to-br from-red-500 via-red-600 to-red-700 bg-clip-text text-transparent">
-                          Accounty
+                        <span className="text-xs font-medium">
+                          <span className="text-foreground/80">e</span>
+                          <span className="font-bold text-primary">ai</span>
+                          <span className="text-foreground/80">sy</span>
+                          <span className="text-primary">books</span>
                         </span>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>

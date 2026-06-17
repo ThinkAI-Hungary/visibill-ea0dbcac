@@ -293,7 +293,7 @@ export default function RepresentationPage() {
 
             <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-300">
               <AlertTriangle className="w-4 h-4 inline mr-1.5" />
-              <strong>Figyelem:</strong> Éles környezetben ez az aláírás a NAV AVDH rendszerén keresztül történik. Jelenleg a meghatalmazás rögzítése az Accounty nyilvántartásba történik, nem kerül beküldésre a NAV felé.
+              <strong>Figyelem:</strong> Éles környezetben ez az aláírás a NAV AVDH rendszerén keresztül történik. Jelenleg a meghatalmazás rögzítése az eaisybooks nyilvántartásba történik, nem kerül beküldésre a NAV felé.
             </div>
 
             <label className="flex items-start gap-3 p-4 rounded-xl border-2 border-border hover:border-indigo-300 transition-all cursor-pointer">
@@ -304,7 +304,7 @@ export default function RepresentationPage() {
                 className="mt-0.5 rounded"
               />
               <span className="text-sm text-slate-700 dark:text-slate-300">
-                Kijelentem, hogy az adatokat ellenőriztem, és hozzájárulok a meghatalmazás rögzítéséhez az Accounty rendszerben.
+                Kijelentem, hogy az adatokat ellenőriztem, és hozzájárulok a meghatalmazás rögzítéséhez az eaisybooks rendszerben.
               </span>
             </label>
 

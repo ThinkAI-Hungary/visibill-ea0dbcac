@@ -78,7 +78,7 @@ export default function CookieConsentBanner() {
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-bold text-white">Süti beállítások</h3>
               <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                Az Accounty sütiket használ a működéshez és a felhasználói élmény javításához.
+                Az eaisybooks sütiket használ a működéshez és a felhasználói élmény javításához.
                 Az „Összes elfogadása" gombra kattintva hozzájárulsz az összes süti használatához.
               </p>
             </div>

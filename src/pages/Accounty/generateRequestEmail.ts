@@ -69,7 +69,7 @@ ${senderName}`;
 
   const htmlPreview = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto;">
   <div style="background: #111827; padding: 24px 28px; border-radius: 8px 8px 0 0;">
-    <div style="color: #ffffff; font-size: 20px; font-weight: 700;">Accounty</div>
+    <div style="color: #ffffff; font-size: 20px; font-weight: 700;">eaisybooks</div>
     <div style="color: #9ca3af; font-size: 12px; margin-top: 2px;">Dokumentum bekérés</div>
   </div>
   <div style="padding: 28px; background: #ffffff; border: 1px solid #e5e7eb; border-top: none;">
@@ -111,7 +111,7 @@ ${senderName}`;
     </p>
   </div>
   <div style="background: #f3f4f6; padding: 14px 28px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
-    <p style="font-size: 11px; color: #9ca3af; margin: 0;">Ez a levél automatikusan készült az Accounty rendszerből.</p>
+    <p style="font-size: 11px; color: #9ca3af; margin: 0;">Ez a levél automatikusan készült az eaisybooks rendszerből.</p>
   </div>
 </div>`;
 

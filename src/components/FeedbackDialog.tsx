@@ -273,8 +273,11 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
                   </SelectItem>
                   <SelectItem value="accounty">
                     <span className="flex items-center gap-2">
-                      <span className="text-sm font-black bg-gradient-to-br from-red-500 via-red-600 to-red-700 bg-clip-text text-transparent">
-                        Accounty
+                      <span className="text-sm">
+                        <span className="font-medium text-foreground/80">e</span>
+                        <span className="font-bold text-primary">ai</span>
+                        <span className="font-medium text-foreground/80">sy</span>
+                        <span className="font-medium text-primary">books</span>
                       </span>
                     </span>
                   </SelectItem>

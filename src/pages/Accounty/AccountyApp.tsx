@@ -601,7 +601,7 @@ export default function AccountyApp() {
         <div className="text-center space-y-2">
           <h2 className="text-lg font-bold text-slate-700 dark:text-slate-300">Nincs hozzárendelt ügyfél</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md">
-            Az Accounty modulhoz először könyvelőként hozzá kell rendelned magad a cégekhez.
+            Az eaisybooks modulhoz először könyvelőként hozzá kell rendelned magad a cégekhez.
           </p>
         </div>
         <button

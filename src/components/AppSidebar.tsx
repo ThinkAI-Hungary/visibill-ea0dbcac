@@ -314,8 +314,12 @@ export const AppSidebar = React.memo(function AppSidebar() {
                 <span className="absolute -bottom-1.5 left-0 right-0 h-[2px] rounded-full bg-primary" />
               </span>
               <span className="text-xl font-light text-muted-foreground">|</span>
-              <Link to="/accounty" className="text-2xl font-black bg-gradient-to-br from-red-500 via-red-600 to-red-700 bg-clip-text text-transparent tracking-tight hover:opacity-80 transition-opacity">
-                Accounty
+              <Link to="/accounty" className="relative text-2xl tracking-tight select-none hover:opacity-80 transition-opacity">
+                <span className="font-medium text-foreground/80">e</span>
+                <span className="font-bold text-primary">ai</span>
+                <span className="font-medium text-foreground/80">sy</span>
+                <span className="font-medium text-primary">books</span>
+                <span className="absolute -bottom-1.5 left-0 right-0 h-[2px] rounded-full bg-primary" />
               </Link>
             </div>
           ) : (
@@ -325,8 +329,9 @@ export const AppSidebar = React.memo(function AppSidebar() {
                 <span className="font-bold text-primary">ai</span>
               </span>
               <div className="w-4 h-px bg-muted-foreground/30 rounded-full" />
-              <Link to="/accounty" className="text-2xl font-black bg-gradient-to-br from-red-500 via-red-600 to-red-700 bg-clip-text text-transparent tracking-tight hover:opacity-80 transition-opacity" title="Accounty">
-                A
+              <Link to="/accounty" className="text-2xl tracking-tight hover:opacity-80 transition-opacity" title="eaisybooks">
+                <span className="font-medium text-foreground/80">e</span>
+                <span className="font-bold text-primary">ai</span>
               </Link>
             </div>
           )}
