@@ -300,26 +300,55 @@ export function useDashboardData() {
     placeholderData: keepPreviousData,
   });
 
-  // ── Petty cash (multi-register) ──
+  // ── Petty cash (computed from raw tables, no RPC) ──
   const { data: pettyCashBalances = [] } = useQuery<{ currency: string; balance: number }[]>({
-    queryKey: queryKeys.pettyCashSummary(companyId),
+    queryKey: queryKeys.dashboardPettyCash(companyId),
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_petty_cash_summary', {
-        p_company_id: companyId,
-      });
-      if (error) throw error;
-      // Aggregate across all registers by currency
+      console.log('[Dashboard] Computing petty cash from raw tables for company:', companyId);
+
+      const [regRes, obRes, entRes] = await Promise.all([
+        supabase.from('petty_cash_registers' as any).select('id').eq('company_id', companyId),
+        supabase.from('petty_cash_opening_balances' as any).select('register_id, currency, amount'),
+        supabase.from('petty_cash_entries' as any).select('register_id, currency, amount').eq('company_id', companyId),
+      ]);
+
+      console.log('[Dashboard] Registers:', regRes.data?.length, 'error:', regRes.error?.message);
+      console.log('[Dashboard] Opening balances:', obRes.data?.length, 'error:', obRes.error?.message);
+      console.log('[Dashboard] Entries:', entRes.data?.length, 'error:', entRes.error?.message);
+
+      const regIds = new Set((regRes.data || []).map((r: any) => r.id));
+      if (regIds.size === 0) {
+        console.warn('[Dashboard] No registers found — petty cash will be empty');
+        return [];
+      }
+
       const byCurrency: Record<string, number> = {};
-      ((data || []) as any[]).forEach((row: any) => {
-        const cur = row.currency || 'HUF';
-        byCurrency[cur] = (byCurrency[cur] || 0) + Number(row.current_balance || 0);
+
+      (obRes.data || []).forEach((ob: any) => {
+        if (!regIds.has(ob.register_id)) return;
+        const cur = ob.currency || 'HUF';
+        byCurrency[cur] = (byCurrency[cur] || 0) + Number(ob.amount || 0);
       });
-      return Object.entries(byCurrency)
+
+      (entRes.data || []).forEach((e: any) => {
+        if (!regIds.has(e.register_id)) return;
+        const cur = e.currency || 'HUF';
+        byCurrency[cur] = (byCurrency[cur] || 0) + Number(e.amount || 0);
+      });
+
+      // Round HUF to nearest 5
+      Object.keys(byCurrency).forEach(cur => {
+        if (cur === 'HUF') byCurrency[cur] = Math.round(byCurrency[cur] / 5) * 5;
+      });
+
+      const result = Object.entries(byCurrency)
         .map(([currency, balance]) => ({ currency, balance }))
         .sort((a, b) => a.currency === 'HUF' ? -1 : b.currency === 'HUF' ? 1 : a.currency.localeCompare(b.currency));
+      console.log('[Dashboard] Petty cash result:', result);
+      return result;
     },
     enabled: !!user && !!companyId,
-    placeholderData: keepPreviousData,
+    staleTime: 0,
   });
 
   // ── FX Differences (devizás árfolyam-különbözet) ──

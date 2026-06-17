@@ -1175,19 +1175,91 @@ const PettyCashPage = () => {
   const { selectedCompany } = useCompany();
   const companyId = selectedCompany?.id || '';
 
-  // Summary from RPC
+  // Summary computed from raw tables (RPC get_petty_cash_summary not deployed yet)
   const { data: summary = [], isLoading } = useQuery({
     queryKey: queryKeys.pettyCashSummary(companyId),
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_petty_cash_summary', { p_company_id: companyId });
-      if (error) {
-        reportError({ type: 'db_query', component: 'PettyCashPage', action: 'error', message: 'Summary RPC error:', error });
+      console.log('[PettyCash] Computing summary from raw tables for company:', companyId);
+
+      const [regRes, obRes, entRes] = await Promise.all([
+        supabase.from('petty_cash_registers' as any).select('*').eq('company_id', companyId),
+        supabase.from('petty_cash_opening_balances' as any).select('*'),
+        supabase.from('petty_cash_entries' as any).select('register_id, currency, amount').eq('company_id', companyId),
+      ]);
+
+      console.log('[PettyCash] Registers:', regRes.data?.length, 'error:', regRes.error?.message);
+      console.log('[PettyCash] Opening balances:', obRes.data?.length, 'error:', obRes.error?.message);
+      console.log('[PettyCash] Entries:', entRes.data?.length, 'error:', entRes.error?.message);
+
+      const registers = (regRes.data || []) as any[];
+      const openingBalances = (obRes.data || []) as any[];
+      const entries = (entRes.data || []) as any[];
+
+      if (registers.length === 0) {
+        console.warn('[PettyCash] No registers found — summary will be empty');
         return [];
       }
-      return (data || []) as unknown as SummaryRow[];
+
+      const regIds = new Set(registers.map((r: any) => r.id));
+      const filteredOB = openingBalances.filter((ob: any) => regIds.has(ob.register_id));
+
+      const summaryMap: Record<string, SummaryRow> = {};
+
+      // Seed from opening balances
+      filteredOB.forEach((ob: any) => {
+        const reg = registers.find((r: any) => r.id === ob.register_id);
+        if (!reg) return;
+        const key = `${ob.register_id}::${ob.currency}`;
+        summaryMap[key] = {
+          register_id: ob.register_id,
+          register_name: reg.name,
+          is_default: reg.is_default,
+          currency: ob.currency,
+          opening_balance: Number(ob.amount || 0),
+          start_date: ob.start_date,
+          total_income: 0,
+          total_expense: 0,
+          current_balance: 0,
+        };
+      });
+
+      // Aggregate entries
+      entries.forEach((e: any) => {
+        const key = `${e.register_id}::${e.currency}`;
+        if (!summaryMap[key]) {
+          const reg = registers.find((r: any) => r.id === e.register_id);
+          if (!reg) return;
+          summaryMap[key] = {
+            register_id: e.register_id,
+            register_name: reg.name,
+            is_default: reg.is_default,
+            currency: e.currency,
+            opening_balance: 0,
+            start_date: null,
+            total_income: 0,
+            total_expense: 0,
+            current_balance: 0,
+          };
+        }
+        const amount = Number(e.amount || 0);
+        if (amount > 0) summaryMap[key].total_income += amount;
+        else summaryMap[key].total_expense += amount;
+      });
+
+      // Compute current_balance
+      Object.values(summaryMap).forEach(row => {
+        const raw = row.opening_balance + row.total_income + row.total_expense;
+        row.current_balance = row.currency === 'HUF' ? Math.round(raw / 5) * 5 : raw;
+      });
+
+      const result = Object.values(summaryMap).sort((a, b) =>
+        (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0) || a.register_name.localeCompare(b.register_name) || a.currency.localeCompare(b.currency)
+      );
+      console.log('[PettyCash] Summary result:', result);
+      return result;
     },
     enabled: !!user && !!companyId,
-    placeholderData: keepPreviousData,
+    staleTime: 0,
   });
 
   // Aggregate by currency (total across all registers)
