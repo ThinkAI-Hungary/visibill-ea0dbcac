@@ -10,6 +10,7 @@ import { CompanyProvider, useCompany } from "./contexts/CompanyContext";
 import { DateRangeProvider, useDateRange } from "./contexts/DateRangeContext";
 import { ProtectedLayout } from "./components/ProtectedLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { ProtectedAccountyRoute } from "./pages/Accounty/ProtectedAccountyRoute";
 import { ScopedLayout } from "./components/ScopedLayout";
 import { generateScopedPath, extractPageSegment } from "./lib/navigation";
 
@@ -78,6 +79,8 @@ const TemplatesPage = lazy(() => import("./pages/Accounty/TemplatesPage"));
 const JobCodesPage = lazy(() => import("./pages/Accounty/JobCodesPage"));
 const AdminTaxParametersPage = lazy(() => import("./pages/Accounty/AdminTaxParametersPage"));
 const LegalUpdatesPage = lazy(() => import("./pages/Accounty/LegalUpdatesPage"));
+const PermissionMatrixPage = lazy(() => import("./pages/Accounty/PermissionMatrixPage"));
+const AccountantManagementPage = lazy(() => import("./pages/Accounty/AccountantManagementPage"));
 const AccountyOnboardingPage = lazy(() => import("./pages/Accounty/OnboardingPage"));
 const AiAssistantPage = lazy(() => import("./pages/Accounty/AiAssistantPage"));
 const ProfileSettingsPage = lazy(() => import("./pages/Accounty/ProfileSettingsPage"));
@@ -348,15 +351,15 @@ const App = () => (
                       <Route path="client/:id/reports" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientReportsPage /></Suspense>} />
                       <Route path="client/:id/reports/missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientMissingInvoicesReportPage /></Suspense>} />
                       <Route path="client/:id/invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientInvoicesPage /></Suspense>} />
-                      <Route path="reports" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ReportsPage /></Suspense>} />
-                      <Route path="reports/missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MissingInvoicesReportPage /></Suspense>} />
-                      <Route path="reports/ai-anomaly" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AiAnomalyReportPage /></Suspense>} />
+                      <Route path="reports" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ReportsPage /></Suspense></ProtectedAccountyRoute>} />
+                      <Route path="reports/missing-invoices" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MissingInvoicesReportPage /></Suspense></ProtectedAccountyRoute>} />
+                      <Route path="reports/ai-anomaly" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AiAnomalyReportPage /></Suspense></ProtectedAccountyRoute>} />
                       <Route path="tax-calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaxCalendarPage /></Suspense>} />
-                      <Route path="settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><SettingsPage /></Suspense>} />
+                      <Route path="settings" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><SettingsPage /></Suspense></ProtectedAccountyRoute>} />
                       <Route path="privacy-policy" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PrivacyPolicyPage /></Suspense>} />
                       <Route path="help" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><HelpPage /></Suspense>} />
                       <Route path="tickets/:ticketId?" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TicketsPage /></Suspense>} />
-                      <Route path="approval-queue" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ApprovalQueuePage /></Suspense>} />
+                      <Route path="approval-queue" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ApprovalQueuePage /></Suspense></ProtectedAccountyRoute>} />
                       <Route path="payroll/:id" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollDashboardPage /></Suspense>} />
                       <Route path="payroll/:id/employees" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollEmployeesPage /></Suspense>} />
                       <Route path="payroll/:id/employees/new" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollEmployeeWizardPage /></Suspense>} />
@@ -407,19 +410,21 @@ const App = () => (
                       <Route path="payroll/:id/advanced-reports/anomaly" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AiAnomalyReportPage /></Suspense>} />
                       <Route path="payroll/:id/advanced-reports/custom" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CustomReportBuilderPage /></Suspense>} />
                       <Route path="new-client" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NewClientPage /></Suspense>} />
-                      {/* Admin modules */}
-                      <Route path="admin/audit" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AuditLogPage /></Suspense>} />
-                      <Route path="admin/gdpr" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><GdprPage /></Suspense>} />
-                      <Route path="admin/templates" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TemplatesPage /></Suspense>} />
-                      <Route path="admin/job-codes" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><JobCodesPage /></Suspense>} />
-                      <Route path="admin/tax-parameters" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AdminTaxParametersPage /></Suspense>} />
-                      <Route path="admin/legal-updates" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><LegalUpdatesPage /></Suspense>} />
-                      <Route path="admin/office-settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OfficeSettingsPage /></Suspense>} />
+                      {/* Admin modules — iroda_admin only */}
+                      <Route path="admin/audit" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AuditLogPage /></Suspense></ProtectedAccountyRoute>} />
+                      <Route path="admin/gdpr" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><GdprPage /></Suspense></ProtectedAccountyRoute>} />
+                      <Route path="admin/templates" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TemplatesPage /></Suspense></ProtectedAccountyRoute>} />
+                      <Route path="admin/job-codes" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><JobCodesPage /></Suspense></ProtectedAccountyRoute>} />
+                      <Route path="admin/tax-parameters" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AdminTaxParametersPage /></Suspense></ProtectedAccountyRoute>} />
+                      <Route path="admin/legal-updates" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><LegalUpdatesPage /></Suspense></ProtectedAccountyRoute>} />
+                      <Route path="admin/office-settings" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OfficeSettingsPage /></Suspense></ProtectedAccountyRoute>} />
+                      <Route path="admin/permissions" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PermissionMatrixPage /></Suspense></ProtectedAccountyRoute>} />
+                      <Route path="admin/accountants" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountantManagementPage /></Suspense></ProtectedAccountyRoute>} />
                       {/* Portfolio pages */}
-                      <Route path="alerts" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AlertsCenterPage /></Suspense>} />
-                      <Route path="nav-deadlines" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NavDeadlinesPage /></Suspense>} />
+                      <Route path="alerts" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AlertsCenterPage /></Suspense></ProtectedAccountyRoute>} />
+                      <Route path="nav-deadlines" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin', 'senior_könyvelő']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NavDeadlinesPage /></Suspense></ProtectedAccountyRoute>} />
                       <Route path="payroll-portfolio" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><PayrollPortfolioPage /></Suspense>} />
-                      <Route path="onboarding" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountyOnboardingPage /></Suspense>} />
+                      <Route path="onboarding" element={<ProtectedAccountyRoute requiredRoles={['iroda_admin']}><Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountyOnboardingPage /></Suspense></ProtectedAccountyRoute>} />
                       <Route path="ai-assistant" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AiAssistantPage /></Suspense>} />
                       <Route path="profile/settings" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ProfileSettingsPage /></Suspense>} />
                       {/* TAO/KIVA module */}

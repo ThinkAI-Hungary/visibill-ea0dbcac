@@ -44,21 +44,29 @@ Deno.serve(async (req: Request) => {
 
     console.log(`[accounty-seed] User: ${user.id} (${user.email})`)
 
-    // Get all companies
-    const { data: companies, error: compErr } = await supabase
+    // Get the user's eaisybill companies (from company_members)
+    const { data: memberCompanies, error: memberErr } = await supabase
+      .from('company_members')
+      .select('company_id, companies:company_id(id, name)')
+      .eq('user_id', user.id)
+
+    if (memberErr) throw memberErr
+
+    // Find accounting firm (the first company where user is owner, or fallback to Taxology)
+    const { data: ownedCompanies } = await supabase
       .from('companies')
       .select('id, name')
+      .eq('owner_id', user.id)
 
-    if (compErr) throw compErr
-
-    // Find accounting firm (Taxology)
-    const firm = (companies || []).find((c: any) =>
+    const firm = (ownedCompanies || []).find((c: any) =>
       c.name.toLowerCase().includes('taxology')
-    )
+    ) || (ownedCompanies || [])[0] || null
     const firmId = firm?.id || null
 
-    // Assign user to all companies except the firm itself
-    const clientCompanies = (companies || []).filter((c: any) => c.id !== firmId)
+    // Assign user to ALL their eaisybill companies (including the firm)
+    const clientCompanies = (memberCompanies || [])
+      .map((m: any) => m.companies)
+      .filter((c: any) => c)
     let inserted = 0
 
     for (const company of clientCompanies) {
@@ -68,8 +76,9 @@ Deno.serve(async (req: Request) => {
           accountant_user_id: user.id,
           company_id: company.id,
           accounting_firm_id: firmId,
-          role: 'senior',
+          role: 'iroda_admin',
           is_primary: true,
+          source: 'sync',
         }, {
           onConflict: 'accountant_user_id,company_id',
         })

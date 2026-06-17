@@ -6,6 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { FeedbackFab } from '@/components/FeedbackFab';
 import { GlobalDatePicker } from '@/components/GlobalDatePicker';
 import { useAccountyKpis, useAccountyClients } from '@/hooks/useAccountyData';
+import { useAccountyPermissions, PATH_TO_MODULE } from '@/hooks/useAccountyPermissions';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -67,8 +68,17 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useUnreadTicketCount } from '@/hooks/useTickets';
 import { AiAssistantChat as AiDrawerChat } from './AiAssistantPage';
 import CookieConsentBanner from '@/components/accounty/CookieConsentBanner';
+import { CompanySwitcher } from '@/components/accounty/CompanySwitcher';
 
 export default function AccountyLayout() {
+  return (
+    <AccountyRoleProvider>
+      <AccountyLayoutInner />
+    </AccountyRoleProvider>
+  );
+}
+
+function AccountyLayoutInner() {
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const location = useLocation();
@@ -76,6 +86,7 @@ export default function AccountyLayout() {
   const navigate = useNavigate();
   const { data: kpis } = useAccountyKpis();
   const { data: unreadTicketCount = 0 } = useUnreadTicketCount();
+  const { canAccess } = useAccountyPermissions();
 
   // #16 Favicon badge — show missing items count in browser tab
   useEffect(() => {
@@ -317,7 +328,10 @@ export default function AccountyLayout() {
                 { path: '/accounty/help', name: 'Segítség', icon: HelpCircle },
                 { path: '/accounty/ai-assistant', name: 'AI Asszisztens', icon: Sparkles },
                 { path: '/accounty/admin/audit', name: 'Audit', icon: ShieldCheck },
-              ].map((item) => (
+              ].filter(item => {
+                const module = PATH_TO_MODULE[item.path];
+                return !module || canAccess(module);
+              }).map((item) => (
                 <li key={item.path} className="relative flex justify-center">
                   <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
@@ -348,7 +362,7 @@ export default function AccountyLayout() {
               {(() => {
                 const groupKey = 'portfolio';
                 const isOpen = expandedSections.has(groupKey);
-                const items = [
+                const allPortfolioItems = [
                   { to: '/accounty', icon: Briefcase, label: 'Portfólió', exact: true },
                   { to: '/accounty/missing-invoices', icon: FileWarning, label: 'Hiányzó számlák', badge: kpis?.missingItems },
                   { to: '/accounty/tax-calendar', icon: Calendar, label: 'Adó naptár' },
@@ -358,6 +372,10 @@ export default function AccountyLayout() {
                   { to: '/accounty/nav-deadlines', icon: Clock, label: 'NAV határidők' },
                   { to: '/accounty/onboarding', icon: Rocket, label: 'Onboarding' },
                 ];
+                const items = allPortfolioItems.filter(item => {
+                  const module = PATH_TO_MODULE[item.to];
+                  return !module || canAccess(module);
+                });
                 const groupHasActive = items.some(i => i.exact ? pathname === i.to : isActive(i.to));
                 return (
                   <div>
@@ -587,7 +605,7 @@ export default function AccountyLayout() {
               {(() => {
                 const groupKey = 'admin';
                 const isOpen = expandedSections.has(groupKey);
-                const items = [
+                const allItems = [
                   { to: '/accounty/settings', icon: Settings, label: 'Beállítások' },
                   { to: '/accounty/tickets', icon: TicketCheck, label: 'Hibajegyek', badge: unreadTicketCount },
                   { to: '/accounty/help', icon: HelpCircle, label: 'Segítség' },
@@ -599,7 +617,13 @@ export default function AccountyLayout() {
                   { to: '/accounty/admin/job-codes', icon: BookOpen, label: 'Jogviszonykódok' },
                   { to: '/accounty/admin/tax-parameters', icon: Calculator, label: 'Adómértékek' },
                   { to: '/accounty/admin/legal-updates', icon: Scale, label: 'Jogszabály-frissítések' },
+                  { to: '/accounty/admin/permissions', icon: Shield, label: 'Jogosultságkezelő' },
+                  { to: '/accounty/admin/accountants', icon: Users, label: 'Könyvelők kezelése' },
                 ];
+                const items = allItems.filter(item => {
+                  const module = PATH_TO_MODULE[item.to];
+                  return !module || canAccess(module);
+                });
                 const groupHasActive = items.some(i => isActive(i.to));
                 return (
                   <div>
@@ -766,8 +790,11 @@ export default function AccountyLayout() {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex-1">
-            <GlobalDatePicker />
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <CompanySwitcher />
+            <div className="flex-1">
+              <GlobalDatePicker />
+            </div>
           </div>
           <div className="flex items-center pr-4 lg:pr-6">
             <Popover>
@@ -892,9 +919,7 @@ export default function AccountyLayout() {
               </div>
             );
           })()}
-          <AccountyRoleProvider>
             <Outlet />
-          </AccountyRoleProvider>
 
 
           {/* AI Assistant Drawer */}

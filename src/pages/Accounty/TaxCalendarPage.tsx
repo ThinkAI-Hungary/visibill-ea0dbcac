@@ -65,7 +65,7 @@ function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900 dark:t
 }
 
 export default function TaxCalendarPage() {
-  const { role } = useAccountyRole();
+  const { isAdmin } = useAccountyRole();
   const [viewScope, setViewScope] = useState<'mine' | 'all'>('mine');
   const [selectedDeadline, setSelectedDeadline] = useState<DeadlineGroup | null>(null);
   const [selectedClient, setSelectedClient] = useState<string>('all');
@@ -75,12 +75,12 @@ export default function TaxCalendarPage() {
   const { data: kpisData } = useAccountyKpis();
   const completeDeadlineMutation = useCompleteDeadline();
 
-  // Ha könyvelő módban van, mindig saját nézet
+  // Ha nem admin, mindig saját nézet
   React.useEffect(() => {
-    if (role === 'könyvelő') {
+    if (!isAdmin) {
       setViewScope('mine');
     }
-  }, [role]);
+  }, [isAdmin]);
 
   // Build DeadlineGroups from Supabase data, grouped by (due_date day + deadline_type)
   const { deadlineGroups, clientDeadlines } = useMemo(() => {
@@ -352,7 +352,7 @@ export default function TaxCalendarPage() {
           <User className="w-4 h-4" />
           Saját ügyfeleim ({kpisData?.totalClients || 0})
         </button>
-        {role === 'admin' && (
+        {isAdmin && (
           <button
             onClick={() => { setViewScope('all'); setSelectedClient('all'); }}
             className={cn(

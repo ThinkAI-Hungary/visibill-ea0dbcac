@@ -1388,10 +1388,22 @@ export function useAccountyColleagueStats() {
   return useQuery({
     queryKey: ['accounty-colleague-stats'],
     queryFn: async (): Promise<ColleagueStat[]> => {
-      // Get all assignments
+      // First get the current user's firm
+      const { data: myAssignment } = await supabase
+        .from('accounty_assignments')
+        .select('accounting_firm_id')
+        .eq('accountant_user_id', user!.id)
+        .limit(1)
+        .single();
+
+      const firmId = myAssignment?.accounting_firm_id;
+      if (!firmId) return [];
+
+      // Get all assignments for THIS firm only
       const { data: assignments } = await supabase
         .from('accounty_assignments')
-        .select('accountant_user_id, company_id') as any;
+        .select('accountant_user_id, company_id')
+        .eq('accounting_firm_id', firmId) as any;
       if (!assignments || assignments.length === 0) return [];
 
       // Get company names to exclude SANDBOX
@@ -1479,7 +1491,9 @@ export function useAccountyColleagueStats() {
         });
       }
 
-      return results.sort((a, b) => b.closingPct - a.closingPct);
+      return results
+        .filter(r => r.name !== 'Sandbox' && r.name !== 'Névtelen')
+        .sort((a, b) => b.closingPct - a.closingPct);
     },
     enabled: !!user,
     staleTime: 5 * 60_000,

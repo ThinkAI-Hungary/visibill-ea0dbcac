@@ -47,9 +47,22 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
   const { data: companies = [], isPending, isFetching } = useQuery({
     queryKey: queryKeys.companies(user?.id || ''),
     queryFn: async () => {
+      // First get the company IDs where the user is a member (eaisybill side)
+      const { data: memberData, error: memberError } = await supabase
+        .from('company_members')
+        .select('company_id')
+        .eq('user_id', user!.id);
+
+      if (memberError) throw memberError;
+      if (!memberData || memberData.length === 0) return [] as Company[];
+
+      const memberCompanyIds = memberData.map(m => m.company_id);
+
+      // Then fetch only those companies
       const { data, error } = await supabase
         .from('companies')
         .select('id, name, tax_number, address, owner_id, share_token, created_at, updated_at')
+        .in('id', memberCompanyIds)
         .order('created_at', { ascending: true });
 
       if (error) throw error;

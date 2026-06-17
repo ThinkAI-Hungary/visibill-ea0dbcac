@@ -397,7 +397,7 @@ export default function AccountyApp() {
   const [ownerOverrides, setOwnerOverrides] = useState<Record<string, string>>({});
   const [statusOverrides, setStatusOverrides] = useState<Record<string, ClientData['status']>>({});
   const navigate = useNavigate();
-  const { role, setRole } = useAccountyRole();
+  const { role, isAdmin, isSenior } = useAccountyRole();
 
   // F1: Bulk operations
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -613,7 +613,7 @@ export default function AccountyApp() {
           }}
           className="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-xl font-medium text-sm transition-colors shadow-lg"
         >
-          Hozzárendelés indítása (összes cég)
+          Hozzárendelés indítása (eaisybill cégek)
         </button>
       </div>
     );
@@ -629,32 +629,19 @@ export default function AccountyApp() {
           <p className="text-slate-500 dark:text-slate-400 mt-1">Ügyfeleid áttekintése és kezelése</p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Role Switcher */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
-            <button
-              onClick={() => { setRole('admin'); }}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all',
-                role === 'admin'
-                  ? 'bg-card text-slate-900 dark:text-slate-100 shadow-soft'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-              )}
-            >
-              <Shield className="w-3.5 h-3.5" />
-              Admin
-            </button>
-            <button
-              onClick={() => { setRole('könyvelő'); setViewScope('mine'); }}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all',
-                role === 'könyvelő'
-                  ? 'bg-card text-slate-900 dark:text-slate-100 shadow-soft'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-              )}
-            >
-              <UserCheck className="w-3.5 h-3.5" />
-              Könyvelő
-            </button>
+          {/* Role badge (read from DB) */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+            {isAdmin ? (
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100">
+                <Shield className="w-3.5 h-3.5" />
+                Irodavezető
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100">
+                <UserCheck className="w-3.5 h-3.5" />
+                {role === 'senior_könyvelő' ? 'Senior könyvelő' : role === 'asszisztens' ? 'Asszisztens' : 'Könyvelő'}
+              </span>
+            )}
           </div>
           <Link to="/accounty/new-client">
           <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-4 flex items-center gap-2">
@@ -677,7 +664,7 @@ export default function AccountyApp() {
 
       {/* Scope Tabs */}
       <div className="w-full bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-xl border border-border/60 shadow-inner flex items-center">
-        {role === 'admin' && (
+        {isAdmin && (
           <button
             onClick={() => setViewScope('kpi')}
             className={cn(
@@ -703,7 +690,7 @@ export default function AccountyApp() {
           <User className="w-4 h-4" />
           Saját ügyfeleim ({mineCount})
         </button>
-        {role === 'admin' && (
+        {isAdmin && (
           <button
             onClick={() => setViewScope('all')}
             className={cn(
@@ -840,8 +827,8 @@ export default function AccountyApp() {
             </button>
           </div>
 
-          {/* Middle Row: Charts */}
-          <WidgetWrapper 
+          {/* Middle Row: Charts (senior+ only) */}
+          {isSenior && <WidgetWrapper 
             id="charts" 
             editingLayout={editingLayout} 
             onMoveUp={() => moveWidget(widgetOrder.indexOf('charts'), -1)} 
@@ -928,10 +915,10 @@ export default function AccountyApp() {
               </div>
             </div>
           </div>
-          </WidgetWrapper>
+          </WidgetWrapper>}
 
-          {/* Monthly Trend Chart */}
-          <WidgetWrapper 
+          {/* Monthly Trend Chart (senior+ only) */}
+          {isSenior && <WidgetWrapper 
             id="monthly_trend" 
             editingLayout={editingLayout} 
             onMoveUp={() => moveWidget(widgetOrder.indexOf('monthly_trend'), -1)} 
@@ -953,10 +940,11 @@ export default function AccountyApp() {
             </div>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyTrendData || []} margin={{ top: 10, right: 30, left: -10, bottom: 0 }}>
+                <LineChart data={monthlyTrendData || []} margin={{ top: 10, right: 40, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="[&>line]:stroke-slate-100 dark:[&>line]:stroke-slate-800" stroke="#f1f5f9" />
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                  <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                  <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(v) => `${v} db`} />
                   <RechartsTooltip content={({ active, payload, label }) => {
                     if (!active || !payload?.length) return null;
                     const labels: Record<string, string> = { zaras: 'Zárási %', hianyzok: 'Hiányzó számlák' };
@@ -971,8 +959,8 @@ export default function AccountyApp() {
                       </div>
                     );
                   }} />
-                  <Line type="monotone" dataKey="zaras" stroke="hsl(173, 80%, 40%)" strokeWidth={2.5} dot={{ fill: 'hsl(173, 80%, 40%)', r: 4 }} activeDot={{ r: 6 }} name="zaras" />
-                  <Line type="monotone" dataKey="hianyzok" stroke="#ef4444" strokeWidth={2} dot={{ fill: '#ef4444', r: 3 }} strokeDasharray="5 5" name="hianyzok" />
+                  <Line type="monotone" dataKey="zaras" yAxisId="left" stroke="hsl(173, 80%, 40%)" strokeWidth={2.5} dot={{ fill: 'hsl(173, 80%, 40%)', r: 4 }} activeDot={{ r: 6 }} name="zaras" />
+                  <Line type="monotone" dataKey="hianyzok" yAxisId="right" stroke="#ef4444" strokeWidth={2} dot={{ fill: '#ef4444', r: 3 }} strokeDasharray="5 5" name="hianyzok" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -987,10 +975,10 @@ export default function AccountyApp() {
               </div>
             </div>
           </div>
-          </WidgetWrapper>
+          </WidgetWrapper>}
 
-          {/* Bottom Row: Table */}
-          <WidgetWrapper 
+          {/* Bottom Row: Table (admin only) */}
+          {isAdmin && <WidgetWrapper 
             id="colleague_table" 
             editingLayout={editingLayout} 
             onMoveUp={() => moveWidget(widgetOrder.indexOf('colleague_table'), -1)} 
@@ -1071,10 +1059,10 @@ export default function AccountyApp() {
               </table>
             </div>
           </div>
-          </WidgetWrapper>
+          </WidgetWrapper>}
 
-          {/* F5: Audit Log Timeline */}
-          <WidgetWrapper 
+          {/* Audit Log + Portal Stats (admin only) */}
+          {isAdmin && <WidgetWrapper 
             id="audit_log" 
             editingLayout={editingLayout} 
             onMoveUp={() => moveWidget(widgetOrder.indexOf('audit_log'), -1)} 
@@ -1107,10 +1095,10 @@ export default function AccountyApp() {
               )}
             </div>
           </div>
-          </WidgetWrapper>
+          </WidgetWrapper>}
 
-          {/* Új Szekció: Automatizmus & Ügyfél Analitika */}
-          <WidgetWrapper 
+          {/* Új Szekció: Automatizmus & Ügyfél Analitika (admin only) */}
+          {isAdmin && <WidgetWrapper 
             id="automation_analytics" 
             editingLayout={editingLayout} 
             onMoveUp={() => moveWidget(widgetOrder.indexOf('automation_analytics'), -1)} 
@@ -1219,7 +1207,7 @@ export default function AccountyApp() {
 
             </div>
             </div>
-          </WidgetWrapper>
+          </WidgetWrapper>}
         </div>
       ) : viewMode === 'kanban' ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
