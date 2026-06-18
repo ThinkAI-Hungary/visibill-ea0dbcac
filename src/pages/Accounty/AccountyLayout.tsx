@@ -244,7 +244,7 @@ function AccountyLayoutInner() {
       )}>
         {/* Logo Area */}
         <div className={cn(
-          "border-b border-primary/30 shrink-0",
+          "border-b border-border shrink-0",
           isCollapsed ? "p-2 py-4 flex justify-center" : "p-4"
         )}>
           {isCollapsed ? (
@@ -357,7 +357,7 @@ function AccountyLayoutInner() {
             </ul>
           ) : (
             /* Expanded mode: Collapsible groups */
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               {/* Portfólió csoport */}
               {(() => {
                 const groupKey = 'portfolio';
@@ -402,7 +402,7 @@ function AccountyLayoutInner() {
                               <Link
                                 to={item.to}
                                 className={cn(
-                                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-4 text-left text-sm transition-colors",
+                                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-colors",
                                   active ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
                                 )}
                               >
@@ -448,7 +448,7 @@ function AccountyLayoutInner() {
                           <Link
                             to="/accounty/payroll-portfolio"
                             className={cn(
-                              "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-4 text-left text-sm transition-colors",
+                              "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-colors",
                               isActive('/accounty/payroll-portfolio') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
                             )}
                           >
@@ -486,7 +486,7 @@ function AccountyLayoutInner() {
                                 return (
                                   <li key={client.id}>
                                     <div className={cn(
-                                      "flex w-full items-center rounded-md pl-4 text-xs transition-colors",
+                                      "flex w-full items-center rounded-md pl-9 text-xs transition-colors",
                                       isPayrollActive ? "text-primary font-medium" : "text-sidebar-foreground/70 hover:text-primary"
                                     )}>
                                       <Link
@@ -585,7 +585,7 @@ function AccountyLayoutInner() {
                               <Link
                                 to={item.to}
                                 className={cn(
-                                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-4 text-left text-sm transition-colors",
+                                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-colors",
                                   active ? "bg-emerald-500/15 font-medium text-emerald-600" : "hover:bg-emerald-500/10 hover:text-emerald-600 text-sidebar-foreground"
                                 )}
                               >
@@ -650,7 +650,7 @@ function AccountyLayoutInner() {
                               <Link
                                 to={item.to}
                                 className={cn(
-                                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-4 text-left text-sm transition-colors",
+                                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-colors",
                                   active ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
                                 )}
                               >

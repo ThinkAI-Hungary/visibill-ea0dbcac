@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Cookie, X, Settings, Check } from 'lucide-react';
+import { Cookie, Settings, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const COOKIE_CONSENT_KEY = 'accounty_cookie_consent';
@@ -68,16 +68,16 @@ export default function CookieConsentBanner() {
       "fixed bottom-0 left-0 right-0 z-[9999] p-4 transition-all duration-500",
       visible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
     )}>
-      <div className="max-w-2xl mx-auto bg-slate-900 dark:bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl shadow-black/40 overflow-hidden">
+      <div className="max-w-2xl mx-auto bg-popover border border-border rounded-2xl shadow-xl overflow-hidden">
         {/* Main bar */}
         <div className="p-5">
           <div className="flex items-start gap-4">
-            <div className="p-2 bg-amber-500/20 rounded-xl shrink-0">
-              <Cookie className="w-5 h-5 text-amber-400" />
+            <div className="p-2 bg-primary/15 rounded-xl shrink-0">
+              <Cookie className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-bold text-white">Süti beállítások</h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+              <h3 className="text-sm font-bold text-foreground">Süti beállítások</h3>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                 Az eaisybooks sütiket használ a működéshez és a felhasználói élmény javításához.
                 Az „Összes elfogadása" gombra kattintva hozzájárulsz az összes süti használatához.
               </p>
@@ -88,20 +88,20 @@ export default function CookieConsentBanner() {
           <div className="flex items-center gap-2 mt-4">
             <button
               onClick={() => accept(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-white text-xs font-bold rounded-lg transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold rounded-lg transition-colors"
             >
               <Check className="w-3.5 h-3.5" />
               Összes elfogadása
             </button>
             <button
               onClick={() => accept(false)}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-bold rounded-lg transition-colors"
+              className="px-4 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground text-xs font-bold rounded-lg transition-colors"
             >
               Csak szükségesek
             </button>
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="flex items-center gap-1.5 px-3 py-2 text-slate-400 hover:text-white text-xs font-medium transition-colors ml-auto"
+              className="flex items-center gap-1.5 px-3 py-2 text-muted-foreground hover:text-foreground text-xs font-medium transition-colors ml-auto"
             >
               <Settings className="w-3.5 h-3.5" />
               Testreszabás
@@ -114,7 +114,7 @@ export default function CookieConsentBanner() {
           "overflow-hidden transition-all duration-300",
           showDetails ? "max-h-[400px]" : "max-h-0"
         )}>
-          <div className="px-5 pb-5 pt-3 border-t border-slate-700 space-y-3">
+          <div className="px-5 pb-5 pt-3 border-t border-border space-y-3">
             {[
               { id: 'necessary', label: 'Szükséges sütik', desc: 'Az alkalmazás alapvető működéséhez szükséges (pl. bejelentkezés, munkamenet)', checked: true, disabled: true },
               { id: 'functional', label: 'Funkcionális sütik', desc: 'Felhasználói beállítások megjegyzése (pl. téma, nyelv, szűrők)', checked: functional, disabled: false },
@@ -125,8 +125,8 @@ export default function CookieConsentBanner() {
                 className={cn(
                   "flex items-start gap-3 p-3 rounded-lg border transition-all cursor-pointer",
                   cookie.checked
-                    ? "bg-slate-800 border-primary/30"
-                    : "bg-slate-800/50 border-slate-700 hover:border-slate-600",
+                    ? "bg-accent/50 border-primary/30"
+                    : "bg-muted/50 border-border hover:border-border/80",
                   cookie.disabled && "cursor-default"
                 )}
               >
@@ -141,18 +141,18 @@ export default function CookieConsentBanner() {
                   className="mt-0.5 accent-primary"
                 />
                 <div>
-                  <p className="text-xs font-bold text-white flex items-center gap-2">
+                  <p className="text-xs font-bold text-foreground flex items-center gap-2">
                     {cookie.label}
-                    {cookie.disabled && <span className="text-[9px] text-slate-500 font-normal">(kötelező)</span>}
+                    {cookie.disabled && <span className="text-[9px] text-muted-foreground/60 font-normal">(kötelező)</span>}
                   </p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">{cookie.desc}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{cookie.desc}</p>
                 </div>
               </label>
             ))}
 
             <button
               onClick={() => accept(false)}
-              className="w-full px-4 py-2 bg-primary hover:bg-primary/90 text-white text-xs font-bold rounded-lg transition-colors"
+              className="w-full px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold rounded-lg transition-colors"
             >
               Kiválasztottak mentése
             </button>
@@ -162,3 +162,4 @@ export default function CookieConsentBanner() {
     </div>
   );
 }
+
