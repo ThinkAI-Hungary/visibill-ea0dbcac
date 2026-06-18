@@ -196,14 +196,15 @@ export function useDashboardData() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('invoices')
-        .select('id, bizonylatsorszam, elado_nev, vevo_nev, brutto_vegosszeg, kibocsatas_datuma, statusz, penznem, category_id, image_url, reference_number, categories(name)')
+        .select('id, bizonylatsorszam, elado_nev, vevo_nev, brutto_vegosszeg, kibocsatas_datuma, statusz, penznem, category_id, image_url, reference_number, categories(name), projects(name)')
         .eq('company_id', companyId)
         .order('kibocsatas_datuma', { ascending: false })
         .limit(10);
       if (error) throw error;
       return (data || []).map(invoice => ({
         ...invoice,
-        category_name: (invoice as any).categories?.name
+        category_name: (invoice as any).categories?.name,
+        project_name: (invoice as any).projects?.name
       })) as Invoice[];
     },
     enabled: !!user && !!companyId,
@@ -252,13 +253,24 @@ export function useDashboardData() {
   const { data: navVatData } = useQuery({
     queryKey: queryKeys.dashboardAnalytics(companyId, dateFromFormatted, dateToFormatted),
     queryFn: async () => {
-      const { data: navAggregates, error } = await supabase
-        .rpc('get_nav_invoice_aggregates', {
+      const [navAggregatesRes, navAggregatesCumulativeRes] = await Promise.all([
+        supabase.rpc('get_nav_invoice_aggregates', {
           p_company_id: companyId,
           p_date_from: dateFromFormatted,
           p_date_to: dateToFormatted
-        });
-      if (error) throw error;
+        }),
+        supabase.rpc('get_nav_invoice_aggregates', {
+          p_company_id: companyId,
+          p_date_from: '1970-01-01',
+          p_date_to: dateToFormatted
+        })
+      ]);
+
+      if (navAggregatesRes.error) throw navAggregatesRes.error;
+      if (navAggregatesCumulativeRes.error) throw navAggregatesCumulativeRes.error;
+
+      const navAggregates = navAggregatesRes.data || [];
+      const navAggregatesCumulative = navAggregatesCumulativeRes.data || [];
 
       const inboundVat: { [currency: string]: number } = {};
       const outboundVat: { [currency: string]: number } = {};
@@ -276,19 +288,27 @@ export function useDashboardData() {
         const vatAmount = Number(agg.total_vat || 0);
         const netAmount = Number(agg.total_net || 0);
         const grossAmount = Number(agg.total_gross || 0);
-        const unpaidNet = Number(agg.unpaid_net || 0);
-        const unpaidGross = Number(agg.unpaid_gross || 0);
 
         if (agg.invoice_direction === 'INBOUND') {
           inboundVat[currency] = (inboundVat[currency] || 0) + vatAmount;
           expensesNet[currency] = (expensesNet[currency] || 0) + netAmount;
           expensesGross[currency] = (expensesGross[currency] || 0) + grossAmount;
-          unpaidInboundNet[currency] = (unpaidInboundNet[currency] || 0) + unpaidNet;
-          unpaidInboundGross[currency] = (unpaidInboundGross[currency] || 0) + unpaidGross;
         } else if (agg.invoice_direction === 'OUTBOUND') {
           outboundVat[currency] = (outboundVat[currency] || 0) + vatAmount;
           revenueNet[currency] = (revenueNet[currency] || 0) + netAmount;
           revenueGross[currency] = (revenueGross[currency] || 0) + grossAmount;
+        }
+      });
+
+      (navAggregatesCumulative || []).forEach((agg: any) => {
+        const currency = agg.currency || 'HUF';
+        const unpaidNet = Number(agg.unpaid_net || 0);
+        const unpaidGross = Number(agg.unpaid_gross || 0);
+
+        if (agg.invoice_direction === 'INBOUND') {
+          unpaidInboundNet[currency] = (unpaidInboundNet[currency] || 0) + unpaidNet;
+          unpaidInboundGross[currency] = (unpaidInboundGross[currency] || 0) + unpaidGross;
+        } else if (agg.invoice_direction === 'OUTBOUND') {
           unpaidOutboundNet[currency] = (unpaidOutboundNet[currency] || 0) + unpaidNet;
           unpaidOutboundGross[currency] = (unpaidOutboundGross[currency] || 0) + unpaidGross;
         }
@@ -480,20 +500,20 @@ export function useDashboardData() {
       const [itemsRes, headersRes, unmatchedInvRes] = await Promise.all([
         supabase
           .from("nav_invoice_items")
-          .select(`vat_rate, net_amount, vat_amount, nav_invoices!inner (id, invoice_direction, invoice_issue_date, company_id)`)
+          .select(`vat_rate, net_amount, vat_amount, nav_invoices!inner (id, invoice_direction, invoice_issue_date, company_id, currency)`)
           .eq("nav_invoices.company_id", companyId)
           .gte("nav_invoices.invoice_issue_date", dateFromFormatted)
           .lte("nav_invoices.invoice_issue_date", dateToFormatted),
         supabase
           .from("nav_invoices")
-          .select("id, invoice_direction, invoice_vat_amount, invoice_net_amount, invoice_number")
+          .select("id, invoice_direction, invoice_vat_amount, invoice_net_amount, invoice_number, currency")
           .eq("company_id", companyId)
           .gte("invoice_issue_date", dateFromFormatted)
           .lte("invoice_issue_date", dateToFormatted),
         // Also fetch submitted INBOUND invoices to find unmatched ones
         supabase
           .from("invoices")
-          .select("bizonylatsorszam, afa_osszeg_osszesen, adoalap_osszesen, invoice_direction")
+          .select("bizonylatsorszam, afa_osszeg_osszesen, adoalap_osszesen, invoice_direction, penznem")
           .eq("company_id", companyId)
           .eq("invoice_direction", "INBOUND")
           .neq("invoice_type", "garanciajegy")
@@ -515,21 +535,28 @@ export function useDashboardData() {
         return clean && !navInvoiceNumbers.has(clean);
       });
 
-      // Sum unmatched invoices VAT and net for the inbound side
+      // Sum unmatched invoices VAT and net for the inbound side (normalized to HUF)
       let unmatchedInVat = 0, unmatchedInNet = 0;
       unmatchedInvoices.forEach((inv: any) => {
-        unmatchedInVat += inv.afa_osszeg_osszesen || 0;
-        unmatchedInNet += inv.adoalap_osszesen || 0;
+        const currency = inv.penznem || 'HUF';
+        const vatHUF = convertToSelectedCurrency(inv.afa_osszeg_osszesen || 0, currency, 'HUF');
+        const netHUF = convertToSelectedCurrency(inv.adoalap_osszesen || 0, currency, 'HUF');
+        unmatchedInVat += vatHUF;
+        unmatchedInNet += netHUF;
       });
 
       let headerOutVat = 0, headerInVat = 0, headerOutNet = 0, headerInNet = 0;
       allNavInvoices.forEach(inv => {
+        const currency = (inv as any).currency || 'HUF';
+        const vatHUF = convertToSelectedCurrency(inv.invoice_vat_amount || 0, currency, 'HUF');
+        const netHUF = convertToSelectedCurrency(inv.invoice_net_amount || 0, currency, 'HUF');
+
         if (inv.invoice_direction === 'OUTBOUND') {
-          headerOutVat += inv.invoice_vat_amount || 0;
-          headerOutNet += inv.invoice_net_amount || 0;
+          headerOutVat += vatHUF;
+          headerOutNet += netHUF;
         } else {
-          headerInVat += inv.invoice_vat_amount || 0;
-          headerInNet += inv.invoice_net_amount || 0;
+          headerInVat += vatHUF;
+          headerInNet += netHUF;
         }
       });
 
@@ -543,16 +570,20 @@ export function useDashboardData() {
         const itemsVatByInvoice: Record<string, { vatSum: number; netSum: number; direction: string }> = {};
 
         vatItems.forEach(item => {
-          const navInvoice = item.nav_invoices as unknown as { id: string; invoice_direction: string };
+          const navInvoice = item.nav_invoices as unknown as { id: string; invoice_direction: string; currency: string };
           const direction = navInvoice?.invoice_direction;
           const invoiceId = navInvoice?.id;
+          const currency = navInvoice?.currency || 'HUF';
+
+          const netHUF = convertToSelectedCurrency(item.net_amount || 0, currency, 'HUF');
+          const vatHUF = convertToSelectedCurrency(item.vat_amount || 0, currency, 'HUF');
 
           if (invoiceId) {
             if (!itemsVatByInvoice[invoiceId]) {
               itemsVatByInvoice[invoiceId] = { vatSum: 0, netSum: 0, direction: direction || 'INBOUND' };
             }
-            itemsVatByInvoice[invoiceId].vatSum += item.vat_amount || 0;
-            itemsVatByInvoice[invoiceId].netSum += item.net_amount || 0;
+            itemsVatByInvoice[invoiceId].vatSum += vatHUF;
+            itemsVatByInvoice[invoiceId].netSum += netHUF;
           }
 
           let rateLabel: string;
@@ -565,14 +596,15 @@ export function useDashboardData() {
 
           const target = direction === 'OUTBOUND' ? outboundByRate : inboundByRate;
           if (!target[rateLabel]) target[rateLabel] = { netAmount: 0, vatAmount: 0 };
-          target[rateLabel].netAmount += item.net_amount || 0;
-          target[rateLabel].vatAmount += item.vat_amount || 0;
+          target[rateLabel].netAmount += netHUF;
+          target[rateLabel].vatAmount += vatHUF;
         });
 
         let gapOutVat = 0, gapOutNet = 0, gapInVat = 0, gapInNet = 0;
         allNavInvoices.forEach(inv => {
-          const headerVat = inv.invoice_vat_amount || 0;
-          const headerNet = inv.invoice_net_amount || 0;
+          const currency = (inv as any).currency || 'HUF';
+          const headerVat = convertToSelectedCurrency(inv.invoice_vat_amount || 0, currency, 'HUF');
+          const headerNet = convertToSelectedCurrency(inv.invoice_net_amount || 0, currency, 'HUF');
           const itemData = itemsVatByInvoice[inv.id];
           const itemVat = itemData ? itemData.vatSum : 0;
           const itemNet = itemData ? itemData.netSum : 0;
@@ -730,7 +762,7 @@ export function useDashboardData() {
       // Fetch nav_invoices with project_id in the date range
       const { data: navRows, error: navErr } = await supabase
         .from('nav_invoices')
-        .select('project_id, invoice_gross_amount')
+        .select('project_id, invoice_gross_amount, currency')
         .eq('company_id', companyId)
         .gte('invoice_issue_date', dateFromFormatted)
         .lte('invoice_issue_date', dateToFormatted)
@@ -742,7 +774,13 @@ export function useDashboardData() {
       (navRows || []).forEach((row: any) => {
         const existing = projectMap.get(row.project_id) || { count: 0, total: 0 };
         existing.count += 1;
-        existing.total += Number(row.invoice_gross_amount || 0);
+        
+        const amountInHUF = convertToSelectedCurrency(
+          Number(row.invoice_gross_amount || 0),
+          row.currency || 'HUF',
+          'HUF'
+        );
+        existing.total += amountInHUF;
         projectMap.set(row.project_id, existing);
       });
 
