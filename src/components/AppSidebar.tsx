@@ -69,12 +69,26 @@ import {
 import { useUnreadTicketCount } from "@/hooks/useTickets";
 import CompanySelector from "./CompanySelector";
 
+/**
+ * Role hierarchy for visibility filtering.
+ * Higher number = more privilege. An item is visible if the user's
+ * role rank >= the item's minRole rank.
+ */
+type MinRole = 'employee' | 'viewer' | 'member' | 'admin';
+const ROLE_RANK: Record<string, number> = {
+  employee: 0,
+  viewer: 1,
+  member: 2,
+  admin: 3, // admin & owner
+};
+
 interface NavItem {
   title: string;
   url: string;
   icon: React.ComponentType<{ className?: string }>;
   tourId: string;
-  employeeVisible?: boolean;
+  /** Minimum role required to see this item. Default: 'viewer' (everyone except employee) */
+  minRole?: MinRole;
 }
 
 interface NavGroup {
@@ -112,11 +126,11 @@ const navigationGroups: NavGroup[] = [
     label: 'Könyvelés',
     icon: BookOpen,
     items: [
-      { title: "Főkönyv", url: "/general-ledger", icon: BookOpen, tourId: "general-ledger" },
-      { title: "Eredménykimutatás", url: "/profit-and-loss", icon: BarChart3, tourId: "profit-and-loss" },
-      { title: "Mérleg", url: "/balance-sheet", icon: Scale, tourId: "balance-sheet" },
-      { title: "Beszámoló", url: "/annual-report", icon: ClipboardCheck, tourId: "annual-report" },
-      { title: "ÁFA Bevallás", url: "/vat-return", icon: FileSpreadsheet, tourId: "vat-return" },
+      { title: "Főkönyv", url: "/general-ledger", icon: BookOpen, tourId: "general-ledger", minRole: 'member' },
+      { title: "Eredménykimutatás", url: "/profit-and-loss", icon: BarChart3, tourId: "profit-and-loss", minRole: 'member' },
+      { title: "Mérleg", url: "/balance-sheet", icon: Scale, tourId: "balance-sheet", minRole: 'member' },
+      { title: "Beszámoló", url: "/annual-report", icon: ClipboardCheck, tourId: "annual-report", minRole: 'member' },
+      { title: "ÁFA Bevallás", url: "/vat-return", icon: FileSpreadsheet, tourId: "vat-return", minRole: 'member' },
     ],
   },
   {
@@ -124,9 +138,9 @@ const navigationGroups: NavGroup[] = [
     label: 'HR & Eszközök',
     icon: Users,
     items: [
-      { title: "Bérek/járulékok", url: "/salaries", icon: Wallet, tourId: "salaries" },
-      { title: "Munkaidő", url: "/working-time", icon: Clock, tourId: "working-time", employeeVisible: true },
-      { title: "TENY", url: "/teny", icon: Package2, tourId: "teny" },
+      { title: "Bérek/járulékok", url: "/salaries", icon: Wallet, tourId: "salaries", minRole: 'admin' },
+      { title: "Munkaidő", url: "/working-time", icon: Clock, tourId: "working-time", minRole: 'employee' },
+      { title: "TENY", url: "/teny", icon: Package2, tourId: "teny", minRole: 'member' },
     ],
   },
   {
@@ -134,9 +148,8 @@ const navigationGroups: NavGroup[] = [
     label: 'Rendszer',
     icon: Wrench,
     items: [
-      { title: "Integrációk", url: "/integrations", icon: Plug, tourId: "integrations" },
+      { title: "Integrációk", url: "/integrations", icon: Plug, tourId: "integrations", minRole: 'admin' },
       { title: "Árfolyamok", url: "/exchange-rates", icon: TrendingUp, tourId: "exchange-rates" },
-
     ],
   },
 ];
@@ -197,7 +210,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
   const { user, signOut } = useAuth();
   const { selectedCompany } = useCompany();
   const { theme, setTheme } = useTheme();
-  const { isEmployee } = useUserRole();
+  const { role, isAdmin, isEmployee } = useUserRole();
   const { data: unreadTicketCount = 0 } = useUnreadTicketCount();
 
   const currentPath = location.pathname;
@@ -253,13 +266,17 @@ export const AppSidebar = React.memo(function AppSidebar() {
     });
   }, []);
 
-  // Role-based filtering: for employees, only show groups that have visible items
+  // User's role rank for visibility filtering
+  const userRank = isAdmin ? ROLE_RANK['admin'] : ROLE_RANK[role || 'viewer'] ?? ROLE_RANK['viewer'];
+
+  // Role-based filtering: filter items by minRole rank
   const visibleGroups = useMemo(() => {
     return navigationGroups
       .map(group => {
-        const items = isEmployee
-          ? group.items.filter(item => item.employeeVisible)
-          : group.items;
+        const items = group.items.filter(item => {
+          const requiredRank = ROLE_RANK[item.minRole || 'viewer'] ?? ROLE_RANK['viewer'];
+          return userRank >= requiredRank;
+        });
         return { ...group, items };
       })
       .filter(group => group.items.length > 0)
@@ -270,7 +287,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
           to: item.url === "/" ? basePath : `${basePath}${item.url}`,
         })),
       }));
-  }, [isEmployee, basePath]);
+  }, [userRank, basePath]);
 
   const handlePrefetch = useCallback((url: string) => {
     const loader = prefetchMap[url];

@@ -56,10 +56,18 @@ export function ProtectedLayout() {
     } catch {}
 
     const returnTo = location.pathname + location.search;
-    const authUrl =
-      !postSignout && returnTo && returnTo !== '/'
-        ? `/auth?returnTo=${encodeURIComponent(returnTo)}`
-        : '/auth';
+    const isEaisybooks = returnTo && (returnTo.startsWith('/accounty') || returnTo.includes('/accounty'));
+    
+    let authUrl = '/auth';
+    if (!postSignout && returnTo && returnTo !== '/') {
+      authUrl = `/auth?returnTo=${encodeURIComponent(returnTo)}`;
+      if (isEaisybooks) {
+        authUrl += '&app=eaisybooks';
+      }
+    } else if (isEaisybooks) {
+      authUrl = '/auth?app=eaisybooks';
+    }
+
     // Clean up loader if still present
     const loader = document.getElementById('initial-loader');
     if (loader) loader.remove();

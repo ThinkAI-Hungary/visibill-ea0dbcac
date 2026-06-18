@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useAccountyRole, AccountyRole } from '@/pages/Accounty/AccountyRoleContext';
 
 /**
  * Module names that can be permission-gated in Accounty.
- * For now this is a static config; Phase 3 will add DB-driven `accounty_module_permissions`.
  */
 export type AccountyModule =
   | 'portfolio'         // Portfólió
@@ -37,8 +39,19 @@ interface ModulePermission {
 }
 
 /**
+ * DB-driven module permission override.
+ * If the iroda_admin has configured specific permissions for a user in
+ * `accounty_module_permissions`, those override the static defaults.
+ */
+interface DbModulePermission {
+  module_name: string;
+  can_read: boolean;
+  can_write: boolean;
+}
+
+/**
  * Default permissions per role (static config).
- * In Phase 3 these will be overridden by DB-level `accounty_module_permissions`.
+ * These are used when there is NO DB override for a specific module.
  */
 const ADMIN_ONLY_MODULES: AccountyModule[] = [
   'admin_audit',
@@ -61,41 +74,114 @@ const SENIOR_AND_ADMIN_MODULES: AccountyModule[] = [
   'settings',
 ];
 
+const ALWAYS_ACCESSIBLE: AccountyModule[] = [
+  'portfolio', 'missing_invoices', 'tax_calendar', 'payroll',
+  'tao', 'tickets', 'ai_assistant', 'help', 'profile',
+];
+
+const ALL_MODULES: AccountyModule[] = [
+  'portfolio', 'missing_invoices', 'tax_calendar', 'reports',
+  'approval_queue', 'alerts', 'nav_deadlines', 'payroll',
+  'onboarding', 'tao', 'settings', 'tickets', 'ai_assistant',
+  'help', 'profile', 'admin_audit', 'admin_gdpr', 'admin_templates',
+  'admin_job_codes', 'admin_tax_params', 'admin_legal', 'admin_office',
+  'admin_permissions', 'admin_accountants',
+];
+
 /**
- * Returns permission info for Accounty modules based on the user's role.
- * 
+ * Fetches the user's DB-level module permission overrides.
+ * These are set by the iroda_admin in the permission management UI.
+ * The RLS policy on `accounty_module_permissions` ensures users can only
+ * read their own permissions (or admin can read all within their firm).
+ */
+function useDbModulePermissions() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['accounty-module-permissions', user?.id],
+    queryFn: async (): Promise<Map<string, DbModulePermission>> => {
+      const { data, error } = await supabase
+        .from('accounty_module_permissions' as any)
+        .select('module_name, can_read, can_write')
+        .eq('user_id', user!.id);
+
+      if (error || !data) return new Map();
+
+      const map = new Map<string, DbModulePermission>();
+      for (const row of data as any[]) {
+        map.set(row.module_name, {
+          module_name: row.module_name,
+          can_read: row.can_read,
+          can_write: row.can_write,
+        });
+      }
+      return map;
+    },
+    enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Returns permission info for Accounty modules based on:
+ * 1. The user's role (static defaults)
+ * 2. DB-level overrides from `accounty_module_permissions` (if set by admin)
+ *
+ * Priority: DB override > static default
+ *
  * Usage:
  *   const { canAccess, canWrite, visibleModules } = useAccountyPermissions();
  *   if (canAccess('admin_audit')) { ... }
  */
 export function useAccountyPermissions() {
-  const { role, isLoading, isAdmin, isSenior } = useAccountyRole();
+  const { role, isLoading: roleLoading, isAdmin, isSenior } = useAccountyRole();
+  const { data: dbOverrides, isLoading: dbLoading } = useDbModulePermissions();
+
+  const isLoading = roleLoading || dbLoading;
 
   const permissions = useMemo(() => {
-    /** Check if the user can access a given module */
-    function canAccess(module: AccountyModule): boolean {
-      // Everyone can access basic modules
-      if (['portfolio', 'missing_invoices', 'tax_calendar', 'payroll', 'tao', 'tickets', 'ai_assistant', 'help', 'profile'].includes(module)) {
-        return true;
-      }
-      // Admin-only modules
-      if (ADMIN_ONLY_MODULES.includes(module)) {
-        return isAdmin;
-      }
-      // Senior + Admin modules
-      if (SENIOR_AND_ADMIN_MODULES.includes(module)) {
-        return isSenior;
-      }
-      // Default: allow
+    /** Static default: can the user access this module based on role? */
+    function staticCanAccess(module: AccountyModule): boolean {
+      if (ALWAYS_ACCESSIBLE.includes(module)) return true;
+      if (ADMIN_ONLY_MODULES.includes(module)) return isAdmin;
+      if (SENIOR_AND_ADMIN_MODULES.includes(module)) return isSenior;
       return true;
+    }
+
+    /** Static default: can the user write to this module based on role? */
+    function staticCanWrite(module: AccountyModule): boolean {
+      if (isAdmin) return true;
+      if (isSenior) return !ADMIN_ONLY_MODULES.includes(module);
+      return staticCanAccess(module) && !ADMIN_ONLY_MODULES.includes(module) && !SENIOR_AND_ADMIN_MODULES.includes(module);
+    }
+
+    /** Check if the user can access a given module (DB override > static) */
+    function canAccess(module: AccountyModule): boolean {
+      // Admin always has access — DB overrides don't restrict admins
+      if (isAdmin) return true;
+
+      // Check DB override
+      const override = dbOverrides?.get(module);
+      if (override !== undefined) {
+        return override.can_read;
+      }
+
+      // Fall back to static default
+      return staticCanAccess(module);
     }
 
     /** Check if the user has write permissions for a module */
     function canWrite(module: AccountyModule): boolean {
       if (isAdmin) return true;
-      if (isSenior) return !ADMIN_ONLY_MODULES.includes(module);
-      // könyvelő and asszisztens can write to their own modules
-      return canAccess(module) && !ADMIN_ONLY_MODULES.includes(module) && !SENIOR_AND_ADMIN_MODULES.includes(module);
+
+      // Check DB override
+      const override = dbOverrides?.get(module);
+      if (override !== undefined) {
+        return override.can_write;
+      }
+
+      return staticCanWrite(module);
     }
 
     /** Get the full permission object for a module */
@@ -106,20 +192,10 @@ export function useAccountyPermissions() {
       };
     }
 
-    /** List of modules the user can access (useful for sidebar filtering) */
-    const ALL_MODULES: AccountyModule[] = [
-      'portfolio', 'missing_invoices', 'tax_calendar', 'reports',
-      'approval_queue', 'alerts', 'nav_deadlines', 'payroll',
-      'onboarding', 'tao', 'settings', 'tickets', 'ai_assistant',
-      'help', 'profile', 'admin_audit', 'admin_gdpr', 'admin_templates',
-      'admin_job_codes', 'admin_tax_params', 'admin_legal', 'admin_office',
-      'admin_permissions', 'admin_accountants',
-    ];
-
     const visibleModules = ALL_MODULES.filter(m => canAccess(m));
 
     return { canAccess, canWrite, getPermission, visibleModules, role, isAdmin, isSenior };
-  }, [role, isAdmin, isSenior]);
+  }, [role, isAdmin, isSenior, dbOverrides]);
 
   return { ...permissions, isLoading };
 }

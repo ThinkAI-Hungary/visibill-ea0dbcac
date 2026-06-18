@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const validRoles = ["member", "admin", "employee"];
+    const validRoles = ["member", "admin", "employee", "könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"];
     const assignRole = role && validRoles.includes(role) ? role : "member";
 
     // Service role client (bypasses RLS, can create auth users)
@@ -71,43 +71,116 @@ Deno.serve(async (req) => {
 
     // ── 3. If company_id provided, verify caller is owner/admin ──
     if (company_id) {
-      // Check if caller is the company owner
-      const { data: company } = await adminClient
-        .from("companies")
-        .select("owner_id")
-        .eq("id", company_id)
-        .single();
+      // Check if caller is an accountant firm admin/senior in accounty_assignments
+      const isAccountantRole = ["könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"].includes(role);
+      let isAuthorized = false;
 
-      const isOwner = company?.owner_id === callingUser.id;
-
-      if (!isOwner) {
-        // Check if caller is admin member
-        const { data: membership } = await adminClient
-          .from("company_members")
+      if (isAccountantRole) {
+        // Verify caller has role 'iroda_admin' or 'senior_könyvelő' in this firm
+        const { data: callerAssignment } = await adminClient
+          .from("accounty_assignments")
           .select("role")
-          .eq("company_id", company_id)
-          .eq("user_id", callingUser.id)
+          .eq("accounting_firm_id", company_id)
+          .eq("accountant_user_id", callingUser.id)
+          .in("role", ["iroda_admin", "senior_könyvelő"])
+          .limit(1);
+
+        if (callerAssignment && callerAssignment.length > 0) {
+          isAuthorized = true;
+        }
+      }
+
+      if (!isAuthorized) {
+        // Check if caller is the company owner
+        const { data: company } = await adminClient
+          .from("companies")
+          .select("owner_id")
+          .eq("id", company_id)
           .single();
 
-        if (!membership || (membership.role !== "admin" && membership.role !== "owner")) {
-          return new Response(JSON.stringify({ error: "not_admin" }), {
-            status: 403,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+        const isOwner = company?.owner_id === callingUser.id;
+
+        if (!isOwner) {
+          // Check if caller is admin member
+          const { data: membership } = await adminClient
+            .from("company_members")
+            .select("role")
+            .eq("company_id", company_id)
+            .eq("user_id", callingUser.id)
+            .single();
+
+          if (!membership || (membership.role !== "admin" && membership.role !== "owner")) {
+            return new Response(JSON.stringify({ error: "not_admin" }), {
+              status: 403,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
         }
       }
     }
 
     // ── 4. Check if email already exists ──
-    const { data: existingUsers } = await adminClient.auth.admin.listUsers();
     const emailLower = email.trim().toLowerCase();
-    const existingUser = existingUsers?.users?.find(
-      (u: any) => u.email?.toLowerCase() === emailLower
-    );
+    const { data: existingUserId, error: rpcError } = await adminClient
+      .rpc("get_user_id_by_email", { p_email: emailLower });
+
+    if (rpcError) {
+      console.error("[INVITE-USER] RPC check user email error:", rpcError);
+    }
+
+    const existingUser = existingUserId ? { id: existingUserId } : null;
 
     if (existingUser) {
       // User already exists — just add to company if requested
-      if (company_id) {
+        const isAccountantRole = ["könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"].includes(role);
+        if (isAccountantRole) {
+          // Check if already assigned
+          const { data: existingAssignment } = await adminClient
+            .from("accounty_assignments")
+            .select("id")
+            .eq("accountant_user_id", existingUser.id)
+            .eq("accounting_firm_id", company_id)
+            .maybeSingle();
+
+          if (existingAssignment) {
+            return new Response(JSON.stringify({ error: "already_member" }), {
+              status: 409,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          // Add accountant assignment
+          const { error: assignError } = await adminClient
+            .from("accounty_assignments")
+            .insert({
+              accountant_user_id: existingUser.id,
+              company_id: company_id,
+              accounting_firm_id: company_id,
+              role: role,
+              is_primary: true,
+              kanban_status: "aktiv",
+              source: "manual"
+            });
+
+          if (assignError) {
+            console.error("[INVITE-USER] Accountant assignment insert error for existing user:", assignError);
+            return new Response(JSON.stringify({ error: "member_insert_failed" }), {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
+          return new Response(JSON.stringify({
+            success: true,
+            existing_user: true,
+            user_id: existingUser.id,
+            message: "Existing user added to firm assignments",
+          }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
         // Check if already a member
         const { data: existingMember } = await adminClient
           .from("company_members")
@@ -145,7 +218,6 @@ Deno.serve(async (req) => {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
-      }
 
       return new Response(JSON.stringify({ error: "email_exists" }), {
         status: 409,
@@ -212,13 +284,33 @@ Deno.serve(async (req) => {
 
     // ── 7. Add to company (if requested) ──
     if (company_id) {
-      const { error: memberError } = await adminClient
-        .from("company_members")
-        .insert({ user_id: newUserId, company_id, role: assignRole });
+      const isAccountantRole = ["könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"].includes(role);
+      if (isAccountantRole) {
+        // Add accountant assignment
+        const { error: assignError } = await adminClient
+          .from("accounty_assignments")
+          .insert({
+            accountant_user_id: newUserId,
+            company_id: company_id,
+            accounting_firm_id: company_id,
+            role: role,
+            is_primary: true,
+            kanban_status: "aktiv",
+            source: "manual"
+          });
 
-      if (memberError) {
-        console.error("[INVITE-USER] Member insert error:", memberError);
-        // Not fatal — user is created, just not linked yet
+        if (assignError) {
+          console.error("[INVITE-USER] Accountant assignment insert error:", assignError);
+        }
+      } else {
+        const { error: memberError } = await adminClient
+          .from("company_members")
+          .insert({ user_id: newUserId, company_id, role: assignRole });
+
+        if (memberError) {
+          console.error("[INVITE-USER] Member insert error:", memberError);
+          // Not fatal — user is created, just not linked yet
+        }
       }
     }
 

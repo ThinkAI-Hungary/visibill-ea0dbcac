@@ -131,6 +131,7 @@ function CompanyMembersCard({ companyId, companyName, ownerId, isOwnerOrAdmin, t
   const queryClient = useQueryClient();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; userId: string; name: string } | null>(null);
+  const [updatingRole, setUpdatingRole] = useState<string | null>(null); // member.id being updated
   const { data: members = [], isLoading: loading } = useQuery({
     queryKey: queryKeys.settingsMembers(companyId),
     queryFn: async () => {
@@ -145,6 +146,33 @@ function CompanyMembersCard({ companyId, companyName, ownerId, isOwnerOrAdmin, t
     },
     placeholderData: keepPreviousData,
   });
+
+  const EAISYBILL_ROLES = [
+    { value: 'admin', label: 'Admin', desc: 'Teljes hozzáférés, beállítások', color: 'bg-blue-500/15 text-blue-600 dark:text-blue-400' },
+    { value: 'member', label: 'Tag', desc: 'Pénzügyi adatok olvasás/írás', color: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
+    { value: 'viewer', label: 'Betekintő', desc: 'Csak olvasás', color: 'bg-slate-500/15 text-slate-600 dark:text-slate-400' },
+    { value: 'employee', label: 'Munkavállaló', desc: 'Csak munkaidő', color: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
+  ];
+
+  const getRoleBadge = (role: string, userId: string) => {
+    if (userId === ownerId) return <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">Tulajdonos</span>;
+    const r = EAISYBILL_ROLES.find(rr => rr.value === role);
+    return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r?.color || 'bg-muted text-muted-foreground'}`}>{r?.label || role}</span>;
+  };
+
+  const updateMemberRole = async (memberId: string, newRole: string) => {
+    setUpdatingRole(memberId);
+    const { error } = await supabase.from('company_members').update({ role: newRole }).eq('id', memberId);
+    if (error) {
+      reportError({ type: 'db_query', component: 'Settings', action: 'updateMemberRole', message: 'Role update failed', error });
+      toast({ title: "Hiba", description: "Nem sikerült a szerepkör módosítása.", variant: "destructive" });
+    } else {
+      toast({ title: "Siker", description: "Szerepkör frissítve." });
+      queryClient.invalidateQueries({ queryKey: queryKeys.settingsMembers(companyId) });
+      queryClient.invalidateQueries({ queryKey: ['user-role'] });
+    }
+    setUpdatingRole(null);
+  };
 
   const removeMember = async (memberId: string, userId: string) => {
     if (userId === ownerId) return;
@@ -172,34 +200,46 @@ function CompanyMembersCard({ companyId, companyName, ownerId, isOwnerOrAdmin, t
       <CardContent>
         {loading ? <p className="text-sm text-muted-foreground">Betöltés...</p> : members.length === 0 ? <p className="text-sm text-muted-foreground">Nincsenek tagok.</p> : (
           <div className="space-y-2">
-            {members.map(member => (
-              <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
-                <div>
-                  <p className="font-medium">
-                    {member.profile?.name || 'Névtelen felhasználó'}
-                    {member.user_id === ownerId
-                      ? <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Tulajdonos</span>
-                      : member.role === 'admin'
-                        ? <span className="ml-2 text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Admin</span>
-                        : member.role === 'employee'
-                          ? <span className="ml-2 text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full">Munkavállaló</span>
-                          : <span className="ml-2 text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Tag</span>}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Csatlakozott: {new Date(member.created_at).toLocaleDateString('hu-HU')}</p>
+            {members.map(member => {
+              const isOwnerRow = member.user_id === ownerId;
+              const canChangeRole = isOwnerOrAdmin && !isOwnerRow;
+              return (
+                <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium">{member.profile?.name || 'Névtelen felhasználó'}</p>
+                      {getRoleBadge(member.role, member.user_id)}
+                    </div>
+                    <p className="text-sm text-muted-foreground">Csatlakozott: {new Date(member.created_at).toLocaleDateString('hu-HU')}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {canChangeRole && (
+                      <select
+                        value={member.role}
+                        disabled={updatingRole === member.id}
+                        onChange={(e) => updateMemberRole(member.id, e.target.value)}
+                        className="h-8 rounded-md border border-input bg-background px-2 text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {EAISYBILL_ROLES.map(r => (
+                          <option key={r.value} value={r.value}>{r.label} — {r.desc}</option>
+                        ))}
+                      </select>
+                    )}
+                    {isOwnerOrAdmin && !isOwnerRow && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive"
+                        onClick={() => setDeleteTarget({ id: member.id, userId: member.user_id, name: member.profile?.name || 'Névtelen felhasználó' })}
+                        title="Tag eltávolítása"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                {isOwnerOrAdmin && member.user_id !== ownerId && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive"
-                    onClick={() => setDeleteTarget({ id: member.id, userId: member.user_id, name: member.profile?.name || 'Névtelen felhasználó' })}
-                    title="Tag eltávolítása"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>

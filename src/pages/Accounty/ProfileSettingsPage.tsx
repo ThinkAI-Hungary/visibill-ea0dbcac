@@ -20,6 +20,7 @@ import { SystemSection } from '@/components/settings/SystemSection';
 import { SecuritySection } from '@/components/settings/SecuritySection';
 import { InviteUserDialog } from '@/components/settings/InviteUserDialog';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useAccountyRole, type AccountyRole } from '@/pages/Accounty/AccountyRoleContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -252,7 +253,37 @@ export default function ProfileSettingsPage() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { isAdmin } = useUserRole();
+  const { role: accountyRole } = useAccountyRole();
   const { companies, selectedCompany, setSelectedCompany, refreshCompanies, loading: companiesLoading } = useCompany();
+
+  // Fetch the accounting firm name for the current user
+  const { data: firmName } = useQuery({
+    queryKey: ['accounty-firm-name', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('accounty_assignments' as any)
+        .select('accounting_firm_id')
+        .eq('accountant_user_id', user!.id)
+        .limit(1);
+      if (!data || data.length === 0) return null;
+      const firmId = (data[0] as any).accounting_firm_id;
+      const { data: company } = await supabase
+        .from('companies')
+        .select('name')
+        .eq('id', firmId)
+        .single();
+      return company?.name || null;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const ACCOUNTY_ROLE_LABELS: Record<string, string> = {
+    iroda_admin: 'Iroda Admin',
+    senior_könyvelő: 'Senior Könyvelő',
+    könyvelő: 'Könyvelő',
+    asszisztens: 'Asszisztens',
+  };
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
@@ -413,7 +444,16 @@ export default function ProfileSettingsPage() {
         </TabsList>
 
         <TabsContent value="profile">
-          <ProfileSection profile={profile} setProfile={setProfile} onSave={updateProfile} loading={loading} />
+          <ProfileSection
+            profile={profile}
+            setProfile={setProfile}
+            onSave={updateProfile}
+            loading={loading}
+            readOnlyOverrides={{
+              position: ACCOUNTY_ROLE_LABELS[accountyRole] || accountyRole,
+              company: firmName || undefined,
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="business">

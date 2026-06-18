@@ -38,9 +38,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ClientData } from './types';
-import { useAccountyClients, useAccountyKpis, useUpdateKanbanStatus, useAccountyAccountants, useAccountyMonthlyTrend, useAccountyColleagueStats, useAccountyAuditLog, useAccountyPortalStats } from '@/hooks/useAccountyData';
+import { useAccountyClients, useAccountyKpis, useUpdateKanbanStatus, useAccountyAccountants, useAccountyMonthlyTrend, useAccountyColleagueStats, useAccountyAuditLog, useAccountyPortalStats, useUpdateClientOwner } from '@/hooks/useAccountyData';
 import { useAccountyRole } from './AccountyRoleContext';
 import { seedAccountyAssignments } from '@/utils/seedAccounty';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -125,10 +126,22 @@ function StatusBadge({ status }: { status: ClientData['status'] }) {
 function OwnerDropdown({ client, onUpdateOwner }: { client: ClientData, onUpdateOwner?: (clientId: string, ownerId: string) => void }) {
   const [open, setOpen] = useState(false);
   const { data: accountants } = useAccountyAccountants();
+  const { isAdmin } = useAccountyRole();
   const safeAccountants = accountants || [{ id: '1', userId: '1', name: 'Névtelen', initial: 'N', clientCount: 0 }];
   const owner = safeAccountants.find(a => a.id === client.ownerId) || safeAccountants[0];
 
   if (!owner) return null;
+
+  if (!isAdmin) {
+    return (
+      <div className="h-8 px-2 flex items-center gap-2 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-border/30 cursor-default select-none">
+        <div className="w-5 h-5 rounded-full bg-slate-400 flex items-center justify-center text-[10px] font-bold text-white">
+          {owner.initial}
+        </div>
+        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{owner.name}</span>
+      </div>
+    );
+  }
 
   return (
     <div onClick={(e) => e.stopPropagation()}>
@@ -382,6 +395,7 @@ function WidgetWrapper({
 }
 
 export default function AccountyApp() {
+  const { user } = useAuth();
   const { data: supabaseClients, isLoading: clientsLoading } = useAccountyClients();
   const { data: supabaseKpis } = useAccountyKpis();
   const { data: monthlyTrendData } = useAccountyMonthlyTrend();
@@ -389,6 +403,7 @@ export default function AccountyApp() {
   const { data: auditLog } = useAccountyAuditLog(10);
   const { data: portalStats } = useAccountyPortalStats();
   const kanbanMutation = useUpdateKanbanStatus();
+  const updateOwnerMutation = useUpdateClientOwner();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('Minden');
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'kanban'>('grid');
@@ -444,10 +459,12 @@ export default function AccountyApp() {
       deadlineDate: sc.deadlineDate || new Date(Date.now() + 30 * 86400000).toISOString(),
       progress: sc.progress,
       colorHex: CLIENT_COLORS[idx % CLIENT_COLORS.length],
-      assignedToMe: sc.assignedToMe,
-      ownerId: ownerOverrides[sc.id] || '1',
+      assignedToMe: ownerOverrides[sc.id] 
+        ? ownerOverrides[sc.id] === user?.id 
+        : sc.assignedToMe,
+      ownerId: ownerOverrides[sc.id] || sc.ownerId || '1',
     }));
-  }, [supabaseClients, ownerOverrides, statusOverrides]);
+  }, [supabaseClients, ownerOverrides, statusOverrides, user?.id]);
 
   // KPIs from Supabase (fallback to 0)
   const kpis = useMemo(() => ({
@@ -496,6 +513,23 @@ export default function AccountyApp() {
 
   const handleUpdateOwner = (clientId: string, ownerId: string) => {
     setOwnerOverrides(prev => ({ ...prev, [clientId]: ownerId }));
+    const client = clients.find(c => c.id === clientId);
+    const oldOwnerId = client?.ownerId || '1';
+    updateOwnerMutation.mutate({
+      companyId: clientId,
+      newOwnerId: ownerId,
+      oldOwnerId
+    }, {
+      onError: (err: any) => {
+        console.error("Hiba a könyvelő módosításakor:", err);
+        setOwnerOverrides(prev => {
+          const next = { ...prev };
+          delete next[clientId];
+          return next;
+        });
+        alert("Nem sikerült módosítani a könyvelőt: " + (err.message || err));
+      }
+    });
   };
 
   const handleDragStart = (e: React.DragEvent, id: string) => {

@@ -7,6 +7,7 @@ import { FeedbackFab } from '@/components/FeedbackFab';
 import { GlobalDatePicker } from '@/components/GlobalDatePicker';
 import { useAccountyKpis, useAccountyClients } from '@/hooks/useAccountyData';
 import { useAccountyPermissions, PATH_TO_MODULE } from '@/hooks/useAccountyPermissions';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -80,6 +81,19 @@ export default function AccountyLayout() {
 
 function AccountyLayoutInner() {
   const { user, signOut } = useAuth();
+  const [hasEaisybillAccess, setHasEaisybillAccess] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from('company_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .then(({ count }) => {
+        setHasEaisybillAccess((count ?? 0) > 0);
+      });
+  }, [user?.id]);
+
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const pathname = location.pathname;
@@ -249,11 +263,15 @@ function AccountyLayoutInner() {
         )}>
           {isCollapsed ? (
             <div className="flex flex-col items-center justify-center gap-2 select-none">
-              <Link to="/" className="text-2xl tracking-tight hover:opacity-80 transition-opacity" title="Vissza az eaisybillbe">
-                <span className="font-medium text-foreground/80">e</span>
-                <span className="font-bold text-primary">ai</span>
-              </Link>
-              <div className="w-4 h-px bg-muted-foreground/30 rounded-full" />
+              {hasEaisybillAccess !== false && (
+                <>
+                  <Link to="/" className="text-2xl tracking-tight hover:opacity-80 transition-opacity" title="Vissza az eaisybillbe">
+                    <span className="font-medium text-foreground/80">e</span>
+                    <span className="font-bold text-primary">ai</span>
+                  </Link>
+                  <div className="w-4 h-px bg-muted-foreground/30 rounded-full" />
+                </>
+              )}
               <Link to="/accounty" className="text-2xl tracking-tight hover:opacity-80 transition-opacity" title="eaisybooks">
                 <span className="font-medium text-foreground/80">e</span>
                 <span className="font-bold text-primary">ai</span>
@@ -261,20 +279,31 @@ function AccountyLayoutInner() {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Link to="/" className="text-2xl tracking-tight select-none hover:opacity-80 transition-opacity" title="Vissza az eaisybillbe">
-                <span className="font-medium text-foreground/80">e</span>
-                <span className="font-bold text-primary">ai</span>
-                <span className="font-medium text-foreground/80">sy</span>
-                <span className="font-medium text-primary">bill</span>
-              </Link>
-              <span className="text-xl font-light text-muted-foreground">|</span>
-              <Link to="/accounty" className="relative text-2xl tracking-tight select-none hover:opacity-80 transition-opacity">
-                <span className="font-medium text-foreground/80">e</span>
-                <span className="font-bold text-primary">ai</span>
-                <span className="font-medium text-foreground/80">sy</span>
-                <span className="font-medium text-primary">books</span>
-                <span className="absolute -bottom-1.5 left-0 right-0 h-[2px] rounded-full bg-primary" />
-              </Link>
+              {hasEaisybillAccess !== false ? (
+                <>
+                  <Link to="/" className="text-2xl tracking-tight select-none hover:opacity-80 transition-opacity" title="Vissza az eaisybillbe">
+                    <span className="font-medium text-foreground/80">e</span>
+                    <span className="font-bold text-primary">ai</span>
+                    <span className="font-medium text-foreground/80">sy</span>
+                    <span className="font-medium text-primary">bill</span>
+                  </Link>
+                  <span className="text-xl font-light text-muted-foreground">|</span>
+                  <Link to="/accounty" className="relative text-2xl tracking-tight select-none hover:opacity-80 transition-opacity">
+                    <span className="font-medium text-foreground/80">e</span>
+                    <span className="font-bold text-primary">ai</span>
+                    <span className="font-medium text-foreground/80">sy</span>
+                    <span className="font-medium text-primary">books</span>
+                    <span className="absolute -bottom-1.5 left-0 right-0 h-[2px] rounded-full bg-primary" />
+                  </Link>
+                </>
+              ) : (
+                <Link to="/accounty" className="relative text-2xl tracking-tight select-none hover:opacity-80 transition-opacity">
+                  <span className="font-medium text-foreground/80">e</span>
+                  <span className="font-bold text-primary">ai</span>
+                  <span className="font-medium text-foreground/80">sy</span>
+                  <span className="font-medium text-primary">books</span>
+                </Link>
+              )}
             </div>
           )}
         </div>
@@ -707,7 +736,7 @@ function AccountyLayoutInner() {
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" onClick={async () => { await signOut(); navigate('/auth'); }} className="w-8 h-8 hover:bg-primary/10 hover:text-primary hover:border-primary/30">
+                  <Button variant="outline" size="icon" onClick={async () => { await signOut(); navigate('/auth?app=eaisybooks'); }} className="w-8 h-8 hover:bg-primary/10 hover:text-primary hover:border-primary/30">
                     <LogOut className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
@@ -752,7 +781,7 @@ function AccountyLayoutInner() {
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="outline" onClick={async () => { await signOut(); navigate('/auth'); }} className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
+                    <Button variant="outline" onClick={async () => { await signOut(); navigate('/auth?app=eaisybooks'); }} className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
                       <LogOut className="h-5 w-5" />
                     </Button>
                   </TooltipTrigger>

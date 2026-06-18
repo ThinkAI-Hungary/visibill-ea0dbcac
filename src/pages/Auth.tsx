@@ -162,7 +162,215 @@ const carouselSlides: CarouselSlide[] = [
       </div>
     ),
   },
+  {
+    text: 'Kintlévőség-kezelés és automatikus fizetési felszólítások.',
+    visual: (
+      <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-rose-500/30">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm font-semibold text-foreground">Lejárt kintlévőségek</span>
+          <span className="text-xs text-rose-500 font-bold bg-rose-500/10 px-2 py-0.5 rounded-full">Figyelmeztetés</span>
+        </div>
+        <div className="space-y-3">
+          <div className="bg-secondary/40 rounded-lg p-3 border border-border/30 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-foreground">INV-2026-0034</p>
+              <p className="text-[10px] text-muted-foreground">Vevő Partner • 14 napja lejárt</p>
+            </div>
+            <p className="text-xs font-bold text-rose-500">450 000 Ft</p>
+          </div>
+          <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-500 px-3 py-2 rounded-lg">
+            <CheckCircle2 className="h-4 w-4" />
+            <span className="text-xs font-medium">1. Fizetési felszólító email elküldve</span>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    text: 'Automatikus partneradat-lekérdezés adószám alapján.',
+    visual: (
+      <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-border/50">
+        <span className="text-sm font-semibold text-foreground block mb-3">Gyors számlázás partnereknek</span>
+        <div className="space-y-3">
+          <div>
+            <label className="text-[10px] text-muted-foreground block mb-1">Adószám</label>
+            <div className="bg-secondary/40 rounded-lg px-3 py-1.5 border border-border/30 text-xs font-semibold text-foreground">
+              12345678-2-41
+            </div>
+          </div>
+          <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 space-y-1">
+            <p className="text-xs font-bold text-primary">Alfa Kereskedelmi Kft.</p>
+            <p className="text-[10px] text-muted-foreground">1051 Budapest, Fő utca 12.</p>
+            <p className="text-[9px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3" /> Partner adatai lekérve a hivatalos cégadatbázisból
+            </p>
+          </div>
+        </div>
+      </div>
+    ),
+  },
 ];
+
+const booksCarouselSlides: CarouselSlide[] = [
+  {
+    text: 'AI-alapú anomália-detekció és intelligens számladuplikáció-szűrés.',
+    visual: (
+      <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-rose-500/30">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="p-2 rounded-lg bg-rose-500/10">
+            <AlertTriangle className="h-5 w-5 text-rose-500 animate-pulse" />
+          </div>
+          <div>
+            <span className="text-sm font-semibold text-foreground block">AI Anomália Észlelés</span>
+            <span className="text-xs text-rose-500 font-medium">98% egyezési valószínűség</span>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground mb-4">Gyanús számladuplikáció azonosítva a NAV Online Számla adatai alapján.</p>
+        <div className="space-y-2">
+          <div className="bg-secondary/40 rounded-lg p-3 border border-border/30 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-foreground">D-2026-0042</p>
+              <p className="text-[10px] text-muted-foreground">Logisztikai Szolgáltató • 2026.06.10</p>
+            </div>
+            <p className="text-xs font-bold text-foreground">142 500 Ft</p>
+          </div>
+          <div className="bg-secondary/40 rounded-lg p-3 border border-border/30 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-foreground">D-2026-0045</p>
+              <p className="text-[10px] text-muted-foreground">Logisztikai Szolgáltató • 2026.06.10</p>
+            </div>
+            <p className="text-xs font-bold text-foreground">142 500 Ft</p>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    text: 'Valós idejű főkönyvi kivonat és automatikus mérlegegyensúly ellenőrzés.',
+    visual: (
+      <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-border/50">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <PieChart className="h-5 w-5 text-teal-500" />
+            <span className="text-sm font-semibold text-foreground">Főkönyv & Mérleg</span>
+          </div>
+          <div className="flex items-center gap-1 bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full">
+            <CheckCircle2 className="h-3 w-3" />
+            <span className="text-[10px] font-bold">Egyensúlyban</span>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center text-xs py-1.5 border-b border-border/30">
+            <span className="text-muted-foreground">Eszközök összesen (Assets)</span>
+            <span className="font-semibold text-foreground">42 850 000 Ft</span>
+          </div>
+          <div className="flex justify-between items-center text-xs py-1.5 border-b border-border/30">
+            <span className="text-muted-foreground">Források összesen (Equity & Liab.)</span>
+            <span className="font-semibold text-foreground">42 850 000 Ft</span>
+          </div>
+          <div className="flex justify-between items-center text-xs py-1.5">
+            <span className="text-muted-foreground">Aktuális tárgyévi eredmény</span>
+            <span className="font-semibold text-emerald-500">+6 420 000 Ft</span>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    text: 'Intelligens adónaptár, járulékbevallások és áfa-tervezés nyomon követése.',
+    visual: (
+      <div className="space-y-3">
+        {[
+          { filing: '2608 Járulékbevallás', deadline: 'Esedékes: 12 nap múlva', status: 'Beküldve', color: 'text-emerald-500', icon: CheckCircle2, bg: 'bg-emerald-500/10' },
+          { filing: '2665 ÁFA bevallás', deadline: 'Esedékes: 8 nap múlva', status: 'Egyeztetés alatt', color: 'text-amber-500', icon: Clock, bg: 'bg-amber-500/10' },
+          { filing: 'KIVA / KATA elszámolás', deadline: 'Esedékes: 15 nap múlva', status: 'Elkészítve', color: 'text-teal-500', icon: FileText, bg: 'bg-teal-500/10' },
+        ].map((f, i) => (
+          <div key={i} className="bg-background/90 backdrop-blur-md rounded-xl p-4 shadow-lg border border-border/50 flex items-center gap-4">
+            <div className={`p-2 rounded-lg ${f.bg}`}>
+              <f.icon className={`h-5 w-5 ${f.color}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-semibold text-foreground block truncate">{f.filing}</span>
+              <span className="text-xs text-muted-foreground">{f.deadline}</span>
+            </div>
+            <span className={`text-xs font-medium ${f.color}`}>{f.status}</span>
+          </div>
+        ))}
+      </div>
+    ),
+  },
+  {
+    text: 'Hivatalos levelek letöltése és automatikus archiválása a Cégkapuból.',
+    visual: (
+      <div className="space-y-3">
+        {[
+          { sender: 'NAV_KAVIG', doc: 'Folyószámla kivonat', time: '1 órája', status: 'Letöltve', color: 'text-emerald-500', icon: FileText, bg: 'bg-emerald-500/10' },
+          { sender: 'ÖNKORMÁNYZAT', doc: 'Helyi iparűzési adó értesítő', time: 'Tegnap', status: 'Letöltve', color: 'text-emerald-500', icon: FileText, bg: 'bg-emerald-500/10' },
+        ].map((d, i) => (
+          <div key={i} className="bg-background/90 backdrop-blur-md rounded-xl p-4 shadow-lg border border-border/50 flex items-center gap-4">
+            <div className={`p-2 rounded-lg ${d.bg}`}>
+              <d.icon className={`h-5 w-5 ${d.color}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-semibold text-foreground block truncate">{d.sender}</span>
+              <span className="text-xs text-muted-foreground">{d.doc} • {d.time}</span>
+            </div>
+            <span className="text-xs font-medium text-emerald-500">{d.status}</span>
+          </div>
+        ))}
+      </div>
+    ),
+  },
+  {
+    text: 'Átlátható bérszámfejtési összesítők és kifizetési jegyzékek.',
+    visual: (
+      <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-border/50">
+        <div className="flex items-center gap-2 mb-4">
+          <Wallet className="h-5 w-5 text-teal-500" />
+          <span className="text-sm font-semibold text-foreground">Bérszámfejtési jelentés</span>
+        </div>
+        <div className="space-y-2 text-xs">
+          <div className="flex justify-between py-1 border-b border-border/30">
+            <span className="text-muted-foreground">Aktív munkavállalók száma</span>
+            <span className="font-semibold text-foreground">12 fő</span>
+          </div>
+          <div className="flex justify-between py-1 border-b border-border/30">
+            <span className="text-muted-foreground">Bruttó bérköltség összesen</span>
+            <span className="font-semibold text-foreground">6 890 000 Ft</span>
+          </div>
+          <div className="flex justify-between py-1">
+            <span className="text-muted-foreground">Nettó utalandó munkabérek</span>
+            <span className="font-semibold text-teal-500">4 580 000 Ft</span>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    text: 'Könyvelőirodai munkafolyamatok és cég-hozzárendelések nyomon követése.',
+    visual: (
+      <div className="bg-background/90 backdrop-blur-md rounded-xl p-5 shadow-2xl border border-border/50">
+        <div className="flex items-center gap-2 mb-4">
+          <Users className="h-5 w-5 text-teal-500" />
+          <span className="text-sm font-semibold text-foreground">Hozzárendelt cégek</span>
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-teal-500/10 flex items-center justify-center">
+              <Users className="h-4 w-4 text-teal-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-foreground">Könyvelő Partner</p>
+              <p className="text-[10px] text-muted-foreground">Felelős: Minta János (Irodavezető)</p>
+            </div>
+            <span className="text-[10px] bg-teal-500/10 text-teal-500 px-2 py-0.5 rounded-full font-medium">Elsődleges</span>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+];
+
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -180,6 +388,12 @@ const Auth = () => {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [authSearchParams, setAuthSearchParams] = useSearchParams();
+  const [appMode, setAppMode] = useState<'eaisybill' | 'eaisybooks'>(() => {
+    return (authSearchParams.get('app') === 'eaisybooks') ? 'eaisybooks' : 'eaisybill';
+  });
+  const isEaisybooks = appMode === 'eaisybooks';
+  const activeSlides = isEaisybooks ? booksCarouselSlides : carouselSlides;
+
   const queryClient = useQueryClient();
 
   // Check if redirected here because email is not verified
@@ -351,13 +565,34 @@ const Auth = () => {
 
   selectedDimsRef.current = selectedDims; // keep in sync on every render
 
+  const [hasEaisybillAccess, setHasEaisybillAccess] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setHasEaisybillAccess(null);
+      return;
+    }
+    supabase
+      .from('company_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .then(({ count }) => {
+        setHasEaisybillAccess((count ?? 0) > 0);
+      });
+  }, [user]);
+
   useEffect(() => {
     // Don't auto-navigate after signup — user should see the email confirmation screen
     if (signUpSuccess) return;
     // Don't auto-navigate when email is not verified — user is locked
     if (isUnverified) return;
-    if (user) { navigate(returnTo); }
-  }, [user, navigate, signUpSuccess, isUnverified]);
+    if (user && hasEaisybillAccess !== null) {
+      const target = returnTo && returnTo !== '/'
+        ? returnTo
+        : ((isEaisybooks || !hasEaisybillAccess) ? '/accounty' : '/');
+      navigate(target);
+    }
+  }, [user, navigate, signUpSuccess, isUnverified, isEaisybooks, returnTo, hasEaisybillAccess]);
 
   // Non-passive wheel listener — adds to scroll velocity for smooth momentum
   useEffect(() => {
@@ -594,6 +829,20 @@ const Auth = () => {
     }, 500);
   };
 
+  const handleAppModeChange = (mode: 'eaisybill' | 'eaisybooks') => {
+    handleFadeDismiss();
+    setAppMode(mode);
+    setAuthSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (mode === 'eaisybooks') {
+        next.set('app', 'eaisybooks');
+      } else {
+        next.delete('app');
+      }
+      return next;
+    }, { replace: true });
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.includes('@')) {
@@ -609,7 +858,19 @@ const Auth = () => {
     const { error } = await signIn(email, password);
 
     if (!error) {
-      navigate(returnTo);
+      const { data: { user: sessionUser } } = await supabase.auth.getUser();
+      let hasBill = false;
+      if (sessionUser) {
+        const { count } = await supabase
+          .from('company_members')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', sessionUser.id);
+        hasBill = (count ?? 0) > 0;
+      }
+      const target = returnTo && returnTo !== '/'
+        ? returnTo
+        : ((isEaisybooks || !hasBill) ? '/accounty' : '/');
+      navigate(target);
     }
 
     setLoading(false);
@@ -682,7 +943,7 @@ const Auth = () => {
         src={currentTheme === 'dark' ? '/eaisybill_wave_dark.webp' : '/eaisybill_wave_bright.webp'}
         alt=""
         aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none z-0"
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none z-0 transition-all duration-500"
       />
 
       {/* Left Side - Form Area */}
@@ -822,12 +1083,49 @@ const Auth = () => {
           <>
           {/* Logo */}
           <div className="mb-4">
-            <span className="text-4xl tracking-tight select-none">
-              <span className="font-medium text-foreground/80">e</span>
-              <span className="font-bold text-primary">ai</span>
-              <span className="font-medium text-foreground/80">sy</span>
-              <span className="font-medium text-primary">bill</span>
-            </span>
+            {isEaisybooks ? (
+              <span className="text-4xl tracking-tight select-none">
+                <span className="font-medium text-foreground/80">e</span>
+                <span className="font-bold text-teal-500">ai</span>
+                <span className="font-medium text-foreground/80">sy</span>
+                <span className="font-medium text-teal-500">books</span>
+              </span>
+            ) : (
+              <span className="text-4xl tracking-tight select-none">
+                <span className="font-medium text-foreground/80">e</span>
+                <span className="font-bold text-primary">ai</span>
+                <span className="font-medium text-foreground/80">sy</span>
+                <span className="font-medium text-primary">bill</span>
+              </span>
+            )}
+          </div>
+
+          {/* App Mode Switcher */}
+          <div className="flex items-center gap-1 p-1 bg-slate-100/60 dark:bg-zinc-800/40 rounded-full border border-slate-200/50 dark:border-zinc-700/30 w-fit mb-6 shadow-sm">
+            <button
+              type="button"
+              onClick={() => handleAppModeChange('eaisybill')}
+              className={cn(
+                "px-5 py-1.5 text-xs font-semibold rounded-full transition-all duration-300",
+                appMode === 'eaisybill'
+                  ? "bg-white dark:bg-zinc-800 text-primary shadow-sm font-bold border border-slate-200/40 dark:border-zinc-700/50"
+                  : "text-slate-500 dark:text-muted-foreground hover:text-slate-800 dark:hover:text-foreground"
+              )}
+            >
+              eaisybill
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAppModeChange('eaisybooks')}
+              className={cn(
+                "px-5 py-1.5 text-xs font-semibold rounded-full transition-all duration-300",
+                appMode === 'eaisybooks'
+                  ? "bg-white dark:bg-zinc-800 text-teal-600 dark:text-teal-400 shadow-sm font-bold border border-slate-200/40 dark:border-zinc-700/50"
+                  : "text-slate-500 dark:text-muted-foreground hover:text-slate-800 dark:hover:text-foreground"
+              )}
+            >
+              eaisybooks
+            </button>
           </div>
 
           {/* Welcome Text – min-h reserves space for 2-line subtitle, preventing layout shifts */}
@@ -837,7 +1135,7 @@ const Auth = () => {
             </h1>
             <p className="text-sm text-muted-foreground">
               {activeTab === 'signin'
-                ? 'Jelentkezz be a fiókodba a folytatáshoz.'
+                ? (isEaisybooks ? 'Lépj be a könyvelő fiókodba a folytatáshoz.' : 'Jelentkezz be a fiókodba a folytatáshoz.')
                 : 'Hozd létre a fiókodat néhány egyszerű lépésben'}
             </p>
           </div>
@@ -1167,7 +1465,7 @@ const Auth = () => {
 
             {/* Title — static */}
             <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-foreground dark:text-white mb-4 xl:mb-8">
-              T<span className="text-primary">a</span>rtsd kézben a pénzügye<span className="text-primary">i</span>det
+              T<span className={cn(isEaisybooks ? "text-teal-500" : "text-primary")}>a</span>rtsd kézben a pénzügye<span className={cn(isEaisybooks ? "text-teal-500" : "text-primary")}>i</span>det
             </h2>
 
             {/* Waterfall tape window */}
@@ -1221,7 +1519,7 @@ const Auth = () => {
 
               {/* The tape — two copies stacked for seamless downward loop */}
               <div ref={tapeRef} className="will-change-transform relative z-1">
-                {[...carouselSlides, ...carouselSlides].map((slide, i) => (
+                {[...activeSlides, ...activeSlides].map((slide, i) => (
                   <div
                     key={i}
                     className="pb-8 relative cursor-pointer tape-slide"
@@ -1247,7 +1545,7 @@ const Auth = () => {
               >
                 <div className="rounded-xl border border-primary/40 bg-background/90 backdrop-blur-md p-5 shadow-2xl">
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    {carouselSlides[selectedAbsIdx % carouselSlides.length].text}
+                    {activeSlides[selectedAbsIdx % activeSlides.length].text}
                   </p>
                 </div>
               </div>

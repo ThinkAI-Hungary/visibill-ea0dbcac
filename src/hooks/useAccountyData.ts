@@ -92,10 +92,6 @@ function computeProgress(missingCount: number, totalInvoices: number): number {
   return Math.round(ratio * 100);
 }
 
-// ══════════════════════════════════════════════════════════════
-// useAccountyClients – Fetches companies assigned to this accountant
-// ══════════════════════════════════════════════════════════════
-
 export function useAccountyClients() {
   const { user } = useAuth();
   const userId = user?.id || '';
@@ -103,18 +99,55 @@ export function useAccountyClients() {
   return useQuery({
     queryKey: queryKeys.accountyClients(userId),
     queryFn: async (): Promise<AccountyClient[]> => {
-      // 1. Get all assignments for this accountant
-      const { data: assignments, error: assignErr } = await supabase
+      // 1. Get current user's assignments to determine firm and role
+      const { data: myAssignments } = await supabase
         .from('accounty_assignments')
-        .select('company_id, role, is_primary')
+        .select('accounting_firm_id, role')
         .eq('accountant_user_id', userId);
 
-      if (assignErr) throw assignErr;
-      if (!assignments || assignments.length === 0) return [];
+      const firmId = myAssignments?.[0]?.accounting_firm_id;
+      const isAdmin = myAssignments?.some((a: any) => a.role === 'iroda_admin');
 
-      const companyIds = assignments.map((a: any) => a.company_id);
+      // 2. Fetch assignments (all firm assignments for admin, otherwise only own)
+      let assignments: any[] = [];
+      if (isAdmin && firmId) {
+        const { data, error } = await supabase
+          .from('accounty_assignments')
+          .select('company_id, accountant_user_id, role, is_primary')
+          .eq('accounting_firm_id', firmId);
+        if (error) throw error;
+        assignments = data || [];
+      } else {
+        // Fetch user's assigned company IDs first
+        const { data: myAssigns, error: myErr } = await supabase
+          .from('accounty_assignments')
+          .select('company_id')
+          .eq('accountant_user_id', userId);
+        if (myErr) throw myErr;
 
-      // 2. Get company details (companies RLS includes accounty_assignments policy)
+        if (myAssigns && myAssigns.length > 0) {
+          const myCompanyIds = myAssigns.map((a: any) => a.company_id);
+          const { data, error } = await supabase
+            .from('accounty_assignments')
+            .select('company_id, accountant_user_id, role, is_primary')
+            .in('company_id', myCompanyIds);
+          if (error) throw error;
+          assignments = data || [];
+        }
+      }
+
+      if (assignments.length === 0) return [];
+
+      // Group assignments by company
+      const companyAssignments: Record<string, any[]> = {};
+      assignments.forEach((a: any) => {
+        if (!companyAssignments[a.company_id]) companyAssignments[a.company_id] = [];
+        companyAssignments[a.company_id].push(a);
+      });
+
+      const companyIds = Object.keys(companyAssignments);
+
+      // 3. Get company details (companies RLS includes accounty_assignments policy)
       const { data: companies, error: compErr } = await supabase
         .from('companies')
         .select('id, name, tax_number')
@@ -122,7 +155,7 @@ export function useAccountyClients() {
 
       if (compErr) throw compErr;
 
-      // 3. Get missing items counts per company (count-only, no row limit issue)
+      // 4. Get missing items counts per company
       const missingCountMap: Record<string, number> = {};
       for (const cid of companyIds) {
         const { count, error: countErr } = await supabase
@@ -134,7 +167,7 @@ export function useAccountyClients() {
         missingCountMap[cid] = count || 0;
       }
 
-      // 4. Get nearest deadline per company
+      // 5. Get nearest deadline per company
       const { data: deadlines, error: deadErr } = await supabase
         .from('accounty_deadlines')
         .select('company_id, due_date')
@@ -144,7 +177,6 @@ export function useAccountyClients() {
 
       if (deadErr) throw deadErr;
 
-
       const deadlineMap: Record<string, string> = {};
       (deadlines || []).forEach((d: any) => {
         if (!deadlineMap[d.company_id]) {
@@ -152,16 +184,13 @@ export function useAccountyClients() {
         }
       });
 
-      const assignmentMap: Record<string, any> = {};
-      assignments.forEach((a: any) => {
-        assignmentMap[a.company_id] = a;
-      });
-
-      // 5. Build client list (exclude SANDBOX — duplikált test adatok)
-      return (companies || []).filter(c => c.name !== 'SANDBOX').map((company): AccountyClient => {
-        const assignment = assignmentMap[company.id];
+      // 6. Build client list
+      const clientsList = (companies || []).filter(c => c.name !== 'SANDBOX').map((company): AccountyClient => {
+        const assignsForComp = companyAssignments[company.id] || [];
+        const primaryAssign = assignsForComp.find((a: any) => a.is_primary) || assignsForComp[0];
+        const assignedToMe = assignsForComp.some((a: any) => a.accountant_user_id === userId);
         const missingCount = missingCountMap[company.id] || 0;
-        const unprocessedCount = 0; // Will be calculated from invoices later
+        const unprocessedCount = 0;
         const progress = computeProgress(missingCount, 0);
 
         return {
@@ -174,17 +203,22 @@ export function useAccountyClients() {
           missingCount,
           deadlineDate: deadlineMap[company.id] || null,
           progress,
-          assignedToMe: true,
-          isPrimary: assignment?.is_primary || false,
-          accountantRole: assignment?.role || 'junior',
+          assignedToMe,
+          isPrimary: primaryAssign?.is_primary || false,
+          accountantRole: primaryAssign?.role || 'junior',
+          ownerId: primaryAssign?.accountant_user_id || '1',
         };
       });
+
+      if (!isAdmin) {
+        return clientsList.filter(c => c.ownerId === userId);
+      }
+      return clientsList;
     },
     enabled: !!userId,
     staleTime: 30_000,
   });
 }
-
 // ══════════════════════════════════════════════════════════════
 // useAccountyMissingItems – Missing items for a specific company
 // ══════════════════════════════════════════════════════════════
@@ -244,11 +278,23 @@ export function useAccountyAllMissingItems() {
   return useQuery({
     queryKey: queryKeys.accountyAllMissingItems(userId),
     queryFn: async (): Promise<(AccountyMissingItem & { companyName: string })[]> => {
-      // Get assignments first
-      const { data: assignments, error: assignErr } = await supabase
+      // Get role & assignments
+      const { data: myAssigns } = await supabase
+        .from('accounty_assignments')
+        .select('role')
+        .eq('accountant_user_id', userId);
+      const isAdmin = myAssigns?.some((a: any) => a.role === 'iroda_admin');
+
+      let query = supabase
         .from('accounty_assignments')
         .select('company_id')
         .eq('accountant_user_id', userId);
+      
+      if (!isAdmin) {
+        query = query.eq('is_primary', true);
+      }
+      
+      const { data: assignments, error: assignErr } = await query;
 
       if (assignErr) throw assignErr;
       if (!assignments || assignments.length === 0) return [];
@@ -379,11 +425,23 @@ export function useAccountyCompanySummary() {
   return useQuery({
     queryKey: ['accounty-company-summary', userId],
     queryFn: async (): Promise<AccountyCompanySummary[]> => {
-      // 1. Get assignments for this accountant
-      const { data: assignments, error: assignErr } = await supabase
+      // 1. Get role & assignments
+      const { data: myAssigns } = await supabase
+        .from('accounty_assignments')
+        .select('role')
+        .eq('accountant_user_id', userId);
+      const isAdmin = myAssigns?.some((a: any) => a.role === 'iroda_admin');
+
+      let query = supabase
         .from('accounty_assignments')
         .select('company_id')
         .eq('accountant_user_id', userId);
+      
+      if (!isAdmin) {
+        query = query.eq('is_primary', true);
+      }
+      
+      const { data: assignments, error: assignErr } = await query;
 
       if (assignErr) throw assignErr;
       if (!assignments || assignments.length === 0) return [];
@@ -454,11 +512,23 @@ export function useAccountyDeadlines() {
   return useQuery({
     queryKey: queryKeys.accountyDeadlines(userId),
     queryFn: async (): Promise<AccountyDeadline[]> => {
-      // Get assignments
-      const { data: assignments, error: assignErr } = await supabase
+      // Get role & assignments
+      const { data: myAssigns } = await supabase
+        .from('accounty_assignments')
+        .select('role')
+        .eq('accountant_user_id', userId);
+      const isAdmin = myAssigns?.some((a: any) => a.role === 'iroda_admin');
+
+      let query = supabase
         .from('accounty_assignments')
         .select('company_id')
         .eq('accountant_user_id', userId);
+      
+      if (!isAdmin) {
+        query = query.eq('is_primary', true);
+      }
+      
+      const { data: assignments, error: assignErr } = await query;
 
       if (assignErr) throw assignErr;
       if (!assignments || assignments.length === 0) return [];
@@ -513,11 +583,23 @@ export function useAccountyKpis() {
   return useQuery({
     queryKey: queryKeys.accountyKpis(userId),
     queryFn: async (): Promise<AccountyKpis> => {
-      // Get assignments
-      const { data: assignments, error: assignErr } = await supabase
+      // Get role & assignments
+      const { data: myAssigns } = await supabase
+        .from('accounty_assignments')
+        .select('role')
+        .eq('accountant_user_id', userId);
+      const isAdmin = myAssigns?.some((a: any) => a.role === 'iroda_admin');
+
+      let query = supabase
         .from('accounty_assignments')
         .select('company_id')
         .eq('accountant_user_id', userId);
+      
+      if (!isAdmin) {
+        query = query.eq('is_primary', true);
+      }
+      
+      const { data: assignments, error: assignErr } = await query;
 
       if (assignErr) throw assignErr;
       if (!assignments || assignments.length === 0) {
@@ -819,6 +901,90 @@ export function useCompleteDeadline() {
     },
   });
 }
+
+// Update client owner (accountant assignment)
+export function useUpdateClientOwner() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: { companyId: string; newOwnerId: string; oldOwnerId: string }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      // Get user's accounting firm ID
+      const { data: myAssignments } = await supabase
+        .from('accounty_assignments')
+        .select('accounting_firm_id')
+        .eq('accountant_user_id', user.id)
+        .limit(1);
+
+      const firmId = myAssignments?.[0]?.accounting_firm_id || null;
+
+      // 1. Check if the new owner already has an assignment for this company
+      const { data: existingNewOwnerAssign } = await supabase
+        .from('accounty_assignments')
+        .select('id')
+        .eq('company_id', params.companyId)
+        .eq('accountant_user_id', params.newOwnerId)
+        .limit(1);
+
+      if (existingNewOwnerAssign && existingNewOwnerAssign.length > 0) {
+        // New owner already assigned: set their assignment to primary
+        const { error: updateNewErr } = await supabase
+          .from('accounty_assignments')
+          .update({ is_primary: true })
+          .eq('id', existingNewOwnerAssign[0].id);
+        if (updateNewErr) throw updateNewErr;
+
+        // And remove old assignment to decrease client count and avoid duplicates
+        if (params.oldOwnerId && params.oldOwnerId !== '1' && params.oldOwnerId !== params.newOwnerId) {
+          const { error: deleteOldErr } = await supabase
+            .from('accounty_assignments')
+            .delete()
+            .eq('company_id', params.companyId)
+            .eq('accountant_user_id', params.oldOwnerId);
+          if (deleteOldErr) throw deleteOldErr;
+        }
+      } else {
+        // New owner is not assigned yet: update old assignment or insert new
+        if (params.oldOwnerId && params.oldOwnerId !== '1') {
+          const { error: updateOldErr } = await supabase
+            .from('accounty_assignments')
+            .update({ accountant_user_id: params.newOwnerId, is_primary: true })
+            .eq('company_id', params.companyId)
+            .eq('accountant_user_id', params.oldOwnerId);
+          if (updateOldErr) throw updateOldErr;
+        } else {
+          const { error: insertErr } = await supabase
+            .from('accounty_assignments')
+            .insert({
+              company_id: params.companyId,
+              accountant_user_id: params.newOwnerId,
+              accounting_firm_id: firmId,
+              role: 'könyvelő',
+              is_primary: true
+            });
+          if (insertErr) throw insertErr;
+        }
+      }
+
+      // 2. Set any other assignments for this company to NOT primary
+      const { error: clearPrimaryErr } = await supabase
+        .from('accounty_assignments')
+        .update({ is_primary: false })
+        .eq('company_id', params.companyId)
+        .neq('accountant_user_id', params.newOwnerId);
+      if (clearPrimaryErr) console.warn("Failed to clear other primary flags:", clearPrimaryErr);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounty-clients'] });
+      queryClient.invalidateQueries({ queryKey: ['accounty-kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['accounty-all-missing-items'] });
+      queryClient.invalidateQueries({ queryKey: ['accounty-company-summary'] });
+    },
+  });
+}
+
 
 // ══════════════════════════════════════════════════════════════
 // useAccountyCommunicationPrefs – Read communication preferences

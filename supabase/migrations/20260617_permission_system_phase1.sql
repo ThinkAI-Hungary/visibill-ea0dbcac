@@ -339,10 +339,25 @@ AS $$
   );
 $$;
 
+CREATE OR REPLACE FUNCTION is_member_of_firm(p_firm_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM accounty_assignments
+    WHERE accountant_user_id = auth.uid()
+      AND accounting_firm_id = p_firm_id
+  );
+$$;
+
 DROP POLICY IF EXISTS "assignments_select" ON public.accounty_assignments;
 CREATE POLICY "assignments_select" ON public.accounty_assignments
   FOR SELECT TO authenticated
   USING (
     accountant_user_id = (SELECT auth.uid())
     OR is_iroda_admin_for_firm(accounting_firm_id)
+    OR is_member_of_firm(accounting_firm_id)
   );

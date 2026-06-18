@@ -216,7 +216,26 @@ function RootRedirect() {
     staleTime: 5 * 60 * 1000,
   });
 
-  if (roleLoading) return null;
+  // Check if they have eaisybill access
+  const { data: hasEaisybillAccess, isLoading: accessLoading } = useQuery({
+    queryKey: ['has-eaisybill-access-root', user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('company_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user!.id);
+      return (count ?? 0) > 0;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  if (roleLoading || accessLoading) return null;
+
+  if (hasEaisybillAccess === false) {
+    return <Navigate to="/accounty" replace />;
+  }
+
   if (profileRole === 'management') {
     return <Navigate to="/management" replace />;
   }

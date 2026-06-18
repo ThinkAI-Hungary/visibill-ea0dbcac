@@ -3,25 +3,50 @@ import { Link } from 'react-router-dom';
 import { 
   Settings, Building2, Mail, Phone, Bell, Shield, Users, Globe,
   Save, Check, Loader2, ChevronRight, ChevronDown, AlertTriangle, Key, Clock,
-  Coffee, CreditCard, Gift, Send, CheckCircle2, Circle
+  Coffee, CreditCard, Gift, Send, CheckCircle2, Circle, Lock, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAccountyAccountants } from '@/hooks/useAccountyData';
+import { useAccountyRole } from './AccountyRoleContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 type SettingsTab = 'general' | 'notifications' | 'team' | 'cafeteria' | 'nav' | 'security';
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const { data: accountants } = useAccountyAccountants();
+  const { role: currentUserRole, isAdmin, isSenior } = useAccountyRole();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Deletion state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Collapsible state for team members
+  const [expandedMembers, setExpandedMembers] = useState<Set<string>>(new Set());
+
+  // Invite dialog state
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
+  const [inviteRole, setInviteRole] = useState<string>('könyvelő');
+  const [inviting, setInviting] = useState(false);
 
   // General settings state
   const [officeName, setOfficeName] = useState('');
@@ -125,6 +150,106 @@ export default function SettingsPage() {
     }
   }, [user]);
 
+  // ── Firm data from DB ──
+  const { data: firmData } = useQuery({
+    queryKey: ['accounty-firm-data', user?.id],
+    queryFn: async () => {
+      // Get firm ID from accounty_assignments
+      const { data: assignments } = await supabase
+        .from('accounty_assignments' as any)
+        .select('accounting_firm_id')
+        .eq('accountant_user_id', user!.id)
+        .limit(1);
+      if (!assignments || assignments.length === 0) return null;
+      const firmId = (assignments[0] as any).accounting_firm_id;
+      // Get firm (company) details
+      const { data: company } = await supabase
+        .from('companies')
+        .select('name, tax_number, address')
+        .eq('id', firmId)
+        .maybeSingle();
+      return company ? { name: company.name, taxNumber: company.tax_number, address: company.address, firmId } : null;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+  });
+
+  // Auto-fill office fields from firm data
+  useEffect(() => {
+    if (firmData) {
+      if (firmData.name && !officeName) setOfficeName(firmData.name);
+      if (firmData.address && !officeAddress) setOfficeAddress(firmData.address);
+    }
+  }, [firmData]);
+
+  // ── Team members from DB ──
+  const ROLE_LABELS: Record<string, string> = {
+    iroda_admin: 'Iroda Admin',
+    senior_könyvelő: 'Senior',
+    könyvelő: 'Könyvelő',
+    asszisztens: 'Asszisztens',
+  };
+  const ROLE_COLORS: Record<string, string> = {
+    iroda_admin: 'bg-primary/10 text-primary',
+    senior_könyvelő: 'bg-accent dark:bg-accent text-accent-foreground dark:text-primary',
+    könyvelő: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400',
+    asszisztens: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400',
+  };
+
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ['accounty-team-members', firmData?.firmId],
+    queryFn: async () => {
+      const firmId = firmData!.firmId;
+      // Get all assignments for this firm
+      const { data: assignments } = await supabase
+        .from('accounty_assignments' as any)
+        .select('accountant_user_id, company_id, role')
+        .eq('accounting_firm_id', firmId);
+      if (!assignments || assignments.length === 0) return [];
+
+      // Group: pick highest role per user, count companies
+      const userRoles: Record<string, { role: string; companies: Set<string> }> = {};
+      const ROLE_PRIORITY: Record<string, number> = { iroda_admin: 4, senior_könyvelő: 3, könyvelő: 2, asszisztens: 1 };
+      for (const a of assignments as any[]) {
+        const uid = a.accountant_user_id;
+        if (!userRoles[uid]) userRoles[uid] = { role: a.role, companies: new Set() };
+        userRoles[uid].companies.add(a.company_id);
+        if ((ROLE_PRIORITY[a.role] || 0) > (ROLE_PRIORITY[userRoles[uid].role] || 0)) {
+          userRoles[uid].role = a.role;
+        }
+      }
+
+      const userIds = Object.keys(userRoles);
+      const { data: profiles } = await supabase.from('profiles').select('user_id, name').in('user_id', userIds);
+      const nameMap: Record<string, string> = {};
+      (profiles || []).forEach(p => { nameMap[p.user_id] = p.name || 'Névtelen'; });
+
+      const companyIds = [...new Set(assignments.map((a: any) => a.company_id))];
+      const { data: companies } = await supabase
+        .from('companies')
+        .select('id, name')
+        .in('id', companyIds);
+      const companyMap: Record<string, string> = {};
+      (companies || []).forEach(c => { companyMap[c.id] = c.name; });
+
+      return userIds
+        .map(uid => ({
+          id: uid,
+          name: nameMap[uid] || 'Névtelen',
+          initial: (nameMap[uid] || 'N').charAt(0).toUpperCase(),
+          role: userRoles[uid].role,
+          clientCount: userRoles[uid].companies.size,
+          assignedCompanies: Array.from(userRoles[uid].companies)
+            .map(cid => ({ id: cid, name: companyMap[cid] || 'Ismeretlen cég' }))
+            .filter(c => c.name !== 'SANDBOX')
+        }))
+        .filter(m => m.name !== 'Sandbox' && m.name !== 'Névtelen')
+        .sort((a, b) => (ROLE_PRIORITY[b.role] || 0) - (ROLE_PRIORITY[a.role] || 0));
+    },
+    enabled: !!firmData?.firmId,
+    staleTime: 60_000,
+  });
+
   const handleSave = async () => {
     setSaving(true);
     
@@ -203,12 +328,17 @@ export default function SettingsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Iroda neve</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    Iroda neve
+                    {firmData?.name && <Lock className="h-3 w-3 text-muted-foreground" />}
+                  </label>
                   <Input 
-                    value={officeName} 
+                    value={firmData?.name || officeName} 
                     onChange={e => setOfficeName(e.target.value)} 
                     placeholder="Pl. Minta Könyvelőiroda"
-                    className="bg-card border-border"
+                    className={cn('bg-card border-border', firmData?.name && 'bg-muted/50 cursor-not-allowed')}
+                    disabled={!!firmData?.name}
+                    title={firmData?.name ? 'Az iroda neve a cégadatokból származik' : undefined}
                   />
                 </div>
                 <div className="space-y-2">
@@ -230,12 +360,16 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Cím</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    Cím
+                    {firmData?.address && <Lock className="h-3 w-3 text-muted-foreground" />}
+                  </label>
                   <Input 
-                    value={officeAddress} 
+                    value={firmData?.address || officeAddress} 
                     onChange={e => setOfficeAddress(e.target.value)} 
                     placeholder="1234 Budapest, Példa utca 1."
-                    className="bg-card border-border"
+                    className={cn('bg-card border-border', firmData?.address && 'bg-muted/50 cursor-not-allowed')}
+                    disabled={!!firmData?.address}
                   />
                 </div>
               </div>
@@ -365,27 +499,82 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-3">
-                {(accountants || []).map((acc, idx) => (
-                  <div key={acc.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white",
-                        idx === 0 ? "bg-primary" : idx === 1 ? "bg-blue-600" : "bg-purple-600"
-                      )}>
-                        {acc.initial}
+                {teamMembers.map((member, idx) => {
+                  const isExpanded = expandedMembers.has(member.id);
+                  return (
+                    <div key={member.id} className="flex flex-col bg-slate-50 dark:bg-slate-800/50 rounded-xl overflow-hidden">
+                      {/* Header Row */}
+                      <div 
+                        onClick={() => {
+                          setExpandedMembers(prev => {
+                            const next = new Set(prev);
+                            if (next.has(member.id)) next.delete(member.id);
+                            else next.add(member.id);
+                            return next;
+                          });
+                        }}
+                        className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-100/30 dark:hover:bg-slate-800 transition-colors select-none"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white",
+                            idx === 0 ? "bg-primary" : idx === 1 ? "bg-blue-600" : idx === 2 ? "bg-purple-600" : "bg-slate-500"
+                          )}>
+                            {member.initial}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{member.name}</p>
+                            <p className="text-xs text-slate-500">{member.clientCount} ügyfél hozzárendelve</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            'px-2.5 py-1 rounded-full text-[10px] font-bold uppercase',
+                            ROLE_COLORS[member.role] || 'bg-muted text-muted-foreground'
+                          )}>
+                            {ROLE_LABELS[member.role] || member.role}
+                          </span>
+                          {isAdmin && member.id !== user?.id && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setMemberToDelete({ id: member.id, name: member.name });
+                                setDeleteConfirmOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                              title="Eltávolítás"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                          <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform duration-200", isExpanded && "rotate-180")} />
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{acc.name}</p>
-                        <p className="text-xs text-slate-500">{acc.clientCount} ügyfél hozzárendelve</p>
-                      </div>
+
+                      {/* Collapsible Panel */}
+                      {isExpanded && (
+                        <div className="border-t border-border/50 bg-slate-50/50 dark:bg-slate-900/10 px-4 py-3 space-y-2">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            Hozzárendelt ügyfelek ({member.assignedCompanies?.length || 0})
+                          </p>
+                          {!member.assignedCompanies || member.assignedCompanies.length === 0 ? (
+                            <p className="text-xs text-slate-400 dark:text-slate-500 italic">Nincsenek hozzárendelt ügyfelek</p>
+                          ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {member.assignedCompanies.map((comp: any) => (
+                                <div key={comp.id} className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg text-xs font-medium">
+                                  <Building2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                  <span className="truncate text-slate-700 dark:text-slate-300">{comp.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-accent dark:bg-accent text-accent-foreground dark:text-primary">Senior</span>
-                      <ChevronRight className="w-4 h-4 text-slate-400" />
-                    </div>
-                  </div>
-                ))}
-                {(!accountants || accountants.length === 0) && (
+                  );
+                })}
+                {teamMembers.length === 0 && (
                   <div className="text-center py-8 text-slate-500">
                     <Users className="w-8 h-8 mx-auto mb-2 text-slate-300" />
                     <p className="text-sm">Még nincs csapattag regisztrálva</p>
@@ -393,10 +582,184 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              <Button variant="outline" className="gap-2 w-full border-dashed border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+              <Button
+                variant="outline"
+                className="gap-2 w-full border-dashed border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                onClick={() => setInviteOpen(true)}
+              >
                 <Users className="w-4 h-4" />
                 Új könyvelő meghívása
               </Button>
+
+              <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Új könyvelő meghívása</DialogTitle>
+                    <DialogDescription>Add meg a meghívandó könyvelő adatait</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Név</label>
+                      <Input
+                        placeholder="Könyvelő neve"
+                        value={inviteName}
+                        onChange={e => setInviteName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">E-mail cím</label>
+                      <Input
+                        type="email"
+                        placeholder="konyvelo@example.com"
+                        value={inviteEmail}
+                        onChange={e => setInviteEmail(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Szerepkör</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(['könyvelő', 'senior_könyvelő', 'asszisztens', 'iroda_admin'] as const).map(r => (
+                          <button
+                            key={r}
+                            onClick={() => setInviteRole(r)}
+                            className={cn(
+                              'px-3 py-2 rounded-lg border text-sm font-medium transition-all text-left',
+                              inviteRole === r
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-border hover:border-slate-300'
+                            )}
+                          >
+                            {ROLE_LABELS[r] || r}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setInviteOpen(false)}>Mégse</Button>
+                    <Button
+                      disabled={inviting || !inviteEmail.trim() || !inviteName.trim()}
+                      onClick={async () => {
+                        setInviting(true);
+                        try {
+                          if (!firmData?.firmId) throw new Error('Nincs iroda hozzárendelve');
+                          
+                          const { data: { session } } = await supabase.auth.getSession();
+                          if (!session?.access_token) throw new Error('Nincs aktív munkamenet.');
+
+                          // Generate a random temporary password for the invited user
+                          const tempPassword = Math.random().toString(36).slice(-8) + 'aA1!';
+
+                          const response = await supabase.functions.invoke('invite-user', {
+                            body: {
+                              email: inviteEmail.trim(),
+                              name: inviteName.trim(),
+                              password: tempPassword,
+                              company_id: firmData.firmId,
+                              role: inviteRole,
+                            },
+                          });
+
+                          if (response.error) {
+                            throw new Error(response.error.message || 'Ismeretlen hiba');
+                          }
+
+                          const result = response.data;
+
+                          if (!result?.success) {
+                            const errorMessages: Record<string, string> = {
+                              valid_email_required: 'Érvényes email cím szükséges.',
+                              name_required: 'A név megadása kötelező.',
+                              password_min_6: 'A jelszónak legalább 6 karakter hosszúnak kell lennie.',
+                              not_admin: 'Nincs jogosultságod felhasználót meghívni ehhez az irodához.',
+                              already_member: 'Ez a felhasználó már tagja az irodának.',
+                              email_exists: 'Ez az email cím már regisztrálva van az adatbázisban.',
+                              user_create_failed: 'Nem sikerült létrehozni a felhasználót.',
+                            };
+
+                            const msg = errorMessages[result?.error] || result?.error || 'Ismeretlen hiba történt.';
+                            throw new Error(msg);
+                          }
+
+                          toast({
+                            title: result.existing_user ? 'Könyvelő hozzáadva' : 'Meghívó elküldve',
+                            description: result.existing_user
+                              ? `${inviteName.trim()} már regisztrált felhasználó — hozzáadva az irodához.`
+                              : `Meghívó elküldve ${inviteEmail} címre (${ROLE_LABELS[inviteRole]} szerepkörrel).`,
+                          });
+                          
+                          setInviteOpen(false);
+                          setInviteEmail('');
+                          setInviteName('');
+                          setInviteRole('könyvelő');
+                          queryClient.invalidateQueries({ queryKey: ['accounty-team-members'] });
+                        } catch (err: any) {
+                          toast({ title: 'Hiba', description: err.message, variant: 'destructive' });
+                        } finally {
+                          setInviting(false);
+                        }
+                      }}
+                    >
+                      {inviting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      Meghívó küldése
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-red-600">
+                      <AlertTriangle className="w-5 h-5" />
+                      Csapattag eltávolítása
+                    </DialogTitle>
+                    <DialogDescription>
+                      Biztosan el szeretné távolítani <strong>{memberToDelete?.name}</strong> felhasználót a csapatból?
+                      Ezzel törlődik az összes irodai hozzárendelése ehhez a könyvelő irodához.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>Mégse</Button>
+                    <Button
+                      variant="destructive"
+                      disabled={deleting}
+                      onClick={async () => {
+                        if (!memberToDelete || !firmData?.firmId) return;
+                        setDeleting(true);
+                        try {
+                          const { error } = await supabase
+                            .from('accounty_assignments')
+                            .delete()
+                            .eq('accountant_user_id', memberToDelete.id)
+                            .eq('accounting_firm_id', firmData.firmId);
+                          
+                          if (error) throw error;
+
+                          toast({
+                            title: 'Sikeres eltávolítás',
+                            description: `${memberToDelete.name} sikeresen el lett távolítva a csapatból.`,
+                          });
+                          setDeleteConfirmOpen(false);
+                          setMemberToDelete(null);
+                          queryClient.invalidateQueries({ queryKey: ['accounty-team-members'] });
+                        } catch (err: any) {
+                          toast({
+                            title: 'Hiba',
+                            description: err.message || 'Nem sikerült eltávolítani a felhasználót.',
+                            variant: 'destructive',
+                          });
+                        } finally {
+                          setDeleting(false);
+                        }
+                      }}
+                    >
+                      {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      Eltávolítás
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           )}
 
