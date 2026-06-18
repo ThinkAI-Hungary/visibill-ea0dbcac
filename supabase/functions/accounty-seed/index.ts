@@ -52,15 +52,13 @@ Deno.serve(async (req: Request) => {
 
     if (memberErr) throw memberErr
 
-    // Find accounting firm (the first company where user is owner, or fallback to Taxology)
+    // Find accounting firm (the company owned by this user — their own firm)
     const { data: ownedCompanies } = await supabase
       .from('companies')
       .select('id, name')
       .eq('owner_id', user.id)
 
-    const firm = (ownedCompanies || []).find((c: any) =>
-      c.name.toLowerCase().includes('taxology')
-    ) || (ownedCompanies || [])[0] || null
+    const firm = (ownedCompanies || [])[0] || null
     const firmId = firm?.id || null
 
     // Assign user to ALL their eaisybill companies (including the firm)
