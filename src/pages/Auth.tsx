@@ -12,6 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { reportAuthError } from '@/lib/errorReporter';
+import { useHasEaisybillAccess } from '@/hooks/useHasEaisybillAccess';
 
 /* Tape showcase animations */
 const carouselStyle = document.createElement('style');
@@ -565,28 +566,14 @@ const Auth = () => {
 
   selectedDimsRef.current = selectedDims; // keep in sync on every render
 
-  const [hasEaisybillAccess, setHasEaisybillAccess] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (!user) {
-      setHasEaisybillAccess(null);
-      return;
-    }
-    supabase
-      .from('company_members')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .then(({ count }) => {
-        setHasEaisybillAccess((count ?? 0) > 0);
-      });
-  }, [user]);
+  const { hasAccess: hasEaisybillAccess } = useHasEaisybillAccess();
 
   useEffect(() => {
     // Don't auto-navigate after signup — user should see the email confirmation screen
     if (signUpSuccess) return;
     // Don't auto-navigate when email is not verified — user is locked
     if (isUnverified) return;
-    if (user && hasEaisybillAccess !== null) {
+    if (user && hasEaisybillAccess !== undefined) {
       const target = returnTo && returnTo !== '/'
         ? returnTo
         : ((isEaisybooks || !hasEaisybillAccess) ? '/accounty' : '/');

@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useHasAccountyAccess } from "@/hooks/useHasEaisybillAccess";
 import { useScopedBasePath, extractPageSegment } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -211,6 +212,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
   const { selectedCompany } = useCompany();
   const { theme, setTheme } = useTheme();
   const { role, isAdmin, isEmployee } = useUserRole();
+  const { hasAccess: hasAccountyAccess } = useHasAccountyAccess();
   const { data: unreadTicketCount = 0 } = useUnreadTicketCount();
 
   const currentPath = location.pathname;
@@ -330,13 +332,17 @@ export const AppSidebar = React.memo(function AppSidebar() {
                 <span className="font-medium text-primary">bill</span>
                 <span className="absolute -bottom-1.5 left-0 right-0 h-[2px] rounded-full bg-primary" />
               </span>
-              <span className="text-xl font-light text-muted-foreground">|</span>
-              <Link to="/accounty" className="relative text-2xl tracking-tight select-none hover:opacity-80 transition-opacity">
-                <span className="font-medium text-foreground/80">e</span>
-                <span className="font-bold text-primary">ai</span>
-                <span className="font-medium text-foreground/80">sy</span>
-                <span className="font-medium text-primary">books</span>
-              </Link>
+              {hasAccountyAccess && (
+                <>
+                  <span className="text-xl font-light text-muted-foreground">|</span>
+                  <Link to="/accounty" className="relative text-2xl tracking-tight select-none hover:opacity-80 transition-opacity">
+                    <span className="font-medium text-foreground/80">e</span>
+                    <span className="font-bold text-primary">ai</span>
+                    <span className="font-medium text-foreground/80">sy</span>
+                    <span className="font-medium text-primary">books</span>
+                  </Link>
+                </>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-2">
@@ -344,11 +350,15 @@ export const AppSidebar = React.memo(function AppSidebar() {
                 <span className="font-medium text-foreground/80">e</span>
                 <span className="font-bold text-primary">ai</span>
               </span>
-              <div className="w-4 h-px bg-muted-foreground/30 rounded-full" />
-              <Link to="/accounty" className="text-2xl tracking-tight hover:opacity-80 transition-opacity" title="eaisybooks">
-                <span className="font-medium text-foreground/80">e</span>
-                <span className="font-bold text-primary">ai</span>
-              </Link>
+              {hasAccountyAccess && (
+                <>
+                  <div className="w-4 h-px bg-muted-foreground/30 rounded-full" />
+                  <Link to="/accounty" className="text-2xl tracking-tight hover:opacity-80 transition-opacity" title="eaisybooks">
+                    <span className="font-medium text-foreground/80">e</span>
+                    <span className="font-bold text-primary">ai</span>
+                  </Link>
+                </>
+              )}
             </div>
           )}
         </div>

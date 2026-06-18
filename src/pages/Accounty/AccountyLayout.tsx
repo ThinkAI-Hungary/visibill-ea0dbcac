@@ -7,6 +7,7 @@ import { FeedbackFab } from '@/components/FeedbackFab';
 import { GlobalDatePicker } from '@/components/GlobalDatePicker';
 import { useAccountyKpis, useAccountyClients } from '@/hooks/useAccountyData';
 import { useAccountyPermissions, PATH_TO_MODULE } from '@/hooks/useAccountyPermissions';
+import { useHasEaisybillAccess } from '@/hooks/useHasEaisybillAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -81,18 +82,7 @@ export default function AccountyLayout() {
 
 function AccountyLayoutInner() {
   const { user, signOut } = useAuth();
-  const [hasEaisybillAccess, setHasEaisybillAccess] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    supabase
-      .from('company_members')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .then(({ count }) => {
-        setHasEaisybillAccess((count ?? 0) > 0);
-      });
-  }, [user?.id]);
+  const { hasAccess: hasEaisybillAccess } = useHasEaisybillAccess();
 
   const { theme, setTheme } = useTheme();
   const location = useLocation();

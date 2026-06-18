@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache, useQuery } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { useHasEaisybillAccess } from "./hooks/useHasEaisybillAccess";
 
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { CompanyProvider, useCompany } from "./contexts/CompanyContext";
@@ -217,18 +218,7 @@ function RootRedirect() {
   });
 
   // Check if they have eaisybill access
-  const { data: hasEaisybillAccess, isLoading: accessLoading } = useQuery({
-    queryKey: ['has-eaisybill-access-root', user?.id],
-    queryFn: async () => {
-      const { count } = await supabase
-        .from('company_members')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user!.id);
-      return (count ?? 0) > 0;
-    },
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { hasAccess: hasEaisybillAccess, isLoading: accessLoading } = useHasEaisybillAccess();
 
   if (roleLoading || accessLoading) return null;
 

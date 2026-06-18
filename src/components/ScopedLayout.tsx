@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Outlet, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useParams, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import { parseDateRange, generateScopedPath, extractPageSegment } from '@/lib/navigation';
 import { ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+/**
+ * Pages that employee role users are allowed to access.
+ * All other pages redirect to /working-time.
+ */
+const EMPLOYEE_ALLOWED_PAGES = new Set(['/working-time']);
 
 /**
  * ScopedLayout — URL ↔ Context Synchronization Layer.
@@ -146,6 +153,20 @@ export function ScopedLayout() {
 
   // Keep Outlet mounted during URL sync to prevent child component unmount/remount flash
   const isSyncing = !isCompanySynced || !isDateSynced;
+
+  // ── Employee route guard (M2) ──
+  // Employees may only access /working-time. All other pages redirect there.
+  const { isEmployee } = useUserRole();
+  const pageSegment = extractPageSegment(location.pathname);
+  if (isEmployee && !EMPLOYEE_ALLOWED_PAGES.has(pageSegment) && pageSegment !== '/') {
+    const workingTimePath = generateScopedPath(
+      selectedCompany?.id || urlCompanyId || '',
+      dateFromFormatted,
+      dateToFormatted,
+      'working-time',
+    );
+    return <Navigate to={workingTimePath} replace />;
+  }
 
   return (
     <div style={isSyncing ? { opacity: 0, pointerEvents: 'none', minHeight: '50vh' } : undefined}>
