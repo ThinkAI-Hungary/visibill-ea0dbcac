@@ -52,7 +52,7 @@ export function InvoiceImagePreview({ invoiceId, imageUrl, mellekletUrl, isOpen 
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-48 bg-muted/50 rounded text-muted-foreground text-xs gap-2">
+      <div className="flex flex-col items-center justify-center h-48 bg-popover rounded text-muted-foreground text-xs gap-2">
         <Loader2 className="h-6 w-6 animate-spin" />
         <span>Előnézet betöltése...</span>
       </div>

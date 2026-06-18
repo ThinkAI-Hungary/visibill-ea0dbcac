@@ -60,6 +60,11 @@ const TAB_TO_SLUG: Record<InvoiceTab, TabSlug> = {
 };
 
 const InvoicesPage = () => {
+  // Always scroll to the top of the page when navigating to InvoicesPage
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
@@ -1212,11 +1217,11 @@ const InvoicesPage = () => {
                   <div className="flex items-center gap-4 mb-2 text-[11px] text-muted-foreground">
                     <span className="font-medium">Jelmagyarázat:</span>
                     <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 rounded-sm bg-emerald-100 dark:bg-emerald-950/60 border-l-2 border-l-emerald-500" />
+                      <div className="w-3 h-3 rounded-sm bg-[var(--row-matched-bg)] border-l-2 border-l-[var(--row-matched-border)]" />
                       <span>Párosított / Kifizetve</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 rounded-sm bg-amber-100 dark:bg-amber-950/60 border-l-2 border-l-amber-500" />
+                      <div className="w-3 h-3 rounded-sm bg-[var(--row-suggested-bg)] border-l-2 border-l-[var(--row-suggested-border)]" />
                       <span>AI javaslat (jóváhagyásra vár)</span>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -1305,12 +1310,12 @@ const InvoicesPage = () => {
                             const isPaid = invoice.paid === true || !!invoice.transaction_id || directlyMatched || indirectlyMatched || linkedChainMatched;
                             return (
                               <React.Fragment key={invoice.id}>
-                                <TableRow className={cn(
+                                <TableRow data-row-hover className={cn(
                                   "group cursor-pointer",
                                   selectedInvoiceIds.has(invoice.id) && "bg-primary/5",
-                                  !selectedInvoiceIds.has(invoice.id) && isPaid && !suggestedOnlyIds.has(invoice.id) && "bg-emerald-100/70 dark:bg-emerald-950/40 border-l-2 border-l-emerald-500/60 border-b border-border/40",
-                                  !selectedInvoiceIds.has(invoice.id) && suggestedOnlyIds.has(invoice.id) && "bg-amber-100/70 dark:bg-amber-950/40 border-l-2 border-l-amber-500/60 border-b border-border/40",
-                                  !selectedInvoiceIds.has(invoice.id) && !isPaid && !suggestedOnlyIds.has(invoice.id) && "bg-rose-100/60 dark:bg-rose-950/30 border-l-2 border-l-rose-400/50 border-b border-border/40",
+                                  !selectedInvoiceIds.has(invoice.id) && isPaid && !suggestedOnlyIds.has(invoice.id) && "bg-[var(--row-matched-bg)]",
+                                  !selectedInvoiceIds.has(invoice.id) && suggestedOnlyIds.has(invoice.id) && "bg-[var(--row-suggested-bg)]",
+                                  !selectedInvoiceIds.has(invoice.id) && !isPaid && !suggestedOnlyIds.has(invoice.id) && "bg-[var(--row-unmatched-bg)]",
                                   expandedRowIds.has(invoice.id) && "border-b-0"
                                 )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                   <TableCell className="pl-4">
@@ -1339,17 +1344,17 @@ const InvoicesPage = () => {
                                     <CopyableCell value={invoice.invoice_number || '-'} ariaLabel={`${invoice.invoice_number} bizonylatsorszám másolása`} />
                                   </TableCell>
                                   <TableCell className={cn("text-right font-mono tabular-nums", !invoice.invoice_net_amount ? "text-muted-foreground" : activeTab === 'INBOUND' ? "text-destructive" : "text-success")}>
-                                    <CopyableCell value={(invoice.invoice_net_amount || 0).toString()} displayValue={formatCurrency(invoice.invoice_net_amount || 0, invoice.currency || 'HUF')} className="justify-end" ariaLabel="Nettó összeg másolása" />
+                                    {formatCurrency(invoice.invoice_net_amount || 0, invoice.currency || 'HUF')}
                                   </TableCell>
                                   <TableCell className={cn("text-right font-mono tabular-nums font-medium", !invoice.invoice_gross_amount ? "text-muted-foreground" : activeTab === 'INBOUND' ? "text-destructive" : "text-success")}>
-                                    <CopyableCell value={(invoice.invoice_gross_amount || 0).toString()} displayValue={formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')} className="justify-end" ariaLabel="Bruttó összeg másolása" />
+                                    {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
                                   </TableCell>
                                   <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
-                                    <CopyableCell value={(invoice.invoice_vat_amount || 0).toString()} displayValue={formatCurrency(invoice.invoice_vat_amount || 0, invoice.currency || 'HUF')} className="justify-end" align="right" ariaLabel="ÁFA összeg másolása" />
+                                    {formatCurrency(invoice.invoice_vat_amount || 0, invoice.currency || 'HUF')}
                                   </TableCell>
                                   <TableCell className="text-center">
                                     <div className="flex items-center justify-center gap-1.5">
-                                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${isPaid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                                      <span className={`inline-flex items-center justify-center min-w-[72px] px-2 py-0.5 rounded-md text-xs font-medium border border-black/10 dark:border-white/10 ${isPaid ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                                         {isPaid ? 'Kifizetve' : 'Nyitott'}
                                       </span>
                                       {invoice.exclude_from_accounting && (
@@ -1385,7 +1390,7 @@ const InvoicesPage = () => {
                                     </Select>
                                   </TableCell>
                                   <TableCell className="text-center">
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground">{getPaymentMethodLabel(invoice.payment_method)}</span>
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground border border-black/10 dark:border-white/10">{getPaymentMethodLabel(invoice.payment_method)}</span>
                                   </TableCell>
                                   <TableCell className="text-center">
                                     {(() => {
@@ -1613,11 +1618,11 @@ const InvoicesPage = () => {
                   <div className="flex items-center gap-4 mb-2 text-[11px] text-muted-foreground">
                     <span className="font-medium">Jelmagyarázat:</span>
                     <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 rounded-sm bg-emerald-100 dark:bg-emerald-950/60 border-l-2 border-l-emerald-500" />
+                      <div className="w-3 h-3 rounded-sm bg-[var(--row-matched-bg)] border-l-2 border-l-[var(--row-matched-border)]" />
                       <span>Párosított / Kifizetve</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 rounded-sm bg-amber-100 dark:bg-amber-950/60 border-l-2 border-l-amber-500" />
+                      <div className="w-3 h-3 rounded-sm bg-[var(--row-suggested-bg)] border-l-2 border-l-[var(--row-suggested-border)]" />
                       <span>AI javaslat (jóváhagyásra vár)</span>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -1678,12 +1683,12 @@ const InvoicesPage = () => {
                         ) : (
                           displayedSubmittedInvoices.map((invoice) => (
                             <React.Fragment key={invoice.id}>
-                              <TableRow className={cn(
+                              <TableRow data-row-hover className={cn(
                                 "group cursor-pointer",
                                 selectedSubmittedIds.has(invoice.id) && "bg-primary/5",
-                                !selectedSubmittedIds.has(invoice.id) && extendedMatchedIds.has(invoice.id) && !suggestedOnlyIds.has(invoice.id) && "bg-emerald-100/70 dark:bg-emerald-950/40 border-l-2 border-l-emerald-500/60 border-b border-border/40",
-                                !selectedSubmittedIds.has(invoice.id) && suggestedOnlyIds.has(invoice.id) && "bg-amber-100/70 dark:bg-amber-950/40 border-l-2 border-l-amber-500/60 border-b border-border/40",
-                                !selectedSubmittedIds.has(invoice.id) && !extendedMatchedIds.has(invoice.id) && !suggestedOnlyIds.has(invoice.id) && "bg-rose-100/60 dark:bg-rose-950/30 border-l-2 border-l-rose-400/50 border-b border-border/40",
+                                !selectedSubmittedIds.has(invoice.id) && extendedMatchedIds.has(invoice.id) && !suggestedOnlyIds.has(invoice.id) && "bg-[var(--row-matched-bg)]",
+                                !selectedSubmittedIds.has(invoice.id) && suggestedOnlyIds.has(invoice.id) && "bg-[var(--row-suggested-bg)]",
+                                !selectedSubmittedIds.has(invoice.id) && !extendedMatchedIds.has(invoice.id) && !suggestedOnlyIds.has(invoice.id) && "bg-[var(--row-unmatched-bg)]",
                                 expandedRowIds.has(invoice.id) && "border-b-0"
                               )} onClick={(e) => handleRowClick(invoice.id, e)}>
                                 <TableCell className="pl-4">
@@ -1717,17 +1722,17 @@ const InvoicesPage = () => {
                                   <CopyableCell value={invoice.bizonylatsorszam || '-'} ariaLabel={`${invoice.bizonylatsorszam} bizonylatsorszám másolása`} />
                                 </TableCell>
                                 <TableCell className={cn("text-right font-mono tabular-nums", invoice.reference_number ? "text-muted-foreground italic" : !invoice.adoalap_osszesen ? "text-muted-foreground" : activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
-                                  <CopyableCell value={(invoice.adoalap_osszesen || 0).toString()} displayValue={formatCurrency(invoice.adoalap_osszesen || 0, invoice.penznem || 'HUF')} className="justify-end" ariaLabel="Nettó összeg másolása" />
+                                  {formatCurrency(invoice.adoalap_osszesen || 0, invoice.penznem || 'HUF')}
                                 </TableCell>
                                 <TableCell className={cn("text-right font-mono tabular-nums font-medium", invoice.reference_number ? "text-muted-foreground italic" : !invoice.brutto_vegosszeg ? "text-muted-foreground" : activeTab === 'SUBMITTED_INBOUND' ? "text-destructive" : "text-success")}>
-                                  <CopyableCell value={(invoice.brutto_vegosszeg || 0).toString()} displayValue={formatCurrency(invoice.brutto_vegosszeg || 0, invoice.penznem || 'HUF')} className="justify-end" ariaLabel="Bruttó összeg másolása" />
+                                  {formatCurrency(invoice.brutto_vegosszeg || 0, invoice.penznem || 'HUF')}
                                 </TableCell>
                                 <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
-                                  <CopyableCell value={(invoice.afa_osszeg_osszesen || 0).toString()} displayValue={formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || 'HUF')} className="justify-end" align="right" ariaLabel="ÁFA összeg másolása" />
+                                  {formatCurrency(invoice.afa_osszeg_osszesen || 0, invoice.penznem || 'HUF')}
                                 </TableCell>
                                 <TableCell className="text-center">
                                   <div className="flex items-center justify-center gap-1.5">
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground">{invoice.fizetesi_mod || 'Nem megadott'}</span>
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground border border-black/10 dark:border-white/10">{invoice.fizetesi_mod || 'Nem megadott'}</span>
                                     {invoice.exclude_from_accounting && (
                                       <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-300/40 whitespace-nowrap">
                                         Nem könyvelt

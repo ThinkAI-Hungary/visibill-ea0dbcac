@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TableBody, TableRow, TableCell, TableHead, TableHeader } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn, formatCurrency } from '@/lib/utils';
 import { CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, Eye, Settings, Ban, UploadCloud, ChevronDown, Link2, Link2Off } from 'lucide-react';
@@ -20,21 +21,21 @@ import { supabase } from '@/integrations/supabase/client';
 const getRowBackgroundClass = (transaction: Transaction): string => {
   const status = computeMatchStatus(transaction);
   if (status === 'matched') {
-    return 'bg-emerald-100/70 dark:bg-emerald-950/40 border-l-2 border-l-emerald-500/60 border-b border-border/40';
+    return 'bg-[var(--row-matched-bg)]';
   }
   if (status === 'suggested') {
-    return 'bg-yellow-100/70 dark:bg-yellow-950/40 border-l-2 border-l-yellow-500/70 border-b border-border/40';
+    return 'bg-[var(--row-suggested-bg)]';
   }
   if (status === 'auto_settled') {
-    return 'bg-blue-100/50 dark:bg-blue-950/30 border-l-2 border-l-blue-500/50 border-b border-border/40';
+    return 'bg-[var(--row-settled-bg)]';
   }
   if (status === 'no_invoice') {
-    return 'bg-purple-100/60 dark:bg-purple-950/40 border-l-2 border-l-purple-500/60 border-b border-border/40';
+    return 'bg-[var(--row-noinvoice-bg)]';
   }
   if (status === 'invoice_missing') {
-    return 'bg-sky-100/60 dark:bg-sky-950/40 border-l-2 border-l-sky-500/60 border-b border-border/40';
+    return 'bg-[var(--row-missing-bg)]';
   }
-  return 'bg-rose-100/60 dark:bg-rose-950/30 border-l-2 border-l-rose-400/50 border-b border-border/40';
+  return 'bg-[var(--row-unmatched-bg)]';
 };
 
 const getTypeBgClass = (type: string | null): string => {
@@ -182,30 +183,37 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
 
   if (matchedSubmitted.length === 0 && matchedNav.length === 0) {
     return (
-      <TableRow>
-        <TableCell colSpan={8} className="bg-muted/20 py-4">
-          <div className="max-w-md mx-auto">
-            <div className="flex items-center justify-between mb-3">
+      <>
+        {/* Top spacer row */}
+        <TableRow className="bg-transparent hover:bg-transparent border-none">
+          <TableCell colSpan={8} className="p-0 h-1 border-none" />
+        </TableRow>
+        <TableRow className="bg-muted/40 dark:bg-card hover:bg-muted/40 dark:hover:bg-card border-t border-b border-border/30">
+          <TableCell colSpan={8} className="p-0">
+            <div className="py-6 px-8 space-y-4 max-w-3xl ml-4">
+              {/* Header */}
               <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 <Link2Off className="h-3.5 w-3.5" />
                 Kapcsolódó tételek
               </div>
+              <Card className="bg-muted/30 border-border/50">
+                <CardContent className="p-4 flex flex-col items-center justify-center gap-3">
+                  <p className="text-sm text-muted-foreground italic">Nincs párosított tétel ehhez a tranzakcióhoz.</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => { e.stopPropagation(); onOpenDetails(transaction); }}
+                    className="h-8 text-xs gap-1.5"
+                  >
+                    <Link2 className="h-3.5 w-3.5" />
+                    Számla hozzárendelése
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
-            <div className="bg-muted/30 border border-border/50 rounded-lg p-4 flex flex-col items-center justify-center gap-3">
-              <p className="text-sm text-muted-foreground italic">Nincs párosított tétel ehhez a tranzakcióhoz.</p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => { e.stopPropagation(); onOpenDetails(transaction); }}
-                className="h-8 text-xs gap-1.5"
-              >
-                <Link2 className="h-3.5 w-3.5" />
-                Számla hozzárendelése
-              </Button>
-            </div>
-          </div>
-        </TableCell>
-      </TableRow>
+          </TableCell>
+        </TableRow>
+      </>
     );
   }
 
@@ -239,6 +247,7 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
   return (
     <>
     <TableRow
+      data-row-hover
       className={cn(
         "h-10 cursor-pointer",
         getRowBackgroundClass(transaction),
@@ -247,7 +256,7 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
       onClick={() => onToggleExpand?.(transaction.id)}
     >
       <TableCell className="font-medium text-xs whitespace-nowrap">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
             <ChevronDown className={cn(
               "h-3 w-3 text-muted-foreground shrink-0 transition-transform duration-200",
               isExpanded && "rotate-180"
@@ -282,11 +291,11 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
         </div>
       </TableCell>
       <TableCell className={cn(
-        "text-right font-mono text-xs whitespace-nowrap",
+        "text-right font-mono text-xs whitespace-nowrap [text-shadow:_0_0_3px_rgba(255,255,255,0.8)] dark:[text-shadow:_0_0_3px_rgba(0,0,0,0.6)]",
         transaction.amount >= 0 ? "text-success" : "text-destructive"
       )}>
         <div className="flex flex-col items-end">
-          <span>{formatCurrency(transaction.amount, transaction.currency || 'HUF')}</span>
+          <span className="font-medium">{formatCurrency(transaction.amount, transaction.currency || 'HUF')}</span>
           {transaction.currency && transaction.currency !== 'HUF' && exchangeRates && (
             <span className="text-[10px] text-muted-foreground font-normal leading-tight">
               ({formatCurrency(transaction.amount * (exchangeRates[transaction.currency] || 1), 'HUF')})
@@ -295,18 +304,19 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
         </div>
       </TableCell>
       <TableCell className="text-xs whitespace-nowrap">
-        {transaction.currency && transaction.currency !== 'HUF' ? (
-          <span className="font-semibold text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded text-[10px]">
-            {transaction.currency}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">{transaction.currency || 'HUF'}</span>
-        )}
+        <span className={cn(
+          "inline-block w-[3rem] text-center font-semibold px-1.5 py-0.5 rounded text-[10px] border border-black/10 dark:border-white/10 text-foreground",
+          transaction.currency && transaction.currency !== 'HUF'
+            ? "bg-amber-500/20 dark:bg-yellow-500/10"
+            : "bg-muted/60"
+        )}>
+          {transaction.currency || 'HUF'}
+        </span>
       </TableCell>
       <TableCell className="overflow-hidden">
         {transaction.type ? (
           <span className={cn(
-            "text-[11px] px-1.5 py-0.5 rounded-md inline-block w-[10.5rem] text-center whitespace-nowrap overflow-hidden text-ellipsis",
+            "text-[11px] font-semibold px-1.5 py-0.5 rounded-md inline-block w-[10.5rem] text-center whitespace-nowrap overflow-hidden text-ellipsis border border-black/10 dark:border-white/10",
             getTypeBgClass(transaction.type) || "text-muted-foreground"
           )}>
             {transaction.type}
@@ -319,13 +329,37 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
         <TooltipProvider delayDuration={0}>
           <Tooltip>
             <TooltipTrigger>
-              <div className="flex items-center justify-center gap-1">
-                {matchStatus === 'matched' && <><CheckCircle2 className="h-3.5 w-3.5 text-success" /><span className="text-[10px] font-medium text-emerald-600">Párosított</span></>}
-                {matchStatus === 'suggested' && <><AlertCircle className="h-3.5 w-3.5 text-yellow-500" /><span className="text-[10px] font-medium text-yellow-600">Javasolt</span></>}
-                {matchStatus === 'auto_settled' && <><Settings className="h-3.5 w-3.5 text-blue-500" /><span className="text-[10px] font-medium text-blue-600 dark:text-blue-400">Rendezett</span></>}
-                {matchStatus === 'unmatched' && <><HelpCircle className="h-3.5 w-3.5 text-destructive" /><span className="text-[10px] font-medium text-rose-500">Nincs</span></>}
-                {matchStatus === 'no_invoice' && <><Ban className="h-3.5 w-3.5 text-purple-500" /><span className="text-[10px] font-medium text-purple-600 dark:text-purple-400">Nincs számla</span></>}
-                {matchStatus === 'invoice_missing' && <><UploadCloud className="h-3.5 w-3.5 text-sky-500" /><span className="text-[10px] font-medium text-sky-600 dark:text-sky-400">Feltöltendő</span></>}
+              <div className="flex items-center justify-center">
+                {matchStatus === 'matched' && (
+                  <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-600/15 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-400 border border-black/10 dark:border-white/10">
+                    <CheckCircle2 className="h-3 w-3" />Párosított
+                  </span>
+                )}
+                {matchStatus === 'suggested' && (
+                  <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/15 text-amber-800 dark:bg-yellow-500/15 dark:text-yellow-400 border border-black/10 dark:border-white/10">
+                    <AlertCircle className="h-3 w-3" />Javasolt
+                  </span>
+                )}
+                {matchStatus === 'auto_settled' && (
+                  <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-blue-500/15 text-blue-800 dark:bg-blue-500/15 dark:text-blue-400 border border-black/10 dark:border-white/10">
+                    <Settings className="h-3 w-3" />Rendezett
+                  </span>
+                )}
+                {matchStatus === 'unmatched' && (
+                  <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-rose-500/15 text-rose-800 dark:bg-rose-500/15 dark:text-rose-400 border border-black/10 dark:border-white/10">
+                    <HelpCircle className="h-3 w-3" />Nincs
+                  </span>
+                )}
+                {matchStatus === 'no_invoice' && (
+                  <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-purple-500/15 text-purple-800 dark:bg-purple-500/15 dark:text-purple-400 border border-black/10 dark:border-white/10">
+                    <Ban className="h-3 w-3" />Nincs számla
+                  </span>
+                )}
+                {matchStatus === 'invoice_missing' && (
+                  <span className="inline-flex items-center gap-1 w-[5.5rem] justify-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-sky-500/15 text-sky-800 dark:bg-sky-500/15 dark:text-sky-400 border border-black/10 dark:border-white/10">
+                    <UploadCloud className="h-3 w-3" />Feltöltendő
+                  </span>
+                )}
               </div>
             </TooltipTrigger>
             <TooltipContent>
@@ -409,8 +443,8 @@ const TransactionTable = React.memo(function TransactionTable({
   }, []);
 
   return (
-    <div className="rounded-xl border border-border/50 overflow-hidden">
-      <table className="w-full caption-bottom text-sm compact-table" style={{ tableLayout: 'fixed' }}>
+    <div className="rounded-xl border border-border/50 overflow-x-auto">
+      <table className="w-full caption-bottom text-sm compact-table min-w-[1000px]" style={{ tableLayout: 'fixed' }}>
         <colgroup>
           <col style={{ width: '8%' }} />
           <col style={{ width: '32%' }} />

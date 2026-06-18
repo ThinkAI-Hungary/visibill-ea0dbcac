@@ -92,6 +92,7 @@
 | `IdleWarningModal` | 3KB | Inaktivitás figyelmeztetés |
 | `UnsavedChangesDialog` | 1KB | Mentetlen változások |
 | `SupplierInvoiceAssignment` | 14KB | Szállító-számla összerendelés |
+| `ExpandedInvoiceRow` (belső) | – | Tranzakció kereső/hozzárendelés (Dialog-ba migrálva 2026-06-18) |
 
 ---
 
@@ -192,6 +193,24 @@ Cégválasztó dropdown a sidebar-ban, keresési funkcióval.
 | Loading spinner | `z-[9999]` | Full-page spinner |
 | Idle Warning | `z-[9999]` | Kiemelt modal |
 | Sign-out overlay | `z-[9999]` | Kijelentkezés overlay |
+
+---
+
+## Tooltip Portal Pattern
+
+> **Döntés (2026-06-18):** A `TooltipContent` komponens `TooltipPrimitive.Portal`-ba csomagolva, hogy a tooltip a `<body>` szintjén renderelődjön. Ez megakadályozza, hogy szülő konténerek `overflow` beállítása levágja a tooltip szövegét.
+
+```tsx
+// tooltip.tsx — Portal wrapper
+<TooltipPrimitive.Portal>
+  <TooltipPrimitive.Content
+    className="z-50 rounded-md border bg-popover px-3 py-1.5 text-sm ..."
+    {...props}
+  />
+</TooltipPrimitive.Portal>
+```
+
+> **Korábbi probléma:** Az `overflow-x-auto` tábla wrapper levágta a tooltip-eket, amelyek a konténer szélén túl nyúltak. A Portal megoldja ezt, mert a tooltip a DOM gyökérben renderelődik.
 
 ---
 

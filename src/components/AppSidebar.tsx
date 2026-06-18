@@ -69,6 +69,7 @@ import {
 } from "lucide-react";
 import { useUnreadTicketCount } from "@/hooks/useTickets";
 import CompanySelector from "./CompanySelector";
+import AppModeSwitcher from "./AppModeSwitcher";
 
 /**
  * Role hierarchy for visibility filtering.
@@ -323,44 +324,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
       <SidebarContent className="select-none flex flex-col h-full overflow-hidden">
         {/* Header */}
         <div className={`p-4 border-b border-border ${isCollapsed ? 'flex justify-center' : ''}`}>
-          {!isCollapsed ? (
-            <div className="flex items-center gap-2">
-              <span className="relative text-2xl tracking-tight select-none">
-                <span className="font-medium text-foreground/80">e</span>
-                <span className="font-bold text-primary">ai</span>
-                <span className="font-medium text-foreground/80">sy</span>
-                <span className="font-medium text-primary">bill</span>
-                <span className="absolute -bottom-1.5 left-0 right-0 h-[2px] rounded-full bg-primary" />
-              </span>
-              {hasAccountyAccess && (
-                <>
-                  <span className="text-xl font-light text-muted-foreground">|</span>
-                  <Link to="/accounty" className="relative text-2xl tracking-tight select-none hover:opacity-80 transition-opacity">
-                    <span className="font-medium text-foreground/80">e</span>
-                    <span className="font-bold text-primary">ai</span>
-                    <span className="font-medium text-foreground/80">sy</span>
-                    <span className="font-medium text-primary">books</span>
-                  </Link>
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-2">
-              <span className="text-2xl tracking-tight select-none">
-                <span className="font-medium text-foreground/80">e</span>
-                <span className="font-bold text-primary">ai</span>
-              </span>
-              {hasAccountyAccess && (
-                <>
-                  <div className="w-4 h-px bg-muted-foreground/30 rounded-full" />
-                  <Link to="/accounty" className="text-2xl tracking-tight hover:opacity-80 transition-opacity" title="eaisybooks">
-                    <span className="font-medium text-foreground/80">e</span>
-                    <span className="font-bold text-primary">ai</span>
-                  </Link>
-                </>
-              )}
-            </div>
-          )}
+          <AppModeSwitcher activeMode="eaisybill" isCollapsed={isCollapsed} />
         </div>
 
         {/* Company Selector — hidden for employees */}

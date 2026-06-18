@@ -329,7 +329,7 @@ const TransactionsPage = () => {
 
           {/* ── KPI Summary Bar (T1) ── */}
           {activeTab === 'general' && (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4 print:hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 mb-4 print:hidden">
             <div className="bg-card border border-border/60 rounded-xl p-3.5 flex items-center gap-3">
               <div className="bg-primary/10 text-primary p-2 rounded-lg"><FileText className="w-4 h-4" /></div>
               <div><div className="text-lg font-bold tabular-nums">{safeKpis.total.toLocaleString('hu-HU')}</div><div className="text-[11px] text-muted-foreground">Összes tranzakció</div></div>
@@ -442,23 +442,23 @@ const TransactionsPage = () => {
                 <div className="flex items-center gap-4 mb-2 text-[11px] text-muted-foreground flex-wrap">
                   <span className="font-medium">Jelmagyarázat:</span>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm bg-emerald-100 dark:bg-emerald-950/60 border-l-2 border-l-emerald-500" />
+                    <div className="w-3 h-3 rounded-sm bg-[var(--row-matched-bg)] border-l-2 border-l-[var(--row-matched-border)]" />
                     <span>Párosított / Kifizetve</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm bg-yellow-100 dark:bg-yellow-950/60 border-l-2 border-l-yellow-500" />
+                    <div className="w-3 h-3 rounded-sm bg-[var(--row-suggested-bg)] border-l-2 border-l-[var(--row-suggested-border)]" />
                     <span>AI javaslat (jóváhagyásra vár)</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm bg-blue-100 dark:bg-blue-950/60 border-l-2 border-l-blue-500" />
+                    <div className="w-3 h-3 rounded-sm bg-[var(--row-settled-bg)] border-l-2 border-l-[var(--row-settled-border)]" />
                     <span>Rendezett (nincs számla)</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm bg-purple-100 dark:bg-purple-950/60 border-l-2 border-l-purple-500" />
+                    <div className="w-3 h-3 rounded-sm bg-[var(--row-noinvoice-bg)] border-l-2 border-l-[var(--row-noinvoice-border)]" />
                     <span>Nincs számla</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm bg-rose-100 dark:bg-rose-950/60 border-l-2 border-l-rose-400" />
+                    <div className="w-3 h-3 rounded-sm bg-[var(--row-unmatched-bg)] border-l-2 border-l-[var(--row-unmatched-border)]" />
                     <span>Nincs párosítás</span>
                   </div>
                 </div>

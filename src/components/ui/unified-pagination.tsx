@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,6 +31,21 @@ export function UnifiedPagination({
   pageSizeOptions = [50, 100],
   className,
 }: UnifiedPaginationProps) {
+  // Reset scroll of layout containers when current page changes
+  useEffect(() => {
+    const scrollContainers = document.querySelectorAll("main, .overflow-y-auto, .overflow-auto");
+    scrollContainers.forEach((el) => {
+      if (
+        el.tagName === 'MAIN' ||
+        el.classList.contains('p-6') ||
+        el.classList.contains('p-8') ||
+        el.classList.contains('flex-1')
+      ) {
+        el.scrollTop = 0;
+      }
+    });
+  }, [currentPage]);
+
   const isFirstPage = currentPage === 1;
   const isLastPage = currentPage === totalPages || totalPages === 0;
 

@@ -14,17 +14,113 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus, Hash, Users, BarChart3, FileText, Settings, Search } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus, Hash, Users, BarChart3, FileText, Settings, Search, Check } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { PartnerCombobox } from '@/components/PartnerCombobox';
 import { SupplierInvoiceAssignment } from '@/components/SupplierInvoiceAssignment';
 import { CopyableCell } from '@/components/ui/copyable-cell';
 import { useProjectLaborCosts } from '@/hooks/useProjectLaborCosts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { IconPicker, ColorPicker, resolveIcon } from '@/components/IconPicker';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const ProjectSkeleton = () => {
+  return (
+    <div className="container mx-auto px-4 py-8 animate-in fade-in-0 duration-300">
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-9 w-48" />
+            </div>
+            <Skeleton className="h-4 w-96 max-w-full" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        {/* Cards Grid Skeleton */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="flex flex-col overflow-hidden border shadow-sm h-[435px]">
+              <div className="flex flex-1">
+                {/* Left Stripe placeholder */}
+                <div className="w-1.5 shrink-0 bg-muted/50" />
+                
+                <div className="flex-1 flex flex-col">
+                  {/* Card Header area */}
+                  <div className="p-4 border-b space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {/* Icon placeholder */}
+                        <Skeleton className="w-10 h-10 rounded-lg shrink-0" />
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                          <Skeleton className="h-5 w-36" />
+                          <div className="flex gap-2">
+                            <Skeleton className="h-3.5 w-16" />
+                            <Skeleton className="h-3.5 w-24" />
+                          </div>
+                        </div>
+                      </div>
+                      <Skeleton className="h-5 w-12 shrink-0 ml-2" />
+                    </div>
+
+                    {/* Inline financials row */}
+                    <div className="flex gap-1.5 mt-3">
+                      <Skeleton className="h-5 w-24 rounded-full" />
+                      <Skeleton className="h-5 w-24 rounded-full" />
+                      <Skeleton className="h-5 w-24 rounded-full" />
+                    </div>
+                  </div>
+
+                  {/* Tabs switchers */}
+                  <div className="flex border-b text-xs font-semibold">
+                    <div className="flex-1 py-3 flex justify-center"><Skeleton className="h-4 w-16" /></div>
+                    <div className="flex-1 py-3 flex justify-center"><Skeleton className="h-4 w-16" /></div>
+                    <div className="flex-1 py-3 flex justify-center"><Skeleton className="h-4 w-16" /></div>
+                  </div>
+
+                  {/* Content Area */}
+                  <div className="flex-1 flex flex-col p-4 justify-between space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Budget progress card */}
+                      <div className="p-3 rounded-lg border space-y-2">
+                        <Skeleton className="h-3 w-14" />
+                        <Skeleton className="h-5 w-20" />
+                        <Skeleton className="h-1.5 w-full rounded-full" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+
+                      {/* Duration progress card */}
+                      <div className="p-3 rounded-lg border space-y-2">
+                        <Skeleton className="h-3 w-14" />
+                        <Skeleton className="h-5 w-20" />
+                        <Skeleton className="h-1.5 w-full rounded-full" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                    </div>
+
+                    {/* Description placeholder */}
+                    <div className="space-y-2 border-t pt-3 flex-1">
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-[90%]" />
+                      <Skeleton className="h-3 w-[40%]" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 interface Project {
   id?: string;
@@ -54,6 +150,7 @@ const Projects = () => {
   const [assigningProject, setAssigningProject] = useState<Project | null>(null);
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [modalSelectedInvoices, setModalSelectedInvoices] = useState<Set<string>>(new Set());
   
   // Track active tab for each project (defaulting to 'overview')
   const [activeTabs, setActiveTabs] = useState<Record<string, 'overview' | 'invoices' | 'settings'>>({});
@@ -331,6 +428,64 @@ const Projects = () => {
     }
   };
 
+  const handleToggleModalInvoiceSelection = (invoiceId: string) => {
+    setModalSelectedInvoices(prev => {
+      const next = new Set(prev);
+      if (next.has(invoiceId)) {
+        next.delete(invoiceId);
+      } else {
+        next.add(invoiceId);
+      }
+      return next;
+    });
+  };
+
+  const handleToggleSelectAllModalInvoices = () => {
+    const allFilteredIds = modalFilteredUnassigned.map(inv => inv.id);
+    const areAllSelected = allFilteredIds.every(id => modalSelectedInvoices.has(id));
+    
+    setModalSelectedInvoices(prev => {
+      const next = new Set(prev);
+      if (areAllSelected) {
+        allFilteredIds.forEach(id => next.delete(id));
+      } else {
+        allFilteredIds.forEach(id => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const handleBatchAssignInvoices = async (projectId: string) => {
+    if (modalSelectedInvoices.size === 0) return;
+    setLoading(true);
+    try {
+      const idsArray = Array.from(modalSelectedInvoices);
+      const { error } = await supabase
+        .from('nav_invoices')
+        .update({ project_id: projectId })
+        .in('id', idsArray);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Számlák hozzárendelve',
+        description: `${modalSelectedInvoices.size} db számla sikeresen hozzárendelve a projekthez.`,
+      });
+
+      setModalSelectedInvoices(new Set());
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects(selectedCompany?.id || '') });
+      refetchUnassigned();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Hiba',
+        description: error.message || 'Nem sikerült a számlák hozzárendelése.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleUnassignInvoice = async (invoiceId: string) => {
     try {
       const { error } = await supabase
@@ -390,7 +545,7 @@ const Projects = () => {
   };
 
   if (initialLoading) {
-    return <ContentSkeleton />;
+    return <ProjectSkeleton />;
   }
 
   return (
@@ -955,14 +1110,14 @@ const Projects = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Assign Invoice Dialog Modal */}
       <Dialog open={assigningProject !== null} onOpenChange={(open) => {
         if (!open) {
           setAssigningProject(null);
           setInvoiceSearchQuery('');
+          setModalSelectedInvoices(new Set());
         }
       }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-3xl min-w-[320px] sm:min-w-[650px] md:min-w-[800px]">
           <DialogHeader>
             <DialogTitle>Számlák hozzárendelése</DialogTitle>
             <DialogDescription>
@@ -981,59 +1136,106 @@ const Projects = () => {
               />
             </div>
 
-            <div className="max-h-[300px] overflow-y-auto border rounded-lg p-1 divide-y bg-background/50">
+            {/* Batch Selection Toolbar */}
+            {modalFilteredUnassigned.length > 0 && (
+              <div className="flex items-center justify-between px-2.5 text-xs text-muted-foreground bg-muted/30 rounded-lg border border-border/40 h-11 shrink-0 gap-2">
+                <div className="flex items-center gap-2.5 pl-0.5">
+                  <Checkbox
+                    id="select-all-modal"
+                    checked={
+                      modalFilteredUnassigned.length > 0 &&
+                      modalFilteredUnassigned.every(inv => modalSelectedInvoices.has(inv.id))
+                    }
+                    onCheckedChange={handleToggleSelectAllModalInvoices}
+                  />
+                  <label htmlFor="select-all-modal" className="cursor-pointer select-none font-semibold text-foreground">
+                    Összes kijelölése ezen a listán ({modalFilteredUnassigned.length} db)
+                  </label>
+                </div>
+                {modalSelectedInvoices.size > 0 && (
+                  <Button
+                    size="sm"
+                    className="h-7 px-3 text-xs gap-1.5 animate-in fade-in zoom-in-95 duration-150"
+                    onClick={() => {
+                      if (assigningProject?.id) {
+                        handleBatchAssignInvoices(assigningProject.id);
+                      }
+                    }}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                    Kijelöltek hozzárendelése ({modalSelectedInvoices.size} db)
+                  </Button>
+                )}
+              </div>
+            )}
+
+            <div className="max-h-[300px] overflow-y-auto overflow-x-hidden w-full border rounded-lg p-1 divide-y bg-background/50">
               {modalFilteredUnassigned.length === 0 ? (
                 <div className="text-center py-8 text-sm text-muted-foreground">
                   Nincs hozzárendelhető (projekt nélküli) számla.
                 </div>
               ) : (
-                modalFilteredUnassigned.map((invoice) => (
-                  <div
-                    key={invoice.id}
-                    className="flex justify-between items-center p-2.5 hover:bg-muted/60 transition-colors text-xs"
-                  >
-                    <div className="min-w-0 mr-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-bold truncate">
-                          {invoice.invoice_number}
+                modalFilteredUnassigned.map((invoice) => {
+                  const isSelected = modalSelectedInvoices.has(invoice.id);
+                  return (
+                    <div
+                      key={invoice.id}
+                      className={cn(
+                        "flex justify-between items-center p-2.5 hover:bg-muted/60 transition-colors text-xs w-full min-w-0 gap-2 cursor-pointer select-none min-h-[50px]",
+                        isSelected && "bg-primary/5 hover:bg-primary/10"
+                      )}
+                      onClick={() => handleToggleModalInvoiceSelection(invoice.id)}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => handleToggleModalInvoiceSelection(invoice.id)}
+                          onClick={(e) => e.stopPropagation()} // Stop triggering row onClick
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="font-mono font-bold truncate">
+                              {invoice.invoice_number}
+                            </span>
+                            <Badge
+                              variant="secondary"
+                              className={`text-[9px] px-1.5 py-0 h-4 border-0 ${
+                                invoice.invoice_direction === 'INBOUND'
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-green-100 text-green-700'
+                              }`}
+                            >
+                              {invoice.invoice_direction === 'INBOUND' ? 'BE' : 'KI'}
+                            </Badge>
+                          </div>
+                          <div className="text-[10px] text-muted-foreground truncate mt-0.5">
+                            {invoice.invoice_direction === 'INBOUND'
+                              ? (invoice.supplier_name || 'Szállító')
+                              : (invoice.customer_name || 'Ügyfél')}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <span className="font-semibold text-foreground">
+                          {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
                         </span>
-                        <Badge
-                          variant="secondary"
-                          className={`text-[9px] px-1.5 py-0 h-4 border-0 ${
-                            invoice.invoice_direction === 'INBOUND'
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-green-100 text-green-700'
-                          }`}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-2 flex items-center gap-1 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                          onClick={async () => {
+                            if (assigningProject?.id) {
+                              await handleAssignInvoice(assigningProject.id, invoice.id);
+                            }
+                          }}
                         >
-                          {invoice.invoice_direction === 'INBOUND' ? 'BE' : 'KI'}
-                        </Badge>
-                      </div>
-                      <div className="text-[10px] text-muted-foreground truncate mt-0.5">
-                        {invoice.invoice_direction === 'INBOUND'
-                          ? (invoice.supplier_name || 'Szállító')
-                          : (invoice.customer_name || 'Ügyfél')}
+                          <Plus className="h-3.5 w-3.5" />
+                          Hozzáad
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="font-semibold text-foreground">
-                        {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 px-2 flex items-center gap-1 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
-                        onClick={async () => {
-                          if (assigningProject?.id) {
-                            await handleAssignInvoice(assigningProject.id, invoice.id);
-                          }
-                        }}
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        Hozzáad
-                      </Button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
@@ -1044,6 +1246,7 @@ const Projects = () => {
               onClick={() => {
                 setAssigningProject(null);
                 setInvoiceSearchQuery('');
+                setModalSelectedInvoices(new Set());
               }}
             >
               Bezárás

@@ -35,7 +35,7 @@
 | **Drawer** | `drawer.tsx` | `vaul` |
 | **Popover** | `popover.tsx` | `@radix-ui/react-popover` |
 | **Hover Card** | `hover-card.tsx` | `@radix-ui/react-hover-card` |
-| **Tooltip** | `tooltip.tsx` | `@radix-ui/react-tooltip` |
+| **Tooltip** | `tooltip.tsx` | `@radix-ui/react-tooltip` | Portal-wrapped |
 | **Toast** | `toast.tsx` | `@radix-ui/react-toast` |
 | **Toaster** | `toaster.tsx` | – |
 
@@ -181,6 +181,8 @@ Kattintásra másolható cella tooltip-pal:
 - Hover: Copy ikon megjelenik (`opacity-0 → group-hover:opacity-100`)
 - Click: vágólapra másolás + toast értesítés „Másolva"
 - Tooltip: teljes érték megjelenítése
+
+> **Használati irányelv (2026-06-18):** A `CopyableCell` kizárólag szöveges és azonosító mezőknél (pl. Partner név, Bizonylatszám) használandó. Pénzügyi összegek / devizák esetén nem használjuk, a vizuális zaj csökkentése érdekében.
 
 ### iOS Toggle
 **Fájl:** `ui/ios-toggle.tsx`

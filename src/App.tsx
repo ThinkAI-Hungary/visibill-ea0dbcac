@@ -302,6 +302,27 @@ function PasswordRecoveryRedirect() {
   return null;
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    // Reset scroll positions of main layout content containers
+    const scrollContainers = document.querySelectorAll("main, .overflow-y-auto, .overflow-auto");
+    scrollContainers.forEach((el) => {
+      if (
+        el.tagName === 'MAIN' ||
+        el.classList.contains('p-6') ||
+        el.classList.contains('p-8') ||
+        el.classList.contains('flex-1')
+      ) {
+        el.scrollTop = 0;
+      }
+    });
+  }, [pathname]);
+
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -313,6 +334,7 @@ const App = () => (
 
                 <Toaster />
                 <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                    <ScrollToTop />
                     <PasswordRecoveryRedirect />
                     <Routes>
                     {/* Auth routes – no sidebar, own Suspense for lazy chunks */}

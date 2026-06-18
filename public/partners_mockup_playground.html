@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="hu" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visibill - Partnertörzs Redesign Mockups</title>
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            border: 'hsl(var(--border))',
+            background: 'hsl(var(--background))',
+            foreground: 'hsl(var(--foreground))',
+            primary: {
+              DEFAULT: 'hsl(var(--primary))',
+              foreground: 'hsl(var(--primary-foreground))',
+            },
+            card: {
+              DEFAULT: 'hsl(var(--card))',
+              foreground: 'hsl(var(--card-foreground))',
+            },
+            muted: {
+              DEFAULT: 'hsl(var(--muted))',
+              foreground: 'hsl(var(--muted-foreground))',
+            },
+            success: 'hsl(142, 71%, 45%)',
+          }
+        }
+      }
+    }
+  </script>
+  <style type="text/css">
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 224 71.4% 4.1%;
+      --card: 0 0% 100%;
+      --card-foreground: 224 71.4% 4.1%;
+      --primary: 221.2 83.2% 53.3%;
+      --primary-foreground: 210 40% 98%;
+      --muted: 220 14.3% 95.9%;
+      --muted-foreground: 220 8.9% 46.1%;
+      --border: 220 13% 91%;
+    }
+    .dark {
+      --background: 224 71.4% 4.1%;
+      --foreground: 210 40% 98%;
+      --card: 224 71.4% 6.5%;
+      --card-foreground: 210 40% 98%;
+      --primary: 217.2 91.2% 59.8%;
+      --primary-foreground: 222.2 47.4% 11.2%;
+      --muted: 215 27.9% 12%;
+      --muted-foreground: 215.4 16.3% 56.9%;
+      --border: 215 27.9% 14%;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: rgb(2 2 2 / var(--tw-bg-opacity, 1));
+    }
+    .dark body {
+      background-color: #030303;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: hsl(var(--border));
+      border-radius: 99px;
+    }
+    /* Global border for all badge-like elements (standard Badge and custom inline spans/divs) */
+    span[class*="inline-flex"][class*="items-center"][class*="bg-"][class*="text-"],
+    div[class*="inline-flex"][class*="items-center"][class*="bg-"][class*="text-"],
+    .badge {
+      border: 1px solid currentColor !important;
+      border-color: color-mix(in srgb, currentColor 15%, transparent) !important;
+    }
+  </style>
+</head>
+<body class="text-foreground antialiased min-h-screen flex transition-colors duration-300">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="w-64 border-r border-border/40 bg-card/40 backdrop-blur-lg flex flex-col shrink-0">
+    <div class="p-4 border-b border-border/40 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="w-7 h-7 rounded bg-blue-600 flex items-center justify-center text-white font-bold text-sm">V</span>
+        <span class="font-display font-bold text-lg tracking-tight">eaisy<span class="text-blue-500">Bill</span></span>
+      </div>
+    </div>
+    
+    <div class="p-3 border-b border-border/40">
+      <div class="bg-muted/50 rounded-lg p-2 flex items-center justify-between border border-border/20">
+        <div class="min-w-0">
+          <p class="text-[10px] font-bold text-muted-foreground uppercase">Szervezet</p>
+          <p class="text-xs font-semibold truncate">Think Ai Kft</p>
+        </div>
+        <i data-lucide="chevrons-up-down" class="w-3.5 h-3.5 text-muted-foreground"></i>
+      </div>
+    </div>
+
+    <nav class="flex-1 p-2 space-y-1 overflow-y-auto">
+      <div class="text-[10px] font-bold text-muted-foreground uppercase px-3 py-2">Áttekintés</div>
+      <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-all">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Irányítópult
+      </a>
+      <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-all">
+        <i data-lucide="tags" class="w-4 h-4"></i> Kategóriák
+      </a>
+      <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-all">
+        <i data-lucide="folder-open" class="w-4 h-4"></i> Projektek
+      </a>
+      <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg bg-blue-500/10 text-blue-500 font-semibold border border-blue-500/20 transition-all">
+        <i data-lucide="users" class="w-4 h-4"></i> Partnertörzs
+      </a>
+
+      <div class="text-[10px] font-bold text-muted-foreground uppercase px-3 py-2 pt-4">Pénzügyek</div>
+      <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-all">
+        <i data-lucide="file-text" class="w-4 h-4"></i> Számlák
+      </a>
+      <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-all">
+        <i data-lucide="line-chart" class="w-4 h-4"></i> Kintlévőség
+      </a>
+      <a href="#" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-all">
+        <i data-lucide="landmark" class="w-4 h-4"></i> Tranzakciók
+      </a>
+    </nav>
+  </aside>
+
+  <!-- ================= MAIN CONTENT AREA ================= -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-background">
+    <!-- Top date range bar -->
+    <header class="h-14 border-b border-border/40 px-6 flex items-center justify-between bg-card/20 backdrop-blur-md">
+      <div class="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+        <span>Időszak:</span>
+        <span class="bg-muted px-2 py-0.5 rounded border border-border/30 font-semibold text-foreground">Ez az év</span>
+        <span>(2026. jan. 01. – 2026. dec. 31.)</span>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <!-- Theme Switcher Button -->
+        <button id="themeToggle" class="p-2 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground transition-colors border border-border/30">
+          <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+          <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
+        </button>
+        <!-- Mockup Info Tooltip -->
+        <div class="text-xs bg-blue-500/10 text-blue-500 border border-blue-500/20 px-3 py-1 rounded-full font-semibold">
+          10 Mockup Koncepció Játszótér
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Scrollable Area -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+      
+      <!-- Page Title & Toolbar -->
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight font-display">Partnertörzs</h1>
+          <p class="text-muted-foreground text-sm mt-0.5 font-medium">Redizájnolt, funkció- és adatspecifikus partner nyilvántartó felület</p>
+        </div>
+        
+        <div class="flex items-center gap-3">
+          <button onclick="openWizard()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-blue-600/15 transition-all">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Új Partner (API Kitöltő)
+          </button>
+        </div>
+      </div>
+
+      <!-- concept selector tabs switcher -->
+      <div class="bg-card/40 border border-border/50 rounded-xl p-1 flex gap-1 text-sm font-semibold max-w-4xl shadow-sm backdrop-blur-md">
+        <button onclick="switchConcept('bento')" id="btn-bento" class="flex-1 py-2 rounded-lg text-center transition-all flex items-center justify-center gap-1.5 bg-blue-600 text-white shadow-sm">
+          <i data-lucide="layout-grid" class="w-4 h-4"></i> Bento Kártyák (1)
+        </button>
+        <button onclick="switchConcept('splitscreen')" id="btn-splitscreen" class="flex-1 py-2 rounded-lg text-center transition-all flex items-center justify-center gap-1.5 text-muted-foreground hover:text-foreground">
+          <i data-lucide="columns-2" class="w-4 h-4"></i> Splitscreen Lista (2)
+        </button>
+        <button onclick="switchConcept('financial')" id="btn-financial" class="flex-1 py-2 rounded-lg text-center transition-all flex items-center justify-center gap-1.5 text-muted-foreground hover:text-foreground">
+          <i data-lucide="pie-chart" class="w-4 h-4"></i> Kockázat & Analitika (5)
+        </button>
+        <button onclick="switchConcept('navsync')" id="btn-navsync" class="flex-1 py-2 rounded-lg text-center transition-all flex items-center justify-center gap-1.5 text-muted-foreground hover:text-foreground">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i> NAV Kapcsolat (6)
+        </button>
+      </div>
+
+      <!-- Filters & Search Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-4 max-w-7xl">
+        <div class="flex items-center gap-2 border border-border/40 rounded-lg p-1 bg-card/20 backdrop-blur-md text-xs font-semibold">
+          <button class="px-3 py-1.5 rounded-md bg-muted text-foreground border border-border/20">Összes (52)</button>
+          <button class="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground">Vevők (34)</button>
+          <button class="px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground">Szállítók (18)</button>
+          <button class="px-3 py-1.5 rounded-md text-amber-500 hover:text-amber-600 flex items-center gap-1">
+            <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Figyelmeztetett (4)
+          </button>
+        </div>
+
+        <div class="relative w-80 max-w-full">
+          <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"></i>
+          <input type="text" placeholder="Keresés partner neve, adószáma alapján..." class="w-full bg-card/40 border border-border/40 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/30 backdrop-blur-md">
+        </div>
+      </div>
+
+      <!-- ================= MOCKUP CONTENT CONTAINER ================= -->
+      <div id="mockup-content" class="max-w-7xl animate-in fade-in-0 duration-300">
+        <!-- Rendered dynamically -->
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ================= SLIDE-OVER DETAIL DRAWERS (Concept 2) ================= -->
+  <div id="drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-card border-l border-border/60 shadow-2xl translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+    <!-- Drawer Header -->
+    <div class="p-4 border-b border-border/40 flex items-center justify-between bg-muted/20">
+      <div class="flex items-center gap-3">
+        <div id="drawer-avatar" class="w-9 h-9 rounded-full bg-blue-600/10 text-blue-600 flex items-center justify-center font-bold text-sm">AB</div>
+        <div>
+          <h3 id="drawer-name" class="font-bold text-sm">Absurd Kft.</h3>
+          <p id="drawer-type" class="text-[10px] bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 font-semibold px-1.5 py-0.5 rounded-md inline-block">Vevő</p>
+        </div>
+      </div>
+      <button onclick="closeDrawer()" class="p-2 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Drawer Body -->
+    <div class="flex-1 overflow-y-auto p-5 space-y-6 text-sm">
+      <!-- General details -->
+      <div class="space-y-3">
+        <h4 class="font-bold text-xs text-muted-foreground uppercase tracking-wider">Cégadatok</h4>
+        <div class="grid grid-cols-2 gap-y-3 border border-border/30 rounded-xl p-3 bg-muted/10">
+          <div>
+            <p class="text-[10px] text-muted-foreground font-semibold">Adószám</p>
+            <p id="drawer-tax" class="font-mono text-xs font-semibold">14866618-2-42</p>
+          </div>
+          <div>
+            <p class="text-[10px] text-muted-foreground font-semibold">NAV Státusz</p>
+            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-500">
+              <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Online
+            </span>
+          </div>
+          <div class="col-span-2">
+            <p class="text-[10px] text-muted-foreground font-semibold">Székhely</p>
+            <p id="drawer-address" class="text-xs">8000 Székesfehérvár, Fő utca 12.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial mini ledger stats (Concept 10) -->
+      <div class="space-y-3">
+        <h4 class="font-bold text-xs text-muted-foreground uppercase tracking-wider">Pénzügyi Egyenleg</h4>
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="p-2 rounded-lg bg-green-500/10 border border-green-500/10 text-green-700 dark:text-green-400">
+            <p class="text-[9px] font-bold uppercase">Kiszámlázva</p>
+            <p class="font-bold text-xs mt-1">4.2M Ft</p>
+          </div>
+          <div class="p-2 rounded-lg bg-red-500/10 border border-red-500/10 text-red-700 dark:text-red-400">
+            <p class="text-[9px] font-bold uppercase">Kifizetve</p>
+            <p class="font-bold text-xs mt-1">3.8M Ft</p>
+          </div>
+          <div class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/10 text-amber-700 dark:text-amber-400">
+            <p class="text-[9px] font-bold uppercase">Nyitott</p>
+            <p class="font-bold text-xs mt-1">400k Ft</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Smart matching rules (Concept 4) -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="font-bold text-xs text-muted-foreground uppercase tracking-wider">Párosítási Szabályok</h4>
+          <button class="text-[10px] font-bold text-blue-500 hover:underline">+ Új szabály</button>
+        </div>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between p-2.5 rounded-lg border border-border/30 bg-muted/10">
+            <div>
+              <p class="text-[10px] text-muted-foreground">Kivonat leírás tartalmazza:</p>
+              <p class="font-semibold text-xs">"ABSURD KFT SZAML"</p>
+            </div>
+            <i data-lucide="trash-2" class="w-3.5 h-3.5 text-muted-foreground hover:text-red-500 cursor-pointer"></i>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Communication Timeline & CRM notes (Concept 8) -->
+      <div class="space-y-3">
+        <h4 class="font-bold text-xs text-muted-foreground uppercase tracking-wider">Megjegyzések & CRM Feed</h4>
+        <div class="space-y-3 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-[1px] before:bg-border/60">
+          <div class="flex gap-3 relative z-10">
+            <div class="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0 border border-card shadow-sm"><i data-lucide="message-square" class="w-3 h-3"></i></div>
+            <div class="bg-muted/30 p-2.5 rounded-lg border border-border/20 flex-1">
+              <div class="flex justify-between items-center text-[10px] text-muted-foreground mb-1">
+                <span class="font-bold">Könyvelő asszisztens</span>
+                <span>Tegnap, 14:20</span>
+              </div>
+              <p class="text-xs">A júniusi vevőszámla utalása beérkezett, az egyeztetés sikeres.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    
+    <!-- Drawer Footer -->
+    <div class="p-4 border-t border-border/40 flex justify-between bg-muted/10">
+      <button onclick="closeDrawer()" class="px-4 py-2 border border-border/50 rounded-lg text-xs font-semibold hover:bg-muted transition-colors">Bezárás</button>
+      <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-lg shadow-blue-600/10 transition-colors">Szerkesztés</button>
+    </div>
+  </div>
+
+  <!-- ================= AUTOMATED REGISTRY WIZARD (Concept 3) ================= -->
+  <div id="wizard" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-card border border-border/50 rounded-2xl w-[500px] max-w-full p-6 shadow-2xl scale-95 transition-transform duration-300 flex flex-col space-y-4">
+      <div class="flex justify-between items-start">
+        <div>
+          <h3 class="text-lg font-bold font-display">NAV Cégadat Lekérdező Asszisztens</h3>
+          <p class="text-xs text-muted-foreground">Írd be az adószámot az adatok automatikus kitöltéséhez</p>
+        </div>
+        <button onclick="closeWizard()" class="p-1 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Step Content -->
+      <div class="space-y-4 py-2">
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-muted-foreground uppercase">Adószám (első 8 számjegy is elég)</label>
+          <div class="flex gap-2">
+            <input id="taxInput" type="text" placeholder="pl. 25176735" class="flex-1 bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 font-mono">
+            <button onclick="runApiLookup()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-1.5 transition-colors">
+              <i data-lucide="database" class="w-3.5 h-3.5"></i> Lekérés
+            </button>
+          </div>
+        </div>
+
+        <div id="loadingApi" class="hidden py-4 flex flex-col items-center justify-center gap-2">
+          <div class="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+          <span class="text-xs text-muted-foreground font-semibold">Lekérdezés a NAV cégadatbázisból...</span>
+        </div>
+
+        <!-- Result Fields (Disabled initially) -->
+        <div class="space-y-3 border-t border-border/30 pt-3">
+          <div class="space-y-1">
+            <label class="text-[10px] font-bold text-muted-foreground uppercase">Hivatalos Cégnév</label>
+            <input id="resultName" type="text" disabled placeholder="-" class="w-full bg-muted/40 border border-border/30 rounded-lg px-3 py-1.5 text-xs text-muted-foreground font-semibold">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[10px] font-bold text-muted-foreground uppercase">Székhely Cím</label>
+            <input id="resultAddress" type="text" disabled placeholder="-" class="w-full bg-muted/40 border border-border/30 rounded-lg px-3 py-1.5 text-xs text-muted-foreground font-semibold">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[10px] font-bold text-muted-foreground uppercase">Hivatalos Adószám</label>
+            <input id="resultTaxId" type="text" disabled placeholder="-" class="w-full bg-muted/40 border border-border/30 rounded-lg px-3 py-1.5 text-xs text-muted-foreground font-semibold font-mono">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-border/30">
+        <button onclick="closeWizard()" class="px-4 py-2 border border-border rounded-lg text-xs font-semibold hover:bg-muted transition-colors">Mégse</button>
+        <button id="btnSaveWizard" disabled class="px-4 py-2 bg-blue-600 opacity-50 cursor-not-allowed text-white rounded-lg text-xs font-semibold transition-colors">Mentés Partnerként</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FLOATING BULK PANEL (Concept 7) ================= -->
+  <div id="bulkPanel" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-card/90 backdrop-blur-xl border border-border shadow-2xl rounded-2xl px-6 py-3.5 flex items-center justify-between gap-6 translate-y-20 opacity-0 pointer-events-none transition-all duration-300">
+    <div class="flex items-center gap-2">
+      <div class="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs" id="bulkCount">0</div>
+      <span class="text-sm font-semibold">partner kiválasztva</span>
+    </div>
+    
+    <div class="h-6 w-[1px] bg-border/60"></div>
+    
+    <div class="flex items-center gap-2">
+      <button class="px-3 py-1.5 bg-muted hover:bg-muted/80 text-foreground border border-border/30 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors">
+        <i data-lucide="file-down" class="w-3.5 h-3.5 text-muted-foreground"></i> Egyenlegkimutatás
+      </button>
+      <button class="px-3 py-1.5 bg-muted hover:bg-muted/80 text-foreground border border-border/30 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors">
+        <i data-lucide="merge" class="w-3.5 h-3.5 text-muted-foreground"></i> Összevonás (Merge)
+      </button>
+      <button class="px-3 py-1.5 bg-red-500/10 text-red-600 hover:bg-red-500/20 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors border border-red-500/20">
+        <i data-lucide="trash" class="w-3.5 h-3.5"></i> Törlés
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= SCRIPTS & INTERACTIVITY ================= -->
+  <script>
+    // Partners data pool
+    const partners = [
+      { id: '1', name: 'Absurd Kft.', tax: '14866618-2-42', address: '8000 Székesfehérvár, Fő utca 12.', type: 'Vevő', nav: 'online', risk: 'low', balance: '400 000 Ft' },
+      { id: '2', name: 'AgroLYNX Zrt.', tax: '28049814-1-13', address: '2051 Biatorbágy, Mező utca 4.', type: 'Vevő', nav: 'online', risk: 'low', balance: '0 Ft' },
+      { id: '3', name: 'Alzahu Kft.', tax: '25765849-2-41', address: '1134 Budapest, Váci út 35.', type: 'Szállító', nav: 'online', risk: 'low', balance: '-180 000 Ft' },
+      { id: '4', name: 'Bőgő Design Kft.', tax: '25176735-2-42', address: '1118 Budapest, Réti út 8.', type: 'Vevő', nav: 'sync_error', risk: 'medium', balance: '12 800 Ft' },
+      { id: '5', name: 'Company Solutions Kft.', tax: '14788693-2-43', address: '1111 Budapest, Budafoki út 11.', type: 'Szállító', nav: 'online', risk: 'low', balance: '-2 500 000 Ft' },
+      { id: '6', name: 'Diego Kft.', tax: '10744884-2-13', address: '2372 Dabas, Ipari park 3.', type: 'Vevő', nav: 'missing_info', risk: 'high', balance: '850 000 Ft' },
+    ];
+
+    // Page state
+    let activeConcept = 'bento';
+    let selectedIds = new Set();
+
+    // Init Lucide
+    lucide.createIcons();
+
+    // Toggle Theme
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+    });
+
+    // Switch Concept layouts
+    function switchConcept(concept) {
+      activeConcept = concept;
+      
+      // Update buttons style
+      const concepts = ['bento', 'splitscreen', 'financial', 'navsync'];
+      concepts.forEach(c => {
+        const btn = document.getElementById('btn-' + c);
+        if (c === concept) {
+          btn.className = "flex-1 py-2 rounded-lg text-center transition-all flex items-center justify-center gap-1.5 bg-blue-600 text-white shadow-sm";
+        } else {
+          btn.className = "flex-1 py-2 rounded-lg text-center transition-all flex items-center justify-center gap-1.5 text-muted-foreground hover:text-foreground";
+        }
+      });
+
+      // Clear selection
+      selectedIds.clear();
+      updateBulkPanel();
+
+      // Render Layout content
+      renderMockup();
+    }
+
+    // Render Layouts
+    function renderMockup() {
+      const container = document.getElementById('mockup-content');
+      
+      if (activeConcept === 'bento') {
+        // Concept 1: Bento Grid view
+        let html = `<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">`;
+        partners.forEach(p => {
+          const initials = p.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+          const badgeClass = p.type === 'Vevő' ? 'bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20' : 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20';
+          const navDotClass = p.nav === 'online' ? 'bg-green-500' : p.nav === 'sync_error' ? 'bg-amber-500' : 'bg-red-500';
+          const balanceClass = p.balance.startsWith('-') ? 'text-red-500 dark:text-red-400' : p.balance === '0 Ft' ? 'text-muted-foreground' : 'text-green-500 dark:text-green-400';
+          
+          html += `
+            <div onclick="openDrawer('${p.id}')" class="bg-card/40 border border-border/50 rounded-2xl hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/5 transition-all p-5 flex flex-col justify-between h-[230px] cursor-pointer group backdrop-blur-md relative overflow-hidden">
+              <!-- top stripe -->
+              <div class="absolute left-0 top-0 bottom-0 w-1 ${p.type === 'Vevő' ? 'bg-green-500' : 'bg-blue-500'}"></div>
+              
+              <div class="space-y-3">
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-muted/60 flex items-center justify-center font-bold text-sm tracking-tight text-blue-500 border border-border/20">${initials}</div>
+                    <div class="min-w-0">
+                      <h4 class="font-bold text-sm truncate text-foreground group-hover:text-blue-500 transition-colors">${p.name}</h4>
+                      <p class="text-[10px] font-mono text-muted-foreground mt-0.5">${p.tax}</p>
+                    </div>
+                  </div>
+                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${badgeClass}">${p.type}</span>
+                </div>
+
+                <div class="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                  ${p.address}
+                </div>
+              </div>
+
+              <!-- Stats row -->
+              <div class="border-t border-border/30 pt-3 mt-3 flex items-center justify-between text-xs">
+                <div class="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase">
+                  <span class="w-2 h-2 rounded-full ${navDotClass}"></span>
+                  NAV: ${p.nav === 'online' ? 'Kapcsolódva' : p.nav === 'sync_error' ? 'Hiba' : 'Hiányos'}
+                </div>
+                <div class="font-mono font-bold ${balanceClass}">
+                  ${p.balance}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        html += `</div>`;
+        container.innerHTML = html;
+        
+      } else if (activeConcept === 'splitscreen') {
+        // Concept 2: Splitscreen List View
+        let html = `
+          <div class="bg-card/40 border border-border/50 rounded-2xl overflow-hidden backdrop-blur-md">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm text-left">
+                <thead>
+                  <tr class="bg-muted/30 border-b border-border/40 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    <th class="p-4 w-12 text-center"><input type="checkbox" onclick="toggleAllCheckboxes(this)" class="rounded border-border/40"></th>
+                    <th class="p-4">Partner Név</th>
+                    <th class="p-4">Adószám</th>
+                    <th class="p-4">Székhely Cím</th>
+                    <th class="p-4">Típus</th>
+                    <th class="p-4 text-right">Egyenleg</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-border/30">
+        `;
+        
+        partners.forEach(p => {
+          const checked = selectedIds.has(p.id) ? 'checked' : '';
+          const balanceClass = p.balance.startsWith('-') ? 'text-red-500' : p.balance === '0 Ft' ? 'text-muted-foreground' : 'text-green-500';
+          
+          html += `
+            <tr onclick="openDrawer('${p.id}')" class="hover:bg-muted/20 transition-colors cursor-pointer group">
+              <td class="p-4 text-center" onclick="event.stopPropagation()">
+                <input type="checkbox" data-id="${p.id}" ${checked} onclick="toggleSelect('${p.id}')" class="rounded border-border/40">
+              </td>
+              <td class="p-4 font-semibold text-xs flex items-center gap-2.5">
+                <div class="w-6 h-6 rounded-full bg-blue-600/10 text-blue-600 flex items-center justify-center font-bold text-[10px]">${p.name[0]}</div>
+                <span class="group-hover:text-blue-500 transition-colors">${p.name}</span>
+              </td>
+              <td class="p-4 font-mono text-xs text-muted-foreground">${p.tax}</td>
+              <td class="p-4 text-xs text-muted-foreground max-w-xs truncate">${p.address}</td>
+              <td class="p-4">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${p.type === 'Vevő' ? 'bg-green-500/10 text-green-700 dark:text-green-400' : 'bg-blue-500/10 text-blue-700 dark:text-blue-400'}">${p.type}</span>
+              </td>
+              <td class="p-4 font-mono text-xs font-semibold text-right ${balanceClass}">${p.balance}</td>
+            </tr>
+          `;
+        });
+        
+        html += `
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+        container.innerHTML = html;
+        
+      } else if (activeConcept === 'financial') {
+        // Concept 5: Financial Analytics & Risk Dashboard
+        let html = `
+          <div class="grid gap-6 md:grid-cols-2">
+            <!-- Left: Financial summary widget -->
+            <div class="bg-card/40 border border-border/50 rounded-2xl p-5 space-y-4 backdrop-blur-md">
+              <h3 class="font-display font-bold text-base">Forgalmi statisztika partnerek szerint</h3>
+              <div class="space-y-3">
+                <div class="space-y-1">
+                  <div class="flex justify-between text-xs font-semibold">
+                    <span>Absurd Kft.</span>
+                    <span class="font-mono">4 200 000 Ft</span>
+                  </div>
+                  <div class="h-2 bg-muted rounded-full overflow-hidden border">
+                    <div class="h-full bg-green-500 rounded-full" style="width: 75%"></div>
+                  </div>
+                </div>
+                <div class="space-y-1">
+                  <div class="flex justify-between text-xs font-semibold">
+                    <span>Company Solutions Kft.</span>
+                    <span class="font-mono">2 500 000 Ft</span>
+                  </div>
+                  <div class="h-2 bg-muted rounded-full overflow-hidden border">
+                    <div class="h-full bg-blue-500 rounded-full" style="width: 45%"></div>
+                  </div>
+                </div>
+                <div class="space-y-1">
+                  <div class="flex justify-between text-xs font-semibold">
+                    <span>Diego Kft.</span>
+                    <span class="font-mono">850 000 Ft</span>
+                  </div>
+                  <div class="h-2 bg-muted rounded-full overflow-hidden border">
+                    <div class="h-full bg-red-500 rounded-full" style="width: 15%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Risk indicators (Concept 5) -->
+            <div class="bg-card/40 border border-border/50 rounded-2xl p-5 space-y-4 backdrop-blur-md">
+              <h3 class="font-display font-bold text-base">Kockázat-elemzési Csoportok</h3>
+              <div class="grid grid-cols-3 gap-3">
+                <div class="p-3 border border-border/30 rounded-xl bg-green-500/5 text-center">
+                  <div class="text-[9px] font-bold text-green-600 dark:text-green-400 uppercase">Biztonságos (Low)</div>
+                  <p class="text-3xl font-bold font-display mt-2">4</p>
+                  <p class="text-[10px] text-muted-foreground mt-1">Nincs lejárt tartozás</p>
+                </div>
+                <div class="p-3 border border-border/30 rounded-xl bg-amber-500/5 text-center">
+                  <div class="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase">Közepes (Med)</div>
+                  <p class="text-3xl font-bold font-display mt-2">1</p>
+                  <p class="text-[10px] text-muted-foreground mt-1">1-30 napos csúszás</p>
+                </div>
+                <div class="p-3 border border-border/30 rounded-xl bg-red-500/5 text-center">
+                  <div class="text-[9px] font-bold text-red-600 dark:text-red-400 uppercase">Kockázatos (High)</div>
+                  <p class="text-3xl font-bold font-display mt-2">1</p>
+                  <p class="text-[10px] text-muted-foreground mt-1">NAV adóhiány jelzett</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        container.innerHTML = html;
+        
+      } else if (activeConcept === 'navsync') {
+        // Concept 6: NAV Sync status center
+        let html = `
+          <div class="bg-card/40 border border-border/50 rounded-2xl p-5 space-y-4 backdrop-blur-md">
+            <div class="flex justify-between items-center border-b border-border/30 pb-3">
+              <h3 class="font-display font-bold text-base">NAV XML Adatszinkronizációs Központ</h3>
+              <button class="bg-muted hover:bg-muted/80 border border-border/50 rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Összes kényszerítése
+              </button>
+            </div>
+            <div class="divide-y divide-border/30">
+        `;
+        
+        partners.forEach(p => {
+          const isOnline = p.nav === 'online';
+          const navLabel = isOnline ? 'Szinkronban' : p.nav === 'sync_error' ? 'Adathiba' : 'Nincs NAV adat';
+          const badgeClass = isOnline ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20' : p.nav === 'sync_error' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20' : 'bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20';
+          const dotClass = isOnline ? 'bg-emerald-500 animate-pulse' : p.nav === 'sync_error' ? 'bg-amber-500' : 'bg-red-500';
+          
+          html += `
+            <div class="flex items-center justify-between py-3">
+              <div class="flex items-center gap-3">
+                <span class="w-2.5 h-2.5 rounded-full ${dotClass}"></span>
+                <div>
+                  <h4 class="font-semibold text-sm">${p.name}</h4>
+                  <p class="text-[10px] text-muted-foreground">Utolsó lekérés: 2026.06.18 10:30</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${badgeClass}">${navLabel}</span>
+                <button class="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground">
+                  <i data-lucide="info" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        });
+        
+        html += `
+            </div>
+          </div>
+        `;
+        container.innerHTML = html;
+      }
+      
+      // Re-trigger lucide icons
+      lucide.createIcons();
+    }
+
+    // Drawer triggers
+    function openDrawer(partnerId) {
+      const p = partners.find(item => item.id === partnerId);
+      if (!p) return;
+
+      document.getElementById('drawer-name').innerText = p.name;
+      document.getElementById('drawer-avatar').innerText = p.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+      document.getElementById('drawer-type').innerText = p.type;
+      document.getElementById('drawer-tax').innerText = p.tax;
+      document.getElementById('drawer-address').innerText = p.address;
+
+      if (p.type === 'Vevő') {
+        document.getElementById('drawer-type').className = "text-[10px] bg-green-500/15 text-green-800 dark:text-green-400 font-semibold px-1.5 py-0.5 rounded-md inline-block border border-green-500/10";
+      } else {
+        document.getElementById('drawer-type').className = "text-[10px] bg-blue-500/15 text-blue-800 dark:text-blue-400 font-semibold px-1.5 py-0.5 rounded-md inline-block border border-blue-500/10";
+      }
+
+      document.getElementById('drawer').classList.remove('translate-x-full');
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawer').classList.add('translate-x-full');
+    }
+
+    // Selection handlers for bulk actions
+    function toggleSelect(id) {
+      if (selectedIds.has(id)) {
+        selectedIds.delete(id);
+      } else {
+        selectedIds.add(id);
+      }
+      updateBulkPanel();
+    }
+
+    function toggleAllCheckboxes(masterCheckbox) {
+      const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+      checkboxes.forEach(cb => {
+        const id = cb.getAttribute('data-id');
+        cb.checked = masterCheckbox.checked;
+        if (masterCheckbox.checked) {
+          selectedIds.add(id);
+        } else {
+          selectedIds.delete(id);
+        }
+      });
+      updateBulkPanel();
+    }
+
+    function updateBulkPanel() {
+      const panel = document.getElementById('bulkPanel');
+      const countLabel = document.getElementById('bulkCount');
+      
+      if (selectedIds.size > 0) {
+        countLabel.innerText = selectedIds.size;
+        panel.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+      } else {
+        panel.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+      }
+    }
+
+    // Wizard actions (Concept 3)
+    function openWizard() {
+      const wiz = document.getElementById('wizard');
+      wiz.classList.remove('pointer-events-none', 'opacity-0');
+      wiz.querySelector('.scale-95').classList.remove('scale-95');
+    }
+
+    function closeWizard() {
+      const wiz = document.getElementById('wizard');
+      wiz.classList.add('pointer-events-none', 'opacity-0');
+      wiz.querySelector('div').classList.add('scale-95');
+      
+      // Clear inputs
+      document.getElementById('taxInput').value = '';
+      document.getElementById('resultName').value = '';
+      document.getElementById('resultAddress').value = '';
+      document.getElementById('resultTaxId').value = '';
+      document.getElementById('btnSaveWizard').disabled = true;
+      document.getElementById('btnSaveWizard').className = "px-4 py-2 bg-blue-600 opacity-50 cursor-not-allowed text-white rounded-lg text-xs font-semibold transition-colors";
+    }
+
+    function runApiLookup() {
+      const taxInput = document.getElementById('taxInput').value.trim();
+      if (!taxInput) return;
+
+      const loader = document.getElementById('loadingApi');
+      loader.classList.remove('hidden');
+
+      setTimeout(() => {
+        loader.classList.add('hidden');
+        
+        let found = {
+          name: 'Absurd Fejlesztő Kft.',
+          address: '8000 Székesfehérvár, Fő utca 12.',
+          taxId: '14866618-2-42'
+        };
+
+        if (taxInput.startsWith('2517')) {
+          found = {
+            name: 'Bőgő Design Kft.',
+            address: '1118 Budapest, Réti út 8.',
+            taxId: '25176735-2-42'
+          };
+        } else if (taxInput.startsWith('2804')) {
+          found = {
+            name: 'AgroLYNX Zrt.',
+            address: '2051 Biatorbágy, Mező utca 4.',
+            taxId: '28049814-1-13'
+          };
+        }
+
+        document.getElementById('resultName').value = found.name;
+        document.getElementById('resultAddress').value = found.address;
+        document.getElementById('resultTaxId').value = found.taxId;
+        
+        // Enable save button
+        const saveBtn = document.getElementById('btnSaveWizard');
+        saveBtn.disabled = false;
+        saveBtn.className = "px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-lg shadow-blue-600/10";
+
+      }, 1200);
+    }
+
+    // Initial render
+    renderMockup();
+
+  </script>
+</body>
+</html>

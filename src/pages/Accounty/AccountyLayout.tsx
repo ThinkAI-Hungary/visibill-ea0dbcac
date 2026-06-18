@@ -71,6 +71,7 @@ import { useUnreadTicketCount } from '@/hooks/useTickets';
 import { AiAssistantChat as AiDrawerChat } from './AiAssistantPage';
 import CookieConsentBanner from '@/components/accounty/CookieConsentBanner';
 import { CompanySwitcher } from '@/components/accounty/CompanySwitcher';
+import AppModeSwitcher from '@/components/AppModeSwitcher';
 
 export default function AccountyLayout() {
   return (
@@ -251,51 +252,11 @@ function AccountyLayoutInner() {
           "border-b border-border shrink-0",
           isCollapsed ? "p-2 py-4 flex justify-center" : "p-4"
         )}>
-          {isCollapsed ? (
-            <div className="flex flex-col items-center justify-center gap-2 select-none">
-              {hasEaisybillAccess !== false && (
-                <>
-                  <Link to="/" className="text-2xl tracking-tight hover:opacity-80 transition-opacity" title="Vissza az eaisybillbe">
-                    <span className="font-medium text-foreground/80">e</span>
-                    <span className="font-bold text-primary">ai</span>
-                  </Link>
-                  <div className="w-4 h-px bg-muted-foreground/30 rounded-full" />
-                </>
-              )}
-              <Link to="/accounty" className="text-2xl tracking-tight hover:opacity-80 transition-opacity" title="eaisybooks">
-                <span className="font-medium text-foreground/80">e</span>
-                <span className="font-bold text-primary">ai</span>
-              </Link>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              {hasEaisybillAccess !== false ? (
-                <>
-                  <Link to="/" className="text-2xl tracking-tight select-none hover:opacity-80 transition-opacity" title="Vissza az eaisybillbe">
-                    <span className="font-medium text-foreground/80">e</span>
-                    <span className="font-bold text-primary">ai</span>
-                    <span className="font-medium text-foreground/80">sy</span>
-                    <span className="font-medium text-primary">bill</span>
-                  </Link>
-                  <span className="text-xl font-light text-muted-foreground">|</span>
-                  <Link to="/accounty" className="relative text-2xl tracking-tight select-none hover:opacity-80 transition-opacity">
-                    <span className="font-medium text-foreground/80">e</span>
-                    <span className="font-bold text-primary">ai</span>
-                    <span className="font-medium text-foreground/80">sy</span>
-                    <span className="font-medium text-primary">books</span>
-                    <span className="absolute -bottom-1.5 left-0 right-0 h-[2px] rounded-full bg-primary" />
-                  </Link>
-                </>
-              ) : (
-                <Link to="/accounty" className="relative text-2xl tracking-tight select-none hover:opacity-80 transition-opacity">
-                  <span className="font-medium text-foreground/80">e</span>
-                  <span className="font-bold text-primary">ai</span>
-                  <span className="font-medium text-foreground/80">sy</span>
-                  <span className="font-medium text-primary">books</span>
-                </Link>
-              )}
-            </div>
-          )}
+          <AppModeSwitcher
+            activeMode="accounty"
+            isCollapsed={isCollapsed}
+            showToggle={hasEaisybillAccess !== false}
+          />
         </div>
 
         {/* Navigation — Collapsible groups */}

@@ -59,8 +59,10 @@ A `table-layout: fixed` kényszeríti a táblát a konténer szélességébe, am
 </div>
 ```
 
-- `overflow-x-auto` a wrapper `<div>`-en → scrollbar megjelenik ha szükséges
-- `min-w-max` a `<Table>`-ön → a tábla soha nem nyomódik kisebbre a tartalomnál
+- `overflow-x-auto` a wrapper `<div>`-en → scrollbar megjelenik ha szükséges (tooltip-ek és egyéb lebegő elemek nem vágódnak le vertikálisan)
+- `min-w-max` (számláknál) vagy `min-w-[1000px]` (tranzakcióknál fixed col layout esetén) a `<table>`-ön → a tábla soha nem nyomódik kisebbre a tartalomnál, elkerülve a cellák és feliratok egymásra csúszását kis felbontásnál
+
+> **Döntés (2026-06-18 & 2026-06-19):** `overflow-auto` → `overflow-x-auto`. Az `overflow-auto` vertikálisan is vágja a kiugró elemeket (tooltip-ek, popover-ek). A tranzakciós tábla szintén megkapta az `overflow-x-auto` csomagolót és a `min-w-[1000px]` szélességet a torzulások megakadályozására.
 
 ### 3. Partner név truncálás (13 karakter)
 
@@ -76,6 +78,8 @@ A partner nevek 13 karakter felett `…`-tal levágódnak. A teljes név másol�
   ariaLabel={`${partnerName} másolása`}
 />
 ```
+
+> **Döntés (2026-06-18):** A másolható tooltip és másolás ikon (`CopyableCell`) kizárólag a Partner név és Biz.szám felett jelenik meg. A pénznem / összeg oszlopokról eltávolítottuk, így azok közvetlenül formázott szövegként (`formatCurrency`) jelennek meg, növelve a táblázat tisztaságát és az összegek olvashatóságát.
 
 ### 4. Oszlop szélességek
 
@@ -94,17 +98,17 @@ A `td` elemeken **tilos** az `overflow: hidden` — a horizontális scroll wrapp
 
 ## Sor Elválasztók
 
+> **Döntés (2026-06-18):** Border-alapú sor elválasztók eltávolítva. A sorok közötti vizuális elválasztás a különböző státusz háttérszínekből ered. A `border-b` konzisztencia-problémákat okozott `border-separate` módban (egyes celláknál megjelent, másoknál nem).
+
+**Korábbi (archivált) megoldás:**
 ```css
+/* NEM HASZNÁLJUK — csak referencia */
 table tbody tr {
   box-shadow: inset 0 -1px 0 0 hsl(var(--foreground) / 0.08);
 }
-
-.dark table tbody tr {
-  box-shadow: inset 0 -1px 0 0 hsl(var(--foreground) / 0.1);
-}
 ```
 
-> **Miért `box-shadow` és nem `border-bottom`?** A `box-shadow` nem ad hozzá a layout magassághoz és nem okoz sub-pixel rendering problémákat.
+**Jelenlegi megoldás:** Nincs explicit sor elválasztó. A `border-collapse` biztosítja, hogy ne legyen rés a sorok között, a háttérszínek adják a vizuális struktúrát.
 
 ---
 
@@ -114,12 +118,14 @@ table tbody tr {
 
 | Komponens | CSS | Felhasználás |
 |-----------|-----|-------------|
-| `<Table>` | `w-full caption-bottom text-sm` | Tábla wrapper |
-| `<TableHeader>` | `[&_tr]:border-b` | Fejléc |
-| `<TableBody>` | `[&_tr:last-child]:border-0` | Tartalom |
-| `<TableRow>` | `border-b transition-colors hover:bg-muted/50` | Sor |
+| `<Table>` | `w-full caption-bottom text-sm border-collapse` | Tábla wrapper |
+| `<TableHeader>` | – | Fejléc |
+| `<TableBody>` | – | Tartalom |
+| `<TableRow>` | `transition-colors` | Sor (border nélkül) |
 | `<TableHead>` | `h-12 px-4 text-left font-medium text-muted-foreground` | Fejléc cella |
 | `<TableCell>` | `p-4 align-middle` | Tartalom cella |
+
+> **Döntés (2026-06-18):** `border-collapse` hozzáadva a `<table>` elemre, hogy ne legyen rés a cellák/sorok között. Az összes `border-b` eltávolítva a `<tr>` elemekről — a háttérszínek biztosítják a vizuális sorelválasztást.
 
 ### Table Empty State (`ui/table-empty-state.tsx`)
 
@@ -255,16 +261,29 @@ style={{ color: `hsl(var(--tr-supplier-text))` }}
 
 ## Sor Státusz Kiemelés
 
-```tsx
-// Sikeres sor (pl. fizetve)
-className="bg-[hsl(var(--success-row-bg))] text-[hsl(var(--success-row-text))]"
+> **Döntés (2026-06-18):** A sorok státuszát kizárólag háttérszín jelzi. A korábbi `border-l-2` bal oldali színjelzők eltávolítva — zavaró vizuális elemet adtak `border-collapse` módban.
 
-// Hibás sor
-className="bg-[hsl(var(--error-row-bg))] text-[hsl(var(--error-row-text))]"
+### TransactionTable — `getRowBackgroundClass()`
 
-// Figyelmeztetés sor
-className="bg-[hsl(var(--warning-row-bg))] text-[hsl(var(--warning-row-text))]"
-```
+| Státusz | CSS osztály |
+|---------|------------|
+| `matched` | `bg-[var(--row-matched-bg)]` |
+| `suggested` | `bg-[var(--row-suggested-bg)]` |
+| `auto_settled` | `bg-[var(--row-settled-bg)]` |
+| `no_invoice` | `bg-[var(--row-noinvoice-bg)]` |
+| `invoice_missing` | `bg-[var(--row-missing-bg)]` |
+| `unmatched` (default) | `bg-[var(--row-unmatched-bg)]` |
+
+### InvoicesPage — sor osztályok
+
+| Feltétel | CSS osztály |
+|----------|------------|
+| Kifizetve (`isPaid`) | `bg-[var(--row-matched-bg)]` |
+| Javaslat (`suggestedOnly`) | `bg-[var(--row-suggested-bg)]` |
+| Nincs párosítva | `bg-[var(--row-unmatched-bg)]` |
+| Kijelölve | `bg-primary/5` |
+
+> **Korábbi (archivált) megoldás:** `border-l-2 border-l-[var(--row-*-border)]` — a sor bal szélén 2px színes csík volt. Ez `border-separate` módban réseket okozott, `border-collapse`-nál pedig a háttérszínnel együtt feleslegessé vált.
 
 ---
 

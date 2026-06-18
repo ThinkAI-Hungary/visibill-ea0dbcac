@@ -1255,7 +1255,7 @@ export const TransactionDetailsDialog = ({
                 </div>
               )}
 
-              <div className="max-h-[240px] overflow-y-auto border rounded-md">
+              <div className="min-h-[240px] max-h-[240px] overflow-y-auto border rounded-md">
                 {loadingAvailable ? (
                   <div className="flex items-center justify-center h-20">
                     <LoadingSpinner />
@@ -1458,7 +1458,7 @@ export const TransactionDetailsDialog = ({
                 />
               </div>
 
-              <div className="max-h-[200px] overflow-y-auto border rounded-md">
+              <div className="min-h-[200px] max-h-[200px] overflow-y-auto border rounded-md">
                 {loadingAvailable ? (
                   <div className="flex items-center justify-center h-20">
                     <LoadingSpinner />
