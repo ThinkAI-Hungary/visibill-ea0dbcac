@@ -637,18 +637,20 @@ const InvoicesPage = () => {
   }, [matchedInvoiceIds, submittedInvoices, linkedInvoicesPool, submittedToNavMap, submittedIdToTransactionsMap]);
 
   // Identify invoices that ONLY have suggested (not confirmed) matches → amber row
+  // A match is "suggested" when: match_type !== 'manual' AND is_verified !== true AND confidence_score < 0.9
+  // This mirrors the isSuggested logic in ExpandedInvoiceRow.tsx
   const suggestedOnlyIds = useMemo(() => {
     const ids = new Set<string>();
     allTransactions.forEach(tx => {
       if (!tx.matched_invoice_id) return;
-      const score = tx.confidence_score ?? 1;
-      if (score < 0.9) ids.add(tx.matched_invoice_id);
+      const isSuggested = tx.match_type !== 'manual' && !tx.is_verified && (tx.confidence_score ?? 1) < 0.9;
+      if (isSuggested) ids.add(tx.matched_invoice_id);
     });
-    // Remove any that also have a confirmed match (>= 0.9)
+    // Remove any that also have a confirmed (non-suggested) match
     allTransactions.forEach(tx => {
       if (!tx.matched_invoice_id) return;
-      const score = tx.confidence_score ?? 1;
-      if (score >= 0.9) ids.delete(tx.matched_invoice_id);
+      const isSuggested = tx.match_type !== 'manual' && !tx.is_verified && (tx.confidence_score ?? 1) < 0.9;
+      if (!isSuggested) ids.delete(tx.matched_invoice_id);
     });
     return ids;
   }, [allTransactions]);
