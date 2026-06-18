@@ -7,7 +7,7 @@ import { useDateRange } from '@/contexts/DateRangeContext';
 import SalaryPageSkeleton from '@/components/salaries/SalaryPageSkeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Users, FileText } from 'lucide-react';
+import { Plus, FileText } from 'lucide-react';
 import { SalaryKpiCards } from '@/components/salaries/SalaryKpiCards';
 import { EmployeeAccordion } from '@/components/salaries/EmployeeAccordion';
 import { NavSummaryTable } from '@/components/salaries/NavSummaryTable';
@@ -134,18 +134,6 @@ export default function SalariesPage() {
 
       {/* NAV Summary Table */}
       <NavSummaryTable navItems={navItems} onEdit={openEditModal} isSingleMonth={isSingleMonth} periodLabel={periodLabel} />
-
-      {/* Empty state */}
-      {employeeGroups.length === 0 && navItems.length === 0 && (
-        <Card className="rounded-xl border-border/50 bg-card/50 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <div className="text-center py-16 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nincs bejegyzés a kiválasztott időszakban</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Dialogs */}
       <SalaryAddDialog

@@ -15,10 +15,8 @@ interface Props {
 }
 
 export function EmployeeAccordion({ employeeGroups, onEdit, isSingleMonth, periodLabel }: Props) {
-  if (employeeGroups.length === 0) return null;
-
   const getSubtotal = (items: SalaryItem[]) =>
-    items.reduce((sum, item) => sum + Number(item.összeg), 0);
+    items.filter(item => item.tipus !== 'bruttó_bér').reduce((sum, item) => sum + Number(item.összeg), 0);
 
   const getNetTotal = (items: SalaryItem[]) =>
     items.filter(item => item.tipus === 'bér').reduce((sum, item) => sum + Number(item.összeg), 0);
@@ -133,6 +131,13 @@ export function EmployeeAccordion({ employeeGroups, onEdit, isSingleMonth, perio
             );
           })}
         </Accordion>
+
+        {employeeGroups.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            <User className="h-8 w-8 mx-auto mb-2 opacity-40" />
+            <p className="text-sm">Nincs dolgozói adat a kiválasztott időszakban</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
