@@ -1,4 +1,4 @@
-﻿import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -438,6 +438,30 @@ const TransactionsPage = () => {
                   onPageSizeChange={handlePageSizeChange}
                   className="mb-3"
                 />
+
+                <div className="flex items-center gap-4 mb-2 text-[11px] text-muted-foreground flex-wrap">
+                  <span className="font-medium">Jelmagyarázat:</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm bg-emerald-100 dark:bg-emerald-950/60 border-l-2 border-l-emerald-500" />
+                    <span>Párosított / Kifizetve</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm bg-yellow-100 dark:bg-yellow-950/60 border-l-2 border-l-yellow-500" />
+                    <span>AI javaslat (jóváhagyásra vár)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm bg-blue-100 dark:bg-blue-950/60 border-l-2 border-l-blue-500" />
+                    <span>Rendezett (nincs számla)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm bg-purple-100 dark:bg-purple-950/60 border-l-2 border-l-purple-500" />
+                    <span>Nincs számla</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm bg-rose-100 dark:bg-rose-950/60 border-l-2 border-l-rose-400" />
+                    <span>Nincs párosítás</span>
+                  </div>
+                </div>
 
                 <TransactionTable
                   transactions={filteredTransactions}

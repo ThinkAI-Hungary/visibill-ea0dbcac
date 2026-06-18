@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -40,6 +42,7 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
 import { Search, Plus, Pencil, Trash2, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CopyableCell } from "@/components/ui/copyable-cell";
 import { UnifiedPagination } from "@/components/ui/unified-pagination";
@@ -435,7 +438,19 @@ export default function PartnersPage() {
                     Típus
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[10%] text-center">
-                    Könyvelés
+                    <div className="flex items-center justify-center gap-1">
+                      Könyvelés
+                      <TooltipProvider delayDuration={0}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[240px]">
+                            <p className="text-xs font-normal normal-case tracking-normal leading-relaxed">Ha be van jelölve, a partner számlái bekerülnek a könyvelésbe. Kattints a jelölőnégyzetre a módosításhoz.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-[12%]">
                     Műveletek
@@ -513,17 +528,11 @@ export default function PartnersPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleTogglePartnerExclude(partner)}
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all duration-200 border cursor-pointer ${
-                              partner.exclude_from_accounting
-                                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-300/40 hover:bg-amber-500/25'
-                                : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-300/30 hover:bg-emerald-500/20'
-                            }`}
-                          >
-                            {partner.exclude_from_accounting ? 'Nem könyvelt' : 'Könyvelt'}
-                          </button>
+                          <Checkbox
+                            checked={!partner.exclude_from_accounting}
+                            onCheckedChange={() => handleTogglePartnerExclude(partner)}
+                            aria-label={partner.exclude_from_accounting ? 'Könyvelésbe visszaállítás' : 'Könyvelésből kizárás'}
+                          />
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">

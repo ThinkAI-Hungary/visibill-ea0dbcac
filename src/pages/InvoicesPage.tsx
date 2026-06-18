@@ -1270,7 +1270,7 @@ const InvoicesPage = () => {
                           <TableHead className="font-semibold text-center whitespace-nowrap">
                             <div className="flex items-center justify-center gap-1">
                               Státusz
-                              <TooltipProvider><Tooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground cursor-help" /></TooltipTrigger><TooltipContent className="max-w-xs"><p>A számla fizetési állapota automatikusan változik: „Kifizetve" lesz, ha a számlához tartozó tranzakció párosítva van.</p></TooltipContent></Tooltip></TooltipProvider>
+                              <TooltipProvider delayDuration={0}><Tooltip><TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground/60 cursor-help" /></TooltipTrigger><TooltipContent side="top" align="end" sideOffset={8} className="max-w-[280px] whitespace-normal"><p className="text-xs font-normal normal-case tracking-normal leading-relaxed whitespace-normal">A számla fizetési állapota automatikusan változik: „Kifizetve" lesz, ha a számlához tartozó tranzakció párosítva van.</p></TooltipContent></Tooltip></TooltipProvider>
                             </div>
                           </TableHead>
                           {activeTab === 'INBOUND' && (<TableHead className="font-semibold text-center whitespace-nowrap">Beküldve</TableHead>)}

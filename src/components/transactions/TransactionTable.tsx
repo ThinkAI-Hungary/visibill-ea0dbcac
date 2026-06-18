@@ -3,7 +3,7 @@ import { TableBody, TableRow, TableCell, TableHead, TableHeader } from '@/compon
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn, formatCurrency } from '@/lib/utils';
-import { CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, Eye, Sparkles, Settings, Ban, UploadCloud, ChevronDown } from 'lucide-react';
+import { CheckCircle2, AlertCircle, HelpCircle, ArrowUpDown, Eye, Settings, Ban, UploadCloud, ChevronDown, Link2, Link2Off } from 'lucide-react';
 import { format } from 'date-fns';
 import { computeMatchStatus } from '@/hooks/useComputedStatus';
 import { TransactionReasonCell } from '@/components/TransactionReasonCell';
@@ -66,9 +66,11 @@ import ExpandedInvoiceRow from '@/components/ExpandedInvoiceRow';
 const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoice({
   matchedInvoiceId,
   transaction,
+  onOpenDetails,
 }: {
   matchedInvoiceId: string | null;
   transaction: Transaction;
+  onOpenDetails: (transaction: Transaction) => void;
 }) {
   const [matchedSubmitted, setMatchedSubmitted] = useState<any[]>([]);
   const [matchedNav, setMatchedNav] = useState<any[]>([]);
@@ -181,9 +183,26 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
   if (matchedSubmitted.length === 0 && matchedNav.length === 0) {
     return (
       <TableRow>
-        <TableCell colSpan={8} className="bg-muted/20 py-3">
-          <div className="text-xs text-muted-foreground text-center py-2">
-            Nem található párosított számla
+        <TableCell colSpan={8} className="bg-muted/20 py-4">
+          <div className="max-w-md mx-auto">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <Link2Off className="h-3.5 w-3.5" />
+                Kapcsolódó tételek
+              </div>
+            </div>
+            <div className="bg-muted/30 border border-border/50 rounded-lg p-4 flex flex-col items-center justify-center gap-3">
+              <p className="text-sm text-muted-foreground italic">Nincs párosított tétel ehhez a tranzakcióhoz.</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => { e.stopPropagation(); onOpenDetails(transaction); }}
+                className="h-8 text-xs gap-1.5"
+              >
+                <Link2 className="h-3.5 w-3.5" />
+                Számla hozzárendelése
+              </Button>
+            </div>
           </div>
         </TableCell>
       </TableRow>
@@ -216,27 +235,23 @@ interface TransactionRowProps {
 
 const TransactionRow = React.memo(function TransactionRow({ transaction, exchangeRates, isExpanded, onToggleExpand, onOpenDetails, bankLabel, bankBgClass }: TransactionRowProps) {
   const matchStatus = computeMatchStatus(transaction);
-  const hasMatch = !!transaction.matched_invoice_id;
 
   return (
     <>
     <TableRow
       className={cn(
-        "h-10",
+        "h-10 cursor-pointer",
         getRowBackgroundClass(transaction),
-        hasMatch && "cursor-pointer",
         isExpanded && "border-b-0"
       )}
-      onClick={() => hasMatch && onToggleExpand?.(transaction.id)}
+      onClick={() => onToggleExpand?.(transaction.id)}
     >
       <TableCell className="font-medium text-xs whitespace-nowrap">
         <div className="flex items-center gap-1">
-          {hasMatch && (
             <ChevronDown className={cn(
               "h-3 w-3 text-muted-foreground shrink-0 transition-transform duration-200",
               isExpanded && "rotate-180"
             )} />
-          )}
           {transaction.transaction_date
             ? format(new Date(transaction.transaction_date), 'yyyy.MM.dd')
             : '-'}
@@ -291,7 +306,7 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
       <TableCell className="overflow-hidden">
         {transaction.type ? (
           <span className={cn(
-            "text-[11px] px-1.5 py-0.5 rounded-md inline-block truncate max-w-full text-center",
+            "text-[11px] px-1.5 py-0.5 rounded-md inline-block w-[10.5rem] text-center whitespace-nowrap overflow-hidden text-ellipsis",
             getTypeBgClass(transaction.type) || "text-muted-foreground"
           )}>
             {transaction.type}
@@ -311,12 +326,10 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
                 {matchStatus === 'unmatched' && <><HelpCircle className="h-3.5 w-3.5 text-destructive" /><span className="text-[10px] font-medium text-rose-500">Nincs</span></>}
                 {matchStatus === 'no_invoice' && <><Ban className="h-3.5 w-3.5 text-purple-500" /><span className="text-[10px] font-medium text-purple-600 dark:text-purple-400">Nincs számla</span></>}
                 {matchStatus === 'invoice_missing' && <><UploadCloud className="h-3.5 w-3.5 text-sky-500" /><span className="text-[10px] font-medium text-sky-600 dark:text-sky-400">Feltöltendő</span></>}
-                {transaction.match_type === 'auto' && <Sparkles className="h-3 w-3 text-success" />}
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              {matchStatus === 'matched' && transaction.match_type === 'auto' && 'Automatikusan jóváhagyva (≥97%)'}
-              {matchStatus === 'matched' && transaction.match_type !== 'auto' && 'Párosított és jóváhagyott'}
+              {matchStatus === 'matched' && 'Párosított és jóváhagyott'}
               {matchStatus === 'suggested' && `Javasolt párosítás ${transaction.confidence_score ? `(${Math.round(transaction.confidence_score * 100)}%)` : ''}`}
               {matchStatus === 'auto_settled' && 'Rendezett — nem igényel számlát (bankköltség, ATM, stb.)'}
               {matchStatus === 'unmatched' && 'Nincs párosítva'}
@@ -351,6 +364,7 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
       <ExpandedTransactionInvoice
         matchedInvoiceId={transaction.matched_invoice_id}
         transaction={transaction}
+        onOpenDetails={onOpenDetails}
       />
     )}
     </>
@@ -447,8 +461,7 @@ const TransactionTable = React.memo(function TransactionTable({
             />
           ) : (
             transactions.map((transaction) => {
-              const txUploadId = (transaction as any).upload_id;
-              const bankKey = uploadBankMap && txUploadId ? uploadBankMap[txUploadId] : undefined;
+              const bankKey = uploadBankMap && transaction.upload_id ? uploadBankMap[transaction.upload_id] : undefined;
               const cfg = bankKey && bankConfig ? bankConfig[bankKey] : undefined;
               return (
                 <TransactionRow

@@ -19,11 +19,11 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, cn } from '@/lib/utils';
-import { Package, Package2, CheckCircle2 } from 'lucide-react';
+import { Package, Package2, CheckCircle2, Info } from 'lucide-react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useActivePreset } from '@/hooks/useActivePreset';
 import { AssetActivationDialog } from '@/components/AssetActivationDialog';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 interface InvoiceLineItem {
   id: string;
@@ -291,7 +291,21 @@ export function InvoiceItemsDialog({
                       <TableHead className="text-right font-semibold">ÁFA összeg</TableHead>
                       <TableHead className="text-right font-semibold">Bruttó</TableHead>
                       <TableHead className="text-center font-semibold">Főkönyv</TableHead>
-                      <TableHead className="text-center font-semibold w-[70px]">Könyv.</TableHead>
+                      <TableHead className="text-center font-semibold w-[70px]">
+                        <div className="flex items-center justify-center gap-1">
+                          Könyv.
+                          <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent side="top" align="end" sideOffset={8} className="max-w-[240px] z-[100]">
+                                <p className="text-xs font-normal normal-case tracking-normal leading-relaxed">Ha be van jelölve, a tétel bekerül a könyvelésbe. Kattints a jelölőnégyzetre a módosításhoz.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -392,19 +406,12 @@ export function InvoiceItemsDialog({
                         </TableCell>
                         <TableCell className="text-center">
                           {item.exclude_from_accounting !== undefined ? (
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); handleToggleItemExclude(item); }}
-                              className={cn(
-                                "inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold transition-all border cursor-pointer whitespace-nowrap",
-                                item.exclude_from_accounting
-                                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-300/40 hover:bg-amber-500/25"
-                                  : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-300/30 hover:bg-emerald-500/20"
-                              )}
-                              title={item.exclude_from_accounting ? 'Nem kerül könyvelésre — kattints a visszaállításhoz' : 'Könyvelésre kerül — kattints a kizáráshoz'}
-                            >
-                              {item.exclude_from_accounting ? 'Nem' : 'Igen'}
-                            </button>
+                            <Checkbox
+                              checked={!item.exclude_from_accounting}
+                              onCheckedChange={() => handleToggleItemExclude(item)}
+                              onClick={(e) => e.stopPropagation()}
+                              aria-label={item.exclude_from_accounting ? 'Könyvelésbe visszaállítás' : 'Könyvelésből kizárás'}
+                            />
                           ) : (
                             <span className="text-xs text-muted-foreground">-</span>
                           )}

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,6 +25,7 @@ export interface Transaction {
   reason: string | null;
   created_at: string | null;
   company_id: string | null;
+  upload_id: string | null;
 }
 
 export interface TransactionFilters {
@@ -130,7 +131,7 @@ export function useTransactionData() {
           // auto_settled = no_match_category OR cash/bank types
           query = query.or(
             'match_type.eq.no_match_category,' +
-            'type.in.("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség")'
+            'type.in.("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség","járulékok/adók")'
           );
         } else if (filters.matchStatus === 'suggested') {
           query = query
@@ -145,7 +146,7 @@ export function useTransactionData() {
             .not('match_type', 'eq', 'no_match_category')
             .not('match_type', 'eq', 'no_invoice')
             .not('match_type', 'eq', 'invoice_missing')
-            .not('type', 'in', '("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség")');
+            .not('type', 'in', '("atm készpénzfelvét","pénztári kp felvét","pénztári kp befizetés","kp befizetés atm-en keresztül","bankköltség","járulékok/adók")');
         } else if (filters.matchStatus === 'no_invoice') {
           query = query.eq('match_type', 'no_invoice');
         } else if (filters.matchStatus === 'invoice_missing') {
