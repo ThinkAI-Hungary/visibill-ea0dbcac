@@ -435,6 +435,63 @@ export default function Settings() {
     if (user) { fetchProfile(); fetchSettings(); }
   }, [user]);
 
+  const ACCOUNTY_ROLE_LABELS: Record<string, string> = {
+    iroda_admin: 'Iroda Admin',
+    senior_könyvelő: 'Senior Könyvelő',
+    könyvelő: 'Könyvelő',
+    asszisztens: 'Asszisztens',
+  };
+
+  const { data: accountantAssignmentInfo } = useQuery({
+    queryKey: ['settings-accountant-assignment', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data: assignments, error } = await supabase
+        .from('accounty_assignments' as any)
+        .select('accounting_firm_id, role')
+        .eq('accountant_user_id', user.id);
+      
+      if (error || !assignments || assignments.length === 0) return null;
+
+      // Role priority: pick the highest privilege
+      const ROLE_PRIORITY: Record<string, number> = {
+        'iroda_admin': 4,
+        'senior_könyvelő': 3,
+        'könyvelő': 2,
+        'asszisztens': 1,
+        'senior': 4,
+        'admin': 4,
+        'junior': 2,
+      };
+
+      const roles = assignments.map((d: any) => d.role as string);
+      const bestRole = roles.reduce((best, current) => {
+        const bestPrio = ROLE_PRIORITY[best] ?? 0;
+        const currentPrio = ROLE_PRIORITY[current] ?? 0;
+        return currentPrio > bestPrio ? current : best;
+      }, roles[0]);
+
+      // Map legacy values
+      let finalRole = bestRole;
+      if (bestRole === 'senior' || bestRole === 'admin') finalRole = 'iroda_admin';
+      if (bestRole === 'junior') finalRole = 'könyvelő';
+
+      const firmId = assignments[0].accounting_firm_id;
+      const { data: company } = await supabase
+        .from('companies')
+        .select('name')
+        .eq('id', firmId)
+        .maybeSingle();
+
+      return {
+        role: finalRole,
+        firmName: company?.name || null,
+      };
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const fetchProfile = async () => {
     if (!user) return;
     const { data } = await supabase.from('profiles').select('name, company, position, avatar_url').eq('user_id', user.id).single();
@@ -540,7 +597,16 @@ export default function Settings() {
         </TabsList>
 
         <TabsContent value="profile">
-          <ProfileSection profile={profile} setProfile={setProfile} onSave={updateProfile} loading={loading} />
+          <ProfileSection
+            profile={profile}
+            setProfile={setProfile}
+            onSave={updateProfile}
+            loading={loading}
+            readOnlyOverrides={accountantAssignmentInfo ? {
+              position: ACCOUNTY_ROLE_LABELS[accountantAssignmentInfo.role] || accountantAssignmentInfo.role,
+              company: accountantAssignmentInfo.firmName || undefined,
+            } : undefined}
+          />
         </TabsContent>
 
         <TabsContent value="business">

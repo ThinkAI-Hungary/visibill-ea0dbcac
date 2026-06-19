@@ -38,8 +38,21 @@ export function useUserRole(): {
         .eq('user_id', user!.id)
         .maybeSingle();
 
-      if (error || !data) return null;
-      return data.role as UserRole;
+      if (!error && data) return data.role as UserRole;
+
+      // Fallback: check if user is an accountant assigned to this company in accounty_assignments
+      const { data: assignData, error: assignError } = await supabase
+        .from('accounty_assignments')
+        .select('role')
+        .eq('company_id', companyId!)
+        .eq('accountant_user_id', user!.id)
+        .maybeSingle();
+
+      if (!assignError && assignData) {
+        return 'member';
+      }
+
+      return null;
     },
     enabled: !!user && !!companyId,
     staleTime: 5 * 60 * 1000,

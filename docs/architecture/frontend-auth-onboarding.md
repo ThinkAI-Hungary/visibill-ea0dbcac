@@ -214,34 +214,53 @@ localStorage.setItem('eaisybill_last_active', Date.now().toString());
 
 ---
 
-## Role-Based Access
+## Role-Based Access (Szerepkörök és Jogosultságok)
 
-### User Roles
+A rendszer két különálló alkalmazási felülettel rendelkezik (eaisybill és eaisybooks), amelyek saját szerepkörökkel és jogosultsági szintekkel bírnak. A hozzáférések feloldását és a felületek közötti áttérést egy intelligens fallback-mechanizmus biztosítja.
 
-| Szerep | Jogosultság |
-|--------|-----------|
-| `owner` / `admin` | Teljes hozzáférés |
-| `employee` | Csak munkaidő oldal |
-| `management` | Management dashboard (`/management`) |
+### 1. eaisybill Jogosultsági Körök
 
-### Role-Based UI Változások
+| Szerepkör | Kulcs | Jogosultságok leírása |
+| :--- | :--- | :--- |
+| **Tulajdonos / Admin** | `owner` / `admin` | Teljes hozzáférés az összes modulhoz, cégbeállításokhoz, számlázási csomagokhoz, meghívók kezeléséhez és tagok szerepköreinek módosításához. |
+| **Tag** | `member` | Írási és olvasási jog a pénzügyi modulokhoz (Számlák, Tranzakciók, Házipénztár, Projektek, Munkaidő rögzítés). Nem érheti el a cégbeállításokat és tagkezelést. |
+| **Betekintő** | `viewer` | Csak olvasási jog a pénzügyi modulokhoz. Nem hozhat létre és nem módosíthat adatokat. |
+| **Munkavállaló** | `employee` | Kizárólag a saját Munkaidő oldalát éri el és rögzíthet időbejegyzéseket. Minden más menüpont rejtve van számára. |
+| **Vezetőség** | `management` | Speciális hozzáférés a vezetői dashboardhoz (`/management`). |
 
-| Elem | Owner | Employee | Management |
-|------|-------|----------|------------|
-| Sidebar menüpontok | Mind | Csak Munkaidő | – |
-| CompanySelector | ✅ | ❌ | – |
-| GlobalDatePicker | ✅ | ❌ | – |
-| Settings gomb | ✅ | ❌ | – |
-| Management dashboard | ❌ | ❌ | ✅ |
+#### UI Eltérések az eaisybill szerepkörök alapján:
 
-### Management Redirect
+| UI Elem | Admin / Owner | Member / Viewer | Employee | Management |
+| :--- | :---: | :---: | :---: | :---: |
+| **Pénzügyi menüpontok** | ✅ | ✅ | ❌ | ❌ |
+| **Munkaidő menü** | ✅ | ✅ | ✅ | ❌ |
+| **Cégválasztó** | ✅ | ✅ | ❌ | ❌ |
+| **Dátumválasztó** | ✅ | ✅ | ❌ | ❌ |
+| **Cégbeállítások** | ✅ | ❌ | ❌ | ❌ |
+| **Vezetői Dashboard** | ❌ | ❌ | ❌ | ✅ |
 
-```tsx
-// RootRedirect-ben
-if (profileRole === 'management') {
-  return <Navigate to="/management" replace />;
-}
-```
+---
+
+### 2. eaisybooks (Accounty) Szerepkörök
+
+Az eaisybooks könyvelőirodai felületén az alábbi hierarchia működik:
+
+1. **Iroda Admin** (`iroda_admin`): Teljes körű irodai adminisztráció, csapattagok és NAV kulcsok kezelése.
+2. **Senior Könyvelő** (`senior_könyvelő`): Kiemelt könyvelési funkciók.
+3. **Könyvelő** (`könyvelő`): Standard könyvelői feladatok és ügyfél hozzárendelések.
+4. **Asszisztens** (`asszisztens`): Korlátozottabb, asszisztensi hozzáférés.
+
+---
+
+### 3. Kereszt-Alkalmazás Szerepkör-feloldás (Cross-App Role Resolution)
+
+Amikor egy `eaisybooks` könyvelő/asszisztens átvált az `eaisybill` felületre egy hozzárendelt cég kezelésére:
+- A `useUserRole.ts` hook először ellenőrzi a standard `company_members` táblát.
+- **Fallback logika**: Ha a felhasználó nem szerepel a cég direkt tagjai (`company_members`) között, a rendszer lekérdezi az `accounty_assignments` táblát.
+- Ha ott van érvényes hozzárendelése az adott céghez mint könyvelő, a rendszer **automatikusan `member` szerepkört biztosít neki az eaisybill-ben**.
+- Ezáltal a könyvelő azonnal látja a teljes könyvelési menüt és bizonylatokat anélkül, hogy admin jogosultságot kellene kapnia a cégben.
+
+---
 
 ---
 
@@ -263,3 +282,24 @@ handleResetAndSignOut = async () => {
   window.location.href = '/auth';
 };
 ```
+
+---
+
+## Felhasználókezelési Rendszer & Könyvelői Áttérés
+
+A rendszer támogatja a normál felhasználók, meghívott csapattagok, valamint az `eaisybooks` (könyvelőirodai) felületről áttérő könyvelők kezelését.
+
+### 1. Profilok és Feliratkozások Automatikus Létrehozása
+- **Regisztráció/Meghívás**: Amikor egy felhasználó létrejön, a Supabase trigger adatbázis-szinten létrehozza a `profiles` bejegyzést.
+- **Adat-helyreállítás (Backfill Migration)**: Ha egy adminisztrátor által manuálisan létrehozott felhasználónál nem futott le a trigger, az adatbázis migrációs szkript (`20260619_backfill_missing_user_data.sql`) automatikusan pótolja a hiányzó profilokat, a teszt feliratkozásokat (`user_subscriptions`), és szinkronizálja a `user_company_access_cache` rekordokat a `company_members` tábla alapján.
+
+### 2. Meghívási és Ellenőrzési Folyamat
+- **InviteUserDialog & lookup_user_by_email RPC**: Új tag meghívásakor a felület ellenőrzi, hogy a megadott e-mail cím létezik-e már a rendszerben. Ehhez a `lookup_user_by_email` biztonságos RPC-t használja. Ha a felhasználó létezik, azonnal hozzáadja a céghez, ha nem, meghívót küld az Edge Function-ön keresztül.
+- **Email Megerősítési Callback**: A rendszer kezeli az e-mail megerősítő linkek (`verify_token` paraméterek) feldolgozását, elkerülve a duplán megerősített vagy lejárt token hibákat a dinamikus átirányítások során.
+
+### 3. Könyvelők Áttérése (eaisybooks → eaisybill)
+- **Jogosultságok**: Az `eaisybooks` könyvelőirodákból áttérő könyvelők alapértelmezetten `member` jogosultsági kört kapnak a hozzárendelt cégekhez az `eaisybill` rendszerben. Ez biztosítja számukra a hozzáférést a teljes könyvelési menühöz (Könyvelés sidebar csoport, Főkönyv, Áfa analitika, Tranzakciók, Házipénztár), miközben elkerüli, hogy feleslegesen globális rendszer-adminisztrátori jogokat kapjanak.
+- **Profil mezők zárolása (Profile Locking)**:
+  - Ha a felhasználónak van aktív könyvelőirodai összerendelése (`accounty_assignments`), a rendszer zárolja a profil beállításaiban a **Pozíció** (Position) és **Cég neve** (Company Name) mezőket.
+  - A `Settings.tsx` lekérdezi a legmagasabb könyvelői szerepkört és az iroda nevét, majd ezeket átadja a `ProfileSection` komponensnek `readOnlyOverrides` propként. A felületen a zárolt mezők mellett lakat ikon jelenik meg, és a beviteli mezők inaktívvá (disabled) válnak.
+
