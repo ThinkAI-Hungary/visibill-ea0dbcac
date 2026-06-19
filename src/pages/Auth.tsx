@@ -431,8 +431,12 @@ const Auth = () => {
         toast({ title: 'Hiba a megerősítéskor', description: err.message, variant: 'destructive' });
       } finally {
         setIsVerifying(false);
-        // Clean up URL
-        setAuthSearchParams({}, { replace: true });
+        setAuthSearchParams(prev => {
+          const next = new URLSearchParams();
+          const app = prev.get('app');
+          if (app) next.set('app', app);
+          return next;
+        }, { replace: true });
       }
     };
 
@@ -466,7 +470,8 @@ const Auth = () => {
         body: JSON.stringify({
           userId: user.id,
           email: user.email,
-          name: user.user_metadata?.name || user.email?.split('@')[0]
+          name: user.user_metadata?.name || user.email?.split('@')[0],
+          source: isEaisybooks ? 'eaisybooks' : 'eaisybill'
         }),
       });
 
@@ -871,7 +876,7 @@ const Auth = () => {
     }
     setLoading(true);
 
-    const { error } = await signUp(email, password, name);
+    const { error } = await signUp(email, password, name, appMode);
 
     if (!error) {
       setSignedUpEmail(email);
@@ -989,7 +994,7 @@ const Auth = () => {
                 Email sikeresen megerősítve! 🎉
               </h1>
               <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-                Köszönjük, hogy megerősítetted az email címedet. Mostantól beléphetsz a eaisybill fiókodba.
+                Köszönjük, hogy megerősítetted az email címedet. Mostantól beléphetsz az eaisybill/eaisybooks fiókodba.
               </p>
 
               <Button

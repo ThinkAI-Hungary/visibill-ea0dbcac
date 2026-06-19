@@ -173,6 +173,30 @@ export default function WorkingTimePage() {
   // Projects for dropdown and name lookup
   const { projects } = useProjectList();
 
+  // Resolve user_id -> name from profiles (for admin Jelenléti ív)
+  const companyUserIds = useMemo(() => {
+    if (!isAdmin) return [];
+    const ids = new Set(companyTimeEntries.map(e => e.user_id).filter(Boolean));
+    return Array.from(ids) as string[];
+  }, [companyTimeEntries, isAdmin]);
+
+  const { data: userProfileNames = {} } = useQuery({
+    queryKey: ['user-profiles-names', selectedCompany?.id, companyUserIds.join(',')],
+    queryFn: async () => {
+      if (companyUserIds.length === 0) return {} as Record<string, string>;
+      const { data } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .in('user_id', companyUserIds);
+      const map: Record<string, string> = {};
+      (data || []).forEach(p => {
+        if (p.user_id && p.name) map[p.user_id] = p.name;
+      });
+      return map;
+    },
+    enabled: !!selectedCompany?.id && isAdmin && companyUserIds.length > 0,
+  });
+
   // Count submitted entries for admin badge
   const { data: submittedCount = 0 } = useQuery({
     queryKey: ['submitted-count', selectedCompany?.id],
@@ -228,34 +252,35 @@ export default function WorkingTimePage() {
       }
     });
 
-    // 2. Filter employee rates to only active employees in the selected month
-    const activeRates = employeeRates.filter(r => activeNames.has(r.employee_name));
-    
-    const employeeCount = activeRates.filter(
+    // 2. Employee/contractor counts from employee_rates (all registered workers)
+    const employeeCount = employeeRates.filter(
       (r) => r.employee_type === 'employee'
-    ).length || activeNames.size; // fallback to activeNames count if not in employee_rates yet
+    ).length;
     
-    const contractorCount = activeRates.filter(
+    const contractorCount = employeeRates.filter(
       (r) => r.employee_type === 'contractor'
     ).length;
 
-    // 3. Average hourly rate of active employees in the selected month
-    const activeHourlyRates = Array.from(activeNames).map((name) => {
-      const rateObj = employeeRates.find(r => r.employee_name === name);
-      if (rateObj?.hourly_rate && rateObj.hourly_rate > 0) {
-        return Number(rateObj.hourly_rate);
-      }
-      // Fallback: calculate dynamically from gross cost
-      const empItems = salaryItems.filter(i => i.munkavallalo_neve === name && i.dátum && i.dátum.startsWith(monthStr));
-      const net = empItems.filter(i => i.tipus === 'bér').reduce((s, i) => s + Number(i.összeg), 0);
-      const adó = empItems.filter(i => i.tipus === 'adó').reduce((s, i) => s + Number(i.összeg), 0);
-      const járulék = empItems.filter(i => i.tipus === 'járulék').reduce((s, i) => s + Number(i.összeg), 0);
-      const gross = net + adó + járulék;
-      return gross / (effectiveSettings.monthly_working_hours || 168);
-    });
+    // 3. Average hourly rate from all employees in employee_rates
+    const allHourlyRates = employeeRates
+      .filter(r => r.employee_type === 'employee')
+      .map((rateObj) => {
+        if (rateObj.hourly_rate && rateObj.hourly_rate > 0) {
+          return Number(rateObj.hourly_rate);
+        }
+        // Fallback: calculate dynamically from gross cost if salary data exists
+        const empItems = salaryItems.filter(i => i.munkavallalo_neve === rateObj.employee_name && i.dátum && i.dátum.startsWith(monthStr));
+        if (empItems.length === 0) return null;
+        const net = empItems.filter(i => i.tipus === 'bér').reduce((s, i) => s + Number(i.összeg), 0);
+        const adó = empItems.filter(i => i.tipus === 'adó').reduce((s, i) => s + Number(i.összeg), 0);
+        const járulék = empItems.filter(i => i.tipus === 'járulék').reduce((s, i) => s + Number(i.összeg), 0);
+        const gross = net + adó + járulék;
+        return gross > 0 ? gross / (effectiveSettings.monthly_working_hours || 168) : null;
+      })
+      .filter((r): r is number => r !== null && r > 0);
 
-    const avgHourlyRate = activeHourlyRates.length > 0
-      ? activeHourlyRates.reduce((sum, r) => sum + r, 0) / activeHourlyRates.length
+    const avgHourlyRate = allHourlyRates.length > 0
+      ? allHourlyRates.reduce((sum, r) => sum + r, 0) / allHourlyRates.length
       : 0;
 
     // Weekly hours from time entries
@@ -265,7 +290,7 @@ export default function WorkingTimePage() {
     );
 
     return {
-      totalEmployees: activeNames.size || employeeRates.length,
+      totalEmployees: employeeRates.length,
       employeeCount,
       contractorCount,
       totalMonthlyCost,
@@ -292,6 +317,7 @@ export default function WorkingTimePage() {
     email: string | null;
     phone: string | null;
     hourly_rate: number | null;
+    user_id?: string | null;
   }) => {
     upsertMutation.mutate(data, {
       onSuccess: () => setAddEmployeeOpen(false),
@@ -548,6 +574,7 @@ export default function WorkingTimePage() {
             workEndTime={effectiveSettings.work_end_time}
             projectNames={projectNames}
             employeeRates={employeeRates}
+            userProfileNames={userProfileNames}
             isAdmin={isAdmin}
           />
         </TabsContent>
@@ -595,6 +622,7 @@ export default function WorkingTimePage() {
         onOpenChange={handleCloseAddEmployee}
         onSubmit={handleAddEmployee}
         isSaving={upsertMutation.isPending}
+        existingEmployeeNames={employeeRates.map(r => r.employee_name)}
       />
     </div>
   );

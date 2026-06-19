@@ -51,6 +51,7 @@ export function useEmployeeRates() {
       effective_date?: string;
       email?: string | null;
       phone?: string | null;
+      user_id?: string | null;
     }): Promise<'created' | 'updated'> => {
       if (!user || !selectedCompany) throw new Error('No user/company');
 
@@ -61,39 +62,51 @@ export function useEmployeeRates() {
       );
 
       if (existing) {
+        const updateData: Record<string, any> = {
+          employee_type: rate.employee_type ?? existing.employee_type,
+          base_salary_cost: rate.base_salary_cost ?? existing.base_salary_cost,
+          hourly_rate: rate.hourly_rate ?? existing.hourly_rate,
+          effective_date: rate.effective_date ?? existing.effective_date,
+          email: rate.email !== undefined ? rate.email : existing.email,
+          phone: rate.phone !== undefined ? rate.phone : existing.phone,
+          updated_at: new Date().toISOString(),
+        };
+        // Link user_id if provided and not already set
+        if (rate.user_id && !existing.user_id) {
+          updateData.user_id = rate.user_id;
+        }
+
         const { error } = await supabase
           .from('employee_rates')
-          .update({
-            employee_type: rate.employee_type ?? existing.employee_type,
-            base_salary_cost: rate.base_salary_cost ?? existing.base_salary_cost,
-            hourly_rate: rate.hourly_rate ?? existing.hourly_rate,
-            effective_date: rate.effective_date ?? existing.effective_date,
-            email: rate.email !== undefined ? rate.email : existing.email,
-            phone: rate.phone !== undefined ? rate.phone : existing.phone,
-            updated_at: new Date().toISOString(),
-          })
+          .update(updateData)
           .eq('id', existing.id);
 
         if (error) throw error;
         return 'updated';
       } else {
+        const insertData: Record<string, any> = {
+          company_id: selectedCompany.id,
+          employee_name: rate.employee_name,
+          employee_type: rate.employee_type ?? 'employee',
+          base_salary_cost: rate.base_salary_cost ?? null,
+          hourly_rate: rate.hourly_rate ?? null,
+          effective_date: rate.effective_date ?? new Date().toISOString().slice(0, 10),
+          email: rate.email ?? null,
+          phone: rate.phone ?? null,
+        };
+        if (rate.user_id) {
+          insertData.user_id = rate.user_id;
+        }
+
         const { error } = await supabase
           .from('employee_rates')
-          .insert({
-            company_id: selectedCompany.id,
-            employee_name: rate.employee_name,
-            employee_type: rate.employee_type ?? 'employee',
-            base_salary_cost: rate.base_salary_cost ?? null,
-            hourly_rate: rate.hourly_rate ?? null,
-            effective_date: rate.effective_date ?? new Date().toISOString().slice(0, 10),
-            email: rate.email ?? null,
-            phone: rate.phone ?? null,
-          });
+          .insert(insertData);
 
         if (error) throw error;
         return 'created';
       }
     },
+
     onSuccess: (result) => {
       if (result === 'created') {
         toast({ title: 'Siker', description: 'Dolgozó sikeresen hozzáadva.' });

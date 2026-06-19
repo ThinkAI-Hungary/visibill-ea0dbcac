@@ -17,7 +17,7 @@ interface AuthContextType {
   isPasswordRecovery: boolean;
   clearPasswordRecovery: () => void;
   sessionGuard: SessionGuardState;
-  signUp: (email: string, password: string, name?: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, name?: string, source?: 'eaisybill' | 'eaisybooks') => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: (options?: { silent?: boolean }) => Promise<void>;
   updatePassword: (currentPassword: string, newPassword: string) => Promise<{ error: any }>;
@@ -127,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, name?: string) => {
+  const signUp = async (email: string, password: string, name?: string, source?: 'eaisybill' | 'eaisybooks') => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { data, error } = await supabase.auth.signUp({
@@ -135,7 +135,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: name ? { name } : undefined
+        data: {
+          ...(name ? { name } : {}),
+          ...(source ? { source } : {})
+        }
       }
     });
     
@@ -162,10 +165,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (error) {
       reportError({ type: 'auth', component: 'AuthContext', action: 'signIn', message: error.message, error, context: { email } });
+      
+      // Map technical PostgREST errors to user-friendly messages
+      let description = error.message;
+      if (error.message.includes('Database error querying schema') || error.message.includes('querying schema')) {
+        description = 'Átmeneti szerverhiba. Kérjük próbáld újra néhány másodperc múlva.';
+      } else if (error.message.includes('Invalid login credentials')) {
+        description = 'Hibás email cím vagy jelszó.';
+      }
+      
       toast({
         variant: "destructive",
         title: "Bejelentkezés sikertelen",
-        description: error.message
+        description,
       });
     } else {
       // ── Login success: reset lastActive so gate won't block ──

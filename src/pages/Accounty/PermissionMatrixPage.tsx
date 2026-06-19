@@ -354,15 +354,19 @@ function RoleSelector({ currentRole, onSelect, onClose, onRemove, isNew }: {
   );
 }
 
-function PermissionToggle({ canRead, canWrite, onToggleRead, onToggleWrite }: {
+function PermissionToggle({ canRead, canWrite, defaultRead, defaultWrite, onToggleRead, onToggleWrite }: {
   canRead: boolean | null;
   canWrite: boolean | null;
+  defaultRead: boolean;
+  defaultWrite: boolean;
   onToggleRead: () => void;
   onToggleWrite: () => void;
 }) {
-  // null means "no DB override, using static default"
-  const readActive = canRead !== false;
-  const writeActive = canWrite === true;
+  const readActive = canRead !== null ? canRead : defaultRead;
+  const writeActive = canWrite !== null ? canWrite : defaultWrite;
+
+  const isReadCustom = canRead !== null;
+  const isWriteCustom = canWrite !== null;
 
   return (
     <div className="flex items-center gap-1.5 justify-center">
@@ -374,7 +378,7 @@ function PermissionToggle({ canRead, canWrite, onToggleRead, onToggleWrite }: {
             ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/25'
             : 'bg-red-500/10 text-red-500/60 border-red-500/15 hover:bg-red-500/20'
           }
-          ${canRead === null ? 'opacity-50 border-dashed' : ''}
+          ${!isReadCustom ? 'opacity-55 border-dashed' : ''}
         `}
       >
         <Eye className="w-3 h-3" />
@@ -388,7 +392,7 @@ function PermissionToggle({ canRead, canWrite, onToggleRead, onToggleWrite }: {
             ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/25'
             : 'bg-slate-500/10 text-slate-400 border-slate-500/15 hover:bg-slate-500/20'
           }
-          ${canWrite === null ? 'opacity-50 border-dashed' : ''}
+          ${!isWriteCustom ? 'opacity-55 border-dashed' : ''}
         `}
       >
         <Pencil className="w-3 h-3" />
@@ -431,6 +435,56 @@ export default function PermissionMatrixPage() {
     );
     return filteredUsers.filter(u => !adminUserIds.has(u.id));
   }, [filteredUsers, data]);
+
+  const getUserRole = useCallback((userId: string): RoleOption => {
+    if (!data?.assignments) return 'könyvelő';
+    const userAssignments = data.assignments.filter(a => a.accountantUserId === userId);
+    if (userAssignments.length === 0) return 'könyvelő';
+
+    const ROLE_PRIORITY: Record<RoleOption, number> = {
+      'iroda_admin': 4,
+      'senior_könyvelő': 3,
+      'könyvelő': 2,
+      'asszisztens': 1,
+    };
+
+    const roles = userAssignments.map(a => a.role as RoleOption);
+    return roles.reduce((best, current) => {
+      const bestPrio = ROLE_PRIORITY[best] ?? 0;
+      const currentPrio = ROLE_PRIORITY[current] ?? 0;
+      return currentPrio > bestPrio ? current : best;
+    }, roles[0]);
+  }, [data?.assignments]);
+
+  const getRoleDefaultPermission = useCallback((role: RoleOption, moduleKey: string) => {
+    const isAdmin = role === 'iroda_admin';
+    const isSenior = role === 'senior_könyvelő' || role === 'iroda_admin';
+
+    const ALWAYS_ACCESSIBLE = [
+      'portfolio', 'missing_invoices', 'tax_calendar', 'payroll',
+      'tao', 'tickets', 'ai_assistant', 'help', 'profile',
+    ];
+    
+    const ADMIN_ONLY_MODULES = [
+      'admin_audit', 'admin_gdpr', 'admin_templates', 'admin_job_codes',
+      'admin_tax_params', 'admin_legal', 'admin_office', 'admin_permissions',
+      'admin_accountants', 'onboarding',
+    ];
+    
+    const SENIOR_AND_ADMIN_MODULES = [
+      'reports', 'approval_queue', 'alerts', 'nav_deadlines', 'settings',
+    ];
+
+    const canRead = ALWAYS_ACCESSIBLE.includes(moduleKey) || 
+                    (ADMIN_ONLY_MODULES.includes(moduleKey) && isAdmin) || 
+                    (SENIOR_AND_ADMIN_MODULES.includes(moduleKey) && isSenior);
+
+    const canWrite = isAdmin || 
+                     (isSenior && !ADMIN_ONLY_MODULES.includes(moduleKey)) ||
+                     (canRead && !ADMIN_ONLY_MODULES.includes(moduleKey) && !SENIOR_AND_ADMIN_MODULES.includes(moduleKey));
+
+    return { canRead, canWrite };
+  }, []);
 
   const getModulePerm = useCallback((userId: string, moduleName: string): ModulePermRow | undefined => {
     return data?.modulePerms.find(p => p.userId === userId && p.moduleName === moduleName);
@@ -699,31 +753,38 @@ export default function PermissionMatrixPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {nonAdminUsers.map((user, idx) => (
-                    <tr
-                      key={user.id}
-                      className={`border-b border-border/50 transition-colors hover:bg-muted/30
-                        ${idx % 2 === 0 ? '' : 'bg-muted/10'}
-                      `}
-                    >
-                      <td className="sticky left-0 z-10 bg-card px-4 py-3 font-medium text-foreground">
-                        <div className="font-medium">{user.name}</div>
-                      </td>
-                      {CONFIGURABLE_MODULES.map(mod => {
-                        const perm = getModulePerm(user.id, mod.key);
-                        return (
-                          <td key={mod.key} className="px-2 py-2 text-center">
-                            <PermissionToggle
-                              canRead={perm ? perm.canRead : null}
-                              canWrite={perm ? perm.canWrite : null}
-                              onToggleRead={() => handleToggleRead(user.id, mod.key)}
-                              onToggleWrite={() => handleToggleWrite(user.id, mod.key)}
-                            />
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
+                  {nonAdminUsers.map((user, idx) => {
+                    const role = getUserRole(user.id);
+                    return (
+                      <tr
+                        key={user.id}
+                        className={`border-b border-border/50 transition-colors hover:bg-muted/30
+                          ${idx % 2 === 0 ? '' : 'bg-muted/10'}
+                        `}
+                      >
+                        <td className="sticky left-0 z-10 bg-card px-4 py-3 font-medium text-foreground">
+                          <div className="font-medium">{user.name}</div>
+                          <div className="text-[10px] text-muted-foreground">{ROLE_LABELS[role]}</div>
+                        </td>
+                        {CONFIGURABLE_MODULES.map(mod => {
+                          const perm = getModulePerm(user.id, mod.key);
+                          const defaultPerm = getRoleDefaultPermission(role, mod.key);
+                          return (
+                            <td key={mod.key} className="px-2 py-2 text-center">
+                              <PermissionToggle
+                                canRead={perm ? perm.canRead : null}
+                                canWrite={perm ? perm.canWrite : null}
+                                defaultRead={defaultPerm.canRead}
+                                defaultWrite={defaultPerm.canWrite}
+                                onToggleRead={() => handleToggleRead(user.id, mod.key)}
+                                onToggleWrite={() => handleToggleWrite(user.id, mod.key)}
+                              />
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
                   {nonAdminUsers.length === 0 && (
                     <tr>
                       <td colSpan={CONFIGURABLE_MODULES.length + 1} className="px-4 py-8 text-center text-muted-foreground">

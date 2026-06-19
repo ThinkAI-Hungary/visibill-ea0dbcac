@@ -463,6 +463,7 @@ export default function AccountyApp() {
         ? ownerOverrides[sc.id] === user?.id 
         : sc.assignedToMe,
       ownerId: ownerOverrides[sc.id] || sc.ownerId || '1',
+      isMainAccountant: sc.isMainAccountant ?? false,
     }));
   }, [supabaseClients, ownerOverrides, statusOverrides, user?.id]);
 
@@ -573,7 +574,7 @@ export default function AccountyApp() {
 
   // Előszűrjük a saját/összes nézet alapján
   const scopedClients = clients.filter(client => 
-    viewScope === 'all' || client.assignedToMe
+    viewScope === 'all' || client.isMainAccountant
   );
 
   const filteredClients = scopedClients.filter(client => {
@@ -584,7 +585,7 @@ export default function AccountyApp() {
     return matchesSearch && matchesStatus;
   });
 
-  const mineCount = clients.filter(c => c.assignedToMe).length;
+  const mineCount = clients.filter(c => c.isMainAccountant).length;
   const allCount = clients.length;
 
   if (clientsLoading) {
@@ -698,20 +699,18 @@ export default function AccountyApp() {
 
       {/* Scope Tabs */}
       <div className="w-full bg-slate-100/80 dark:bg-slate-900/80 p-1.5 rounded-xl border border-border/60 shadow-inner flex items-center">
-        {isAdmin && (
-          <button
-            onClick={() => setViewScope('kpi')}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
-              viewScope === 'kpi' 
-                ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" 
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
-            )}
-          >
-            <BarChart2 className="w-4 h-4" />
-            Irodai KPI (Vezetői)
-          </button>
-        )}
+        <button
+          onClick={() => setViewScope('kpi')}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
+            viewScope === 'kpi' 
+              ? "bg-card text-slate-900 dark:text-slate-100 shadow-soft" 
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 dark:text-slate-300 hover:bg-slate-200/50"
+          )}
+        >
+          <BarChart2 className="w-4 h-4" />
+          {isAdmin ? 'Irodai KPI (Vezetői)' : 'Statisztikák'}
+        </button>
         <button
           onClick={() => setViewScope('mine')}
           className={cn(
@@ -861,8 +860,8 @@ export default function AccountyApp() {
             </button>
           </div>
 
-          {/* Middle Row: Charts (senior+ only) */}
-          {isSenior && <WidgetWrapper 
+          {/* Middle Row: Charts */}
+          <WidgetWrapper 
             id="charts" 
             editingLayout={editingLayout} 
             onMoveUp={() => moveWidget(widgetOrder.indexOf('charts'), -1)} 
@@ -901,7 +900,7 @@ export default function AccountyApp() {
             <div className="bg-card rounded-xl p-6 border border-border shadow-soft h-80 flex flex-col relative">
               <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
                 <PieChartIcon className="w-4 h-4 text-amber-600" />
-                Irodai Ügyfél Státuszok
+                {isAdmin ? 'Irodai Ügyfél Státuszok' : 'Saját Ügyfél Státuszok'}
               </h3>
               <div className="flex-1 w-full flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
@@ -949,10 +948,10 @@ export default function AccountyApp() {
               </div>
             </div>
           </div>
-          </WidgetWrapper>}
+          </WidgetWrapper>
 
-          {/* Monthly Trend Chart (senior+ only) */}
-          {isSenior && <WidgetWrapper 
+          {/* Monthly Trend Chart */}
+          <WidgetWrapper 
             id="monthly_trend" 
             editingLayout={editingLayout} 
             onMoveUp={() => moveWidget(widgetOrder.indexOf('monthly_trend'), -1)} 
@@ -1009,7 +1008,7 @@ export default function AccountyApp() {
               </div>
             </div>
           </div>
-          </WidgetWrapper>}
+          </WidgetWrapper>
 
           {/* Bottom Row: Table (admin only) */}
           {isAdmin && <WidgetWrapper 

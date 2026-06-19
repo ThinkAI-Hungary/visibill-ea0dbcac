@@ -13,7 +13,9 @@ export interface ClientData {
   colorHex: string;
   assignedToMe: boolean;
   ownerId: string;
+  isMainAccountant?: boolean;
 }
+
 
 export type BlockingCategory = 'bejovo' | 'kimeno' | 'bank' | 'ber';
 

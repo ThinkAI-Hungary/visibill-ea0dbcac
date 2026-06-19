@@ -30,6 +30,7 @@ interface TimesheetTableProps {
   workEndTime: string;      // e.g. "16:30"
   projectNames: Record<string, string>;
   employeeRates?: { user_id: string | null; employee_name: string }[];
+  userProfileNames?: Record<string, string>;
   isAdmin?: boolean;
 }
 
@@ -68,6 +69,7 @@ export function TimesheetTable({
   workEndTime,
   projectNames,
   employeeRates = [],
+  userProfileNames = {},
   isAdmin = false,
 }: TimesheetTableProps) {
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -160,7 +162,9 @@ export function TimesheetTable({
                   ? format(parseISO(entry.updated_at), 'yyyy.MM.dd. HH:mm')
                   : null;
               const projName = entry.project_id ? projectNames[entry.project_id] || '—' : null;
-              const employeeName = entry.user_id ? userNameMap[entry.user_id] || 'Ismeretlen' : '—';
+              const employeeName = entry.user_id
+                ? (userProfileNames[entry.user_id] || userNameMap[entry.user_id] || 'Ismeretlen')
+                : '—';
 
               return (
                 <TableRow

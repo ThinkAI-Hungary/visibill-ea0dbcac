@@ -20,11 +20,27 @@ export function useHasEaisybillAccess() {
   const { data: hasAccess, isPending } = useQuery({
     queryKey: ['has-eaisybill-access', user?.id],
     queryFn: async () => {
-      const { count } = await supabase
+      // First check if admin has disabled eaisybill access for this user
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('eaisybill_access')
+        .eq('user_id', user!.id)
+        .single();
+      if (profile && profile.eaisybill_access === false) return false;
+
+      // Check company_members
+      const { count: memberCount } = await supabase
         .from('company_members')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user!.id);
-      return (count ?? 0) > 0;
+      if ((memberCount ?? 0) > 0) return true;
+
+      // Also check accounty_assignments (accountants have eaisybill access to assigned companies)
+      const { count: assignmentCount } = await supabase
+        .from('accounty_assignments' as any)
+        .select('id', { count: 'exact', head: true })
+        .eq('accountant_user_id', user!.id);
+      return (assignmentCount ?? 0) > 0;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,

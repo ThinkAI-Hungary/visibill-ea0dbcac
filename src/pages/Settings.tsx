@@ -162,10 +162,17 @@ function CompanyMembersCard({ companyId, companyName, ownerId, isOwnerOrAdmin, t
 
   const updateMemberRole = async (memberId: string, newRole: string) => {
     setUpdatingRole(memberId);
-    const { error } = await supabase.from('company_members').update({ role: newRole }).eq('id', memberId);
+    const { data, error, count } = await supabase
+      .from('company_members')
+      .update({ role: newRole } as any)
+      .eq('id', memberId)
+      .select();
     if (error) {
       reportError({ type: 'db_query', component: 'Settings', action: 'updateMemberRole', message: 'Role update failed', error });
       toast({ title: "Hiba", description: "Nem sikerült a szerepkör módosítása.", variant: "destructive" });
+    } else if (!data || data.length === 0) {
+      // RLS blocked — no rows affected
+      toast({ title: "Hiba", description: "Nincs jogosultságod a szerepkör módosításához. Csak a cég tulajdonosa módosíthat.", variant: "destructive" });
     } else {
       toast({ title: "Siker", description: "Szerepkör frissítve." });
       queryClient.invalidateQueries({ queryKey: queryKeys.settingsMembers(companyId) });

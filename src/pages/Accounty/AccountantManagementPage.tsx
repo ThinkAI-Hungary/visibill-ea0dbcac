@@ -4,8 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAccountyRole } from './AccountyRoleContext';
 import {
-  Building2, Users, Shield, Search, Plus, Trash2, Loader2, UserPlus, ChevronDown, Check, X, AlertTriangle
+  Building2, Users, Shield, Search, Plus, Trash2, Loader2, UserPlus, ChevronDown, Check, X, AlertTriangle, Monitor, Star
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -16,7 +18,8 @@ interface FirmAccountant {
   name: string;
   email: string;
   role: string;
-  assignedCompanies: { id: string; name: string; role: string; assignmentId: string }[];
+  eaisybillAccess: boolean;
+  assignedCompanies: { id: string; name: string; role: string; assignmentId: string; isMainAccountant: boolean }[];
 }
 
 interface AvailableCompany {
@@ -60,7 +63,7 @@ function useFirmAccountants() {
       // Get all assignments for firm
       const { data: assignments } = await supabase
         .from('accounty_assignments')
-        .select('id, accountant_user_id, company_id, role')
+        .select('id, accountant_user_id, company_id, role, is_main_accountant')
         .eq('accounting_firm_id', firmId);
 
       if (!assignments) return { firmId, accountants: [], companies: [] };
@@ -87,6 +90,14 @@ function useFirmAccountants() {
         companyMap[c.id] = { name: c.name, taxNumber: c.tax_number };
       });
 
+      // Get eaisybill access flags
+      const { data: eaisybillProfiles } = await supabase
+        .from('profiles')
+        .select('user_id, eaisybill_access')
+        .in('user_id', userIds);
+      const eaisybillMap: Record<string, boolean> = {};
+      (eaisybillProfiles || []).forEach((p: any) => { eaisybillMap[p.user_id] = p.eaisybill_access ?? true; });
+
       // Build accountant objects
       const accountantMap: Record<string, FirmAccountant> = {};
       for (const uid of userIds) {
@@ -95,6 +106,7 @@ function useFirmAccountants() {
           name: nameMap[uid] || 'Névtelen',
           email: '',
           role: '',
+          eaisybillAccess: eaisybillMap[uid] ?? true,
           assignedCompanies: [],
         };
       }
@@ -111,6 +123,7 @@ function useFirmAccountants() {
             name: comp.name,
             role: a.role,
             assignmentId: a.id,
+            isMainAccountant: a.is_main_accountant ?? false,
           });
         }
       }
@@ -182,6 +195,93 @@ function useRemoveAssignment() {
       queryClient.invalidateQueries({ queryKey: ['permission-matrix'] });
       queryClient.invalidateQueries({ queryKey: ['accounty-clients'] });
       toast({ title: 'Hozzárendelés törölve', description: 'A könyvelő el lett távolítva a cégtől.' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Hiba', description: err.message, variant: 'destructive' });
+    },
+  });
+}
+
+function useToggleEaisybillAccess() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ userId, access }: { userId: string; access: boolean }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ eaisybill_access: access })
+        .eq('user_id', userId);
+      if (error) throw error;
+    },
+    onMutate: async (vars) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['firm-accountants'] });
+      // Snapshot previous value
+      const previous = queryClient.getQueryData(['firm-accountants']);
+      // Optimistically update cache
+      queryClient.setQueryData(['firm-accountants'], (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((acc: any) =>
+          acc.userId === vars.userId ? { ...acc, eaisybillAccess: vars.access } : acc
+        );
+      });
+      return { previous };
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['has-eaisybill-access'] });
+      toast({
+        title: vars.access ? 'eaisybill engedélyezve' : 'eaisybill letiltva',
+        description: vars.access
+          ? 'A felhasználó mostantól hozzáfér az eaisybill-hez.'
+          : 'A felhasználó eaisybill hozzáférése letiltva.',
+      });
+    },
+    onError: (err: any, _, context) => {
+      // Rollback on error
+      if (context?.previous) {
+        queryClient.setQueryData(['firm-accountants'], context.previous);
+      }
+      toast({ title: 'Hiba', description: err.message, variant: 'destructive' });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['firm-accountants'] });
+    },
+  });
+}
+
+
+function useSetMainAccountant() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ assignmentId, companyId, setMain }: { assignmentId: string; companyId: string; setMain: boolean }) => {
+      if (setMain) {
+        // First clear any existing main accountant for this company
+        const { error: clearError } = await supabase
+          .from('accounty_assignments')
+          .update({ is_main_accountant: false })
+          .eq('company_id', companyId)
+          .eq('is_main_accountant', true);
+        if (clearError) throw clearError;
+      }
+      // Set or unset this one
+      const { error } = await supabase
+        .from('accounty_assignments')
+        .update({ is_main_accountant: setMain })
+        .eq('id', assignmentId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['firm-accountants'] });
+      queryClient.invalidateQueries({ queryKey: ['accounty-clients'] });
+      toast({
+        title: vars.setMain ? 'Fő könyvelő beállítva' : 'Fő könyvelő jelölés törölve',
+        description: vars.setMain
+          ? 'A könyvelő mostantól a cég fő könyvelője.'
+          : 'A fő könyvelő jelölés eltávolítva.',
+      });
     },
     onError: (err: any) => {
       toast({ title: 'Hiba', description: err.message, variant: 'destructive' });
@@ -337,6 +437,8 @@ export default function AccountantManagementPage() {
   const { isAdmin } = useAccountyRole();
   const { data, isLoading } = useFirmAccountants();
   const removeAssignment = useRemoveAssignment();
+  const toggleEaisybill = useToggleEaisybillAccess();
+  const setMainAccountant = useSetMainAccountant();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [assignDialogUser, setAssignDialogUser] = useState<FirmAccountant | null>(null);
@@ -427,6 +529,19 @@ export default function AccountantManagementPage() {
                   <Shield className="w-3 h-3 inline mr-1" />
                   {ROLE_LABELS[acc.role] || acc.role}
                 </span>
+                <div
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-muted/50 border border-border/50"
+                  onClick={e => e.stopPropagation()}
+                  title={acc.eaisybillAccess ? 'eaisybill hozzáférés engedélyezve' : 'eaisybill hozzáférés letiltva'}
+                >
+                  <Monitor className={`w-3.5 h-3.5 ${acc.eaisybillAccess ? 'text-emerald-500' : 'text-muted-foreground/40'}`} />
+                  <span className="text-[10px] text-muted-foreground hidden sm:inline">eaisybill</span>
+                  <Switch
+                    checked={acc.eaisybillAccess}
+                    onCheckedChange={(checked) => toggleEaisybill.mutate({ userId: acc.userId, access: checked })}
+                    className="scale-75"
+                  />
+                </div>
                 <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
               </button>
 
@@ -456,6 +571,27 @@ export default function AccountantManagementPage() {
                         >
                           <Building2 className="w-4 h-4 text-muted-foreground shrink-0" />
                           <span className="text-sm font-medium text-foreground flex-1 truncate">{comp.name}</span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={() => setMainAccountant.mutate({
+                                  assignmentId: comp.assignmentId,
+                                  companyId: comp.id,
+                                  setMain: !comp.isMainAccountant,
+                                })}
+                                className={`p-1 rounded transition-all ${
+                                  comp.isMainAccountant
+                                    ? 'text-amber-500 hover:text-amber-600'
+                                    : 'text-muted-foreground/30 hover:text-amber-400 opacity-0 group-hover:opacity-100'
+                                }`}
+                              >
+                                <Star className={`w-4 h-4 ${comp.isMainAccountant ? 'fill-amber-500' : ''}`} />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="left">
+                              {comp.isMainAccountant ? 'Fő könyvelő (kattints a törléshez)' : 'Beállítás fő könyvelőnek'}
+                            </TooltipContent>
+                          </Tooltip>
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${ROLE_COLORS[comp.role] || 'bg-muted text-muted-foreground'}`}>
                             {ROLE_LABELS[comp.role] || comp.role}
                           </span>

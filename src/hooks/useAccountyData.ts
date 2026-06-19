@@ -18,7 +18,10 @@ export interface AccountyClient {
   assignedToMe: boolean;
   isPrimary: boolean;
   accountantRole: 'senior' | 'junior';
+  ownerId?: string;
+  isMainAccountant?: boolean;
 }
+
 
 export interface AccountyMissingItem {
   id: string;
@@ -113,7 +116,7 @@ export function useAccountyClients() {
       if (isAdmin && firmId) {
         const { data, error } = await supabase
           .from('accounty_assignments')
-          .select('company_id, accountant_user_id, role, is_primary')
+          .select('*')
           .eq('accounting_firm_id', firmId);
         if (error) throw error;
         assignments = data || [];
@@ -129,7 +132,7 @@ export function useAccountyClients() {
           const myCompanyIds = myAssigns.map((a: any) => a.company_id);
           const { data, error } = await supabase
             .from('accounty_assignments')
-            .select('company_id, accountant_user_id, role, is_primary')
+            .select('*')
             .in('company_id', myCompanyIds);
           if (error) throw error;
           assignments = data || [];
@@ -187,8 +190,15 @@ export function useAccountyClients() {
       // 6. Build client list
       const clientsList = (companies || []).filter(c => c.name !== 'SANDBOX').map((company): AccountyClient => {
         const assignsForComp = companyAssignments[company.id] || [];
-        const primaryAssign = assignsForComp.find((a: any) => a.is_primary) || assignsForComp[0];
-        const assignedToMe = assignsForComp.some((a: any) => a.accountant_user_id === userId);
+        // Main accountant is the one with is_main_accountant=true, fallback to is_primary or first
+        const mainAccountantAssign = assignsForComp.find((a: any) => a.is_main_accountant) 
+          || assignsForComp.find((a: any) => a.is_primary) 
+          || assignsForComp[0];
+        const isMainAccountantForMe = assignsForComp.some((a: any) => a.accountant_user_id === userId && a.is_main_accountant);
+
+        const assignedToMe = isAdmin 
+          ? assignsForComp.some((a: any) => a.accountant_user_id === userId)
+          : isMainAccountantForMe;
         const missingCount = missingCountMap[company.id] || 0;
         const unprocessedCount = 0;
         const progress = computeProgress(missingCount, 0);
@@ -204,14 +214,16 @@ export function useAccountyClients() {
           deadlineDate: deadlineMap[company.id] || null,
           progress,
           assignedToMe,
-          isPrimary: primaryAssign?.is_primary || false,
-          accountantRole: primaryAssign?.role || 'junior',
-          ownerId: primaryAssign?.accountant_user_id || '1',
+          isPrimary: mainAccountantAssign?.is_primary || false,
+          accountantRole: mainAccountantAssign?.role || 'junior',
+          ownerId: mainAccountantAssign?.accountant_user_id || '1',
+          isMainAccountant: isMainAccountantForMe,
         };
       });
 
+      // Non-admin users: only show companies where they are the main accountant
       if (!isAdmin) {
-        return clientsList.filter(c => c.ownerId === userId);
+        return clientsList.filter(c => c.isMainAccountant);
       }
       return clientsList;
     },
@@ -219,6 +231,7 @@ export function useAccountyClients() {
     staleTime: 30_000,
   });
 }
+
 // ══════════════════════════════════════════════════════════════
 // useAccountyMissingItems – Missing items for a specific company
 // ══════════════════════════════════════════════════════════════
@@ -291,7 +304,7 @@ export function useAccountyAllMissingItems() {
         .eq('accountant_user_id', userId);
       
       if (!isAdmin) {
-        query = query.eq('is_primary', true);
+        query = query.eq('is_main_accountant', true);
       }
       
       const { data: assignments, error: assignErr } = await query;
@@ -438,7 +451,7 @@ export function useAccountyCompanySummary() {
         .eq('accountant_user_id', userId);
       
       if (!isAdmin) {
-        query = query.eq('is_primary', true);
+        query = query.eq('is_main_accountant', true);
       }
       
       const { data: assignments, error: assignErr } = await query;
@@ -525,7 +538,7 @@ export function useAccountyDeadlines() {
         .eq('accountant_user_id', userId);
       
       if (!isAdmin) {
-        query = query.eq('is_primary', true);
+        query = query.eq('is_main_accountant', true);
       }
       
       const { data: assignments, error: assignErr } = await query;
@@ -596,7 +609,7 @@ export function useAccountyKpis() {
         .eq('accountant_user_id', userId);
       
       if (!isAdmin) {
-        query = query.eq('is_primary', true);
+        query = query.eq('is_main_accountant', true);
       }
       
       const { data: assignments, error: assignErr } = await query;
@@ -920,70 +933,54 @@ export function useUpdateClientOwner() {
 
       const firmId = myAssignments?.[0]?.accounting_firm_id || null;
 
-      // 1. Check if the new owner already has an assignment for this company
-      const { data: existingNewOwnerAssign } = await supabase
+      // 1. Clear is_main_accountant on ALL assignments for this company
+      const { error: clearErr } = await supabase
+        .from('accounty_assignments')
+        .update({ is_main_accountant: false } as any)
+        .eq('company_id', params.companyId)
+        .eq('is_main_accountant', true);
+      if (clearErr) throw clearErr;
+
+      // 2. Check if the new owner already has an assignment for this company
+      const { data: existingAssign } = await supabase
         .from('accounty_assignments')
         .select('id')
         .eq('company_id', params.companyId)
         .eq('accountant_user_id', params.newOwnerId)
         .limit(1);
 
-      if (existingNewOwnerAssign && existingNewOwnerAssign.length > 0) {
-        // New owner already assigned: set their assignment to primary
-        const { error: updateNewErr } = await supabase
+      if (existingAssign && existingAssign.length > 0) {
+        // Set is_main_accountant on existing assignment
+        const { error: updateErr } = await supabase
           .from('accounty_assignments')
-          .update({ is_primary: true })
-          .eq('id', existingNewOwnerAssign[0].id);
-        if (updateNewErr) throw updateNewErr;
-
-        // And remove old assignment to decrease client count and avoid duplicates
-        if (params.oldOwnerId && params.oldOwnerId !== '1' && params.oldOwnerId !== params.newOwnerId) {
-          const { error: deleteOldErr } = await supabase
-            .from('accounty_assignments')
-            .delete()
-            .eq('company_id', params.companyId)
-            .eq('accountant_user_id', params.oldOwnerId);
-          if (deleteOldErr) throw deleteOldErr;
-        }
+          .update({ is_main_accountant: true } as any)
+          .eq('id', existingAssign[0].id);
+        if (updateErr) throw updateErr;
       } else {
-        // New owner is not assigned yet: update old assignment or insert new
-        if (params.oldOwnerId && params.oldOwnerId !== '1') {
-          const { error: updateOldErr } = await supabase
-            .from('accounty_assignments')
-            .update({ accountant_user_id: params.newOwnerId, is_primary: true })
-            .eq('company_id', params.companyId)
-            .eq('accountant_user_id', params.oldOwnerId);
-          if (updateOldErr) throw updateOldErr;
-        } else {
-          const { error: insertErr } = await supabase
-            .from('accounty_assignments')
-            .insert({
-              company_id: params.companyId,
-              accountant_user_id: params.newOwnerId,
-              accounting_firm_id: firmId,
-              role: 'könyvelő',
-              is_primary: true
-            });
-          if (insertErr) throw insertErr;
-        }
+        // Create new assignment with is_main_accountant = true
+        const { error: insertErr } = await supabase
+          .from('accounty_assignments')
+          .insert({
+            company_id: params.companyId,
+            accountant_user_id: params.newOwnerId,
+            accounting_firm_id: firmId,
+            role: 'könyvelő',
+            is_primary: true,
+            is_main_accountant: true,
+          } as any);
+        if (insertErr) throw insertErr;
       }
-
-      // 2. Set any other assignments for this company to NOT primary
-      const { error: clearPrimaryErr } = await supabase
-        .from('accounty_assignments')
-        .update({ is_primary: false })
-        .eq('company_id', params.companyId)
-        .neq('accountant_user_id', params.newOwnerId);
-      if (clearPrimaryErr) console.warn("Failed to clear other primary flags:", clearPrimaryErr);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounty-clients'] });
       queryClient.invalidateQueries({ queryKey: ['accounty-kpis'] });
       queryClient.invalidateQueries({ queryKey: ['accounty-all-missing-items'] });
       queryClient.invalidateQueries({ queryKey: ['accounty-company-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['firm-accountants'] });
     },
   });
 }
+
 
 
 // ══════════════════════════════════════════════════════════════

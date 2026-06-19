@@ -1,4 +1,4 @@
-﻿import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany, type Company } from '@/contexts/CompanyContext';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { UserPlus, Loader2, Eye, EyeOff, Building2, Search, Check, X, AlertCircle } from 'lucide-react';
+import { UserPlus, Loader2, Eye, EyeOff, Building2, Search, Check, X, AlertCircle, UserCheck, UserRoundPlus, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { reportError } from '@/lib/errorReporter';
 
@@ -65,6 +65,9 @@ function evaluatePassword(password: string): PasswordStrength {
   return { score, ...levels[score], checks };
 }
 
+// ── Mode type ──
+type InviteMode = 'existing' | 'new';
+
 export function InviteUserDialog({
   open,
   onOpenChange,
@@ -73,22 +76,30 @@ export function InviteUserDialog({
   onSuccess,
   toast,
 }: InviteUserDialogProps) {
-  // Form state
-  const [name, setName] = useState('');
+  // Mode: add existing user or create new
+  const [mode, setMode] = useState<InviteMode>('existing');
+
+  // Common form state
   const [email, setEmail] = useState('');
+  const [role, setRole] = useState<'member' | 'admin' | 'employee' | 'viewer'>('member');
+  const [loading, setLoading] = useState(false);
+
+  // New user form state
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Existing user lookup state
+  const [lookupStatus, setLookupStatus] = useState<'idle' | 'checking' | 'found' | 'not_found'>('idle');
+  const [foundUserName, setFoundUserName] = useState<string | null>(null);
+  const lookupDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Company assignment
   const [assignToCompany, setAssignToCompany] = useState(true);
   const [selectedCompanyId, setSelectedCompanyId] = useState(companyId);
   const [companySearch, setCompanySearch] = useState('');
-  const [role, setRole] = useState<'member' | 'admin' | 'employee'>('member');
-
-  // UI
-  const [loading, setLoading] = useState(false);
 
   // Companies from context
   const { companies } = useCompany();
@@ -112,7 +123,56 @@ export function InviteUserDialog({
   const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
   const isPasswordStrong = strength.score >= 4; // At least 4 of 5 criteria
 
+  // ── Email lookup for existing users ──
+  const checkEmailExists = useCallback(async (emailVal: string) => {
+    if (!emailVal.includes('@') || emailVal.trim().length < 5) {
+      setLookupStatus('idle');
+      setFoundUserName(null);
+      return;
+    }
+
+    setLookupStatus('checking');
+
+    try {
+      const { data, error } = await supabase
+        .rpc('lookup_user_by_email' as any, { p_email: emailVal.trim().toLowerCase() });
+
+      if (error) {
+        // RPC might not exist yet — that's OK, allow submission anyway
+        console.warn('Email lookup unavailable:', error.message);
+        setLookupStatus('idle');
+        return;
+      }
+
+      if (data && (data as any[]).length > 0) {
+        setLookupStatus('found');
+        setFoundUserName((data as any[])[0].name || (data as any[])[0].email);
+      } else {
+        setLookupStatus('not_found');
+        setFoundUserName(null);
+      }
+    } catch {
+      // Network error — allow submission anyway
+      setLookupStatus('idle');
+    }
+  }, []);
+
+  // Debounced email lookup in 'existing' mode
+  useEffect(() => {
+    if (mode !== 'existing') return;
+    if (lookupDebounce.current) clearTimeout(lookupDebounce.current);
+
+    lookupDebounce.current = setTimeout(() => {
+      checkEmailExists(email);
+    }, 500);
+
+    return () => {
+      if (lookupDebounce.current) clearTimeout(lookupDebounce.current);
+    };
+  }, [email, mode, checkEmailExists]);
+
   const resetForm = () => {
+    setMode('existing');
     setName('');
     setEmail('');
     setPassword('');
@@ -123,9 +183,18 @@ export function InviteUserDialog({
     setSelectedCompanyId(companyId);
     setCompanySearch('');
     setRole('member');
+    setLookupStatus('idle');
+    setFoundUserName(null);
   };
 
-  const canSubmit = (
+  const canSubmitExisting = (
+    email.trim().length > 0 &&
+    email.includes('@') &&
+    lookupStatus === 'found' &&
+    !loading
+  );
+
+  const canSubmitNew = (
     name.trim().length > 0 &&
     email.trim().length > 0 &&
     email.includes('@') &&
@@ -134,19 +203,23 @@ export function InviteUserDialog({
     !loading
   );
 
+  const canSubmit = mode === 'existing' ? canSubmitExisting : canSubmitNew;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!canSubmit) return;
 
-    if (password !== confirmPassword) {
-      toast({ title: 'A jelszavak nem egyeznek', description: 'Kérlek ellenőrizd a megadott jelszavakat.', variant: 'destructive' });
-      return;
-    }
+    if (mode === 'new') {
+      if (password !== confirmPassword) {
+        toast({ title: 'A jelszavak nem egyeznek', description: 'Kérlek ellenőrizd a megadott jelszavakat.', variant: 'destructive' });
+        return;
+      }
 
-    if (!isPasswordStrong) {
-      toast({ title: 'Gyenge jelszó', description: 'A jelszónak legalább 4 kritériumnak meg kell felelnie.', variant: 'destructive' });
-      return;
+      if (!isPasswordStrong) {
+        toast({ title: 'Gyenge jelszó', description: 'A jelszónak legalább 4 kritériumnak meg kell felelnie.', variant: 'destructive' });
+        return;
+      }
     }
 
     setLoading(true);
@@ -155,51 +228,84 @@ export function InviteUserDialog({
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('Nincs aktív munkamenet.');
 
-      const response = await supabase.functions.invoke('invite-user', {
-        body: {
-          email: email.trim(),
-          name: name.trim(),
-          password,
-          company_id: assignToCompany ? selectedCompanyId : null,
-          role: assignToCompany ? role : null,
-        },
-      });
+      if (mode === 'existing') {
+        // ── Existing user: add to company directly ──
+        const response = await supabase.functions.invoke('invite-user', {
+          body: {
+            email: email.trim(),
+            name: foundUserName || email.trim(),
+            password: 'DummyPassword1!', // Not used for existing users, but backend requires it
+            company_id: assignToCompany ? selectedCompanyId : null,
+            role: assignToCompany ? role : null,
+          },
+        });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Ismeretlen hiba');
-      }
+        if (response.error) throw new Error(response.error.message || 'Ismeretlen hiba');
 
-      const result = response.data;
+        const result = response.data;
 
-      if (!result?.success) {
-        const errorMessages: Record<string, string> = {
-          valid_email_required: 'Érvényes email cím szükséges.',
-          name_required: 'A név megadása kötelező.',
-          password_min_6: 'A jelszónak legalább 6 karakter hosszúnak kell lennie.',
-          not_admin: 'Nincs jogosultságod felhasználót meghívni ehhez a céghez.',
-          already_member: 'Ez a felhasználó már tagja a cégnek.',
-          email_exists: 'Ez az email cím már regisztrálva van és nem tartozik céghez.',
-          user_create_failed: 'Nem sikerült létrehozni a felhasználót.',
-          member_insert_failed: 'Nem sikerült hozzárendelni a felhasználót a céghez.',
-        };
+        if (!result?.success) {
+          const errorMessages: Record<string, string> = {
+            valid_email_required: 'Érvényes email cím szükséges.',
+            name_required: 'A név megadása kötelező.',
+            not_admin: 'Nincs jogosultságod felhasználót hozzáadni ehhez a céghez.',
+            already_member: 'Ez a felhasználó már tagja a cégnek.',
+            member_insert_failed: 'Nem sikerült hozzárendelni a felhasználót a céghez.',
+          };
+          const msg = errorMessages[result?.error] || result?.error || 'Ismeretlen hiba történt.';
+          toast({ title: 'Hiba', description: msg, variant: 'destructive' });
+          setLoading(false);
+          return;
+        }
 
-        const msg = errorMessages[result?.error] || result?.error || 'Ismeretlen hiba történt.';
-        toast({ title: 'Hiba', description: msg, variant: 'destructive' });
-        setLoading(false);
-        return;
-      }
-
-      // Success
-      if (result.existing_user) {
         toast({
           title: 'Felhasználó hozzáadva',
-          description: `${name.trim()} már regisztrált felhasználó — hozzáadva a céghez.`,
+          description: `${foundUserName || email.trim()} sikeresen hozzáadva a céghez.`,
         });
       } else {
-        toast({
-          title: 'Felhasználó meghívva',
-          description: `${name.trim()} (${email.trim()}) sikeresen létrehozva.`,
+        // ── New user: create + add to company ──
+        const response = await supabase.functions.invoke('invite-user', {
+          body: {
+            email: email.trim(),
+            name: name.trim(),
+            password,
+            company_id: assignToCompany ? selectedCompanyId : null,
+            role: assignToCompany ? role : null,
+          },
         });
+
+        if (response.error) throw new Error(response.error.message || 'Ismeretlen hiba');
+
+        const result = response.data;
+
+        if (!result?.success) {
+          const errorMessages: Record<string, string> = {
+            valid_email_required: 'Érvényes email cím szükséges.',
+            name_required: 'A név megadása kötelező.',
+            password_min_6: 'A jelszónak legalább 6 karakter hosszúnak kell lennie.',
+            not_admin: 'Nincs jogosultságod felhasználót meghívni ehhez a céghez.',
+            already_member: 'Ez a felhasználó már tagja a cégnek.',
+            email_exists: 'Ez az email cím már regisztrálva van. Használd a „Meglévő felhasználó" fület.',
+            user_create_failed: 'Nem sikerült létrehozni a felhasználót.',
+            member_insert_failed: 'Nem sikerült hozzárendelni a felhasználót a céghez.',
+          };
+          const msg = errorMessages[result?.error] || result?.error || 'Ismeretlen hiba történt.';
+          toast({ title: 'Hiba', description: msg, variant: 'destructive' });
+          setLoading(false);
+          return;
+        }
+
+        if (result.existing_user) {
+          toast({
+            title: 'Felhasználó hozzáadva',
+            description: `${name.trim()} már regisztrált felhasználó — hozzáadva a céghez.`,
+          });
+        } else {
+          toast({
+            title: 'Felhasználó meghívva',
+            description: `${name.trim()} (${email.trim()}) sikeresen létrehozva.`,
+          });
+        }
       }
 
       resetForm();
@@ -208,7 +314,7 @@ export function InviteUserDialog({
     } catch (err: any) {
       reportError({ type: 'db_query', component: 'InviteUserDialog', action: 'error', message: 'Invite error:', error: err });
       toast({
-        title: 'Meghívás sikertelen',
+        title: mode === 'existing' ? 'Hozzáadás sikertelen' : 'Meghívás sikertelen',
         description: err.message || 'Ismeretlen hiba történt.',
         variant: 'destructive',
       });
@@ -219,143 +325,237 @@ export function InviteUserDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!loading) { onOpenChange(v); if (!v) resetForm(); } }}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" />
-            Felhasználó meghívása
+            Tag hozzáadása
           </DialogTitle>
           <DialogDescription>
-            Új felhasználó létrehozása az eaisybill platformon.
+            Meglévő eaisybill felhasználó hozzáadása vagy új felhasználó létrehozása.
           </DialogDescription>
         </DialogHeader>
 
+        {/* ── Mode Switcher ── */}
+        <div className="flex rounded-lg border border-border bg-muted/30 p-1 gap-1">
+          <button
+            type="button"
+            onClick={() => { setMode('existing'); setLookupStatus('idle'); }}
+            className={cn(
+              'flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2',
+              mode === 'existing'
+                ? 'bg-background shadow-sm text-foreground border border-border/50'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+            )}
+          >
+            <UserCheck className="h-4 w-4" />
+            Meglévő felhasználó
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('new')}
+            className={cn(
+              'flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2',
+              mode === 'new'
+                ? 'bg-background shadow-sm text-foreground border border-border/50'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+            )}
+          >
+            <UserRoundPlus className="h-4 w-4" />
+            Új felhasználó
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-5 py-2">
-          {/* ── Name ── */}
-          <div className="space-y-2">
-            <Label htmlFor="invite-name">Teljes név *</Label>
-            <Input
-              id="invite-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Vezetéknév Keresztnév"
-              autoComplete="off"
-            />
-          </div>
+          {mode === 'existing' ? (
+            /* ══════════════════════════════════════
+               MODE: EXISTING USER
+               ══════════════════════════════════════ */
+            <>
+              {/* ── Email Search ── */}
+              <div className="space-y-2">
+                <Label htmlFor="invite-email-existing">Email cím *</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="invite-email-existing"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="felhasznalo@example.com"
+                    autoComplete="off"
+                    className="pl-10"
+                  />
+                  {lookupStatus === 'checking' && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                  {lookupStatus === 'found' && (
+                    <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                  )}
+                  {lookupStatus === 'not_found' && email.includes('@') && (
+                    <X className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                  )}
+                </div>
 
-          {/* ── Email ── */}
-          <div className="space-y-2">
-            <Label htmlFor="invite-email">Email cím *</Label>
-            <Input
-              id="invite-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="felhasznalo@example.com"
-              autoComplete="off"
-            />
-          </div>
+                {/* Status messages */}
+                {lookupStatus === 'found' && (
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <UserCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <div className="text-sm">
+                      <span className="font-medium text-emerald-600 dark:text-emerald-400">{foundUserName}</span>
+                      <span className="text-muted-foreground"> — regisztrált felhasználó</span>
+                    </div>
+                  </div>
+                )}
+                {lookupStatus === 'not_found' && email.includes('@') && (
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                    <div className="text-sm text-muted-foreground">
+                      Ez az email cím nincs regisztrálva. 
+                      <button
+                        type="button"
+                        className="text-primary font-medium hover:underline ml-1"
+                        onClick={() => setMode('new')}
+                      >
+                        Új felhasználó létrehozása →
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            /* ══════════════════════════════════════
+               MODE: NEW USER
+               ══════════════════════════════════════ */
+            <>
+              {/* ── Name ── */}
+              <div className="space-y-2">
+                <Label htmlFor="invite-name">Teljes név *</Label>
+                <Input
+                  id="invite-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Vezetéknév Keresztnév"
+                  autoComplete="off"
+                />
+              </div>
 
-          {/* ── Password ── */}
-          <div className="space-y-2">
-            <Label htmlFor="invite-password">Jelszó *</Label>
-            <div className="relative">
-              <Input
-                id="invite-password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Erős jelszó"
-                autoComplete="new-password"
-                className="pr-10"
-              />
-              <button
-                type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
+              {/* ── Email ── */}
+              <div className="space-y-2">
+                <Label htmlFor="invite-email">Email cím *</Label>
+                <Input
+                  id="invite-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="felhasznalo@example.com"
+                  autoComplete="off"
+                />
+              </div>
 
-            {/* Strength bar */}
-            <div className="space-y-2">
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map(i => (
-                  <div
-                    key={i}
+              {/* ── Password ── */}
+              <div className="space-y-2">
+                <Label htmlFor="invite-password">Jelszó *</Label>
+                <div className="relative">
+                  <Input
+                    id="invite-password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Erős jelszó"
+                    autoComplete="new-password"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+
+                {/* Strength bar */}
+                <div className="space-y-2">
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <div
+                        key={i}
+                        className={cn(
+                          'h-1.5 flex-1 rounded-full transition-colors duration-200',
+                          i <= strength.score ? strength.color : 'bg-muted'
+                        )}
+                      />
+                    ))}
+                  </div>
+                  {password.length > 0 && (
+                    <p className={cn(
+                      'text-xs font-medium',
+                      strength.score <= 2 ? 'text-red-500' : strength.score <= 3 ? 'text-amber-500' : 'text-emerald-500'
+                    )}>
+                      {strength.label}
+                    </p>
+                  )}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                    {strength.checks.map(check => (
+                      <div key={check.label} className="flex items-center gap-1.5 text-xs">
+                        {check.passed
+                          ? <Check className="h-3 w-3 text-emerald-500 shrink-0" />
+                          : <X className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                        }
+                        <span className={check.passed ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}>
+                          {check.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Confirm Password ── */}
+              <div className="space-y-2">
+                <Label htmlFor="invite-confirm-password">Jelszó megerősítése *</Label>
+                <div className="relative">
+                  <Input
+                    id="invite-confirm-password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Jelszó újra"
+                    autoComplete="new-password"
                     className={cn(
-                      'h-1.5 flex-1 rounded-full transition-colors duration-200',
-                      i <= strength.score ? strength.color : 'bg-muted'
+                      'pr-10',
+                      passwordsMismatch && 'border-red-500 focus-visible:ring-red-500/25'
                     )}
                   />
-                ))}
-              </div>
-              {password.length > 0 && (
-                <p className={cn(
-                  'text-xs font-medium',
-                  strength.score <= 2 ? 'text-red-500' : strength.score <= 3 ? 'text-amber-500' : 'text-emerald-500'
-                )}>
-                  {strength.label}
-                </p>
-              )}
-              <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-                {strength.checks.map(check => (
-                  <div key={check.label} className="flex items-center gap-1.5 text-xs">
-                    {check.passed
-                      ? <Check className="h-3 w-3 text-emerald-500 shrink-0" />
-                      : <X className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                    }
-                    <span className={check.passed ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}>
-                      {check.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* ── Confirm Password ── */}
-          <div className="space-y-2">
-            <Label htmlFor="invite-confirm-password">Jelszó megerősítése *</Label>
-            <div className="relative">
-              <Input
-                id="invite-confirm-password"
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Jelszó újra"
-                autoComplete="new-password"
-                className={cn(
-                  'pr-10',
-                  passwordsMismatch && 'border-red-500 focus-visible:ring-red-500/25'
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {passwordsMismatch && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    A jelszavak nem egyeznek
+                  </p>
                 )}
-              />
-              <button
-                type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                tabIndex={-1}
-              >
-                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            {passwordsMismatch && (
-              <p className="text-xs text-red-500 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                A jelszavak nem egyeznek
-              </p>
-            )}
-            {passwordsMatch && (
-              <p className="text-xs text-emerald-500 flex items-center gap-1">
-                <Check className="h-3 w-3" />
-                A jelszavak egyeznek
-              </p>
-            )}
-          </div>
+                {passwordsMatch && (
+                  <p className="text-xs text-emerald-500 flex items-center gap-1">
+                    <Check className="h-3 w-3" />
+                    A jelszavak egyeznek
+                  </p>
+                )}
+              </div>
+            </>
+          )}
 
-          {/* ── Company assignment ── */}
+          {/* ── Company assignment (shared for both modes) ── */}
           <div className="rounded-lg border border-border p-3 space-y-3">
             <div className="flex items-center gap-2">
               <Checkbox
@@ -419,14 +619,16 @@ export function InviteUserDialog({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="member">Tag</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="member">Tag</SelectItem>
+                      <SelectItem value="viewer">Betekintő</SelectItem>
                       <SelectItem value="employee">Munkavállaló</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
                     {role === 'admin' && 'Teljes hozzáférés a céghez, felhasználókat is kezelhet.'}
-                    {role === 'member' && 'Általános hozzáférés a cég adataihoz.'}
+                    {role === 'member' && 'Pénzügyi adatok olvasás/írás, könyvelési hozzáférés.'}
+                    {role === 'viewer' && 'Csak olvasási hozzáférés a pénzügyi adatokhoz.'}
                     {role === 'employee' && 'Csak a saját munkaidő-nyilvántartásához fér hozzá.'}
                   </p>
                 </div>
@@ -443,12 +645,21 @@ export function InviteUserDialog({
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Létrehozás...
+                  {mode === 'existing' ? 'Hozzáadás...' : 'Létrehozás...'}
                 </>
               ) : (
                 <>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Meghívás
+                  {mode === 'existing' ? (
+                    <>
+                      <UserCheck className="h-4 w-4 mr-2" />
+                      Hozzáadás
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Meghívás
+                    </>
+                  )}
                 </>
               )}
             </Button>

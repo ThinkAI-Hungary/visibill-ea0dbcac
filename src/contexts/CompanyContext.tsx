@@ -47,27 +47,58 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
   const { data: companies = [], isPending, isFetching } = useQuery({
     queryKey: queryKeys.companies(user?.id || ''),
     queryFn: async () => {
-      // First get the company IDs where the user is a member (eaisybill side)
+      // 1. Get company IDs from company_members (eaisybill members)
       const { data: memberData, error: memberError } = await supabase
         .from('company_members')
         .select('company_id')
         .eq('user_id', user!.id);
 
       if (memberError) throw memberError;
-      if (!memberData || memberData.length === 0) return [] as Company[];
 
-      const memberCompanyIds = memberData.map(m => m.company_id);
+      // 2. Check if user is an iroda_admin in accounty
+      const { data: roleData } = await supabase
+        .from('accounty_assignments')
+        .select('role')
+        .eq('accountant_user_id', user!.id);
 
-      // Then fetch only those companies
+      const isAccountyAdmin = roleData?.some((r: any) => r.role === 'iroda_admin');
+
+      // 3. Get company IDs from accounty_assignments
+      //    Admin: all assignments. Non-admin: only is_main_accountant=true
+      let assignmentQuery = supabase
+        .from('accounty_assignments')
+        .select('company_id')
+        .eq('accountant_user_id', user!.id);
+
+      if (!isAccountyAdmin) {
+        assignmentQuery = assignmentQuery.eq('is_main_accountant', true);
+      }
+
+      const { data: assignmentData, error: assignmentError } = await assignmentQuery;
+
+      if (assignmentError && assignmentError.code !== 'PGRST116') {
+        // Ignore "table not found" — it might not exist in all setups
+        console.warn('accounty_assignments query error:', assignmentError.message);
+      }
+
+      // 4. Merge & deduplicate company IDs
+      const memberIds = (memberData || []).map(m => m.company_id);
+      const assignmentIds = (assignmentData || []).map(a => a.company_id);
+      const allCompanyIds = [...new Set([...memberIds, ...assignmentIds])];
+
+      if (allCompanyIds.length === 0) return [] as Company[];
+
+      // 5. Fetch company details
       const { data, error } = await supabase
         .from('companies')
         .select('id, name, tax_number, address, owner_id, share_token, created_at, updated_at')
-        .in('id', memberCompanyIds)
+        .in('id', allCompanyIds)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
       return (data || []) as Company[];
     },
+
     enabled: !!user,
   });
 

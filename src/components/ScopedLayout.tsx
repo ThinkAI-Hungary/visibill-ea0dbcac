@@ -47,6 +47,9 @@ export function ScopedLayout() {
   const accessDeniedRef = useRef(false);
   const [accessDenied, setAccessDenied] = useState(false);
 
+  // ── Employee route guard hook (must be called before any early returns) ──
+  const { isEmployee } = useUserRole();
+
   /** Set both ref (sync) and state (triggers re-render). */
   const markAccessDenied = (denied: boolean) => {
     accessDeniedRef.current = denied;
@@ -156,7 +159,6 @@ export function ScopedLayout() {
 
   // ── Employee route guard (M2) ──
   // Employees may only access /working-time. All other pages redirect there.
-  const { isEmployee } = useUserRole();
   const pageSegment = extractPageSegment(location.pathname);
   if (isEmployee && !EMPLOYEE_ALLOWED_PAGES.has(pageSegment) && pageSegment !== '/') {
     const workingTimePath = generateScopedPath(
