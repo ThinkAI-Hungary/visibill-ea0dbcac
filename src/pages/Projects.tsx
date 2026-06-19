@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 
@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus, Hash, Users, BarChart3, FileText, Settings, Search, Check } from 'lucide-react';
+import { Plus, X, FolderOpen, Calendar, DollarSign, Building2, Info, TrendingUp, TrendingDown, Minus, Hash, Users, BarChart3, FileText, Settings, Search, Check, ChevronDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -154,6 +154,9 @@ const Projects = () => {
   
   // Track active tab for each project (defaulting to 'overview')
   const [activeTabs, setActiveTabs] = useState<Record<string, 'overview' | 'invoices' | 'settings'>>({});
+
+  // Track expanded description cards
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
   
   // Track search text for filtering existing assigned invoices
   const [assignedInvoicesSearch, setAssignedInvoicesSearch] = useState<Record<string, string>>({});
@@ -813,11 +816,28 @@ const Projects = () => {
                               );
                             })()}
 
-                            {project.description && (
-                              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4 border-t pt-3 mt-1 flex-1">
-                                {project.description}
-                              </p>
-                            )}
+                            {project.description && (() => {
+                              const isExpanded = expandedDescriptions[project.id!];
+                              return (
+                                <div className="border-t pt-2 mt-1">
+                                  <p className={cn(
+                                    "text-xs text-muted-foreground leading-relaxed transition-all",
+                                    !isExpanded && "line-clamp-2"
+                                  )}>
+                                    {project.description}
+                                  </p>
+                                  {project.description.length > 80 && (
+                                    <button
+                                      onClick={() => setExpandedDescriptions(prev => ({ ...prev, [project.id!]: !prev[project.id!] }))}
+                                      className="text-[10px] text-primary/70 hover:text-primary font-semibold mt-1 flex items-center gap-0.5 transition-colors"
+                                    >
+                                      <ChevronDown className={cn("h-3 w-3 transition-transform", isExpanded && "rotate-180")} />
+                                      {isExpanded ? 'Kevesebb' : 'Továbbiak'}
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         )}
 
