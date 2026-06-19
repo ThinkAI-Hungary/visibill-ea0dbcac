@@ -447,7 +447,7 @@ export default function PartnersPage() {
       </div>
 
       {/* Main Splitscreen Container */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 h-full min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 h-full min-h-[930px] overflow-hidden">
         {/* Left Pane: Master List & Toolbar */}
         <Card className="flex-1 rounded-xl border-border/50 bg-card/50 backdrop-blur-sm flex flex-col min-h-0 overflow-hidden lg:w-3/5">
           <CardContent className="p-4 flex flex-col h-full min-h-0 overflow-hidden space-y-3">

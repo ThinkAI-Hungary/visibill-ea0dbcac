@@ -261,7 +261,7 @@ export function useDashboardData() {
         }),
         supabase.rpc('get_nav_invoice_aggregates', {
           p_company_id: companyId,
-          p_date_from: '1970-01-01',
+          p_date_from: '2000-01-01',
           p_date_to: dateToFormatted
         })
       ]);
