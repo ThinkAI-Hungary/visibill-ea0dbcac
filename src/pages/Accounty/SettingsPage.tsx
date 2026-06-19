@@ -48,6 +48,12 @@ export default function SettingsPage() {
   const [inviteRole, setInviteRole] = useState<string>('könyvelő');
   const [inviting, setInviting] = useState(false);
 
+  // Password change state
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+
   // General settings state
   const [officeName, setOfficeName] = useState('');
   const [officeEmail, setOfficeEmail] = useState(user?.email || '');
@@ -943,7 +949,7 @@ export default function SettingsPage() {
                       <p className="text-xs text-slate-500">Utolsó módosítás: ismeretlen</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="text-xs">Módosítás</Button>
+                  <Button variant="outline" size="sm" className="text-xs" onClick={() => setPasswordDialogOpen(true)}>Módosítás</Button>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
@@ -1104,6 +1110,63 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Password Change Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={(open) => { setPasswordDialogOpen(open); if (!open) { setNewPassword(''); setConfirmPassword(''); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Jelszó módosítás</DialogTitle>
+            <DialogDescription>Adja meg az új jelszavát. Minimum 6 karakter.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Új jelszó</label>
+              <Input
+                type="password"
+                placeholder="Minimum 6 karakter"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Jelszó megerősítése</label>
+              <Input
+                type="password"
+                placeholder="Jelszó újra"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+              />
+              {confirmPassword && newPassword !== confirmPassword && (
+                <p className="text-xs text-red-500">A két jelszó nem egyezik</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>Mégse</Button>
+            <Button
+              disabled={changingPassword || newPassword.length < 6 || newPassword !== confirmPassword}
+              onClick={async () => {
+                setChangingPassword(true);
+                try {
+                  const { error } = await supabase.auth.updateUser({ password: newPassword });
+                  if (error) throw error;
+                  toast({ title: 'Jelszó módosítva', description: 'Az új jelszó sikeresen beállítva.' });
+                  setPasswordDialogOpen(false);
+                  setNewPassword('');
+                  setConfirmPassword('');
+                } catch (err: any) {
+                  toast({ variant: 'destructive', title: 'Hiba', description: err.message || 'Nem sikerült a jelszó módosítása.' });
+                } finally {
+                  setChangingPassword(false);
+                }
+              }}
+            >
+              {changingPassword ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Jelszó módosítása
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

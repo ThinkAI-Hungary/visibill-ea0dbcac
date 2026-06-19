@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, FileText, PieChart, TrendingUp, Users, FileWarning, 
-  Download, FileJson, Mail, ChevronRight, X, Eye, Check, Loader2
+  Download, FileJson, Mail, ChevronRight, X, Eye, Check, Loader2, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useAccountyFullReportData, type FullReportData, type InvoiceReportRow, type ReportRow } from '@/hooks/useAccountyData';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  addToApprovalQueue,
+  type OutgoingMessage,
+} from './generateRequestEmail';
 
 type ReportType = 'havi' | 'afa' | 'koltseg' | 'cashflow' | 'partner' | 'hianyzo';
 
@@ -23,8 +29,44 @@ const reportTypes = [
   { id: 'hianyzo', title: 'Hiányzó számlák riport', description: 'Automatikus bekérő statisztikák', icon: FileWarning, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/30' },
 ];
 
+// ── Report history (localStorage) ──
+interface ReportHistoryEntry {
+  id: string;
+  type: ReportType;
+  typeLabel: string;
+  format: 'pdf' | 'excel';
+  dateFrom: string;
+  dateTo: string;
+  invoiceCount: number;
+  includeDetails: boolean;
+  generatedAt: string;
+  sentToApproval: boolean;
+}
+
+const REPORT_HISTORY_KEY = 'eaisybooks_report_history';
+
+function getReportHistory(): ReportHistoryEntry[] {
+  try {
+    const raw = localStorage.getItem(REPORT_HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function addToReportHistory(entry: ReportHistoryEntry) {
+  const history = getReportHistory();
+  history.unshift(entry);
+  // Keep last 20
+  localStorage.setItem(REPORT_HISTORY_KEY, JSON.stringify(history.slice(0, 20)));
+}
+
+function removeFromReportHistory(id: string) {
+  const history = getReportHistory().filter(e => e.id !== id);
+  localStorage.setItem(REPORT_HISTORY_KEY, JSON.stringify(history));
+}
+
 export default function ReportsPage() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<ReportType>('havi');
   const [format, setFormat] = useState<'pdf' | 'excel'>('pdf');
@@ -33,6 +75,7 @@ export default function ReportsPage() {
   const [generated, setGenerated] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [reportHistory, setReportHistory] = useState<ReportHistoryEntry[]>(getReportHistory);
   const rawReportData = useAccountyFullReportData();
 
   // Default date range: current month
@@ -85,6 +128,21 @@ export default function ReportsPage() {
       } else {
         exportPDF(reportData, selectedType, { details: includeDetails });
       }
+      const typeLabel = reportTypes.find(r => r.id === selectedType)?.title || selectedType;
+      const entry: ReportHistoryEntry = {
+        id: `rpt-${Date.now()}`,
+        type: selectedType,
+        typeLabel,
+        format,
+        dateFrom,
+        dateTo,
+        invoiceCount: reportData.invoices.length,
+        includeDetails,
+        generatedAt: new Date().toISOString(),
+        sentToApproval: false,
+      };
+      addToReportHistory(entry);
+      setReportHistory(getReportHistory());
       setIsGenerating(false);
       setGenerated(true);
     }, 600);
@@ -94,22 +152,150 @@ export default function ReportsPage() {
     setShowPreview(true);
   };
 
-  const handleSendEmail = () => {
+  const handleSendEmail = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      // Generate report + simulate email send
-      if (format === 'excel') {
-        exportCSV(reportData, selectedType, { details: includeDetails });
-      } else {
-        exportPDF(reportData, selectedType, { details: includeDetails });
+    try {
+
+      const typeLabel = reportTypes.find(r => r.id === selectedType)?.title || selectedType;
+      const fromFormatted = new Date(dateFrom).toLocaleDateString('hu-HU');
+      const toFormatted = new Date(dateTo).toLocaleDateString('hu-HU');
+      const invoiceCount = reportData.invoices.length;
+
+      // Get unique client names from the report data
+      const clientNames = [...new Set(reportData.invoices.map(i => i.clientName))].filter(Boolean);
+      const companyLabel = clientNames.length === 1 ? clientNames[0] : `${clientNames.length} ügyfél`;
+
+      // Fetch a contact email from the first client's comm prefs (if single-client report)
+      let contactEmail = 'nincs-megadva@example.com';
+      if (clientNames.length === 1) {
+        // Try to find company ID for this client
+        const { data: companyRow } = await supabase
+          .from('companies')
+          .select('id')
+          .eq('name', clientNames[0])
+          .maybeSingle();
+        if (companyRow) {
+          const { data: commPrefs } = await supabase
+            .from('accounty_communication_preferences')
+            .select('contact_email')
+            .eq('company_id', companyRow.id)
+            .maybeSingle();
+          if ((commPrefs as any)?.contact_email) {
+            contactEmail = (commPrefs as any).contact_email;
+          }
+        }
       }
-      setIsGenerating(false);
+
+      const greeting = clientNames.length === 1
+        ? `Tisztelt ${clientNames[0]}!`
+        : 'Tisztelt Partnerünk!';
+
+      const subject = `${typeLabel} – ${fromFormatted} - ${toFormatted}`;
+
+      const body = `${greeting}
+
+Értesítjük, hogy az alábbi riport elkészült:
+
+• Riport típusa: ${typeLabel}
+• Időszak: ${fromFormatted} – ${toFormatted}
+• Számlák száma: ${invoiceCount}
+• Formátum: ${format.toUpperCase()}
+
+A riport a fenti időszak összes számláját tartalmazza${includeDetails ? ' részletes tételsorokkal' : ' összesítve'}.
+
+Üdvözlettel,
+ThinkAI`;
+
+      const htmlPreview = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto;">
+  <div style="background: #111827; padding: 24px 28px; border-radius: 8px 8px 0 0;">
+    <div style="color: #ffffff; font-size: 20px; font-weight: 700;">eaisybooks</div>
+    <div style="color: #9ca3af; font-size: 12px; margin-top: 2px;">Riport küldés</div>
+  </div>
+  <div style="padding: 28px; background: #ffffff; border: 1px solid #e5e7eb; border-top: none;">
+    <p style="font-size: 15px; color: #374151; margin-bottom: 16px;">${greeting}</p>
+    <p style="font-size: 14px; color: #374151; line-height: 1.6;">Értesítjük, hogy az alábbi riport elkészült:</p>
+    <div style="margin: 20px 0; border-radius: 6px; overflow: hidden; border: 1px solid #e5e7eb;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tbody>
+          <tr style="background: #f3f4f6;"><td style="padding: 10px 12px; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Típus</td><td style="padding: 10px 12px; font-size: 14px; color: #111827; font-weight: 500;">${typeLabel}</td></tr>
+          <tr><td style="padding: 10px 12px; border-top: 1px solid #e5e7eb; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Időszak</td><td style="padding: 10px 12px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #111827; font-weight: 500;">${fromFormatted} – ${toFormatted}</td></tr>
+          <tr><td style="padding: 10px 12px; border-top: 1px solid #e5e7eb; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Számlák</td><td style="padding: 10px 12px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #111827; font-weight: 500;">${invoiceCount} db</td></tr>
+          <tr><td style="padding: 10px 12px; border-top: 1px solid #e5e7eb; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Formátum</td><td style="padding: 10px 12px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #111827; font-weight: 500;">${format.toUpperCase()}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size: 14px; color: #374151; margin-top: 20px;">Üdvözlettel,<br/><strong>ThinkAI</strong></p>
+  </div>
+  <div style="background: #f3f4f6; padding: 14px 28px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
+    <p style="font-size: 11px; color: #9ca3af; margin: 0;">Ez a levél automatikusan készült az eaisybooks rendszerből.</p>
+  </div>
+</div>`;
+
+      const message: OutgoingMessage = {
+        id: `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        companyId: '',
+        companyName: companyLabel,
+        contactEmail,
+        channel: 'email',
+        category: 'normal',
+        subject,
+        originalContext: `${typeLabel} riport – ${fromFormatted} - ${toFormatted} (${invoiceCount} számla, ${format.toUpperCase()})`,
+        aiGeneratedBody: body,
+        htmlPreview,
+        portalLink: '',
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        missingItemIds: [],
+      };
+
+      addToApprovalQueue(message);
+      const entry: ReportHistoryEntry = {
+        id: `rpt-${Date.now()}`,
+        type: selectedType,
+        typeLabel,
+        format,
+        dateFrom,
+        dateTo,
+        invoiceCount,
+        includeDetails,
+        generatedAt: new Date().toISOString(),
+        sentToApproval: true,
+      };
+      addToReportHistory(entry);
+      setReportHistory(getReportHistory());
       setEmailSent(true);
       setTimeout(() => setEmailSent(false), 3000);
-    }, 1000);
+      toast({
+        title: '✉ Riport a jóváhagyó sorba került',
+        description: `${typeLabel} – ${companyLabel}`,
+      });
+    } catch (err) {
+      console.error('Report send error:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Hiba',
+        description: 'Nem sikerült a riportot a jóváhagyó sorba tenni.',
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const currentTypeLabel = reportTypes.find(r => r.id === selectedType)?.title || '';
+
+  const handleRedownload = (entry: ReportHistoryEntry) => {
+    if (entry.format === 'excel') {
+      exportCSV(reportData, entry.type, { details: entry.includeDetails });
+    } else {
+      exportPDF(reportData, entry.type, { details: entry.includeDetails });
+    }
+    toast({ title: `↓ ${entry.typeLabel} újragenerálva`, description: `${entry.format.toUpperCase()} formátumban` });
+  };
+
+  const handleDeleteReport = (id: string) => {
+    removeFromReportHistory(id);
+    setReportHistory(getReportHistory());
+  };
 
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-500 relative">
@@ -146,13 +332,68 @@ export default function ReportsPage() {
         </div>
 
         <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden">
-          <div className="p-12 text-center">
-            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
-              <FileText className="w-6 h-6 text-slate-400" />
+          {reportHistory.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
+                <FileText className="w-6 h-6 text-slate-400" />
+              </div>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Még nincs generált riport</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">A generált riportok itt fognak megjelenni</p>
             </div>
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Még nincs generált riport</p>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">A generált riportok itt fognak megjelenni</p>
-          </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {reportHistory.slice(0, 10).map((entry) => {
+                const icon = reportTypes.find(r => r.id === entry.type);
+                const IconComp = icon?.icon || FileText;
+                const genDate = new Date(entry.generatedAt);
+                const fromFmt = new Date(entry.dateFrom).toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                const toFmt = new Date(entry.dateTo).toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                return (
+                  <div key={entry.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", icon?.bg || 'bg-slate-100')}>
+                      <IconComp className={cn("w-4.5 h-4.5", icon?.color || 'text-slate-500')} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{entry.typeLabel}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {fromFmt} – {toFmt} · {entry.invoiceCount} számla
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className={cn(
+                        "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase",
+                        entry.format === 'pdf' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                      )}>
+                        {entry.format}
+                      </span>
+                      {entry.sentToApproval && (
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">
+                          ✉ Küldve
+                        </span>
+                      )}
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500 tabular-nums">
+                        {genDate.toLocaleDateString('hu-HU')} {genDate.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <button
+                        onClick={() => handleRedownload(entry)}
+                        className="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 transition-colors"
+                        title="Újra letöltés"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteReport(entry.id)}
+                        className="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/30 transition-colors"
+                        title="Törlés"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -539,7 +780,7 @@ function exportPDF(data: FullReportData, type: string, options: { details: boole
       <tbody>${sorted.map(([name, d]) => `<tr><td><strong>${name}</strong></td><td style="text-align:right">${d.count}</td><td style="text-align:right"><strong>${fmt(d.total)} Ft</strong></td></tr>`).join('')}</tbody></table>` : ''}`;
   }
 
-  const html = `<html><head><title>${title} – Visibill</title>
+  const html = `<html><head><title>${title} – eaisybooks</title>
     <style>
       body { font-family: 'Segoe UI', sans-serif; padding: 40px; color: #1e293b; }
       h1 { font-size: 22px; margin-bottom: 4px; }
@@ -553,10 +794,13 @@ function exportPDF(data: FullReportData, type: string, options: { details: boole
       .rendben { background: #d1fae5; color: #065f46; }
       .feldolgozando { background: #fef3c7; color: #92400e; }
       .kritikus { background: #fee2e2; color: #991b1b; }
-      @media print { body { padding: 20px; } }
+      .print-btn { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 24px; padding: 8px 18px; background: #111827; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+      .print-btn:hover { background: #1e293b; }
+      @media print { .print-btn { display: none; } body { padding: 20px; } }
     </style></head><body>
+    <button class="print-btn" onclick="window.print()">🖨 Nyomtatás / Mentés PDF-ként</button>
     <h1> ${title}</h1>
-    <p class="sub">Generálva: ${now} – Visibill for Accountants</p>
+    <p class="sub">Generálva: ${now} – eaisybooks</p>
     ${tableHtml}
     </body></html>`;
   
@@ -564,6 +808,5 @@ function exportPDF(data: FullReportData, type: string, options: { details: boole
   if (win) {
     win.document.write(html);
     win.document.close();
-    setTimeout(() => win.print(), 400);
   }
 }

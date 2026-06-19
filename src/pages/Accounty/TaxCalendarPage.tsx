@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
   FileText, 
@@ -20,6 +21,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { cn } from '@/lib/utils';
 import { useAccountyRole } from './AccountyRoleContext';
 import { useAccountyDeadlines, useAccountyKpis, useCompleteDeadline } from '@/hooks/useAccountyData';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  addToApprovalQueue,
+  type OutgoingMessage,
+} from './generateRequestEmail';
 
 type Status = 'Zöld' | 'Sárga' | 'Piros';
 
@@ -34,11 +41,14 @@ interface DeadlineGroup {
 
 interface ClientDeadline {
   id: string;
+  companyId: string;
   deadlineGroupKey: string;
   clientName: string;
   assignedToMe: boolean;
   status: 'Rendben' | 'Feldolgozandó' | 'Kritikus';
   deadlineStatus: string;
+  deadlineType: string;
+  dueDate: string;
 }
 
 // Map deadline_type to display title
@@ -66,6 +76,8 @@ function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900 dark:t
 
 export default function TaxCalendarPage() {
   const { isAdmin } = useAccountyRole();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [viewScope, setViewScope] = useState<'mine' | 'all'>('mine');
   const [selectedDeadline, setSelectedDeadline] = useState<DeadlineGroup | null>(null);
   const [selectedClient, setSelectedClient] = useState<string>('all');
@@ -74,6 +86,111 @@ export default function TaxCalendarPage() {
   const { data: deadlinesData } = useAccountyDeadlines();
   const { data: kpisData } = useAccountyKpis();
   const completeDeadlineMutation = useCompleteDeadline();
+
+  // ── Handler: send deadline notification to approval queue ──
+  const handleNotify = async (client: ClientDeadline) => {
+    try {
+      // Fetch contact email for this company
+      const { data: commPrefs } = await supabase
+        .from('accounty_communication_preferences')
+        .select('contact_email, contact_name')
+        .eq('company_id', client.companyId)
+        .maybeSingle();
+
+      const contactEmail = (commPrefs as any)?.contact_email || 'nincs-megadva@example.com';
+      const contactName = (commPrefs as any)?.contact_name || null;
+
+      const deadlineTitle = deadlineTypeTitle[client.deadlineType] || client.deadlineType;
+      const dueDateFormatted = new Date(client.dueDate).toLocaleDateString('hu-HU', {
+        year: 'numeric', month: 'long', day: 'numeric',
+      });
+
+      const greeting = contactName
+        ? `Kedves ${contactName}!`
+        : `Tisztelt ${client.clientName}!`;
+
+      const subject = `Határidő emlékeztető – ${deadlineTitle} – ${client.clientName}`;
+
+      const body = `${greeting}
+
+Szeretnénk emlékeztetni, hogy az alábbi könyvelési határidő közeledik:
+
+• Típus: ${deadlineTitle} bevallás
+• Határidő: ${dueDateFormatted}
+• Cég: ${client.clientName}
+
+Kérjük, gondoskodjon a szükséges dokumentumok mielőbbi eljuttatásáról, hogy a bevallást határidőre el tudjuk készíteni.
+
+Amennyiben a dokumentumokat már eljuttatta hozzánk, kérjük tekintse tárgytalannak ezt az üzenetet.
+
+Üdvözlettel,
+ThinkAI`;
+
+      const htmlPreview = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto;">
+  <div style="background: #111827; padding: 24px 28px; border-radius: 8px 8px 0 0;">
+    <div style="color: #ffffff; font-size: 20px; font-weight: 700;">eaisybooks</div>
+    <div style="color: #9ca3af; font-size: 12px; margin-top: 2px;">Határidő emlékeztető</div>
+  </div>
+  <div style="padding: 28px; background: #ffffff; border: 1px solid #e5e7eb; border-top: none;">
+    <p style="font-size: 15px; color: #374151; margin-bottom: 16px;">${greeting}</p>
+    <p style="font-size: 14px; color: #374151; line-height: 1.6;">Szeretnénk emlékeztetni, hogy az alábbi könyvelési határidő közeledik:</p>
+    <div style="margin: 20px 0; border-radius: 6px; overflow: hidden; border: 1px solid #e5e7eb;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tbody>
+          <tr style="background: #f3f4f6;">
+            <td style="padding: 10px 12px; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Típus</td>
+            <td style="padding: 10px 12px; font-size: 14px; color: #111827; font-weight: 500;">${deadlineTitle} bevallás</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 12px; border-top: 1px solid #e5e7eb; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Határidő</td>
+            <td style="padding: 10px 12px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #111827; font-weight: 500;">${dueDateFormatted}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 12px; border-top: 1px solid #e5e7eb; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Cég</td>
+            <td style="padding: 10px 12px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #111827; font-weight: 500;">${client.clientName}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size: 13px; color: #9ca3af; margin-top: 20px;">Amennyiben a dokumentumokat már eljuttatta hozzánk, kérjük tekintse tárgytalannak ezt az üzenetet.</p>
+    <p style="font-size: 14px; color: #374151; margin-top: 20px;">Üdvözlettel,<br/><strong>ThinkAI</strong></p>
+  </div>
+  <div style="background: #f3f4f6; padding: 14px 28px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
+    <p style="font-size: 11px; color: #9ca3af; margin: 0;">Ez a levél automatikusan készült az eaisybooks rendszerből.</p>
+  </div>
+</div>`;
+
+      const message: OutgoingMessage = {
+        id: `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        companyId: client.companyId,
+        companyName: client.clientName,
+        contactEmail,
+        channel: 'email',
+        category: client.status === 'Kritikus' ? 'urgent' : 'normal',
+        subject,
+        originalContext: `${deadlineTitle} bevallás – Határidő: ${dueDateFormatted}`,
+        aiGeneratedBody: body,
+        htmlPreview,
+        portalLink: '',
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        missingItemIds: [],
+      };
+
+      addToApprovalQueue(message);
+      toast({
+        title: '✉ Értesítés a jóváhagyó sorba került',
+        description: `${deadlineTitle} – ${client.clientName}`,
+      });
+    } catch (err) {
+      console.error('Notify error:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Hiba',
+        description: 'Nem sikerült az értesítés létrehozása.',
+      });
+    }
+  };
 
   // Ha nem admin, mindig saját nézet
   React.useEffect(() => {
@@ -126,11 +243,14 @@ export default function TaxCalendarPage() {
           : 'Feldolgozandó';
         clients.push({
           id: d.id,
+          companyId: d.companyId,
           deadlineGroupKey: key,
           clientName: d.companyName || 'Ismeretlen',
           assignedToMe: true,
           status: dlStatus as any,
           deadlineStatus: d.status,
+          deadlineType: d.deadlineType,
+          dueDate: d.dueDate,
         });
       });
     });
@@ -575,7 +695,12 @@ export default function TaxCalendarPage() {
                       
                       <div className="flex items-center gap-2">
                         {client.status !== 'Rendben' && (
-                          <Button variant="outline" size="sm" className="h-8 text-xs font-semibold gap-1.5 border-border">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs font-semibold gap-1.5 border-border"
+                            onClick={() => handleNotify(client)}
+                          >
                             <Mail className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                             Értesítés
                           </Button>
