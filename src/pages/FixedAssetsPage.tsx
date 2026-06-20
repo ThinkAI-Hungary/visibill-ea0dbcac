@@ -2,6 +2,7 @@ import { useState, lazy, Suspense, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useFixedAssets, useFixedAssetDetail } from '@/hooks/useFixedAssets';
+import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { AssetListTable } from '@/components/fixed-assets/AssetListTable';
 import { AssetDetailPanel } from '@/components/fixed-assets/AssetDetailPanel';
 import { ContentSkeleton } from '@/components/ui/content-skeleton';
@@ -19,6 +20,8 @@ export default function FixedAssetsPage() {
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [inventoryCheckOpen, setInventoryCheckOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const { canWrite: canWriteModule } = useEaisybillPermissions();
+  const writable = canWriteModule('fixed_assets');
 
   const { data: assets = [], isLoading } = useFixedAssets(selectedCompany?.id);
   const { data: detailData, isFetching: detailLoading } = useFixedAssetDetail(selectedAssetId);
@@ -103,7 +106,7 @@ export default function FixedAssetsPage() {
               size="sm"
               className="gap-2"
               onClick={handleOpenInventory}
-              disabled={activeCount === 0}
+              disabled={activeCount === 0 || !writable}
             >
               <ShieldCheck className="h-4 w-4" />
               Leltár ellenőrzés

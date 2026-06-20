@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
+import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -79,6 +80,8 @@ export default function PartnersPage() {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const queryClient = useQueryClient();
+  const { canWrite: canWriteModule } = useEaisybillPermissions();
+  const writable = canWriteModule('partners');
   
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -441,7 +444,7 @@ export default function PartnersPage() {
             Vevők és szállítók kezelése és pénzügyi áttekintése
           </p>
         </div>
-        <Button onClick={() => handleOpenDialog()} className="gap-2">
+        <Button onClick={() => handleOpenDialog()} className="gap-2" disabled={!writable} title={!writable ? 'Nincs írási jogosultságod' : undefined}>
           <Plus className="h-4 w-4" /> Új partner hozzáadása
         </Button>
       </div>
@@ -627,6 +630,7 @@ export default function PartnersPage() {
                     size="icon"
                     onClick={() => handleOpenDialog(selectedPartner)}
                     className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                    disabled={!writable}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -635,6 +639,7 @@ export default function PartnersPage() {
                     size="icon"
                     onClick={() => handleDelete(selectedPartner)}
                     className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                    disabled={!writable}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -699,6 +704,7 @@ export default function PartnersPage() {
                     onCheckedChange={() => handleTogglePartnerExclude(selectedPartner)}
                     aria-label={selectedPartner.exclude_from_accounting ? 'Könyvelésbe visszaállítás' : 'Könyvelésből kizárás'}
                     className="h-5 w-5"
+                    disabled={!writable}
                   />
                 </div>
               </div>

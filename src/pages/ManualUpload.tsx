@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import UploadHistory from '@/components/UploadHistory';
 import { reportError } from '@/lib/errorReporter';
+import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 
 const ManualUpload = () => {
   const [selectedInvoiceFiles, setSelectedInvoiceFiles] = useState<File[]>([]);
@@ -42,6 +43,8 @@ const ManualUpload = () => {
   const { selectedCompany } = useCompany();
 
   const queryClient = useQueryClient();
+  const { canWrite: canWriteModule } = useEaisybillPermissions();
+  const writable = canWriteModule('upload');
 
   // Duplicate re-upload confirmation state
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
@@ -815,6 +818,7 @@ const ManualUpload = () => {
                     onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }}
                     onDrop={(e) => {
                       e.preventDefault(); e.stopPropagation(); setDragOver(null);
+                      if (!writable) return;
                       const files = Array.from(e.dataTransfer.files);
                       const allowed = ['application/pdf','image/jpeg','image/jpg','image/png','image/webp'];
                       const valid = files.filter(f => allowed.includes(f.type));
@@ -831,6 +835,7 @@ const ManualUpload = () => {
                     <Button
                       className="mt-4"
                       onClick={() => document.getElementById('invoice-file-input')?.click()}
+                      disabled={!writable}
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       Fájlok tallózása
@@ -882,7 +887,7 @@ const ManualUpload = () => {
 
                       <Button
                         onClick={handleInvoiceUpload}
-                        disabled={uploading}
+                        disabled={uploading || !writable}
                         className="w-full"
                       >
                         {uploading ? (
@@ -928,6 +933,7 @@ const ManualUpload = () => {
                     onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }}
                     onDrop={(e) => {
                       e.preventDefault(); e.stopPropagation(); setDragOver(null);
+                      if (!writable) return;
                       const files = Array.from(e.dataTransfer.files);
                       const allowed = ['application/pdf','text/csv','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
                       const valid = files.filter(f => allowed.includes(f.type));
@@ -944,6 +950,7 @@ const ManualUpload = () => {
                     <Button
                       className="mt-4"
                       onClick={() => document.getElementById('bank-file-input')?.click()}
+                      disabled={!writable}
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       Bankkivonatok tallózása
@@ -997,7 +1004,7 @@ const ManualUpload = () => {
 
                       <Button
                         onClick={handleBankStatementUpload}
-                        disabled={uploading}
+                        disabled={uploading || !writable}
                         className="w-full"
                       >
                         {uploading ? (
@@ -1153,6 +1160,7 @@ const ManualUpload = () => {
                     onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }}
                     onDrop={(e) => {
                       e.preventDefault(); e.stopPropagation(); setDragOver(null);
+                      if (!writable) return;
                       const files = Array.from(e.dataTransfer.files);
                       const allowed = ['application/pdf','text/csv','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
                       const valid = files.filter(f => allowed.includes(f.type));
@@ -1169,6 +1177,7 @@ const ManualUpload = () => {
                     <Button
                       className="mt-4"
                       onClick={() => document.getElementById('transaction-file-input')?.click()}
+                      disabled={!writable}
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       Tranzakciók tallózása
@@ -1222,7 +1231,7 @@ const ManualUpload = () => {
 
                       <Button
                         onClick={handleTransactionUpload}
-                        disabled={uploading}
+                        disabled={uploading || !writable}
                         className="w-full"
                       >
                         {uploading ? (
@@ -1268,6 +1277,7 @@ const ManualUpload = () => {
                     onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }}
                     onDrop={(e) => {
                       e.preventDefault(); e.stopPropagation(); setDragOver(null);
+                      if (!writable) return;
                       const files = Array.from(e.dataTransfer.files);
                       const allowedExts = ['.pdf','.csv','.xls','.xlsx'];
                       const valid = files.filter(f => allowedExts.some(ext => f.name.toLowerCase().endsWith(ext)));
@@ -1284,6 +1294,7 @@ const ManualUpload = () => {
                     <Button
                       className="mt-4"
                       onClick={() => document.getElementById('salary-file-input')?.click()}
+                      disabled={!writable}
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       Bérek/Járulékok tallózása
@@ -1337,7 +1348,7 @@ const ManualUpload = () => {
 
                       <Button
                         onClick={handleSalaryUpload}
-                        disabled={uploading}
+                        disabled={uploading || !writable}
                         className="w-full"
                       >
                         {uploading ? (
@@ -1398,6 +1409,7 @@ const ManualUpload = () => {
                     onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }}
                     onDrop={(e) => {
                       e.preventDefault(); e.stopPropagation(); setDragOver(null);
+                      if (!writable) return;
                       const files = Array.from(e.dataTransfer.files);
                       const allowedExts = ['.xls','.xlsx','.csv','.pdf','.doc','.docx'];
                       const valid = files.filter(f => allowedExts.some(ext => f.name.toLowerCase().endsWith(ext)));
@@ -1414,6 +1426,7 @@ const ManualUpload = () => {
                     <Button
                       className="mt-4"
                       onClick={() => document.getElementById('report-file-input')?.click()}
+                      disabled={!writable}
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       Riport fájlok tallózása
@@ -1468,7 +1481,7 @@ const ManualUpload = () => {
 
                       <Button
                         onClick={handleReportUpload}
-                        disabled={uploading}
+                        disabled={uploading || !writable}
                         className="w-full"
                       >
                         {uploading ? (

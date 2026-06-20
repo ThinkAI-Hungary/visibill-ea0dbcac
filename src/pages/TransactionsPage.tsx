@@ -22,6 +22,7 @@ import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { Landmark } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { reportError } from '@/lib/errorReporter';
+import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 
 
 // ── Bank display config ──
@@ -68,6 +69,9 @@ const TransactionsPage = () => {
     handleExport,
     queryClient,
   } = useTransactionData();
+
+  const { canWrite: canWriteModule } = useEaisybillPermissions();
+  const writable = canWriteModule('transactions');
 
   const [exporting, setExporting] = useState(false);
   const runExport = async (format: 'csv' | 'xlsx') => {

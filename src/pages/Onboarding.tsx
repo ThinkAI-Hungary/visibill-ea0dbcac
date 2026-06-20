@@ -13,6 +13,7 @@ import { Plus, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 import { reportError } from '@/lib/errorReporter';
+import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { CategoryDonutChart } from '@/components/CategoryDonutChart';
 import { CategoryAccordionItem, type CategoryInvoice } from '@/components/CategoryAccordionItem';
 import { IconPicker, ColorPicker, DEFAULT_CATEGORY_COLOR, resolveIcon } from '@/components/IconPicker';
@@ -139,6 +140,8 @@ const Onboarding = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
+  const { canWrite: canWriteModule } = useEaisybillPermissions();
+  const writable = canWriteModule('categories');
   
   // Edit dialog state
   const [editingCategory, setEditingCategory] = useState<{ index: number; category: Category } | null>(null);
@@ -559,7 +562,7 @@ const Onboarding = () => {
             Kattints a kategóriákra a hozzárendelt számlák megtekintéséhez, újak hozzáadásához vagy a meglévők leválasztásához.
           </p>
         </div>
-        <Button onClick={() => setShowNewDialog(true)} className="gap-2">
+        <Button onClick={() => setShowNewDialog(true)} className="gap-2" disabled={!writable} title={!writable ? 'Nincs írási jogosultságod' : undefined}>
           <Plus className="h-4 w-4" />
           Új kategória
         </Button>

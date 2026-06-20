@@ -3,15 +3,10 @@ import { Outlet, useParams, useNavigate, useLocation, Navigate } from 'react-rou
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useEaisybillPermissions, URL_TO_MODULE } from '@/hooks/useEaisybillPermissions';
 import { parseDateRange, generateScopedPath, extractPageSegment } from '@/lib/navigation';
 import { ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-/**
- * Pages that employee role users are allowed to access.
- * All other pages redirect to /working-time.
- */
-const EMPLOYEE_ALLOWED_PAGES = new Set(['/working-time']);
 
 /**
  * ScopedLayout — URL ↔ Context Synchronization Layer.
@@ -22,6 +17,7 @@ const EMPLOYEE_ALLOWED_PAGES = new Set(['/working-time']);
  * 1. On mount (bookmarked/shared URL): read URL params → update CompanyContext + DateRangeContext
  * 2. When user changes company or date (via UI): update URL to reflect new context
  * 3. Validate companyId belongs to the user's companies list
+ * 4. Route guard: redirect if user lacks permission for the current page module
  *
  * Renders <Outlet /> so child routes render inside it.
  */
@@ -47,8 +43,9 @@ export function ScopedLayout() {
   const accessDeniedRef = useRef(false);
   const [accessDenied, setAccessDenied] = useState(false);
 
-  // ── Employee route guard hook (must be called before any early returns) ──
+  // ── Permission hooks (must be called before any early returns) ──
   const { isEmployee } = useUserRole();
+  const { canAccess } = useEaisybillPermissions();
 
   /** Set both ref (sync) and state (triggers re-render). */
   const markAccessDenied = (denied: boolean) => {
@@ -157,17 +154,20 @@ export function ScopedLayout() {
   // Keep Outlet mounted during URL sync to prevent child component unmount/remount flash
   const isSyncing = !isCompanySynced || !isDateSynced;
 
-  // ── Employee route guard (M2) ──
-  // Employees may only access /working-time. All other pages redirect there.
+  // ── Permission-based route guard ──
+  // Check if the current page's module is accessible to this user.
+  // Employees redirect to /working-time; others redirect to dashboard.
   const pageSegment = extractPageSegment(location.pathname);
-  if (isEmployee && !EMPLOYEE_ALLOWED_PAGES.has(pageSegment) && pageSegment !== '/') {
-    const workingTimePath = generateScopedPath(
+  const pageModule = URL_TO_MODULE[pageSegment];
+  if (pageModule && !canAccess(pageModule) && pageSegment !== '/') {
+    const fallbackPage = isEmployee ? 'working-time' : '';
+    const redirectPath = generateScopedPath(
       selectedCompany?.id || urlCompanyId || '',
       dateFromFormatted,
       dateToFormatted,
-      'working-time',
+      fallbackPage,
     );
-    return <Navigate to={workingTimePath} replace />;
+    return <Navigate to={redirectPath} replace />;
   }
 
   return (

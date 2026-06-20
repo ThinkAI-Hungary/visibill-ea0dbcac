@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
+import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -165,6 +166,8 @@ const Projects = () => {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { canWrite: canWriteModule } = useEaisybillPermissions();
+  const writable = canWriteModule('projects');
 
   const emptyProject: Project = {
     name: '',
@@ -577,6 +580,8 @@ const Projects = () => {
               setEditingProject(emptyProject);
               setIsCreating(true);
             }}
+            disabled={!writable}
+            title={!writable ? 'Nincs írási jogosultságod' : undefined}
           >
             <Plus className="h-4 w-4 mr-2" />
             Új projekt
@@ -600,6 +605,7 @@ const Projects = () => {
                     setEditingProject(emptyProject);
                     setIsCreating(true);
                   }}
+                  disabled={!writable}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Első projekt létrehozása

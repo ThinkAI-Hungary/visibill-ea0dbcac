@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useSalaryData } from '@/hooks/useSalaryData';
+import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import SalaryPageSkeleton from '@/components/salaries/SalaryPageSkeleton';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,8 @@ export default function SalariesPage() {
   } = useSalaryData();
 
   const { dateFrom, dateTo } = useDateRange();
+  const { canWrite: canWriteModule } = useEaisybillPermissions();
+  const writable = canWriteModule('salaries');
   const [searchParams, setSearchParams] = useSearchParams();
   const isSingleMonth = dateFrom.getFullYear() === dateTo.getFullYear()
     && dateFrom.getMonth() === dateTo.getMonth();
@@ -108,7 +111,7 @@ export default function SalariesPage() {
             Feltöltött fájlok
           </Button>
           <SalaryFilesDialog open={filesDialogOpen} onOpenChange={handleCloseFiles} />
-          <Button onClick={openAddDialog}>
+          <Button onClick={openAddDialog} disabled={!writable} title={!writable ? 'Nincs írási jogosultságod' : undefined}>
             <Plus className="mr-2 h-4 w-4" />
             KP kifizetés
           </Button>

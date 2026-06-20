@@ -24,6 +24,7 @@ import { hu } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { reportError } from '@/lib/errorReporter';
+import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -129,6 +130,8 @@ function RegistersTab() {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const qc = useQueryClient();
+  const { canWrite: canWriteModule } = useEaisybillPermissions();
+  const writable = canWriteModule('petty_cash');
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<PettyCashRegister | null>(null);
   const [editingBalances, setEditingBalances] = useState<string | null>(null);
@@ -230,7 +233,7 @@ function RegistersTab() {
           <h2 className="text-lg font-semibold">Pénztárak</h2>
           <p className="text-sm text-muted-foreground">Házipénztárak kezelése, valuták és helyszínek</p>
         </div>
-        <Button onClick={() => { setEditing(null); setShowDialog(true); }}>
+        <Button onClick={() => { setEditing(null); setShowDialog(true); }} disabled={!writable}>
           <Plus className="w-4 h-4 mr-2" /> Új pénztár
         </Button>
       </div>
@@ -240,7 +243,7 @@ function RegistersTab() {
           <CardContent className="flex flex-col items-center justify-center py-12 gap-3">
             <Banknote className="w-10 h-10 text-muted-foreground/40" />
             <p className="text-muted-foreground">Nincs még pénztár létrehozva</p>
-            <Button onClick={() => { setEditing(null); setShowDialog(true); }}>
+            <Button onClick={() => { setEditing(null); setShowDialog(true); }} disabled={!writable}>
               <Plus className="w-4 h-4 mr-2" /> Első pénztár létrehozása
             </Button>
           </CardContent>
@@ -491,6 +494,8 @@ function EntriesTab() {
   const { selectedCompany } = useCompany();
   const qc = useQueryClient();
   const companyId = selectedCompany?.id || '';
+  const { canWrite: canWriteModule } = useEaisybillPermissions();
+  const writable = canWriteModule('petty_cash');
   const [filterRegister, setFilterRegister] = useState<string>('all');
   const [filterCurrency, setFilterCurrency] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
@@ -645,7 +650,7 @@ function EntriesTab() {
             {syncEntries.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <ArrowRightLeft className="w-4 h-4 mr-1" />}
             Szinkronizálás
           </Button>
-          <Button size="sm" onClick={() => setShowManualDialog(true)}>
+          <Button size="sm" onClick={() => setShowManualDialog(true)} disabled={!writable}>
             <Plus className="w-4 h-4 mr-1" /> Manuális tétel
           </Button>
         </div>

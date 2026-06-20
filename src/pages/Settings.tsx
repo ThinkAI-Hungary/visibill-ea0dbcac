@@ -19,6 +19,7 @@ import { BusinessSection } from '@/components/settings/BusinessSection';
 import { SystemSection } from '@/components/settings/SystemSection';
 import { SecuritySection } from '@/components/settings/SecuritySection';
 import { InviteUserDialog } from '@/components/settings/InviteUserDialog';
+import { EaisybillPermissionPanel } from '@/components/settings/EaisybillPermissionPanel';
 import { useUserRole } from '@/hooks/useUserRole';
 import { reportError } from '@/lib/errorReporter';
 import { useUrlTab } from '@/lib/navigation';
@@ -149,7 +150,8 @@ function CompanyMembersCard({ companyId, companyName, ownerId, isOwnerOrAdmin, t
 
   const EAISYBILL_ROLES = [
     { value: 'admin', label: 'Admin', desc: 'Teljes hozzáférés, beállítások', color: 'bg-blue-500/15 text-blue-600 dark:text-blue-400' },
-    { value: 'member', label: 'Tag', desc: 'Pénzügyi adatok olvasás/írás', color: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
+    { value: 'member', label: 'Pénzügyes', desc: 'Pénzügyi modulok olvasás/írás', color: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' },
+    { value: 'assistant', label: 'Pénzügyi asszisztens', desc: 'Számlák, tranzakciók kezelése', color: 'bg-teal-500/15 text-teal-600 dark:text-teal-400' },
     { value: 'viewer', label: 'Betekintő', desc: 'Csak olvasás', color: 'bg-slate-500/15 text-slate-600 dark:text-slate-400' },
     { value: 'employee', label: 'Munkavállaló', desc: 'Csak munkaidő', color: 'bg-amber-500/15 text-amber-600 dark:text-amber-400' },
   ];
@@ -629,6 +631,9 @@ export default function Settings() {
             )}
             {selectedCompany && (
               <CompanyMembersCard companyId={selectedCompany.id} companyName={selectedCompany.name} ownerId={selectedCompany.owner_id} isOwnerOrAdmin={isAdmin} toast={toast} />
+            )}
+            {selectedCompany && isAdmin && (
+              <EaisybillPermissionPanel companyId={selectedCompany.id} toast={toast} />
             )}
             {selectedCompany && (
               <FxSettingsCard companyId={selectedCompany.id} toast={toast} />

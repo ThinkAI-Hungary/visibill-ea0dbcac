@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const validRoles = ["member", "admin", "viewer", "employee", "könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"];
+    const validRoles = ["member", "admin", "assistant", "viewer", "employee", "könyvelő", "senior_könyvelő", "asszisztens", "iroda_admin"];
     const assignRole = role && validRoles.includes(role) ? role : "member";
 
     // Service role client (bypasses RLS, can create auth users)

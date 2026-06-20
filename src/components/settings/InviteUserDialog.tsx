@@ -81,7 +81,7 @@ export function InviteUserDialog({
 
   // Common form state
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'member' | 'admin' | 'employee' | 'viewer'>('member');
+  const [role, setRole] = useState<'member' | 'admin' | 'assistant' | 'employee' | 'viewer'>('member');
   const [loading, setLoading] = useState(false);
 
   // New user form state
@@ -620,7 +620,8 @@ export function InviteUserDialog({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="member">Tag</SelectItem>
+                      <SelectItem value="member">Pénzügyes</SelectItem>
+                      <SelectItem value="assistant">Pénzügyi asszisztens</SelectItem>
                       <SelectItem value="viewer">Betekintő</SelectItem>
                       <SelectItem value="employee">Munkavállaló</SelectItem>
                     </SelectContent>
@@ -628,6 +629,7 @@ export function InviteUserDialog({
                   <p className="text-xs text-muted-foreground">
                     {role === 'admin' && 'Teljes hozzáférés a céghez, felhasználókat is kezelhet.'}
                     {role === 'member' && 'Pénzügyi adatok olvasás/írás, könyvelési hozzáférés.'}
+                    {role === 'assistant' && 'Számlák, tranzakciók, kintlévőségek kezelése. Nem lát béreket, könyvelést.'}
                     {role === 'viewer' && 'Csak olvasási hozzáférés a pénzügyi adatokhoz.'}
                     {role === 'employee' && 'Csak a saját munkaidő-nyilvántartásához fér hozzá.'}
                   </p>

@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useEaisybillPermissions, URL_TO_MODULE, type EaisybillModule } from "@/hooks/useEaisybillPermissions";
 import { useHasAccountyAccess } from "@/hooks/useHasEaisybillAccess";
 import { useScopedBasePath, extractPageSegment } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
@@ -71,26 +72,13 @@ import { useUnreadTicketCount } from "@/hooks/useTickets";
 import CompanySelector from "./CompanySelector";
 import AppModeSwitcher from "./AppModeSwitcher";
 
-/**
- * Role hierarchy for visibility filtering.
- * Higher number = more privilege. An item is visible if the user's
- * role rank >= the item's minRole rank.
- */
-type MinRole = 'employee' | 'viewer' | 'member' | 'admin';
-const ROLE_RANK: Record<string, number> = {
-  employee: 0,
-  viewer: 1,
-  member: 2,
-  admin: 3, // admin & owner
-};
-
 interface NavItem {
   title: string;
   url: string;
   icon: React.ComponentType<{ className?: string }>;
   tourId: string;
-  /** Minimum role required to see this item. Default: 'viewer' (everyone except employee) */
-  minRole?: MinRole;
+  /** Module key for permission checking via useEaisybillPermissions */
+  moduleKey?: EaisybillModule;
 }
 
 interface NavGroup {
@@ -106,10 +94,10 @@ const navigationGroups: NavGroup[] = [
     label: 'Áttekintés',
     icon: LayoutDashboard,
     items: [
-      { title: "Irányítópult", url: "/", icon: LayoutDashboard, tourId: "dashboard" },
-      { title: "Kategóriák", url: "/categories", icon: Tags, tourId: "categories" },
-      { title: "Projektek", url: "/projects", icon: FolderKanban, tourId: "projects" },
-      { title: "Partnertörzs", url: "/partners", icon: Users, tourId: "partners" },
+      { title: "Irányítópult", url: "/", icon: LayoutDashboard, tourId: "dashboard", moduleKey: 'dashboard' },
+      { title: "Kategóriák", url: "/categories", icon: Tags, tourId: "categories", moduleKey: 'categories' },
+      { title: "Projektek", url: "/projects", icon: FolderKanban, tourId: "projects", moduleKey: 'projects' },
+      { title: "Partnertörzs", url: "/partners", icon: Users, tourId: "partners", moduleKey: 'partners' },
     ],
   },
   {
@@ -117,10 +105,10 @@ const navigationGroups: NavGroup[] = [
     label: 'Pénzügyek',
     icon: Landmark,
     items: [
-      { title: "Számlák", url: "/invoices", icon: FileText, tourId: "invoices" },
-      { title: "Kintlévőség", url: "/kintlevo", icon: ReceiptText, tourId: "kintlevo" },
-      { title: "Tranzakciók", url: "/transactions", icon: Landmark, tourId: "transactions" },
-      { title: "Házipénztár", url: "/petty-cash", icon: Banknote, tourId: "petty-cash" },
+      { title: "Számlák", url: "/invoices", icon: FileText, tourId: "invoices", moduleKey: 'invoices' },
+      { title: "Kintlévőség", url: "/kintlevo", icon: ReceiptText, tourId: "kintlevo", moduleKey: 'receivables' },
+      { title: "Tranzakciók", url: "/transactions", icon: Landmark, tourId: "transactions", moduleKey: 'transactions' },
+      { title: "Házipénztár", url: "/petty-cash", icon: Banknote, tourId: "petty-cash", moduleKey: 'petty_cash' },
     ],
   },
   {
@@ -128,11 +116,11 @@ const navigationGroups: NavGroup[] = [
     label: 'Könyvelés',
     icon: BookOpen,
     items: [
-      { title: "Főkönyv", url: "/general-ledger", icon: BookOpen, tourId: "general-ledger", minRole: 'member' },
-      { title: "Eredménykimutatás", url: "/profit-and-loss", icon: BarChart3, tourId: "profit-and-loss", minRole: 'member' },
-      { title: "Mérleg", url: "/balance-sheet", icon: Scale, tourId: "balance-sheet", minRole: 'member' },
-      { title: "Beszámoló", url: "/annual-report", icon: ClipboardCheck, tourId: "annual-report", minRole: 'member' },
-      { title: "ÁFA Bevallás", url: "/vat-return", icon: FileSpreadsheet, tourId: "vat-return", minRole: 'member' },
+      { title: "Főkönyv", url: "/general-ledger", icon: BookOpen, tourId: "general-ledger", moduleKey: 'general_ledger' },
+      { title: "Eredménykimutatás", url: "/profit-and-loss", icon: BarChart3, tourId: "profit-and-loss", moduleKey: 'profit_loss' },
+      { title: "Mérleg", url: "/balance-sheet", icon: Scale, tourId: "balance-sheet", moduleKey: 'balance_sheet' },
+      { title: "Beszámoló", url: "/annual-report", icon: ClipboardCheck, tourId: "annual-report", moduleKey: 'annual_report' },
+      { title: "ÁFA Bevallás", url: "/vat-return", icon: FileSpreadsheet, tourId: "vat-return", moduleKey: 'vat_return' },
     ],
   },
   {
@@ -140,9 +128,9 @@ const navigationGroups: NavGroup[] = [
     label: 'HR & Eszközök',
     icon: Users,
     items: [
-      { title: "Bérek/járulékok", url: "/salaries", icon: Wallet, tourId: "salaries", minRole: 'admin' },
-      { title: "Munkaidő", url: "/working-time", icon: Clock, tourId: "working-time", minRole: 'employee' },
-      { title: "TENY", url: "/teny", icon: Package2, tourId: "teny", minRole: 'member' },
+      { title: "Bérek/járulékok", url: "/salaries", icon: Wallet, tourId: "salaries", moduleKey: 'salaries' },
+      { title: "Munkaidő", url: "/working-time", icon: Clock, tourId: "working-time", moduleKey: 'working_time' },
+      { title: "TENY", url: "/teny", icon: Package2, tourId: "teny", moduleKey: 'fixed_assets' },
     ],
   },
   {
@@ -150,8 +138,8 @@ const navigationGroups: NavGroup[] = [
     label: 'Rendszer',
     icon: Wrench,
     items: [
-      { title: "Integrációk", url: "/integrations", icon: Plug, tourId: "integrations", minRole: 'admin' },
-      { title: "Árfolyamok", url: "/exchange-rates", icon: TrendingUp, tourId: "exchange-rates" },
+      { title: "Integrációk", url: "/integrations", icon: Plug, tourId: "integrations", moduleKey: 'integrations' },
+      { title: "Árfolyamok", url: "/exchange-rates", icon: TrendingUp, tourId: "exchange-rates", moduleKey: 'exchange_rates' },
     ],
   },
 ];
@@ -213,6 +201,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
   const { selectedCompany } = useCompany();
   const { theme, setTheme } = useTheme();
   const { role, isAdmin, isEmployee } = useUserRole();
+  const { canAccess } = useEaisybillPermissions();
   const { hasAccess: hasAccountyAccess } = useHasAccountyAccess();
   const { data: unreadTicketCount = 0 } = useUnreadTicketCount();
 
@@ -269,16 +258,13 @@ export const AppSidebar = React.memo(function AppSidebar() {
     });
   }, []);
 
-  // User's role rank for visibility filtering
-  const userRank = isAdmin ? ROLE_RANK['admin'] : ROLE_RANK[role || 'viewer'] ?? ROLE_RANK['viewer'];
-
-  // Role-based filtering: filter items by minRole rank
+  // Permission-based filtering: filter items by canAccess() from useEaisybillPermissions
   const visibleGroups = useMemo(() => {
     return navigationGroups
       .map(group => {
         const items = group.items.filter(item => {
-          const requiredRank = ROLE_RANK[item.minRole || 'viewer'] ?? ROLE_RANK['viewer'];
-          return userRank >= requiredRank;
+          if (!item.moduleKey) return true; // no module key → always visible
+          return canAccess(item.moduleKey);
         });
         return { ...group, items };
       })
@@ -290,7 +276,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
           to: item.url === "/" ? basePath : `${basePath}${item.url}`,
         })),
       }));
-  }, [userRank, basePath]);
+  }, [canAccess, basePath]);
 
   const handlePrefetch = useCallback((url: string) => {
     const loader = prefetchMap[url];

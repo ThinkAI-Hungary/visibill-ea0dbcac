@@ -42,6 +42,7 @@ import { useInvoiceFilters, FILTER_URL_KEYS, defaultFilters } from '@/hooks/useI
 import type { InvoiceTab } from '@/hooks/useInvoiceFilters';
 import { useInvoiceMutations } from '@/hooks/useInvoiceMutations';
 import { useUrlTab } from '@/lib/navigation';
+import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 
 // ── Tab slug ↔ InvoiceTab mapping ──
 const TAB_SLUGS = ['outbound_nav', 'inbound_nav', 'submitted_inbound', 'submitted_outbound'] as const;
@@ -68,6 +69,8 @@ const InvoicesPage = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { dateFromFormatted, dateToFormatted } = useDateRange();
+  const { canWrite: canWriteModule } = useEaisybillPermissions();
+  const writable = canWriteModule('invoices');
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
@@ -921,7 +924,7 @@ const InvoicesPage = () => {
                         variant="outline"
                         size="sm"
                         onClick={handleSync}
-                        disabled={syncing || !credentialsExist || !canSync}
+                        disabled={syncing || !credentialsExist || !canSync || !writable}
                       >
                         <RefreshCw className={cn("h-4 w-4 mr-2", syncing && "animate-spin")} />
                         {syncing ? 'Szinkronizálás...' : !canSync ? `Várj ${formatCooldown(cooldownSeconds)}` : 'Szinkronizálás'}
@@ -1765,7 +1768,7 @@ const InvoicesPage = () => {
                                 </TableCell>
                                 <TableCell className="text-center">
                                   <TooltipProvider><Tooltip><TooltipTrigger asChild>
-                                    <Button size="sm" variant="ghost" className="h-8 w-8 opacity-70 group-hover:opacity-100" onClick={() => openEditDialog(invoice)}>
+                                    <Button size="sm" variant="ghost" className="h-8 w-8 opacity-70 group-hover:opacity-100" onClick={() => openEditDialog(invoice)} disabled={!writable}>
                                       <Pencil className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger><TooltipContent><p>Számla szerkesztése</p></TooltipContent></Tooltip></TooltipProvider>

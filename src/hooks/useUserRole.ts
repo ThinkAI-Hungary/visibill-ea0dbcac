@@ -3,12 +3,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 
-export type UserRole = 'owner' | 'admin' | 'member' | 'viewer' | 'employee' | null;
+export type UserRole = 'owner' | 'admin' | 'member' | 'assistant' | 'viewer' | 'employee' | null;
 
 /**
  * Returns the current user's role in the selected company.
  * - owner/admin: full access (all modules, settings, member management)
  * - member: read all financial data, CRUD own time_entries, no settings
+ * - assistant: invoices, transactions, receivables, projects R/W — no salaries/HR/accounting
  * - viewer: read-only access to financial data, no mutations
  * - employee: only own time_entries, limited UI
  *
@@ -20,6 +21,7 @@ export function useUserRole(): {
   isLoading: boolean;
   isAdmin: boolean;
   isMember: boolean;
+  isAssistant: boolean;
   isViewer: boolean;
   isEmployee: boolean;
 } {
@@ -68,6 +70,7 @@ export function useUserRole(): {
     isLoading: isPending && !!companyId,
     isAdmin: resolvedRole === 'owner' || resolvedRole === 'admin' || !companyId,
     isMember: resolvedRole === 'member',
+    isAssistant: resolvedRole === 'assistant',
     isViewer: resolvedRole === 'viewer',
     isEmployee: !!companyId && resolvedRole === 'employee',
   };

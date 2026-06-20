@@ -24,6 +24,7 @@ import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { useTimeEntries } from '@/hooks/useTimeEntries';
 import { useProjectList } from '@/hooks/useProjectList';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { WorkingTimePageSkeleton } from '@/components/working-time/WorkingTimePageSkeleton';
@@ -150,6 +151,8 @@ export default function WorkingTimePage() {
   } = useCompanySettings();
 
   const { isEmployee, isAdmin } = useUserRole();
+  const { canWrite: canWriteModule } = useEaisybillPermissions();
+  const writable = canWriteModule('working_time');
 
   // Time entries for the selected week (personal view)
   const {
@@ -395,11 +398,12 @@ export default function WorkingTimePage() {
               variant="outline"
               size="sm"
               onClick={handleOpenSettings}
+              disabled={!writable}
             >
               <Settings2 className="h-4 w-4 mr-2" />
               Beállítások
             </Button>
-            <Button size="sm" onClick={handleOpenAddEmployee}>
+            <Button size="sm" onClick={handleOpenAddEmployee} disabled={!writable}>
               <UserPlus className="h-4 w-4 mr-2" />
               Dolgozó hozzáadása
             </Button>

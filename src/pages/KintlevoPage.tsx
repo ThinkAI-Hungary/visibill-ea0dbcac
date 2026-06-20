@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useKintlevoData } from '@/hooks/useKintlevoData';
+import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +43,8 @@ export default function KintlevoPage() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { canWrite: canWriteModule } = useEaisybillPermissions();
+  const writable = canWriteModule('receivables');
 
   // ── URL param helpers ──
   const setDunningParam = useCallback((open: boolean) => {
@@ -82,7 +85,7 @@ export default function KintlevoPage() {
               Kifizetetlen kimenő számlák cégenként csoportosítva
             </p>
           </div>
-          <Button size="lg" className="gap-2 shrink-0" onClick={handleOpenDunning}>
+          <Button size="lg" className="gap-2 shrink-0" onClick={handleOpenDunning} disabled={!writable} title={!writable ? 'Nincs írási jogosultságod' : undefined}>
             <Mail className="h-4 w-4" />
             Felszólítás küldése
           </Button>
