@@ -310,7 +310,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
       <SidebarContent className="select-none flex flex-col h-full overflow-hidden">
         {/* Header */}
         <div className={`p-4 border-b border-border ${isCollapsed ? 'flex justify-center' : ''}`}>
-          <AppModeSwitcher activeMode="eaisybill" isCollapsed={isCollapsed} showToggle={hasAccountyAccess !== false} />
+          <AppModeSwitcher activeMode="eaisybill" isCollapsed={isCollapsed} showToggle={hasAccountyAccess === true} />
         </div>
 
         {/* Company Selector — hidden for employees */}

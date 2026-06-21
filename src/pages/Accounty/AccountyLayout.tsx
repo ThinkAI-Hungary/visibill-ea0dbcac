@@ -255,7 +255,7 @@ function AccountyLayoutInner() {
           <AppModeSwitcher
             activeMode="accounty"
             isCollapsed={isCollapsed}
-            showToggle={hasEaisybillAccess !== false}
+            showToggle={hasEaisybillAccess === true}
           />
         </div>
 

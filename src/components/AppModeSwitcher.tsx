@@ -9,15 +9,16 @@ interface AppModeSwitcherProps {
 }
 
 export default function AppModeSwitcher({ activeMode, isCollapsed = false, showToggle = true }: AppModeSwitcherProps) {
-  // If we shouldn't show the toggle (e.g. user has no access to eaisybill), just show a static eaisyBooks logo
+  // If we shouldn't show the toggle (e.g. user has no access to the other app), just show a static logo for the active app
   if (!showToggle) {
+    const isBill = activeMode === 'eaisybill';
     return (
       <div className={cn("flex items-center", isCollapsed ? "justify-center py-2" : "px-2 py-1")}>
         {isCollapsed ? (
-          <span className="text-xl font-bold text-primary select-none">eB</span>
+          <span className="text-xl font-bold text-primary select-none">{isBill ? 'eB' : 'eB'}</span>
         ) : (
           <span className="text-xl font-medium text-foreground/80 select-none">
-            eaisy<span className="font-bold text-primary">Books</span>
+            eaisy<span className="font-bold text-primary">{isBill ? 'Bill' : 'Books'}</span>
           </span>
         )}
       </div>
