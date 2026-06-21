@@ -48,7 +48,6 @@ interface DbModulePermission {
 const ADMIN_ONLY_MODULES: EaisybillModule[] = [
   'salaries',
   'integrations',
-  'settings',
 ];
 
 /**
@@ -79,6 +78,7 @@ const ASSISTANT_MODULES: EaisybillModule[] = [
   'upload',
   'tickets',
   'exchange_rates',
+  'settings',
 ];
 
 /**
@@ -95,6 +95,7 @@ const VIEWER_MODULES: EaisybillModule[] = [
   'petty_cash',
   'exchange_rates',
   'tickets',
+  'settings',
 ];
 
 /**
@@ -231,6 +232,8 @@ export function useEaisybillPermissions() {
     /** Static default: can the user write to this module? */
     function staticCanWrite(module: EaisybillModule): boolean {
       if (isAdmin) return true;
+      // Settings write (member management, company data edit) is admin-only
+      if (module === 'settings') return false;
       if (role === 'member') return staticCanAccess(module);
       if (role === 'assistant') return ASSISTANT_MODULES.includes(module);
       if (role === 'viewer') return false; // Read-only

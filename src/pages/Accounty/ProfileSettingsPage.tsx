@@ -263,6 +263,7 @@ function FirmMembersCard({ companyId, companyName, isOwnerOrAdmin, toast }: { co
         companyName={companyName}
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ['accounty-firm-members', companyId] })}
         toast={toast}
+        isAccounty
       />
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>

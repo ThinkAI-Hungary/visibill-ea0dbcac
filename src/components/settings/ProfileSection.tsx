@@ -53,7 +53,7 @@ export function ProfileSection({ profile, setProfile, onSave, loading, readOnlyO
                 value={positionOverride}
                 disabled
                 className="bg-muted/50 cursor-not-allowed"
-                title="A pozíció a könyvelői szerepkörből származik"
+                title="A pozíció a szerepkörből származik"
               />
             ) : (
               <Input id="position" value={profile.position} onChange={e => setProfile(prev => ({ ...prev, position: e.target.value }))} placeholder="Ügyvezető" />
@@ -71,7 +71,7 @@ export function ProfileSection({ profile, setProfile, onSave, loading, readOnlyO
               value={companyOverride}
               disabled
               className="bg-muted/50 cursor-not-allowed"
-              title="A cég a könyvelő irodából származik"
+              title="A cég neve a kiválasztott cégből származik"
             />
           ) : (
             <Input id="company" value={profile.company} onChange={e => setProfile(prev => ({ ...prev, company: e.target.value }))} placeholder="Példa Kft." />

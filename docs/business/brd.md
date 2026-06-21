@@ -1,13 +1,20 @@
 # Visibill — Business Requirements Document (BRD)
 
-> **Verzió:** 1.0 | **Dátum:** 2026-05-16 | **Státusz:** Draft  
+> **Verzió:** 2.0 | **Dátum:** 2026-06-21 | **Státusz:** Draft  
 > **Kapcsolódó dokumentumok:** [decisions/](./decisions/index.md) · [user-journeys.md](./user-journeys.md) · [use-cases.md](./use-cases.md)
 
 ---
 
 ## 1. Összefoglaló
 
-A Visibill egy AI-alapú pénzügyi adminisztrációs platform magyar KKV-k számára. A rendszer automatizálja a számla-feldolgozást, NAV Online Számla szinkronizációt, banki tranzakció-párosítást, főkönyvi osztályozást és éves beszámoló készítést.
+A Visibill platform két önálló, de egymásra épülő alkalmazásból áll:
+
+| Alkalmazás | Célcsoport | Leírás |
+|------------|------------|--------|
+| **eaisyBill** | Magyar KKV cégvezetők | AI-alapú pénzügyi adminisztrációs platform: számla-feldolgozás, NAV szinkronizáció, banki tranzakció-párosítás, főkönyvi osztályozás, éves beszámoló |
+| **eaisyBooks** | Könyvelő irodák | Portfólió-menedzsment platform: ügyfélkezelés, hiányzó számlák, bérszámfejtés, TAO/KIVA, adónaptár, jóváhagyási workflow, AI asszisztens |
+
+A két alkalmazás közös kódbázison, közös Supabase backend-en fut, de eltérő sidebar-ral, routing-gal, jogosultsági rendszerrel és adatmodellel rendelkezik. A felhasználók az `AppModeSwitcher` komponenssel válthatnak a két mód között (ha mindkettőhöz van hozzáférésük).
 
 **Hivatkozás:** [001-primary-audience](./decisions/001-primary-audience.md) · [002-supported-business-types](./decisions/002-supported-business-types.md)
 
@@ -16,14 +23,19 @@ A Visibill egy AI-alapú pénzügyi adminisztrációs platform magyar KKV-k szá
 ## 2. Termék Scope & Célcsoport
 
 ### REQ-2.1: Elsődleges célcsoport
-A rendszer elsődlegesen **magyar KKV cégvezetőket** szolgálja ki, akik kettős könyvvitelt vezetnek (Kft, Bt, Zrt).  
+- **eaisyBill:** Magyar KKV cégvezetőket szolgálja ki, akik kettős könyvvitelt vezetnek (Kft, Bt, Zrt).  
+- **eaisyBooks:** Könyvelő irodákat (accounting firms) szolgálja ki, akik több KKV ügyfélt kezelnek párhuzamosan.  
 **Státusz:** 🟡 Partially Decided  
 **Hivatkozás:** [001](./decisions/001-primary-audience.md) · [002](./decisions/002-supported-business-types.md)
 
 ### REQ-2.2: Nyelv & lokalizáció
-A felhasználói felület **kizárólag magyar nyelvű**. A pénznem alapértelmezetten HUF, de többvalutás támogatás elérhető.  
+Mindkét alkalmazás felülete **kizárólag magyar nyelvű**. A pénznem alapértelmezetten HUF, de többvalutás támogatás elérhető.  
 **Státusz:** 🟡 Partially Decided  
 **Hivatkozás:** [003](./decisions/003-localization-strategy.md)
+
+### REQ-2.3: Dual-app architektúra
+A két alkalmazás egyetlen React SPA-ként fut, közös `App.tsx` routing-gal. Az eaisyBill a `/:companyId/:dateRange/*` route-okon él (`ScopedLayout`), az eaisyBooks a `/accounty/*` route-okon (`AccountyLayout`). A `RootRedirect` komponens dönti el, melyik felületet mutassa az adott felhasználónak. Az `AppModeSwitcher` lehetővé teszi a két mód közötti váltást, ha a felhasználó mindkettőhöz rendelkezik hozzáféréssel (`useHasEaisybillAccess`, `useHasAccountyAccess`).  
+**Státusz:** ✅ Decided
 
 ---
 
@@ -58,22 +70,46 @@ PGMQ-alapú aszinkron feldolgozás: Upload → Storage → Edge Function trigger
 ## 4. Cégstruktúra & Hozzáférés-kezelés
 
 ### REQ-4.1: Multi-company modell
-Egy felhasználó több céget kezelhet. Minden adat company_id-hoz kötött. CompanySelector a UI-ban. Csatlakozás share_token alapján.  
+Egy felhasználó több céget kezelhet. Minden adat `company_id`-hoz kötött. A `CompanySelector` (eaisyBill) és a `CompanySwitcher` (eaisyBooks) biztosítja a cégváltást. Csatlakozás share_token alapján (eaisyBill).  
 **Státusz:** ✅ Decided  
 **Hivatkozás:** [009](./decisions/009-multi-company-model.md) · Journey 1
 
-### REQ-4.2: Szerepkör-alapú hozzáférés (RBAC)
-Négy cég-szintű szerep: owner, admin, member, employee. Az admin jogosultsága jelenleg azonos az owner-rel. A member-nek a prod-ban nincs korlátozása. Az employee csak a /working-time oldalt éri el.  
-**Státusz:** 🟡 Partially Decided  
+### REQ-4.2: Szerepkör-alapú hozzáférés — eaisyBill (RBAC)
+Az eaisyBill hat cég-szintű szerepkört használ a `company_members` táblából:
+
+| Szerep | Leírás | Jogosultság |
+|--------|--------|-------------|
+| `owner` | Cégtulajdonos | Teljes hozzáférés, minden modul R/W |
+| `admin` | Adminisztrátor | Teljes hozzáférés (azonos az owner-rel) |
+| `member` | Pénzügyes | Minden pénzügyi + könyvelési modul R/W |
+| `assistant` | Pénzügyi asszisztens | Számlák, tranzakciók, kintlévőségek, kategóriák, projektek, partnertörzs, házipénztár, feltöltés R/W. Nem lát béreket, könyvelést, integrációkat. |
+| `viewer` | Betekintő | Ugyanaz mint assistant, de csak olvasás (R) |
+| `employee` | Munkavállaló | Csak a /working-time oldalt éri el |
+
+A jogosultság-kezelést a `useEaisybillPermissions` hook végzi modul-szinten (`canAccess`, `canWrite`). A `settings` modul mindenki számára elérhető (R), de csak admin írhat.  
+**Státusz:** ✅ Decided  
 **Hivatkozás:** [010](./decisions/010-user-roles.md)
 
-### REQ-4.3: Member jogosultsági határok
-A prod kódbázisban a member role-nak **nincs korlátozása** — ez nyitott döntés.  
-**Státusz:** 🔴 Open  
-**Hivatkozás:** [011](./decisions/011-member-permissions.md)
+### REQ-4.3: Szerepkör-alapú hozzáférés — eaisyBooks (RBAC)
+Az eaisyBooks négy iroda-szintű szerepkört használ az `accounty_assignments` táblából:
 
-### REQ-4.4: Platform-szintű szerepek
-profiles.role: `user` (alapértelmezett) / `management` (platform admin). A management role hozzáférést biztosít a management-stats Edge Function-höz.  
+| Szerep | Leírás | Jogosultság |
+|--------|--------|-------------|
+| `iroda_admin` | Irodavezető | Teljes hozzáférés: admin oldalak, jogosultságkezelés, könyvelők kezelése, iroda beállítások |
+| `senior_könyvelő` | Senior könyvelő | Riportok, jóváhagyó rendszer, riasztások, NAV határidők, beállítások |
+| `könyvelő` | Könyvelő | Portfólió, hiányzó számlák, adó naptár, bérszámfejtés, TAO/KIVA, hibajegyek, AI asszisztens |
+| `asszisztens` | Asszisztens | Portfólió, hiányzó számlák, adó naptár, bérszámfejtés, TAO/KIVA, hibajegyek (korlátozott) |
+
+Az eaisyBooks támogatja a **DB-szintű jogosultság-felülírást**: az `iroda_admin` az `accounty_module_permissions` táblában egyedileg megadhatja egyes felhasználók modul-szintű olvasási/írási jogait. A `useAccountyPermissions` hook DB override > static default prioritással dolgozik.  
+**Státusz:** ✅ Decided
+
+### REQ-4.4: A két rendszer közötti hozzáférés
+- **eaisyBill hozzáférés:** `company_members` tábla alapján, VAGY `accounty_assignments` tábla alapján (könyvelők automatikusan látják ügyfeleik eaisyBill oldalát is).
+- **eaisyBooks hozzáférés:** `accounty_assignments` tábla alapján (csak regisztrált könyvelő irodai tagok).
+- A `useHasEaisybillAccess` és `useHasAccountyAccess` hook-ok döntik el, ki mihez fér hozzá, és ez szabályozza az `AppModeSwitcher` megjelenését is.
+
+### REQ-4.5: Platform-szintű szerepek
+`profiles.role`: `user` (alapértelmezett) / `management` (platform admin). A management role hozzáférést biztosít a management-stats Edge Function-höz és a management dashboard-hoz.  
 **Hivatkozás:** [010](./decisions/010-user-roles.md)
 
 ---
@@ -163,7 +199,7 @@ Készpénzes tranzakciók nyilvántartása. Nyitóegyenleg beállítás (hp_sett
 
 ---
 
-## 8. HR & Munkaidő
+## 8. HR & Munkaidő (eaisyBill)
 
 ### REQ-8.1: Munkaidő nyilvántartás
 Napi órák rögzítése, projekt hozzárendelés. Draft → submitted → approved workflow. Hiányzás típusok: vacation, sick, personal, other.  
@@ -173,6 +209,78 @@ Napi órák rögzítése, projekt hozzárendelés. Draft → submitted → appro
 ### REQ-8.2: Szabadság kezelés
 Szabadságkérelem workflow: pending → approved / rejected. Admin megjegyzés, felülvizsgáló azonosítás.  
 **Hivatkozás:** [025](./decisions/025-working-time-scope.md)
+
+---
+
+## 8b. eaisyBooks — Könyvelő Iroda Platform
+
+### REQ-8b.1: Ügyfél portfólió kezelés
+Könyvelő irodák ügyfeleinek áttekintése három nézetben: kártya rács (grid), lista (list), kanban tábla. Státuszok: Rendben / Feldolgozandó / Kritikus. Kanban drag-and-drop státuszváltás. Felelős könyvelő hozzárendelés (owner dropdown). KPI kártyák: összes ügyfél, feldolgozatlan számlák, hiányzó számlák, közeledő határidők. Scope nézetek: Irodai KPI (vezetői) / Saját ügyfeleim / Összes ügyfél. Widget sorrend testreszabható.  
+**Státusz:** ✅ Decided
+
+### REQ-8b.2: Hiányzó számlák kezelés
+Egységes nézet az összes ügyfél hiányzó számláiról. Prioritás szűrés, státuszok: open → notified → resolved. Email felszólító küldés (request email generálás). Ügyfélportálon keresztüli számla pótlás.  
+**Státusz:** ✅ Decided
+
+### REQ-8b.3: Bérszámfejtés portfólió
+Több ügyfél bérszámfejtésének kezelése. Ügyfélenkénti almenük: Foglalkoztatottak, Riportok, NAV bevallások, Ügyfélportál, Paraméterek. Bérszámfejtési ciklus kezelés (PayrollCyclePage). Foglalkoztatott felvétel wizard, kiléptetési wizard, jogviszony módosítás. Jogviszonykódok admin kezelése.  
+**Státusz:** ✅ Decided
+
+### REQ-8b.4: TAO / KIVA modul
+TAO portfólió kezelés. TAO adónaptár. Adózói körök kezelés. Ügyfélenkénti TAO részletek oldal.  
+**Státusz:** ✅ Decided
+
+### REQ-8b.5: Adó naptár
+Összesített NAV és adó határidők naptár nézete az összes ügyfélre. Szűrés ügyfélre, státuszra.  
+**Státusz:** ✅ Decided
+
+### REQ-8b.6: Riportok
+Irodai szintű riportok: ügyfélstatisztikák, havi trend, könyvelő teljesítmény, portál használat, audit napló. Dinamikus KPI dashboard animált számokkal és diagramokkal (Recharts).  
+**Státusz:** ✅ Decided
+
+### REQ-8b.7: Jóváhagyó rendszer
+Számla-jóváhagyási workflow könyvelő irodák számára. Jóváhagyási sor (approval queue) kezelés.  
+**Státusz:** ✅ Decided
+
+### REQ-8b.8: Riasztások & NAV határidők
+Riasztási központ: kritikus ügyfelek, hiányzó dokumentumok, lejárt határidők. NAV határidők oldal: összes ügyfél NAV bevallásinak határidő-követése.  
+**Státusz:** ✅ Decided
+
+### REQ-8b.9: AI Asszisztens
+Beépített AI chat (AiAssistantPage) könyvelő irodai felhasználóknak. Drawer módban is elérhető bármely oldalon.  
+**Státusz:** ✅ Decided
+
+### REQ-8b.10: Ügyfél onboarding
+Új ügyfél felvételi wizard (NewClientPage). Cégadatok, NAV adatok, felelős könyvelő hozzárendelés.  
+**Státusz:** ✅ Decided
+
+### REQ-8b.11: Ügyfélportál
+A könyvelő iroda által kezelt cégek ügyfélportálja (ClientPortalPage). Az ügyfelek itt tölthetik fel a hiányzó dokumentumokat.  
+**Státusz:** ✅ Decided
+
+### REQ-8b.12: Adminisztráció (iroda_admin)
+Az iroda_admin számára elérhető admin oldalak:
+- Audit napló (AuditLogPage)
+- GDPR / adatvédelem (GdprPage, DataRetentionPage)
+- Sablonok kezelés (TemplatesPage)
+- Jogviszonykódok (JobCodesPage)
+- Adómértékek (AdminTaxParametersPage)
+- Jogszabály-frissítések (LegalUpdatesPage)
+- Jogosultságkezelő (PermissionMatrixPage) — modul-szintű R/W jogok egyedi felülírása
+- Könyvelők kezelése (AccountantManagementPage)
+- Irodai beállítások (SettingsPage)
+
+**Státusz:** ✅ Decided
+
+### REQ-8b.13: eaisyBooks RBAC adatmodell
+
+| Tábla | Leírás |
+|-------|--------|
+| `accounty_assignments` | Könyvelő ↔ ügyfél cég hozzárendelés (accountant_user_id, company_id, accounting_firm_id, role) |
+| `accounty_module_permissions` | Modul-szintű jogosultság felülírás (user_id, module_name, can_read, can_write) |
+| `accounty_missing_items` | Hiányzó számlák/dokumentumok nyilvántartás |
+
+**Státusz:** ✅ Decided
 
 ---
 
@@ -209,12 +317,20 @@ Edge Function cron jobok: check-payment-deadlines, check-missing-invoices, send-
 ## 11. Support & Onboarding
 
 ### REQ-11.1: Visszajelzési rendszer
-FeedbackDialog (FAB gomb) — egyszerű form: cég, típus (bug/feature/feedback/question), üzenet. Slack integráció.  
+FeedbackDialog (FAB gomb) — egyszerű form: cég, típus (bug/feature/feedback/question), üzenet. Slack integráció. Mindkét alkalmazásban (eaisyBill + eaisyBooks) elérhető.  
 **Hivatkozás:** UC-011
 
-### REQ-11.2: Onboarding
+### REQ-11.2: Onboarding — eaisyBill
 Product Tour (ProductTour.tsx). Email verifikáció. Welcome email (send-welcome-email).  
 **Hivatkozás:** Journey 1 · UC-001
+
+### REQ-11.3: Onboarding — eaisyBooks
+Új ügyfél felvételi wizard (NewClientPage). Meglévő eaisyBill cégek automatikus szinkronizálása könyvelő irodai hozzárendelésként (`seedAccountyAssignments`). Segítség oldal (HelpPage) kontextusfüggő dokumentációval.  
+**Státusz:** ✅ Decided
+
+### REQ-11.4: Hibajegy rendszer
+Mindkét alkalmazásban elérhető hibajegy rendszer (TicketsPage). Olvasatlan jegyek badge a sidebarban (`useUnreadTicketCount`).  
+**Státusz:** ✅ Decided
 
 ---
 
@@ -272,18 +388,19 @@ Teljes naplózás (llm_koltsegek). Limitálás eldöntendő.
 
 ## 14. Jövőbeli Döntések
 
-| # | Téma | Státusz | Hivatkozás |
-|---|------|---------|-----------|
-| 1 | Árazási modell véglegesítés | 🔴 Open | [004](./decisions/004-pricing-model.md) |
-| 2 | Subscription scope (user vs cég) | 🔴 Open | [005](./decisions/005-subscription-scope.md) |
-| 3 | Multi-instance stratégia | 🔴 Open | [007](./decisions/007-multi-instance-strategy.md) |
-| 4 | Member jogosultsági határok | 🔴 Open | [011](./decisions/011-member-permissions.md) |
-| 5 | Számla kiállítás | 🔴 Open | [014](./decisions/014-invoice-creation.md) |
-| 6 | Adó modul scope | 🔴 Open | [020](./decisions/020-tax-module.md) |
-| 7 | Banki integráció jövője | 🔴 Open | [026](./decisions/026-banking-integration.md) |
-| 8 | GDPR compliance | 🔴 Open | [028](./decisions/028-gdpr-compliance.md) |
-| 9 | Mobil stratégia | 🔴 Open | [029](./decisions/029-mobile-strategy.md) |
-| 10 | API & third-party hozzáférés | 🔴 Open | [030](./decisions/030-api-access.md) |
+| # | Téma | Platform | Státusz | Hivatkozás |
+|---|------|----------|---------|------------|
+| 1 | Árazási modell véglegesítés | Mindkettő | 🔴 Open | [004](./decisions/004-pricing-model.md) |
+| 2 | Subscription scope (user vs cég) | Mindkettő | 🔴 Open | [005](./decisions/005-subscription-scope.md) |
+| 3 | Multi-instance stratégia | Infra | 🔴 Open | [007](./decisions/007-multi-instance-strategy.md) |
+| 4 | Számla kiállítás | eaisyBill | 🔴 Open | [014](./decisions/014-invoice-creation.md) |
+| 5 | Adó modul scope | eaisyBill | 🔴 Open | [020](./decisions/020-tax-module.md) |
+| 6 | Banki integráció jövője | eaisyBill | 🔴 Open | [026](./decisions/026-banking-integration.md) |
+| 7 | GDPR compliance | Mindkettő | 🔴 Open | [028](./decisions/028-gdpr-compliance.md) |
+| 8 | Mobil stratégia | Mindkettő | 🔴 Open | [029](./decisions/029-mobile-strategy.md) |
+| 9 | API & third-party hozzáférés | Mindkettő | 🔴 Open | [030](./decisions/030-api-access.md) |
+| 10 | eaisyBooks árazás (irodai license) | eaisyBooks | 🔴 Open | — |
+| 11 | eaisyBooks ↔ eaisyBill automatikus szinkron | Mindkettő | 🟡 Partial | — |
 
 Opciós elemzések: [decision_helper.md](./decisions/decision_helper.md)
 
@@ -291,16 +408,18 @@ Opciós elemzések: [decision_helper.md](./decisions/decision_helper.md)
 
 ## 15. Követelmények Mátrix
 
+### eaisyBill követelmények
+
 | REQ | Döntés | Use Case | Journey | Státusz |
 |-----|--------|----------|---------|---------|
 | REQ-2.1 | 001, 002 | — | — | 🟡 |
 | REQ-2.2 | 003 | — | — | 🟡 |
+| REQ-2.3 | — | — | — | ✅ |
 | REQ-3.1 | 006 | — | — | ✅ |
 | REQ-3.2 | 007 | — | — | 🔴 |
 | REQ-3.3 | 008 | UC-002, UC-003 | J2 | ✅ |
 | REQ-4.1 | 009 | UC-001 | J1 | ✅ |
-| REQ-4.2 | 010 | UC-009 | J7 | 🟡 |
-| REQ-4.3 | 011 | — | — | 🔴 |
+| REQ-4.2 | 010 | UC-009 | J7 | ✅ |
 | REQ-5.1 | 012 | UC-002 | J2 | ✅ |
 | REQ-5.2 | 013 | UC-002, UC-003, UC-004 | J2 | ✅ |
 | REQ-5.3 | 014 | — | — | 🔴 |
@@ -320,3 +439,23 @@ Opciós elemzések: [decision_helper.md](./decisions/decision_helper.md)
 | REQ-12.4 | 028 | — | — | 🔴 |
 | REQ-13.2 | 026 | UC-005 | J3 | 🔴 |
 | REQ-13.3 | 027 | — | — | 🟡 |
+
+### eaisyBooks követelmények
+
+| REQ | Modul | Státusz |
+|-----|-------|---------|
+| REQ-8b.1 | Ügyfél portfólió kezelés | ✅ |
+| REQ-8b.2 | Hiányzó számlák kezelés | ✅ |
+| REQ-8b.3 | Bérszámfejtés portfólió | ✅ |
+| REQ-8b.4 | TAO / KIVA modul | ✅ |
+| REQ-8b.5 | Adó naptár | ✅ |
+| REQ-8b.6 | Riportok | ✅ |
+| REQ-8b.7 | Jóváhagyó rendszer | ✅ |
+| REQ-8b.8 | Riasztások & NAV határidők | ✅ |
+| REQ-8b.9 | AI Asszisztens | ✅ |
+| REQ-8b.10 | Ügyfél onboarding | ✅ |
+| REQ-8b.11 | Ügyfélportál | ✅ |
+| REQ-8b.12 | Adminisztráció (iroda_admin) | ✅ |
+| REQ-8b.13 | eaisyBooks RBAC adatmodell | ✅ |
+| REQ-4.3 | eaisyBooks RBAC (4 role) | ✅ |
+| REQ-4.4 | Cross-platform hozzáférés | ✅ |

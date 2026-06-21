@@ -31,6 +31,8 @@ interface InviteUserDialogProps {
   companyName: string;
   onSuccess: () => void;
   toast: (props: { title: string; description?: string; variant?: 'default' | 'destructive' }) => void;
+  /** When true, show eaisybooks (accounting firm) roles instead of eaisybill roles */
+  isAccounty?: boolean;
 }
 
 // ── Password Strength ──
@@ -75,13 +77,14 @@ export function InviteUserDialog({
   companyName,
   onSuccess,
   toast,
+  isAccounty = false,
 }: InviteUserDialogProps) {
   // Mode: add existing user or create new
   const [mode, setMode] = useState<InviteMode>('existing');
 
   // Common form state
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'member' | 'admin' | 'assistant' | 'employee' | 'viewer'>('member');
+  const [role, setRole] = useState<string>(isAccounty ? 'könyvelő' : 'member');
   const [loading, setLoading] = useState(false);
 
   // New user form state
@@ -182,7 +185,7 @@ export function InviteUserDialog({
     setAssignToCompany(true);
     setSelectedCompanyId(companyId);
     setCompanySearch('');
-    setRole('member');
+    setRole(isAccounty ? 'könyvelő' : 'member');
     setLookupStatus('idle');
     setFoundUserName(null);
   };
@@ -332,7 +335,9 @@ export function InviteUserDialog({
             Tag hozzáadása
           </DialogTitle>
           <DialogDescription>
-            Meglévő eaisybill felhasználó hozzáadása vagy új felhasználó létrehozása.
+            {isAccounty
+              ? 'Munkatárs hozzáadása az irodához vagy új felhasználó létrehozása.'
+              : 'Meglévő eaisybill felhasználó hozzáadása vagy új felhasználó létrehozása.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -614,24 +619,46 @@ export function InviteUserDialog({
                 {/* Role */}
                 <div className="space-y-2">
                   <Label htmlFor="invite-role">Szerepkör</Label>
-                  <Select value={role} onValueChange={(v) => setRole(v as typeof role)}>
+                  <Select value={role} onValueChange={(v) => setRole(v)}>
                     <SelectTrigger id="invite-role">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="member">Pénzügyes</SelectItem>
-                      <SelectItem value="assistant">Pénzügyi asszisztens</SelectItem>
-                      <SelectItem value="viewer">Betekintő</SelectItem>
-                      <SelectItem value="employee">Munkavállaló</SelectItem>
+                      {isAccounty ? (
+                        <>
+                          <SelectItem value="iroda_admin">Iroda Admin</SelectItem>
+                          <SelectItem value="senior_könyvelő">Senior Könyvelő</SelectItem>
+                          <SelectItem value="könyvelő">Könyvelő</SelectItem>
+                          <SelectItem value="asszisztens">Asszisztens</SelectItem>
+                        </>
+                      ) : (
+                        <>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="member">Pénzügyes</SelectItem>
+                          <SelectItem value="assistant">Pénzügyi asszisztens</SelectItem>
+                          <SelectItem value="viewer">Betekintő</SelectItem>
+                          <SelectItem value="employee">Munkavállaló</SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    {role === 'admin' && 'Teljes hozzáférés a céghez, felhasználókat is kezelhet.'}
-                    {role === 'member' && 'Pénzügyi adatok olvasás/írás, könyvelési hozzáférés.'}
-                    {role === 'assistant' && 'Számlák, tranzakciók, kintlévőségek kezelése. Nem lát béreket, könyvelést.'}
-                    {role === 'viewer' && 'Csak olvasási hozzáférés a pénzügyi adatokhoz.'}
-                    {role === 'employee' && 'Csak a saját munkaidő-nyilvántartásához fér hozzá.'}
+                    {isAccounty ? (
+                      <>
+                        {role === 'iroda_admin' && 'Teljes hozzáférés, iroda kezelés, felhasználókat is kezelhet.'}
+                        {role === 'senior_könyvelő' && 'Könyvelési feladatok és felügyelet.'}
+                        {role === 'könyvelő' && 'Könyvelési feladatok ellátása.'}
+                        {role === 'asszisztens' && 'Adminisztrációs feladatok.'}
+                      </>
+                    ) : (
+                      <>
+                        {role === 'admin' && 'Teljes hozzáférés a céghez, felhasználókat is kezelhet.'}
+                        {role === 'member' && 'Pénzügyi adatok olvasás/írás, könyvelési hozzáférés.'}
+                        {role === 'assistant' && 'Számlák, tranzakciók, kintlévőségek kezelése. Nem lát béreket, könyvelést.'}
+                        {role === 'viewer' && 'Csak olvasási hozzáférés a pénzügyi adatokhoz.'}
+                        {role === 'employee' && 'Csak a saját munkaidő-nyilvántartásához fér hozzá.'}
+                      </>
+                    )}
                   </p>
                 </div>
               </div>

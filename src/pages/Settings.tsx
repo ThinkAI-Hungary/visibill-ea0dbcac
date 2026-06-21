@@ -385,7 +385,7 @@ export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, role: userRole } = useUserRole();
   const { companies, selectedCompany, setSelectedCompany, refreshCompanies, loading: companiesLoading } = useCompany();
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -442,6 +442,16 @@ export default function Settings() {
     senior_könyvelő: 'Senior Könyvelő',
     könyvelő: 'Könyvelő',
     asszisztens: 'Asszisztens',
+  };
+
+  /** Human-readable labels for eaisybill roles (company_members) */
+  const EAISYBILL_ROLE_LABELS: Record<string, string> = {
+    owner: 'Tulajdonos',
+    admin: 'Admin',
+    member: 'Pénzügyes',
+    assistant: 'Pénzügyi asszisztens',
+    viewer: 'Betekintő',
+    employee: 'Munkavállaló',
   };
 
   const { data: accountantAssignmentInfo } = useQuery({
@@ -607,7 +617,10 @@ export default function Settings() {
             readOnlyOverrides={accountantAssignmentInfo ? {
               position: ACCOUNTY_ROLE_LABELS[accountantAssignmentInfo.role] || accountantAssignmentInfo.role,
               company: accountantAssignmentInfo.firmName || undefined,
-            } : undefined}
+            } : {
+              position: userRole ? (EAISYBILL_ROLE_LABELS[userRole] || userRole) : undefined,
+              company: selectedCompany?.name || undefined,
+            }}
           />
         </TabsContent>
 
