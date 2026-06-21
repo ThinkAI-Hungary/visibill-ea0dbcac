@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jogosultságok Panel – V3: Compact Checkbox Matrix</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070a0f;
+    --card: #0f1318;
+    --card-raised: #141a21;
+    --border: rgba(255,255,255,0.06);
+    --text: #eaeef3;
+    --text-muted: #5e6b7a;
+    --primary: #38d6aa;
+    --primary-bg: rgba(56,214,170,0.08);
+    --accent: #818cf8;
+    --accent-bg: rgba(129,140,248,0.08);
+    --warning: #fbbf24;
+    --warning-bg: rgba(251,191,36,0.08);
+    --danger: #f87171;
+    --success: #4ade80;
+    --radius: 14px;
+    --glass: rgba(255,255,255,0.02);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .page { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 3px; padding: 3px; background: var(--glass); border-radius: 14px; width: fit-content; border: 1px solid var(--border); margin-bottom: 24px; }
+  .tab-btn { padding: 10px 22px; border-radius: 11px; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 7px; border: 1px solid transparent; color: var(--text-muted); transition: all 0.2s; }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { background: var(--card-raised); color: var(--text); border-color: var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+  .tab-btn svg { width: 15px; height: 15px; }
+
+  /* ── Grid layout ── */
+  .grid { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+
+  /* ── Sidebar ── */
+  .side { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); display: flex; flex-direction: column; max-height: calc(100vh - 140px); overflow: hidden; }
+  .side-top { padding: 14px 14px 10px; border-bottom: 1px solid var(--border); }
+  .side-top h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .side-top h3 svg { width: 13px; height: 13px; color: var(--primary); }
+  .srch { position: relative; }
+  .srch input { width: 100%; padding: 7px 8px 7px 30px; background: var(--glass); border: 1px solid var(--border); border-radius: 8px; font-size: 11px; color: var(--text); outline: none; }
+  .srch input:focus { border-color: var(--primary); }
+  .srch svg { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 13px; height: 13px; color: var(--text-muted); }
+  .side-list { flex: 1; overflow-y: auto; }
+  .uitem { width: 100%; padding: 10px 14px; display: flex; align-items: center; gap: 10px; cursor: pointer; border-bottom: 1px solid var(--border); transition: all 0.12s; }
+  .uitem:hover { background: rgba(255,255,255,0.02); }
+  .uitem.sel { background: var(--primary-bg); border-left: 2px solid var(--primary); }
+  .uav { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--primary)); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .uitem .n { font-size: 12px; font-weight: 500; }
+  .uitem .e { font-size: 10px; color: var(--text-muted); }
+  .uitem .tags { display: flex; gap: 3px; margin-top: 2px; }
+  .utag { font-size: 8px; padding: 1px 5px; border-radius: 3px; font-weight: 600; letter-spacing: 0.3px; }
+  .utag.eb { background: var(--primary-bg); color: var(--primary); }
+  .utag.ab { background: var(--accent-bg); color: var(--accent); }
+
+  /* ── Right ── */
+  .main { display: flex; flex-direction: column; gap: 16px; }
+
+  /* Header card */
+  .hdr { display: flex; align-items: center; justify-content: space-between; background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 14px 18px; }
+  .hdr-left { display: flex; align-items: center; gap: 14px; }
+  .hdr .big-av { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--primary)); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; color: #fff; }
+  .hdr .nm { font-weight: 700; font-size: 14px; }
+  .hdr .em { font-size: 11px; color: var(--text-muted); }
+  .hdr .rl { display: inline-flex; margin-top: 3px; padding: 2px 8px; border-radius: 5px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(251,191,36,0.12); }
+  .hdr-right { display: flex; align-items: center; gap: 10px; }
+  .saved-lbl { font-size: 11px; color: var(--success); font-weight: 500; animation: fadeIn 0.3s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  .btn-s { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: 9px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; background: linear-gradient(135deg, var(--primary), #2dd4a0); color: #070a0f; transition: all 0.2s; box-shadow: 0 2px 8px rgba(56,214,170,0.15); }
+  .btn-s:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 24px rgba(56,214,170,0.25); }
+  .btn-s svg { width: 13px; height: 13px; }
+  .btn-s .cc { background: rgba(0,0,0,0.12); padding: 1px 6px; border-radius: 99px; font-size: 9px; }
+
+  /* ── Platform block ── */
+  .pblock { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+  .pblock-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid var(--border); }
+  .pblock-head .lbl { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+  .pblock-head .icon-circle { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+  .pblock-head .icon-circle.eb { background: var(--primary-bg); color: var(--primary); }
+  .pblock-head .icon-circle.ab { background: var(--accent-bg); color: var(--accent); }
+  .pblock-head .icon-circle svg { width: 13px; height: 13px; }
+  .pblock-head .cname { font-size: 11px; color: var(--text-muted); font-weight: 400; padding: 3px 10px; border-radius: 6px; background: var(--glass); border: 1px solid var(--border); }
+
+  /* Compact matrix */
+  .matrix { display: grid; grid-template-columns: 1fr repeat(2, 70px); }
+  .matrix .mh { padding: 8px 16px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-muted); background: rgba(255,255,255,0.015); border-bottom: 1px solid var(--border); }
+  .matrix .mh:nth-child(2), .matrix .mh:nth-child(3) { text-align: center; }
+  .matrix .grp { grid-column: 1 / -1; padding: 5px 16px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--primary); background: var(--primary-bg); border-bottom: 1px solid rgba(56,214,170,0.06); display: flex; align-items: center; gap: 6px; }
+  .matrix .grp.ab-grp { color: var(--accent); background: var(--accent-bg); border-bottom-color: rgba(129,140,248,0.06); }
+  .matrix .grp svg { width: 10px; height: 10px; }
+  .matrix .mr { display: contents; }
+  .matrix .mr > * { border-bottom: 1px solid rgba(255,255,255,0.025); transition: background 0.1s; }
+  .matrix .mr:hover > * { background: rgba(255,255,255,0.02); }
+  .matrix .mc { padding: 8px 16px; font-size: 11px; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+  .matrix .mc-toggle { display: flex; align-items: center; justify-content: center; padding: 8px 0; }
+
+  /* Checkbox */
+  .ck { width: 18px; height: 18px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .ck.on { background: var(--primary); box-shadow: 0 0 8px rgba(56,214,170,0.15); }
+  .ck.on svg { stroke: #070a0f; }
+  .ck.off { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+  .ck.off svg { stroke: transparent; }
+  .ck.write.on { background: var(--accent); box-shadow: 0 0 8px rgba(129,140,248,0.15); }
+  .ck.write.on svg { stroke: #fff; }
+  .ck.changed { box-shadow: 0 0 0 2px rgba(251,191,36,0.5) !important; }
+  .ck svg { width: 11px; height: 11px; stroke-width: 3; }
+  .ck:hover { transform: scale(1.1); }
+
+  .ovr-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--warning); }
+
+  /* No selection */
+  .nosel { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 80px 20px; text-align: center; }
+  .nosel svg { width: 52px; height: 52px; color: var(--text-muted); opacity: 0.2; margin-bottom: 12px; }
+  .nosel p { font-size: 13px; color: var(--text-muted); }
+
+  .legend { display: flex; gap: 16px; padding: 6px 0 0; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text-muted); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .legend-dot.r { background: var(--primary); }
+  .legend-dot.w { background: var(--accent); }
+  .legend-dot.c { background: var(--warning); }
+  .legend-dot.o { background: var(--warning); opacity: 0.6; }
+</style>
+</head>
+<body>
+<div class="page">
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Hibák
+    </div>
+    <div class="tab-btn active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      Jogosultságok
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- Sidebar -->
+    <div class="side">
+      <div class="side-top">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Felhasználók
+        </h3>
+        <div class="srch">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input placeholder="Keresés...">
+        </div>
+      </div>
+      <div class="side-list">
+        <div class="uitem sel">
+          <div class="uav">BL</div>
+          <div>
+            <div class="n">Balázs Lederer</div>
+            <div class="e">lederer@thinkai.hu</div>
+            <div class="tags"><span class="utag eb">EB</span><span class="utag ab">AB</span></div>
+          </div>
+        </div>
+        <div class="uitem">
+          <div class="uav">TA</div>
+          <div>
+            <div class="n">Teszt Asszisztens</div>
+            <div class="e">test.assistant@eaisybill.hu</div>
+            <div class="tags"><span class="utag eb">EB</span></div>
+          </div>
+        </div>
+        <div class="uitem">
+          <div class="uav">KP</div>
+          <div>
+            <div class="n">Kovács Péter</div>
+            <div class="e">kovacs.peter@demo.hu</div>
+            <div class="tags"><span class="utag eb">EB</span><span class="utag ab">AB</span></div>
+          </div>
+        </div>
+        <div class="uitem">
+          <div class="uav">NA</div>
+          <div>
+            <div class="n">Nagy Andrea</div>
+            <div class="e">nagy.andrea@iroda.hu</div>
+            <div class="tags"><span class="utag ab">AB</span></div>
+          </div>
+        </div>
+        <div class="uitem">
+          <div class="uav">SG</div>
+          <div>
+            <div class="n">Szabó Gábor</div>
+            <div class="e">szabo@cegem.hu</div>
+            <div class="tags"><span class="utag eb">EB</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+      <!-- Header -->
+      <div class="hdr">
+        <div class="hdr-left">
+          <div class="big-av">BL</div>
+          <div>
+            <div class="nm">Balázs Lederer</div>
+            <div class="em">lederer@thinkai.hu</div>
+            <span class="rl">owner</span>
+          </div>
+        </div>
+        <div class="hdr-right">
+          <span class="saved-lbl">✅ Mentve!</span>
+          <button class="btn-s">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Mentés
+            <span class="cc">3</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot r"></span> Olvasás engedélyezve</div>
+        <div class="legend-item"><span class="legend-dot w"></span> Írás engedélyezve</div>
+        <div class="legend-item"><span class="legend-dot c"></span> Módosítva (mentetlen)</div>
+        <div class="legend-item"><span class="legend-dot o"></span> Egyedi felülírás</div>
+      </div>
+
+      <!-- eaisyBill -->
+      <div class="pblock">
+        <div class="pblock-head">
+          <div class="lbl">
+            <div class="icon-circle eb">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>
+            </div>
+            eaisyBill
+          </div>
+          <span class="cname">Think AI Kft · owner</span>
+        </div>
+        <div class="matrix">
+          <div class="mh">Modul</div><div class="mh">Olvasás</div><div class="mh">Írás</div>
+
+          <div class="grp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Áttekintés</div>
+          <div class="mr"><div class="mc">Irányítópult</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">Kategóriák</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">Projektek</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write off changed"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">Partnertörzs</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+
+          <div class="grp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Pénzügyek</div>
+          <div class="mr"><div class="mc"><span class="ovr-dot"></span> Számlák</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">Kintlévőség</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">Tranzakciók</div><div class="mc-toggle"><div class="ck off changed"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write off"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">Házipénztár</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write off"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+
+          <div class="grp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg> Könyvelés</div>
+          <div class="mr"><div class="mc">Főkönyv</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">Eredménykimutatás</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write off"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">Mérleg</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write off"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">ÁFA Bevallás</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write off changed"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+
+          <div class="grp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> HR & Eszközök</div>
+          <div class="mr"><div class="mc"><span class="ovr-dot"></span> Bérek</div><div class="mc-toggle"><div class="ck off"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write off"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">Munkaidő</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">TENY</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write off"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+
+          <div class="grp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Rendszer</div>
+          <div class="mr"><div class="mc">Integrációk</div><div class="mc-toggle"><div class="ck off"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write off"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">Feltöltés</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">Beállítások</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write off"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+        </div>
+      </div>
+
+      <!-- eaisyBooks -->
+      <div class="pblock">
+        <div class="pblock-head">
+          <div class="lbl">
+            <div class="icon-circle ab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+            </div>
+            eaisyBooks
+          </div>
+          <span class="cname">Think AI Iroda · iroda_admin · Think AI Kft</span>
+        </div>
+        <div class="matrix">
+          <div class="mh">Modul</div><div class="mh">Olvasás</div><div class="mh">Írás</div>
+
+          <div class="grp ab-grp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Portfólió & Adó</div>
+          <div class="mr"><div class="mc">Portfólió</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">Hiányzó számlák</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">Adó naptár</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write off"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+          <div class="mr"><div class="mc">TAO / KIVA</div><div class="mc-toggle"><div class="ck on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="mc-toggle"><div class="ck write on"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

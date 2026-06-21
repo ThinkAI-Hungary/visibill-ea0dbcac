@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V5 – Multi-user spreadsheet mátrix</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07090d; --surface: #0f1217; --surface2: #161a21; --border: rgba(255,255,255,0.06);
+    --text: #e8ecf2; --muted: #5a6577; --primary: #38d6aa; --primary-bg: rgba(56,214,170,0.08);
+    --accent: #818cf8; --accent-bg: rgba(129,140,248,0.08);
+    --warn: #fbbf24; --warn-bg: rgba(251,191,36,0.06); --success: #4ade80;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 28px; }
+
+  .page { max-width: 1600px; margin: 0 auto; }
+
+  /* ── Header ── */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .header h1 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .header h1 svg { width: 20px; height: 20px; color: var(--primary); }
+  .header p { font-size: 12px; color: var(--muted); }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .btn-save { display: inline-flex; align-items: center; gap: 7px; padding: 10px 22px; border-radius: 10px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; background: var(--primary); color: #070a0e; }
+  .btn-save:hover { filter: brightness(1.1); box-shadow: 0 4px 20px rgba(56,214,170,0.2); }
+  .btn-save svg { width: 14px; height: 14px; }
+
+  /* ── Filter bar ── */
+  .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .filter-input { padding: 8px 12px 8px 32px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-size: 12px; outline: none; position: relative; }
+  .filter-input:focus { border-color: var(--primary); }
+  .filter-chip { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: 8px; font-size: 11px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--muted); transition: all 0.15s; }
+  .filter-chip:hover { color: var(--text); border-color: rgba(255,255,255,0.1); }
+  .filter-chip.active { background: var(--primary-bg); border-color: rgba(56,214,170,0.2); color: var(--primary); }
+  .filter-chip svg { width: 12px; height: 12px; }
+
+  /* ── Spreadsheet ── */
+  .spreadsheet-wrap { background: var(--surface); border-radius: 14px; border: 1px solid var(--border); overflow: hidden; }
+  .spreadsheet { width: 100%; border-collapse: collapse; }
+
+  /* Sticky headers */
+  .spreadsheet thead th { position: sticky; top: 0; z-index: 10; background: var(--surface2); padding: 0; border-bottom: 2px solid var(--border); }
+  .spreadsheet thead th .th-inner { padding: 10px 8px; }
+  .spreadsheet thead th:first-child { position: sticky; left: 0; z-index: 20; min-width: 180px; }
+  .spreadsheet thead th:first-child .th-inner { padding: 10px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); }
+
+  /* User column headers */
+  .user-col-header { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 90px; }
+  .user-col-header .uav { width: 28px; height: 28px; border-radius: 7px; background: linear-gradient(135deg, var(--accent), var(--primary)); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #fff; }
+  .user-col-header .un { font-size: 10px; font-weight: 600; color: var(--text); white-space: nowrap; }
+  .user-col-header .ur { font-size: 8px; font-weight: 600; text-transform: uppercase; color: var(--warn); }
+
+  /* Module rows */
+  .spreadsheet tbody td { padding: 0; border-bottom: 1px solid rgba(255,255,255,0.025); }
+  .spreadsheet tbody td:first-child { position: sticky; left: 0; z-index: 5; background: var(--surface); border-right: 1px solid var(--border); }
+  .spreadsheet tbody tr:hover td { background: rgba(255,255,255,0.015); }
+  .spreadsheet tbody tr:hover td:first-child { background: var(--surface2); }
+
+  .mod-label { padding: 10px 16px; font-size: 12px; font-weight: 500; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+  .mod-label .ovr-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--warn); flex-shrink: 0; }
+
+  /* Group rows */
+  .group-row td { background: rgba(56,214,170,0.03) !important; }
+  .group-row td:first-child { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--primary); padding: 6px 16px; }
+
+  /* Cell with toggles */
+  .cell-toggles { display: flex; gap: 3px; padding: 6px 4px; justify-content: center; }
+  .mini-pill { width: 20px; height: 20px; border-radius: 5px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; font-size: 8px; font-weight: 800; }
+  .mini-pill.r.on { background: var(--primary-bg); color: var(--primary); border: 1px solid rgba(56,214,170,0.15); }
+  .mini-pill.w.on { background: var(--accent-bg); color: var(--accent); border: 1px solid rgba(129,140,248,0.15); }
+  .mini-pill.r.off, .mini-pill.w.off { background: rgba(255,255,255,0.02); color: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.04); }
+  .mini-pill:hover { filter: brightness(1.4); transform: scale(1.1); }
+  .mini-pill.changed { box-shadow: 0 0 0 2px rgba(251,191,36,0.5); }
+
+  /* Legend */
+  .legend { display: flex; gap: 16px; margin-top: 14px; padding: 0 4px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+  .legend-dot.rd { background: var(--primary-bg); border: 1px solid rgba(56,214,170,0.2); }
+  .legend-dot.wr { background: var(--accent-bg); border: 1px solid rgba(129,140,248,0.2); }
+  .legend-dot.off { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); }
+  .legend-dot.chg { background: transparent; border: 2px solid var(--warn); }
+
+  /* Scroll container */
+  .scroll { max-height: calc(100vh - 200px); overflow: auto; }
+</style>
+</head>
+<body>
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <h1>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        Jogosultság mátrix
+      </h1>
+      <p>Összes felhasználó · eaisyBill · Think AI Kft</p>
+    </div>
+    <div class="header-right">
+      <button class="btn-save">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Mentés (2)
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <input class="filter-input" placeholder="🔍 Modul keresés...">
+    <div class="filter-chip active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      eaisyBill
+    </div>
+    <div class="filter-chip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+      eaisyBooks
+    </div>
+    <div class="filter-chip">Csak felülírt modulok</div>
+    <div class="filter-chip">Csak tiltott modulok</div>
+  </div>
+
+  <!-- Spreadsheet -->
+  <div class="spreadsheet-wrap">
+    <div class="scroll">
+      <table class="spreadsheet">
+        <thead>
+          <tr>
+            <th><div class="th-inner">Modul</div></th>
+            <th>
+              <div class="th-inner">
+                <div class="user-col-header">
+                  <div class="uav">BL</div>
+                  <span class="un">Balázs L.</span>
+                  <span class="ur">owner</span>
+                </div>
+              </div>
+            </th>
+            <th>
+              <div class="th-inner">
+                <div class="user-col-header">
+                  <div class="uav">TA</div>
+                  <span class="un">Teszt A.</span>
+                  <span class="ur">assistant</span>
+                </div>
+              </div>
+            </th>
+            <th>
+              <div class="th-inner">
+                <div class="user-col-header">
+                  <div class="uav">KP</div>
+                  <span class="un">Kovács P.</span>
+                  <span class="ur">member</span>
+                </div>
+              </div>
+            </th>
+            <th>
+              <div class="th-inner">
+                <div class="user-col-header">
+                  <div class="uav">NA</div>
+                  <span class="un">Nagy A.</span>
+                  <span class="ur">viewer</span>
+                </div>
+              </div>
+            </th>
+            <th>
+              <div class="th-inner">
+                <div class="user-col-header">
+                  <div class="uav">SG</div>
+                  <span class="un">Szabó G.</span>
+                  <span class="ur">employee</span>
+                </div>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="group-row"><td colspan="6">Áttekintés</td></tr>
+          <tr>
+            <td><div class="mod-label">Irányítópult</div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+          </tr>
+          <tr>
+            <td><div class="mod-label">Kategóriák</div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+          </tr>
+          <tr>
+            <td><div class="mod-label">Projektek</div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w off changed">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+          </tr>
+          <tr class="group-row"><td colspan="6">Pénzügyek</td></tr>
+          <tr>
+            <td><div class="mod-label"><span class="ovr-dot"></span>Számlák</div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+          </tr>
+          <tr>
+            <td><div class="mod-label">Tranzakciók</div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off changed">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+          </tr>
+          <tr>
+            <td><div class="mod-label">Házipénztár</div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+          </tr>
+          <tr class="group-row"><td colspan="6">Könyvelés</td></tr>
+          <tr>
+            <td><div class="mod-label">Főkönyv</div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+          </tr>
+          <tr>
+            <td><div class="mod-label">Mérleg</div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+          </tr>
+          <tr>
+            <td><div class="mod-label">ÁFA Bevallás</div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+          </tr>
+          <tr class="group-row"><td colspan="6">HR & Eszközök</td></tr>
+          <tr>
+            <td><div class="mod-label"><span class="ovr-dot"></span>Bérek</div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+          </tr>
+          <tr>
+            <td><div class="mod-label">Munkaidő</div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r off">R</div><div class="mini-pill w off">W</div></div></td>
+            <td><div class="cell-toggles"><div class="mini-pill r on">R</div><div class="mini-pill w on">W</div></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot rd"></span> R = Olvasás</div>
+    <div class="legend-item"><span class="legend-dot wr"></span> W = Írás</div>
+    <div class="legend-item"><span class="legend-dot off"></span> Letiltva</div>
+    <div class="legend-item"><span class="legend-dot chg"></span> Módosítva</div>
+  </div>
+</div>
+</body>
+</html>

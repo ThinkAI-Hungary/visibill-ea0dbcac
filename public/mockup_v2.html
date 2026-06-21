@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jogosultságok Panel – V2: Switch Table + Accordions</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #09090b;
+    --card: #18181b;
+    --card-hover: #1e1e22;
+    --border: rgba(255,255,255,0.07);
+    --text: #f4f4f5;
+    --text-muted: #71717a;
+    --primary: #38d6aa;
+    --primary-dim: rgba(56,214,170,0.1);
+    --accent: #6366f1;
+    --accent-dim: rgba(99,102,241,0.1);
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 32px 24px; }
+
+  /* ── Tab bar ── */
+  .tab-bar { display: flex; gap: 4px; padding: 4px; background: rgba(255,255,255,0.03); border-radius: 14px; width: fit-content; border: 1px solid var(--border); margin-bottom: 28px; }
+  .tab { display: flex; align-items: center; gap: 8px; padding: 10px 22px; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; color: var(--text-muted); }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--card); color: var(--text); border-color: var(--border); box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+
+  /* ── Split layout ── */
+  .split { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+
+  /* ── Sidebar ── */
+  .sidebar { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; max-height: calc(100vh - 160px); }
+  .sidebar-head { padding: 16px 16px 12px; }
+  .sidebar-head h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 10px; }
+  .search-wrap { position: relative; }
+  .search-wrap input { width: 100%; padding: 8px 8px 8px 32px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 12px; outline: none; }
+  .search-wrap input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(56,214,170,0.08); }
+  .search-wrap .icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 14px; height: 14px; }
+  .users { flex: 1; overflow-y: auto; }
+  .user-btn { width: 100%; padding: 14px 16px; display: flex; align-items: center; gap: 12px; border: none; background: none; cursor: pointer; transition: background 0.15s; text-align: left; border-bottom: 1px solid var(--border); color: var(--text); }
+  .user-btn:hover { background: var(--card-hover); }
+  .user-btn.sel { background: var(--primary-dim); border-left: 3px solid var(--primary); }
+  .user-avatar { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #6366f1 0%, #38d6aa 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #fff; flex-shrink: 0; }
+  .user-btn .meta .name { font-size: 13px; font-weight: 500; }
+  .user-btn .meta .email { font-size: 11px; color: var(--text-muted); }
+  .user-btn .meta .badges { display: flex; gap: 4px; margin-top: 3px; }
+  .mini-badge { font-size: 9px; padding: 1px 6px; border-radius: 4px; font-weight: 600; }
+  .mini-badge.eb { background: var(--primary-dim); color: var(--primary); }
+  .mini-badge.ab { background: var(--accent-dim); color: var(--accent); }
+
+  /* ── Right content ── */
+  .right { display: flex; flex-direction: column; gap: 16px; }
+
+  /* Top bar */
+  .top-bar { display: flex; align-items: center; justify-content: space-between; background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 12px 20px; }
+  .top-bar-left { display: flex; align-items: center; gap: 16px; }
+  .top-bar .big-avatar { width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(135deg, #6366f1 0%, #38d6aa 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: #fff; }
+  .top-bar .info .n { font-weight: 600; font-size: 15px; }
+  .top-bar .info .e { font-size: 11px; color: var(--text-muted); }
+  .top-bar .info .role { display: inline-block; margin-top: 4px; padding: 2px 10px; border-radius: 6px; font-size: 10px; font-weight: 600; background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.15); }
+  .top-bar-right { display: flex; align-items: center; gap: 10px; }
+  .status-msg { font-size: 11px; color: var(--success); font-weight: 500; }
+  .btn-save { display: inline-flex; align-items: center; gap: 7px; padding: 9px 20px; border-radius: 10px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; background: var(--primary); color: #09090b; }
+  .btn-save:hover { filter: brightness(1.1); box-shadow: 0 4px 20px rgba(56,214,170,0.25); transform: translateY(-1px); }
+  .btn-save:disabled { opacity: 0.3; pointer-events: none; }
+  .btn-save .cnt { background: rgba(0,0,0,0.15); padding: 1px 7px; border-radius: 99px; font-size: 10px; }
+
+  /* Accordion platform */
+  .accordion { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+  .acc-trigger { width: 100%; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border: none; background: none; color: var(--text); transition: background 0.15s; }
+  .acc-trigger:hover { background: var(--card-hover); }
+  .acc-trigger .left { display: flex; align-items: center; gap: 10px; }
+  .acc-trigger .left .platform-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .acc-trigger .left .platform-icon.eb { background: var(--primary-dim); color: var(--primary); }
+  .acc-trigger .left .platform-icon.ab { background: var(--accent-dim); color: var(--accent); }
+  .acc-trigger .left .platform-icon svg { width: 14px; height: 14px; }
+  .acc-trigger .left .label { font-size: 13px; font-weight: 600; }
+  .acc-trigger .left .sub { font-size: 11px; color: var(--text-muted); margin-left: 8px; }
+  .acc-trigger .chevron { color: var(--text-muted); transition: transform 0.3s; width: 16px; height: 16px; }
+  .accordion.open .chevron { transform: rotate(180deg); }
+
+  /* Table */
+  .perm-table { width: 100%; border-collapse: collapse; }
+  .perm-table thead th { padding: 8px 16px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); text-align: left; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); }
+  .perm-table thead th:nth-child(2), .perm-table thead th:nth-child(3) { text-align: center; width: 100px; }
+  .perm-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.12s; }
+  .perm-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+  .perm-table tbody td { padding: 10px 16px; font-size: 12px; }
+  .perm-table tbody td:nth-child(2), .perm-table tbody td:nth-child(3) { text-align: center; }
+  .perm-table .group-row td { padding: 6px 16px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); background: rgba(255,255,255,0.02); }
+  .mod-name { display: flex; align-items: center; gap: 6px; font-weight: 500; }
+  .override-badge { font-size: 8px; padding: 1px 5px; border-radius: 4px; background: rgba(245,158,11,0.1); color: #f59e0b; font-weight: 600; border: 1px solid rgba(245,158,11,0.15); }
+
+  /* Switch */
+  .switch { position: relative; width: 36px; height: 20px; border-radius: 99px; cursor: pointer; transition: all 0.25s; display: inline-block; }
+  .switch.on { background: var(--primary); box-shadow: 0 0 12px rgba(56,214,170,0.2); }
+  .switch.off { background: rgba(255,255,255,0.08); }
+  .switch.changed { box-shadow: 0 0 0 2px rgba(245,158,11,0.5); }
+  .switch::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 2px; transition: left 0.25s; }
+  .switch.on::after { left: 18px; }
+  .switch.off::after { left: 2px; background: #52525b; }
+  .switch.write.on { background: var(--accent); box-shadow: 0 0 12px rgba(99,102,241,0.2); }
+
+  /* Empty state */
+  .empty { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 32px; gap: 12px; }
+  .empty svg { width: 48px; height: 48px; color: var(--text-muted); opacity: 0.25; }
+  .empty p { color: var(--text-muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <div class="tab">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Hibák
+    </div>
+    <div class="tab active">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      Jogosultságok
+    </div>
+  </div>
+
+  <div class="split">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-head">
+        <h3>Felhasználók</h3>
+        <div class="search-wrap">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" placeholder="Keresés...">
+        </div>
+      </div>
+      <div class="users">
+        <button class="user-btn sel">
+          <div class="user-avatar">BL</div>
+          <div class="meta">
+            <div class="name">Balázs Lederer</div>
+            <div class="email">lederer@thinkai.hu</div>
+            <div class="badges">
+              <span class="mini-badge eb">eaisyBill</span>
+              <span class="mini-badge ab">eaisyBooks</span>
+            </div>
+          </div>
+        </button>
+        <button class="user-btn">
+          <div class="user-avatar">TA</div>
+          <div class="meta">
+            <div class="name">Teszt Asszisztens</div>
+            <div class="email">test.assistant@eaisybill.hu</div>
+            <div class="badges">
+              <span class="mini-badge eb">eaisyBill</span>
+            </div>
+          </div>
+        </button>
+        <button class="user-btn">
+          <div class="user-avatar">KP</div>
+          <div class="meta">
+            <div class="name">Kovács Péter</div>
+            <div class="email">kovacs.peter@demo.hu</div>
+            <div class="badges">
+              <span class="mini-badge eb">eaisyBill</span>
+              <span class="mini-badge ab">eaisyBooks</span>
+            </div>
+          </div>
+        </button>
+        <button class="user-btn">
+          <div class="user-avatar">NA</div>
+          <div class="meta">
+            <div class="name">Nagy Andrea</div>
+            <div class="email">nagy.andrea@iroda.hu</div>
+            <div class="badges">
+              <span class="mini-badge ab">eaisyBooks</span>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right -->
+    <div class="right">
+      <!-- Top bar -->
+      <div class="top-bar">
+        <div class="top-bar-left">
+          <div class="big-avatar">BL</div>
+          <div class="info">
+            <div class="n">Balázs Lederer</div>
+            <div class="e">lederer@thinkai.hu</div>
+            <span class="role">OWNER</span>
+          </div>
+        </div>
+        <div class="top-bar-right">
+          <span class="status-msg">✅ Mentve!</span>
+          <button class="btn-save">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Mentés
+            <span class="cnt">2</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- eaisyBill accordion -->
+      <div class="accordion open">
+        <button class="acc-trigger">
+          <div class="left">
+            <div class="platform-icon eb">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>
+            </div>
+            <span class="label">eaisyBill</span>
+            <span class="sub">Think AI Kft · owner</span>
+          </div>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <table class="perm-table">
+          <thead>
+            <tr><th>Modul</th><th>Olvasás</th><th>Írás</th></tr>
+          </thead>
+          <tbody>
+            <tr class="group-row"><td colspan="3">Áttekintés</td></tr>
+            <tr><td><span class="mod-name">Irányítópult</span></td><td><span class="switch on"></span></td><td><span class="switch write on"></span></td></tr>
+            <tr><td><span class="mod-name">Kategóriák</span></td><td><span class="switch on"></span></td><td><span class="switch write on"></span></td></tr>
+            <tr><td><span class="mod-name">Projektek</span></td><td><span class="switch on"></span></td><td><span class="switch write off changed"></span></td></tr>
+            <tr><td><span class="mod-name">Partnertörzs</span></td><td><span class="switch on"></span></td><td><span class="switch write on"></span></td></tr>
+            <tr class="group-row"><td colspan="3">Pénzügyek</td></tr>
+            <tr><td><span class="mod-name"><span class="override-badge">egyedi</span> Számlák</span></td><td><span class="switch on"></span></td><td><span class="switch write on"></span></td></tr>
+            <tr><td><span class="mod-name">Kintlévőség</span></td><td><span class="switch on"></span></td><td><span class="switch write on"></span></td></tr>
+            <tr><td><span class="mod-name">Tranzakciók</span></td><td><span class="switch off changed"></span></td><td><span class="switch write off"></span></td></tr>
+            <tr><td><span class="mod-name">Házipénztár</span></td><td><span class="switch on"></span></td><td><span class="switch write off"></span></td></tr>
+            <tr class="group-row"><td colspan="3">Könyvelés</td></tr>
+            <tr><td><span class="mod-name">Főkönyv</span></td><td><span class="switch on"></span></td><td><span class="switch write on"></span></td></tr>
+            <tr><td><span class="mod-name">Eredménykimutatás</span></td><td><span class="switch on"></span></td><td><span class="switch write off"></span></td></tr>
+            <tr><td><span class="mod-name">Mérleg</span></td><td><span class="switch on"></span></td><td><span class="switch write off"></span></td></tr>
+            <tr><td><span class="mod-name">ÁFA Bevallás</span></td><td><span class="switch on"></span></td><td><span class="switch write off"></span></td></tr>
+            <tr class="group-row"><td colspan="3">HR & Eszközök</td></tr>
+            <tr><td><span class="mod-name"><span class="override-badge">egyedi</span> Bérek/járulékok</span></td><td><span class="switch off"></span></td><td><span class="switch write off"></span></td></tr>
+            <tr><td><span class="mod-name">Munkaidő</span></td><td><span class="switch on"></span></td><td><span class="switch write on"></span></td></tr>
+            <tr><td><span class="mod-name">TENY</span></td><td><span class="switch on"></span></td><td><span class="switch write off"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- eaisyBooks accordion (collapsed) -->
+      <div class="accordion">
+        <button class="acc-trigger">
+          <div class="left">
+            <div class="platform-icon ab">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>
+            </div>
+            <span class="label">eaisyBooks</span>
+            <span class="sub">Think AI Könyvelőiroda · iroda_admin</span>
+          </div>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

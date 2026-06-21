@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jogosultságok Panel – V1: Pill Toggle Grid</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e14;
+    --card: #111820;
+    --card-hover: #161e28;
+    --border: rgba(255,255,255,0.06);
+    --border-active: rgba(56,214,170,0.3);
+    --text: #e8edf3;
+    --text-muted: #6b7a8d;
+    --primary: #38d6aa;
+    --primary-dim: rgba(56,214,170,0.12);
+    --primary-hover: rgba(56,214,170,0.2);
+    --warning: #f59e0b;
+    --warning-dim: rgba(245,158,11,0.12);
+    --danger: #ef4444;
+    --danger-dim: rgba(239,68,68,0.12);
+    --muted-bg: rgba(255,255,255,0.04);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .layout { display: grid; grid-template-columns: 300px 1fr; gap: 24px; max-width: 1400px; margin: 0 auto; padding: 32px 24px; }
+
+  /* ── Tab bar ── */
+  .tab-bar { grid-column: 1 / -1; display: flex; gap: 4px; padding: 4px; background: var(--muted-bg); border-radius: 14px; width: fit-content; border: 1px solid var(--border); }
+  .tab { display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; color: var(--text-muted); }
+  .tab:hover { color: var(--text); background: var(--muted-bg); }
+  .tab.active { background: var(--card); color: var(--text); border-color: var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .tab svg { width: 16px; height: 16px; }
+
+  /* ── User sidebar ── */
+  .sidebar { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; max-height: calc(100vh - 140px); display: flex; flex-direction: column; }
+  .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); }
+  .sidebar-title { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .sidebar-title svg { color: var(--primary); }
+  .search-box { position: relative; }
+  .search-box input { width: 100%; padding: 8px 8px 8px 34px; background: var(--muted-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 12px; outline: none; transition: border-color 0.2s; }
+  .search-box input:focus { border-color: var(--primary); }
+  .search-box svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 14px; height: 14px; }
+  .user-list { flex: 1; overflow-y: auto; }
+  .user-item { display: block; width: 100%; padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: all 0.15s; text-align: left; }
+  .user-item:hover { background: var(--card-hover); }
+  .user-item.active { background: var(--primary-dim); border-left: 3px solid var(--primary); }
+  .user-item .name { font-size: 13px; font-weight: 500; }
+  .user-item .email { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .user-count { padding: 10px 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); text-align: center; }
+
+  /* ── Main content ── */
+  .content { display: flex; flex-direction: column; gap: 20px; }
+
+  /* User info bar */
+  .user-info { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .user-info-left { display: flex; align-items: center; gap: 14px; }
+  .avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #2563eb); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; color: #fff; flex-shrink: 0; }
+  .user-info .name { font-weight: 600; font-size: 14px; }
+  .user-info .email { font-size: 11px; color: var(--text-muted); }
+  .role-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+  .role-badge.owner { background: var(--warning-dim); color: var(--warning); border: 1px solid rgba(245,158,11,0.2); }
+  .role-badge.member { background: var(--primary-dim); color: var(--primary); border: 1px solid rgba(56,214,170,0.2); }
+  .save-btn { display: flex; align-items: center; gap: 8px; padding: 8px 18px; background: var(--primary); color: #000; border: none; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .save-btn:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(56,214,170,0.3); }
+  .save-btn:disabled { opacity: 0.4; cursor: default; transform: none; box-shadow: none; }
+  .save-btn svg { width: 14px; height: 14px; }
+  .changes-count { background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 99px; font-size: 10px; }
+
+  /* Platform section */
+  .platform-section { }
+  .platform-header { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--primary); margin-bottom: 12px; padding-left: 4px; }
+  .platform-header svg { width: 16px; height: 16px; }
+
+  /* Company card */
+  .company-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+  .company-card-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .company-card-header .title { font-size: 13px; font-weight: 600; }
+  .company-card-header .subtitle { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .company-card-header .role-pill { padding: 3px 10px; border-radius: 99px; font-size: 10px; font-weight: 500; background: var(--muted-bg); color: var(--text-muted); border: 1px solid var(--border); }
+
+  /* Module grid */
+  .module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1px; background: var(--border); }
+  .module-cell { background: var(--card); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; transition: background 0.15s; }
+  .module-cell:hover { background: var(--card-hover); }
+  .module-name { font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .override-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warning); flex-shrink: 0; }
+
+  /* Toggle pills */
+  .toggle-group { display: flex; gap: 4px; }
+  .toggle-pill { display: flex; align-items: center; justify-content: center; width: 28px; height: 22px; border-radius: 6px; font-size: 9px; font-weight: 700; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+  .toggle-pill.read.on { background: var(--primary-dim); color: var(--primary); border-color: rgba(56,214,170,0.15); }
+  .toggle-pill.read.off { background: var(--muted-bg); color: var(--text-muted); }
+  .toggle-pill.write.on { background: rgba(59,130,246,0.12); color: #60a5fa; border-color: rgba(59,130,246,0.15); }
+  .toggle-pill.write.off { background: var(--muted-bg); color: var(--text-muted); }
+  .toggle-pill.changed { box-shadow: 0 0 0 2px rgba(245,158,11,0.4); }
+  .toggle-pill:hover { filter: brightness(1.3); }
+
+  /* Empty state */
+  .empty-state { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 64px 32px; text-align: center; }
+  .empty-state svg { width: 48px; height: 48px; color: var(--text-muted); opacity: 0.3; margin-bottom: 16px; }
+  .empty-state p { font-size: 13px; color: var(--text-muted); }
+
+  /* Group header inside grid */
+  .group-header { grid-column: 1 / -1; background: var(--muted-bg); padding: 6px 16px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <div class="tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Hibák
+    </div>
+    <div class="tab active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      Jogosultságok
+    </div>
+  </div>
+
+  <!-- User sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Felhasználók
+      </div>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" placeholder="Keresés név vagy email...">
+      </div>
+    </div>
+    <div class="user-list">
+      <div class="user-item active">
+        <div class="name">Balázs Lederer</div>
+        <div class="email">lederer@thinkai.hu</div>
+      </div>
+      <div class="user-item">
+        <div class="name">Teszt Asszisztens</div>
+        <div class="email">test.assistant@eaisybill.hu</div>
+      </div>
+      <div class="user-item">
+        <div class="name">Kovács Péter</div>
+        <div class="email">kovacs.peter@demo.hu</div>
+      </div>
+      <div class="user-item">
+        <div class="name">Nagy Andrea</div>
+        <div class="email">nagy.andrea@cegem.hu</div>
+      </div>
+      <div class="user-item">
+        <div class="name">Szabó Gábor</div>
+        <div class="email">szabo.gabor@iroda.hu</div>
+      </div>
+    </div>
+    <div class="user-count">5 felhasználó</div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <!-- User info bar -->
+    <div class="user-info">
+      <div class="user-info-left">
+        <div class="avatar">BL</div>
+        <div>
+          <div class="name">Balázs Lederer</div>
+          <div class="email">lederer@thinkai.hu</div>
+          <span class="role-badge owner">owner</span>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:11px; color:var(--primary); font-weight:500;">✅ Mentve!</span>
+        <button class="save-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Mentés
+          <span class="changes-count">3</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- eaisyBill section -->
+    <div class="platform-section">
+      <div class="platform-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>
+        eaisyBill jogosultságok
+      </div>
+
+      <div class="company-card">
+        <div class="company-card-header">
+          <div>
+            <div class="title">Think AI Kft</div>
+            <div class="subtitle">Adószám: 12345678-2-42</div>
+          </div>
+          <span class="role-pill">owner</span>
+        </div>
+        <div class="module-grid">
+          <div class="group-header">Áttekintés</div>
+          <div class="module-cell">
+            <span class="module-name">Irányítópult</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on" title="Olvasás">R</div>
+              <div class="toggle-pill write on" title="Írás">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">Kategóriák</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write on">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">Projektek</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write off changed">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">Partnertörzs</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write on">W</div>
+            </div>
+          </div>
+          <div class="group-header">Pénzügyek</div>
+          <div class="module-cell">
+            <span class="module-name"><span class="override-dot"></span> Számlák</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write on">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">Kintlévőség</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write on">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">Tranzakciók</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read off changed">R</div>
+              <div class="toggle-pill write off">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">Házipénztár</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write off">W</div>
+            </div>
+          </div>
+          <div class="group-header">Könyvelés</div>
+          <div class="module-cell">
+            <span class="module-name">Főkönyv</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write on">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">Eredménykimutatás</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write off">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">Mérleg</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write off">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">ÁFA Bevallás</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write off changed">W</div>
+            </div>
+          </div>
+          <div class="group-header">HR & Eszközök</div>
+          <div class="module-cell">
+            <span class="module-name"><span class="override-dot"></span> Bérek/járulékok</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read off">R</div>
+              <div class="toggle-pill write off">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">Munkaidő</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write on">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">TENY</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write off">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">Integrációk</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read off">R</div>
+              <div class="toggle-pill write off">W</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- eaisyBooks section -->
+    <div class="platform-section">
+      <div class="platform-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>
+        eaisyBooks jogosultságok
+      </div>
+
+      <div class="company-card">
+        <div class="company-card-header">
+          <div>
+            <div class="title">Think AI Könyvelőiroda</div>
+            <div class="subtitle">Szerepkör: iroda_admin · Ügyfél: Think AI Kft</div>
+          </div>
+          <span class="role-pill">iroda_admin</span>
+        </div>
+        <div class="module-grid">
+          <div class="group-header">Portfólió & Adó</div>
+          <div class="module-cell">
+            <span class="module-name">Portfólió</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write on">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">Hiányzó számlák</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write on">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">Adó naptár</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write off">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">TAO / KIVA</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write on">W</div>
+            </div>
+          </div>
+          <div class="group-header">Riportok & Jóváhagyás</div>
+          <div class="module-cell">
+            <span class="module-name">Riportok</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write on">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">Jóváhagyó rendszer</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write on">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">Riasztások</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write off">W</div>
+            </div>
+          </div>
+          <div class="module-cell">
+            <span class="module-name">Bérszámfejtés</span>
+            <div class="toggle-group">
+              <div class="toggle-pill read on">R</div>
+              <div class="toggle-pill write on">W</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V6 – Lépésenkénti (wizard) jogosultságkezelő</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07090d; --surface: #0f1318; --surface2: #171b23; --border: rgba(255,255,255,0.06);
+    --text: #eaeff5; --muted: #5a6577; --primary: #38d6aa; --primary-bg: rgba(56,214,170,0.08);
+    --accent: #818cf8; --accent-bg: rgba(129,140,248,0.08);
+    --warn: #fbbf24; --warn-bg: rgba(251,191,36,0.06); --success: #4ade80; --danger: #f87171;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+  .wizard { width: 900px; max-width: 95vw; }
+
+  /* ── Steps indicator ── */
+  .steps { display: flex; align-items: center; gap: 0; margin-bottom: 32px; padding: 0 20px; }
+  .step { display: flex; align-items: center; gap: 10px; }
+  .step-num { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; border: 2px solid var(--border); color: var(--muted); transition: all 0.3s; }
+  .step.done .step-num { background: var(--primary); border-color: var(--primary); color: #080a0e; }
+  .step.active .step-num { border-color: var(--primary); color: var(--primary); box-shadow: 0 0 12px rgba(56,214,170,0.15); }
+  .step-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .step.done .step-label { color: var(--text); }
+  .step.active .step-label { color: var(--primary); }
+  .step-line { flex: 1; height: 2px; background: var(--border); margin: 0 12px; }
+  .step-line.done { background: var(--primary); }
+
+  /* ── Card ── */
+  .card { background: var(--surface); border-radius: 20px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.3); }
+  .card-header { padding: 24px 32px 20px; border-bottom: 1px solid var(--border); }
+  .card-header h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .card-header p { font-size: 12px; color: var(--muted); }
+  .card-body { padding: 24px 32px; }
+  .card-footer { padding: 16px 32px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.01); }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 24px; border-radius: 10px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: var(--primary); color: #080a0e; }
+  .btn-primary:hover { filter: brightness(1.1); box-shadow: 0 4px 16px rgba(56,214,170,0.2); transform: translateY(-1px); }
+  .btn-ghost { background: none; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.1); }
+  .btn svg { width: 14px; height: 14px; }
+  .btn-danger { background: rgba(248,113,113,0.1); color: var(--danger); border: 1px solid rgba(248,113,113,0.15); }
+
+  /* ── Step 1: User selection (shown as completed) ── */
+  .selected-user { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--primary-bg); border: 1px solid rgba(56,214,170,0.15); border-radius: 12px; margin-bottom: 20px; }
+  .selected-user .av { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--primary)); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #fff; }
+  .selected-user .info .n { font-weight: 700; font-size: 14px; }
+  .selected-user .info .e { font-size: 11px; color: var(--muted); }
+  .selected-user .info .role { display: inline-block; margin-top: 3px; padding: 2px 8px; font-size: 9px; font-weight: 700; text-transform: uppercase; border-radius: 5px; background: var(--warn-bg); color: var(--warn); }
+  .selected-user .change-btn { margin-left: auto; font-size: 11px; color: var(--primary); cursor: pointer; font-weight: 600; text-decoration: underline; }
+
+  /* ── Step 2: Platform + Company (shown as completed) ── */
+  .selected-ctx { display: flex; gap: 10px; margin-bottom: 20px; }
+  .ctx-chip { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border); font-size: 12px; font-weight: 500; }
+  .ctx-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .ctx-chip .dot.eb { background: var(--primary); }
+  .ctx-chip .dot.ab { background: var(--accent); }
+
+  /* ── Step 3: Permission groups ── */
+  .perm-groups { display: flex; flex-direction: column; gap: 16px; }
+  .pgroup { background: var(--surface2); border-radius: 14px; border: 1px solid var(--border); overflow: hidden; }
+  .pgroup-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; cursor: pointer; transition: background 0.15s; }
+  .pgroup-header:hover { background: rgba(255,255,255,0.02); }
+  .pgroup-header .left { display: flex; align-items: center; gap: 10px; }
+  .pgroup-header .icon { width: 28px; height: 28px; border-radius: 8px; background: var(--primary-bg); display: flex; align-items: center; justify-content: center; color: var(--primary); }
+  .pgroup-header .icon svg { width: 14px; height: 14px; }
+  .pgroup-header .label { font-size: 13px; font-weight: 600; }
+  .pgroup-header .count { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 4px; }
+  .pgroup-header .toggle-all { display: flex; gap: 6px; }
+  .toggle-all-btn { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--muted); transition: all 0.15s; }
+  .toggle-all-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.12); }
+  .toggle-all-btn.active { background: var(--primary-bg); border-color: rgba(56,214,170,0.15); color: var(--primary); }
+
+  .pgroup-body { padding: 4px 8px 8px; }
+  .pmod { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 8px; transition: background 0.12s; }
+  .pmod:hover { background: rgba(255,255,255,0.02); }
+  .pmod .mod-name { font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .pmod .mod-name .ovr { font-size: 8px; padding: 1px 5px; border-radius: 3px; background: var(--warn-bg); color: var(--warn); font-weight: 700; }
+  .pmod .toggles { display: flex; gap: 6px; }
+
+  /* Toggle switch with label */
+  .tlabel { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .tlabel span { font-size: 10px; font-weight: 600; color: var(--muted); }
+  .tswitch { width: 34px; height: 18px; border-radius: 99px; position: relative; transition: all 0.25s; cursor: pointer; }
+  .tswitch.on { background: var(--primary); }
+  .tswitch.on.write { background: var(--accent); }
+  .tswitch.off { background: rgba(255,255,255,0.08); }
+  .tswitch.changed { box-shadow: 0 0 0 2px rgba(251,191,36,0.5); }
+  .tswitch::after { content: ''; position: absolute; width: 14px; height: 14px; border-radius: 50%; top: 2px; transition: all 0.25s; }
+  .tswitch.on::after { left: 18px; background: #fff; }
+  .tswitch.off::after { left: 2px; background: #52525b; }
+
+  /* Summary */
+  .summary { background: var(--surface2); border-radius: 14px; border: 1px solid var(--border); padding: 20px 24px; }
+  .summary h3 { font-size: 13px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .summary h3 svg { width: 16px; height: 16px; color: var(--primary); }
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .summary-stat { text-align: center; padding: 12px; border-radius: 10px; background: var(--surface); }
+  .summary-stat .num { font-size: 24px; font-weight: 800; }
+  .summary-stat .num.green { color: var(--primary); }
+  .summary-stat .num.orange { color: var(--warn); }
+  .summary-stat .num.red { color: var(--danger); }
+  .summary-stat .desc { font-size: 10px; color: var(--muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="wizard">
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step done">
+      <div class="step-num">✓</div>
+      <span class="step-label">Felhasználó</span>
+    </div>
+    <div class="step-line done"></div>
+    <div class="step done">
+      <div class="step-num">✓</div>
+      <span class="step-label">Platform</span>
+    </div>
+    <div class="step-line done"></div>
+    <div class="step active">
+      <div class="step-num">3</div>
+      <span class="step-label">Jogosultságok</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <span class="step-label">Összegzés</span>
+    </div>
+  </div>
+
+  <!-- Card -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Modul jogosultságok beállítása</h2>
+      <p>Állítsd be, hogy a kiválasztott felhasználó mely modulokhoz férhet hozzá.</p>
+    </div>
+
+    <div class="card-body">
+      <!-- Selected user (from step 1) -->
+      <div class="selected-user">
+        <div class="av">BL</div>
+        <div class="info">
+          <div class="n">Balázs Lederer</div>
+          <div class="e">lederer@thinkai.hu</div>
+          <span class="role">owner</span>
+        </div>
+        <span class="change-btn">Módosítás</span>
+      </div>
+
+      <!-- Selected context (from step 2) -->
+      <div class="selected-ctx">
+        <div class="ctx-chip"><span class="dot eb"></span> eaisyBill</div>
+        <div class="ctx-chip">Think AI Kft</div>
+        <div class="ctx-chip" style="margin-left:auto; color:var(--primary); cursor:pointer; font-weight:600;">Módosítás</div>
+      </div>
+
+      <!-- Permission groups -->
+      <div class="perm-groups">
+        <div class="pgroup">
+          <div class="pgroup-header">
+            <div class="left">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              </div>
+              <span class="label">Áttekintés <span class="count">(4 modul)</span></span>
+            </div>
+            <div class="toggle-all">
+              <div class="toggle-all-btn active">Mind R</div>
+              <div class="toggle-all-btn">Mind W</div>
+            </div>
+          </div>
+          <div class="pgroup-body">
+            <div class="pmod">
+              <span class="mod-name">Irányítópult</span>
+              <div class="toggles">
+                <div class="tlabel"><span>R</span><div class="tswitch on"></div></div>
+                <div class="tlabel"><span>W</span><div class="tswitch on write"></div></div>
+              </div>
+            </div>
+            <div class="pmod">
+              <span class="mod-name">Kategóriák</span>
+              <div class="toggles">
+                <div class="tlabel"><span>R</span><div class="tswitch on"></div></div>
+                <div class="tlabel"><span>W</span><div class="tswitch on write"></div></div>
+              </div>
+            </div>
+            <div class="pmod">
+              <span class="mod-name">Projektek</span>
+              <div class="toggles">
+                <div class="tlabel"><span>R</span><div class="tswitch on"></div></div>
+                <div class="tlabel"><span>W</span><div class="tswitch off write changed"></div></div>
+              </div>
+            </div>
+            <div class="pmod">
+              <span class="mod-name">Partnertörzs</span>
+              <div class="toggles">
+                <div class="tlabel"><span>R</span><div class="tswitch on"></div></div>
+                <div class="tlabel"><span>W</span><div class="tswitch on write"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pgroup">
+          <div class="pgroup-header">
+            <div class="left">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <span class="label">Pénzügyek <span class="count">(4 modul)</span></span>
+            </div>
+            <div class="toggle-all">
+              <div class="toggle-all-btn active">Mind R</div>
+              <div class="toggle-all-btn">Mind W</div>
+            </div>
+          </div>
+          <div class="pgroup-body">
+            <div class="pmod">
+              <span class="mod-name">Számlák <span class="ovr">EGYEDI</span></span>
+              <div class="toggles">
+                <div class="tlabel"><span>R</span><div class="tswitch on"></div></div>
+                <div class="tlabel"><span>W</span><div class="tswitch on write"></div></div>
+              </div>
+            </div>
+            <div class="pmod">
+              <span class="mod-name">Tranzakciók</span>
+              <div class="toggles">
+                <div class="tlabel"><span>R</span><div class="tswitch off changed"></div></div>
+                <div class="tlabel"><span>W</span><div class="tswitch off write"></div></div>
+              </div>
+            </div>
+            <div class="pmod">
+              <span class="mod-name">Kintlévőség</span>
+              <div class="toggles">
+                <div class="tlabel"><span>R</span><div class="tswitch on"></div></div>
+                <div class="tlabel"><span>W</span><div class="tswitch on write"></div></div>
+              </div>
+            </div>
+            <div class="pmod">
+              <span class="mod-name">Házipénztár</span>
+              <div class="toggles">
+                <div class="tlabel"><span>R</span><div class="tswitch on"></div></div>
+                <div class="tlabel"><span>W</span><div class="tswitch off write"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary card -->
+        <div class="summary">
+          <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Összesítés
+          </h3>
+          <div class="summary-grid">
+            <div class="summary-stat">
+              <div class="num green">16</div>
+              <div class="desc">Engedélyezett modul</div>
+            </div>
+            <div class="summary-stat">
+              <div class="num orange">2</div>
+              <div class="desc">Egyedi felülírás</div>
+            </div>
+            <div class="summary-stat">
+              <div class="num red">3</div>
+              <div class="desc">Módosítva (mentetlen)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-footer">
+      <button class="btn btn-ghost">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Vissza
+      </button>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn btn-danger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Visszaállítás
+        </button>
+        <button class="btn btn-primary">
+          Mentés és tovább
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

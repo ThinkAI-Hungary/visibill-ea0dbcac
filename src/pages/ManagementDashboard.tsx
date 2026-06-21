@@ -15,7 +15,7 @@ import {
   Bot, Coins, ArrowUpDown, ArrowUp, ArrowDown,
   Trophy, Zap, Calendar, X, Crown, Sun, Moon,
   AlertTriangle, Trash2, RefreshCw, RotateCcw, Receipt, Wallet, Landmark, BarChart3,
-  Eye, Download, ExternalLink
+  Eye, Download, ExternalLink, ShieldCheck, ToggleLeft, ToggleRight, Save, Check, Loader2
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────
@@ -721,7 +721,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
   };
 
   return (
-    <div className="space-y-0 animate-in fade-in duration-300">
+    <div className="space-y-0 animate-in fade-in duration-300" style={{ maxWidth: '100%' }}>
       {/* ── Compact header: inline KPIs + distribution bar + filters ── */}
       <Card className="rounded-b-none border-b-0">
         <CardContent className="p-4">
@@ -848,10 +848,10 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
       </Card>
 
       {/* ── Table with severity strip ── */}
-      <Card className="rounded-t-none">
+      <Card className="rounded-t-none overflow-hidden">
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-[11px]" role="table">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-[11px]" style={{ tableLayout: 'fixed', minWidth: 900 }} role="table">
               <thead>
                 <tr className="text-muted-foreground border-b border-border">
                   <th className="py-1.5 px-2 w-7">
@@ -1314,7 +1314,7 @@ export default function ManagementDashboard() {
   const title = view === 'overview'
     ? 'Management Dashboard'
     : view === 'errors'
-      ? 'Error Control Panel'
+      ? 'Control Center'
       : view === 'company'
         ? (selectedCompanyName || 'Cég részletek')
         : (selectedUserObj?.name || 'Felhasználó részletek');
@@ -1322,7 +1322,7 @@ export default function ManagementDashboard() {
   const subtitle = view === 'overview'
     ? 'eaisybill platform áttekintés'
     : view === 'errors'
-      ? 'Feldolgozási hibák áttekintése'
+      ? 'Hibák és jogosultságkezelés'
       : view === 'company'
         ? 'Cég részletes adatai'
         : (selectedUserObj?.email || '');
@@ -1366,7 +1366,7 @@ export default function ManagementDashboard() {
       </header>
 
       <div className="flex-1 overflow-y-auto">
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="w-full max-w-7xl mx-auto px-6 py-8 overflow-hidden">
         {/* ═══ OVERVIEW ═══ */}
         {view === 'overview' && (
           <div className="space-y-8 page-animate">
@@ -1777,12 +1777,537 @@ export default function ManagementDashboard() {
           );
         })()}
 
-        {/* ═══ ERRORS ═══ */}
+        {/* ═══ CONTROL CENTER ═══ */}
         {view === 'errors' && (
-          <ErrorControlPanel onOpenCompany={openCompany} />
+          <ControlCenter onOpenCompany={openCompany} allUsers={overview?.users || []} />
         )}
       </main>
       </div>
     </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// ─── Control Center (tabs: Hibák / Jogosultságok) ────
+// ═══════════════════════════════════════════════════════
+type ControlCenterTab = 'errors' | 'permissions';
+
+interface ControlCenterUser {
+  user_id: string;
+  name: string;
+  email: string;
+}
+
+function ControlCenter({ onOpenCompany, allUsers }: { onOpenCompany: (id: string) => void; allUsers: ControlCenterUser[] }) {
+  const [tab, setTab] = useState<ControlCenterTab>('errors');
+
+  return (
+    <div className="space-y-6 page-animate overflow-hidden">
+      {/* Tab bar */}
+      <div className="flex gap-1 p-1 bg-muted/40 rounded-xl w-fit border border-border/50">
+        <button
+          onClick={() => setTab('errors')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 border
+            ${tab === 'errors'
+              ? 'bg-background text-foreground shadow-sm border-border/60'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'
+            }`}
+        >
+          <AlertTriangle className="h-4 w-4" />
+          Hibák
+        </button>
+        <button
+          onClick={() => setTab('permissions')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 border
+            ${tab === 'permissions'
+              ? 'bg-background text-foreground shadow-sm border-border/60'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60 border-transparent'
+            }`}
+        >
+          <ShieldCheck className="h-4 w-4" />
+          Jogosultságok
+        </button>
+      </div>
+
+      {/* Tab content — ensures both tabs fill the same width and have identical minimum width to prevent layout shift */}
+      <div className="w-full overflow-x-auto">
+        <div style={{ minWidth: 900 }}>
+          {tab === 'errors' && <ErrorControlPanel onOpenCompany={onOpenCompany} />}
+          {tab === 'permissions' && <PermissionsPanel allUsers={allUsers} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// ─── Permissions Panel ───────────────────────────────
+// ═══════════════════════════════════════════════════════
+interface UserPermissionsData {
+  userId: string;
+  email: string;
+  name: string;
+  profileRole: string;
+  eaisybill: Array<{
+    companyId: string;
+    companyName: string;
+    role: string;
+    modules: Array<{ module: string; canRead: boolean; canWrite: boolean; isOverride: boolean }>;
+  }>;
+  accounty: Array<{
+    firmId: string;
+    firmName: string;
+    companyId: string;
+    companyName: string;
+    role: string;
+    modules: Array<{ module: string; canRead: boolean; canWrite: boolean; isOverride: boolean }>;
+  }>;
+}
+
+const MODULE_LABELS: Record<string, string> = {
+  // eaisyBill
+  dashboard: 'Irányítópult', categories: 'Kategóriák', projects: 'Projektek', partners: 'Partnertörzs',
+  invoices: 'Számlák', receivables: 'Kintlévőség', transactions: 'Tranzakciók', petty_cash: 'Házipénztár',
+  general_ledger: 'Főkönyv', profit_loss: 'Eredménykimutatás', balance_sheet: 'Mérleg',
+  annual_report: 'Beszámoló', vat_return: 'ÁFA Bevallás',
+  salaries: 'Bérek/járulékok', working_time: 'Munkaidő', fixed_assets: 'TENY',
+  integrations: 'Integrációk', exchange_rates: 'Árfolyamok', upload: 'Feltöltés', tickets: 'Hibajegyek',
+  settings: 'Beállítások',
+  // eaisyBooks
+  portfolio: 'Portfólió', missing_invoices: 'Hiányzó számlák', tax_calendar: 'Adó naptár',
+  reports: 'Riportok', approval_queue: 'Jóváhagyó rendszer', alerts: 'Riasztások',
+  nav_deadlines: 'NAV határidők', payroll: 'Bérszámfejtés', onboarding: 'Onboarding',
+  tao: 'TAO / KIVA',
+  admin_audit: 'Audit napló', admin_gdpr: 'GDPR', admin_templates: 'Sablonok',
+  admin_job_codes: 'Jogviszonykódok', admin_tax_params: 'Adómértékek',
+  admin_legal: 'Jogszabály-frissítések', admin_office: 'Irodai beállítások',
+  admin_permissions: 'Jogosultságkezelő', admin_accountants: 'Könyvelők kezelése',
+  ai_assistant: 'AI Asszisztens', help: 'Segítség', profile: 'Profil',
+};
+
+function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
+  const [searchUser, setSearchUser] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [pendingChanges, setPendingChanges] = useState<Map<string, { canRead: boolean; canWrite: boolean }>>(new Map());
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [selectedEbCompany, setSelectedEbCompany] = useState<string | null>(null);
+  const [selectedAbFirm, setSelectedAbFirm] = useState<string | null>(null);
+  const [selectedPlatform, setSelectedPlatform] = useState<'eaisybill' | 'accounty'>('eaisybill');
+  const queryClient = useQueryClient();
+
+  const filteredUsers = useMemo(() => {
+    if (!searchUser.trim()) return allUsers;
+    const q = searchUser.toLowerCase();
+    return allUsers.filter(u =>
+      (u.name || '').toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+    );
+  }, [allUsers, searchUser]);
+
+  // Fetch selected user's permissions
+  const { data: userPerms, isLoading: permsLoading } = useQuery<UserPermissionsData>({
+    queryKey: ['management-user-permissions', selectedUserId],
+    queryFn: () => fetchManagementData('user-permissions', { userId: selectedUserId! }),
+    enabled: !!selectedUserId,
+    staleTime: 30_000,
+  });
+
+  const handleToggle = (platform: string, companyOrFirmId: string, moduleName: string, field: 'canRead' | 'canWrite', currentValue: boolean) => {
+    const key = `${platform}:${companyOrFirmId}:${moduleName}:${field}`;
+    const reverseKey = `${platform}:${companyOrFirmId}:${moduleName}:${field === 'canRead' ? 'canWrite' : 'canRead'}`;
+    
+    setPendingChanges(prev => {
+      const next = new Map(prev);
+      next.set(key, { canRead: field === 'canRead' ? !currentValue : currentValue, canWrite: field === 'canWrite' ? !currentValue : currentValue });
+      return next;
+    });
+  };
+
+  const getEffectiveValue = (platform: string, companyOrFirmId: string, moduleName: string, field: 'canRead' | 'canWrite', originalValue: boolean): boolean => {
+    const key = `${platform}:${companyOrFirmId}:${moduleName}:${field}`;
+    const pending = pendingChanges.get(key);
+    if (pending) return pending[field];
+    return originalValue;
+  };
+
+  const isChanged = (platform: string, companyOrFirmId: string, moduleName: string, field: 'canRead' | 'canWrite', originalValue: boolean): boolean => {
+    const key = `${platform}:${companyOrFirmId}:${moduleName}:${field}`;
+    return pendingChanges.has(key);
+  };
+
+  const handleSave = async () => {
+    if (!selectedUserId || !userPerms || pendingChanges.size === 0) return;
+    setSaving(true);
+    setSaveMessage(null);
+
+    // Group changes by platform + company/firm
+    const grouped = new Map<string, { platform: string; companyId?: string; firmId?: string; perms: Array<{ module: string; canRead: boolean; canWrite: boolean }> }>();
+
+    for (const [key] of pendingChanges) {
+      const [platform, entityId, moduleName, field] = key.split(':');
+      const groupKey = `${platform}:${entityId}`;
+
+      if (!grouped.has(groupKey)) {
+        grouped.set(groupKey, {
+          platform,
+          companyId: platform === 'eaisybill' ? entityId : undefined,
+          firmId: platform === 'accounty' ? entityId : undefined,
+          perms: [],
+        });
+      }
+
+      // Find the original module data
+      let originalCanRead = true;
+      let originalCanWrite = true;
+
+      if (platform === 'eaisybill') {
+        const comp = userPerms.eaisybill.find(e => e.companyId === entityId);
+        const mod = comp?.modules.find(m => m.module === moduleName);
+        if (mod) { originalCanRead = mod.canRead; originalCanWrite = mod.canWrite; }
+      } else {
+        const firm = userPerms.accounty.find(a => a.firmId === entityId);
+        const mod = firm?.modules.find(m => m.module === moduleName);
+        if (mod) { originalCanRead = mod.canRead; originalCanWrite = mod.canWrite; }
+      }
+
+      const effectiveRead = getEffectiveValue(platform, entityId, moduleName, 'canRead', originalCanRead);
+      const effectiveWrite = getEffectiveValue(platform, entityId, moduleName, 'canWrite', originalCanWrite);
+
+      // Check if module is already in the group's perms
+      const group = grouped.get(groupKey)!;
+      const existing = group.perms.find(p => p.module === moduleName);
+      if (existing) {
+        existing.canRead = effectiveRead;
+        existing.canWrite = effectiveWrite;
+      } else {
+        group.perms.push({ module: moduleName, canRead: effectiveRead, canWrite: effectiveWrite });
+      }
+    }
+
+    let totalErrors = 0;
+    for (const [, group] of grouped) {
+      const result = await postManagementData('update-permissions', {
+        userId: selectedUserId,
+        platform: group.platform,
+        companyId: group.companyId,
+        firmId: group.firmId,
+        permissions: group.perms,
+      });
+      if (result.error) totalErrors++;
+    }
+
+    setSaving(false);
+    setPendingChanges(new Map());
+
+    if (totalErrors === 0) {
+      setSaveMessage('✅ Mentve!');
+      queryClient.invalidateQueries({ queryKey: ['management-user-permissions', selectedUserId] });
+    } else {
+      setSaveMessage('⚠️ Néhány módosítás nem sikerült');
+    }
+
+    setTimeout(() => setSaveMessage(null), 3000);
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6">
+      {/* ── User list (left column) ── */}
+      <Card className="h-fit lg:max-h-[calc(100vh-240px)] lg:overflow-y-auto">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" /> Felhasználók
+          </CardTitle>
+          <div className="relative mt-2">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              value={searchUser}
+              onChange={e => setSearchUser(e.target.value)}
+              placeholder="Keresés..."
+              className="pl-8 h-8 text-xs"
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y divide-border/40">
+            {filteredUsers.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-4">Nincs találat</p>
+            )}
+            {filteredUsers.map(u => (
+              <button
+                key={u.user_id}
+                onClick={() => { setSelectedUserId(u.user_id); setPendingChanges(new Map()); setSelectedEbCompany(null); setSelectedAbFirm(null); }}
+                className={`w-full text-left px-4 py-3 transition-colors duration-150 hover:bg-accent/30 border-l-2
+                  ${selectedUserId === u.user_id ? 'bg-primary/10 border-primary' : 'border-transparent'}`}
+              >
+                <p className="text-sm font-medium truncate">{u.name || '—'}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{u.email}</p>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Permission matrix (right column) ── */}
+      <div className="space-y-4 w-full overflow-hidden">
+        {!selectedUserId && (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-16 gap-3">
+              <ShieldCheck className="h-10 w-10 text-muted-foreground/40" />
+              <p className="text-sm text-muted-foreground">Válassz ki egy felhasználót a jogosultságok megtekintéséhez</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {selectedUserId && permsLoading && (
+          <Card>
+            <CardContent className="flex items-center justify-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </CardContent>
+          </Card>
+        )}
+
+        {selectedUserId && userPerms && !permsLoading && (
+          <>
+            {/* User info header */}
+            <Card>
+              <CardContent className="flex items-center justify-between p-4">
+                <div>
+                  <p className="font-semibold">{userPerms.name}</p>
+                  <p className="text-xs text-muted-foreground">{userPerms.email}</p>
+                  <Badge variant="outline" className="mt-1 text-[10px]">{userPerms.profileRole}</Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  {saveMessage && (
+                    <span className="text-xs font-medium text-primary animate-in fade-in">{saveMessage}</span>
+                  )}
+                  <Button
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={pendingChanges.size === 0 || saving}
+                    className="gap-2"
+                  >
+                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                    Mentés {pendingChanges.size > 0 && `(${pendingChanges.size})`}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Platform pill toggle */}
+            {(userPerms.eaisybill.length > 0 || userPerms.accounty.length > 0) && (
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1 p-1 bg-muted/30 rounded-xl border border-border/40">
+                  {userPerms.eaisybill.length > 0 && (
+                    <button
+                      onClick={() => setSelectedPlatform('eaisybill')}
+                      style={{ width: 140 }}
+                      className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all duration-200 border
+                        ${selectedPlatform === 'eaisybill'
+                          ? 'bg-primary/15 text-primary border-primary/20'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 border-transparent'
+                        }`}
+                    >
+                      <Building2 className="h-3.5 w-3.5" />
+                      eaisyBill
+                    </button>
+                  )}
+                  {userPerms.accounty.length > 0 && (
+                    <button
+                      onClick={() => setSelectedPlatform('accounty')}
+                      style={{ width: 140 }}
+                      className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all duration-200 border
+                        ${selectedPlatform === 'accounty'
+                          ? 'bg-primary/15 text-primary border-primary/20'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 border-transparent'
+                        }`}
+                    >
+                      <Building2 className="h-3.5 w-3.5" />
+                      eaisyBooks
+                    </button>
+                  )}
+                </div>
+
+                {/* Company dropdown (right side of pills) */}
+                {selectedPlatform === 'eaisybill' && userPerms.eaisybill.length > 1 && (
+                  <select
+                    value={selectedEbCompany || userPerms.eaisybill[0]?.companyId}
+                    onChange={e => setSelectedEbCompany(e.target.value)}
+                    className="text-xs bg-background border border-border rounded-lg px-3 py-2 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all cursor-pointer text-foreground"
+                    style={{ colorScheme: 'dark' }}
+                  >
+                    {userPerms.eaisybill.map(c => (
+                      <option key={c.companyId} value={c.companyId}>{c.companyName} ({c.role})</option>
+                    ))}
+                  </select>
+                )}
+                {selectedPlatform === 'accounty' && userPerms.accounty.length > 1 && (
+                  <select
+                    value={selectedAbFirm || `${userPerms.accounty[0]?.firmId}__${userPerms.accounty[0]?.companyId}`}
+                    onChange={e => setSelectedAbFirm(e.target.value)}
+                    className="text-xs bg-background border border-border rounded-lg px-3 py-2 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all cursor-pointer text-foreground"
+                    style={{ colorScheme: 'dark' }}
+                  >
+                    {userPerms.accounty.map(a => (
+                      <option key={`${a.firmId}__${a.companyId}`} value={`${a.firmId}__${a.companyId}`}>
+                        {a.firmName} · {a.companyName} ({a.role})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
+
+            {/* Active platform content */}
+            {selectedPlatform === 'eaisybill' && userPerms.eaisybill.length > 0 && (() => {
+              const ebId = selectedEbCompany || userPerms.eaisybill[0]?.companyId;
+              const ebComp = userPerms.eaisybill.find(c => c.companyId === ebId) || userPerms.eaisybill[0];
+              return ebComp ? (
+                <ModuleMatrix
+                  key={ebComp.companyId}
+                  title={ebComp.companyName}
+                  subtitle={`Szerepkör: ${ebComp.role}`}
+                  platform="eaisybill"
+                  entityId={ebComp.companyId}
+                  modules={ebComp.modules}
+                  getEffectiveValue={getEffectiveValue}
+                  isChanged={isChanged}
+                  onToggle={handleToggle}
+                />
+              ) : null;
+            })()}
+
+            {selectedPlatform === 'accounty' && userPerms.accounty.length > 0 && (() => {
+              const abId = selectedAbFirm || `${userPerms.accounty[0]?.firmId}__${userPerms.accounty[0]?.companyId}`;
+              const abEntry = userPerms.accounty.find(a => `${a.firmId}__${a.companyId}` === abId) || userPerms.accounty[0];
+              return abEntry ? (
+                <ModuleMatrix
+                  key={`${abEntry.firmId}-${abEntry.companyId}`}
+                  title={abEntry.firmName}
+                  subtitle={`Szerepkör: ${abEntry.role} · Ügyfél: ${abEntry.companyName}`}
+                  platform="accounty"
+                  entityId={abEntry.firmId}
+                  modules={abEntry.modules}
+                  getEffectiveValue={getEffectiveValue}
+                  isChanged={isChanged}
+                  onToggle={handleToggle}
+                />
+              ) : null;
+            })()}
+
+            {userPerms.eaisybill.length === 0 && userPerms.accounty.length === 0 && (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <p className="text-sm text-muted-foreground">Ez a felhasználó nincs hozzárendelve egyetlen céghez sem.</p>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Module Matrix (reusable per-company permission grid) ─────
+function ModuleMatrix({
+  title,
+  subtitle,
+  platform,
+  entityId,
+  modules,
+  getEffectiveValue,
+  isChanged,
+  onToggle,
+}: {
+  title: string;
+  subtitle: string;
+  platform: string;
+  entityId: string;
+  modules: Array<{ module: string; canRead: boolean; canWrite: boolean; isOverride: boolean }>;
+  getEffectiveValue: (platform: string, entityId: string, module: string, field: 'canRead' | 'canWrite', original: boolean) => boolean;
+  isChanged: (platform: string, entityId: string, module: string, field: 'canRead' | 'canWrite', original: boolean) => boolean;
+  onToggle: (platform: string, entityId: string, module: string, field: 'canRead' | 'canWrite', current: boolean) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div>
+          <CardTitle className="text-sm">{title}</CardTitle>
+          <p className="text-[11px] text-muted-foreground">{subtitle}</p>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border/40 text-muted-foreground">
+                <th className="text-left py-2 px-4 font-medium">Modul</th>
+                <th className="text-center py-2 px-3 font-medium w-20">Olvasás</th>
+                <th className="text-center py-2 px-3 font-medium w-20">Írás</th>
+              </tr>
+            </thead>
+            <tbody>
+              {modules.map(mod => {
+                const effectiveRead = getEffectiveValue(platform, entityId, mod.module, 'canRead', mod.canRead);
+                const effectiveWrite = getEffectiveValue(platform, entityId, mod.module, 'canWrite', mod.canWrite);
+                const readChanged = isChanged(platform, entityId, mod.module, 'canRead', mod.canRead);
+                const writeChanged = isChanged(platform, entityId, mod.module, 'canWrite', mod.canWrite);
+
+                return (
+                  <tr key={mod.module} className="border-b border-border/20 hover:bg-muted/20 transition-colors">
+                    <td className="py-2 px-4 font-medium">
+                      <span className="flex items-center gap-2">
+                        {MODULE_LABELS[mod.module] || mod.module}
+                        {mod.isOverride && (
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-warning border-warning/30">
+                            egyedi
+                          </Badge>
+                        )}
+                      </span>
+                    </td>
+                    <td className="text-center py-2 px-3">
+                      <button
+                        onClick={() => onToggle(platform, entityId, mod.module, 'canRead', effectiveRead)}
+                        className={`inline-flex items-center justify-center w-10 h-6 rounded-full transition-all duration-200
+                          ${effectiveRead
+                            ? 'bg-primary/20 text-primary hover:bg-primary/30'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                          }
+                          ${readChanged ? 'ring-2 ring-warning/50' : ''}
+                        `}
+                        title={effectiveRead ? 'Engedélyezve' : 'Letiltva'}
+                      >
+                        {effectiveRead
+                          ? <Check className="h-3.5 w-3.5" />
+                          : <X className="h-3.5 w-3.5" />
+                        }
+                      </button>
+                    </td>
+                    <td className="text-center py-2 px-3">
+                      <button
+                        onClick={() => onToggle(platform, entityId, mod.module, 'canWrite', effectiveWrite)}
+                        className={`inline-flex items-center justify-center w-10 h-6 rounded-full transition-all duration-200
+                          ${effectiveWrite
+                            ? 'bg-primary/20 text-primary hover:bg-primary/30'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                          }
+                          ${writeChanged ? 'ring-2 ring-warning/50' : ''}
+                        `}
+                        title={effectiveWrite ? 'Engedélyezve' : 'Letiltva'}
+                      >
+                        {effectiveWrite
+                          ? <Check className="h-3.5 w-3.5" />
+                          : <X className="h-3.5 w-3.5" />
+                        }
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

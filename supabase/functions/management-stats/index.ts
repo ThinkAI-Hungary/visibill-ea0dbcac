@@ -177,7 +177,7 @@ serve(async (req) => {
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (profileError || requesterProfile?.role !== "management") {
+    if (profileError || (requesterProfile?.role !== "management" && requesterProfile?.role !== "thinkai")) {
       console.warn("[MANAGEMENT-STATS] Management role check failed", {
         userId,
         role: requesterProfile?.role ?? null,
@@ -216,6 +216,18 @@ serve(async (req) => {
       const selectedUserId = url.searchParams.get("userId");
       if (!selectedUserId) return json(emptyUserDetail);
       return json(await buildUserDetail(admin, selectedUserId));
+    }
+
+    if (action === "user-permissions") {
+      const targetUserId = url.searchParams.get("userId");
+      if (!targetUserId) return json({ error: "userId required" });
+      return json(await buildUserPermissions(admin, targetUserId));
+    }
+
+    if (action === "update-permissions") {
+      if (req.method !== "POST") return json({ error: "POST required" });
+      const body = await req.json().catch(() => ({}));
+      return json(await updatePermissions(admin, body));
     }
 
     return json({ error: "Unknown action", ...emptyOverview });
@@ -336,12 +348,12 @@ async function buildOverview(admin: ReturnType<typeof createClient>) {
     + (errGlRes.count || 0) + (errNavRes.count || 0) + (errBankRes.count || 0) + (errAppRes.count || 0);
 
   return {
-    usersCount: profiles.filter((profile) => profile.role !== "management").length,
+    usersCount: profiles.filter((profile) => profile.role !== "management" && profile.role !== "thinkai").length,
     companiesCount: companies.length,
     totalErrors,
     companies: companySummaries,
     users: profiles
-      .filter((profile) => profile.role !== "management")
+      .filter((profile) => profile.role !== "management" && profile.role !== "thinkai")
       .map((profile) => ({
         id: profile.id,
         user_id: profile.user_id,
@@ -1011,6 +1023,283 @@ async function retryErrors(
 
   return {
     retried: totalRetried,
+    error: errors.length > 0 ? errors.join("; ") : null,
+  };
+}
+
+// ─── User Permissions (for Control Center) ───────────
+const EAISYBILL_MODULES = [
+  'dashboard', 'categories', 'projects', 'partners',
+  'invoices', 'receivables', 'transactions', 'petty_cash',
+  'general_ledger', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return',
+  'salaries', 'working_time', 'fixed_assets',
+  'integrations', 'exchange_rates', 'upload', 'tickets', 'settings',
+];
+
+const ACCOUNTY_MODULES = [
+  'portfolio', 'missing_invoices', 'tax_calendar',
+  'reports', 'approval_queue', 'alerts', 'nav_deadlines',
+  'payroll', 'onboarding', 'tao', 'settings',
+  'admin_audit', 'admin_gdpr', 'admin_templates', 'admin_job_codes',
+  'admin_tax_params', 'admin_legal', 'admin_office', 'admin_permissions',
+  'admin_accountants', 'tickets', 'ai_assistant', 'help', 'profile',
+];
+
+const EAISYBILL_ADMIN_ONLY = new Set(['salaries', 'integrations']);
+const EAISYBILL_ASSISTANT = new Set([
+  'dashboard', 'categories', 'projects', 'partners', 'invoices', 'receivables',
+  'transactions', 'petty_cash', 'upload', 'tickets', 'exchange_rates', 'settings'
+]);
+const EAISYBILL_VIEWER = new Set([
+  'dashboard', 'categories', 'projects', 'partners', 'invoices', 'receivables',
+  'transactions', 'petty_cash', 'exchange_rates', 'tickets', 'settings'
+]);
+const EAISYBILL_EMPLOYEE = new Set(['working_time']);
+
+function getEaisybillDefault(role: string | null | undefined, module: string): { canRead: boolean; canWrite: boolean } {
+  const r = (role || "").toLowerCase();
+  const isAdmin = r === 'admin' || r === 'owner' || r === 'ceo';
+  if (isAdmin) return { canRead: true, canWrite: true };
+
+  if (r === 'member') {
+    const canAccess = !EAISYBILL_ADMIN_ONLY.has(module) || module === 'working_time';
+    const canWrite = canAccess && module !== 'settings';
+    return { canRead: canAccess, canWrite };
+  }
+  if (r === 'assistant') {
+    const canAccess = EAISYBILL_ASSISTANT.has(module);
+    const canWrite = canAccess && module !== 'settings';
+    return { canRead: canAccess, canWrite };
+  }
+  if (r === 'viewer') {
+    const canAccess = EAISYBILL_VIEWER.has(module);
+    return { canRead: canAccess, canWrite: false };
+  }
+  if (r === 'employee') {
+    const canAccess = EAISYBILL_EMPLOYEE.has(module);
+    return { canRead: canAccess, canWrite: canAccess };
+  }
+  return { canRead: false, canWrite: false };
+}
+
+const ACCOUNTY_ADMIN_ONLY = new Set([
+  'admin_audit', 'admin_gdpr', 'admin_templates', 'admin_job_codes',
+  'admin_tax_params', 'admin_legal', 'admin_office', 'admin_permissions',
+  'admin_accountants', 'onboarding',
+]);
+const ACCOUNTY_SENIOR_AND_ADMIN = new Set([
+  'reports', 'approval_queue', 'alerts', 'nav_deadlines', 'settings',
+]);
+const ACCOUNTY_ALWAYS = new Set([
+  'portfolio', 'missing_invoices', 'tax_calendar', 'payroll',
+  'tao', 'tickets', 'ai_assistant', 'help', 'profile',
+]);
+
+function getAccountyDefault(role: string | null | undefined, module: string): { canRead: boolean; canWrite: boolean } {
+  const r = (role || "").toLowerCase();
+  const isAdmin = r === 'iroda_admin' || r === 'admin';
+  const isSenior = isAdmin || r === 'senior_könyvelő' || r === 'senior_konyvelo' || r === 'senior';
+
+  if (isAdmin) return { canRead: true, canWrite: true };
+
+  let canRead = false;
+  if (ACCOUNTY_ALWAYS.has(module)) {
+    canRead = true;
+  } else if (ACCOUNTY_SENIOR_AND_ADMIN.has(module)) {
+    canRead = isSenior;
+  } else if (!ACCOUNTY_ADMIN_ONLY.has(module)) {
+    canRead = true;
+  }
+
+  let canWrite = false;
+  if (isAdmin) {
+    canWrite = true;
+  } else if (isSenior) {
+    canWrite = !ACCOUNTY_ADMIN_ONLY.has(module);
+  } else {
+    canWrite = canRead && !ACCOUNTY_ADMIN_ONLY.has(module) && !ACCOUNTY_SENIOR_AND_ADMIN.has(module);
+  }
+
+  return { canRead, canWrite };
+}
+
+async function buildUserPermissions(admin: ReturnType<typeof createClient>, userId: string) {
+  // Fetch user info
+  const { data: userData } = await admin.auth.admin.getUserById(userId);
+  const userEmail = userData?.user?.email || "—";
+
+  const { data: profileData } = await admin
+    .from("profiles")
+    .select("name, role")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  // Fetch eaisybill memberships (company_members)
+  const { data: eaisybillMemberships } = await admin
+    .from("company_members")
+    .select("company_id, role")
+    .eq("user_id", userId);
+
+  // Fetch accounty memberships (accounty_assignments)
+  const { data: accountyAssignments } = await admin
+    .from("accounty_assignments")
+    .select("company_id, accounting_firm_id, role")
+    .eq("accountant_user_id", userId);
+
+  // Fetch company names
+  const allCompanyIds = new Set<string>();
+  for (const m of eaisybillMemberships || []) allCompanyIds.add(m.company_id);
+  for (const a of accountyAssignments || []) {
+    allCompanyIds.add(a.company_id);
+    if (a.accounting_firm_id) allCompanyIds.add(a.accounting_firm_id);
+  }
+
+  const { data: companies } = await admin
+    .from("companies")
+    .select("id, name")
+    .in("id", [...allCompanyIds]);
+
+  const companyNameMap = new Map((companies || []).map((c: any) => [c.id, c.name]));
+
+  // Fetch eaisybill module permission overrides
+  const { data: eaisybillPerms } = await admin
+    .from("eaisybill_module_permissions")
+    .select("company_id, module_name, can_read, can_write")
+    .eq("user_id", userId);
+
+  const ebPermMap = new Map<string, Map<string, { can_read: boolean; can_write: boolean }>>();
+  for (const p of (eaisybillPerms || []) as any[]) {
+    if (!ebPermMap.has(p.company_id)) ebPermMap.set(p.company_id, new Map());
+    ebPermMap.get(p.company_id)!.set(p.module_name, { can_read: p.can_read, can_write: p.can_write });
+  }
+
+  // Fetch accounty module permission overrides
+  const { data: accountyPerms } = await admin
+    .from("accounty_module_permissions")
+    .select("accounting_firm_id, module_name, can_read, can_write")
+    .eq("user_id", userId);
+
+  const acPermMap = new Map<string, Map<string, { can_read: boolean; can_write: boolean }>>();
+  for (const p of (accountyPerms || []) as any[]) {
+    if (!acPermMap.has(p.accounting_firm_id)) acPermMap.set(p.accounting_firm_id, new Map());
+    acPermMap.get(p.accounting_firm_id)!.set(p.module_name, { can_read: p.can_read, can_write: p.can_write });
+  }
+
+  // Build eaisybill sections
+  const eaisybill = (eaisybillMemberships || []).map((m: any) => ({
+    companyId: m.company_id,
+    companyName: companyNameMap.get(m.company_id) || "—",
+    role: m.role,
+    modules: EAISYBILL_MODULES.map(mod => {
+      const override = ebPermMap.get(m.company_id)?.get(mod);
+      const defaults = getEaisybillDefault(m.role, mod);
+      return {
+        module: mod,
+        canRead: override?.can_read ?? defaults.canRead,
+        canWrite: override?.can_write ?? defaults.canWrite,
+        isOverride: !!override,
+      };
+    }),
+  }));
+
+  // Build accounty sections
+  const accounty = (accountyAssignments || []).map((a: any) => ({
+    firmId: a.accounting_firm_id,
+    firmName: companyNameMap.get(a.accounting_firm_id) || "—",
+    companyId: a.company_id,
+    companyName: companyNameMap.get(a.company_id) || "—",
+    role: a.role,
+    modules: ACCOUNTY_MODULES.map(mod => {
+      const override = acPermMap.get(a.accounting_firm_id)?.get(mod);
+      const defaults = getAccountyDefault(a.role, mod);
+      return {
+        module: mod,
+        canRead: override?.can_read ?? defaults.canRead,
+        canWrite: override?.can_write ?? defaults.canWrite,
+        isOverride: !!override,
+      };
+    }),
+  }));
+
+  return {
+    userId,
+    email: userEmail,
+    name: profileData?.name || "—",
+    profileRole: profileData?.role || "user",
+    eaisybill,
+    accounty,
+  };
+}
+
+async function updatePermissions(
+  admin: ReturnType<typeof createClient>,
+  body: {
+    userId?: string;
+    platform?: "eaisybill" | "accounty";
+    companyId?: string;
+    firmId?: string;
+    permissions?: Array<{ module: string; canRead: boolean; canWrite: boolean }>;
+  },
+) {
+  if (!body.userId || !body.platform || !body.permissions) {
+    return { error: "Missing required fields: userId, platform, permissions" };
+  }
+
+  const errors: string[] = [];
+  let updated = 0;
+
+  if (body.platform === "eaisybill") {
+    if (!body.companyId) return { error: "companyId required for eaisybill" };
+
+    for (const perm of body.permissions) {
+      const { error } = await admin
+        .from("eaisybill_module_permissions")
+        .upsert(
+          {
+            company_id: body.companyId,
+            user_id: body.userId,
+            module_name: perm.module,
+            can_read: perm.canRead,
+            can_write: perm.canWrite,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "company_id,user_id,module_name" },
+        );
+
+      if (error) {
+        errors.push(`${perm.module}: ${error.message}`);
+      } else {
+        updated++;
+      }
+    }
+  } else if (body.platform === "accounty") {
+    if (!body.firmId) return { error: "firmId required for accounty" };
+
+    for (const perm of body.permissions) {
+      const { error } = await admin
+        .from("accounty_module_permissions")
+        .upsert(
+          {
+            accounting_firm_id: body.firmId,
+            user_id: body.userId,
+            module_name: perm.module,
+            can_read: perm.canRead,
+            can_write: perm.canWrite,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "accounting_firm_id,user_id,module_name" },
+        );
+
+      if (error) {
+        errors.push(`${perm.module}: ${error.message}`);
+      } else {
+        updated++;
+      }
+    }
+  }
+
+  return {
+    updated,
     error: errors.length > 0 ? errors.join("; ") : null,
   };
 }

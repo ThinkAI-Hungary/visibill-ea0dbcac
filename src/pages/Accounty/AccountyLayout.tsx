@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AccountyRoleProvider } from './AccountyRoleContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -9,6 +9,7 @@ import { useAccountyKpis, useAccountyClients } from '@/hooks/useAccountyData';
 import { useAccountyPermissions, PATH_TO_MODULE } from '@/hooks/useAccountyPermissions';
 import { useHasEaisybillAccess } from '@/hooks/useHasEaisybillAccess';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -92,6 +93,22 @@ function AccountyLayoutInner() {
   const { data: kpis } = useAccountyKpis();
   const { data: unreadTicketCount = 0 } = useUnreadTicketCount();
   const { canAccess } = useAccountyPermissions();
+
+  // ThinkAI / management role → redirect to management dashboard
+  const { data: profileRole } = useQuery({
+    queryKey: ['profile-role-accounty', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', user!.id)
+        .single();
+      return data?.role || 'user';
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
 
   // #16 Favicon badge — show missing items count in browser tab
   useEffect(() => {
@@ -203,6 +220,11 @@ function AccountyLayoutInner() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
+
+  // ThinkAI / management role → redirect to management dashboard (must be after all hooks)
+  if (profileRole === 'management' || profileRole === 'thinkai') {
+    return <Navigate to="/management" replace />;
+  }
 
   const cmdPages = [
     { name: 'Portfólió', path: '/accounty', icon: Briefcase },
