@@ -226,7 +226,7 @@ function RootRedirect() {
     return <Navigate to="/accounty" replace />;
   }
 
-  if (profileRole === 'management') {
+  if (profileRole === 'management' || profileRole === 'thinkai') {
     return <Navigate to="/management" replace />;
   }
 

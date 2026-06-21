@@ -109,7 +109,14 @@ Az eaisyBooks támogatja a **DB-szintű jogosultság-felülírást**: az `iroda_
 - A `useHasEaisybillAccess` és `useHasAccountyAccess` hook-ok döntik el, ki mihez fér hozzá, és ez szabályozza az `AppModeSwitcher` megjelenését is.
 
 ### REQ-4.5: Platform-szintű szerepek
-`profiles.role`: `user` (alapértelmezett) / `management` (platform admin). A management role hozzáférést biztosít a management-stats Edge Function-höz és a management dashboard-hoz.  
+`profiles.role` három értéket vehet fel:
+
+| Szerep | Leírás | Hozzáférés |
+|--------|--------|------------|
+| `user` | Alapértelmezett | eaisyBill és/vagy eaisyBooks (egyéb role-ok alapján) |
+| `thinkai` | ThinkAI | Kizárólag a Management Dashboard (`/management`) — platform-szintű statisztikák, LLM költségek, hibakezelés, felhasználó- és cégáttekintés. Nem lát eaisyBill/eaisyBooks felületet. |
+
+Aktuálisan hozzárendelt ThinkAI user: `management@thinkai.hu`  
 **Hivatkozás:** [010](./decisions/010-user-roles.md)
 
 ---
