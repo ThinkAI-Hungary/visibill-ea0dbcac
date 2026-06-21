@@ -47,6 +47,8 @@ const pendingStatuses = new Set(['pending', 'uploaded']);
 const activeStatuses = new Set([...processingStatuses, ...pendingStatuses]);
 // Invoice/payroll worker uses 'processed', transaction worker uses 'completed'
 const doneStatuses = new Set(['completed', 'processed']);
+// CMR/document statuses — worker sets these for non-invoice documents
+const cmrStatuses = new Set(['cmr_attached', 'cmr_orphaned']);
 
 // formatFileSize is now imported from @/lib/utils
 
@@ -68,6 +70,15 @@ function getStatus(record: UploadRecord, processedIds: Set<string>): { label: st
   if (processingStatuses.has(record.processing_status)) {
     const multiInfo = isMulti ? `${processed}/${total} számla` : undefined;
     return { label: 'Feldolgozás alatt', variant: 'outline', multiProgress: multiInfo };
+  }
+  // CMR documents — show specific status for transport documents
+  if (cmrStatuses.has(record.processing_status)) {
+    const label = record.processing_status === 'cmr_attached' ? 'CMR párosítva' : 'CMR (párosítatlan)';
+    return { label, variant: record.processing_status === 'cmr_attached' ? 'default' : 'secondary' };
+  }
+  // Ignored documents — classified as unidentifiable
+  if (record.processing_status === 'ignored') {
+    return { label: 'Nem beazonosítható', variant: 'secondary' };
   }
   if (doneStatuses.has(record.processing_status) || processedIds.has(record.id)) {
     const multiInfo = isMulti ? `${total} számla` : undefined;
