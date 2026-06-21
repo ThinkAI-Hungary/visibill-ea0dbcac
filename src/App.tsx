@@ -222,12 +222,13 @@ function RootRedirect() {
 
   if (roleLoading || accessLoading) return null;
 
-  if (hasEaisybillAccess === false) {
-    return <Navigate to="/accounty" replace />;
-  }
-
+  // ThinkAI / management role → management dashboard (takes priority)
   if (profileRole === 'management' || profileRole === 'thinkai') {
     return <Navigate to="/management" replace />;
+  }
+
+  if (hasEaisybillAccess === false) {
+    return <Navigate to="/accounty" replace />;
   }
 
   // Still loading companies — render nothing (initial-loader covers this)
