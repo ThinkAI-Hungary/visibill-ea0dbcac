@@ -25,9 +25,12 @@ export function ProtectedLayout() {
   const location = useLocation();
   const loaderRemovedRef = useRef(false);
 
-  // Remove the HTML initial-loader once we're ready and rendering
+  // Remove the HTML initial-loader once we're ready and rendering actual content.
+  // Only skip when redirecting to /management (outside ProtectedLayout, no manual cleanup).
+  // Auth/unverified redirects manually remove the loader in their redirect blocks below.
+  // Onboarding stays within ProtectedLayout, so the loader should be removed normally.
   useEffect(() => {
-    if (isReady && !loaderRemovedRef.current) {
+    if (isReady && redirectTarget !== 'management' && !loaderRemovedRef.current) {
       loaderRemovedRef.current = true;
       requestAnimationFrame(() => {
         const loader = document.getElementById('initial-loader');
@@ -37,7 +40,7 @@ export function ProtectedLayout() {
         }
       });
     }
-  }, [isReady]);
+  }, [isReady, redirectTarget]);
 
   // Full-Stop: render NOTHING until ready
   if (!isReady) {
@@ -79,6 +82,11 @@ export function ProtectedLayout() {
     const loader = document.getElementById('initial-loader');
     if (loader) loader.remove();
     return <Navigate to="/auth?unverified=true" replace />;
+  }
+
+  // Management/ThinkAI user → skip directly to management dashboard, no sidebar flash.
+  if (redirectTarget === 'management' && location.pathname !== '/management') {
+    return <Navigate to="/management" replace />;
   }
 
   if (redirectTarget === 'onboarding' && location.pathname !== '/categories') {

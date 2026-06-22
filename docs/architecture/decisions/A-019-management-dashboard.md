@@ -1,7 +1,7 @@
 # A-019: Management Dashboard Architektúra
 
 **Status:** Decided  
-**Date:** 2025-12 (last updated 2026-06-14)
+**Date:** 2025-12 (last updated 2026-06-21)
 
 ## Context
 
@@ -23,11 +23,13 @@ management-stats Edge Function
     ↓ JSON response
 ```
 
-### Hozzáférés-védelem (3 réteg)
+### Hozzáférés-védelem (5 réteg)
 
-1. **Frontend:** `ProtectedPage` wrapper → auth guard, bejelentkezés nélkül nem érhető el
-2. **Edge Function JWT:** `admin.auth.getUser(token)` — érvényes JWT token szükséges
-3. **Role check:** `profiles.role === 'management'` — csak management role-lal rendelkező user kaphat adatot
+1. **`useAppReady()`:** Profile query-ból felismeri a `management`/`thinkai` role-t → `redirectTarget = 'management'`
+2. **`ProtectedLayout`:** A `/` és scoped route-okból azonnal `<Navigate to="/management">` — sidebar nem renderel
+3. **`ProtectedRoute`:** A `/accounty` és bármely más route-ból is redirect — `isPending` alatt `null`-t renderel (zero-flash guard)
+4. **Edge Function JWT:** `admin.auth.getUser(token)` — érvényes JWT token szükséges
+5. **Role check:** `profiles.role` = `'management'` vagy `'thinkai'` — csak ezekkel a role-okkal rendelkező user kaphat adatot
 
 ```typescript
 // Edge Function: management-stats/index.ts
@@ -37,20 +39,22 @@ const { data: requesterProfile } = await admin
   .eq("user_id", userId)
   .maybeSingle();
 
-if (requesterProfile?.role !== "management") {
+if (requesterProfile?.role !== "management" && requesterProfile?.role !== "thinkai") {
   return json({ error: "Unauthorized", ...emptyForAction(action) });
 }
 ```
 
 ### API Design: Action-based Query Params
 
-Egyetlen Edge Function, 6 action:
+Egyetlen Edge Function, 8 action:
 
 | Action | Params | Visszatérés |
 |---|---|---|
 | `overview` | — | usersCount, companiesCount, companies[], users[], llmOverview |
 | `company-detail` | `companyId`, `page`, `pageSize`, `sortBy`, `sortDir`, `search`, `dateFrom`, `dateTo` | invoiceCount, members[], lastActivity, llmCosts{details[]} |
 | `user-detail` | `userId` | companyCount, companies[] |
+| `user-permissions` | `userId` | Felhasználó modul jogosultságai (eaisybill + accounty modulok, read/write) |
+| `update-permissions` | POST body: `{ userId, permissions[] }` | Jogosultságok frissítése |
 | `errors` | `page`, `pageSize`, `sortCol`, `sortDir`, `search`, `filterSource`, `filterCategory`, `filterCompanyId`, `filterUserId` | totalErrors, last24hErrors, mostAffectedCompany, mostAffectedUser, topErrorCategory, errors[], totalRows |
 | `delete-errors` | POST body: `{ ids }` | Hibák törlése az `app_error_logs` táblából |
 | `retry-errors` | POST body: `{ ids, targetQueue?, targetCategory? }` | Hibák újraküldése PGMQ queue-ba |
@@ -131,18 +135,19 @@ Az Edge Function **mindig érvényes JSON-t ad vissza** — hiba esetén üres a
 ## Consequences
 
 **Pozitív:**
-- Egyetlen Edge Function, 3 action → egyszerű deployment
+- Egyetlen Edge Function, 8 action → egyszerű deployment
 - Service_role az Edge Function-ben → biztonságos cross-tenant hozzáférés
 - Server-side pagination → LLM tábla akárhány rekordra skálázódik
 - `keepPreviousData` → lapozás közben nincs villogás
 - Graceful error handling → nem crashel, üres adatot mutat
+- Zero-flash management routing → 5 rétegű guard biztosítja, hogy a management user soha nem lát sidebar/navbar villanást
 
 **Negatív:**
 - ~~`auth.admin.listUsers({ perPage: 1000 })` → 1000+ felhasználónál csonkolódik~~ — **Javítva:** `listAllAuthUsers()` helper paginál az összes oldalon
 - Minden action egyetlen fetch hívásban fut → ha bármelyik query lassú, az egész válasz lassú
 - Overview minden company és member adatát egyszerre tölti le → nagy tenant számmal skálázódási kockázat
 - Nincs cache-invalidation — `refetchInterval` alapú polling, nem Realtime
-- A `management` role check a `profiles` tábla `role` mezőjére épít, nem Supabase-natív custom claims-re
+- A `management`/`thinkai` role check a `profiles` tábla `role` mezőjére épít, nem Supabase-natív custom claims-re
 
 ## Kapcsolódó Dokumentáció
 

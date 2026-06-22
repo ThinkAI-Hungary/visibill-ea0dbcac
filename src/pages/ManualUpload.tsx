@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, FileText, X, Building2, CreditCard, Wallet, Info, Landmark, Package } from 'lucide-react';
+import { Upload, FileText, X, Building2, CreditCard, Wallet, Info, Landmark, Package, FolderOpen } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,6 +26,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import UploadHistory from '@/components/UploadHistory';
 import { reportError } from '@/lib/errorReporter';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
+import UploadedFilesModal from '@/components/UploadedFilesModal';
 
 const ManualUpload = () => {
   const [selectedInvoiceFiles, setSelectedInvoiceFiles] = useState<File[]>([]);
@@ -51,6 +52,7 @@ const ManualUpload = () => {
   const [duplicateFileNames, setDuplicateFileNames] = useState<string[]>([]);
   const [duplicateUploadType, setDuplicateUploadType] = useState<'invoice' | 'transaction'>('invoice');
   const pendingUploadRef = useRef<(() => void) | null>(null);
+  const [filesModalOpen, setFilesModalOpen] = useState(false);
 
   const delayedUploadHistoryInvalidation = useCallback(() => {
     setTimeout(() => {
@@ -753,22 +755,30 @@ const ManualUpload = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl page-animate">
       <div className="mb-8">
-        <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">Dokumentum feltöltés</h1>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="h-5 w-5 text-muted-foreground cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p>Tölts fel PDF, képek vagy Excel fájlokat. A rendszer automatikusan feldolgozza és adatbázisba menti az információkat.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold tracking-tight">Dokumentum feltöltés</h1>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-5 w-5 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>Tölts fel PDF, képek vagy Excel fájlokat. A rendszer automatikusan feldolgozza és adatbázisba menti az információkat.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <p className="text-muted-foreground">
+              Tölts fel számlákat és bankkivonatokat feldolgozásra és elemzésre
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => setFilesModalOpen(true)}>
+            <FolderOpen className="h-4 w-4 mr-2" />
+            Feltöltött fájlok
+          </Button>
         </div>
-        <p className="text-muted-foreground">
-          Tölts fel számlákat és bankkivonatokat feldolgozásra és elemzésre
-        </p>
       </div>
 
       <div className="space-y-6">
@@ -1546,6 +1556,13 @@ const ManualUpload = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Uploaded Files Management Modal */}
+      <UploadedFilesModal
+        open={filesModalOpen}
+        onOpenChange={setFilesModalOpen}
+        activeTab={activeTab as 'invoices' | 'transactions' | 'salaries' | 'reports'}
+      />
     </div>
   );
 };

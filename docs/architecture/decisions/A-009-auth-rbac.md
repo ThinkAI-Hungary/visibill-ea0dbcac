@@ -16,8 +16,11 @@ A rendszernek támogatnia kell: regisztrációt, bejelentkezést, session kezel�
 |--------|-----------|---------------|
 | `owner` | Teljes — minden modul, beállítások, tagkezelés | Cég létrehozásakor automatikusan |
 | `admin` | Teljes (owner alias) | Owner adja |
-| `member` | Teljes — minden modul, beállítások | Share token-nel csatlakozik |
+| `member` | Teljes — minden modul, beállítások | Share token-nel csatlakozik, vagy accounty_assignments fallback |
+| `assistant` | Számlák, tranzakciók, kintlévőségek, projektek R/W | Owner/admin adja |
+| `viewer` | Csak olvasás — pénzügyi modulok | Owner/admin adja |
 | `employee` | Csak Munkaidő modul | Meghívó link (`/register/:token`) |
+| `management` / `thinkai` | Vezetői dashboard (`/management`) — cross-tenant áttekintés | `profiles.role` mezőben, manuálisan beállítva |
 
 **Implementáció:**
 - `auth.users` — Supabase beépített user tábla

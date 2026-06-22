@@ -1034,6 +1034,7 @@ const EAISYBILL_MODULES = [
   'general_ledger', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return',
   'salaries', 'working_time', 'fixed_assets',
   'integrations', 'exchange_rates', 'upload', 'tickets', 'settings',
+  'shipments', 'shipment_import', 'shipment_matching',
 ];
 
 const ACCOUNTY_MODULES = [
@@ -1057,6 +1058,10 @@ const EAISYBILL_VIEWER = new Set([
 const EAISYBILL_EMPLOYEE = new Set(['working_time']);
 
 function getEaisybillDefault(role: string | null | undefined, module: string): { canRead: boolean; canWrite: boolean } {
+  if (module === 'shipments' || module === 'shipment_import' || module === 'shipment_matching') {
+    return { canRead: false, canWrite: false };
+  }
+
   const r = (role || "").toLowerCase();
   const isAdmin = r === 'admin' || r === 'owner' || r === 'ceo';
   if (isAdmin) return { canRead: true, canWrite: true };

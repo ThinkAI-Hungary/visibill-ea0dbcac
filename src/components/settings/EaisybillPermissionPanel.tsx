@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { CONFIGURABLE_MODULES, getStaticDefaults, type EaisybillModule } from '@/hooks/useEaisybillPermissions';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   Shield, ChevronDown, ChevronUp, Eye, Pencil,
-  ToggleLeft, ToggleRight, Loader2, Users, Search,
+  ToggleLeft, ToggleRight, Loader2, Users, Search, RotateCcw, X
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
@@ -219,16 +219,103 @@ export function EaisybillPermissionPanel({ companyId, toast }: EaisybillPermissi
     }
   }, [modulePerms, deleteMutation]);
 
-  // Group modules by category
-  const groupedModules = useMemo(() => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Bulk upsert mutation
+  const bulkUpsertMutation = useMutation({
+    mutationFn: async (rows: Array<{ userId: string; moduleName: string; canRead: boolean; canWrite: boolean }>) => {
+      const promises = rows.map(async (row) => {
+        const existing = modulePerms.find(p => p.userId === row.userId && p.moduleName === row.moduleName);
+        if (existing) {
+          return supabase
+            .from('eaisybill_module_permissions' as any)
+            .update({ can_read: row.canRead, can_write: row.canWrite, updated_at: new Date().toISOString() } as any)
+            .eq('id', existing.id);
+        } else {
+          return supabase
+            .from('eaisybill_module_permissions' as any)
+            .insert({
+              company_id: companyId,
+              user_id: row.userId,
+              module_name: row.moduleName,
+              can_read: row.canRead,
+              can_write: row.canWrite,
+            } as any);
+        }
+      });
+      const results = await Promise.all(promises);
+      const firstError = results.find(r => r.error);
+      if (firstError) throw firstError.error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['eaisybill-company-module-permissions', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['eaisybill-module-permissions'] });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Hiba', description: err.message || 'Nem sikerült menteni.', variant: 'destructive' });
+    },
+  });
+
+  const handleBulkToggleGroup = useCallback((userId: string, groupName: string, field: 'canRead' | 'canWrite', enable: boolean) => {
+    const groupMods = CONFIGURABLE_MODULES.filter(mod => mod.group === groupName);
+    const rowsToUpsert = groupMods.map(mod => {
+      const existing = modulePerms.find(p => p.userId === userId && p.moduleName === mod.key);
+      const defaults = getStaticDefaults(selectedUserRole, mod.key);
+      const currentRead = existing?.canRead ?? defaults.canRead;
+      const currentWrite = existing?.canWrite ?? defaults.canWrite;
+
+      let nextRead = currentRead;
+      let nextWrite = currentWrite;
+
+      if (field === 'canRead') {
+        nextRead = enable;
+        if (!enable) nextWrite = false;
+      } else {
+        nextWrite = enable;
+        if (enable) nextRead = true;
+      }
+
+      return { userId, moduleName: mod.key, canRead: nextRead, canWrite: nextWrite };
+    });
+
+    bulkUpsertMutation.mutate(rowsToUpsert);
+  }, [modulePerms, selectedUserRole, bulkUpsertMutation]);
+
+  const handleResetGroup = useCallback((userId: string, groupName: string) => {
+    const groupMods = CONFIGURABLE_MODULES.filter(mod => mod.group === groupName);
+    const overridesToDelete = groupMods
+      .map(mod => modulePerms.find(p => p.userId === userId && p.moduleName === mod.key))
+      .filter(Boolean);
+
+    if (overridesToDelete.length === 0) return;
+
+    const promises = overridesToDelete.map(perm => 
+      supabase
+        .from('eaisybill_module_permissions' as any)
+        .delete()
+        .eq('id', perm!.id)
+    );
+
+    Promise.all(promises).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['eaisybill-company-module-permissions', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['eaisybill-module-permissions'] });
+    });
+  }, [modulePerms, companyId, queryClient]);
+
+  // Group modules by category and filter by search query
+  const filteredGroupedModules = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
     const groups = new Map<string, typeof CONFIGURABLE_MODULES>();
     for (const mod of CONFIGURABLE_MODULES) {
+      if (q && !mod.label.toLowerCase().includes(q) && !mod.key.toLowerCase().includes(q)) {
+        continue;
+      }
       const existing = groups.get(mod.group) || [];
       existing.push(mod);
       groups.set(mod.group, existing);
     }
     return groups;
-  }, []);
+  }, [searchQuery]);
 
   if (configurableMembers.length === 0) return null;
 
@@ -307,87 +394,159 @@ export function EaisybillPermissionPanel({ companyId, toast }: EaisybillPermissi
               {/* Module permission matrix for selected user */}
               {selectedUserId && (
                 <div className="space-y-4 pt-2 border-t">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <p className="text-sm font-medium">
                       Modul jogosultságok: <span className="text-primary">{configurableMembers.find(m => m.userId === selectedUserId)?.name}</span>
                     </p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> Olvasás</span>
-                      <span className="flex items-center gap-1"><Pencil className="h-3 w-3" /> Írás</span>
+                    
+                    <div className="relative w-full sm:w-56">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                      <Input
+                        placeholder="Modul szűrése..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="pl-8 h-8 text-xs bg-background/50"
+                        aria-label="Modul szűrése"
+                      />
+                      {searchQuery && (
+                        <button 
+                          onClick={() => setSearchQuery('')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  {[...groupedModules.entries()].map(([groupName, modules]) => (
-                    <div key={groupName} className="space-y-1">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">{groupName}</p>
-                      <div className="rounded-lg border border-border overflow-hidden">
-                        {modules.map((mod, i) => {
-                          const perm = selectedPerms.get(mod.key);
-                          const hasOverride = !!perm;
-                          const defaults = getStaticDefaults(selectedUserRole, mod.key);
-                          const canRead = perm?.canRead ?? defaults.canRead;
-                          const canWrite = perm?.canWrite ?? defaults.canWrite;
-
+                  <div className="rounded-lg border border-border overflow-hidden bg-card">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-border text-muted-foreground bg-muted/5">
+                          <th className="text-left py-2 px-3 font-medium">Modul</th>
+                          <th className="text-center py-2 px-2 font-medium w-20">Olvasás</th>
+                          <th className="text-center py-2 px-2 font-medium w-20">Írás</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...filteredGroupedModules.entries()].map(([groupName, modules]) => {
+                          if (modules.length === 0) return null;
                           return (
-                            <div
-                              key={mod.key}
-                              className={cn(
-                                'flex items-center justify-between px-3 py-2 text-sm',
-                                i > 0 && 'border-t border-border',
-                                hasOverride && 'bg-primary/[0.02]',
-                              )}
-                            >
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <span className="truncate">{mod.label}</span>
-                                {hasOverride && (
-                                  <button
-                                    type="button"
-                                    onClick={() => resetToDefault(selectedUserId, mod.key)}
-                                    className="text-xs text-muted-foreground hover:text-foreground underline shrink-0"
-                                    title="Visszaállítás alapértelmezettre"
-                                  >
-                                    reset
-                                  </button>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-3 shrink-0">
-                                {/* Read toggle */}
-                                <button
-                                  type="button"
-                                  onClick={() => togglePermission(selectedUserId, mod.key, 'canRead')}
-                                  disabled={upsertMutation.isPending}
-                                  className={cn(
-                                    'flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors',
-                                    canRead
-                                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25'
-                                      : 'bg-red-500/10 text-red-500 hover:bg-red-500/20'
-                                  )}
-                                >
-                                  {canRead ? <ToggleRight className="h-3.5 w-3.5" /> : <ToggleLeft className="h-3.5 w-3.5" />}
-                                  <Eye className="h-3 w-3" />
-                                </button>
-                                {/* Write toggle */}
-                                <button
-                                  type="button"
-                                  onClick={() => togglePermission(selectedUserId, mod.key, 'canWrite')}
-                                  disabled={upsertMutation.isPending}
-                                  className={cn(
-                                    'flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors',
-                                    canWrite
-                                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25'
-                                      : 'bg-red-500/10 text-red-500 hover:bg-red-500/20'
-                                  )}
-                                >
-                                  {canWrite ? <ToggleRight className="h-3.5 w-3.5" /> : <ToggleLeft className="h-3.5 w-3.5" />}
-                                  <Pencil className="h-3 w-3" />
-                                </button>
-                              </div>
-                            </div>
+                            <React.Fragment key={groupName}>
+                              <tr className="border-b border-border/40 bg-muted/20">
+                                <td className="py-1.5 px-3 font-bold text-[10px] text-primary uppercase tracking-wider">
+                                  {groupName}
+                                </td>
+                                <td colSpan={2} className="py-1 px-2 text-right">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <button
+                                      type="button"
+                                      disabled={bulkUpsertMutation.isPending}
+                                      onClick={() => handleBulkToggleGroup(selectedUserId, groupName, 'canRead', true)}
+                                      className="px-1 py-0.5 rounded text-[9px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                                      title="Összes olvasása engedélyezve a csoportban"
+                                    >
+                                      R+
+                                    </button>
+                                    <span className="text-muted-foreground/20 text-[9px]">|</span>
+                                    <button
+                                      type="button"
+                                      disabled={bulkUpsertMutation.isPending}
+                                      onClick={() => handleBulkToggleGroup(selectedUserId, groupName, 'canWrite', true)}
+                                      className="px-1 py-0.5 rounded text-[9px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                                      title="Összes írása engedélyezve a csoportban"
+                                    >
+                                      W+
+                                    </button>
+                                    <span className="text-muted-foreground/20 text-[9px]">|</span>
+                                    <button
+                                      type="button"
+                                      disabled={bulkUpsertMutation.isPending}
+                                      onClick={() => {
+                                        handleBulkToggleGroup(selectedUserId, groupName, 'canRead', false);
+                                        handleBulkToggleGroup(selectedUserId, groupName, 'canWrite', false);
+                                      }}
+                                      className="px-1 py-0.5 rounded text-[9px] font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                      title="Összes letiltása a csoportban"
+                                    >
+                                      Tilt
+                                    </button>
+                                    <span className="text-muted-foreground/20 text-[9px]">|</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleResetGroup(selectedUserId, groupName)}
+                                      className="p-0.5 rounded text-muted-foreground hover:text-warning hover:bg-warning/10 transition-colors"
+                                      title="Csoport visszaállítása alapértelmezettre"
+                                    >
+                                      <RotateCcw className="h-2.5 w-2.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+
+                              {modules.map(mod => {
+                                const perm = selectedPerms.get(mod.key);
+                                const hasOverride = !!perm;
+                                const defaults = getStaticDefaults(selectedUserRole, mod.key);
+                                const canRead = perm?.canRead ?? defaults.canRead;
+                                const canWrite = perm?.canWrite ?? defaults.canWrite;
+
+                                return (
+                                  <tr key={mod.key} className="border-b border-border/15 hover:bg-muted/10 transition-colors">
+                                    <td className="py-2 px-3 font-medium">
+                                      <div className="flex items-center gap-2">
+                                        <span className="truncate">{mod.label}</span>
+                                        {hasOverride && (
+                                          <button
+                                            type="button"
+                                            onClick={() => resetToDefault(selectedUserId, mod.key)}
+                                            className="text-[9px] font-semibold text-primary hover:text-primary/80 bg-primary/10 border border-primary/20 rounded px-1.5 py-0.5 transition-colors"
+                                            title="Visszaállítás alapértelmezettre"
+                                          >
+                                            reset
+                                          </button>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className="text-center py-1.5 px-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => togglePermission(selectedUserId, mod.key, 'canRead')}
+                                        disabled={upsertMutation.isPending || bulkUpsertMutation.isPending}
+                                        className={`h-6 w-7 rounded-md border flex items-center justify-center mx-auto transition-all duration-150
+                                          ${canRead
+                                            ? 'bg-primary/15 text-primary border-primary/30 hover:bg-primary/25'
+                                            : 'bg-muted/40 text-muted-foreground border-border/40 hover:bg-muted/60'
+                                          }
+                                        `}
+                                      >
+                                        <Eye className="h-3.5 w-3.5" />
+                                      </button>
+                                    </td>
+                                    <td className="text-center py-1.5 px-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => togglePermission(selectedUserId, mod.key, 'canWrite')}
+                                        disabled={upsertMutation.isPending || bulkUpsertMutation.isPending}
+                                        className={`h-6 w-7 rounded-md border flex items-center justify-center mx-auto transition-all duration-150
+                                          ${canWrite
+                                            ? 'bg-accent/15 text-accent border-accent/30 hover:bg-accent/25'
+                                            : 'bg-muted/40 text-muted-foreground border-border/40 hover:bg-muted/60'
+                                          }
+                                        `}
+                                      >
+                                        <Pencil className="h-3.5 w-3.5" />
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </React.Fragment>
                           );
                         })}
-                      </div>
-                    </div>
-                  ))}
+                      </tbody>
+                    </table>
+                  </div>
 
                   <p className="text-xs text-muted-foreground">
                     💡 Tipp: Az Admin felhasználókat nem korlátozhatod — nekik mindig teljes hozzáférésük van. 

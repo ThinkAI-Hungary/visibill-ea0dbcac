@@ -1,6 +1,6 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-06-14  
+> **Utoljára frissítve:** 2026-06-21  
 > **Összesen:** 20 döntés | ✅ Decided: 19 | ⛔ Superseded: 1
 
 ---
@@ -44,7 +44,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| A-009 | Supabase Auth + RBAC (owner/admin/member/employee) | ✅ Decided | [A-009](./A-009-auth-rbac.md) |
+| A-009 | Supabase Auth + RBAC (7 role: owner/admin/member/assistant/viewer/employee/management+thinkai) | ✅ Decided | [A-009](./A-009-auth-rbac.md) |
 | A-010 | Credential titkosítás (AES-256-GCM, per-user) | ✅ Decided | [A-010](./A-010-credential-encryption.md) |
 | A-017 | Biztonsági architektúra (5 réteg, audit trail) | ✅ Decided | [A-017](./A-017-security-architecture.md) |
 | A-020 | Auth Trigger Chain — Signup Incident és Tanulságok | ✅ Decided | [A-020](./A-020-auth-trigger-chain-incident.md) |
@@ -85,7 +85,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| A-019 | Management Dashboard architektúra (Edge Function + service_role) | ✅ Decided | [A-019](./A-019-management-dashboard.md) |
+| A-019 | Management Dashboard architektúra (8 action, 5 rétegű guard, Edge Function + service_role) | ✅ Decided | [A-019](./A-019-management-dashboard.md) |
 
 ---
 

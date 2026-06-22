@@ -122,6 +122,9 @@ const CustomReportBuilderPage = lazy(() => import("./pages/Accounty/reports/Cust
 const DeclarationArchivePage = lazy(() => import("./pages/Accounty/declarations/DeclarationArchivePage"));
 const VatReturnPage = lazy(() => import("./pages/VatReturnPage"));
 const TicketsPage = lazy(() => import("./pages/TicketsPage"));
+const ShipmentImportPage = lazy(() => import("./pages/ShipmentImportPage"));
+const ShipmentMatchingDashboard = lazy(() => import("./pages/ShipmentMatchingDashboard"));
+const EscalationListPage = lazy(() => import("./pages/EscalationListPage"));
 
 // TAO/KIVA module
 const TaoPortfolioPage = lazy(() => import("./pages/Accounty/Tao/TaoPortfolioPage"));
@@ -227,16 +230,18 @@ function RootRedirect() {
     return <Navigate to="/management" replace />;
   }
 
-  if (hasEaisybillAccess === false) {
-    return <Navigate to="/accounty" replace />;
-  }
-
   // Still loading companies — render nothing (initial-loader covers this)
   if (isInitialLoading) return null;
 
-  // No companies at all — render Index directly (shows EmptyStateDashboard onboarding wizard)
+  // No companies at all — render Index directly (shows EmptyStateDashboard onboarding wizard).
+  // This MUST come BEFORE the eaisybillAccess check, because a brand-new user
+  // has no company_members → hasEaisybillAccess=false, but they should see onboarding, not /accounty.
   if (!isInitialLoading && companies.length === 0) {
     return <Suspense fallback={<LoadingSpinner message="Betöltés..." />}><Index /></Suspense>;
+  }
+
+  if (hasEaisybillAccess === false) {
+    return <Navigate to="/accounty" replace />;
   }
 
   // Has companies but selectedCompany not yet resolved — wait
@@ -510,6 +515,9 @@ const App = () => (
                         <Route path="salaries/:tab?" element={<ProtectedPage><SalariesPage /></ProtectedPage>} />
                         <Route path="working-time/:tab?" element={<ProtectedPage><WorkingTimePage /></ProtectedPage>} />
                         <Route path="analytics/:tab?" element={<ProtectedPage><Analytics /></ProtectedPage>} />
+                        <Route path="shipments" element={<ProtectedPage><ShipmentMatchingDashboard /></ProtectedPage>} />
+                        <Route path="shipments/import" element={<ProtectedPage><ShipmentImportPage /></ProtectedPage>} />
+                        <Route path="shipments/escalated" element={<ProtectedPage><EscalationListPage /></ProtectedPage>} />
                       </Route>
 
                       {/* ═══ Legacy Redirects — old flat paths → scoped ═══ */}
@@ -533,6 +541,12 @@ const App = () => (
                       <Route path="/analytics" element={<LegacyRedirect page="analytics" />} />
                       <Route path="/tickets" element={<LegacyRedirect page="tickets" />} />
                       <Route path="/onboarding" element={<LegacyRedirect page="categories" />} />
+                      <Route path="/shipments" element={<LegacyRedirect page="shipments" />} />
+                      <Route path="/shipments/import" element={<LegacyRedirect page="shipments/import" />} />
+                      <Route path="/shipments/escalated" element={<LegacyRedirect page="shipments/escalated" />} />
+                      {/* Legacy matching routes → redirect to consolidated /shipments */}
+                      <Route path="/shipment-matching" element={<LegacyRedirect page="shipments" />} />
+                      <Route path="/shipment-matching/escalated" element={<LegacyRedirect page="shipments/escalated" />} />
 
                       {/* Root → scoped dashboard */}
                       <Route path="/" element={<RootRedirect />} />

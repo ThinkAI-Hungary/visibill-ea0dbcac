@@ -81,6 +81,23 @@ return <Navigate to={authUrl} replace />;
 
 Bejelentkezés után a `returnTo` query param-ból visszairányít.
 
+### Post-Login Routing (Centralizált)
+
+Az `Auth.tsx` **nem hoz routing döntést** — mindig `/`-re navigál (vagy `returnTo`-ra, ha van). A `RootRedirect` komponens (App.tsx) dönt a végső útvonalról:
+
+```
+Auth.tsx  →  navigate('/')  →  RootRedirect  →  végső útvonal
+```
+
+| Prioritás | Feltétel | Cél |
+|:---------:|----------|-----|
+| 1 | `profiles.role` = `management` / `thinkai` | `/management` |
+| 2 | `companies.length === 0` | Onboarding wizard (EmptyStateDashboard) |
+| 3 | `hasEaisybillAccess === false` (van cég, de nincs eaisybill jog) | `/accounty` |
+| 4 | Normál user | `/:companyId/:dateRange/` (scoped dashboard) |
+
+> **Megjegyzés:** Korábban az `Auth.tsx` is tartalmazott `hasEaisybillAccess` checkeket, ami duplán routolt és friss (cég nélküli) user-eket tévesen `/accounty`-ra küldött az onboarding helyett. Ez javítva — a routing döntés egyetlen helyen van (`RootRedirect`).
+
 ---
 
 ## Password Recovery Flow
@@ -119,16 +136,31 @@ A `ProtectedLayout` SEMMIT nem renderel, amíg az összes adat be nem töltődö
 | Auth | Supabase session resolved |
 | Company | Cégek listája betöltődött |
 | Role | User role (owner/employee) lekérdezve |
-| Profile | Profil adatok betöltve |
+| Profile | Profil adatok betöltve (name, email_verified, **role**) |
 
 ### Redirect Targetek
 
 | `redirectTarget` | Feltétel | Cél |
 |-----------------|----------|-----|
 | `'auth'` | Nincs user session | `/auth` |
-| `'unverified'` | Email nem megerősítve | `/auth?unverified=true` |
-| `'onboarding'` | Nincs cég | `/categories` |
+| ~~`'unverified'`~~ | ~~Email nem megerősítve~~ | ~~`/auth?unverified=true`~~ |
+| `'management'` | `profiles.role` = `'management'` vagy `'thinkai'` | `/management` |
+| `'onboarding'` | Nincs profil / profil incomplete | `/categories` |
 | `null` | Minden OK | Normál renderelés |
+
+> **Megjegyzés:** Az `'unverified'` redirect jelenleg `[DISABLED]` — a kódban kikommentezve, jövőbeli visszakapcsolásra fenntartva.
+
+### Management Routing (Zero-Flash Guard)
+
+A `management` / `thinkai` role-lal rendelkező felhasználók **azonnal** a `/management` útvonalra kerülnek bejelentkezéskor, sidebar/navbar villanás nélkül. Ezt 3 rétegű frontend guard biztosítja:
+
+| Réteg | Komponens | Feladata |
+|-------|-----------|----------|
+| 1 | `useAppReady()` | Profile query-ból felismeri a management role-t → `redirectTarget = 'management'` |
+| 2 | `ProtectedLayout` | A `/` és scoped route-okból azonnal `<Navigate to="/management">` — sidebar nem renderel |
+| 3 | `ProtectedRoute` | A `/accounty` és bármely más route-ból is redirect — `isPending` alatt `null`-t renderel (zero flash) |
+
+Az initial-loader (CSS spinner) a `ProtectedLayout`-ban **NEM** távolítódik el management redirect esetén — a `/management` oldal saját `<RemoveInitialLoader />` komponense kezeli.
 
 ---
 
@@ -224,9 +256,10 @@ A rendszer két különálló alkalmazási felülettel rendelkezik (eaisybill é
 | :--- | :--- | :--- |
 | **Tulajdonos / Admin** | `owner` / `admin` | Teljes hozzáférés az összes modulhoz, cégbeállításokhoz, számlázási csomagokhoz, meghívók kezeléséhez és tagok szerepköreinek módosításához. |
 | **Tag** | `member` | Írási és olvasási jog a pénzügyi modulokhoz (Számlák, Tranzakciók, Házipénztár, Projektek, Munkaidő rögzítés). Nem érheti el a cégbeállításokat és tagkezelést. |
+| **Asszisztens** | `assistant` | Számlák, tranzakciók, kintlévőségek, projektek R/W — bérszámfejtés/HR/könyvelési modulok nélkül. |
 | **Betekintő** | `viewer` | Csak olvasási jog a pénzügyi modulokhoz. Nem hozhat létre és nem módosíthat adatokat. |
 | **Munkavállaló** | `employee` | Kizárólag a saját Munkaidő oldalát éri el és rögzíthet időbejegyzéseket. Minden más menüpont rejtve van számára. |
-| **Vezetőség** | `management` | Speciális hozzáférés a vezetői dashboardhoz (`/management`). |
+| **Vezetőség / ThinkAI** | `management` / `thinkai` | Speciális hozzáférés a vezetői dashboardhoz (`/management`). Nem lát eaisybill/eaisybooks felületet. A `profiles.role` mezőben tárolódik (nem `company_members`). Aktuális ThinkAI user: `management@thinkai.hu` (`thinkai` role). |
 
 #### UI Eltérések az eaisybill szerepkörök alapján:
 

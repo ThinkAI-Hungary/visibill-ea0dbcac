@@ -16,6 +16,9 @@ import { hu } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { lazy, Suspense } from 'react';
+
+const CMREscalationDialog = lazy(() => import('@/components/CMREscalationDialog'));
 
 interface UploadRecord {
   id: string;
@@ -48,7 +51,7 @@ const activeStatuses = new Set([...processingStatuses, ...pendingStatuses]);
 // Invoice/payroll worker uses 'processed', transaction worker uses 'completed'
 const doneStatuses = new Set(['completed', 'processed']);
 // CMR/document statuses — worker sets these for non-invoice documents
-const cmrStatuses = new Set(['cmr_attached', 'cmr_orphaned']);
+const cmrStatuses = new Set(['cmr_attached', 'cmr_orphaned', 'cmr_escalated']);
 
 // formatFileSize is now imported from @/lib/utils
 
@@ -71,10 +74,15 @@ function getStatus(record: UploadRecord, processedIds: Set<string>): { label: st
     const multiInfo = isMulti ? `${processed}/${total} számla` : undefined;
     return { label: 'Feldolgozás alatt', variant: 'outline', multiProgress: multiInfo };
   }
-  // CMR documents — show specific status for transport documents
+  // Transport document statuses (CMR, nalog, etc.)
   if (cmrStatuses.has(record.processing_status)) {
-    const label = record.processing_status === 'cmr_attached' ? 'CMR párosítva' : 'CMR (párosítatlan)';
-    return { label, variant: record.processing_status === 'cmr_attached' ? 'default' : 'secondary' };
+    if (record.processing_status === 'cmr_attached') {
+      return { label: 'Dokumentum párosítva', variant: 'default' };
+    }
+    if (record.processing_status === 'cmr_escalated') {
+      return { label: '⚠️ Eszkaláció', variant: 'outline' };
+    }
+    return { label: 'Vár a számlára', variant: 'secondary' };
   }
   // Ignored documents — classified as unidentifiable
   if (record.processing_status === 'ignored') {
@@ -96,6 +104,9 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
   const [previewFile, setPreviewFile] = useState<{ name: string; url: string } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(true);
   const [previewError, setPreviewError] = useState(false);
+
+  // CMR Escalation dialog state
+  const [escalationUpload, setEscalationUpload] = useState<UploadRecord | null>(null);
 
   // Track previous processing_status per upload ID to detect transitions
   const prevStatusMap = useRef<Map<string, string>>(new Map());
@@ -247,7 +258,11 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
       const hasActiveJobs = recs.some(
         (r: UploadRecord) => processingStatuses.has(r.processing_status) || pendingStatuses.has(r.processing_status)
       );
-      return hasActiveJobs ? 3000 : false;
+      // Also keep polling if the newest record was created in the last 90s
+      // (covers CMR/nalog detection which can take 30-60s with Vision OCR fallback)
+      const newestCreatedAt = recs[0]?.created_at;
+      const recentUpload = newestCreatedAt && (Date.now() - new Date(newestCreatedAt).getTime()) < 90_000;
+      return (hasActiveJobs || recentUpload) ? 3000 : false;
     },
   });
 
@@ -390,7 +405,11 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
                       <TableCell>
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-1.5">
-                            <Badge variant={status.variant} className="text-xs">
+                            <Badge
+                              variant={status.variant}
+                              className={`text-xs${record.processing_status === 'cmr_escalated' ? ' cursor-pointer hover:ring-2 hover:ring-orange-400/50' : ''}`}
+                              onClick={record.processing_status === 'cmr_escalated' ? (e: React.MouseEvent) => { e.stopPropagation(); setEscalationUpload(record); } : undefined}
+                            >
                               {status.label}
                             </Badge>
                             {status.multiProgress && (
@@ -531,6 +550,22 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* CMR Escalation Dialog */}
+    {escalationUpload && (
+      <Suspense fallback={null}>
+        <CMREscalationDialog
+          upload={escalationUpload}
+          open={!!escalationUpload}
+          onClose={() => setEscalationUpload(null)}
+          onResolved={() => {
+            setEscalationUpload(null);
+            queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
+            queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
+          }}
+        />
+      </Suspense>
+    )}
     </>
   );
 }

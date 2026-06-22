@@ -4,7 +4,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 
-export type RedirectTarget = 'auth' | 'unverified' | 'onboarding' | 'working-time' | null;
+export type RedirectTarget = 'auth' | 'unverified' | 'onboarding' | 'management' | 'working-time' | null;
 
 /**
  * useAppReady — Single source of truth for app readiness.
@@ -22,26 +22,29 @@ export function useAppReady() {
   const { role, isLoading: roleLoading, isEmployee } = useUserRole();
 
   // Profile check — owned by useAppReady (single root gate, no duplication in ProtectedRoute).
-  const { data: profileStatus, isPending: profilePending } = useQuery({
+  const { data: profileData, isPending: profilePending } = useQuery({
     queryKey: ['profile-check', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('name, email_verified')
+        .select('name, email_verified, role')
         .eq('user_id', user!.id)
         .single();
 
-      if (error && (error as any).code === 'PGRST116') return 'no-profile' as const;
+      if (error && (error as any).code === 'PGRST116') return { status: 'no-profile' as const, role: null };
       if (error) throw error;
-      if (!data?.name) return 'incomplete' as const;
+      if (!data?.name) return { status: 'incomplete' as const, role: data?.role || null };
       // [DISABLED] Email verification check — kept for future re-enablement
-      // if (data?.email_verified === false) return 'unverified' as const;
-      return 'complete' as const;
+      // if (data?.email_verified === false) return { status: 'unverified' as const, role: data?.role || null };
+      return { status: 'complete' as const, role: data?.role || null };
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
+
+  const profileStatus = profileData?.status;
+  const profileRole = profileData?.role;
 
   // Auth still loading → not ready.
   if (authLoading) {
@@ -56,6 +59,11 @@ export function useAppReady() {
   // Wait for company AND profile resolution.
   if (companyLoading || profilePending) {
     return { isReady: false, user, redirectTarget: null as RedirectTarget };
+  }
+
+  // Management/ThinkAI role → redirect to /management immediately, before any layout renders.
+  if (profileRole === 'management' || profileRole === 'thinkai') {
+    return { isReady: true, user, redirectTarget: 'management' as RedirectTarget };
   }
 
   // [DISABLED] Email not verified redirect — kept for future re-enablement
@@ -86,3 +94,4 @@ export function useAppReady() {
 
   return { isReady: true, user, redirectTarget: null as RedirectTarget };
 }
+

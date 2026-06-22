@@ -29,7 +29,10 @@ export type EaisybillModule =
   | 'exchange_rates'
   | 'upload'
   | 'tickets'
-  | 'settings';
+  | 'settings'
+  | 'shipments'
+  | 'shipment_matching'
+  | 'shipment_import';
 
 interface ModulePermission {
   canRead: boolean;
@@ -48,6 +51,9 @@ interface DbModulePermission {
 const ADMIN_ONLY_MODULES: EaisybillModule[] = [
   'salaries',
   'integrations',
+  'shipments',
+  'shipment_matching',
+  'shipment_import',
 ];
 
 /**
@@ -111,6 +117,7 @@ const ALL_MODULES: EaisybillModule[] = [
   'general_ledger', 'profit_loss', 'balance_sheet', 'annual_report', 'vat_return',
   'salaries', 'working_time', 'fixed_assets',
   'integrations', 'exchange_rates', 'upload', 'tickets', 'settings',
+  'shipments', 'shipment_matching', 'shipment_import',
 ];
 
 /**
@@ -138,6 +145,12 @@ export const URL_TO_MODULE: Record<string, EaisybillModule> = {
   '/upload': 'upload',
   '/tickets': 'tickets',
   '/settings': 'settings',
+  '/shipments': 'shipment_matching',
+  '/shipments/import': 'shipment_import',
+  '/shipments/escalated': 'shipment_matching',
+  // Legacy URLs (redirect targets still need module resolution)
+  '/shipment-matching': 'shipment_matching',
+  '/shipment-matching/escalated': 'shipment_matching',
 };
 
 /**
@@ -163,6 +176,10 @@ export const CONFIGURABLE_MODULES: { key: EaisybillModule; label: string; group:
   { key: 'exchange_rates', label: 'Árfolyamok', group: 'Rendszer' },
   { key: 'upload', label: 'Feltöltés', group: 'Rendszer' },
   { key: 'tickets', label: 'Hibajegyek', group: 'Rendszer' },
+  { key: 'integrations', label: 'Integrációk', group: 'Rendszer' },
+  { key: 'settings', label: 'Beállítások', group: 'Rendszer' },
+  { key: 'shipment_matching', label: 'Fuvarok', group: 'Szállítmányozás' },
+  { key: 'shipment_import', label: 'Excel Import', group: 'Szállítmányozás' },
 ];
 
 /**
@@ -243,26 +260,37 @@ export function useEaisybillPermissions() {
 
     /** Check if the user can access a given module (DB override > static) */
     function canAccess(module: EaisybillModule): boolean {
-      // Admin always has access
-      if (isAdmin) return true;
-
-      // Check DB override
+      // Check DB override first
       const override = dbOverrides?.get(module);
       if (override !== undefined) {
         return override.can_read;
       }
+
+      // Shipment modules are disabled by default for ALL users (including admins)
+      if (module === 'shipments' || module === 'shipment_matching' || module === 'shipment_import') {
+        return false;
+      }
+
+      // Admin always has access to other modules
+      if (isAdmin) return true;
 
       return staticCanAccess(module);
     }
 
     /** Check if the user has write permissions for a module */
     function canWrite(module: EaisybillModule): boolean {
-      if (isAdmin) return true;
-
+      // Check DB override first
       const override = dbOverrides?.get(module);
       if (override !== undefined) {
         return override.can_write;
       }
+
+      // Shipment modules are disabled by default for ALL users (including admins)
+      if (module === 'shipments' || module === 'shipment_matching' || module === 'shipment_import') {
+        return false;
+      }
+
+      if (isAdmin) return true;
 
       return staticCanWrite(module);
     }
@@ -288,6 +316,11 @@ export function useEaisybillPermissions() {
  * Used by the admin permission panel to show accurate defaults.
  */
 export function getStaticDefaults(role: string, module: EaisybillModule): { canRead: boolean; canWrite: boolean } {
+  // Shipment modules are disabled by default for all roles
+  if (module === 'shipments' || module === 'shipment_matching' || module === 'shipment_import') {
+    return { canRead: false, canWrite: false };
+  }
+
   const isAdminRole = role === 'admin' || role === 'owner';
   if (isAdminRole) return { canRead: true, canWrite: true };
 

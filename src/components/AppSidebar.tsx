@@ -67,6 +67,8 @@ import {
   ChevronRight,
   Wrench,
   TicketCheck,
+  Truck,
+  AlertTriangle,
 } from "lucide-react";
 import { useUnreadTicketCount } from "@/hooks/useTickets";
 import CompanySelector from "./CompanySelector";
@@ -134,6 +136,16 @@ const navigationGroups: NavGroup[] = [
     ],
   },
   {
+    key: 'shipment',
+    label: 'Szállítmányozás',
+    icon: Truck,
+    items: [
+      { title: "Fuvarok", url: "/shipments", icon: Truck, tourId: "shipments", moduleKey: 'shipment_matching' },
+      { title: "Excel Import", url: "/shipments/import", icon: FileSpreadsheet, tourId: "shipment-import", moduleKey: 'shipment_import' },
+      { title: "Eszkaláció", url: "/shipments/escalated", icon: AlertTriangle, tourId: "escalation", moduleKey: 'shipment_matching' },
+    ],
+  },
+  {
     key: 'system',
     label: 'Rendszer',
     icon: Wrench,
@@ -171,6 +183,9 @@ const prefetchMap: Record<string, () => Promise<unknown>> = {
   "/exchange-rates": () => import("@/pages/ExchangeRates"),
 
   "/tickets": () => import("@/pages/TicketsPage"),
+  "/shipments": () => import("@/pages/ShipmentMatchingDashboard"),
+  "/shipments/import": () => import("@/pages/ShipmentImportPage"),
+  "/shipments/escalated": () => import("@/pages/EscalationListPage"),
 };
 
 const STORAGE_KEY = "visibill:sidebar-groups";
@@ -285,9 +300,28 @@ export const AppSidebar = React.memo(function AppSidebar() {
 
   const toggleTheme = () => setTheme(isDark ? "light" : "dark");
 
+  // Collect all registered nav item URLs for exact-match priority
+  const allNavUrls = useMemo(() => {
+    const urls = new Set<string>();
+    for (const group of navigationGroups) {
+      for (const item of group.items) {
+        urls.add(item.url);
+      }
+    }
+    // Include standalone items
+    urls.add('/upload');
+    urls.add('/tickets');
+    urls.add('/settings');
+    return urls;
+  }, []);
+
   const isActive = (path: string) => {
     if (path === "/") return pageSegment === "/";
-    return pageSegment === path || pageSegment.startsWith(path + '/');
+    if (pageSegment === path) return true;
+    // If the current page is itself a registered nav item, don't let
+    // prefix matching claim a parent (e.g., /shipments vs /shipments/import)
+    if (allNavUrls.has(pageSegment)) return false;
+    return pageSegment.startsWith(path + '/');
   };
 
   const handleSignOut = async () => {

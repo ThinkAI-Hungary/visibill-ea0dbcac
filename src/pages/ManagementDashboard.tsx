@@ -15,7 +15,7 @@ import {
   Bot, Coins, ArrowUpDown, ArrowUp, ArrowDown,
   Trophy, Zap, Calendar, X, Crown, Sun, Moon,
   AlertTriangle, Trash2, RefreshCw, RotateCcw, Receipt, Wallet, Landmark, BarChart3,
-  Eye, Download, ExternalLink, ShieldCheck, ToggleLeft, ToggleRight, Save, Check, Loader2
+  Eye, Download, ExternalLink, ShieldCheck, ToggleLeft, ToggleRight, Save, Check, Loader2, Pencil
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────
@@ -1246,9 +1246,12 @@ export default function ManagementDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Derive view state from URL
-  const urlView = searchParams.get('view') as 'company' | 'user' | null;
+  const urlView = searchParams.get('view') as 'company' | 'user' | 'errors' | 'permissions' | null;
   const urlId = searchParams.get('id');
-  const view: 'overview' | 'company' | 'user' | 'errors' = (urlView === 'company' || urlView === 'user' || urlView === 'errors') ? urlView : 'overview';
+  const view: 'overview' | 'company' | 'user' | 'errors' | 'permissions' = 
+    (urlView === 'company' || urlView === 'user' || urlView === 'errors' || urlView === 'permissions') 
+      ? urlView 
+      : 'overview';
   const selectedCompanyId = view === 'company' ? urlId : null;
   const selectedUserId = view === 'user' ? urlId : null;
 
@@ -1313,7 +1316,7 @@ export default function ManagementDashboard() {
   // ── Title / subtitle derivation ─────────────────────
   const title = view === 'overview'
     ? 'Management Dashboard'
-    : view === 'errors'
+    : (view === 'errors' || view === 'permissions')
       ? 'Control Center'
       : view === 'company'
         ? (selectedCompanyName || 'Cég részletek')
@@ -1321,7 +1324,7 @@ export default function ManagementDashboard() {
 
   const subtitle = view === 'overview'
     ? 'eaisybill platform áttekintés'
-    : view === 'errors'
+    : (view === 'errors' || view === 'permissions')
       ? 'Hibák és jogosultságkezelés'
       : view === 'company'
         ? 'Cég részletes adatai'
@@ -1778,8 +1781,8 @@ export default function ManagementDashboard() {
         })()}
 
         {/* ═══ CONTROL CENTER ═══ */}
-        {view === 'errors' && (
-          <ControlCenter onOpenCompany={openCompany} allUsers={overview?.users || []} />
+        {(view === 'errors' || view === 'permissions') && (
+          <ControlCenter initialTab={view} onOpenCompany={openCompany} allUsers={overview?.users || []} />
         )}
       </main>
       </div>
@@ -1798,8 +1801,13 @@ interface ControlCenterUser {
   email: string;
 }
 
-function ControlCenter({ onOpenCompany, allUsers }: { onOpenCompany: (id: string) => void; allUsers: ControlCenterUser[] }) {
-  const [tab, setTab] = useState<ControlCenterTab>('errors');
+function ControlCenter({ initialTab, onOpenCompany, allUsers }: { initialTab: 'errors' | 'permissions'; onOpenCompany: (id: string) => void; allUsers: ControlCenterUser[] }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = initialTab;
+
+  const setTab = (newTab: 'errors' | 'permissions') => {
+    setSearchParams({ view: newTab });
+  };
 
   return (
     <div className="space-y-6 page-animate overflow-hidden">
@@ -1873,6 +1881,7 @@ const MODULE_LABELS: Record<string, string> = {
   salaries: 'Bérek/járulékok', working_time: 'Munkaidő', fixed_assets: 'TENY',
   integrations: 'Integrációk', exchange_rates: 'Árfolyamok', upload: 'Feltöltés', tickets: 'Hibajegyek',
   settings: 'Beállítások',
+  shipments: 'Fuvarok', shipment_import: 'Excel Import', shipment_matching: 'Matching',
   // eaisyBooks
   portfolio: 'Portfólió', missing_invoices: 'Hiányzó számlák', tax_calendar: 'Adó naptár',
   reports: 'Riportok', approval_queue: 'Jóváhagyó rendszer', alerts: 'Riasztások',
@@ -1887,8 +1896,26 @@ const MODULE_LABELS: Record<string, string> = {
 
 function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
   const [searchUser, setSearchUser] = useState('');
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedUserId = searchParams.get('userId') || null;
+
+  const setSelectedUserId = useCallback((userId: string | null) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (userId) {
+      nextParams.set('userId', userId);
+    } else {
+      nextParams.delete('userId');
+    }
+    setSearchParams(nextParams);
+  }, [searchParams, setSearchParams]);
+
   const [pendingChanges, setPendingChanges] = useState<Map<string, { canRead: boolean; canWrite: boolean }>>(new Map());
+
+  React.useEffect(() => {
+    setPendingChanges(new Map());
+    setSelectedEbCompany(null);
+    setSelectedAbFirm(null);
+  }, [selectedUserId]);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [selectedEbCompany, setSelectedEbCompany] = useState<string | null>(null);
@@ -1913,12 +1940,52 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
   });
 
   const handleToggle = (platform: string, companyOrFirmId: string, moduleName: string, field: 'canRead' | 'canWrite', currentValue: boolean) => {
-    const key = `${platform}:${companyOrFirmId}:${moduleName}:${field}`;
-    const reverseKey = `${platform}:${companyOrFirmId}:${moduleName}:${field === 'canRead' ? 'canWrite' : 'canRead'}`;
+    const nextVal = !currentValue;
     
     setPendingChanges(prev => {
       const next = new Map(prev);
-      next.set(key, { canRead: field === 'canRead' ? !currentValue : currentValue, canWrite: field === 'canWrite' ? !currentValue : currentValue });
+      const readKey = `${platform}:${companyOrFirmId}:${moduleName}:canRead`;
+      const writeKey = `${platform}:${companyOrFirmId}:${moduleName}:canWrite`;
+
+      // Find original DB values for both fields
+      const currentMod = userPerms?.eaisybill.find(c => c.companyId === companyOrFirmId)?.modules.find(m => m.module === moduleName)
+        || userPerms?.accounty.find(a => a.firmId === companyOrFirmId)?.modules.find(m => m.module === moduleName);
+      const origRead = currentMod?.canRead ?? true;
+      const origWrite = currentMod?.canWrite ?? true;
+      const effectiveRead = prev.get(readKey)?.canRead ?? origRead;
+      const effectiveWrite = prev.get(writeKey)?.canWrite ?? origWrite;
+
+      let newRead = effectiveRead;
+      let newWrite = effectiveWrite;
+
+      if (field === 'canRead' && !nextVal) {
+        // Turning off read → also turn off write
+        newRead = false;
+        newWrite = false;
+      } else if (field === 'canWrite' && nextVal) {
+        // Turning on write → also turn on read
+        newRead = true;
+        newWrite = true;
+      } else if (field === 'canRead') {
+        // Turning on read only
+        newRead = true;
+      } else {
+        // Turning off write only
+        newWrite = false;
+      }
+
+      // Only keep entries that actually differ from the original DB value
+      if (newRead !== origRead) {
+        next.set(readKey, { canRead: newRead, canWrite: newWrite });
+      } else {
+        next.delete(readKey);
+      }
+      if (newWrite !== origWrite) {
+        next.set(writeKey, { canRead: newRead, canWrite: newWrite });
+      } else {
+        next.delete(writeKey);
+      }
+
       return next;
     });
   };
@@ -2035,7 +2102,7 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
             {filteredUsers.map(u => (
               <button
                 key={u.user_id}
-                onClick={() => { setSelectedUserId(u.user_id); setPendingChanges(new Map()); setSelectedEbCompany(null); setSelectedAbFirm(null); }}
+                onClick={() => setSelectedUserId(u.user_id)}
                 className={`w-full text-left px-4 py-3 transition-colors duration-150 hover:bg-accent/30 border-l-2
                   ${selectedUserId === u.user_id ? 'bg-primary/10 border-primary' : 'border-transparent'}`}
               >
@@ -2209,6 +2276,61 @@ function PermissionsPanel({ allUsers }: { allUsers: ControlCenterUser[] }) {
 }
 
 // ─── Module Matrix (reusable per-company permission grid) ─────
+const PLATFORM_MODULE_GROUPS: Record<string, Record<string, { label: string; group: string }>> = {
+  eaisybill: {
+    dashboard: { label: 'Irányítópult', group: 'Áttekintés' },
+    categories: { label: 'Kategóriák', group: 'Áttekintés' },
+    projects: { label: 'Projektek', group: 'Áttekintés' },
+    partners: { label: 'Partnertörzs', group: 'Áttekintés' },
+    invoices: { label: 'Számlák', group: 'Pénzügyek' },
+    receivables: { label: 'Kintlévőség', group: 'Pénzügyek' },
+    transactions: { label: 'Tranzakciók', group: 'Pénzügyek' },
+    petty_cash: { label: 'Házipénztár', group: 'Pénzügyek' },
+    general_ledger: { label: 'Főkönyv', group: 'Könyvelés' },
+    profit_loss: { label: 'Eredménykimutatás', group: 'Könyvelés' },
+    balance_sheet: { label: 'Mérleg', group: 'Könyvelés' },
+    annual_report: { label: 'Beszámoló', group: 'Könyvelés' },
+    vat_return: { label: 'ÁFA Bevallás', group: 'Könyvelés' },
+    salaries: { label: 'Bérek/járulékok', group: 'HR & Eszközök' },
+    working_time: { label: 'Munkaidő', group: 'HR & Eszközök' },
+    fixed_assets: { label: 'TENY', group: 'HR & Eszközök' },
+    exchange_rates: { label: 'Árfolyamok', group: 'Rendszer' },
+    upload: { label: 'Feltöltés', group: 'Rendszer' },
+    tickets: { label: 'Hibajegyek', group: 'Rendszer' },
+    integrations: { label: 'Integrációk', group: 'Rendszer' },
+    settings: { label: 'Beállítások', group: 'Rendszer' },
+    shipments: { label: 'Fuvarok', group: 'Szállítmányozás' },
+    shipment_import: { label: 'Excel Import', group: 'Szállítmányozás' },
+    shipment_matching: { label: 'Matching', group: 'Szállítmányozás' },
+  },
+  accounty: {
+    portfolio: { label: 'Portfólió', group: 'Áttekintés' },
+    missing_invoices: { label: 'Hiányzó számlák', group: 'Áttekintés' },
+    tax_calendar: { label: 'Adó naptár', group: 'Áttekintés' },
+    reports: { label: 'Riportok', group: 'Riportok' },
+    approval_queue: { label: 'Jóváhagyó rendszer', group: 'Riportok' },
+    alerts: { label: 'Riasztások', group: 'Riportok' },
+    nav_deadlines: { label: 'NAV határidők', group: 'Riportok' },
+    payroll: { label: 'Bérszámfejtés', group: 'Pénzügyek' },
+    tao: { label: 'TAO / KIVA', group: 'Pénzügyek' },
+    settings: { label: 'Beállítások', group: 'Pénzügyek' },
+    admin_audit: { label: 'Audit napló', group: 'Rendszer' },
+    admin_gdpr: { label: 'GDPR', group: 'Rendszer' },
+    admin_templates: { label: 'Sablonok', group: 'Rendszer' },
+    admin_job_codes: { label: 'Jogviszonykódok', group: 'Rendszer' },
+    admin_tax_params: { label: 'Adómértékek', group: 'Rendszer' },
+    admin_legal: { label: 'Jogszabály-frissítések', group: 'Rendszer' },
+    admin_office: { label: 'Irodai beállítások', group: 'Rendszer' },
+    admin_permissions: { label: 'Jogosultságkezelő', group: 'Rendszer' },
+    admin_accountants: { label: 'Könyvelők kezelése', group: 'Rendszer' },
+    onboarding: { label: 'Onboarding', group: 'Rendszer' },
+    ai_assistant: { label: 'AI Asszisztens', group: 'AI & Segítség' },
+    help: { label: 'Segítség', group: 'AI & Segítség' },
+    profile: { label: 'Profil', group: 'AI & Segítség' },
+    tickets: { label: 'Hibajegyek', group: 'AI & Segítség' },
+  }
+};
+
 function ModuleMatrix({
   title,
   subtitle,
@@ -2228,82 +2350,231 @@ function ModuleMatrix({
   isChanged: (platform: string, entityId: string, module: string, field: 'canRead' | 'canWrite', original: boolean) => boolean;
   onToggle: (platform: string, entityId: string, module: string, field: 'canRead' | 'canWrite', current: boolean) => void;
 }) {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredModules = useMemo(() => {
+    if (!searchQuery.trim()) return modules;
+    const q = searchQuery.toLowerCase();
+    const groupInfo = PLATFORM_MODULE_GROUPS[platform] || {};
+    return modules.filter(mod => {
+      const info = groupInfo[mod.module];
+      const label = info?.label || MODULE_LABELS[mod.module] || mod.module;
+      return label.toLowerCase().includes(q) || mod.module.toLowerCase().includes(q);
+    });
+  }, [modules, searchQuery, platform]);
+
+  const groupedModules = useMemo(() => {
+    const groups: Record<string, typeof modules> = {};
+    const groupInfo = PLATFORM_MODULE_GROUPS[platform] || {};
+    
+    filteredModules.forEach(mod => {
+      const info = groupInfo[mod.module];
+      const groupName = info?.group || 'Egyéb';
+      if (!groups[groupName]) groups[groupName] = [];
+      groups[groupName].push(mod);
+    });
+    
+    return groups;
+  }, [filteredModules, platform]);
+
+  const handleBulkToggleGroup = (groupName: string, field: 'canRead' | 'canWrite', enable: boolean) => {
+    const groupInfo = PLATFORM_MODULE_GROUPS[platform] || {};
+    const groupMods = modules.filter(mod => {
+      const info = groupInfo[mod.module];
+      return (info?.group || 'Egyéb') === groupName;
+    });
+
+    groupMods.forEach(mod => {
+      const currentEffective = getEffectiveValue(platform, entityId, mod.module, field, mod[field]);
+      
+      if (field === 'canWrite' && enable) {
+        const currentRead = getEffectiveValue(platform, entityId, mod.module, 'canRead', mod.canRead);
+        if (!currentRead) {
+          onToggle(platform, entityId, mod.module, 'canRead', false);
+        }
+      }
+      
+      if (field === 'canRead' && !enable) {
+        const currentWrite = getEffectiveValue(platform, entityId, mod.module, 'canWrite', mod.canWrite);
+        if (currentWrite) {
+          onToggle(platform, entityId, mod.module, 'canWrite', true);
+        }
+      }
+
+      if (currentEffective !== enable) {
+        onToggle(platform, entityId, mod.module, field, currentEffective);
+      }
+    });
+  };
+
+  const handleResetGroup = (groupName: string) => {
+    const groupInfo = PLATFORM_MODULE_GROUPS[platform] || {};
+    const groupMods = modules.filter(mod => {
+      const info = groupInfo[mod.module];
+      return (info?.group || 'Egyéb') === groupName;
+    });
+
+    groupMods.forEach(mod => {
+      const currentRead = getEffectiveValue(platform, entityId, mod.module, 'canRead', mod.canRead);
+      if (currentRead !== mod.canRead) {
+        onToggle(platform, entityId, mod.module, 'canRead', currentRead);
+      }
+      const currentWrite = getEffectiveValue(platform, entityId, mod.module, 'canWrite', mod.canWrite);
+      if (currentWrite !== mod.canWrite) {
+        onToggle(platform, entityId, mod.module, 'canWrite', currentWrite);
+      }
+    });
+  };
+
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div>
-          <CardTitle className="text-sm">{title}</CardTitle>
-          <p className="text-[11px] text-muted-foreground">{subtitle}</p>
+    <Card className="border border-border/80 shadow-md">
+      <CardHeader className="pb-3 border-b border-border/40 bg-muted/10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <CardTitle className="text-sm font-semibold tracking-tight">{title}</CardTitle>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>
+          </div>
+          
+          <div className="relative w-full sm:w-60">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+            <Input
+              placeholder="Modul szűrése..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="pl-8 h-8 text-xs bg-background/50"
+              aria-label="Modul szűrése"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
         </div>
       </CardHeader>
+      
       <CardContent className="p-0">
         <div className="w-full overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-border/40 text-muted-foreground">
-                <th className="text-left py-2 px-4 font-medium">Modul</th>
-                <th className="text-center py-2 px-3 font-medium w-20">Olvasás</th>
-                <th className="text-center py-2 px-3 font-medium w-20">Írás</th>
+              <tr className="border-b border-border/40 text-muted-foreground bg-muted/5">
+                <th className="text-left py-2.5 px-4 font-medium">Modul</th>
+                <th className="text-center py-2.5 px-3 font-medium w-24">Olvasás</th>
+                <th className="text-center py-2.5 px-3 font-medium w-24">Írás</th>
               </tr>
             </thead>
             <tbody>
-              {modules.map(mod => {
-                const effectiveRead = getEffectiveValue(platform, entityId, mod.module, 'canRead', mod.canRead);
-                const effectiveWrite = getEffectiveValue(platform, entityId, mod.module, 'canWrite', mod.canWrite);
-                const readChanged = isChanged(platform, entityId, mod.module, 'canRead', mod.canRead);
-                const writeChanged = isChanged(platform, entityId, mod.module, 'canWrite', mod.canWrite);
-
-                return (
-                  <tr key={mod.module} className="border-b border-border/20 hover:bg-muted/20 transition-colors">
-                    <td className="py-2 px-4 font-medium">
-                      <span className="flex items-center gap-2">
-                        {MODULE_LABELS[mod.module] || mod.module}
-                        {mod.isOverride && (
-                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-warning border-warning/30">
-                            egyedi
-                          </Badge>
-                        )}
-                      </span>
+              {Object.keys(groupedModules).length === 0 && (
+                <tr>
+                  <td colSpan={3} className="text-center py-8 text-muted-foreground">
+                    Nincs a szűrésnek megfelelő modul.
+                  </td>
+                </tr>
+              )}
+              {Object.entries(groupedModules).map(([groupName, groupMods]) => (
+                <React.Fragment key={groupName}>
+                  <tr className="border-b border-border/20 bg-muted/20">
+                    <td className="py-1.5 px-4 font-bold text-[10px] text-primary uppercase tracking-wider">
+                      {groupName}
                     </td>
-                    <td className="text-center py-2 px-3">
-                      <button
-                        onClick={() => onToggle(platform, entityId, mod.module, 'canRead', effectiveRead)}
-                        className={`inline-flex items-center justify-center w-10 h-6 rounded-full transition-all duration-200
-                          ${effectiveRead
-                            ? 'bg-primary/20 text-primary hover:bg-primary/30'
-                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                          }
-                          ${readChanged ? 'ring-2 ring-warning/50' : ''}
-                        `}
-                        title={effectiveRead ? 'Engedélyezve' : 'Letiltva'}
-                      >
-                        {effectiveRead
-                          ? <Check className="h-3.5 w-3.5" />
-                          : <X className="h-3.5 w-3.5" />
-                        }
-                      </button>
-                    </td>
-                    <td className="text-center py-2 px-3">
-                      <button
-                        onClick={() => onToggle(platform, entityId, mod.module, 'canWrite', effectiveWrite)}
-                        className={`inline-flex items-center justify-center w-10 h-6 rounded-full transition-all duration-200
-                          ${effectiveWrite
-                            ? 'bg-primary/20 text-primary hover:bg-primary/30'
-                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                          }
-                          ${writeChanged ? 'ring-2 ring-warning/50' : ''}
-                        `}
-                        title={effectiveWrite ? 'Engedélyezve' : 'Letiltva'}
-                      >
-                        {effectiveWrite
-                          ? <Check className="h-3.5 w-3.5" />
-                          : <X className="h-3.5 w-3.5" />
-                        }
-                      </button>
+                    <td colSpan={2} className="py-1 px-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleBulkToggleGroup(groupName, 'canRead', true)}
+                          className="px-1.5 py-0.5 rounded text-[9px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                          title="Összes olvasása engedélyezve a csoportban"
+                        >
+                          R+
+                        </button>
+                        <span className="text-muted-foreground/20 text-[9px]">|</span>
+                        <button
+                          onClick={() => handleBulkToggleGroup(groupName, 'canWrite', true)}
+                          className="px-1.5 py-0.5 rounded text-[9px] font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                          title="Összes írása engedélyezve a csoportban"
+                        >
+                          W+
+                        </button>
+                        <span className="text-muted-foreground/20 text-[9px]">|</span>
+                        <button
+                          onClick={() => {
+                            handleBulkToggleGroup(groupName, 'canRead', false);
+                            handleBulkToggleGroup(groupName, 'canWrite', false);
+                          }}
+                          className="px-1.5 py-0.5 rounded text-[9px] font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          title="Összes letiltása a csoportban"
+                        >
+                          Tilt
+                        </button>
+                        <span className="text-muted-foreground/20 text-[9px]">|</span>
+                        <button
+                          onClick={() => handleResetGroup(groupName)}
+                          className="p-1 rounded text-muted-foreground hover:text-warning hover:bg-warning/10 transition-colors"
+                          title="Csoport visszaállítása alapértelmezettre"
+                        >
+                          <RotateCcw className="h-2.5 w-2.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
-                );
-              })}
+                  
+                  {groupMods.map(mod => {
+                    const effectiveRead = getEffectiveValue(platform, entityId, mod.module, 'canRead', mod.canRead);
+                    const effectiveWrite = getEffectiveValue(platform, entityId, mod.module, 'canWrite', mod.canWrite);
+                    const readChanged = isChanged(platform, entityId, mod.module, 'canRead', mod.canRead);
+                    const writeChanged = isChanged(platform, entityId, mod.module, 'canWrite', mod.canWrite);
+                    const groupInfo = PLATFORM_MODULE_GROUPS[platform] || {};
+                    const label = groupInfo[mod.module]?.label || MODULE_LABELS[mod.module] || mod.module;
+
+                    return (
+                      <tr key={mod.module} className="border-b border-border/10 hover:bg-muted/10 transition-colors">
+                        <td className="py-2.5 px-4 font-medium">
+                          <span className="flex items-center gap-2">
+                            {label}
+                            {mod.isOverride && (
+                              <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-primary border-primary/30 bg-primary/5">
+                                egyedi
+                              </Badge>
+                            )}
+                          </span>
+                        </td>
+                        <td className="text-center py-2 px-3">
+                          <button
+                            onClick={() => onToggle(platform, entityId, mod.module, 'canRead', effectiveRead)}
+                            className={`h-6 w-7 rounded-md border flex items-center justify-center mx-auto transition-all duration-150
+                              ${effectiveRead
+                                ? 'bg-primary/15 text-primary border-primary/30 hover:bg-primary/25'
+                                : 'bg-muted/40 text-muted-foreground border-border/40 hover:bg-muted/60'
+                              }
+                              ${readChanged ? 'ring-2 ring-warning/60 border-warning' : ''}
+                            `}
+                            title={effectiveRead ? 'Olvasás: Engedélyezve' : 'Olvasás: Letiltva'}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
+                        <td className="text-center py-2 px-3">
+                          <button
+                            onClick={() => onToggle(platform, entityId, mod.module, 'canWrite', effectiveWrite)}
+                            className={`h-6 w-7 rounded-md border flex items-center justify-center mx-auto transition-all duration-150
+                              ${effectiveWrite
+                                ? 'bg-primary/15 text-primary border-primary/30 hover:bg-primary/25'
+                                : 'bg-muted/40 text-muted-foreground border-border/40 hover:bg-muted/60'
+                              }
+                              ${writeChanged ? 'ring-2 ring-warning/60 border-warning' : ''}
+                            `}
+                            title={effectiveWrite ? 'Írás: Engedélyezve' : 'Írás: Letiltva'}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
             </tbody>
           </table>
         </div>
