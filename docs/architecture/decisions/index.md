@@ -1,6 +1,6 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-06-21  
+> **Utoljára frissítve:** 2026-06-22  
 > **Összesen:** 20 döntés | ✅ Decided: 19 | ⛔ Superseded: 1
 
 ---
@@ -30,7 +30,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | A-004 | PGMQ mint aszinkron queue | ✅ Decided | [A-004](./A-004-pgmq-queue.md) |
-| A-005 | Edge Functions (Deno) — 46 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
+| A-005 | Edge Functions (Deno) — 48 function teljes katalógus | ✅ Decided | [A-005](./A-005-edge-functions.md) |
 
 ## 🤖 AI & Feldolgozás
 

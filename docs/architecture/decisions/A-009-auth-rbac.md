@@ -1,7 +1,8 @@
 # A-009: Supabase Auth + RBAC
 
 **Status:** Decided  
-**Date:** 2025-09
+**Date:** 2025-09  
+**Utoljára frissítve:** 2026-06-22
 
 ## Context
 
@@ -24,7 +25,8 @@ A rendszernek támogatnia kell: regisztrációt, bejelentkezést, session kezel�
 
 **Implementáció:**
 - `auth.users` — Supabase beépített user tábla
-- `company_members` — `user_id` + `company_id` + `role` összekapcsolás
+- `company_members` — `user_id` + `company_id` + `role` összekapcsolás (eaisybill)
+- `accounty_assignments` — `accountant_user_id` + `company_id` + `role` összekapcsolás (eaisybooks)
 - `useAuth()` hook — session kezelés a frontend-en
 - `useAppReady()` — session + company + profile betöltés gate
 - `useSessionGuard()` — session timeout (30 perc inaktivitás)
@@ -45,6 +47,23 @@ A rendszernek támogatnia kell: regisztrációt, bejelentkezést, session kezel�
 - Nincs social login (Google, GitHub) — csak email/password
 - A role a `company_members`-ben van, nem a JWT-ben — minden role-check DB lekérdezés
 - Session timeout manuálisan implementált (nem Supabase beépített)
+
+## Hozzárendelési Mechánizmusok
+
+| Módszer | Tábla | Használat |
+|---|---|---|
+| `join-company` edge function (share_token) | `company_members` | eaisybill: céghez csatlakozás tag-ként |
+| `seedAccountyAssignments()` | `accounty_assignments` | eaisybooks: összes `company_members` cég áthúzása könyvelőként |
+| `join-company-as-accountant` edge function (share_token) | `accounty_assignments` | eaisybooks: egyedi cég hozzáadása meghívó kóddal |
+
+> **Fontos:** Az `accounty_assignments` INSERT-nél az `is_main_accountant: true` flag kötelező — enélkül a non-admin `useAccountyClients` hook nem mutatja a céget.
+
+## Hozzáférés-kezelő Hook-ok
+
+| Hook | Logika | Hatás |
+|---|---|---|
+| `useHasEaisybillAccess` | `company_members` tagSág VAGY `profiles.eaisybill_access` flag | eaisybill toggle láthatóság (AccountyLayout sidebar) |
+| `useHasAccountyAccess` | `accounty_assignments` tagság | eaisybooks link láthatóság (AppSidebar) |
 
 ## Signup Trigger Chain
 

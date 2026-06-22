@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, X, Building2, User, Mail, Phone, ExternalLink, Download, FileText, Smartphone, Send, Settings, Users, BarChart2 } from 'lucide-react';
+import { Check, X, Building2, User, Mail, Phone, ExternalLink, Download, FileText, Smartphone, Send, Settings, Users, BarChart2, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +31,12 @@ export default function NewClientPage() {
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
+
+  // Invite code state ("Van Visibill fiókja" flow)
+  const [inviteCode, setInviteCode] = useState('');
+  const [codeStatus, setCodeStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid' | 'expired' | 'already_assigned'>('idle');
+  const [linkedCompany, setLinkedCompany] = useState<{ id: string; name: string; tax_number: string } | null>(null);
+  const [isJoiningAsAccountant, setIsJoiningAsAccountant] = useState(false);
 
   const [isUploadingDocs, setIsUploadingDocs] = useState(false);
   const [docsUploaded, setDocsUploaded] = useState(false);
@@ -73,6 +79,59 @@ export default function NewClientPage() {
         address: ''
       });
     }, 1500);
+  };
+
+  // Validate the invite code against share_token
+  const handleValidateCode = async () => {
+    if (!inviteCode.trim()) return;
+    setCodeStatus('validating');
+    setLinkedCompany(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-partner-code', {
+        body: { share_token: inviteCode.trim() },
+      });
+      if (error) throw error;
+      if (data?.valid) {
+        setCodeStatus('valid');
+        setLinkedCompany(data.company);
+      } else if (data?.error === 'token_expired') {
+        setCodeStatus('expired');
+      } else {
+        setCodeStatus('invalid');
+      }
+    } catch (err) {
+      reportError({ type: 'edge_function', component: 'NewClientPage', action: 'error', message: 'Failed to validate partner code:', error: err });
+      setCodeStatus('invalid');
+    }
+  };
+
+  // Join the company as an accountant (creates accounty_assignment)
+  const handleJoinAsAccountant = async () => {
+    if (!inviteCode.trim() || codeStatus !== 'valid') return;
+    setIsJoiningAsAccountant(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('join-company-as-accountant', {
+        body: { share_token: inviteCode.trim() },
+      });
+      if (error) throw error;
+      if (data?.error === 'already_assigned') {
+        setCodeStatus('already_assigned');
+        return;
+      }
+      if (data?.error) {
+        setCodeStatus('invalid');
+        return;
+      }
+      // Success — invalidate queries and navigate to dashboard
+      queryClient.invalidateQueries({ queryKey: ['accounty-clients'] });
+      queryClient.invalidateQueries({ queryKey: ['accounty-kpis'] });
+      navigate('/accounty');
+    } catch (err) {
+      reportError({ type: 'edge_function', component: 'NewClientPage', action: 'error', message: 'Failed to join as accountant:', error: err });
+      setCodeStatus('invalid');
+    } finally {
+      setIsJoiningAsAccountant(false);
+    }
   };
 
   const handleNext = async () => {
@@ -244,28 +303,81 @@ export default function NewClientPage() {
               {useVisibillAccount ? (
                 <div className="bg-card rounded-xl p-6 border border-border shadow-soft animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-1">Ügyfelemnek van Visibill fiókja</h2>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Az ügyfeled a saját fiókjából fog meghívni</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Az ügyfeled eaisybill fiókjából generált meghívó kóddal tudod hozzáadni</p>
                   
                   <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-5 mb-6">
                     <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Így működik:</h3>
                     <ol className="space-y-1.5 text-sm text-slate-600 dark:text-slate-400">
-                      <li>1. Kérd meg az ügyfelet, hogy hívjon meg a Visibill-ből</li>
-                      <li>2. Fogadd el az e-mailben kapott meghívót</li>
+                      <li>1. Kérd meg az ügyfelet, hogy generáljon meghívó kódot az eaisybill Beállításokban</li>
+                      <li>2. Írd be ide a kapott kódot és ellenőrizd</li>
+                      <li>3. Ha érvényes, add hozzá az ügyfelet</li>
                     </ol>
                   </div>
 
                   <div className="space-y-2 mb-8">
-                    <Label className="text-sm font-medium text-slate-900 dark:text-slate-100">Vagy add meg a meghívó kódot</Label>
-                    <Input placeholder="ABC-123-XYZ" className="bg-slate-50/50 dark:bg-slate-900/50 border-border font-mono" />
+                    <Label className="text-sm font-medium text-slate-900 dark:text-slate-100">Meghívó kód</Label>
+                    <Input 
+                      placeholder="pl. A1B2C3" 
+                      value={inviteCode}
+                      onChange={(e) => { setInviteCode(e.target.value.toUpperCase()); setCodeStatus('idle'); setLinkedCompany(null); }}
+                      className="bg-slate-50/50 dark:bg-slate-900/50 border-border font-mono uppercase tracking-widest text-lg" 
+                    />
+                    {/* Validation feedback */}
+                    {codeStatus === 'valid' && linkedCompany && (
+                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm mt-2 p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                        <CheckCircle className="w-4 h-4 shrink-0" />
+                        <span>Cég megtalálva: <strong>{linkedCompany.name}</strong> ({linkedCompany.tax_number})</span>
+                      </div>
+                    )}
+                    {codeStatus === 'invalid' && (
+                      <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 text-sm mt-2 p-3 bg-rose-50 dark:bg-rose-950/30 rounded-lg border border-rose-200 dark:border-rose-800">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>Érvénytelen meghívó kód</span>
+                      </div>
+                    )}
+                    {codeStatus === 'expired' && (
+                      <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm mt-2 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>A meghívó kód lejárt — kérj újat az ügyféltől!</span>
+                      </div>
+                    )}
+                    {codeStatus === 'already_assigned' && (
+                      <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm mt-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <CheckCircle className="w-4 h-4 shrink-0" />
+                        <span>Ez a cég már hozzá van rendelve a fiókodhoz</span>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-2 border-t border-slate-50 mt-4">
+                  <div className="flex justify-end gap-3 pt-2 border-t border-border mt-4">
                     <Button variant="outline" onClick={() => navigate('/accounty')} className="border-border text-slate-700 dark:text-slate-300">
-                      Várok a meghívóra
+                      Mégse
                     </Button>
-                    <Button onClick={handleNext} className="bg-[#6B7280] hover:bg-[#4B5563] text-white px-6">
-                      Kód ellenőrzése
-                    </Button>
+                    {codeStatus === 'valid' ? (
+                      <Button 
+                        onClick={handleJoinAsAccountant} 
+                        disabled={isJoiningAsAccountant}
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground px-6"
+                      >
+                        {isJoiningAsAccountant ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Hozzáadás...</>
+                        ) : (
+                          <><Check className="w-4 h-4 mr-2" /> Ügyfél hozzáadása</>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={handleValidateCode} 
+                        disabled={!inviteCode.trim() || codeStatus === 'validating'}
+                        className="bg-[#6B7280] hover:bg-[#4B5563] text-white px-6"
+                      >
+                        {codeStatus === 'validating' ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Ellenőrzés...</>
+                        ) : (
+                          'Kód ellenőrzése'
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
               ) : (

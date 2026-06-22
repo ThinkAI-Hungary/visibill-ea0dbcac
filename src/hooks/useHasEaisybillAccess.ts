@@ -33,14 +33,7 @@ export function useHasEaisybillAccess() {
         .from('company_members')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user!.id);
-      if ((memberCount ?? 0) > 0) return true;
-
-      // Also check accounty_assignments (accountants have eaisybill access to assigned companies)
-      const { count: assignmentCount } = await supabase
-        .from('accounty_assignments' as any)
-        .select('id', { count: 'exact', head: true })
-        .eq('accountant_user_id', user!.id);
-      return (assignmentCount ?? 0) > 0;
+      return (memberCount ?? 0) > 0;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,

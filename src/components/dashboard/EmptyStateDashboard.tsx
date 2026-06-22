@@ -1,7 +1,9 @@
-﻿import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Euro, TrendingUp, PieChart, Building2, ArrowRight, ArrowLeft, Check, Plus, X, FolderOpen, Tags, Shield, RefreshCw, CheckCircle, Users, LogOut } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -81,6 +83,8 @@ interface EmptyStateDashboardProps {
 const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps) => {
   const { user, signOut } = useAuth();
   const { refreshCompanies, setSelectedCompany } = useCompany();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   
   // Onboarding state
   const [isOnboarding, setIsOnboarding] = useState(false);
@@ -403,11 +407,20 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
       }
 
       await refreshCompanies();
+      // Immediately set access cache to true so RootRedirect won't redirect to /accounty
+      queryClient.setQueryData(['has-eaisybill-access', user.id], true);
       setSelectedCompany(companyData);
       toast({ title: 'Beállítás sikeres! Üdvözöljük a eaisybill-ben!' });
       
-      // Trigger the product tour after successful onboarding
-      onOnboardingComplete?.();
+      // Hard reload to the new company's dashboard.
+      // navigate() doesn't work because React state batching means companies
+      // haven't committed to the DOM yet, causing the wizard to reappear.
+      // A full page reload guarantees fresh state and cleans up the Dialog Portal.
+      const now = new Date();
+      const yearStart = `${now.getFullYear()}-01-01`;
+      const yearEnd = `${now.getFullYear()}-12-31`;
+      window.location.href = `/${companyData.id}/${yearStart}_${yearEnd}/`;
+      return; // stop execution — page is reloading
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'EmptyStateDashboard', action: 'error', message: 'Error during onboarding:', error: error });
       const msg = error?.message || error?.details || JSON.stringify(error);
@@ -461,11 +474,21 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
       }
 
       await refreshCompanies();
-      if (data?.company) {
-        setSelectedCompany(data.company);
+      queryClient.setQueryData(['has-eaisybill-access', user.id], true);
+      const joinedCompany = data?.company;
+      if (joinedCompany) {
+        setSelectedCompany(joinedCompany);
       }
       toast({ title: 'Sikeresen csatlakoztál a céghez!' });
-      onOnboardingComplete?.();
+      
+      // Hard reload (same reason as create flow)
+      if (joinedCompany) {
+        const now = new Date();
+        const yearStart = `${now.getFullYear()}-01-01`;
+        const yearEnd = `${now.getFullYear()}-12-31`;
+        window.location.href = `/${joinedCompany.id}/${yearStart}_${yearEnd}/`;
+        return;
+      }
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'EmptyStateDashboard', action: 'error', message: 'Error joining company:', error: error });
       const msg = error?.message || error?.details || JSON.stringify(error);

@@ -579,11 +579,10 @@ const Auth = () => {
     // Don't auto-navigate when email is not verified — user is locked
     if (isUnverified) return;
     if (user && hasEaisybillAccess !== undefined) {
-      // Always navigate to '/' (or returnTo) — RootRedirect handles the correct
-      // destination (onboarding, /accounty, scoped dashboard, /management).
+      // Respect the eaisybooks toggle for routing
       const target = returnTo && returnTo !== '/'
         ? returnTo
-        : '/';
+        : isEaisybooks ? '/accounty' : '/';
       navigate(target);
     }
   }, [user, navigate, signUpSuccess, isUnverified, isEaisybooks, returnTo, hasEaisybillAccess]);
@@ -853,11 +852,11 @@ const Auth = () => {
 
     if (!error) {
       const { data: { user: sessionUser } } = await supabase.auth.getUser();
-      // Always navigate to '/' (or returnTo) — RootRedirect handles the correct
-      // destination (onboarding, /accounty, scoped dashboard, /management).
+      // If user logged in with the eaisybooks toggle, send them to /accounty.
+      // Otherwise navigate to '/' (or returnTo) — RootRedirect handles the rest.
       const target = returnTo && returnTo !== '/'
         ? returnTo
-        : '/';
+        : isEaisybooks ? '/accounty' : '/';
       navigate(target);
     }
 

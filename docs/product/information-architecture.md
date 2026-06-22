@@ -1,6 +1,6 @@
 # Visibill — Information Architecture & Navigation
 
-> **Verzió:** 1.2 | **Dátum:** 2026-06-16  
+> **Verzió:** 1.3 | **Dátum:** 2026-06-22  
 > **Forrás:** [AppSidebar.tsx](../../src/components/AppSidebar.tsx) · [App.tsx](../../src/App.tsx)  
 > **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md)
 
@@ -117,7 +117,7 @@ Visibill
 │   ├── /tickets/:ticketId?        Hibajegyek
 │   ├── /settings                  Accounty beállítások
 │   ├── /help                      Segítség
-│   └── /new-client                Új ügyfél wizard (saját layout)
+│   └── /new-client                Új ügyfél wizard (meghívó kód + manuális létrehozás)
 │
 ├── Ügyfélportál (publikus)
 │   └── /portal/:token             Magic link-es ügyfélportál

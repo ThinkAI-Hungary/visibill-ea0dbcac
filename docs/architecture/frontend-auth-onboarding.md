@@ -307,6 +307,37 @@ Amikor egy `eaisybooks` könyvelő/asszisztens átvált az `eaisybill` felületr
 
 ---
 
+### 4. Eaisybooks — Meghívó kód alapú cég hozzárendelés
+
+Az eaisybooks felületen a könyvelők kétféleképpen rendelhetnek hozzá ügyfelet:
+
+**A) Automatikus áthúzás (eaisybill cégek):** A `seedAccountyAssignments()` utility áthúzza az összes `company_members`-ből ismert céget `accounty_assignments`-be.
+
+**B) Meghívó kód (share_token):** Inline form az `AccountyApp.tsx` üres állapotában:
+1. Cég tulajdonos generál meghívó kódot eaisybill Beállításokban → `companies.share_token` + `share_token_created_at`
+2. Könyvelő beírja a kódot → `validate-partner-code` EF ellenőriz (10 perc lejárat)
+3. Validálás után → `join-company-as-accountant` EF INSERT-el `accounty_assignments`-be
+
+| Edge Function | Hatás | Tábla |
+|---|---|---|
+| `validate-partner-code` | Read-only: cég adatok visszaadása | `companies` (SELECT) |
+| `join-company-as-accountant` | Könyvelő hozzárendelés | `accounty_assignments` (INSERT) |
+
+> [!IMPORTANT]
+> Mindkét edge function **status 200**-at ad minden business logic válasznál — a `supabase.functions.invoke` non-2xx válaszokat az `error` mezőbe teszi, nem `data`-ba.
+
+> [!IMPORTANT]
+> Az `accounty_assignments` INSERT-nél az `is_main_accountant: true` flag kötelező — a `useAccountyClients` hook non-admin usereknek csak ezeket a cégeket mutatja.
+
+**Hozzáférés-ellenőrző hook-ok:**
+
+| Hook | Ellenőrzés | Mire hat |
+|---|---|---|
+| `useHasEaisybillAccess` | `company_members` tagság (NEM `accounty_assignments`!) | eaisybill toggle megjelenítése |
+| `useHasAccountyAccess` | `accounty_assignments` tagság | eaisybooks sidebar link megjelenítése |
+
+---
+
 ---
 
 ## Biztonsági Konvenciók

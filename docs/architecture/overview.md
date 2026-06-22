@@ -1,6 +1,6 @@
 # Visibill — Architecture Overview
 
-> **Verzió:** 1.3 | **Dátum:** 2026-06-16  
+> **Verzió:** 1.4 | **Dátum:** 2026-06-22  
 > **Kapcsolódó:** [Business Overview](../business/overview.md) · [PRD](../product/prd.md) · [Design System](../design/00-overview.md)
 
 ---
@@ -33,7 +33,7 @@ A Visibill egy három rétegű rendszer:
 │  ├─────────────────────────────────────────┤ │
 │  │  Storage (számla képek, PDF-ek)         │ │
 │  ├─────────────────────────────────────────┤ │
-│  │  Edge Functions (47 Deno function)      │ │
+│  │  Edge Functions (48 Deno function)      │ │
 │  │   • NAV sync, email, trigger-ek         │ │
 │  │   • MNB árfolyam letöltés (SOAP API)    │ │
 │  │   • CORS, auth validation               │ │

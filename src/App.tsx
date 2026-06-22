@@ -233,10 +233,16 @@ function RootRedirect() {
   // Still loading companies — render nothing (initial-loader covers this)
   if (isInitialLoading) return null;
 
-  // No companies at all — render Index directly (shows EmptyStateDashboard onboarding wizard).
-  // This MUST come BEFORE the eaisybillAccess check, because a brand-new user
-  // has no company_members → hasEaisybillAccess=false, but they should see onboarding, not /accounty.
+  // Determine the user's registration source from auth metadata
+  const registrationSource = user?.user_metadata?.source as string | undefined;
+
+  // No companies at all — decide based on registration source:
+  // - eaisybooks users → /accounty (they don't need eaisybill onboarding)
+  // - eaisybill users (or unknown) → show eaisybill onboarding wizard
   if (!isInitialLoading && companies.length === 0) {
+    if (registrationSource === 'eaisybooks') {
+      return <Navigate to="/accounty" replace />;
+    }
     return <Suspense fallback={<LoadingSpinner message="Betöltés..." />}><Index /></Suspense>;
   }
 

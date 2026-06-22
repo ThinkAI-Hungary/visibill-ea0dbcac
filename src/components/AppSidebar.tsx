@@ -435,7 +435,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                   );
                 })}
                 {/* Standalone Feltöltés as the very last menu item in collapsed mode */}
-                {!isEmployee && (
+                {canAccess('upload') && (
                   <SidebarMenuItem key="upload" data-tour="upload">
                     <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
@@ -472,7 +472,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                   </SidebarMenuItem>
                 )}
                 {/* Standalone Hibajegyek in collapsed mode */}
-                {!isEmployee && (
+                {canAccess('tickets') && (
                   <SidebarMenuItem key="tickets" data-tour="tickets">
                     <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
@@ -598,7 +598,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                   );
                 })}
                 {/* Standalone Feltöltés as the very last menu item in expanded mode */}
-                {!isEmployee && (
+                {canAccess('upload') && (
                   hasNoCompany ? (
                     <div
                       key="upload"
@@ -638,7 +638,7 @@ export const AppSidebar = React.memo(function AppSidebar() {
                   )
                 )}
                 {/* Standalone Hibajegyek in expanded mode */}
-                {!isEmployee && (
+                {canAccess('tickets') && (
                   hasNoCompany ? (
                     <div
                       key="tickets"
