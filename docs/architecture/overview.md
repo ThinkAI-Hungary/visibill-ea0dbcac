@@ -135,6 +135,7 @@ Dashboard: FxDifferencesSection (KPI kártyák + bar chart + tételszintű tábl
 | **Frontend routing** | `/:companyId/:dateRange/*` | Bookmarkolható, megosztható URL-ek, SEO-barát |
 | **Auth** | Supabase Auth + custom RBAC | JWT token, RLS policy-k, 4 szerep |
 | **Email** | Mailgun webhook → Edge Function | Megbízható, skálázható, spam szűréssel |
+| **Modul jogosultságok** | `eaisybill_module_permissions` DB tábla | Per-user, per-company modul ki-/bekapcsolás, kliens-specifikus feature-ök (pl. Szállítmányozás) |
 
 ---
 
@@ -148,5 +149,6 @@ Dashboard: FxDifferencesSection (KPI kártyák + bar chart + tételszintű tábl
 | [frontend-auth-onboarding.md](./frontend-auth-onboarding.md) | Auth flow, session management, onboarding |
 | [frontend-performance.md](./frontend-performance.md) | Code splitting, prefetch, memoizáció |
 | [error-logging-system.md](./error-logging-system.md) | Centralizált error logging & dashboard rendszer |
+| [shipment-matching.md](./shipment-matching.md) | HRT Spedition fuvar-számla párosítás + Module Permission System |
 | [../business/decisions/034-worker-pipeline.md](../business/decisions/034-worker-pipeline.md) | Worker pipeline üzleti scope |
 | [../business/decisions/006-tech-stack.md](../business/decisions/006-tech-stack.md) | Üzleti tech stack döntés |

@@ -272,7 +272,19 @@ A rendszer két különálló alkalmazási felülettel rendelkezik (eaisybill é
 | **Cégbeállítások** | ✅ | ❌ | ❌ | ❌ |
 | **Vezetői Dashboard** | ❌ | ❌ | ❌ | ✅ |
 
----
+> [!NOTE]
+> **Moduláris jogosultságkezelés:** A fenti statikus szerepkör-alapú alapértelmezések **per-user, per-company alapon felülírhatók**
+> az `eaisybill_module_permissions` DB táblán keresztül. Az admin felhasználók a **Beállítások → Jogosultságkezelő** panelben 
+> konfigurálhatják a nem-admin tagok modul hozzáféréseit (olvasás/írás külön-külön).
+>
+> **Kliens-specifikus modulok:** Egyes modulok (pl. Szállítmányozás) **alapértelmezetten MINDEN felhasználónál kikapcsoltak** 
+> (beleértve adminokat is!), és csak explicit DB override-dal engedélyezhetők.
+> Teljes dokumentáció: [shipment-matching.md § 6](./shipment-matching.md#6-module-permission-system-menü-ki-bekapcsolás)
+>
+> **Fő fájlok:**
+> - [useEaisybillPermissions.ts](../../src/hooks/useEaisybillPermissions.ts) — permission hook
+> - [EaisybillPermissionPanel.tsx](../../src/components/settings/EaisybillPermissionPanel.tsx) — admin UI
+> - [AppSidebar.tsx](../../src/components/AppSidebar.tsx) — menü szűrés (`canAccess(moduleKey)`)
 
 ### 2. eaisybooks (Accounty) Szerepkörök
 
