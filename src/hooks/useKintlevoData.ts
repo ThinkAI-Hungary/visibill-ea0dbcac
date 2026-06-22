@@ -32,7 +32,7 @@ export function useKintlevoData() {
         const to = from + PAGE_SIZE - 1;
         const { data, error } = await supabase
           .from('nav_invoices')
-          .select('id,invoice_number,invoice_issue_date,payment_date,customer_name,customer_tax_number,invoice_gross_amount,currency,transaction_id')
+          .select('id,invoice_number,invoice_issue_date,payment_date,customer_name,customer_tax_number,invoice_gross_amount,invoice_net_amount,currency,transaction_id')
           .eq('company_id', selectedCompany.id)
           .eq('invoice_direction', 'OUTBOUND')
           .is('transaction_id', null)
@@ -65,7 +65,7 @@ export function useKintlevoData() {
         const to = from + PAGE_SIZE - 1;
         const { data, error } = await supabase
           .from('invoices')
-          .select('id,bizonylatsorszam,kibocsatas_datuma,fizetesi_hatarido,vevo_nev,vevo_vat_id,brutto_vegosszeg,penznem,transaction_id,melleklet_url')
+          .select('id,bizonylatsorszam,kibocsatas_datuma,fizetesi_hatarido,vevo_nev,vevo_vat_id,brutto_vegosszeg,netto_vegosszeg,penznem,transaction_id,melleklet_url')
           .eq('company_id', selectedCompany.id)
           .eq('invoice_direction', 'OUTBOUND')
           .is('transaction_id', null)
@@ -150,6 +150,7 @@ export function useKintlevoData() {
       result.push({
         id: inv.id, invoiceNumber: inv.invoice_number, issueDate: inv.invoice_issue_date,
         dueDate: format(dueDate, 'yyyy-MM-dd'), amount: inv.invoice_gross_amount ?? 0,
+        netAmount: inv.invoice_net_amount ?? 0,
         currency: inv.currency ?? 'HUF', companyName: inv.customer_name ?? 'Ismeretlen partner',
         taxNumber: inv.customer_tax_number, source: 'nav', attachmentUrl: null, daysOverdue,
         category: getCategory(daysOverdue),
@@ -171,6 +172,7 @@ export function useKintlevoData() {
       result.push({
         id: inv.id, invoiceNumber: inv.bizonylatsorszam, issueDate: inv.kibocsatas_datuma,
         dueDate: format(dueDate, 'yyyy-MM-dd'), amount: inv.brutto_vegosszeg ?? 0,
+        netAmount: inv.netto_vegosszeg ?? 0,
         currency: inv.penznem ?? 'HUF', companyName: inv.vevo_nev ?? 'Ismeretlen partner',
         taxNumber: inv.vevo_vat_id, source: 'manual', attachmentUrl: inv.melleklet_url ?? null,
         daysOverdue, category: getCategory(daysOverdue),
@@ -200,6 +202,7 @@ export function useKintlevoData() {
         companyName, taxNumber, partnerId: partner?.id ?? null,
         partnerEmail: partner?.email ?? null, invoices: sorted,
         totalAmount: invs.reduce((s, i) => s + i.amount, 0),
+        totalNetAmount: invs.reduce((s, i) => s + i.netAmount, 0),
         worstCategory: worstOf(sorted), lastSent: lastSendRecord?.sent_at ?? null,
       });
     });
@@ -222,11 +225,20 @@ export function useKintlevoData() {
 
   const grandTotal = useMemo(() => Object.values(totals).reduce((a, b) => a + b, 0), [totals]);
 
+  const netTotals = useMemo(() => {
+    const t: Record<AgingCategory, number> = { green: 0, yellow: 0, red: 0, purple: 0 };
+    for (const inv of allInvoices) t[inv.category] += inv.netAmount;
+    return t;
+  }, [allInvoices]);
+
+  const netGrandTotal = useMemo(() => Object.values(netTotals).reduce((a, b) => a + b, 0), [netTotals]);
+
   return {
     user, selectedCompany, queryClient,
     search, setSearch, expanded, setExpanded,
     loadingNav, loadingManual, isLoading: loadingNav || loadingManual,
     allInvoices, companyGroups, filteredGroups, totals, grandTotal,
+    netTotals, netGrandTotal,
     partners, updatePartnerEmail,
   };
 }

@@ -9,6 +9,7 @@ export interface UnifiedInvoice {
   issueDate: string | null;
   dueDate: string;
   amount: number;
+  netAmount: number;
   currency: string;
   companyName: string;
   taxNumber: string | null;
@@ -25,6 +26,7 @@ export interface CompanyGroup {
   partnerEmail: string | null;
   invoices: UnifiedInvoice[];
   totalAmount: number;
+  totalNetAmount: number;
   worstCategory: AgingCategory;
   lastSent: string | null;
 }
