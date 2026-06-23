@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
 
     if (findError || !company) {
       return new Response(JSON.stringify({ error: "invalid_code" }), {
-        status: 200,
+        status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
       const now = Date.now();
       if (now - createdAt > 10 * 60 * 1000) {
         return new Response(JSON.stringify({ error: "token_expired" }), {
-          status: 200,
+          status: 410,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
 
     if (existing) {
       return new Response(JSON.stringify({ error: "already_assigned" }), {
-        status: 200,
+        status: 409,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

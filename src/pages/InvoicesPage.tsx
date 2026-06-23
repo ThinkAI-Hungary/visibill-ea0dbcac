@@ -681,11 +681,20 @@ const InvoicesPage = () => {
       // Amount range (gross)
       if (filters.amountMin && Math.abs(inv.invoice_gross_amount || 0) < parseFloat(filters.amountMin)) return false;
       if (filters.amountMax && Math.abs(inv.invoice_gross_amount || 0) > parseFloat(filters.amountMax)) return false;
-      // Search (partner name, invoice number)
+      // Search (partner names, tax numbers, invoice number, amounts)
       if (filters.search) {
         const q = filters.search.toLowerCase();
-        const partnerName = (inv.invoice_direction === 'OUTBOUND' ? inv.customer_name : inv.supplier_name) || '';
-        if (!partnerName.toLowerCase().includes(q) && !inv.invoice_number.toLowerCase().includes(q)) return false;
+        const grossStr = (inv.invoice_gross_amount || 0).toString();
+        const netStr = (inv.invoice_net_amount || 0).toString();
+        if (
+          !(inv.supplier_name || '').toLowerCase().includes(q) &&
+          !(inv.customer_name || '').toLowerCase().includes(q) &&
+          !(inv.supplier_tax_number || '').toLowerCase().includes(q) &&
+          !(inv.customer_tax_number || '').toLowerCase().includes(q) &&
+          !inv.invoice_number.toLowerCase().includes(q) &&
+          !grossStr.includes(q) &&
+          !netStr.includes(q)
+        ) return false;
       }
       return true;
     };
@@ -713,7 +722,14 @@ const InvoicesPage = () => {
       if (filters.search) {
         const q = filters.search.toLowerCase();
         const partnerName = (inv.invoice_direction === 'OUTBOUND' ? inv.vevo_nev : inv.elado_nev) || '';
-        if (!partnerName.toLowerCase().includes(q) && !(inv.bizonylatsorszam || '').toLowerCase().includes(q)) return false;
+        const grossStr = (inv.brutto_vegosszeg || 0).toString();
+        const netStr = (inv.adoalap_osszesen || 0).toString();
+        if (
+          !partnerName.toLowerCase().includes(q) && 
+          !(inv.bizonylatsorszam || '').toLowerCase().includes(q) &&
+          !grossStr.includes(q) &&
+          !netStr.includes(q)
+        ) return false;
       }
       return true;
     };
@@ -804,8 +820,17 @@ const InvoicesPage = () => {
         if (filters.amountMax && Math.abs(inv.invoice_gross_amount || 0) > parseFloat(filters.amountMax)) return false;
         if (filters.search) {
           const q = filters.search.toLowerCase();
-          const partnerName = (inv.invoice_direction === 'OUTBOUND' ? inv.customer_name : inv.supplier_name) || '';
-          if (!partnerName.toLowerCase().includes(q) && !inv.invoice_number.toLowerCase().includes(q)) return false;
+          const grossStr = (inv.invoice_gross_amount || 0).toString();
+          const netStr = (inv.invoice_net_amount || 0).toString();
+          if (
+            !(inv.supplier_name || '').toLowerCase().includes(q) &&
+            !(inv.customer_name || '').toLowerCase().includes(q) &&
+            !(inv.supplier_tax_number || '').toLowerCase().includes(q) &&
+            !(inv.customer_tax_number || '').toLowerCase().includes(q) &&
+            !inv.invoice_number.toLowerCase().includes(q) &&
+            !grossStr.includes(q) &&
+            !netStr.includes(q)
+          ) return false;
         }
         return true;
       })
@@ -848,7 +873,14 @@ const InvoicesPage = () => {
         if (filters.search) {
           const q = filters.search.toLowerCase();
           const partnerName = (inv.invoice_direction === 'OUTBOUND' ? inv.vevo_nev : inv.elado_nev) || '';
-          if (!partnerName.toLowerCase().includes(q) && !(inv.bizonylatsorszam || '').toLowerCase().includes(q)) return false;
+          const grossStr = (inv.brutto_vegosszeg || 0).toString();
+          const netStr = (inv.adoalap_osszesen || 0).toString();
+          if (
+            !partnerName.toLowerCase().includes(q) && 
+            !(inv.bizonylatsorszam || '').toLowerCase().includes(q) &&
+            !grossStr.includes(q) &&
+            !netStr.includes(q)
+          ) return false;
         }
         return true;
       })

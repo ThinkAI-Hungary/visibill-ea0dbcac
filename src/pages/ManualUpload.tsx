@@ -1133,6 +1133,18 @@ const ManualUpload = () => {
                         </SelectItem>
 
                         <div className="px-2 py-1.5 mt-1 border-t border-border/40">
+                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Kártya</span>
+                        </div>
+
+                        <SelectItem value="szep">
+                          <span className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-full bg-teal-500 flex items-center justify-center text-[8px] font-black text-white leading-none">SZ</span>
+                            <span>SZÉP Kártya</span>
+                            <span className="text-[10px] text-muted-foreground ml-0.5">(elfogadóhelyi)</span>
+                          </span>
+                        </SelectItem>
+
+                        <div className="px-2 py-1.5 mt-1 border-t border-border/40">
                           <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Fintech</span>
                         </div>
 

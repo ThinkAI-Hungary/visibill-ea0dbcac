@@ -7,12 +7,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { RefreshCw, Download, ChevronDown, FileText, Package, Truck, Mail, ArrowDownRight, ArrowUpRight, Link2, Link2Off, Loader2, Settings } from 'lucide-react';
+import { RefreshCw, Download, ChevronDown, FileText, Package, Truck, Mail, ArrowDownRight, ArrowUpRight, Link2, Link2Off, Loader2, Settings, CreditCard } from 'lucide-react';
 import { UnifiedPagination } from '@/components/ui/unified-pagination';
 import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
 import TransactionFilters from '@/components/transactions/TransactionFilters';
 import TransactionTable from '@/components/transactions/TransactionTable';
 import { useTransactionData, type Transaction } from '@/hooks/useTransactionData';
+import SzepCardTab from '@/components/SzepCardTab';
 import { supabase } from '@/integrations/supabase/client';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import CourierReportTab from '@/components/CourierReportTab';
@@ -309,6 +310,19 @@ const TransactionsPage = () => {
               );
             })}
 
+            {/* SZÉP Kártya tab — teal tint */}
+            <TabsTrigger
+              value="szep"
+              className={cn(
+                "flex items-center gap-1.5",
+                "data-[state=active]:bg-teal-500/15 data-[state=active]:text-teal-700 dark:data-[state=active]:text-teal-400",
+                "data-[state=active]:border-teal-500/30"
+              )}
+            >
+              <CreditCard className="h-3.5 w-3.5" />
+              SZÉP Kártya
+            </TabsTrigger>
+
             {/* Courier tabs — amber/brown tint */}
             {(['gls', 'mpl', 'mixpack'] as const).map(key => {
               const icons = { gls: Truck, mpl: Mail, mixpack: Package };
@@ -501,6 +515,11 @@ const TransactionsPage = () => {
           </TabsContent>
           <TabsContent value="mixpack" className="content-animate">
             <CourierReportTab reportType="mixpack" />
+          </TabsContent>
+
+          {/* SZÉP Kártya tab */}
+          <TabsContent value="szep" className="content-animate">
+            <SzepCardTab />
           </TabsContent>
 
           {/* Dynamic bank tabs */}

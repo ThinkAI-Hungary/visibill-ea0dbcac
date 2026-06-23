@@ -250,7 +250,7 @@ export function useInvoiceData(
         const to = from + PAGE_SIZE - 1;
         const { data, error } = await supabase
           .from('nav_invoices')
-          .select('id, invoice_number, invoice_direction, invoice_issue_date, supplier_name, customer_name, invoice_gross_amount, currency, transaction_id, submitted')
+          .select('id, invoice_number, invoice_direction, invoice_issue_date, supplier_name, supplier_tax_number, customer_name, customer_tax_number, invoice_net_amount, invoice_gross_amount, currency, transaction_id, submitted')
           .eq('company_id', companyId)
           .range(from, to)
           .order('invoice_issue_date', { ascending: false })
