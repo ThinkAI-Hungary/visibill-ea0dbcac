@@ -158,16 +158,20 @@ export function useAccountyClients() {
 
       if (compErr) throw compErr;
 
-      // 4. Get missing items counts per company
+      // 4. Get missing items counts per company (single query — replaces N+1 loop)
       const missingCountMap: Record<string, number> = {};
-      for (const cid of companyIds) {
-        const { count, error: countErr } = await supabase
-          .from('accounty_missing_items')
-          .select('id', { count: 'exact', head: true })
-          .eq('company_id', cid)
-          .in('status', ['open', 'notified']);
-        if (countErr) throw countErr;
-        missingCountMap[cid] = count || 0;
+      const { data: openMissingItems, error: countErr } = await supabase
+        .from('accounty_missing_items')
+        .select('company_id')
+        .in('company_id', companyIds)
+        .in('status', ['open', 'notified']);
+      if (countErr) {
+        // Silent fail — missing counts will be 0
+        reportError({ type: 'db_query', component: 'useAccountyClients', action: 'missing_counts', message: countErr.message, error: countErr });
+      } else {
+        (openMissingItems || []).forEach((r: any) => {
+          missingCountMap[r.company_id] = (missingCountMap[r.company_id] || 0) + 1;
+        });
       }
 
       // 5. Get nearest deadline per company

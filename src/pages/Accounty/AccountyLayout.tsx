@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { AccountyRoleProvider } from './AccountyRoleContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -63,6 +64,7 @@ import {
   ChevronUp,
   Landmark,
   Shield,
+  WifiOff,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -73,6 +75,19 @@ import { AiAssistantChat as AiDrawerChat } from './AiAssistantPage';
 import CookieConsentBanner from '@/components/accounty/CookieConsentBanner';
 import { CompanySwitcher } from '@/components/accounty/CompanySwitcher';
 import AppModeSwitcher from '@/components/AppModeSwitcher';
+import { useAccountyRealtime } from '@/hooks/useAccountyRealtime';
+
+/** DEV ONLY: Component that crashes on demand to test Error Boundary.
+ *  Open browser console → type: window.__testCrash()  */
+function CrashTester() {
+  const [shouldCrash, setShouldCrash] = React.useState(false);
+  React.useEffect(() => {
+    (window as any).__testCrash = () => setShouldCrash(true);
+    return () => { delete (window as any).__testCrash; };
+  }, []);
+  if (shouldCrash) throw new Error('🧪 Error Boundary teszt — ez egy szándékos hiba!');
+  return null;
+}
 
 export default function AccountyLayout() {
   return (
@@ -85,6 +100,8 @@ export default function AccountyLayout() {
 function AccountyLayoutInner() {
   const { user, signOut } = useAuth();
   const { hasAccess: hasEaisybillAccess } = useHasEaisybillAccess();
+  const isOnline = useOnlineStatus();
+  useAccountyRealtime();
 
   const { theme, setTheme } = useTheme();
   const location = useLocation();
@@ -114,7 +131,7 @@ function AccountyLayoutInner() {
   useEffect(() => {
     const count = kpis?.missingItems ?? 0;
     document.title = count > 0 ? `(${count}) eaisybooks` : 'eaisybooks';
-    return () => { document.title = 'eaisybill'; };
+    return () => { document.title = 'eaisybooks'; };
   }, [kpis?.missingItems]);
 
   const getUserInitials = () => {
@@ -320,42 +337,49 @@ function AccountyLayoutInner() {
                 { path: '/accounty/approval-queue', name: 'Jóváhagyás', icon: MailCheck },
                 { path: '/accounty/alerts', name: 'Riasztások', icon: AlertTriangle },
                 { path: '/accounty/nav-deadlines', name: 'NAV határidők', icon: Clock },
-                { path: '/accounty/payroll-portfolio', name: 'Bérszámfejtés', icon: Calculator },
                 { path: '/accounty/onboarding', name: 'Onboarding', icon: Rocket },
+                { type: 'divider' as const },
+                { path: '/accounty/payroll-portfolio', name: 'Bérszámfejtés', icon: Calculator },
+                { type: 'divider' as const },
                 { path: '/accounty/tao', name: 'TAO Portfólió', icon: Landmark },
                 { path: '/accounty/tao/calendar', name: 'TAO Naptár', icon: Calendar },
                 { path: '/accounty/tao/taxpayer-types', name: 'Adózói Körök', icon: Users },
+                { type: 'divider' as const },
                 { path: '/accounty/settings', name: 'Beállítások', icon: Settings },
                 { path: '/accounty/tickets', name: 'Hibajegyek', icon: TicketCheck, badge: unreadTicketCount },
                 { path: '/accounty/help', name: 'Segítség', icon: HelpCircle },
                 { path: '/accounty/ai-assistant', name: 'AI Asszisztens', icon: Sparkles },
                 { path: '/accounty/admin/audit', name: 'Audit', icon: ShieldCheck },
               ].filter(item => {
-                const module = PATH_TO_MODULE[item.path];
+                if ('type' in item) return true;
+                const module = PATH_TO_MODULE[(item as any).path];
                 return !module || canAccess(module);
-              }).map((item) => (
-                <li key={item.path} className="relative flex justify-center">
+              }).map((item, idx) => {
+                if ('type' in item) return <li key={`div-${idx}`} className="my-1 mx-2 h-px bg-border/50" />;
+                const navItem = item as { path: string; name: string; icon: any; badge?: number };
+                return (
+                <li key={navItem.path} className="relative flex justify-center">
                   <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                       <Link
-                        to={item.path}
+                        to={navItem.path}
                         className={cn(
                           "relative flex items-center justify-center rounded-md transition-all duration-200 w-8 h-8",
-                          isActive(item.path) ? "bg-primary/15 text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                          isActive(navItem.path) ? "bg-primary/15 text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
                         )}
                       >
-                        <item.icon className="h-4 w-4 shrink-0" />
-                        {'badge' in item && (item as any).badge > 0 ? (
+                        <navItem.icon className="h-4 w-4 shrink-0" />
+                        {navItem.badge && navItem.badge > 0 ? (
                           <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 flex items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
-                            {(item as any).badge > 9 ? '9+' : (item as any).badge}
+                            {navItem.badge > 9 ? '9+' : navItem.badge}
                           </span>
                         ) : null}
                       </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right">{item.name}</TooltipContent>
+                    <TooltipContent side="right">{navItem.name}</TooltipContent>
                   </Tooltip>
                 </li>
-              ))}
+              )})}
             </ul>
           ) : (
             /* Expanded mode: Collapsible groups */
@@ -775,7 +799,7 @@ function AccountyLayoutInner() {
                 isCollapsed ? "w-7" : "w-full"
               )}
             >
-              <PanelLeft className="h-4 w-4 shrink-0" />
+              {isCollapsed ? <PanelLeft className="h-4 w-4 shrink-0" /> : <PanelLeft className="h-4 w-4 shrink-0 rotate-180" />}
               <span className="sr-only">Toggle Sidebar</span>
             </Button>
           </div>
@@ -877,8 +901,21 @@ function AccountyLayoutInner() {
           </div>
         </div>
 
+        {/* DEV ONLY: Error Boundary tester — trigger from console: window.__testCrash() */}
+        {import.meta.env.DEV && <CrashTester />}
+
         {/* Page Content */}
         <div className="flex-1 overflow-auto p-8 relative">
+          {/* Offline connection banner */}
+          {!isOnline && (
+            <div className="mb-5 flex items-center gap-3 px-4 py-3 bg-red-50 dark:bg-red-900/15 border border-red-200 dark:border-red-800/40 rounded-xl text-sm animate-in fade-in slide-in-from-top-2 duration-300">
+              <WifiOff className="w-4 h-4 text-red-500 shrink-0" />
+              <p className="flex-1 text-red-800 dark:text-red-300">
+                <span className="font-medium">Nincs internetkapcsolat</span>
+                <span className="text-red-600 dark:text-red-400"> — Az adatok nem frissülnek amíg a kapcsolat nem áll helyre.</span>
+              </p>
+            </div>
+          )}
           {/* GDPR compliance reminder */}
           {(() => {
             // Check GDPR compliance (same logic as SettingsPage)

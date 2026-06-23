@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const SYSTEM_PROMPT = `Te egy magyar bérszámfejtési AI asszisztens vagy az Accounty rendszerben. A feladatod, hogy segítsd a könyvelőket a napi munkájukban.
+const SYSTEM_PROMPT = `Te egy magyar bérszámfejtési AI asszisztens vagy az eaisybooks rendszerben. A feladatod, hogy segítsd a könyvelőket a napi munkájukban.
 
 Szakterületed:
 - Magyar munkajog és adójog (Mt., Szja tv., Tbj., Szocho tv., Art., Efo tv.)
@@ -38,6 +38,23 @@ Fontos szabályok:
  *   context?: { page?: string, clientName?: string, clientId?: string }
  * }
  */
+// ── Per-user rate limiting: max 30 requests per hour ──
+const RATE_LIMIT = 30;
+const RATE_WINDOW_MS = 3600_000; // 1 hour
+const userRequestCounts = new Map<string, { count: number; windowStart: number }>();
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const entry = userRequestCounts.get(userId);
+  if (!entry || now - entry.windowStart > RATE_WINDOW_MS) {
+    userRequestCounts.set(userId, { count: 1, windowStart: now });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -57,6 +74,14 @@ Deno.serve(async (req) => {
       authHeader.replace('Bearer ', '')
     );
     if (userError || !user) throw new Error('Invalid user token');
+
+    // Rate limit check: 30 requests per hour per user
+    if (!checkRateLimit(user.id)) {
+      return new Response(
+        JSON.stringify({ error: 'Túl sok kérés. Kérlek próbáld újra később (max 30 üzenet/óra).' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Parse body
     const { messages, context } = await req.json();

@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import AccountyWelcomeWizard from '@/components/accounty/AccountyWelcomeWizard';
 import { 
   Plus, 
   Search, 
@@ -48,6 +49,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { reportError } from '@/lib/errorReporter';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { BarChart2, PieChart as PieChartIcon } from 'lucide-react';
@@ -58,19 +60,21 @@ function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: 
   const [display, setDisplay] = useState(0);
   useEffect(() => {
     if (value === 0) { setDisplay(0); return; }
-    let start = 0;
-    const step = Math.max(1, Math.ceil(value / (duration / 16)));
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= value) { setDisplay(value); clearInterval(timer); }
-      else setDisplay(start);
-    }, 16);
-    return () => clearInterval(timer);
+    let startTime: number | null = null;
+    let rafId: number;
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      setDisplay(Math.round(progress * value));
+      if (progress < 1) rafId = requestAnimationFrame(animate);
+    };
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
   }, [value, duration]);
   return <>{display.toLocaleString('hu-HU')}</>;
 }
 
-function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900 dark:text-slate-100", accentColor = "teal" }: { title: string, value: number, icon: React.ElementType, valueClass?: string, accentColor?: string }) {
+function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900 dark:text-slate-100", accentColor = "teal", onClick }: { title: string, value: number, icon: React.ElementType, valueClass?: string, accentColor?: string, onClick?: () => void }) {
   const colorMap: Record<string, string> = {
     teal: 'from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10',
     emerald: 'from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10',
@@ -87,9 +91,11 @@ function KpiCard({ title, value, icon: Icon, valueClass = "text-slate-900 dark:t
   };
   return (
     <div
+      onClick={onClick}
       className={cn(
         "relative overflow-hidden bg-gradient-to-br rounded-xl p-5 border border-border shadow-soft flex flex-col justify-between h-32 card-ripple",
-        "hover:shadow-lg hover:scale-[1.02] hover:border-slate-200 dark:hover:border-slate-700 transition-all duration-300 cursor-default group",
+        "hover:shadow-lg hover:scale-[1.02] hover:border-slate-200 dark:hover:border-slate-700 transition-all duration-300 group",
+        onClick ? "cursor-pointer" : "cursor-default",
         colorMap[accentColor] || colorMap.emerald,
         "bg-card"
       )}
@@ -151,7 +157,7 @@ function OwnerDropdown({ client, onUpdateOwner }: { client: ClientData, onUpdate
     <div onClick={(e) => e.stopPropagation()}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 px-2 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800 data-[state=open]:bg-slate-100 dark:bg-slate-800 shadow-soft border border-border/50">
+          <Button variant="ghost" size="sm" className="h-8 px-2 flex items-center gap-2 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-700 data-[state=open]:bg-slate-100 shadow-soft border border-border/50">
             <div className="w-5 h-5 rounded-full bg-slate-500 flex items-center justify-center text-[10px] font-bold text-white">
               {owner.initial}
             </div>
@@ -297,9 +303,7 @@ function ClientCard({ client, draggable, onDragStart, onDragEnd, isDragged, onUp
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{client.taxNumber}</p>
             </div>
           </div>
-          <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 dark:text-slate-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <MoreVertical className="w-4 h-4" />
-          </button>
+
         </div>
 
         <div className="flex justify-between items-center mb-4">
@@ -417,6 +421,14 @@ export default function AccountyApp() {
   const [statusOverrides, setStatusOverrides] = useState<Record<string, ClientData['status']>>({});
   const navigate = useNavigate();
   const { role, isAdmin, isSenior } = useAccountyRole();
+
+  // Keyboard shortcuts for power-user navigation
+  // Plain keys work because the hook ignores keypresses inside inputs/textareas
+  useKeyboardShortcuts([
+    { combo: { key: '1' }, handler: () => setViewMode('grid'), preventDefault: false, description: 'Rács nézet (1)' },
+    { combo: { key: '2' }, handler: () => setViewMode('list'), preventDefault: false, description: 'Lista nézet (2)' },
+    { combo: { key: '3' }, handler: () => setViewMode('kanban'), preventDefault: false, description: 'Kanban nézet (3)' },
+  ]);
 
   // F1: Bulk operations
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -600,6 +612,19 @@ export default function AccountyApp() {
   const mineCount = clients.filter(c => c.isMainAccountant).length;
   const allCount = clients.length;
 
+  // Wizard visibility: once shown, stays visible until user completes it
+  // (even if clients are added mid-wizard via invite code / sync)
+  // MUST be declared before any early returns to satisfy React hooks rules
+  const [wizardDismissed, setWizardDismissed] = useState(false);
+  const showWizard = !clientsLoading
+    && !wizardDismissed
+    && localStorage.getItem('accounty-welcome-done') !== '1'
+    && clients.length === 0;
+  const [wizardActive, setWizardActive] = useState(false);
+  useEffect(() => {
+    if (showWizard && !wizardActive) setWizardActive(true);
+  }, [showWizard]);
+
   if (clientsLoading) {
     return (
       <div className="w-full space-y-6 animate-in fade-in duration-300">
@@ -684,7 +709,8 @@ export default function AccountyApp() {
       }
       queryClientRef.invalidateQueries({ queryKey: ['accounty-clients'] });
       queryClientRef.invalidateQueries({ queryKey: ['accounty-kpis'] });
-      window.location.reload();
+      setInviteCode('');
+      setCodeStatus(null);
     } catch (err) {
       reportError({ type: 'edge_function', component: 'AccountyApp', action: 'error', message: 'Failed to join as accountant:', error: err });
       setCodeStatus('invalid');
@@ -693,7 +719,21 @@ export default function AccountyApp() {
     }
   };
 
+  if (wizardActive && !wizardDismissed) {
+    return (
+      <AccountyWelcomeWizard
+        onComplete={() => {
+          localStorage.setItem('accounty-welcome-done', '1');
+          setWizardDismissed(true);
+          setWizardActive(false);
+        }}
+      />
+    );
+  }
+
   if (!clientsLoading && clients.length === 0) {
+
+    // Post-onboarding empty state (user completed wizard but has no clients yet)
     return (
       <div className="w-full flex flex-col items-center justify-center py-24 gap-6">
         <Database className="w-12 h-12 text-slate-300 dark:text-slate-600" />
@@ -854,8 +894,8 @@ export default function AccountyApp() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="stagger-1"><KpiCard title="Összes ügyfél" value={kpis.totalClients} icon={Users} accentColor="teal" /></div>
           <div className="stagger-2"><KpiCard title="Feldolgozatlan számlák" value={kpis.unprocessedInvoices} icon={FileText} accentColor="blue" /></div>
-          <div className="stagger-3"><KpiCard title="Hiányzó számlák" value={kpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" accentColor="red" /></div>
-          <div className="stagger-4"><KpiCard title="Közeledő határidők" value={kpis.upcomingDeadlines} icon={Clock} accentColor="amber" /></div>
+          <div className="stagger-3"><KpiCard title="Hiányzó számlák" value={kpis.missingInvoices} icon={AlertTriangle} valueClass="text-red-600" accentColor="red" onClick={() => navigate('/accounty/missing-invoices')} /></div>
+          <div className="stagger-4"><KpiCard title="Közeledő határidők" value={kpis.upcomingDeadlines} icon={Clock} accentColor="amber" onClick={() => navigate('/accounty/tax-calendar')} /></div>
         </div>
       )}
 

@@ -16,6 +16,7 @@ import { ScopedLayout } from "./components/ScopedLayout";
 import { generateScopedPath, extractPageSegment } from "./lib/navigation";
 
 import { LoadingSpinner } from "./components/ui/loading-spinner";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { IdleWarningModal } from "./components/IdleWarningModal";
 import { Toaster } from "./components/ui/toaster";
 import { supabase } from "./integrations/supabase/client";
@@ -49,7 +50,7 @@ const BalanceSheet = lazy(() => import("./pages/BalanceSheet"));
 const AnnualReportPage = lazy(() => import("./pages/AnnualReportPage"));
 const ManagementDashboard = lazy(() => import("./pages/ManagementDashboard"));
 const AccountyApp = lazy(() => import("./pages/Accounty/AccountyApp"));
-const AccountyLayout = lazy(() => import("./pages/Accounty/AccountyLayout"));
+import AccountyLayout from "./pages/Accounty/AccountyLayout";
 const NewClientPage = lazy(() => import("./pages/Accounty/NewClientPage"));
 const MissingInvoicesPage = lazy(() => import("./pages/Accounty/MissingInvoicesPage"));
 const ReportsPage = lazy(() => import("./pages/Accounty/ReportsPage"));
@@ -223,7 +224,7 @@ function RootRedirect() {
   // Check if they have eaisybill access
   const { hasAccess: hasEaisybillAccess, isLoading: accessLoading } = useHasEaisybillAccess();
 
-  if (roleLoading || accessLoading) return null;
+  if (roleLoading || accessLoading) return <LoadingSpinner message="" />;
 
   // ThinkAI / management role → management dashboard (takes priority)
   if (profileRole === 'management' || profileRole === 'thinkai') {
@@ -345,6 +346,7 @@ const App = () => (
               <TooltipProvider>
 
                 <Toaster />
+                <ErrorBoundary>
                 <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                     <ScrollToTop />
                     <PasswordRecoveryRedirect />
@@ -381,10 +383,8 @@ const App = () => (
                     {/* Accounty frontend – standalone layout */}
                     <Route path="/accounty" element={
                       <ProtectedPage>
-                        <Suspense fallback={<LoadingSpinner message="Betöltés..." />}>
                           <RemoveInitialLoader />
                           <AccountyLayout />
-                        </Suspense>
                       </ProtectedPage>
                     }>
                       <Route index element={<AccountyApp />} />
@@ -561,6 +561,7 @@ const App = () => (
                     <Route path="*" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><NotFound /></Suspense>} />
                   </Routes>
                 </BrowserRouter>
+                </ErrorBoundary>
               </TooltipProvider>
 
           </DateRangeProvider>

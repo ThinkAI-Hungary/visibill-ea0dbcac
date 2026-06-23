@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   HelpCircle, BookOpen, Keyboard, MessageCircle, ChevronDown, ChevronRight,
-  FileWarning, Calendar, BarChart2, Settings, Briefcase, Search, Mail, Phone,
+  FileWarning, Calendar, BarChart2, Settings, Briefcase, Search, Mail,
   ExternalLink, Lightbulb, Zap, Shield, Play, Scale, BookText, Tag,
   Calculator, Users, Lock, Link2, Construction, Video, GraduationCap,
   FileText, ArrowRight, Clock
@@ -29,7 +29,7 @@ const faqs: FaqItem[] = [
 ];
 
 const shortcuts = [
-  { keys: ['Ctrl', 'B'], desc: 'Sidebar be/kikapcsolás (Visibill oldalon)' },
+  { keys: ['Ctrl', 'B'], desc: 'Sidebar be/kikapcsolás' },
   { keys: ['Ctrl', 'K'], desc: 'Keresés megnyitása' },
   { keys: ['Esc'], desc: 'Modal / panel bezárása' },
 ];
@@ -467,18 +467,11 @@ export default function HelpPage() {
                 Kapcsolat
               </h3>
               <div className="space-y-3">
-                <a href="mailto:support@eaisybooks.hu" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors group">
+                <a href="mailto:info@eaisybooks.hu" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors group">
                   <Mail className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   <div>
-                    <p className="text-sm font-medium text-foreground">support@eaisybooks.hu</p>
+                    <p className="text-sm font-medium text-foreground">info@eaisybooks.hu</p>
                     <p className="text-xs text-muted-foreground">Email támogatás</p>
-                  </div>
-                </a>
-                <a href="tel:+3612345678" className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors group">
-                  <Phone className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">+36 1 234 5678</p>
-                    <p className="text-xs text-muted-foreground">H–P 9:00–17:00</p>
                   </div>
                 </a>
               </div>
@@ -492,7 +485,7 @@ export default function HelpPage() {
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                   <span className="text-muted-foreground">Verzió</span>
-                  <span className="font-mono font-semibold text-foreground">2.0.0-beta</span>
+                  <span className="font-mono font-semibold text-foreground">2.1.0-beta</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                   <span className="text-muted-foreground">Utolsó frissítés</span>
@@ -604,7 +597,7 @@ export default function HelpPage() {
             {filteredVideos.map((video, i) => (
               <div
                 key={i}
-                className="bg-card rounded-xl border border-border shadow-soft overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer"
+                className="bg-card rounded-xl border border-border shadow-soft overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group cursor-not-allowed opacity-75"
               >
                 {/* Thumbnail placeholder */}
                 <div className="relative aspect-video bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">

@@ -282,7 +282,6 @@ export default function ClientPortalPage() {
           }
         } else {
           uploadedPaths.push(filePath);
-          console.log('[Portal] File uploaded to storage:', filePath);
           // Update log → success
           if (logId) {
             await supabase.from('accounty_uploads' as any)
@@ -318,7 +317,7 @@ export default function ClientPortalPage() {
           toast({ variant: 'destructive', title: 'Hiba', description: `Státusz frissítés sikertelen: ${resolveErr.message}` });
           return;
         }
-        console.log('[Portal] DB update result:', updateResult);
+
         queryClient.invalidateQueries({ queryKey: ['accounty-missing-items'] });
 
         toast({
