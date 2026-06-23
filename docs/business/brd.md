@@ -378,6 +378,7 @@ NAV credentials Supabase Vault-ban (secret_id-k). Jelszavak Supabase Auth-ban.
 | AWS Textract | OCR | ✅ Aktív |
 | OpenAI GPT | LLM | ✅ Aktív |
 | Nylas | Email fiók | 🔧 Implementálva, 0 usage |
+| OpenClaw API | Read-only REST API | ✅ Aktív — `openclaw-api` EF, API key auth, 120+ tábla |
 
 **Hivatkozás:** [015](./decisions/015-nav-integration.md) · [006](./decisions/006-tech-stack.md)
 
@@ -405,7 +406,7 @@ Teljes naplózás (llm_koltsegek). Limitálás eldöntendő.
 | 6 | Banki integráció jövője | eaisyBill | 🔴 Open | [026](./decisions/026-banking-integration.md) |
 | 7 | GDPR compliance | Mindkettő | 🔴 Open | [028](./decisions/028-gdpr-compliance.md) |
 | 8 | Mobil stratégia | Mindkettő | 🔴 Open | [029](./decisions/029-mobile-strategy.md) |
-| 9 | API & third-party hozzáférés | Mindkettő | 🔴 Open | [030](./decisions/030-api-access.md) |
+| 9 | API & third-party hozzáférés | Mindkettő | ✅ Decided | [030](./decisions/030-api-access.md) |
 | 10 | eaisyBooks árazás (irodai license) | eaisyBooks | 🔴 Open | — |
 | 11 | eaisyBooks ↔ eaisyBill automatikus szinkron | Mindkettő | 🟡 Partial | — |
 

@@ -38,8 +38,11 @@ export default function KintlevoPage() {
     selectedCompany, queryClient,
     search, setSearch, expanded, setExpanded,
     isLoading, allInvoices, companyGroups, filteredGroups, totals, grandTotal,
+    netTotals, netGrandTotal,
     updatePartnerEmail,
   } = useKintlevoData();
+
+  const [showBrutto, setShowBrutto] = useState(true);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -95,8 +98,12 @@ export default function KintlevoPage() {
         <KintlevoSummaryCards
           totals={totals}
           grandTotal={grandTotal}
+          netTotals={netTotals}
+          netGrandTotal={netGrandTotal}
           companyGroups={companyGroups}
           allInvoices={allInvoices}
+          showBrutto={showBrutto}
+          onToggleBrutto={() => setShowBrutto(prev => !prev)}
         />
 
         {/* Search */}

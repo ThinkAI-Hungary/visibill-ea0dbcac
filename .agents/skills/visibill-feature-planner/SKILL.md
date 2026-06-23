@@ -1,6 +1,6 @@
 ---
 name: visibill-feature-planner
-description: Use when planning a COMPLEX new feature, module, or significant architectural change in Visibill/eaisybill — NOT for simple modifications. Triggers on "új feature", "új modul", "tervezzünk", "feature plan", "modul tervezés", "építsünk", "hozzunk létre", "fejlesszünk ki", "plan new", "design new", "add module", "milyen döntéseket kell meghozni", "mit kell eldönteni", "decision list", "döntési mátrix". Also triggers when visibill-spec-lookup determines the task is complex (3+ files, new functionality, architecture decision). This skill ensures ZERO silent decisions.
+description: Use when planning a COMPLEX new feature, module, or significant architectural change in Visibill/eaisybill/eaisyBooks — NOT for simple modifications. Triggers on "új feature", "új modul", "tervezzünk", "feature plan", "modul tervezés", "építsünk", "hozzunk létre", "fejlesszünk ki", "plan new", "design new", "add module", "milyen döntéseket kell meghozni", "mit kell eldönteni", "decision list", "döntési mátrix", "eaisybooks", "accounty". Also triggers when visibill-spec-lookup determines the task is complex (3+ files, new functionality, architecture decision). This skill ensures ZERO silent decisions and implements atomic micro-module execution with retry-on-failure verification.
 ---
 
 # Visibill Feature Planner — Zero Silent Decisions
@@ -28,10 +28,18 @@ description: Use when planning a COMPLEX new feature, module, or significant arc
 ## Teljes Feature Életciklus
 
 ```
-TERVEZÉS → DÖNTÉSEK → IMPLEMENTÁCIÓ → VALIDÁCIÓ → DOCS FRISSÍTÉS → GRAPHIFY
-   ↓           ↓           ↓              ↓             ↓              ↓
- Fázis 1    Fázis 2     Fázis 3       Fázis 3.5      Fázis 4       Fázis 5
-(kontextus) (mátrix)   (kódolás)   (user tesztel)  (BRD/PRD/ADR)  (gráf sync)
+TERVEZÉS → DÖNTÉSEK → DEKOMP. → IMPLEMENTÁCIÓ → INTEGR. VERIFY → USER GATE → DOCS → GRAPHIFY
+   ↓           ↓          ↓           ↓               ↓              ↓          ↓        ↓
+ Fázis 1    Fázis 2   Fázis 2.5   Fázis 3        Fázis 3.7      Fázis 3.7.4  Fázis 4  Fázis 5
+(kontextus) (mátrix) (micro-mod) (module loop)  (e2e smoke)    (user valid) (BRD/..) (gráf)
+                                  ↓
+                          ┌───────────────────┐
+                          │ Per-module loop:  │
+                          │ BRIEF → SUB-AGENT │
+                          │ → REVIEW          │
+                          │ ↓ FAIL? ROLLBACK  │
+                          │ → NEW SUB-AGENT   │
+                          └───────────────────┘
 ```
 
 ---
@@ -167,66 +175,414 @@ Minden döntésnél az AI **köteles** megmutatni hogyan oldja meg ezt a meglév
 
 ---
 
-## FÁZIS 3: Implementáció (döntések UTÁN)
+## FÁZIS 2.5: Micro-Module Dekomponálás (döntések UTÁN, implementáció ELŐTT)
 
-**CSAK a felhasználó jóváhagyása után.**
+**KÖTELEZŐ lépés mielőtt bármilyen kódot írnál.**
+
+Az agent a teljes implementációs tervet **atomikus micro-modulokra** bontja. A cél: minden modul elég kicsi ahhoz, hogy **biztonságosan és megbízhatóan verifikálható** legyen mielőtt a következő modulra lépnél.
+
+### Modul méret meghatározás
+
+Az agent **saját maga határozza meg** a modul méretét a következők alapján:
+- **Fájlok komplexitása** — egy 10-soros utility vs egy 300-soros page component
+- **Dependency depth** — mennyi másik fájltól függ
+- **Verifikálhatóság** — tudjuk-e izoláltan tesztelni
+
+> **Alapelv:** Egy modul annyi fájlt tartalmazzon, amennyit **egyetlen verifikációs lépésben** megbízhatóan ellenőrizni tudsz. Ha kétséges → kisebb modulra bontsd.
+
+### Modul terv formátum
+
+```markdown
+## 🧱 Micro-Module Terv — [Feature Neve]
+
+### Module 1: [Rövid név]
+- **Fájlok:** [lista]
+- **Függőség:** Nincs (első modul) / Module X
+- **Verifikáció:**
+  - BUILD: `npm run build` → SIKERES
+  - SMOKE: [specifikus teszt — NEM csak build!]
+  - EVIDENCE: [mi a bizonyíték hogy működik]
+
+### Module 2: [Rövid név]
+- **Fájlok:** [lista]
+- **Függőség:** Module 1
+- **Verifikáció:**
+  - BUILD: `npm run build` → SIKERES
+  - SMOKE: [specifikus teszt]
+  - EVIDENCE: [bizonyíték]
+
+[... további modulok ...]
+```
+
+### Modul sorrend szabály
+
+**Dependency order** — mindig a legalsó rétegtől felfelé:
+```
+1. DB (migration, RLS, trigger)
+2. RPC / Edge Function
+3. Types / shared utilities
+4. Hooks (data fetching)
+5. UI Components (atomikus)
+6. Page assembly (összerakás)
+```
+
+### Példa — "Házipénztár multi-regiszter" feature:
+
+```markdown
+Module 1: DB — petty_cash_registers tábla + RLS
+  Fájlok: 1 migration file
+  Verify: execute_sql "SELECT * FROM petty_cash_registers" → tábla létezik, RLS aktív
+  Evidence: SQL output screenshot
+
+Module 2: DB — petty_cash_entries FK + index módosítás
+  Fájlok: 1 migration file
+  Verify: execute_sql "SELECT indexname FROM pg_indexes WHERE tablename='petty_cash_entries'" → FK index létezik
+  Evidence: index lista output
+
+Module 3: Hook — useRegisters(companyId) + types
+  Fájlok: useRegisters.ts, types.ts bővítés
+  Verify: npm run build + böngésző konzol: hook returnál data tömböt (NEM üres, NEM undefined)
+  Evidence: console.log output screenshot
+
+Module 4: UI — RegisterSelector dropdown
+  Fájlok: RegisterSelector.tsx, PettyCashPage.tsx módosítás
+  Verify: npm run build + browser screenshot: dropdown renderelődik, opciók megjelennek
+  Evidence: browser screenshot a renderelt dropdown-ról
+```
+
+---
+
+## FÁZIS 3: Implementáció — Sub-Agent Orchestrator Pattern
+
+**CSAK a felhasználó jóváhagyása után (döntési mátrix + modul terv jóváhagyva).**
+
+### Architektúra: Orchestrator + Sub-Agent
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     FŐ AGENT (Orchestrator)                         │
+│                                                                     │
+│  Feladatai:                                                         │
+│  • Modul terv kezelés (sorrend, dependency-k)                      │
+│  • Sub-agent brief készítés (kontextus, fájlok, pattern-ek)       │
+│  • Sub-agent eredmény REVIEW (nem vak bizalom!)                    │
+│  • Retry döntés (új sub-agent, módosított brief-fel)               │
+│  • Integration verify (cross-cutting, E2E)                         │
+│  • User kommunikáció (progress, evidence, gate)                    │
+│  • task.md frissítés                                                │
+│                                                                     │
+│  NEM csinál:                                                        │
+│  • Kód írás (azt a sub-agent csinálja)                             │
+│  • Fájl módosítás (azt a sub-agent csinálja)                       │
+│                                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  Module 1 ──→ [Sub-Agent A] ──→ Eredmény ──→ Review ──→ ✅/❌    │
+│  Module 2 ──→ [Sub-Agent B] ──→ Eredmény ──→ Review ──→ ✅/❌    │
+│  Module 3 ──→ [Sub-Agent C] ──→ ...                                │
+│                                                                     │
+│  Ha ❌ → Új Sub-Agent (lessons learned brief-fel)                  │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Miért sub-agent per modul?**
+- **Context izolácó** — minden sub-agent tiszta kontextussal indul, nincs "szennyezés" az előző modul vagy retry kódjából
+- **Tisztább retry** — ha FAIL, a sub-agent kontextusa eldobódik → az új sub-agent NEM emlékszik a rossz kódra, nem másol belőle
+- **Orchestrator fókusz** — a fő agent megőrzi a felülnézeti képet, nem merül el implementáció részleteiben
+- **Context window védelem** — komplex feature (8+ modul) nem terheli túl a fő agent kontextusát
 
 ### 3.0 Build Baseline (implementáció ELŐTT)
 ```bash
 npm run build
 ```
 → Ha a build HIBÁS: **javítsd először a meglévő hibákat** mielőtt bármit hozzáadnál.
-→ Ha a build SIKERES: jegyezd meg mint baseline → kezdheted az implementációt.
+→ Ha a build SIKERES: jegyezd meg mint baseline → `git stash` vagy jegyezd meg a HEAD commit-ot.
 
 > **Az AI NEM kezd kódolni amíg a build nem SIKERES.** Tiszta kiindulási állapot szükséges.
 
-### Checkpoint rendszer
-Komplex feature-eknél:
+### 3.1 Module Execution Loop (Orchestrator szint)
+
+**MINDEN MODULE-RA (sorrendben):**
+
 ```
-Checkpoint 1: Migration kész → user ellenőrzi a sémát
-Checkpoint 2: Hook + API kész → user teszteli a data flow-t
-Checkpoint 3: UI kész → user megnézi a kinézetet
+┌──────────────────────────────────────────────────────────────────┐
+│                ORCHESTRATOR MODULE LOOP                           │
+│                                                                  │
+│  1. BRIEF — sub-agent brief összeállítása (ld. 3.1.1)          │
+│  2. DELEGATE — sub-agent indítása a modul implementálásához     │
+│  3. REVIEW — sub-agent eredményének ellenőrzése (ld. 3.1.2)    │
+│     └─ FAIL → RETRY (ld. 3.2) — ÚJ sub-agent, tanulságokkal   │
+│  4. EVIDENCE — bizonyíték rögzítés (sub-agent output/screenshot) │
+│  5. LOG — task.md-ben modul ✅ jelölés + evidence link           │
+│  6. NEXT MODULE — csak ha 1-5 mind PASS                         │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### 3.1.1 Sub-Agent Brief Sablon
+
+A fő agent KÖTELES minden sub-agent-nek részletes brief-et adni. A brief tartalmazza:
+
+```markdown
+## Sub-Agent Brief — Module [N]: [Modul neve]
+
+### Cél
+[1 mondat — mit kell implementálni]
+
+### Kontextus
+- **Feature:** [a teljes feature neve és célja]
+- **Előző modulok:** [milyen modulok már kész vannak, milyen fájlokat hoztak létre/módosítottak]
+- **Függőségek:** [milyen fájlokra/típusokra/hookra épít ez a modul]
+
+### Módosítandó/létrehozandó fájlok
+- [pontos fájl nevek és elérési utak]
+
+### Meglévő pattern-ek (KÖTELEZŐ követni)
+- [relevans design pattern-ek, pl. "Hook pattern: useXxxData(companyId) → React Query useQuery"]
+- [relevans kód példa, pl. "Nézd meg: src/hooks/useInvoices.ts — ugyanígy csináld"]
+
+### Verifikációs szerződés
+- BUILD: `npm run build` → SIKERES
+- SMOKE: [specifikus smoke test lépés — NEM csak build!]
+- EVIDENCE: [milyen bizonyítékot kell visszaadni]
+
+### eaisyBill login (ha browser verify kell)
+- URL: `http://localhost:5173`
+- Email: `balazs@thinkai.hu`
+- Jelszó: `Nincsapellata1'`
+
+### Visszatérési formátum
+A sub-agent KÖTELES ezzel a struktúrával visszatérni:
+1. **Módosított fájlok listája** (path + rövid leírás)
+2. **Build eredmény** (PASS/FAIL + output)
+3. **Smoke test eredmény** (PASS/FAIL + evidence)
+4. **Ha FAIL:** mi a hiba és mi a feltételezett ok
+```
+
+### 3.1.2 Sub-Agent Eredmény Review (Orchestrator feladata)
+
+A fő agent **NEM bízik vakon** a sub-agent eredményében. Review checklist:
+
+```
+✅ REVIEW CHECKLIST — minden sub-agent visszatérés után:
+
+□ Build PASS — a sub-agent tényleg futtatta? (output-ban látszik?)
+□ Smoke test PASS — specifikus evidence van? (screenshot/SQL output/console)
+□ False positive check — az evidence tényleges adatot mutat?
+  - NEM üres tömb, NEM undefined, NEM skeleton, NEM "Loading..."
+□ A kód konzisztens az előző modulokkal?
+□ A meglévő pattern-eket követte?
+□ Nincs "gyors hack" ami később problémát okoz?
+```
+
+**Ha a review FAIL → NE javítsd saját kezűleg** → spawn új sub-agent a tanulságokkal (ld. 3.2).
+
+### 3.2 Retry Loop — Új Sub-Agent Tanulságokkal
+
+> ⚠️ **Ez az agent legfontosabb viselkedési szabálya.**
+> Ha bármilyen verifikáció vagy review FAIL → NE haladj tovább, NE próbálj saját kezűleg javítani.
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    RETRY LOOP (Sub-Agent)                         │
+│                                                                  │
+│  1. ROLLBACK — git checkout a modul fájljaira                   │
+│     → visszaáll a legutóbbi MŰKÖDŐ állapot                      │
+│                                                                  │
+│  2. ANALYZE — a fő agent elemzi mi ment rosszul                 │
+│     → Mi volt a hiba az előző sub-agent-nél?                    │
+│     → Rossz pattern? Hiányzó kontextus? Logikai hiba?           │
+│                                                                  │
+│  3. LEARN — rögzítsd a hibát                                    │
+│     → task.md-ben: "Module X — Attempt Y: [hiba leírás]"       │
+│                                                                  │
+│  4. ENHANCED BRIEF — új sub-agent brief készítése:              │
+│     → Az eredeti brief + "KORÁBBI HIBÁK" szekció:              │
+│       "Attempt 1: [hiba]. NE ismételd! Helyette: [javaslat]"  │
+│     → Plusz kontextus ha hiányzott (pattern példa, API docs)   │
+│                                                                  │
+│  5. NEW SUB-AGENT — friss sub-agent a bővített brief-fel       │
+│     → Tiszta kontextus — NEM emlékszik az előző próbálkozásra  │
+│     → DE tudja a tanulságokat az enhanced brief-ből             │
+│                                                                  │
+│  6. REVIEW — az új sub-agent eredményének ellenőrzése           │
+│     → FAIL → vissza az 1. lépésre                               │
+│     → PASS → folytatás a következő modullal                     │
+│                                                                  │
+│  ⛔ MAX 5 RETRY — ha 5 sub-agent próbálkozás után sem sikerül: │
+│     → STOP. Jelezd a usernek:                                   │
+│       - Mi a modul                                              │
+│       - Mi volt az 5 próbálkozás és a hibák                    │
+│       - Mi a feltételezésed a gyökérokról                       │
+│       - Kérj user inputot mielőtt folytatnád                    │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**A Retry Loop a task.md-ben így néz ki:**
+
+```markdown
+- [x] Module 1: DB — petty_cash_registers
+  - Sub-Agent A (Attempt 1): ❌ RLS policy syntax error (`USING` hiányzott)
+  - Sub-Agent B (Attempt 2): ✅ Tábla + RLS kész, verify PASS
+  - Evidence: [SQL output](link)
+
+- [/] Module 2: Hook — useRegisters
+  - Sub-Agent C (Attempt 1): ❌ Hook üres tömböt returnált (RLS blokkolta, company_id nem volt set)
+  - Sub-Agent D (Attempt 2): ❌ TypeScript error — PettyCashRegister type nem exportálva
+  - Sub-Agent E (Attempt 3): ✅ Hook returnál data-t, types rendben
+  - Evidence: [console screenshot](link)
+```
+
+### 3.3 Verifikációs Szerződés — típusonként
+
+Minden modulhoz **specifikus** verify lépések kellenek. A `npm run build` szükséges de **SOHA NEM ELÉGSÉGES egyedül**.
+
+| Modul típus | BUILD verify | SMOKE verify (false positive check) |
+|------------|-------------|-------------------------------------|
+| **DB migration** | `npm run build` | `execute_sql` → tábla/oszlop/index létezik, RLS aktív |
+| **RPC function** | `npm run build` | `execute_sql "SELECT func(params)"` → eredmény ≠ error, ≠ üres |
+| **Edge Function** | `npm run build` | `supabase functions invoke` vagy `curl` → 200 + valid JSON body |
+| **React Hook** | `npm run build` | **Browser subagent** → konzol check: hook returnál érvényes data-t |
+| **UI Component** | `npm run build` | **Browser subagent** → screenshot: element renderelődik, adat megjelenik |
+| **Page assembly** | `npm run build` | **Browser subagent** → full page screenshot: layout helyes, adat megjelenik |
+| **Trigger** | migration deploy | `execute_sql INSERT → SELECT` → trigger side-effect ellenőrzés |
+| **Worker pipeline** | pytest | Specifikus pipeline teszt parancs |
+
+### 3.4 False Positive Detekció
+
+> **A false positive a legveszélyesebb hiba.** Az agent azt hiszi "kész", a user talál 3 bugot → trust erosion.
+
+**FALSE POSITIVE JELEK — ha bármelyiket látod → NE haladj tovább:**
+
+```
+❌ Hook returnál `undefined` vagy üres tömböt mikor van adat a DB-ben
+❌ RPC function "success" de 0 sor returnálva (RLS blokkolja!)
+❌ Build SIKERES de TypeScript import nem talál exportot (lazy loaded, nem futott)
+❌ Edge Function 200-at ad de a body üres vagy `{}`
+❌ UI renderelődik de nincs adat benne (skeleton stuck állapotban)
+❌ Teszt PASS de assertion túl gyenge (ld. tiltólista lent)
+❌ Console error van a böngészőben de a build "sikeres"
+❌ A mutation "sikeres" de a DB-ben nem változott semmi
+❌ A query lefut de rossz company_id-vel (multi-tenancy bug)
+```
+
+**Ha false positive gyanú van → KÖTELEZŐ deep verify:**
+1. Nyisd meg a böngészőt, ellenőrizd a konzolt (errors, warnings)
+2. Ellenőrizd a Network tab-ot (API hívások, response body-k)
+3. Ellenőrizd a DB-t közvetlenül (`execute_sql`)
+4. Hasonlítsd össze az elvárt és a tényleges eredményt
+
+### 3.5 Gyenge Assertion Tiltólista
+
+**TILTOTT assertion pattern-ek (tesztekben és manuális verify-ban is):**
+
+```
+❌ expect(result).toBeTruthy()           → MIT vársz pontosan?
+❌ expect(result).toBeDefined()          → Lehet üres tömb, üres object
+❌ expect(result).not.toBeNull()         → Lehet undefined, üres string
+❌ expect(response.ok).toBe(true)        → Body tartalmat is ellenőrizd!
+❌ expect(array.length).toBeGreaterThan(0) → Seed adat nélkül ez FAIL
+❌ "a build sikeres tehát működik"       → BUILD ≠ MŰKÖDIK
+❌ "nincs error a konzolban"             → Lehet silent failure
+```
+
+**KÖTELEZŐ erős assertion pattern-ek:**
+
+```
+✅ expect(result.id).toBe("expected-uuid")
+✅ expect(result.name).toEqual("Teszt Cég Kft.")
+✅ expect(response.data).toHaveLength(3)
+✅ expect(response.data[0]).toMatchObject({ field: "value" })
+✅ expect(error.message).toContain("specific error text")
+✅ Screenshot-on LÁTSZIK a konkrét adat (nem skeleton, nem "Loading...")
+✅ DB query-vel ELLENŐRIZD hogy a sor tényleg bekerült
+✅ Network tab-on a response body tartalmazza az elvárt mezőket
+```
+
+### 3.6 KÖTELEZŐ: Browser UI Verifikáció
+
+**Minden UI-t érintő modulnál KÖTELEZŐ a browser subagent-tel történő verifikáció.**
+
+A browser subagent feladata:
+1. Navigálj a releváns oldalra
+2. Készíts screenshot-ot
+3. Ellenőrizd hogy az elvárt elemek renderelődnek-e
+4. Ellenőrizd a konzolt error-ökre
+5. Ha interakció szükséges (kattintás, form kitöltés) → hajtsd végre és ellenőrizd az eredményt
+
+**eaisyBill bejelentkezési adatok (lokális dev / staging):**
+
+| Mező | Érték |
+|------|-------|
+| URL | `http://localhost:5173` (dev) vagy a staging URL |
+| Email | `balazs@thinkai.hu` |
+| Jelszó | `Nincsapellata1'` |
+
+> ⚠️ Mindig fejlesztői szerveren (`npm run dev`) tesztelj, NE production-ön!
+
+**Browser verify flow:**
+```
+1. Ha dev szerver nem fut → indítsd el: `npm run dev`
+2. Browser subagent → navigálj az eaisybill-re
+3. Ha nincs bejelentkezve → login a fenti adatokkal
+4. Navigálj a tesztelendő oldalra
+5. Screenshot készítés
+6. Konzol ellenőrzés (error-ök, warning-ok)
+7. Ha adat kell → ellenőrizd hogy tényleges adat jelenik meg (nem skeleton/loading)
+8. Eredmény rögzítése a task.md-ben
 ```
 
 ---
 
-## FÁZIS 3.5: Build Verify + User Validáció (implementáció UTÁN, docs ELŐTT)
+## FÁZIS 3.7: Integration Verify (MINDEN modul ✅ után)
 
-### 3.5.1 Build Verify (rekurzív — user NEM lát semmit amíg nem SIKERES)
+Miután az összes micro-module ✅ jelölést kapott:
 
+### 3.7.1 Full Build
 ```bash
 npm run build
 ```
 
-**Ha a build HIBÁS:**
-1. Elemezd a hibákat
-2. Javítsd az összes hibát
-3. Futtasd újra: `npm run build`
-4. **Ismételd amíg a build SIKERES** (max 5 iteráció — ha utána sem sikerül, jelezd a usernek a maradék hibákat)
+### 3.7.2 End-to-End Integration Smoke Test
 
-> ⚠️ **Az AI NEM jelzi a usernek hogy "kész" amíg a build nem SIKERES.**
-> A build fix loop teljesen belső — a user nem látja a köztes hibákat.
+A teljes feature end-to-end tesztelése browser subagent-tel:
+```
+1. Bejelentkezés → Navigáció a feature oldalára
+2. Fő happy path végrehajtása (create/read/update/delete ha releváns)
+3. Adatok megjelenésének ellenőrzése
+4. Mutáció → oldal frissítés → adat megjelenik
+5. Screenshot a végállapotról
+```
 
-### 3.5.2 User Validáció (build SIKERES után)
+### 3.7.3 Regressziós Gyors-Check
+
+A meglévő funkciók nem törtek el:
+```
+1. Dashboard betölt-e (nem blank, adat megjelenik)
+2. Számlák oldal renderelődik-e (táblázat, szűrők)
+3. Sidebar navigáció működik-e (kattintás → oldal váltás)
+4. Ha eaisyBooks érintett → /accounty/ portfólió betölt-e
+```
+
+### 3.7.4 User Gate
 
 > **GATE:** Az AI várja a felhasználó megerősítését hogy az implementáció működik.
 > **NEM lép tovább Fázis 4-re amíg a user nem validálta!**
 
-### Workflow:
-1. Az AI jelzi: „Az implementáció kész. **Build sikeres.** Kérlek teszteld / validáld."
-2. A user teszteli az éles funkciót (böngészőben, API-n, stb.)
-3. User visszajelez:
-   - ✅ **Működik** → Az AI automatikusan elindítja a Fázis 4-et (docs frissítés)
-   - ❌ **Nem működik** → Az AI javít → `npm run build` → újra Fázis 3.5
+**Mit mond az AI:**
 
-### Mit mond az AI:
 ```markdown
-## ✅ Implementáció kész — Build sikeres ✅
+## ✅ Implementáció kész — Összes modul verifikálva ✅
 
-**Változtatások:**
-- [lista a módosított fájlokról és a változásokról]
+**Modulok:**
+- [x] Module 1: [név] — [X] attempt, evidence: [link]
+- [x] Module 2: [név] — [X] attempt, evidence: [link]
+- [x] Module N: [név] — [X] attempt, evidence: [link]
 
-**Kérlek teszteld:** [mit és hogyan kell tesztelni]
+**Integration test:** ✅ PASS — [evidence: screenshot/output]
+**Regresszió:** ✅ Dashboard, Számlák, Navigáció — mind OK
+
+**Kérlek teszteld:** [mit és hogyan kell tesztelni a böngészőben]
 
 ⚠️ Ha működik, frissítem az összes releváns dokumentációt (BRD/PRD/ADR/Design docs).
 ```
@@ -359,13 +715,38 @@ graphify update .
 3. ✅ Open döntések felszínre hozva
 4. ✅ A döntési mátrix minden sora ki van töltve (meglévő pattern oszloppal)
 5. ✅ A felhasználó minden döntést jóváhagyott
-6. ✅ Az implementációs terv elfogadva
+6. ✅ A micro-module terv elkészült és jóváhagyva (Fázis 2.5)
+
+**Az AI (orchestrator) SOHA nem lép a következő modulra amíg:**
+1. ✅ Sub-agent visszatérés review-olva (3.1.2 checklist)
+2. ✅ `npm run build` SIKERES az aktuális modulra
+3. ✅ Modul-specifikus SMOKE TEST PASS — evidence a sub-agent-től (nem csak "pass" szó!)
+4. ✅ False positive check PASS (tényleges adat, nem üres/undefined)
+5. ✅ Evidence rögzítve (screenshot/output/SQL eredmény)
+6. ✅ Ha FAIL → git checkout + ÚJ sub-agent enhanced brief-fel (3.2)
 
 **Az AI SOHA nem jelenti késznek a feature-t amíg:**
-1. ✅ `npm run build` SIKERES (Build Verify — Fázis 3.5.1)
-2. ✅ A user validálta hogy az implementáció működik (Fázis 3.5.2)
-3. ✅ BRD/PRD/ADR frissítve (Fázis 4)
-4. ✅ EF/RPC registry frissítve ha releváns (Fázis 4.6)
-5. ✅ Design docs frissítve (ha releváns)
-6. ✅ Cross-referenciák hozzáadva
-7. ✅ Graphify update lefutott (Fázis 5)
+1. ✅ MINDEN micro-module ✅ jelölést kapott a task.md-ben
+2. ✅ Integration smoke test PASS (E2E a teljes feature-re — Fázis 3.7.2)
+3. ✅ Regressziós gyors-check PASS (Dashboard, Számlák, Navigáció — Fázis 3.7.3)
+4. ✅ Browser screenshot BIZONYÍTJA hogy a UI renderelődik adat-tal
+5. ✅ A user validálta hogy az implementáció működik (User Gate — Fázis 3.7.4)
+6. ✅ BRD/PRD/ADR frissítve (Fázis 4)
+7. ✅ EF/RPC registry frissítve ha releváns (Fázis 4.6)
+8. ✅ Design docs frissítve (ha releváns)
+9. ✅ Cross-referenciák hozzáadva
+10. ✅ Graphify update lefutott (Fázis 5)
+
+**TILTOTT viselkedés:**
+- ❌ "A build sikeres, tehát működik" → BUILD ≠ MŰKÖDIK
+- ❌ Gyenge assertion-nel "pass"-nak jelölni (toBeTruthy, toBeDefined)
+- ❌ Üres tömb/undefined visszatérést "sikernek" tekinteni
+- ❌ Smoke test kihagyása mert "a build sikeres"
+- ❌ Screenshot nélkül UI modult késznek jelölni
+- ❌ Retry loop kihagyása (quickfix a hibán → hamis "pass")
+- ❌ Több modul egyszerre implementálása verifikáció nélkül
+- ❌ Orchestrator maga ír kódot (sub-agent feladata!)
+- ❌ Sub-agent eredményét review nélkül elfogadni ("a sub-agent mondta hogy kész")
+- ❌ Sikertelen sub-agent kontextusát újra felhasználni (tiszta sub-agent kell!)
+
+

@@ -1,7 +1,7 @@
-# P-032: [Accounty] ÁFA Bevallás Workflow
+# P-032: [eaisyBooks] ÁFA Bevallás Workflow
 
 **Status:** Decided  
-**Category:** Accounty  
+**Category:** eaisyBooks  
 **BRD Reference:** Decision 033 (ÁFA bevallás modul)
 
 **Question:** Hogyan néz ki az ÁFA bevallás elkészítésének UI workflow-ja?

@@ -1,6 +1,6 @@
 # Visibill — Business Requirement Decisions
 
-> **Utoljára frissítve:** 2026-06-08  
+> **Utoljára frissítve:** 2026-06-23  
 > **Összesen:** 38 döntés | ✅ Decided: 25 | 🟡 Partially Decided: 4 | ⛔ Superseded: 1 | 🔴 Open: 8
 
 ---
@@ -95,17 +95,17 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | 029 | Mobil stratégia | 🔴 Open | [029-mobile-strategy.md](./029-mobile-strategy.md) |
-| 030 | API & third-party hozzáférés | 🔴 Open | [030-api-access.md](./030-api-access.md) |
+| 030 | API & third-party hozzáférés | ✅ Decided | [030-api-access.md](./030-api-access.md) |
 
-## 💼 Accounty & Integrált Modulok
+## 💼 eaisyBooks & Intégrált Modulok
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| 031 | Accounty modul scope | ✅ Decided | [031-accounty-module.md](./031-accounty-module.md) |
+| 031 | eaisyBooks modul scope | ✅ Decided | [031-accounty-module.md](./031-accounty-module.md) |
 | 032 | Payroll (bérszámfejtés) modul | ✅ Decided | [032-payroll-module.md](./032-payroll-module.md) |
 | 033 | ÁFA bevallás modul | ✅ Decided | [033-vat-return-module.md](./033-vat-return-module.md) |
 | 034 | Worker pipeline (háttérfeldolgozás) | ✅ Decided | [034-worker-pipeline.md](./034-worker-pipeline.md) |
-| 035 | Accounty ügyfélportál | ✅ Decided | [035-accounty-client-portal.md](./035-accounty-client-portal.md) |
+| 035 | eaisyBooks ügyfélportál | ✅ Decided | [035-accounty-client-portal.md](./035-accounty-client-portal.md) |
 
 ## 🎫 Ügyfélszolgálat & Support
 

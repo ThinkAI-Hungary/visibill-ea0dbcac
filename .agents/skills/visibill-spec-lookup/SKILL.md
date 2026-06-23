@@ -1,6 +1,6 @@
 ---
 name: visibill-spec-lookup
-description: Use for ANY task touching the Visibill/eaisybill codebase — always the first step before any code change. Triggers on project names "visibill", "eaisybill", "eaisybill-prod", "vsweb" and ANY modification verb — "módosítsd", "javítsd", "add hozzá", "változtasd meg", "hozzányúl", "implementáld", "oldd meg", "fix", "improve", "change", "modify", "update", "build", "develop", "fejleszt", "refaktoráld", "deployold", "szűrés", "szűrjük". Lightweight lookup — reads relevant specs before any work.
+description: Use for ANY task touching the Visibill/eaisybill codebase — always the first step before any code change. Triggers on project names "visibill", "eaisybill", "eaisybill-prod", "vsweb", "eaisybooks", "accounty" and ANY modification verb — "módosítsd", "javítsd", "add hozzá", "változtasd meg", "hozzányúl", "implementáld", "oldd meg", "fix", "improve", "change", "modify", "update", "build", "develop", "fejleszt", "refaktoráld", "deployold", "szűrés", "szűrjük". Lightweight lookup — reads relevant specs before any work.
 ---
 
 # Visibill Spec Lookup — Specification-Driven Development
@@ -46,6 +46,7 @@ description: Use for ANY task touching the Visibill/eaisybill codebase — alway
 | "NAV", "online számla" | A-012, A-005 |
 | "edge function", "EF" | A-005 (teljes EF katalógus) |
 | "RPC", "function", "SQL" | A-016 (teljes RPC katalógus) |
+| "eaisybooks", "accounty", "könyvelői nézet", "könyvelő iroda" | 031-accounty-module, P-031, GLOSSARY.md |
 
 ## 2. Dokumentumok Beolvasása
 

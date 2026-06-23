@@ -65,7 +65,7 @@ export function useKintlevoData() {
         const to = from + PAGE_SIZE - 1;
         const { data, error } = await supabase
           .from('invoices')
-          .select('id,bizonylatsorszam,kibocsatas_datuma,fizetesi_hatarido,vevo_nev,vevo_vat_id,brutto_vegosszeg,netto_vegosszeg,penznem,transaction_id,melleklet_url')
+          .select('id,bizonylatsorszam,kibocsatas_datuma,fizetesi_hatarido,vevo_nev,vevo_vat_id,brutto_vegosszeg,adoalap_osszesen,penznem,transaction_id,melleklet_url')
           .eq('company_id', selectedCompany.id)
           .eq('invoice_direction', 'OUTBOUND')
           .is('transaction_id', null)
@@ -172,7 +172,7 @@ export function useKintlevoData() {
       result.push({
         id: inv.id, invoiceNumber: inv.bizonylatsorszam, issueDate: inv.kibocsatas_datuma,
         dueDate: format(dueDate, 'yyyy-MM-dd'), amount: inv.brutto_vegosszeg ?? 0,
-        netAmount: inv.netto_vegosszeg ?? 0,
+        netAmount: inv.adoalap_osszesen ?? 0,
         currency: inv.penznem ?? 'HUF', companyName: inv.vevo_nev ?? 'Ismeretlen partner',
         taxNumber: inv.vevo_vat_id, source: 'manual', attachmentUrl: inv.melleklet_url ?? null,
         daysOverdue, category: getCategory(daysOverdue),

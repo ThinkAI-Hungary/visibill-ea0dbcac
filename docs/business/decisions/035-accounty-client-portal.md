@@ -1,14 +1,14 @@
-# Decision 035: [Accounty] Ügyfélportál
+# Decision 035: [eaisyBooks] Ügyfélportál (korábban: Accounty)
 
 **Status:** Decided
 
-**Category:** Accounty & Integrált Modulok
+**Category:** eaisyBooks & Integrált Modulok
 
 **Question:** Hogyan kommunikál a könyvelő az ügyfeleivel és hogyan kéri be a hiányzó dokumentumokat?
 
 **Decision:**
 - **Magic link-es hozzáférés:** Az ügyfél auth nélkül, egyedi token-nel éri el a portált (`/portal/:token`)
-- Az Accounty felületen belül is elérhető preview-ként (`/accounty/payroll/:id/portal`)
+- Az eaisyBooks felületen belül is elérhető preview-ként (`/accounty/payroll/:id/portal`)
 - Funkciók:
   - Hiányzó számlák listája (könyvelő által összeállított)
   - Fájl feltöltés közvetlenül a portálról

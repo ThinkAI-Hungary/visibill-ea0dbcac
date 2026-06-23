@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-09  
-**Utoljára frissítve:** 2026-06-22
+**Utoljára frissítve:** 2026-06-23
 
 ## Context
 
@@ -41,7 +41,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `send-notification-email` | ❌ | Általános értesítő email |
 | `send-weekly-summary` | ❌ | Heti összefoglaló email (cron) |
 | `send-monthly-summary` | ❌ | Havi összefoglaló email (cron) |
-| `send-accounty-email` | ❌ | Accounty modul — hiányzó dokumentum értesítés |
+| `send-accounty-email` | ❌ | eaisyBooks modul — hiányzó dokumentum értesítés |
 
 #### 📥 Email Fogadás (3 db)
 
@@ -115,6 +115,13 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `get-invoice-image-url` | ❌ | Számla kép signed URL generálása (Storage) |
 | `check-missing-invoices` | ❌ | Hiányzó számlák ellenőrzése (cron) |
 | `check-payment-deadlines` | ❌ | Fizetési határidők ellenőrzése (cron) |
+| `sandbox-storage-cleanup` | ❌ | SANDBOX cég mock számlaképek törlése Storage-ból + DB melleklet_url NULL-ra. Admin-only (`x-admin-secret` header). Dry-run mód támogatott. |
+
+#### 🔌 External API (1 db)
+
+| Function | JWT | Leírás |
+|----------|-----|--------|
+| `openclaw-api` | ❌ | Read-only REST API külső integrációkhoz (OpenClaw). Saját API key auth (SHA-256 hash, `api_keys` tábla). 4 action: `help`, `list-tables`, `schema`, `query`. 120+ tábla olvasható, 6 szenzitív tábla blokkolva. Rate limiting (100 req/perc/kulcs). |
 
 ---
 
@@ -123,13 +130,14 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | JWT beállítás | Darabszám | Mikor |
 |---|---|---|
 | `verify_jwt: true` | 17 | Frontend-ből közvetlenül hívott function-ök |
-| `verify_jwt: false` | 31 | Webhook-ok, cron jobok, más EF-ek által hívottak, service_role auth |
+| `verify_jwt: false` | 32 | Webhook-ok, cron jobok, más EF-ek által hívottak, service_role auth, API key auth |
 
 **Megjegyzés:** `verify_jwt: false` nem jelent védtelenséget — ezek a function-ök saját auth-ot implementálnak:
 - Webhook-ok: HMAC signature verification (Mailgun)
 - Cron jobok: Supabase Cron scheduler hívja (internal)
 - Service role: `SUPABASE_SERVICE_ROLE_KEY` env var-ral autentikál
 - Nylas callback: OAuth state validation
+- API key auth: `openclaw-api` — SHA-256 hash lookup az `api_keys` táblából, saját rate limiting
 
 ---
 
@@ -145,7 +153,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 - Deno runtime — npm csomagok korlátozott támogatása (`esm.sh` wrapper szükséges)
 - 60s timeout (hosszú NAV API hívások közel a limithez)
 - Nincs lokális hibakeresés (Supabase CLI `serve` korlátozottan működik)
-- 48 function karbantartása nehézkes — 4 db legacy (Stripe) konszolidálható
+- 50 function karbantartása nehézkes — 4 db legacy (Stripe) konszolidálható
 
 ## Kapcsolódó
 - [A-011: Mailgun Email Processing](./A-011-email-processing.md)

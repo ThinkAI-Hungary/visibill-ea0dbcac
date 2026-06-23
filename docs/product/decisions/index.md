@@ -1,6 +1,6 @@
 # Visibill — Product Requirements: Döntések
 
-> **Utoljára frissítve:** 2026-06-16  
+> **Utoljára frissítve:** 2026-06-23  
 > **Összesen:** 33 döntés | ✅ Decided: 30 | ⛔ Superseded: 2 | 🔴 Open: 1
 
 ---
@@ -77,11 +77,11 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 | P-029 | Limit kezelés | ⛔ Superseded | [P-029](./P-029-limit-handling.md) |
 | P-030 | Trial → fizetős konverzió flow | 🔴 Open | [P-030](./P-030-trial-conversion.md) |
 
-## 💼 Accounty
+## 💼 eaisyBooks
 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
-| P-031 | Accounty layout & navigáció | ✅ Decided | [P-031](./P-031-accounty-layout.md) |
+| P-031 | eaisyBooks layout & navigáció | ✅ Decided | [P-031](./P-031-accounty-layout.md) |
 | P-032 | ÁFA bevallás workflow | ✅ Decided | [P-032](./P-032-vat-return-workflow.md) |
 | P-033 | Bérszámfejtési ciklus workflow | ✅ Decided | [P-033](./P-033-payroll-cycle.md) |
 | P-034 | Jóváhagyási sor (Approval Queue) | ✅ Decided | [P-034](./P-034-approval-queue.md) |

@@ -1,7 +1,7 @@
-# P-033: [Accounty] Bérszámfejtési Ciklus Workflow
+# P-033: [eaisyBooks] Bérszámfejtési Ciklus Workflow
 
 **Status:** Decided  
-**Category:** Accounty  
+**Category:** eaisyBooks  
 **BRD Reference:** Decision 032 (Payroll modul)
 
 **Question:** Hogyan néz ki a bérszámfejtési ciklus UI workflow-ja?

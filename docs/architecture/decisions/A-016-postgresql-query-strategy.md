@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-Q3 (implementálva) → Folyamatosan bővül  
-**Utoljára frissítve:** 2026-06-14
+**Utoljára frissítve:** 2026-06-23
 
 ## Context
 
@@ -45,7 +45,7 @@ await supabase.from('invoices').update({ status: 'verified' }).eq('id', invoiceI
 
 ### 2. Teljes RPC Function Katalógus
 
-**Összesen: 77 function** a `public` schemában.
+**Összesen: 79 function** a `public` sémában.
 
 ---
 
@@ -99,6 +99,8 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `check_request()` | DEFINER | PostgREST pre-request hook | Globális request validáció (rate limiting, auth check) |
 | `increment_invoice_usage(user_uuid)` | DEFINER | Trigger / EF | Havi számlafeldolgozási kvóta növelése |
 | `calculate_hourly_cost(p_base_salary, p_monthly_hours?)` | INVOKER | Frontend | Óradíj kalkuláció alapbérből |
+| `generate_api_key(p_company_id?, p_name?)` | DEFINER | Frontend / SQL | API kulcs generálás külső integrációkhoz (SHA-256 hash, nyers kulcs csak egyszer jelenik meg) |
+| `revoke_api_key(p_key_id)` | DEFINER | Frontend / SQL | API kulcs deaktiválása (is_active = false) |
 
 #### 📬 2.4 PGMQ Wrapper RPC-k (Worker által hívott)
 
@@ -119,12 +121,12 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `auto_approve_high_confidence()` | DEFINER | Worker | Magas confidence-ű tételek auto-jóváhagyása |
 | `auto_match_salary_transaction()` | DEFINER | Worker trigger | Bér-tranzakció automatikus párosítás |
 
-#### 🏗️ 2.6 Accounty / Management RPC-k
+#### 🏗️ 2.6 eaisyBooks / Management RPC-k
 
 | RPC Function | Security | Hívó | Cél |
 |---|---|---|---|
-| `get_accounty_company_summary(p_user_id)` | DEFINER | Accounty dashboard | Könyvelői cég összefoglaló |
-| `get_accounty_company_names(p_company_ids[])` | DEFINER | Accounty dashboard | Cégnevek batch lekérdezés |
+| `get_accounty_company_summary(p_user_id)` | DEFINER | eaisyBooks dashboard | Könyvelői cég összefoglaló |
+| `get_accounty_company_names(p_company_ids[])` | DEFINER | eaisyBooks dashboard | Cégnevek batch lekérdezés |
 | `get_user_emails_for_management(user_ids[])` | DEFINER | management-stats EF | Management email lekérdezés |
 
 ---
@@ -190,7 +192,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `update_vat_updated_at()` | vat_returns |
 | `update_annual_reports_updated_at()` | annual_reports |
 | `update_user_subscriptions_updated_at()` | user_subscriptions |
-| `accounty_set_updated_at()` | accounty_* táblák |
+| `accounty_set_updated_at()` | accounty_* táblák (eaisyBooks modul) |
 
 #### 🛡️ 3.6 Rendszer Utility Function-ök
 

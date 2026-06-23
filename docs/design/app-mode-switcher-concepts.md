@@ -4,20 +4,22 @@
 > **Dátum:** 2026-06-14
 > **Mockup fájl:** `scratch/app-switcher-mockups.html` (lokális preview)
 > **Érintett fájlok:** `AppSidebar.tsx` (L306-332), `AccountyLayout.tsx` (L196-228)
+>
+> **❗ Megjegyzés:** Az "Accounty" rebrandelve lett **eaisyBooks**-ra. A kódban (`AccountyLayout`, `/accounty/` route) továbbra is a legacy név él. A váltó UI-ban az új brand nevet (eaisyBooks) kell megjeleníteni.
 
 ---
 
 ## Kontextus
 
-Az eaisybill és Accounty nézet közötti váltás jelenleg a sidebar header-ben egy egyszerű szöveges link:
+Az eaisyBill és eaisyBooks (korábban: Accounty) nézet közötti váltás jelenleg a sidebar header-ben egy egyszerű szöveges link:
 
 ```
-eaisybill | Accounty
+eaisyBill | eaisyBooks
 ```
 
 A cél: egy designosabb, professzionális váltó komponens, ami:
 - Egyértelmű vizuális jelzést ad, melyik mód aktív
-- Illeszkedik a meglévő dark theme-hez (teal `#2dd4bf` = eaisybill, red `#ef4444` = Accounty)
+- Illeszkedik a meglévő dark theme-hez (teal `#2dd4bf` = eaisyBill, red `#ef4444` = eaisyBooks)
 - Működik collapsed sidebar-ban is (opcionális, de előny)
 - Támogat notification badge-et (pl. jóváhagyásra váró elemek száma)
 

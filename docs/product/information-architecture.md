@@ -1,6 +1,6 @@
 # Visibill — Information Architecture & Navigation
 
-> **Verzió:** 1.3 | **Dátum:** 2026-06-22  
+> **Verzió:** 1.3 | **Dátum:** 2026-06-23  
 > **Forrás:** [AppSidebar.tsx](../../src/components/AppSidebar.tsx) · [App.tsx](../../src/App.tsx)  
 > **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md)
 
@@ -92,7 +92,7 @@ Visibill
 │   ├── /analytics/:tab?           Analitika
 │   └── /vat-return/:tab?          ÁFA bevallás
 │
-├── Accounty (/accounty/)
+├── eaisyBooks (/accounty/)                ← korábban: Accounty
 │   ├── /                          Portfólió (Grid/Lista/Kanban nézet)
 │   ├── /client/:id                Ügyfél részletes nézet
 │   ├── /client/:id/invoices       Ügyfél számlái
@@ -115,7 +115,7 @@ Visibill
 │   ├── /payroll/:id/portal        Ügyfélportál preview
 │   ├── /payroll/:id/tax-params    Adóparaméterek
 │   ├── /tickets/:ticketId?        Hibajegyek
-│   ├── /settings                  Accounty beállítások
+│   ├── /settings                  eaisyBooks beállítások
 │   ├── /help                      Segítség
 │   └── /new-client                Új ügyfél wizard (meghívó kód + manuális létrehozás)
 │
@@ -276,9 +276,9 @@ Sidebar
 
 ---
 
-## 8. [Accounty] Layout Struktúra
+## 8. [eaisyBooks] Layout Struktúra (kódban: AccountyLayout)
 
-Az Accounty modul **teljesen önálló layout-ot** használ (`AccountyLayout`), amely független a fő app `ProtectedLayout`-jától.
+Az eaisyBooks modul **teljesen önálló layout-ot** használ (`AccountyLayout`), amely független a fő app `ProtectedLayout`-jától.
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -325,12 +325,12 @@ Az Accounty modul **teljesen önálló layout-ot** használ (`AccountyLayout`), 
 ```
 
 **Különbségek a fő app-tól:**
-| Tulajdonság | Fő app (ProtectedLayout) | Accounty (AccountyLayout) |
+| Tulajdonság | Fő app (ProtectedLayout) | eaisyBooks (AccountyLayout) |
 |---|---|---|
-| Sidebar | AppSidebar (19 menüpont) | Saját Accounty sidebar (9 menüpont + payroll submenus) |
+| Sidebar | AppSidebar (19 menüpont) | Saját eaisyBooks sidebar (9 menüpont + payroll submenus) |
 | URL pattern | `/:companyId/:dateRange/page` | `/accounty/page` |
 | Company context | GlobalDatePicker + CompanySelector | Nem használ CompanySelector (multi-client) |
-| Branding | eaisybill | eaisybill \| Accounty (piros gradiens) |
+| Branding | eaisyBill | eaisyBill \| eaisyBooks (piros gradiens) |
 | Role | Owner/Admin/Member/Employee | admin/könyvelő |
 | Command palette | Nincs | Ctrl+K — oldalak + ügyfelek keresése |
 
