@@ -11,8 +11,19 @@ import { Suspense, lazy, useEffect } from "react";
   // Don't redirect if already at /auth/callback — prevents infinite reload loop
   if (window.location.pathname === '/auth/callback') return;
   const params = new URLSearchParams(hash.replace('#', ''));
+
+  // Successful email change confirmation
   if (params.get('type') === 'email_change') {
     window.location.replace('/auth/callback' + hash);
+    return;
+  }
+
+  // Already-used token: Supabase returns error=access_denied&error_code=otp_expired on root URL.
+  // Password reset otp_expired lands on /reset-password (different redirect_to), not here.
+  // So any otp_expired on the root is from an email_change → forward to AuthCallback.
+  if (params.get('error') === 'access_denied' && params.get('error_code') === 'otp_expired') {
+    window.location.replace('/auth/callback' + hash);
+    return;
   }
 })();
 // ─────────────────────────────────────────────────────────────────────────────
