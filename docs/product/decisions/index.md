@@ -1,6 +1,6 @@
 # Visibill — Product Requirements: Döntések
 
-> **Utoljára frissítve:** 2026-06-23  
+> **Utoljára frissítve:** 2026-06-24  
 > **Összesen:** 33 döntés | ✅ Decided: 30 | ⛔ Superseded: 2 | 🔴 Open: 1
 
 ---
@@ -58,7 +58,7 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | P-022 | Email értesítés típusok (granular toggle) | ✅ Decided | [P-022](./P-022-email-notifications.md) |
-| P-023 | In-app értesítési center (nincs, toast marad) | ✅ Decided | [P-023](./P-023-notification-center.md) |
+| P-023 | In-app értesítési center (3 rétegű toast: Realtime + session poll + catch-up) | ✅ Decided | [P-023](./P-023-notification-center.md) |
 | P-024 | Heti/havi összefoglaló (minimál számok) | ✅ Decided | [P-024](./P-024-summary-emails.md) |
 
 ## ⚙️ Beállítások & Profil

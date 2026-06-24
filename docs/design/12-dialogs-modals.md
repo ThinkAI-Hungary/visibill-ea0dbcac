@@ -74,7 +74,8 @@
 | `InvoiceFullEditDialog` | 9KB | Nagy | Teljes szerkesztés |
 | `InvoiceImageDialog` | 5KB | Nagy | Számla kép nagyítás |
 | `InvoiceItemsDialog` | 15KB | Nagy | Számla tételek |
-| `InvoiceFilesDialog` | 18KB | Nagy | Csatolt fájlok |
+| `InvoiceFilesDialog` | 28KB | Nagy | Csatolt fájlok — batch delete, A/B mód (2026-06-24) |
+| `UploadedFilesModal` | 22KB | Nagy | Feltöltött fájlok (upload oldalon) — batch delete, A/B mód (2026-06-24) |
 
 ### Tranzakció Dialog
 
@@ -211,6 +212,34 @@ Cégválasztó dropdown a sidebar-ban, keresési funkcióval.
 ```
 
 > **Korábbi probléma:** Az `overflow-x-auto` tábla wrapper levágta a tooltip-eket, amelyek a konténer szélén túl nyúltak. A Portal megoldja ezt, mert a tooltip a DOM gyökérben renderelődik.
+
+---
+
+## AlertDialog Portal Flash Fix (2026-06-24)
+
+> **Probléma:** Amikor egy `Dialog` bezár és `AlertDialog`-ok vannak a komponens fában (testvérként renderelve), a Radix close animation (~150ms) alatt az `AlertDialog` pillanatnyilag láthatóvá válhat.
+
+**Fix pattern — kötelező minden olyan dialógnál ahol belső `AlertDialog` is van:**
+
+```tsx
+// 1. Dialog onOpenChange-ben reseteld az összes ephemeral state-et
+<Dialog open={isOpen} onOpenChange={(open) => {
+  setIsOpen(open);
+  if (!open) {
+    setDeleteTarget(null);
+    setBatchDeleteOpen(false);
+    setSelectedIds(new Set());
+  }
+}}>
+
+// 2. AlertDialog open prop tartalmaz isOpen guard-ot
+<AlertDialog open={isOpen && !!deleteTarget} ...>
+<AlertDialog open={isOpen && batchDeleteOpen} ...>
+```
+
+**Miért:** A Radix `Portal` az AlertDialogot a `<body>` szintjén rendereli. Ha a szülő Dialog close animation fut, és a belső state még `true`, az AlertDialog portal rövid ideig visible állapotba kerülhet. Az `isOpen &&` guard ezt megakadályozza.
+
+**Implementálva:** `InvoiceFilesDialog`, `UploadedFilesModal`
 
 ---
 

@@ -45,7 +45,7 @@ export function ScopedLayout() {
 
   // ── Permission hooks (must be called before any early returns) ──
   const { isEmployee } = useUserRole();
-  const { canAccess } = useEaisybillPermissions();
+  const { canAccess, isLoading: permissionsLoading } = useEaisybillPermissions();
 
   /** Set both ref (sync) and state (triggers re-render). */
   const markAccessDenied = (denied: boolean) => {
@@ -155,11 +155,20 @@ export function ScopedLayout() {
   const isSyncing = !isCompanySynced || !isDateSynced;
 
   // ── Permission-based route guard ──
-  // Check if the current page's module is accessible to this user.
-  // Employees redirect to /working-time; others redirect to dashboard.
+  // Redirect if the user lacks permission for the current page's module.
+  //
+  // CRITICAL: We must wait for ALL of the following before redirecting:
+  //   1. !isSyncing       — company & date synced from URL (useEffect may not have run yet on refresh)
+  //   2. selectedCompany  — company is set, so DB permissions query is actually enabled & ran
+  //   3. !permissionsLoading — the DB permissions query finished
+  //
+  // Without condition (1+2): on refresh, selectedCompany=null → DB query disabled →
+  //   isLoading=false instantly, dbOverrides=undefined → canAccess('shipment_matching')=false
+  //   → premature redirect to dashboard. This was the root cause.
   const pageSegment = extractPageSegment(location.pathname);
   const pageModule = URL_TO_MODULE[pageSegment];
-  if (pageModule && !canAccess(pageModule) && pageSegment !== '/') {
+  const readyToGuard = !isSyncing && !!selectedCompany && !permissionsLoading;
+  if (readyToGuard && pageModule && !canAccess(pageModule) && pageSegment !== '/') {
     const fallbackPage = isEmployee ? 'working-time' : '';
     const redirectPath = generateScopedPath(
       selectedCompany?.id || urlCompanyId || '',

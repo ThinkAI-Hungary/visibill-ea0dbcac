@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-Q3 (implementálva) → Folyamatosan bővül  
-**Utoljára frissítve:** 2026-06-23
+**Utoljára frissítve:** 2026-06-24
 
 ## Context
 
@@ -84,6 +84,7 @@ Komplex üzleti logikához — aggregációk, szűrt lapozott listák, report-ok
 | `override_gl_classifications_batch(p_items, p_new_gl_account_id, ...)` | DEFINER | GeneralLedgerTable.tsx | Batch GL felülbírálás |
 | `seed_default_vat_codes(p_company_id)` | INVOKER | VatReturnPage.tsx | ÁFA kódok inicializálás |
 | `assign_supplier_default_projects(p_company_id)` | DEFINER | ProjectsPage.tsx | Szállítók alapértelmezett projektjének beállítása |
+| `delete_upload_with_data(p_upload_id, p_upload_type)` | DEFINER | InvoiceFilesDialog, UploadedFilesModal | Feltöltés cascade törlés (B mód) — töröl: invoices/transactions/transport_docs/shipment_matches/costs. `p_upload_type`: `'invoice'\|'transaction'\|'report'`. Returns: `{deleted_invoices, deleted_transactions, deleted_transport_docs}` |
 
 #### 🔑 2.3 Auth & Credential RPC-k
 

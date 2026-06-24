@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -6,9 +6,26 @@ import { toast } from '@/hooks/use-toast';
 import { reportError } from '@/lib/errorReporter';
 
 /**
+ * Module-level registry of upload IDs that this browser session is
+ * waiting for. Components call registerPendingUpload(id) immediately
+ * after inserting a row into invoice_uploads. The provider polls every
+ * 5 s until all IDs reach a terminal status, then stops.
+ *
+ * Module-level (not React state) so it survives re-renders and is
+ * shared across any component that imports this file.
+ */
+const _pendingSessionUploads = new Set<string>();
+export function registerPendingUpload(uploadId: string) {
+  _pendingSessionUploads.add(uploadId);
+}
+
+/**
  * Global Realtime listener that:
  * 1. Shows toast notifications when new files are processed (INSERT debounced per upload ID)
  * 2. Silently invalidates TanStack Query caches on any INSERT/UPDATE/DELETE for auto-refresh
+ * 3. Session-scoped catch-up polling: polls only known pending upload IDs (registered via
+ *    registerPendingUpload) — stops automatically when all resolve.
+ * 4. Tab-focus catch-up: when user returns after 2+ min, checks last 15 min of completions.
  *
  * NOTE: We do NOT use server-side filters because Supabase Realtime filters
  * require FULL replica identity for UPDATE/DELETE, and service-role inserts
@@ -34,6 +51,7 @@ export function LiveNotificationProvider() {
     if (!row?.company_id) return true;
     return row.company_id === companyIdRef.current;
   }, []);
+
 
   // ── Notification toast (only for first INSERT per upload) ──
   const showNotification = useCallback(async (
@@ -63,6 +81,30 @@ export function LiveNotificationProvider() {
       variant: 'default',
       duration: 3000,
     });
+  }, []);
+
+  // ── Upload status → toast + targeted cache invalidation helper ──
+  // Used by session polling and tab-focus catch-up.
+  const notifyUploadStatus = useCallback((row: { id: string; file_name: string; processing_status: string }) => {
+    const fileName = row.file_name || 'Ismeretlen fájl';
+    const qc = queryClientRef.current;
+    const cid = companyIdRef.current;
+    if (!cid) return;
+
+    if (row.processing_status === 'processed' || row.processing_status === 'completed') {
+      toast({ title: 'Számla feldolgozva! ✓', description: `${fileName} sikeresen feldolgozva.`, variant: 'default', duration: 5000 });
+      qc.invalidateQueries({ queryKey: ['submittedInvoices', cid] });
+      qc.invalidateQueries({ queryKey: ['recentInvoices', cid] });
+      qc.invalidateQueries({ queryKey: ['dashboardData', cid] });
+    } else if (row.processing_status === 'cmr_attached') {
+      toast({ title: '🚚 Dokumentum párosítva!', description: `${fileName} sikeresen párosítva egy fuvarhoz.`, variant: 'default', duration: 5000 });
+      qc.invalidateQueries({ queryKey: ['shipments-matching', cid] });
+    } else if (row.processing_status === 'cmr_orphaned') {
+      toast({ title: '📄 Dokumentum rögzítve', description: `${fileName} — vár a megfelelő számlára.`, variant: 'default', duration: 5000 });
+    } else if (row.processing_status === 'cmr_escalated') {
+      toast({ title: '⚠️ Eszkaláció szükséges', description: `${fileName} — eltérés, kézi ellenőrzés szükséges.`, variant: 'destructive', duration: 8000 });
+      qc.invalidateQueries({ queryKey: ['shipments-matching', cid] });
+    }
   }, []);
 
   // ── Debounced cache invalidation (500ms) with companyId scoping ──
@@ -182,14 +224,51 @@ export function LiveNotificationProvider() {
         (payload) => {
           if (!isMyCompany(payload)) return;
           invalidate('uploadHistory', 'submittedInvoices', 'filteredSubmittedInvoices');
-          // Show notification when processing_status changes to 'processed' (invoice pipeline)
           if (payload.eventType === 'UPDATE') {
             const row = payload.new as any;
             const oldRow = payload.old as any;
+
+            // Invoice pipeline: 'completed' / 'processed'
             const doneStatuses = ['completed', 'processed'];
             if (row.id && doneStatuses.includes(row.processing_status) && !doneStatuses.includes(oldRow?.processing_status)) {
               console.log('[RealtimeSync] 🔔 invoice_uploads status → done:', row.id);
               showNotification(row.id, 'invoice_uploads');
+            }
+
+            // Transport doc pipeline: 'cmr_attached' → dokumentum párosítva
+            if (row.id && row.processing_status === 'cmr_attached' && oldRow?.processing_status !== 'cmr_attached') {
+              console.log('[RealtimeSync] 🔔 invoice_uploads status → cmr_attached:', row.id);
+              const attachedKey = `cmr_attached_${row.id}`;
+              if (!notifiedUploads.current.has(attachedKey)) {
+                notifiedUploads.current.add(attachedKey);
+                supabase.from('invoice_uploads').select('file_name').eq('id', row.id).single().then(({ data }) => {
+                  const fileName = data?.file_name || 'Ismeretlen fájl';
+                  toast({
+                    title: '🚚 Dokumentum párosítva!',
+                    description: `${fileName} sikeresen párosítva lett egy fuvarhoz.`,
+                    variant: 'default',
+                    duration: 5000,
+                  });
+                });
+              }
+            }
+
+            // Transport doc pipeline: 'cmr_escalated' → emberi ellenőrzés kell
+            if (row.id && row.processing_status === 'cmr_escalated' && oldRow?.processing_status !== 'cmr_escalated') {
+              console.log('[RealtimeSync] ⚠️ invoice_uploads status → cmr_escalated:', row.id);
+              const escalatedKey = `cmr_escalated_${row.id}`;
+              if (!notifiedUploads.current.has(escalatedKey)) {
+                notifiedUploads.current.add(escalatedKey);
+                supabase.from('invoice_uploads').select('file_name').eq('id', row.id).single().then(({ data }) => {
+                  const fileName = data?.file_name || 'Ismeretlen fájl';
+                  toast({
+                    title: '⚠️ Dokumentum eszkalálva',
+                    description: `${fileName} nem párosítható automatikusan — kézi ellenőrzés szükséges.`,
+                    variant: 'destructive',
+                    duration: 8000,
+                  });
+                });
+              }
             }
           }
         }
@@ -405,6 +484,103 @@ export function LiveNotificationProvider() {
         }
       )
 
+      // ━━ SHIPMENTS table (HRTSPED — fuvar-számla párosítás) ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'shipments' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          invalidate('shipments-matching', 'shipment-import-batches');
+        }
+      )
+
+      // ━━ SHIPMENT_MATCHES table (HRTSPED — párosítás eredmény) ━━
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'shipment_matches' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          invalidate('shipments-matching');
+        }
+      )
+
+      // ━━ TRANSPORT_DOCUMENTS table (HRTSPED — CMR, nalog, POD) ━━
+      // Note: We toast on INSERT here (not on invoice_uploads status) because
+      // retroactive rematch / filename-similarity never updates invoice_uploads.processing_status.
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'transport_documents' },
+        (payload) => {
+          if (!isMyCompany(payload)) return;
+          invalidate('shipments-matching', 'uploadHistory');
+
+          if (payload.eventType === 'INSERT') {
+            const row = payload.new as any;
+            // Only toast for matched/orphaned docs (not unclassified noise)
+            if (!row.id || !row.file_name) return;
+
+            const toastKey = `transport_doc_${row.id}`;
+            if (notifiedUploads.current.has(toastKey)) return;
+            notifiedUploads.current.add(toastKey);
+
+            const docTypeLabel: Record<string, string> = {
+              cmr: 'CMR fuvarlevél',
+              nalog: 'Megrendelés',
+              pod: 'POD',
+              other: 'Dokumentum',
+            };
+            const label = docTypeLabel[row.document_type] || 'Dokumentum';
+            const fileName = row.file_name;
+
+            if (row.status === 'matched') {
+              toast({
+                title: `🚚 ${label} párosítva!`,
+                description: `${fileName} sikeresen párosítva lett egy fuvarhoz.`,
+                variant: 'default',
+                duration: 5000,
+              });
+            } else if (row.status === 'escalated') {
+              toast({
+                title: `⚠️ ${label} eszkalálva`,
+                description: `${fileName} nem párosítható automatikusan — kézi ellenőrzés szükséges.`,
+                variant: 'destructive',
+                duration: 8000,
+              });
+            } else if (row.status === 'orphaned') {
+              // Transport doc arrived before the invoice — toast that it's registered
+              toast({
+                title: `📄 ${label} feldolgozva`,
+                description: `${fileName} rögzítve — vár a megfelelő számlára.`,
+                variant: 'default',
+                duration: 5000,
+              });
+            }
+          }
+
+          // UPDATE: orphaned → matched (retroactive rematch found the invoice)
+          if (payload.eventType === 'UPDATE') {
+            const row = payload.new as any;
+            const oldRow = payload.old as any;
+            if (row.id && row.status === 'matched' && oldRow?.status !== 'matched') {
+              const toastKey = `transport_doc_rematch_${row.id}`;
+              if (!notifiedUploads.current.has(toastKey)) {
+                notifiedUploads.current.add(toastKey);
+                const docTypeLabel: Record<string, string> = {
+                  cmr: 'CMR fuvarlevél', nalog: 'Megrendelés', pod: 'POD', other: 'Dokumentum',
+                };
+                const label = docTypeLabel[row.document_type] || 'Dokumentum';
+                toast({
+                  title: `🚚 ${label} utólag párosítva!`,
+                  description: `${row.file_name} párosítva lett egy fuvarhoz.`,
+                  variant: 'default',
+                  duration: 5000,
+                });
+              }
+            }
+          }
+        }
+      )
+
       .subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
           console.log('[RealtimeSync] ✅ Connected');
@@ -462,8 +638,10 @@ export function LiveNotificationProvider() {
           'partners', 'partnersFull', 'projects', 'projectsList',
           'pettyCashEntries', 'dashboardPettyCash',
           'categories', 'dunning-sends', 'syncLogs',
-          'invoiceItems',
+          'invoiceItems', 'shipments-matching',
         );
+        // Also recover any Realtime notifications missed during the away period
+        catchUpToastsRef.current?.();
       } else {
         console.debug(
           `[RealtimeSync] Tab refocus skipped: away=${Math.round(awayMs / 1000)}s, ` +
@@ -492,6 +670,73 @@ export function LiveNotificationProvider() {
       }
     };
   }, [companyId, showNotification, invalidate, isMyCompany]);
+
+  // ── SESSION-SCOPED POLLING ──
+  // Polls every 5 s, but ONLY while _pendingSessionUploads has entries.
+  // Entries are added by registerPendingUpload() at upload time and
+  // removed here once a terminal status is detected.
+  // DB load: (active_uploading_sessions × 1) / 5s — negligible at scale.
+  useEffect(() => {
+    if (!companyId) return;
+
+    const TERMINAL = new Set(['processed', 'completed', 'cmr_attached', 'cmr_orphaned', 'cmr_escalated', 'ignored', 'error', 'failed', 'webhook_failed']);
+
+    const poll = async () => {
+      if (_pendingSessionUploads.size === 0) return;
+      const ids = Array.from(_pendingSessionUploads);
+      try {
+        const { data } = await supabase
+          .from('invoice_uploads')
+          .select('id, file_name, processing_status')
+          .in('id', ids);
+
+        for (const row of (data || [])) {
+          if (!TERMINAL.has(row.processing_status)) continue;
+          _pendingSessionUploads.delete(row.id);
+          const key = `session_${row.processing_status}_${row.id}`;
+          if (notifiedUploads.current.has(key)) continue;
+          notifiedUploads.current.add(key);
+          console.log('[SessionPoll] 🔔 Terminal status detected:', row.processing_status, row.file_name);
+          notifyUploadStatus(row);
+        }
+      } catch (err) {
+        // Silent — Realtime is the primary channel, polling is just a safety net
+      }
+    };
+
+    const interval = setInterval(poll, 5000);
+    return () => clearInterval(interval);
+  }, [companyId, notifyUploadStatus]);
+
+  // ── TAB FOCUS CATCH-UP ──
+  // Exported as a standalone ref so the Realtime useEffect can call it from
+  // its own handleVisibility closure without creating circular deps.
+  const catchUpToastsRef = useRef<(() => Promise<void>) | null>(null);
+  catchUpToastsRef.current = useCallback(async () => {
+    const cid = companyIdRef.current;
+    if (!cid) return;
+    const since = new Date(Date.now() - 15 * 60_000).toISOString(); // last 15 min
+    try {
+      const { data } = await (supabase as any)
+        .from('invoice_uploads')
+        .select('id, file_name, processing_status')
+        .eq('company_id', cid)
+        .in('processing_status', ['processed', 'completed', 'cmr_attached', 'cmr_orphaned', 'cmr_escalated'])
+        .gte('updated_at', since)
+        .order('updated_at', { ascending: false })
+        .limit(10);
+
+      for (const row of (data || [])) {
+        const key = `catchup_${row.processing_status}_${row.id}`;
+        if (notifiedUploads.current.has(key)) continue;
+        notifiedUploads.current.add(key);
+        console.log('[CatchUp] 🔔 Missed event recovered:', row.processing_status, row.file_name);
+        notifyUploadStatus(row);
+      }
+    } catch {
+      // Silent
+    }
+  }, [notifyUploadStatus]) as () => Promise<void>;
 
   return null;
 }

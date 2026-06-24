@@ -319,16 +319,26 @@ function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    // Reset scroll positions of main layout content containers
+    // Reset scroll of main content containers ONLY — NOT the sidebar nav.
+    // AppSidebar's scrollable SidebarGroup has [data-sidebar-nav] which is excluded here.
+    // Without this, the sidebar would jump to top every time the user clicks a menu item
+    // that was scrolled into view on small-resolution screens.
     const scrollContainers = document.querySelectorAll("main, .overflow-y-auto, .overflow-auto");
     scrollContainers.forEach((el) => {
+      // Skip sidebar navigation containers (marked with data-sidebar-nav)
+      if (
+        el.hasAttribute('data-sidebar-nav') ||
+        el.closest('[data-sidebar-nav]')
+      ) {
+        return;
+      }
       if (
         el.tagName === 'MAIN' ||
         el.classList.contains('p-6') ||
         el.classList.contains('p-8') ||
         el.classList.contains('flex-1')
       ) {
-        el.scrollTop = 0;
+        (el as HTMLElement).scrollTop = 0;
       }
     });
   }, [pathname]);

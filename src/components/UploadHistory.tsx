@@ -291,6 +291,8 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
       const curStatus = rec.processing_status;
 
       // Transition detected: was active (pending/processing) → now completed
+      // This acts as a FALLBACK for cases where the Realtime event was missed.
+      // CMR/transport document toasts are handled globally by LiveNotificationProvider.
       if (prevStatus && activeStatuses.has(prevStatus) && doneStatuses.has(curStatus)) {
         // Tab-aware toast title
         const toastTitle = activeTab === 'invoices' ? 'Számlák feldolgozva!'
@@ -298,7 +300,6 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
           : activeTab === 'bank-statements' ? 'Bankkivonat feldolgozva!'
           : activeTab === 'reports' ? 'Riport feldolgozva!'
           : 'Tranzakciók feldolgozva!';
-
 
         toast({
           title: toastTitle,
@@ -334,6 +335,7 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
       prevStatusMap.current.set(rec.id, curStatus);
     }
   }, [records, queryClient, activeTab]);
+
 
   if (!isValidTab) {
     return null;

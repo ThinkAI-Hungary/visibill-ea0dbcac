@@ -379,14 +379,12 @@ export default function ShipmentImportPage() {
       setFile(null);
       setParsedRows([]);
       
-      // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ['shipments', selectedCompany.id] });
+      // Invalidate queries — 'shipments-matching' is the key used by ShipmentMatchingDashboard
+      queryClient.invalidateQueries({ queryKey: ['shipments-matching', selectedCompany.id] });
       queryClient.invalidateQueries({ queryKey: ['shipment-import-batches', selectedCompany.id] });
 
-      // Navigate back to shipments
-      setTimeout(() => {
-        navigate(`${basePath}/shipments`);
-      }, 1000);
+      // Navigate immediately — dashboard will mount with stale cache and refetch automatically
+      navigate(`${basePath}/shipments`);
 
     } catch (err: any) {
       toast({
@@ -739,8 +737,8 @@ export default function ShipmentImportPage() {
                     description: `${confirmDeleteBatch.file_name} és a hozzá tartozó fuvar sorok sikeresen törölve.`,
                   });
 
-                  // Invalidate queries to refresh data
-                  queryClient.invalidateQueries({ queryKey: ['shipments', selectedCompany?.id] });
+                  // Invalidate queries — 'shipments-matching' is the key used by ShipmentMatchingDashboard
+                  queryClient.invalidateQueries({ queryKey: ['shipments-matching', selectedCompany?.id] });
                   queryClient.invalidateQueries({ queryKey: ['shipment-import-batches', selectedCompany?.id] });
                 } catch (err: any) {
                   toast({

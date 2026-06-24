@@ -8,21 +8,28 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { 
-  AlertTriangle, 
-  Check, 
-  X, 
-  ArrowLeftRight, 
-  FileText, 
+import {
+  AlertTriangle,
+  Check,
+  X,
+  ArrowLeftRight,
+  FileText,
   Truck,
   HelpCircle,
   Inbox,
   Link,
-  ChevronRight
+  ChevronRight,
+  ExternalLink,
+  Package,
+  Search,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
+
+// ── Types ──────────────────────────────────────────────────────────────────
 
 interface EscalatedMatch {
   id: string;
@@ -53,109 +60,482 @@ interface EscalatedMatch {
   };
 }
 
+interface EscalatedUpload {
+  id: string;
+  user_id: string;
+  file_name: string;
+  file_size: number;
+  file_url: string;
+  file_type: string;
+  processing_status: string;
+  error_message: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+  document_category: string | null;
+}
+
+interface BatchItem {
+  upload: {
+    id: string;
+    file_name: string;
+    file_size: number;
+    file_url: string;
+    processing_status: string;
+    created_at: string;
+    metadata: Record<string, unknown> | null;
+  };
+  transportDoc: {
+    id: string;
+    file_name: string;
+    position_number: string | null;
+    status: string;
+    linked_invoice_id: string | null;
+    linked_shipment_id: string | null;
+    invoice_bizonylatsorszam?: string | null;
+    shipment_position?: string | null;
+    shipment_carrier?: string | null;
+  } | null;
+}
+
+// ── Status helpers ─────────────────────────────────────────────────────────
+
+function getUploadStatusBadge(status: string) {
+  const map: Record<string, { label: string; className: string }> = {
+    processed:       { label: 'Feldolgozva',        className: 'bg-success/10 text-success border-success/20' },
+    cmr_attached:    { label: 'Dokumentum párosítva', className: 'bg-info/10 text-info border-info/20' },
+    cmr_escalated:   { label: 'Eszkaláció',          className: 'bg-warning/10 text-warning border-warning/20' },
+    cmr_orphaned:    { label: 'Vár a számlára',       className: 'bg-muted/30 text-muted-foreground border-border' },
+    error:           { label: 'Hiba',                className: 'bg-destructive/10 text-destructive border-destructive/20' },
+    pending:         { label: 'Feldolgozás alatt',   className: 'bg-muted/30 text-muted-foreground border-border' },
+  };
+  const s = map[status] ?? { label: status, className: 'bg-muted/30 text-muted-foreground border-border' };
+  return <Badge variant="outline" className={`text-[9px] px-1.5 py-0 font-bold ${s.className}`}>{s.label}</Badge>;
+}
+
+function getTransportStatusBadge(status: string) {
+  if (status === 'matched') return <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-bold bg-success/10 text-success border-success/20">Párosítva</Badge>;
+  if (status === 'orphaned') return <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-bold bg-muted/30 text-muted-foreground border-border">Páratlan</Badge>;
+  return <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-bold">{status}</Badge>;
+}
+
+// ── EscalatedUploadDetail ──────────────────────────────────────────────────
+
+function EscalatedUploadDetail({
+  upload,
+  companyId,
+  onResolved,
+}: {
+  upload: EscalatedUpload;
+  companyId: string;
+  onResolved: () => void;
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [assignPos, setAssignPos] = useState('');
+  const [foundShipment, setFoundShipment] = useState<{ id: string; position_number: string; carrier_name: string | null } | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  // Get cmr_id from metadata
+  const cmrResult = (upload.metadata?.cmr_result as Record<string, unknown> | undefined);
+  const cmrId = cmrResult?.cmr_id as string | undefined;
+
+  // Fetch batch — uploads from same user_id within ±5 min
+  const batchFrom = new Date(new Date(upload.created_at).getTime() - 5 * 60 * 1000).toISOString();
+  const batchTo   = new Date(new Date(upload.created_at).getTime() + 5 * 60 * 1000).toISOString();
+
+  const { data: batchItems = [], isLoading: batchLoading } = useQuery<BatchItem[]>({
+    queryKey: ['upload-batch', upload.id],
+    queryFn: async () => {
+      // 1. Fetch all uploads in the same time window (same company, same user)
+      const { data: uploads, error: upErr } = await supabase
+        .from('invoice_uploads')
+        .select('id, file_name, file_size, file_url, processing_status, created_at, metadata')
+        .eq('company_id', companyId)
+        .eq('user_id', upload.user_id)
+        .gte('created_at', batchFrom)
+        .lte('created_at', batchTo)
+        .order('created_at', { ascending: true });
+      if (upErr) throw upErr;
+
+      // 2. Collect all cmr_ids from those uploads
+      const cmrIds: string[] = [];
+      for (const u of uploads ?? []) {
+        const cr = (u.metadata as Record<string, unknown> | null)?.cmr_result as Record<string, unknown> | undefined;
+        const cid = cr?.cmr_id as string | undefined;
+        if (cid) cmrIds.push(cid);
+      }
+
+      // 3. Fetch transport_documents for those cmr_ids (with joined invoice/shipment info)
+      let tdMap: Record<string, BatchItem['transportDoc']> = {};
+      if (cmrIds.length > 0) {
+        const { data: tds } = await supabase
+          .from('transport_documents')
+          .select(`
+            id, file_name, position_number, status, linked_invoice_id, linked_shipment_id,
+            invoice:invoices(bizonylatsorszam),
+            shipment:shipments(position_number, carrier_name)
+          `)
+          .in('id', cmrIds);
+
+        for (const td of tds ?? []) {
+          const inv = Array.isArray(td.invoice) ? td.invoice[0] : td.invoice;
+          const sh  = Array.isArray(td.shipment)  ? td.shipment[0]  : td.shipment;
+          tdMap[td.id] = {
+            id: td.id,
+            file_name: td.file_name,
+            position_number: td.position_number,
+            status: td.status,
+            linked_invoice_id: td.linked_invoice_id,
+            linked_shipment_id: td.linked_shipment_id,
+            invoice_bizonylatsorszam: (inv as any)?.bizonylatsorszam ?? null,
+            shipment_position: (sh as any)?.position_number ?? null,
+            shipment_carrier: (sh as any)?.carrier_name ?? null,
+          };
+        }
+      }
+
+      // 4. Pair uploads with their transport docs
+      return (uploads ?? []).map<BatchItem>((u) => {
+        const cr = (u.metadata as Record<string, unknown> | null)?.cmr_result as Record<string, unknown> | undefined;
+        const cid = cr?.cmr_id as string | undefined;
+        return { upload: u as BatchItem['upload'], transportDoc: cid ? tdMap[cid] ?? null : null };
+      });
+    },
+    enabled: !!upload.id && !!companyId,
+  });
+
+  // Search shipment by position number
+  const handleSearchShipment = async () => {
+    if (!assignPos.trim()) return;
+    setIsSearching(true);
+    setFoundShipment(null);
+    try {
+      const { data } = await supabase
+        .from('shipments' as any)
+        .select('id, position_number, carrier_name')
+        .eq('company_id', companyId)
+        .ilike('position_number', `%${assignPos.trim()}%`)
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        setFoundShipment(data as any);
+      } else {
+        toast({ variant: 'destructive', title: 'Nem található', description: `Nincs fuvar „${assignPos.trim()}" pozíciószámmal.` });
+      }
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Assign to shipment
+  const handleAssign = async () => {
+    if (!foundShipment || !cmrId) return;
+    setIsAssigning(true);
+    try {
+      // 1. Update transport_document
+      const { error: tdErr } = await supabase
+        .from('transport_documents')
+        .update({ linked_shipment_id: foundShipment.id, status: 'matched' })
+        .eq('id', cmrId);
+      if (tdErr) throw tdErr;
+
+      // 2. Mark upload as resolved
+      const { error: upErr } = await supabase
+        .from('invoice_uploads')
+        .update({ processing_status: 'cmr_attached' })
+        .eq('id', upload.id);
+      if (upErr) throw upErr;
+
+      toast({ title: 'Hozzárendelés sikeres', description: `Dokumentum hozzárendelve: ${foundShipment.position_number}` });
+      queryClient.invalidateQueries({ queryKey: ['escalated-uploads', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['upload-batch', upload.id] });
+      onResolved();
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Hozzárendelés sikertelen', description: err.message });
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  return (
+    <Card className="border border-border/50 bg-card shadow-sm h-[calc(100vh-220px)] flex flex-col overflow-hidden">
+      {/* Header */}
+      <CardHeader className="p-5 border-b border-border/40 shrink-0">
+        <div className="flex justify-between items-start gap-4">
+          <div className="min-w-0">
+            <CardTitle className="text-lg font-bold flex items-center gap-2 truncate">
+              <FileText className="h-5 w-5 text-warning shrink-0" />
+              <span className="truncate">{upload.file_name}</span>
+            </CardTitle>
+            <CardDescription>
+              {(upload.file_size / 1024).toFixed(1)} KB · {upload.file_type || 'PDF'} ·{' '}
+              {format(new Date(upload.created_at), 'yyyy. MM. dd. HH:mm', { locale: hu })}
+            </CardDescription>
+          </div>
+          <Badge className="bg-warning/10 text-warning border-warning/20 font-semibold shrink-0">Eszkaláció</Badge>
+        </div>
+      </CardHeader>
+
+      <CardContent className="p-0 flex-1 overflow-y-auto">
+
+        {/* ── Feltöltési munkamenet ── */}
+        <div className="px-5 pt-5 pb-3">
+          <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mb-3">
+            <Package className="h-3.5 w-3.5" />
+            Feltöltési munkamenet ({batchLoading ? '…' : batchItems.length} fájl)
+          </h3>
+
+          {batchLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-lg" />)}
+            </div>
+          ) : batchItems.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic">Nincsenek egyéb fájlok ebben a munkamenetben.</p>
+          ) : (
+            <div className="space-y-2">
+              {batchItems.map((item) => {
+                const isThis = item.upload.id === upload.id;
+                const td = item.transportDoc;
+                return (
+                  <div
+                    key={item.upload.id}
+                    className={`rounded-lg border p-3 text-xs transition-colors ${
+                      isThis
+                        ? 'border-warning/40 bg-warning/5'
+                        : 'border-border/50 bg-card'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      {/* File info */}
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`font-semibold truncate ${isThis ? 'text-warning' : 'text-foreground'}`}>
+                            {item.upload.file_name}
+                            {isThis && <span className="ml-1 text-[9px] text-warning font-normal">(ez a dokumentum)</span>}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-muted-foreground">{(item.upload.file_size / 1024).toFixed(0)} KB</span>
+                          {getUploadStatusBadge(item.upload.processing_status)}
+
+                          {/* Transport doc info */}
+                          {td && (
+                            <>
+                              {td.position_number && (
+                                <span className="font-mono text-primary font-bold text-[10px]">
+                                  #{td.position_number}
+                                </span>
+                              )}
+                              {getTransportStatusBadge(td.status)}
+                              {td.invoice_bizonylatsorszam && (
+                                <span className="text-muted-foreground">
+                                  → {td.invoice_bizonylatsorszam}
+                                </span>
+                              )}
+                              {td.shipment_position && (
+                                <span className="text-muted-foreground flex items-center gap-0.5">
+                                  <Truck className="h-2.5 w-2.5" />
+                                  {td.shipment_position}
+                                  {td.shipment_carrier && ` · ${td.shipment_carrier}`}
+                                </span>
+                              )}
+                            </>
+                          )}
+                          {!td && (
+                            <span className="text-muted-foreground italic text-[10px]">Nincs dokumentum adat</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Open file button */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0"
+                        title="Fájl megnyitása"
+                        onClick={() => window.open(item.upload.file_url, '_blank')}
+                      >
+                        <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── CMR részletek ── */}
+        {cmrResult && (
+          <div className="px-5 py-3 border-t border-border/30">
+            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mb-2">
+              <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+              AI feldolgozás eredménye
+            </h3>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <span className="text-muted-foreground font-semibold">Beazonosítás</span>
+                <p className="font-bold text-foreground mt-0.5">
+                  {(cmrResult.ai_classification as string | undefined) ?? (upload.metadata?.ai_classification as string | undefined) ?? '—'}
+                </p>
+              </div>
+              <div>
+                <span className="text-muted-foreground font-semibold">Kinyert pozíciószám</span>
+                <p className={`font-mono font-bold mt-0.5 ${cmrResult.position_number ? 'text-primary' : 'text-muted-foreground italic'}`}>
+                  {(cmrResult.position_number as string | null) ?? 'Nem azonosítható'}
+                </p>
+              </div>
+              <div>
+                <span className="text-muted-foreground font-semibold">Konfidencia</span>
+                <p className="font-bold text-foreground mt-0.5">{String(cmrResult.confidence ?? 0)}%</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground font-semibold">CMR jelleg</span>
+                <p className="font-bold text-foreground mt-0.5">{cmrResult.is_cmr ? 'Igen' : 'Nem'}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Manuális hozzárendelés fuvarhoz ── */}
+        <div className="px-5 py-4 border-t border-border/30">
+          <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mb-3">
+            <Link className="h-3.5 w-3.5" />
+            Manuális hozzárendelés fuvarhoz
+          </h3>
+
+          <div className="flex gap-2">
+            <Input
+              placeholder="Pozíciószám (pl. B/2631247, E/2634119...)"
+              value={assignPos}
+              onChange={(e) => { setAssignPos(e.target.value); setFoundShipment(null); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSearchShipment(); }}
+              className="bg-card font-mono text-sm h-9"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 shrink-0"
+              onClick={handleSearchShipment}
+              disabled={isSearching || !assignPos.trim()}
+            >
+              {isSearching ? (
+                <span className="h-3.5 w-3.5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+              ) : (
+                <Search className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          </div>
+
+          {/* Found shipment preview */}
+          {foundShipment && (
+            <div className="mt-3 rounded-lg border border-success/30 bg-success/5 p-3 flex items-center justify-between gap-3 animate-in slide-in-from-top-1 duration-200">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                  <span className="font-bold text-xs text-foreground">{foundShipment.position_number}</span>
+                </div>
+                {foundShipment.carrier_name && (
+                  <p className="text-[11px] text-muted-foreground pl-5">{foundShipment.carrier_name}</p>
+                )}
+              </div>
+              <Button
+                size="sm"
+                className="bg-success hover:bg-success/90 text-success-foreground h-8 shrink-0"
+                onClick={handleAssign}
+                disabled={isAssigning}
+              >
+                {isAssigning ? (
+                  <span className="h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin mr-1.5" />
+                ) : (
+                  <Check className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                Hozzárendelés
+              </Button>
+            </div>
+          )}
+
+          {!cmrId && (
+            <p className="text-[11px] text-muted-foreground italic mt-2">
+              Nincs transport_document azonosító — a hozzárendelés nem lehetséges.
+            </p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Main Page ──────────────────────────────────────────────────────────────
+
 export default function EscalationListPage() {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [selectedMatch, setSelectedMatch] = useState<EscalatedMatch | null>(null);
+  const [selectedUpload, setSelectedUpload] = useState<EscalatedUpload | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [reassignPos, setReassignPos] = useState('');
   const [showReassignInput, setShowReassignInput] = useState(false);
 
-  // Fetch escalated/review matches
+  // ── Escalated matches ──
   const { data: matches = [], isLoading } = useQuery<EscalatedMatch[]>({
     queryKey: ['escalated-matches', selectedCompany?.id],
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
-      
       const { data, error } = await supabase
         .from('shipment_matches' as any)
         .select(`
-          id,
-          confidence_score,
-          discrepancies,
-          status,
-          invoice_id,
-          shipment_id,
-          created_at,
-          invoice:invoices(
-            id,
-            bizonylatsorszam,
-            elado_nev,
-            brutto_vegosszeg,
-            penznem,
-            kibocsatas_datuma,
-            planned_payment_date,
-            position_numbers
-          ),
-          shipment:shipments(
-            id,
-            position_number,
-            carrier_name,
-            pickup_date,
-            delivery_date,
-            calculated_amount_huf,
-            calculated_amount_eur
-          )
+          id, confidence_score, discrepancies, status, invoice_id, shipment_id, created_at,
+          invoice:invoices(id, bizonylatsorszam, elado_nev, brutto_vegosszeg, penznem, kibocsatas_datuma, planned_payment_date, position_numbers),
+          shipment:shipments(id, position_number, carrier_name, pickup_date, delivery_date, calculated_amount_huf, calculated_amount_eur)
         `)
         .eq('company_id', selectedCompany.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       return (data || []) as EscalatedMatch[];
     },
     enabled: !!selectedCompany?.id,
+    staleTime: 0,        // always fresh on mount — escalations must be up-to-date
+    refetchOnMount: true,
   });
+
+  const { data: escalatedUploads = [], isLoading: uploadsLoading } = useQuery<EscalatedUpload[]>({
+    queryKey: ['escalated-uploads', selectedCompany?.id],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return [];
+      const { data, error } = await supabase
+        .from('invoice_uploads')
+        .select('id, user_id, file_name, file_size, file_url, file_type, processing_status, error_message, metadata, created_at, updated_at, document_category')
+        .eq('company_id', selectedCompany.id)
+        .eq('processing_status', 'cmr_escalated')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as EscalatedUpload[];
+    },
+    enabled: !!selectedCompany?.id,
+    staleTime: 0,
+    refetchOnMount: true,
+  });
+
 
   const handleAcceptMatch = async (match: EscalatedMatch) => {
     setIsActionLoading(true);
     try {
-      // 1. Confirm the match
-      const { error: matchError } = await supabase
-        .from('shipment_matches' as any)
-        .update({ status: 'confirmed' })
-        .eq('id', match.id);
-
+      const { error: matchError } = await supabase.from('shipment_matches' as any).update({ status: 'confirmed' }).eq('id', match.id);
       if (matchError) throw matchError;
-
-      // 2. Link shipment to invoice
-      const { error: shipError } = await supabase
-        .from('shipments' as any)
-        .update({ 
-          match_status: 'matched',
-          matched_invoice_id: match.invoice.id 
-        })
-        .eq('id', match.shipment.id);
-
-      if (shipError) throw shipError;
-
-      // 3. Update invoice matching status
-      const { error: invError } = await supabase
-        .from('invoices')
-        .update({ 
-          shipment_match_status: 'matched'
-        })
-        .eq('id', match.invoice.id);
-
-      if (invError) throw invError;
-
-      toast({
-        title: "Párosítás elfogadva",
-        description: "A számla és fuvar manuális párosítása sikeresen rögzítve lett.",
-      });
-
+      await supabase.from('shipments' as any).update({ match_status: 'matched', matched_invoice_id: match.invoice.id }).eq('id', match.shipment.id);
+      await supabase.from('invoices').update({ shipment_match_status: 'matched' }).eq('id', match.invoice.id);
+      toast({ title: 'Párosítás elfogadva', description: 'A manuális párosítás rögzítve.' });
       setSelectedMatch(null);
       queryClient.invalidateQueries({ queryKey: ['escalated-matches', selectedCompany?.id] });
       queryClient.invalidateQueries({ queryKey: ['shipments-matching', selectedCompany?.id] });
-      queryClient.invalidateQueries({ queryKey: ['shipments', selectedCompany?.id] });
     } catch (err: any) {
-      toast({
-        variant: "destructive",
-        title: "Sikertelen mentés",
-        description: err.message || "Hiba történt a párosítás mentése során."
-      });
+      toast({ variant: 'destructive', title: 'Sikertelen mentés', description: err.message });
     } finally {
       setIsActionLoading(false);
     }
@@ -164,48 +544,15 @@ export default function EscalationListPage() {
   const handleRejectMatch = async (match: EscalatedMatch) => {
     setIsActionLoading(true);
     try {
-      // 1. Reject the match
-      const { error: matchError } = await supabase
-        .from('shipment_matches' as any)
-        .update({ status: 'rejected' })
-        .eq('id', match.id);
-
+      const { error: matchError } = await supabase.from('shipment_matches' as any).update({ status: 'rejected' }).eq('id', match.id);
       if (matchError) throw matchError;
-
-      // 2. Unlink shipment
-      const { error: shipError } = await supabase
-        .from('shipments' as any)
-        .update({ 
-          match_status: 'unmatched',
-          matched_invoice_id: null 
-        })
-        .eq('id', match.shipment.id);
-
-      if (shipError) throw shipError;
-
-      // 3. Update invoice status
-      const { error: invError } = await supabase
-        .from('invoices')
-        .update({ 
-          shipment_match_status: 'unmatched'
-        })
-        .eq('id', match.invoice.id);
-
-      if (invError) throw invError;
-
-      toast({
-        title: "Párosítás elutasítva",
-        description: "A javasolt párosítás elutasításra került.",
-      });
-
+      await supabase.from('shipments' as any).update({ match_status: 'unmatched', matched_invoice_id: null }).eq('id', match.shipment.id);
+      await supabase.from('invoices').update({ shipment_match_status: 'unmatched' }).eq('id', match.invoice.id);
+      toast({ title: 'Párosítás elutasítva', description: 'A javasolt párosítás elutasítva.' });
       setSelectedMatch(null);
       queryClient.invalidateQueries({ queryKey: ['escalated-matches', selectedCompany?.id] });
     } catch (err: any) {
-      toast({
-        variant: "destructive",
-        title: "Művelet sikertelen",
-        description: err.message || "Hiba történt."
-      });
+      toast({ variant: 'destructive', title: 'Művelet sikertelen', description: err.message });
     } finally {
       setIsActionLoading(false);
     }
@@ -215,123 +562,89 @@ export default function EscalationListPage() {
     if (!reassignPos.trim()) return;
     setIsActionLoading(true);
     try {
-      // Find the shipment by position number
       const { data: newShipment, error: findError } = await supabase
         .from('shipments' as any)
         .select('id, carrier_name')
         .eq('company_id', selectedCompany?.id)
         .eq('position_number', reassignPos.trim())
         .maybeSingle();
-
       if (findError) throw findError;
-
       if (!newShipment) {
-        toast({
-          variant: "destructive",
-          title: "Pozíció nem található",
-          description: `Nem található "${reassignPos.trim()}" pozíciószámú fuvar a Selexped importban.`
-        });
+        toast({ variant: 'destructive', title: 'Pozíció nem található', description: `Nem található „${reassignPos.trim()}" pozíciószám.` });
         setIsActionLoading(false);
         return;
       }
-
-      // 1. Delete or reject old match
-      await supabase
-        .from('shipment_matches' as any)
-        .delete()
-        .eq('id', match.id);
-
-      // 2. Create new match entry manually confirmed
-      const { error: matchError } = await supabase
-        .from('shipment_matches' as any)
-        .insert({
-          company_id: selectedCompany?.id,
-          invoice_id: match.invoice.id,
-          shipment_id: newShipment.id,
-          match_type: 'manual',
-          confidence_score: 100,
-          status: 'confirmed',
-          match_details: { reassigned_from: match.shipment.position_number }
-        });
-
-      if (matchError) throw matchError;
-
-      // 3. Link new shipment
-      await supabase
-        .from('shipments' as any)
-        .update({ 
-          match_status: 'matched',
-          matched_invoice_id: match.invoice.id 
-        })
-        .eq('id', newShipment.id);
-
-      // 4. Update invoice status
-      await supabase
-        .from('invoices')
-        .update({ 
-          shipment_match_status: 'matched'
-        })
-        .eq('id', match.invoice.id);
-
-      toast({
-        title: "Sikeres átirányítás",
-        description: `A számla sikeresen hozzárendelve a "${reassignPos.trim()}" pozícióhoz.`,
+      await supabase.from('shipment_matches' as any).delete().eq('id', match.id);
+      const { error: matchError } = await supabase.from('shipment_matches' as any).insert({
+        company_id: selectedCompany?.id,
+        invoice_id: match.invoice.id,
+        shipment_id: (newShipment as any).id,
+        match_type: 'manual',
+        confidence_score: 100,
+        status: 'confirmed',
+        match_details: { reassigned_from: match.shipment.position_number },
       });
-
+      if (matchError) throw matchError;
+      await supabase.from('shipments' as any).update({ match_status: 'matched', matched_invoice_id: match.invoice.id }).eq('id', (newShipment as any).id);
+      await supabase.from('invoices').update({ shipment_match_status: 'matched' }).eq('id', match.invoice.id);
+      toast({ title: 'Sikeres átirányítás', description: `Számla hozzárendelve: „${reassignPos.trim()}"` });
       setSelectedMatch(null);
       setReassignPos('');
       setShowReassignInput(false);
       queryClient.invalidateQueries({ queryKey: ['escalated-matches', selectedCompany?.id] });
     } catch (err: any) {
-      toast({
-        variant: "destructive",
-        title: "Átirányítás sikertelen",
-        description: err.message || "Hiba történt."
-      });
+      toast({ variant: 'destructive', title: 'Átirányítás sikertelen', description: err.message });
     } finally {
       setIsActionLoading(false);
     }
   };
 
+  // ── Render ──
+
   return (
     <div className="container mx-auto px-4 py-8 page-animate">
       <div className="space-y-6">
+
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold">Eszkalációs lista</h1>
-          <p className="text-muted-foreground font-medium text-sm">Felülvizsgálatra váró számla-fuvar párosítások — emberi döntés szükséges</p>
+          <p className="text-muted-foreground font-medium text-sm">
+            Felülvizsgálatra váró számlák, dokumentumok és párosítások — emberi döntés szükséges
+          </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
-          {/* Matches List */}
+
+          {/* ── Left panel ── */}
           <div className="md:col-span-1 space-y-4">
             <Card className="border border-border/50 bg-card shadow-sm h-[calc(100vh-220px)] flex flex-col">
               <CardHeader className="p-4 border-b border-border/40 shrink-0">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <AlertTriangle className="h-4.5 w-4.5 text-warning" />
-                  Eltérések ({matches.length} db)
+                  <AlertTriangle className="h-4 w-4 text-warning" />
+                  Összes eszkaláció ({matches.length + escalatedUploads.length} db)
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-2 overflow-y-auto flex-1 space-y-2 min-h-0">
-                {isLoading ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full rounded-lg" />
-                  ))
-                ) : matches.length === 0 ? (
-                  <div className="text-center text-sm text-muted-foreground italic py-10 flex flex-col items-center justify-center gap-2">
-                    <Inbox className="h-8 w-8 text-muted-foreground" />
-                    Nincs felülvizsgálandó tétel.
+              <CardContent className="p-2 overflow-y-auto flex-1 space-y-1 min-h-0">
+
+                {/* Párosítási eltérések */}
+                {(isLoading || matches.length > 0) && (
+                  <div className="px-1 pt-2 pb-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                      <ArrowLeftRight className="h-3 w-3" />
+                      Párosítási eltérések ({matches.length})
+                    </span>
                   </div>
+                )}
+                {isLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-lg" />)
                 ) : (
                   matches.map((m) => (
                     <div
                       key={m.id}
                       className={`p-3 rounded-lg border text-left cursor-pointer transition-all duration-150 flex items-center justify-between group ${
-                        selectedMatch?.id === m.id 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border/50 hover:bg-muted/40 hover:border-primary/20'
+                        selectedMatch?.id === m.id ? 'border-primary bg-primary/5' : 'border-border/50 hover:bg-muted/40 hover:border-primary/20'
                       }`}
-                      onClick={() => { setSelectedMatch(m); setShowReassignInput(false); }}
+                      onClick={() => { setSelectedMatch(m); setSelectedUpload(null); setShowReassignInput(false); }}
                     >
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-center gap-2">
@@ -347,13 +660,60 @@ export default function EscalationListPage() {
                     </div>
                   ))
                 )}
+
+                {/* Eszkalált dokumentumok */}
+                {(uploadsLoading || escalatedUploads.length > 0) && (
+                  <div className="px-1 pt-3 pb-1">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                      <FileText className="h-3 w-3" />
+                      Eszkalált dokumentumok ({escalatedUploads.length})
+                    </span>
+                  </div>
+                )}
+                {uploadsLoading ? (
+                  Array.from({ length: 2 }).map((_, i) => <Skeleton key={`u-${i}`} className="h-14 w-full rounded-lg" />)
+                ) : (
+                  escalatedUploads.map((u) => (
+                    <div
+                      key={u.id}
+                      className={`p-3 rounded-lg border text-left cursor-pointer transition-all duration-150 flex items-center justify-between group ${
+                        selectedUpload?.id === u.id ? 'border-warning bg-warning/5' : 'border-border/50 hover:bg-muted/40 hover:border-warning/20'
+                      }`}
+                      onClick={() => { setSelectedUpload(u); setSelectedMatch(null); setShowReassignInput(false); }}
+                    >
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <span className="font-semibold text-sm truncate block">{u.file_name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-muted-foreground">{(u.file_size / 1024).toFixed(0)} KB</span>
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 border-warning/30 text-warning bg-warning/5 font-semibold">Eszkaláció</Badge>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-warning transition-colors shrink-0 ml-2" />
+                    </div>
+                  ))
+                )}
+
+                {/* Empty state */}
+                {!isLoading && !uploadsLoading && matches.length === 0 && escalatedUploads.length === 0 && (
+                  <div className="text-center text-sm text-muted-foreground italic py-10 flex flex-col items-center justify-center gap-2">
+                    <Inbox className="h-8 w-8 text-muted-foreground" />
+                    Nincs felülvizsgálandó tétel.
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Details / Comparison View */}
+          {/* ── Right panel ── */}
           <div className="md:col-span-2">
-            {selectedMatch ? (
+            {selectedUpload && selectedCompany ? (
+              <EscalatedUploadDetail
+                upload={selectedUpload}
+                companyId={selectedCompany.id}
+                onResolved={() => setSelectedUpload(null)}
+              />
+            ) : selectedMatch ? (
+              // ── Párosítás összehasonlító panel ──
               <Card className="border border-border/50 bg-card shadow-sm h-[calc(100vh-220px)] flex flex-col overflow-hidden">
                 <CardHeader className="p-5 border-b border-border/40 shrink-0">
                   <div className="flex justify-between items-start gap-4">
@@ -374,9 +734,7 @@ export default function EscalationListPage() {
                       <div className="space-y-1">
                         <span className="font-bold text-sm block">Detektált eltérések</span>
                         <ul className="list-disc pl-4 text-xs font-semibold space-y-1">
-                          {selectedMatch.discrepancies.map((d, i) => (
-                            <li key={i}>{d}</li>
-                          ))}
+                          {selectedMatch.discrepancies.map((d, i) => <li key={i}>{d}</li>)}
                         </ul>
                       </div>
                     </div>
@@ -384,164 +742,66 @@ export default function EscalationListPage() {
 
                   {/* Comparison Grid */}
                   <div className="grid md:grid-cols-7 gap-4 items-stretch">
-                    {/* Invoice Info */}
                     <div className="md:col-span-3 border border-border/40 p-4 rounded-lg bg-muted/10 space-y-4">
                       <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
-                        <FileText className="h-4 w-4 text-info" />
-                        Számla Adatok (OCR)
+                        <FileText className="h-4 w-4 text-info" /> Számla Adatok (OCR)
                       </h4>
                       <div className="space-y-3 text-xs">
-                        <div>
-                          <span className="text-muted-foreground font-semibold">Számlaszám</span>
-                          <p className="font-bold text-foreground mt-0.5">{selectedMatch.invoice.bizonylatsorszam}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground font-semibold">
-                            Kinyert Pozíciószám
-                            {(selectedMatch.invoice.position_numbers?.length ?? 0) > 1 && (
-                              <Badge variant="outline" className="ml-1.5 text-[9px] px-1 py-0 border-info/30 text-info bg-info/5 font-semibold align-middle">
-                                Gyűjtő számla · {selectedMatch.invoice.position_numbers!.length} pozíció
-                              </Badge>
-                            )}
-                          </span>
-                          <p className="font-mono font-bold text-primary mt-0.5">
-                            {selectedMatch.invoice.position_numbers?.length
-                              ? selectedMatch.shipment.position_number
-                              : <span className="text-muted-foreground font-normal italic">Nem található</span>
-                            }
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground font-semibold">Partner / Szállító</span>
-                          <p className="font-bold text-foreground mt-0.5">{selectedMatch.invoice.elado_nev}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground font-semibold">Számla Összege</span>
-                          <p className="font-mono font-bold text-foreground mt-0.5">
-                            {formatCurrency(selectedMatch.invoice.brutto_vegosszeg, selectedMatch.invoice.penznem)}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground font-semibold">Teljesítés Dátuma</span>
-                          <p className="font-bold text-foreground mt-0.5">
-                            {selectedMatch.invoice.kibocsatas_datuma ? format(new Date(selectedMatch.invoice.kibocsatas_datuma), 'yyyy. MM. dd.') : '—'}
-                          </p>
-                        </div>
+                        <div><span className="text-muted-foreground font-semibold">Számlaszám</span><p className="font-bold text-foreground mt-0.5">{selectedMatch.invoice.bizonylatsorszam}</p></div>
+                        <div><span className="text-muted-foreground font-semibold">Partner</span><p className="font-bold text-foreground mt-0.5">{selectedMatch.invoice.elado_nev}</p></div>
+                        <div><span className="text-muted-foreground font-semibold">Összeg</span><p className="font-mono font-bold text-foreground mt-0.5">{formatCurrency(selectedMatch.invoice.brutto_vegosszeg, selectedMatch.invoice.penznem)}</p></div>
+                        <div><span className="text-muted-foreground font-semibold">Dátum</span><p className="font-bold text-foreground mt-0.5">{selectedMatch.invoice.kibocsatas_datuma ? format(new Date(selectedMatch.invoice.kibocsatas_datuma), 'yyyy. MM. dd.') : '—'}</p></div>
                       </div>
                     </div>
-
-                    {/* Divider Icon */}
                     <div className="md:col-span-1 flex md:flex-col items-center justify-center gap-2 py-4">
                       <div className="h-px w-8 md:h-8 md:w-px bg-border/60" />
                       <ArrowLeftRight className="h-5 w-5 text-muted-foreground" />
                       <div className="h-px w-8 md:h-8 md:w-px bg-border/60" />
                     </div>
-
-                    {/* Shipment Info */}
                     <div className="md:col-span-3 border border-border/40 p-4 rounded-lg bg-muted/10 space-y-4">
                       <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
-                        <Truck className="h-4 w-4 text-primary" />
-                        Selexped Kalkuláció
+                        <Truck className="h-4 w-4 text-primary" /> Selexped Kalkuláció
                       </h4>
                       <div className="space-y-3 text-xs">
+                        <div><span className="text-muted-foreground font-semibold">Pozíciószám</span><p className="font-mono font-bold text-primary mt-0.5">{selectedMatch.shipment.position_number}</p></div>
+                        <div><span className="text-muted-foreground font-semibold">Fuvaros</span><p className="font-bold text-foreground mt-0.5">{selectedMatch.shipment.carrier_name || '—'}</p></div>
                         <div>
-                          <span className="text-muted-foreground font-semibold">Pozíciószám</span>
-                          <p className="font-mono font-bold text-primary mt-0.5">{selectedMatch.shipment.position_number}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground font-semibold">Fuvaros</span>
-                          <p className="font-bold text-foreground mt-0.5">{selectedMatch.shipment.carrier_name || '—'}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground font-semibold">Kalkulált Összegek</span>
+                          <span className="text-muted-foreground font-semibold">Kalkulált összeg</span>
                           <p className="font-mono font-bold text-foreground mt-0.5">
-                            {/* Show invoice-currency amount first (bold), then other currency (muted) */}
-                            {selectedMatch.invoice.penznem === 'EUR' ? (
-                              <>
-                                {selectedMatch.shipment.calculated_amount_eur !== null 
-                                  ? formatCurrency(Math.abs(selectedMatch.shipment.calculated_amount_eur), 'EUR') 
-                                  : '—'}
-                                {selectedMatch.shipment.calculated_amount_huf !== null && (
-                                  <span className="text-muted-foreground font-normal text-[10px] ml-1.5">
-                                    ({formatCurrency(Math.abs(selectedMatch.shipment.calculated_amount_huf), 'HUF')})
-                                  </span>
-                                )}
-                              </>
-                            ) : (
-                              <>
-                                {selectedMatch.shipment.calculated_amount_huf !== null 
-                                  ? formatCurrency(Math.abs(selectedMatch.shipment.calculated_amount_huf), 'HUF') 
-                                  : '—'}
-                                {selectedMatch.shipment.calculated_amount_eur !== null && (
-                                  <span className="text-muted-foreground font-normal text-[10px] ml-1.5">
-                                    ({formatCurrency(Math.abs(selectedMatch.shipment.calculated_amount_eur), 'EUR')})
-                                  </span>
-                                )}
-                              </>
-                            )}
+                            {selectedMatch.invoice.penznem === 'EUR'
+                              ? selectedMatch.shipment.calculated_amount_eur !== null ? formatCurrency(Math.abs(selectedMatch.shipment.calculated_amount_eur), 'EUR') : '—'
+                              : selectedMatch.shipment.calculated_amount_huf !== null ? formatCurrency(Math.abs(selectedMatch.shipment.calculated_amount_huf), 'HUF') : '—'}
                           </p>
                         </div>
-                        <div>
-                          <span className="text-muted-foreground font-semibold">Lerakás Dátuma</span>
-                          <p className="font-bold text-foreground mt-0.5">
-                            {selectedMatch.shipment.delivery_date ? format(new Date(selectedMatch.shipment.delivery_date), 'yyyy. MM. dd.') : '—'}
-                          </p>
-                        </div>
+                        <div><span className="text-muted-foreground font-semibold">Lerakás</span><p className="font-bold text-foreground mt-0.5">{selectedMatch.shipment.delivery_date ? format(new Date(selectedMatch.shipment.delivery_date), 'yyyy. MM. dd.') : '—'}</p></div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Reassign Panel */}
+                  {/* Reassign */}
                   {showReassignInput && (
                     <div className="border border-primary/20 bg-primary/5 p-4 rounded-lg space-y-3 animate-in slide-in-from-top-2 duration-200">
                       <span className="text-xs font-bold text-primary flex items-center gap-1.5">
-                        <Link className="h-4 w-4" />
-                        Számla átirányítása másik pozícióra
+                        <Link className="h-4 w-4" /> Számla átirányítása másik pozícióra
                       </span>
                       <div className="flex gap-2">
-                        <Input
-                          placeholder="Új pozíciószám (pl. B/2627471)..."
-                          value={reassignPos}
-                          onChange={(e) => setReassignPos(e.target.value)}
-                          className="bg-card font-mono"
-                        />
-                        <Button size="sm" onClick={() => handleReassignMatch(selectedMatch)} disabled={isActionLoading}>
-                          Hozzárendelés
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setShowReassignInput(false)}>
-                          Mégse
-                        </Button>
+                        <Input placeholder="Új pozíciószám (pl. B/2627471)..." value={reassignPos} onChange={(e) => setReassignPos(e.target.value)} className="bg-card font-mono" />
+                        <Button size="sm" onClick={() => handleReassignMatch(selectedMatch)} disabled={isActionLoading}>Hozzárendelés</Button>
+                        <Button size="sm" variant="ghost" onClick={() => setShowReassignInput(false)}>Mégse</Button>
                       </div>
                     </div>
                   )}
 
-                  {/* Actions buttons */}
+                  {/* Actions */}
                   <div className="flex flex-wrap gap-2 pt-4 border-t justify-end">
-                    <Button 
-                      variant="outline"
-                      className="border-primary/30 hover:bg-primary/10 text-primary"
-                      onClick={() => setShowReassignInput(true)}
-                      disabled={isActionLoading}
-                    >
-                      <Link className="h-4 w-4 mr-2" />
-                      Másik fuvarhoz rendelés
+                    <Button variant="outline" className="border-primary/30 hover:bg-primary/10 text-primary" onClick={() => setShowReassignInput(true)} disabled={isActionLoading}>
+                      <Link className="h-4 w-4 mr-2" /> Másik fuvarhoz rendelés
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      className="border-destructive/30 hover:bg-destructive/10 text-destructive"
-                      onClick={() => handleRejectMatch(selectedMatch)}
-                      disabled={isActionLoading}
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Párosítás elutasítása
+                    <Button variant="outline" className="border-destructive/30 hover:bg-destructive/10 text-destructive" onClick={() => handleRejectMatch(selectedMatch)} disabled={isActionLoading}>
+                      <X className="h-4 w-4 mr-2" /> Párosítás elutasítása
                     </Button>
-                    <Button 
-                      className="bg-success hover:bg-success/90 text-success-foreground"
-                      onClick={() => handleAcceptMatch(selectedMatch)}
-                      disabled={isActionLoading}
-                    >
-                      <Check className="h-4 w-4 mr-2" />
-                      Elfogadás (manuális match)
+                    <Button className="bg-success hover:bg-success/90 text-success-foreground" onClick={() => handleAcceptMatch(selectedMatch)} disabled={isActionLoading}>
+                      <Check className="h-4 w-4 mr-2" /> Elfogadás (manuális match)
                     </Button>
                   </div>
                 </CardContent>
@@ -551,7 +811,7 @@ export default function EscalationListPage() {
                 <HelpCircle className="h-16 w-16 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-bold">Válassz ki egy eszkalált tételt</h3>
                 <p className="text-muted-foreground text-sm max-w-sm mt-1">
-                  A bal oldali listából válaszd ki a felülvizsgálandó számlát a részletes adatok megtekintéséhez és a feloldáshoz.
+                  A bal oldali listából válaszd ki a felülvizsgálandó dokumentumot vagy párosítást.
                 </p>
               </Card>
             )}

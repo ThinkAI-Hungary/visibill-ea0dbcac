@@ -1,5 +1,7 @@
+// v2 - batch delete enabled
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useToast } from '@/hooks/use-toast';
@@ -15,7 +17,6 @@ import {
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -26,6 +27,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Trash2,
@@ -36,7 +38,6 @@ import {
   Package,
   ChevronLeft,
   ChevronRight,
-  AlertTriangle,
   Loader2,
   ExternalLink,
 } from 'lucide-react';
@@ -102,7 +103,15 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
 
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Single delete
   const [deleteTarget, setDeleteTarget] = useState<UploadRecord | null>(null);
+  const [singleDeleting, setSingleDeleting] = useState(false);
+
+  // Batch delete
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [batchDeleting, setBatchDeleting] = useState(false);
 
   const config = TAB_CONFIG[activeTab];
   const companyId = selectedCompany?.id;
@@ -144,53 +153,126 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
     return filtered.slice(start, start + PAGE_SIZE);
   }, [filtered, currentPage]);
 
-  // Reset page on search change
   useMemo(() => { setCurrentPage(1); }, [searchQuery]);
 
-  // ── Delete mutation ──
-  const deleteMutation = useMutation({
-    mutationFn: async (record: UploadRecord) => {
-      // Step 1: Call RPC to delete DB rows (cascade)
-      const { data, error } = await supabase.rpc('delete_upload_with_data', {
-        p_upload_id: record.id,
-        p_upload_type: config.uploadType,
-      });
+  // ── Selection helpers ──
+  const visibleIds = paged.map(u => u.id);
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
+  const someVisibleSelected = visibleIds.some(id => selectedIds.has(id));
 
-      if (error) throw error;
-
-      // Step 2: Delete file from storage
-      const storagePath = extractStoragePath(record.file_url, config.bucket);
-      if (storagePath) {
-        await supabase.storage.from(config.bucket).remove([storagePath]);
+  const toggleSelectAll = () => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        visibleIds.forEach(id => next.delete(id));
+      } else {
+        visibleIds.forEach(id => next.add(id));
       }
+      return next;
+    });
+  };
 
-      return data as any;
-    },
-    onSuccess: (data, record) => {
-      const parts: string[] = [`${record.file_name} törölve.`];
-      if (data?.deleted_invoices > 0) parts.push(`${data.deleted_invoices} számla törölve.`);
-      if (data?.deleted_transactions > 0) parts.push(`${data.deleted_transactions} tranzakció törölve.`);
-      if (data?.deleted_transport_docs > 0) parts.push(`${data.deleted_transport_docs} dokumentum törölve.`);
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
-      toast({ title: 'Törlés sikeres', description: parts.join(' '), duration: 4000 });
+  const selectedCount = selectedIds.size;
+  const selectedUploads = uploads.filter(u => selectedIds.has(u.id));
 
-      // Invalidate all related caches
-      queryClient.invalidateQueries({ queryKey: ['uploaded-files'] });
-      queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
-      queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+  // ── Core delete fns ──
+
+  /** Option A: only remove storage file + upload record. Associated data (invoices, txns) stays. */
+  const deleteFileOnly = async (record: UploadRecord) => {
+    const storagePath = extractStoragePath(record.file_url, config.bucket);
+    if (storagePath) {
+      await supabase.storage.from(config.bucket).remove([storagePath]);
+    }
+    const { error } = await supabase.from(config.table as any).delete().eq('id', record.id);
+    if (error) throw error;
+  };
+
+  /** Option B: full cascade via RPC (invoices / transactions / transport_docs / matches / costs). */
+  const deleteFileWithData = async (record: UploadRecord): Promise<any> => {
+    const { data, error } = await supabase.rpc('delete_upload_with_data', {
+      p_upload_id: record.id,
+      p_upload_type: config.uploadType,
+    });
+    if (error) throw error;
+
+    const storagePath = extractStoragePath(record.file_url, config.bucket);
+    if (storagePath) {
+      await supabase.storage.from(config.bucket).remove([storagePath]);
+    }
+    return data;
+  };
+
+  // ── Single delete handlers ──
+  const handleSingleDelete = async (withData: boolean) => {
+    if (!deleteTarget) return;
+    setSingleDeleting(true);
+    try {
+      if (withData) {
+        const data = await deleteFileWithData(deleteTarget);
+        const parts: string[] = [`${deleteTarget.file_name} törölve.`];
+        if (data?.deleted_invoices > 0) parts.push(`${data.deleted_invoices} számla törölve.`);
+        if (data?.deleted_transactions > 0) parts.push(`${data.deleted_transactions} tranzakció törölve.`);
+        if (data?.deleted_transport_docs > 0) parts.push(`${data.deleted_transport_docs} dokumentum törölve.`);
+        toast({ title: 'Törlés sikeres', description: parts.join(' '), duration: 4000 });
+      } else {
+        await deleteFileOnly(deleteTarget);
+        toast({ title: 'Fájl törölve', description: 'A kapcsolódó adatok megmaradtak.', duration: 3000 });
+      }
+      invalidateCaches();
       setDeleteTarget(null);
-    },
-    onError: (error) => {
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Törlés sikertelen', description: err.message || 'Ismeretlen hiba.' });
+    } finally {
+      setSingleDeleting(false);
+    }
+  };
+
+  // ── Batch delete handler ──
+  const handleBatchDelete = async (withData: boolean) => {
+    setBatchDeleting(true);
+    const fn = withData ? deleteFileWithData : deleteFileOnly;
+    const results = await Promise.allSettled(selectedUploads.map(fn));
+    const failed = results.filter(r => r.status === 'rejected').length;
+    const succeeded = results.length - failed;
+
+    if (failed === 0) {
       toast({
-        variant: 'destructive',
-        title: 'Törlés sikertelen',
-        description: error instanceof Error ? error.message : 'Ismeretlen hiba történt.',
+        title: `${succeeded} fájl törölve`,
+        description: withData
+          ? 'A fájlok és a kapcsolódó adatok törölve lettek.'
+          : 'A fájlok törölve, a kapcsolódó adatok megmaradtak.',
+        duration: 4000,
       });
-      setDeleteTarget(null);
-    },
-  });
+    } else {
+      toast({
+        title: `${succeeded}/${results.length} sikeres`,
+        description: `${failed} elem törlése sikertelen volt.`,
+        variant: 'destructive',
+      });
+    }
 
+    setSelectedIds(new Set());
+    setBatchDeleting(false);
+    setBatchDeleteOpen(false);
+    invalidateCaches();
+  };
+
+  const invalidateCaches = () => {
+    queryClient.invalidateQueries({ queryKey: ['uploaded-files'] });
+    queryClient.invalidateQueries({ queryKey: ['uploadHistory'] });
+    queryClient.invalidateQueries({ queryKey: ['submittedInvoices'] });
+    queryClient.invalidateQueries({ queryKey: ['transactions'] });
+  };
+
+  // ── Status badge ──
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'processed':
@@ -216,11 +298,85 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
     }
   };
 
+  // ── Reusable A/B delete option buttons ──
+  const DeleteOptions = ({
+    onFileOnly,
+    onWithData,
+    disabled,
+    fileName,
+    isMulti,
+    count,
+  }: {
+    onFileOnly: () => void;
+    onWithData: () => void;
+    disabled: boolean;
+    fileName?: string;
+    isMulti?: boolean;
+    count?: number;
+  }) => (
+    <div className="space-y-2 py-1">
+      {/* Option A */}
+      <button
+        disabled={disabled}
+        onClick={onFileOnly}
+        className="w-full text-left p-3 rounded-lg border border-border/60 hover:border-primary/50 hover:bg-primary/5 dark:hover:bg-primary/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+            <span className="text-xs font-bold text-amber-600 dark:text-amber-400">A</span>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground">
+              {isMulti ? `Csak a ${count} fájl törlése` : 'Csak a fájl törlése'}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isMulti
+                ? 'A fájlok eltávolításra kerülnek, de a feldolgozott adatok (számlák, tranzakciók) megmaradnak.'
+                : <>A <span className="font-medium text-foreground">{fileName}</span> fájl törlődik, a feldolgozott adatok megmaradnak.</>
+              }
+            </p>
+          </div>
+        </div>
+      </button>
+
+      {/* Option B */}
+      <button
+        disabled={disabled}
+        onClick={onWithData}
+        className="w-full text-left p-3 rounded-lg border border-red-200 dark:border-red-900/40 hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+            <span className="text-xs font-bold text-red-600 dark:text-red-400">B</span>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-destructive">
+              {isMulti ? `Fájlok és összes kapcsolódó adat törlése` : 'Fájl és kapcsolódó adatok törlése'}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isMulti
+                ? `${count} fájl és az összes hozzájuk tartozó számla, tranzakció, dokumentum véglegesen törlődik.`
+                : <>A <span className="font-medium text-foreground">{fileName}</span> fájl és az összes hozzá tartozó adat (számlák, tranzakciók, dokumentumok) véglegesen törlődik.</>
+              }
+            </p>
+          </div>
+        </div>
+      </button>
+    </div>
+  );
+
   const Icon = config.icon;
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={(nextOpen) => {
+        onOpenChange(nextOpen);
+        if (!nextOpen) {
+          setDeleteTarget(null);
+          setBatchDeleteOpen(false);
+          setSelectedIds(new Set());
+        }
+      }}>
         <DialogContent className="sm:max-w-3xl max-h-[85vh] flex flex-col border-border bg-card">
           <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2 text-xl font-bold">
@@ -232,15 +388,36 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
             </DialogDescription>
           </DialogHeader>
 
-          {/* Search */}
-          <div className="relative shrink-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Keresés fájlnév alapján..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="pl-9 bg-muted/30 border-border/50"
+          {/* Search + Batch delete button */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Select all checkbox */}
+            <Checkbox
+              checked={allVisibleSelected}
+              onCheckedChange={toggleSelectAll}
+              aria-label="Összes kijelölése az oldalon"
+              {...(someVisibleSelected && !allVisibleSelected ? { 'data-state': 'indeterminate' } : {})}
+              className="shrink-0"
             />
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Keresés fájlnév alapján..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="pl-9 bg-muted/30 border-border/50"
+              />
+            </div>
+            {selectedCount > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-9 gap-1.5 shrink-0"
+                onClick={() => setBatchDeleteOpen(true)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {selectedCount} törlése
+              </Button>
+            )}
           </div>
 
           {/* File List */}
@@ -257,8 +434,18 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
               paged.map(record => (
                 <div
                   key={record.id}
-                  className="flex items-center justify-between gap-3 border border-border/50 rounded-lg px-4 py-2.5 bg-card hover:border-border transition-colors group"
+                  className={`flex items-center gap-3 border rounded-lg px-3 py-2.5 transition-colors group ${
+                    selectedIds.has(record.id)
+                      ? 'border-primary/40 bg-primary/5 dark:bg-primary/10'
+                      : 'border-border/50 bg-card hover:border-border'
+                  }`}
                 >
+                  <Checkbox
+                    checked={selectedIds.has(record.id)}
+                    onCheckedChange={() => toggleSelect(record.id)}
+                    aria-label={`Kijelölés: ${record.file_name}`}
+                    className="shrink-0"
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium truncate">{record.file_name}</p>
@@ -282,7 +469,6 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-destructive"
                       onClick={() => setDeleteTarget(record)}
-                      disabled={deleteMutation.isPending}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
@@ -300,21 +486,15 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
               </p>
               <div className="flex items-center gap-1">
                 <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-7 w-7"
+                  variant="outline" size="icon" className="h-7 w-7"
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
-                <span className="px-2 text-xs font-semibold tabular-nums">
-                  {currentPage} / {totalPages}
-                </span>
+                <span className="px-2 text-xs font-semibold tabular-nums">{currentPage} / {totalPages}</span>
                 <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-7 w-7"
+                  variant="outline" size="icon" className="h-7 w-7"
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
                 >
@@ -326,38 +506,76 @@ export default function UploadedFilesModal({ open, onOpenChange, activeTab }: Up
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="border-border bg-card">
+      {/* ── Single delete dialog ─────────────────────────────────────────── */}
+      <AlertDialog open={open && !!deleteTarget} onOpenChange={o => !o && setDeleteTarget(null)}>
+        <AlertDialogContent className="max-w-md border-border bg-card">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              Fájl törlése
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>Biztosan törölni akarod a következő fájlt?</p>
-              <p className="font-semibold text-foreground">{deleteTarget?.file_name}</p>
-              <p className="text-xs text-warning">
-                ⚠️ Ez a művelet törli a fájlt és az összes hozzá kapcsolódó adatot (számlák, tranzakciók, dokumentumok). Ez a művelet nem visszavonható!
-              </p>
+            <AlertDialogTitle>Dokumentum törlése</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-1">
+                <p>Válaszd ki a törlés módját:</p>
+                <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          <DeleteOptions
+            disabled={singleDeleting}
+            fileName={deleteTarget?.file_name}
+            onFileOnly={() => handleSingleDelete(false)}
+            onWithData={() => handleSingleDelete(true)}
+          />
+
+          {singleDeleting && (
+            <div className="flex items-center justify-center py-2 gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Törlés folyamatban...</span>
+            </div>
+          )}
+
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Mégsem</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={deleteMutation.isPending}
-              onClick={(e) => {
-                e.preventDefault();
-                if (deleteTarget) deleteMutation.mutate(deleteTarget);
-              }}
-            >
-              {deleteMutation.isPending ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Törlés...</>
-              ) : (
-                <><Trash2 className="h-4 w-4 mr-2" /> Törlés</>
-              )}
-            </AlertDialogAction>
+            <AlertDialogCancel disabled={singleDeleting}>Mégsem</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Batch delete dialog ──────────────────────────────────────────── */}
+      <AlertDialog open={open && batchDeleteOpen} onOpenChange={o => { if (!o && !batchDeleting) setBatchDeleteOpen(false); }}>
+        <AlertDialogContent className="max-w-md border-border bg-card">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{selectedCount} dokumentum törlése</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Válaszd ki a törlés módját az összes kijelölt elemre:</p>
+                <div className="max-h-28 overflow-y-auto rounded-md border border-border/50 bg-muted/30 p-2 space-y-1">
+                  {selectedUploads.map(u => (
+                    <div key={u.id} className="text-xs text-muted-foreground truncate">
+                      • {u.file_name}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">Ez a művelet nem vonható vissza.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <DeleteOptions
+            disabled={batchDeleting}
+            isMulti
+            count={selectedCount}
+            onFileOnly={() => handleBatchDelete(false)}
+            onWithData={() => handleBatchDelete(true)}
+          />
+
+          {batchDeleting && (
+            <div className="flex items-center justify-center py-2 gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Törlés... ({selectedCount} elem)</span>
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={batchDeleting}>Mégsem</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

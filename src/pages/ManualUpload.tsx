@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { registerPendingUpload } from '@/components/LiveNotificationProvider';
 import { formatFileSize, extractStoragePath, cn } from '@/lib/utils';
 import { handleRateLimitError } from '@/lib/supabaseErrors';
 import { useQueryClient } from '@tanstack/react-query';
@@ -370,6 +371,8 @@ const ManualUpload = () => {
           upload_status: 'uploaded', processing_status: 'pending',
           created_at: new Date().toISOString(), error_message: null,
         });
+        // Register with session-scoped polling so toasts fire on any page
+        registerPendingUpload(rec.id);
       }
 
       toast({ title: "Feltöltés sikeres!", description: "A feltöltött adatok feldolgozásának eredménye pár percen belül válik láthatóvá.", duration: 3000 });
@@ -534,6 +537,8 @@ const ManualUpload = () => {
           upload_status: 'uploaded', processing_status: 'pending',
           created_at: new Date().toISOString(), error_message: null,
         });
+        // Register with session-scoped polling so toasts fire on any page
+        registerPendingUpload(rec.id);
       }
 
       toast({ title: "Feltöltés sikeres!", description: "A bér/járulék fájlok feldolgozása automatikusan elindul.", duration: 3000 });

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import InvoiceImageDialog from '@/components/InvoiceImageDialog';
 import { 
   Truck, 
   CheckCircle2, 
@@ -30,12 +31,14 @@ import {
   ExternalLink,
   Upload
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, getDaysInMonth, startOfMonth, addDays } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
-import { ResponsiveContainer, PieChart as ReChartsPie, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { ResponsiveContainer, PieChart as ReChartsPie, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { useScopedBasePath } from '@/lib/navigation';
+import { useDateRange } from '@/contexts/DateRangeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ShipmentMatchDetail {
   id: string;
@@ -79,12 +82,69 @@ export default function ShipmentMatchingDashboard() {
   const { selectedCompany } = useCompany();
   const navigate = useNavigate();
   const basePath = useScopedBasePath();
+  const { dateFrom } = useDateRange();
+  const { theme } = useTheme();
+
+  // ── Chart colors ──
+  // Explicit vibrant HSL values per theme — CSS var tokens are too muted for Recharts SVG.
+  // Colors are chosen for maximum perceptual distinctness in both light and dark mode.
+  const chartColors = useMemo(() => {
+    const isDark = theme === 'dark';
+    return {
+      // Párosított: design primary teal
+      primary:     isDark ? 'hsl(170 82% 52%)' : 'hsl(174 80% 34%)',
+      // Felülvizsgálat: vivid amber (clearly different from teal)
+      warning:     isDark ? 'hsl(36 95% 58%)'  : 'hsl(36 92% 42%)',
+      // Eszkalált: coral-red (high contrast against amber and teal)
+      destructive: isDark ? 'hsl(4 88% 65%)'   : 'hsl(4 74% 52%)',
+      // Függőben: cool slate-indigo (not gray → readable in both modes)
+      muted:       isDark ? 'hsl(220 30% 52%)' : 'hsl(220 20% 64%)',
+      // Tooltip
+      tooltipBg:   isDark ? '#1e293b' : '#ffffff',
+      tooltipText: isDark ? '#e2e8f0' : '#1e293b',
+      border:      isDark ? 'hsl(225 9% 20%)' : 'hsl(222 10% 88%)',
+    };
+  }, [theme]);
+
   
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'matched' | 'review' | 'pending' | 'escalated'>('all');
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
+
+  // Invoice image dialog state
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [invoiceDialogData, setInvoiceDialogData] = useState<{
+    id: string; elado_nev: string; vevo_nev: string;
+    bizonylatsorszam?: string; image_url?: string; melleklet_url?: string;
+  } | null>(null);
+  const [invoiceDialogLoading, setInvoiceDialogLoading] = useState<string | null>(null);
+
+  /** Open dialog immediately with placeholder, then fetch URLs in background */
+  const openInvoiceDialog = async (invoiceId: string, bizonylat?: string, eladoNev?: string) => {
+    if (invoiceDialogLoading) return;
+    // Open the modal right away — spinner will show inside
+    setInvoiceDialogData({
+      id: invoiceId,
+      elado_nev: eladoNev || '',
+      vevo_nev: '',
+      bizonylatsorszam: bizonylat,
+    });
+    setInvoiceDialogOpen(true);
+    setInvoiceDialogLoading(invoiceId);
+    try {
+      const { data } = await supabase
+        .from('invoices')
+        .select('id, elado_nev, vevo_nev, bizonylatsorszam, image_url, melleklet_url')
+        .eq('id', invoiceId)
+        .maybeSingle();
+      if (data) setInvoiceDialogData(data);
+    } finally {
+      setInvoiceDialogLoading(null);
+    }
+  };
+
 
   // Fetch Shipments with joined Matches and CMRs
   const { data: shipments = [], isLoading } = useQuery<DashboardShipment[]>({
@@ -120,6 +180,8 @@ export default function ShipmentMatchingDashboard() {
       return data || [];
     },
     enabled: !!selectedCompany?.id,
+    staleTime: 0,                 // Always refetch on invalidation or mount
+    refetchOnWindowFocus: true,   // Refetch when user switches back to tab (no continuous polling)
   });
 
   // Calculate Statistics
@@ -138,40 +200,52 @@ export default function ShipmentMatchingDashboard() {
   // Donut chart data
   const pieData = useMemo(() => {
     return [
-      { name: 'Párosított', value: stats.matched, color: 'hsl(var(--success))' },
-      { name: 'Felülvizsgálat', value: stats.review, color: 'hsl(var(--warning))' },
-      { name: 'Eszkalált', value: stats.escalated, color: 'hsl(var(--destructive))' },
-      { name: 'Függőben', value: stats.pending, color: 'hsl(var(--muted-foreground))' },
+      { name: 'Párosított',    value: stats.matched,   color: chartColors.primary },
+      { name: 'Felülvizsgálat', value: stats.review,    color: chartColors.warning },
+      { name: 'Eszkalált',     value: stats.escalated, color: chartColors.destructive },
+      { name: 'Függőben',     value: stats.pending,   color: chartColors.muted },
     ].filter(d => d.value > 0);
-  }, [stats]);
+  }, [stats, chartColors]);
 
-  // Trend chart data (mocking daily trend based on last 7 days of shipments)
+
+  // Havi matching trend — az aktuális hónap minden napját megjeleníti
   const trendData = useMemo(() => {
-    // Group shipments by date and match status
-    const dates: Record<string, { date: string; matched: number; review: number; pending: number }> = {};
-    
-    // Fallback if no shipments
-    if (shipments.length === 0) {
-      return Array.from({ length: 7 }).map((_, i) => ({
-        date: `Jún ${10 + i}`,
-        'Párosított': 0,
-        'Felülvizsgálat': 0,
-        'Függőben': 0,
-      }));
+    // The reference month: first day of dateFrom (or current month as fallback)
+    const refDate = dateFrom ? new Date(dateFrom) : new Date();
+    const monthStart = startOfMonth(refDate);
+    const daysInMonth = getDaysInMonth(refDate);
+
+    // Build day buckets for every day of the month
+    const buckets: Record<string, { date: string; 'Párosított': number; 'Felülvizsgálat': number; 'Függőben': number }> = {};
+    for (let d = 0; d < daysInMonth; d++) {
+      const day = addDays(monthStart, d);
+      const key = format(day, 'yyyy-MM-dd');
+      const label = format(day, 'dd.', { locale: hu });
+      buckets[key] = { date: label, 'Párosított': 0, 'Felülvizsgálat': 0, 'Függőben': 0 };
     }
 
-    shipments.slice(0, 30).forEach(s => {
-      const dateStr = format(new Date(s.created_at), 'MMM dd', { locale: hu });
-      if (!dates[dateStr]) {
-        dates[dateStr] = { date: dateStr, matched: 0, review: 0, pending: 0 };
+    // Aggregate shipments into buckets by created_at date
+    for (const s of shipments) {
+      const dayKey = format(new Date(s.created_at), 'yyyy-MM-dd');
+      if (!buckets[dayKey]) continue; // outside the month window
+      if (s.match_status === 'matched') {
+        buckets[dayKey]['Párosított']++;
+      } else if (s.match_status === 'review' || s.match_status === 'escalated') {
+        buckets[dayKey]['Felülvizsgálat']++;
+      } else {
+        buckets[dayKey]['Függőben']++;
       }
-      if (s.match_status === 'matched') dates[dateStr].matched++;
-      else if (s.match_status === 'review' || s.match_status === 'escalated') dates[dateStr].review++;
-      else dates[dateStr].pending++;
-    });
+    }
 
-    return Object.values(dates).reverse().slice(-7);
-  }, [shipments]);
+    return Object.values(buckets);
+  }, [shipments, dateFrom]);
+
+  // Trend chart month label for the header
+  const trendMonthLabel = useMemo(() => {
+    const refDate = dateFrom ? new Date(dateFrom) : new Date();
+    return format(refDate, 'yyyy. MMMM', { locale: hu });
+  }, [dateFrom]);
+
 
   // Filtered shipments
   const filteredShipments = useMemo(() => {
@@ -222,6 +296,70 @@ export default function ShipmentMatchingDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8 page-animate">
+      {isLoading ? (
+        /* ── Loading Skeleton ── */
+        <div className="space-y-6">
+          {/* Header skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-9 w-36" />
+              <Skeleton className="h-4 w-72" />
+            </div>
+            <Skeleton className="h-9 w-32" />
+          </div>
+
+          {/* Stats cards skeleton */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="border border-border/50 shadow-sm">
+                <CardContent className="p-6">
+                  <Skeleton className="h-4 w-24 mb-4" />
+                  <Skeleton className="h-9 w-16 mb-2" />
+                  <Skeleton className="h-3 w-32" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Chart + filter skeleton */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            <Card className="border border-border/50 shadow-sm">
+              <CardContent className="p-6 flex items-center justify-center">
+                <Skeleton className="h-40 w-40 rounded-full" />
+              </CardContent>
+            </Card>
+            <Card className="lg:col-span-2 border border-border/50 shadow-sm">
+              <CardContent className="p-6 space-y-3">
+                <Skeleton className="h-9 w-full" />
+                <div className="grid grid-cols-4 gap-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-8" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Table skeleton */}
+          <Card className="border border-border/50 shadow-sm">
+            <CardContent className="p-0">
+              <div className="divide-y divide-border/50">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4 px-6 py-4">
+                    <Skeleton className="h-4 w-4 shrink-0" />
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-4 w-32 flex-1" />
+                    <Skeleton className="h-6 w-24 rounded-full" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-4 shrink-0" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -343,25 +481,58 @@ export default function ShipmentMatchingDashboard() {
             <CardHeader className="p-5 border-b border-border/40">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-primary" />
-                Napi matching trend (utolsó 7 nap)
+                Napi matching trend &mdash; {trendMonthLabel}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5 min-h-[220px]">
               {stats.total > 0 ? (
-                <div className="w-full h-40">
+                <div className="w-full h-44">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={trendData}>
-                      <XAxis dataKey="date" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} width={25} />
-                      <Tooltip />
-                      <Bar dataKey="Párosított" stackId="a" fill="hsl(var(--success))" radius={[0, 0, 0, 0]} />
-                      <Bar dataKey="Felülvizsgálat" stackId="a" fill="hsl(var(--warning))" radius={[0, 0, 0, 0]} />
-                      <Bar dataKey="Függőben" stackId="a" fill="hsl(var(--muted-foreground))" radius={[3, 3, 0, 0]} />
+                    <BarChart data={trendData} barCategoryGap="35%" barGap={1} maxBarSize={12}>
+                      <XAxis
+                        dataKey="date"
+                        stroke="transparent"
+                        tick={{ fill: chartColors.muted, fontSize: 9, fontWeight: 500 }}
+                        tickLine={false}
+                        axisLine={false}
+                        interval={2}
+                      />
+                      <YAxis
+                        stroke="transparent"
+                        tick={{ fill: chartColors.muted, fontSize: 10, fontWeight: 500 }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={22}
+                        allowDecimals={false}
+                      />
+                      <Tooltip
+                        cursor={{ fill: chartColors.muted, opacity: 0.08, rx: 4 }}
+                        contentStyle={{
+                          background: chartColors.tooltipBg,
+                          border: `1px solid ${chartColors.border}`,
+                          borderRadius: '6px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                          color: chartColors.tooltipText,
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          padding: '8px 12px',
+                        }}
+                        labelStyle={{ color: chartColors.tooltipText, marginBottom: 4, fontWeight: 700 }}
+                        itemStyle={{ color: chartColors.tooltipText, fontSize: 11 }}
+                      />
+                      <Legend
+                        iconType="square"
+                        iconSize={8}
+                        wrapperStyle={{ fontSize: '10px', fontWeight: 600, paddingTop: '8px', color: chartColors.muted }}
+                      />
+                      <Bar dataKey="Párosított"    stackId="a" fill={chartColors.primary}     radius={[0, 0, 0, 0]} />
+                      <Bar dataKey="Felülvizsgálat" stackId="a" fill={chartColors.warning}     radius={[0, 0, 0, 0]} />
+                      <Bar dataKey="Függőben"      stackId="a" fill={chartColors.muted}       radius={[3, 3, 0, 0]} opacity={0.45} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground italic flex items-center justify-center h-40">Nincs adat trend diagramhoz</div>
+                <div className="text-sm text-muted-foreground italic flex items-center justify-center h-44">Nincs adat trend diagramhoz</div>
               )}
             </CardContent>
           </Card>
@@ -470,50 +641,49 @@ export default function ShipmentMatchingDashboard() {
                         ? formatCurrency(s.calculated_amount_huf, 'HUF')
                         : '—';
 
-                    return (
-                      <>
-                        <tr 
-                          key={s.id} 
-                          className={`border-b border-border/30 hover:bg-muted/30 cursor-pointer transition-colors duration-150 ${
-                            isExpanded ? 'bg-muted/10' : ''
-                          }`}
-                          onClick={() => toggleRow(s.id)}
-                        >
-                          <td className="px-4 py-3 text-center">
-                            {activeMatch && (
-                              isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </td>
-                          <td className="px-4 py-3 font-mono font-semibold text-primary">{s.position_number}</td>
-                          <td className="px-4 py-3 font-medium">{s.carrier_name || '—'}</td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {s.pickup_date ? format(new Date(s.pickup_date), 'yyyy. MM. dd.') : '—'}
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {s.delivery_date ? format(new Date(s.delivery_date), 'yyyy. MM. dd.') : '—'}
-                          </td>
-                          <td className="px-4 py-3 text-right font-mono text-xs">{amountStr}</td>
-                          <td className="px-4 py-3">
-                            {activeMatch ? (
-                              <div className="flex items-center gap-2 w-28">
-                                <Progress 
-                                  value={activeMatch.confidence_score} 
-                                  className={`h-1.5 w-16 ${
-                                    activeMatch.confidence_score >= 90 ? '[&>div]:bg-success' : activeMatch.confidence_score >= 70 ? '[&>div]:bg-warning' : '[&>div]:bg-destructive'
-                                  }`} 
-                                />
-                                <span className={`text-xs font-bold ${
-                                  activeMatch.confidence_score >= 90 ? 'text-success' : activeMatch.confidence_score >= 70 ? 'text-warning' : 'text-destructive'
-                                }`}>
-                                  {activeMatch.confidence_score}%
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground text-xs">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">{getStatusBadge(s.match_status)}</td>
-                        </tr>
+                  return (
+                    <Fragment key={s.id}>
+                      <tr
+                        className={`border-b border-border/30 hover:bg-muted/30 cursor-pointer transition-colors duration-150 ${
+                          isExpanded ? 'bg-muted/10' : ''
+                        }`}
+                        onClick={() => toggleRow(s.id)}
+                      >
+                        <td className="px-4 py-3 text-center">
+                          {activeMatch && (
+                            isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </td>
+                        <td className="px-4 py-3 font-mono font-semibold text-primary">{s.position_number}</td>
+                        <td className="px-4 py-3 font-medium">{s.carrier_name || '—'}</td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {s.pickup_date ? format(new Date(s.pickup_date), 'yyyy. MM. dd.') : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {s.delivery_date ? format(new Date(s.delivery_date), 'yyyy. MM. dd.') : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono text-xs">{amountStr}</td>
+                        <td className="px-4 py-3">
+                          {activeMatch ? (
+                            <div className="flex items-center gap-2 w-28">
+                              <Progress
+                                value={activeMatch.confidence_score}
+                                className={`h-1.5 w-16 ${
+                                  activeMatch.confidence_score >= 90 ? '[&>div]:bg-success' : activeMatch.confidence_score >= 70 ? '[&>div]:bg-warning' : '[&>div]:bg-destructive'
+                                }`}
+                              />
+                              <span className={`text-xs font-bold ${
+                                activeMatch.confidence_score >= 90 ? 'text-success' : activeMatch.confidence_score >= 70 ? 'text-warning' : 'text-destructive'
+                              }`}>
+                                {activeMatch.confidence_score}%
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">{getStatusBadge(s.match_status)}</td>
+                      </tr>
 
                         {/* Expanded details row */}
                         {isExpanded && activeMatch && (
@@ -577,13 +747,22 @@ export default function ShipmentMatchingDashboard() {
                                         <Button 
                                           variant="ghost" 
                                           size="sm"
+                                          disabled={!!invoiceDialogLoading}
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            navigate(`${basePath}/invoices?invoiceId=${activeMatch.invoice?.id}`);
+                                            if (activeMatch.invoice?.id) {
+                                              openInvoiceDialog(
+                                                activeMatch.invoice.id,
+                                                activeMatch.invoice.bizonylatsorszam,
+                                                activeMatch.invoice.elado_nev,
+                                              );
+                                            }
                                           }}
                                         >
-                                          Számla részletei
-                                          <ExternalLink className="h-3 w-3 ml-1.5" />
+                                          <span className="flex items-center gap-1.5">
+                                            Számla megtekintése
+                                            <FileText className="h-3 w-3" />
+                                          </span>
                                         </Button>
                                       </div>
                                     </div>
@@ -648,9 +827,9 @@ export default function ShipmentMatchingDashboard() {
                             </td>
                           </tr>
                         )}
-                      </>
-                    );
-                  })}
+                    </Fragment>
+                  );
+                })}
                   {/* Fill empty rows on last page to prevent layout shift */}
                   {emptyRowCount > 0 && Array.from({ length: emptyRowCount }).map((_, idx) => (
                     <tr key={`empty-${idx}`} className="border-b border-border/10">
@@ -714,6 +893,20 @@ export default function ShipmentMatchingDashboard() {
           </div>
         )}
       </div>
+      )}
+
+      {/* Invoice image popup — shared with InvoicesPage */}
+      <InvoiceImageDialog
+        invoice={invoiceDialogData}
+        open={invoiceDialogOpen}
+        isLoading={!!invoiceDialogLoading}
+        onClose={() => {
+          setInvoiceDialogOpen(false);
+          setInvoiceDialogData(null);
+          setInvoiceDialogLoading(null);
+        }}
+      />
+
     </div>
   );
 }
