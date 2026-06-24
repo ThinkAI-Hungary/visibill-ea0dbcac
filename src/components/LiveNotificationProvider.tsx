@@ -185,515 +185,517 @@ export function LiveNotificationProvider() {
       const channel = supabase
         .channel(`realtime-sync-${companyId}`)
 
-      // ━━ SALARY table ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'salary' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate(
-            'salaries', 'salary_files',
-            'dashboardData', 'dashboardAnalytics',
-            'analyticsRaw', 'analyticsVat',
-            'pettyCashEntries', 'uploadHistory',
-          );
-          if (payload.eventType === 'INSERT') {
-            const row = payload.new as any;
-            if (row.salary_file_id) {
-              showNotification(row.salary_file_id, 'salary_files');
-            }
-          }
-        }
-      )
-
-      // ━━ SALARY_FILES table ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'salary_files' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate('salary_files', 'salaries', 'uploadHistory');
-          // Show notification when salary_files status changes to 'completed' or 'webhook_sent'
-          if (payload.eventType === 'UPDATE') {
-            const row = payload.new as any;
-            const oldRow = payload.old as any;
-            if (row.id && row.status === 'completed' && oldRow?.status !== 'completed') {
-              console.log('[RealtimeSync] 🔔 salary_files status → completed:', row.id);
-              showNotification(row.id, 'salary_files');
-            }
-          }
-        }
-      )
-
-      // ━━ INVOICES table ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'invoices' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate(
-            'submittedInvoices', 'linkedInvoices', 'invoiceTransactions',
-            'filteredNavInvoices', 'filteredSubmittedInvoices',
-            'dashboardData', 'dashboardAnalytics',
-            'kintlevo-manual', 'kintlevo-nav',
-            'invoiceStatusPayable', 'invoiceStatusMissing',
-            'recentInvoices', 'uploadHistory',
-            'analyticsRaw', 'analyticsVat',
-            'dashboardPettyCash',
-          );
-          if (payload.eventType === 'INSERT') {
-            const row = payload.new as any;
-            if (row.invoice_uploads_id) {
-              showNotification(row.invoice_uploads_id, 'invoice_uploads');
-            }
-          }
-        }
-      )
-
-      // ━━ INVOICE_UPLOADS table ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'invoice_uploads' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate('uploadHistory', 'submittedInvoices', 'filteredSubmittedInvoices');
-          if (payload.eventType === 'UPDATE') {
-            const row = payload.new as any;
-            const oldRow = payload.old as any;
-
-            // Invoice pipeline: 'completed' / 'processed'
-            const doneStatuses = ['completed', 'processed'];
-            if (row.id && doneStatuses.includes(row.processing_status) && !doneStatuses.includes(oldRow?.processing_status)) {
-              console.log('[RealtimeSync] 🔔 invoice_uploads status → done:', row.id);
-              showNotification(row.id, 'invoice_uploads');
-            }
-
-            // Transport doc pipeline: 'cmr_attached' → dokumentum párosítva
-            if (row.id && row.processing_status === 'cmr_attached' && oldRow?.processing_status !== 'cmr_attached') {
-              console.log('[RealtimeSync] 🔔 invoice_uploads status → cmr_attached:', row.id);
-              const attachedKey = `cmr_attached_${row.id}`;
-              if (!notifiedUploads.current.has(attachedKey)) {
-                notifiedUploads.current.add(attachedKey);
-                (supabase as any).from('invoice_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
-                  const fileName = data?.file_name || 'Ismeretlen fájl';
-                  toast({
-                    title: 'Dokumentum párosítva!',
-                    description: `${fileName} sikeresen párosítva lett egy fuvarhoz.`,
-                    variant: 'default',
-                    duration: 5000,
-                    icon: Truck,
-                  });
-                });
-              }
-            }
-
-            // Transport doc pipeline: 'cmr_escalated' → emberi ellenőrzés kell
-            if (row.id && row.processing_status === 'cmr_escalated' && oldRow?.processing_status !== 'cmr_escalated') {
-              console.log('[RealtimeSync] ⚠️ invoice_uploads status → cmr_escalated:', row.id);
-              const escalatedKey = `cmr_escalated_${row.id}`;
-              if (!notifiedUploads.current.has(escalatedKey)) {
-                notifiedUploads.current.add(escalatedKey);
-                (supabase as any).from('invoice_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
-                  const fileName = data?.file_name || 'Ismeretlen fájl';
-                  toast({
-                    title: 'Dokumentum eszkalálva',
-                    description: `${fileName} nem párosítható automatikusan — kézi ellenőrzés szükséges.`,
-                    variant: 'destructive',
-                    duration: 8000,
-                    icon: AlertTriangle,
-                  });
-                });
+        // ━━ SALARY table ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'salary' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate(
+              'salaries', 'salary_files',
+              'dashboardData', 'dashboardAnalytics',
+              'analyticsRaw', 'analyticsVat',
+              'pettyCashEntries', 'uploadHistory',
+            );
+            if (payload.eventType === 'INSERT') {
+              const row = payload.new as any;
+              if (row.salary_file_id) {
+                showNotification(row.salary_file_id, 'salary_files');
               }
             }
           }
-        }
-      )
+        )
 
-      // ━━ NAV_INVOICES table ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'nav_invoices' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate(
-            'navInvoices', 'filteredNavInvoices', 'kintlevo-nav',
-            'dashboardData', 'dashboardAnalytics',
-            'invoiceStatusPayable', 'invoiceStatusMissing',
-            'analyticsRaw', 'analyticsVat',
-            'projects', 'projectsList',
-            'dashboardPettyCash',
-          );
-        }
-      )
-
-      // ━━ TRANSACTIONS table ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'transactions' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate(
-            'transactions', 'salaries', 'submittedInvoices',
-            'filteredNavInvoices', 'filteredSubmittedInvoices',
-            'dashboardData', 'dashboardAnalytics',
-            'kintlevo-nav', 'kintlevo-manual',
-            'invoiceStatusPayable', 'invoiceStatusMissing',
-            'invoiceTransactions', 'navInvoices',
-            'pettyCashEntries', 'pettyCashSettings',
-            'analyticsRaw', 'analyticsVat',
-            'projects', 'projectsList',
-            'dashboardPettyCash',
-          );
-          queryClientRef.current.invalidateQueries({ queryKey: ['glBalances'] });
-          queryClientRef.current.invalidateQueries({ queryKey: ['glItems'] });
-          if (payload.eventType === 'INSERT') {
-            const row = payload.new as any;
-            if (row.upload_id) {
-              showNotification(row.upload_id, 'transaction_uploads');
-            }
-          }
-        }
-      )
-
-      // ━━ PARTNERS table ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'partners' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate('partners', 'partnersFull', 'kintlevo-nav', 'kintlevo-manual');
-        }
-      )
-
-      // ━━ Upload tables (for upload history) ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'transaction_uploads' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate('uploadHistory', 'transactions');
-          // Show notification + refresh transactions when processing completes
-          if (payload.eventType === 'UPDATE') {
-            const row = payload.new as any;
-            if (row.id && row.processing_status === 'completed') {
-              // Use a dedicated key to avoid conflicts with the transactions INSERT listener
-              const completionKey = `completion_${row.id}`;
-              if (!notifiedUploads.current.has(completionKey)) {
-                notifiedUploads.current.add(completionKey);
-                console.log('[RealtimeSync] 🔔 transaction_uploads status → completed:', row.id);
-                // Fetch file name for the toast
-                (supabase as any).from('transaction_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
-                  const fileName = data?.file_name || 'Ismeretlen fájl';
-                  toast({
-                    title: 'Tranzakciók feldolgozva!',
-                    description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
-                    variant: 'default',
-                    duration: 5000,
-                    icon: Banknote,
-                  });
-                });
+        // ━━ SALARY_FILES table ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'salary_files' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate('salary_files', 'salaries', 'uploadHistory');
+            // Show notification when salary_files status changes to 'completed' or 'webhook_sent'
+            if (payload.eventType === 'UPDATE') {
+              const row = payload.new as any;
+              const oldRow = payload.old as any;
+              if (row.id && row.status === 'completed' && oldRow?.status !== 'completed') {
+                console.log('[RealtimeSync] 🔔 salary_files status → completed:', row.id);
+                showNotification(row.id, 'salary_files');
               }
-              // Force immediate invalidation of transactions (no debounce)
-              queryClientRef.current.invalidateQueries({ queryKey: ['transactions'] });
             }
           }
-        }
-      )
+        )
 
-      // ━━ CATEGORIES table ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'categories' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate(
-            'categories', 'filteredNavInvoices', 'filteredSubmittedInvoices',
-            'navInvoices', 'submittedInvoices',
-          );
-        }
-      )
+        // ━━ INVOICES table ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'invoices' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate(
+              'submittedInvoices', 'linkedInvoices', 'invoiceTransactions',
+              'filteredNavInvoices', 'filteredSubmittedInvoices',
+              'dashboardData', 'dashboardAnalytics',
+              'kintlevo-manual', 'kintlevo-nav',
+              'invoiceStatusPayable', 'invoiceStatusMissing',
+              'recentInvoices', 'uploadHistory',
+              'analyticsRaw', 'analyticsVat',
+              'dashboardPettyCash',
+            );
+            if (payload.eventType === 'INSERT') {
+              const row = payload.new as any;
+              if (row.invoice_uploads_id) {
+                showNotification(row.invoice_uploads_id, 'invoice_uploads');
+              }
+            }
+          }
+        )
 
-      // ━━ PROJECTS table ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'projects' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate(
-            'projects', 'projectsList',
-            'filteredNavInvoices', 'filteredSubmittedInvoices',
-            'navInvoices', 'submittedInvoices',
-          );
-        }
-      )
+        // ━━ INVOICE_UPLOADS table ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'invoice_uploads' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate('uploadHistory', 'submittedInvoices', 'filteredSubmittedInvoices');
+            if (payload.eventType === 'UPDATE') {
+              const row = payload.new as any;
+              const oldRow = payload.old as any;
 
-      // ━━ DUNNING_SENDS table ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'dunning_sends' },
-        (payload) => {
-          console.log('[RealtimeSync] dunning_sends', payload.eventType);
-          invalidate('dunning-sends', 'kintlevo-nav');
-        }
-      )
+              // Invoice pipeline: 'completed' / 'processed'
+              const doneStatuses = ['completed', 'processed'];
+              if (row.id && doneStatuses.includes(row.processing_status) && !doneStatuses.includes(oldRow?.processing_status)) {
+                console.log('[RealtimeSync] 🔔 invoice_uploads status → done:', row.id);
+                showNotification(row.id, 'invoice_uploads');
+              }
 
-      // ━━ NAV_INVOICE_ITEMS table ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'nav_invoice_items' },
-        (payload) => {
-          invalidate('invoiceItems', 'filteredNavInvoices', 'analyticsVat');
-          // GL queries have presetId (not companyId) in position 2, so invalidate directly
-          queryClientRef.current.invalidateQueries({ queryKey: ['glBalances'] });
-          queryClientRef.current.invalidateQueries({ queryKey: ['glItems'] });
-        }
-      )
-
-      // ━━ INVOICE_ITEMS table (submitted/manual invoices) ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'invoice_items' },
-        (payload) => {
-          invalidate('invoiceItems', 'filteredSubmittedInvoices', 'analyticsVat');
-          queryClientRef.current.invalidateQueries({ queryKey: ['glBalances'] });
-          queryClientRef.current.invalidateQueries({ queryKey: ['glItems'] });
-        }
-      )
-
-
-      // ━━ NAV_SYNC_LOGS table ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'nav_sync_logs' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate('syncLogs', 'navInvoices', 'filteredNavInvoices');
-        }
-      )
-
-      // ━━ REPORT_UPLOADS table ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'report_uploads' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate('uploadHistory', 'courier-reports');
-          if (payload.eventType === 'UPDATE') {
-            const row = payload.new as any;
-            const doneStatuses = ['completed', 'processed'];
-            if (row.id && doneStatuses.includes(row.processing_status)) {
-              const completionKey = `report_${row.id}`;
-              if (!notifiedUploads.current.has(completionKey)) {
-                // Verify this is a genuine new completion by checking created_at
-                // If the report was completed more than 30s ago, it's a stale replay — skip
-                const createdAt = row.updated_at || row.created_at;
-                const ageMs = createdAt ? Date.now() - new Date(createdAt).getTime() : Infinity;
-                if (ageMs > 30_000) {
-                  notifiedUploads.current.add(completionKey); // Suppress future replays
-                  return;
+              // Transport doc pipeline: 'cmr_attached' → dokumentum párosítva
+              if (row.id && row.processing_status === 'cmr_attached' && oldRow?.processing_status !== 'cmr_attached') {
+                console.log('[RealtimeSync] 🔔 invoice_uploads status → cmr_attached:', row.id);
+                const attachedKey = `cmr_attached_${row.id}`;
+                if (!notifiedUploads.current.has(attachedKey)) {
+                  notifiedUploads.current.add(attachedKey);
+                  (supabase as any).from('invoice_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
+                    const fileName = data?.file_name || 'Ismeretlen fájl';
+                    toast({
+                      title: 'Dokumentum párosítva!',
+                      description: `${fileName} sikeresen párosítva lett egy fuvarhoz.`,
+                      variant: 'default',
+                      duration: 5000,
+                      icon: Truck,
+                    });
+                  });
                 }
-                notifiedUploads.current.add(completionKey);
-                console.log('[RealtimeSync] 🔔 report_uploads status → completed:', row.id);
-                (supabase as any).from('report_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
-                  const fileName = data?.file_name || 'Ismeretlen fájl';
-                  toast({
-                    title: 'Riport feldolgozva!',
-                    description: `A következő riport sikeresen fel lett dolgozva: ${fileName}`,
-                    variant: 'default',
-                    duration: 5000,
-                    icon: ClipboardCheck,
+              }
+
+              // Transport doc pipeline: 'cmr_escalated' → emberi ellenőrzés kell
+              if (row.id && row.processing_status === 'cmr_escalated' && oldRow?.processing_status !== 'cmr_escalated') {
+                console.log('[RealtimeSync] ⚠️ invoice_uploads status → cmr_escalated:', row.id);
+                const escalatedKey = `cmr_escalated_${row.id}`;
+                if (!notifiedUploads.current.has(escalatedKey)) {
+                  notifiedUploads.current.add(escalatedKey);
+                  (supabase as any).from('invoice_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
+                    const fileName = data?.file_name || 'Ismeretlen fájl';
+                    toast({
+                      title: 'Dokumentum eszkalálva',
+                      description: `${fileName} nem párosítható automatikusan — kézi ellenőrzés szükséges.`,
+                      variant: 'destructive',
+                      duration: 8000,
+                      icon: AlertTriangle,
+                    });
                   });
-                });
+                }
               }
             }
           }
-        }
-      )
+        )
 
-      // ━━ COURIER_REPORTS table ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'courier_reports' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate('courier-reports', 'uploadHistory');
-          // No per-row toast — the report_uploads completion toast is sufficient
-        }
-      )
+        // ━━ NAV_INVOICES table ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'nav_invoices' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate(
+              'navInvoices', 'filteredNavInvoices', 'kintlevo-nav',
+              'dashboardData', 'dashboardAnalytics',
+              'invoiceStatusPayable', 'invoiceStatusMissing',
+              'analyticsRaw', 'analyticsVat',
+              'projects', 'projectsList',
+              'dashboardPettyCash',
+            );
+          }
+        )
 
-      // ━━ SHIPMENTS table (HRTSPED — fuvar-számla párosítás) ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'shipments' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate('shipments-matching', 'shipment-import-batches');
-        }
-      )
-
-      // ━━ SHIPMENT_MATCHES table (HRTSPED — párosítás eredmény) ━━
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'shipment_matches' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate('shipments-matching');
-        }
-      )
-
-      // ━━ TRANSPORT_DOCUMENTS table (HRTSPED — CMR, nalog, POD) ━━
-      // Note: We toast on INSERT here (not on invoice_uploads status) because
-      // retroactive rematch / filename-similarity never updates invoice_uploads.processing_status.
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'transport_documents' },
-        (payload) => {
-          if (!isMyCompany(payload)) return;
-          invalidate('shipments-matching', 'uploadHistory');
-
-          if (payload.eventType === 'INSERT') {
-            const row = payload.new as any;
-            // Only toast for matched/orphaned docs (not unclassified noise)
-            if (!row.id || !row.file_name) return;
-
-            const toastKey = `transport_doc_${row.id}`;
-            if (notifiedUploads.current.has(toastKey)) return;
-            notifiedUploads.current.add(toastKey);
-
-            const docTypeLabel: Record<string, string> = {
-              cmr: 'CMR fuvarlevél',
-              nalog: 'Megrendelés',
-              pod: 'POD',
-              other: 'Dokumentum',
-            };
-            const label = docTypeLabel[row.document_type] || 'Dokumentum';
-            const fileName = row.file_name;
-
-            if (row.status === 'matched') {
-              toast({
-                title: `${label} párosítva!`,
-                description: `${fileName} sikeresen párosítva lett egy fuvarhoz.`,
-                variant: 'default',
-                duration: 5000,
-                icon: Truck,
-              });
-            } else if (row.status === 'escalated') {
-              toast({
-                title: `${label} eszkalálva`,
-                description: `${fileName} nem párosítható automatikusan — kézi ellenőrzés szükséges.`,
-                variant: 'destructive',
-                duration: 8000,
-                icon: AlertTriangle,
-              });
-            } else if (row.status === 'orphaned') {
-              // Transport doc arrived before the invoice — toast that it's registered
-              toast({
-                title: `${label} feldolgozva`,
-                description: `${fileName} rögzítve — vár a megfelelő számlára.`,
-                variant: 'default',
-                duration: 5000,
-                icon: FileText,
-              });
+        // ━━ TRANSACTIONS table ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'transactions' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate(
+              'transactions', 'salaries', 'submittedInvoices',
+              'filteredNavInvoices', 'filteredSubmittedInvoices',
+              'dashboardData', 'dashboardAnalytics',
+              'kintlevo-nav', 'kintlevo-manual',
+              'invoiceStatusPayable', 'invoiceStatusMissing',
+              'invoiceTransactions', 'navInvoices',
+              'pettyCashEntries', 'pettyCashSettings',
+              'analyticsRaw', 'analyticsVat',
+              'projects', 'projectsList',
+              'dashboardPettyCash',
+              'detected-banks', 'upload-bank-map', 'bank-upload-ids',
+              'tx-kpis', 'bank-transactions', 'transactionFilterOptions'
+            );
+            queryClientRef.current.invalidateQueries({ queryKey: ['glBalances'] });
+            queryClientRef.current.invalidateQueries({ queryKey: ['glItems'] });
+            if (payload.eventType === 'INSERT') {
+              const row = payload.new as any;
+              if (row.upload_id) {
+                showNotification(row.upload_id, 'transaction_uploads');
+              }
             }
           }
+        )
 
-          // UPDATE: orphaned → matched (retroactive rematch found the invoice)
-          if (payload.eventType === 'UPDATE') {
-            const row = payload.new as any;
-            const oldRow = payload.old as any;
-            if (row.id && row.status === 'matched' && oldRow?.status !== 'matched') {
-              const toastKey = `transport_doc_rematch_${row.id}`;
-              if (!notifiedUploads.current.has(toastKey)) {
-                notifiedUploads.current.add(toastKey);
-                const docTypeLabel: Record<string, string> = {
-                  cmr: 'CMR fuvarlevél', nalog: 'Megrendelés', pod: 'POD', other: 'Dokumentum',
-                };
-                const label = docTypeLabel[row.document_type] || 'Dokumentum';
+        // ━━ PARTNERS table ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'partners' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate('partners', 'partnersFull', 'kintlevo-nav', 'kintlevo-manual');
+          }
+        )
+
+        // ━━ Upload tables (for upload history) ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'transaction_uploads' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate('uploadHistory', 'transactions');
+            // Show notification + refresh transactions when processing completes
+            if (payload.eventType === 'UPDATE') {
+              const row = payload.new as any;
+              if (row.id && row.processing_status === 'completed') {
+                // Use a dedicated key to avoid conflicts with the transactions INSERT listener
+                const completionKey = `completion_${row.id}`;
+                if (!notifiedUploads.current.has(completionKey)) {
+                  notifiedUploads.current.add(completionKey);
+                  console.log('[RealtimeSync] 🔔 transaction_uploads status → completed:', row.id);
+                  // Fetch file name for the toast
+                  (supabase as any).from('transaction_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
+                    const fileName = data?.file_name || 'Ismeretlen fájl';
+                    toast({
+                      title: 'Tranzakciók feldolgozva!',
+                      description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
+                      variant: 'default',
+                      duration: 5000,
+                      icon: Banknote,
+                    });
+                  });
+                }
+                // Force immediate invalidation of transactions (no debounce)
+                queryClientRef.current.invalidateQueries({ queryKey: ['transactions'] });
+              }
+            }
+          }
+        )
+
+        // ━━ CATEGORIES table ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'categories' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate(
+              'categories', 'filteredNavInvoices', 'filteredSubmittedInvoices',
+              'navInvoices', 'submittedInvoices',
+            );
+          }
+        )
+
+        // ━━ PROJECTS table ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'projects' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate(
+              'projects', 'projectsList',
+              'filteredNavInvoices', 'filteredSubmittedInvoices',
+              'navInvoices', 'submittedInvoices',
+            );
+          }
+        )
+
+        // ━━ DUNNING_SENDS table ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'dunning_sends' },
+          (payload) => {
+            console.log('[RealtimeSync] dunning_sends', payload.eventType);
+            invalidate('dunning-sends', 'kintlevo-nav');
+          }
+        )
+
+        // ━━ NAV_INVOICE_ITEMS table ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'nav_invoice_items' },
+          (payload) => {
+            invalidate('invoiceItems', 'filteredNavInvoices', 'analyticsVat');
+            // GL queries have presetId (not companyId) in position 2, so invalidate directly
+            queryClientRef.current.invalidateQueries({ queryKey: ['glBalances'] });
+            queryClientRef.current.invalidateQueries({ queryKey: ['glItems'] });
+          }
+        )
+
+        // ━━ INVOICE_ITEMS table (submitted/manual invoices) ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'invoice_items' },
+          (payload) => {
+            invalidate('invoiceItems', 'filteredSubmittedInvoices', 'analyticsVat');
+            queryClientRef.current.invalidateQueries({ queryKey: ['glBalances'] });
+            queryClientRef.current.invalidateQueries({ queryKey: ['glItems'] });
+          }
+        )
+
+
+        // ━━ NAV_SYNC_LOGS table ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'nav_sync_logs' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate('syncLogs', 'navInvoices', 'filteredNavInvoices');
+          }
+        )
+
+        // ━━ REPORT_UPLOADS table ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'report_uploads' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate('uploadHistory', 'courier-reports');
+            if (payload.eventType === 'UPDATE') {
+              const row = payload.new as any;
+              const doneStatuses = ['completed', 'processed'];
+              if (row.id && doneStatuses.includes(row.processing_status)) {
+                const completionKey = `report_${row.id}`;
+                if (!notifiedUploads.current.has(completionKey)) {
+                  // Verify this is a genuine new completion by checking created_at
+                  // If the report was completed more than 30s ago, it's a stale replay — skip
+                  const createdAt = row.updated_at || row.created_at;
+                  const ageMs = createdAt ? Date.now() - new Date(createdAt).getTime() : Infinity;
+                  if (ageMs > 30_000) {
+                    notifiedUploads.current.add(completionKey); // Suppress future replays
+                    return;
+                  }
+                  notifiedUploads.current.add(completionKey);
+                  console.log('[RealtimeSync] 🔔 report_uploads status → completed:', row.id);
+                  (supabase as any).from('report_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
+                    const fileName = data?.file_name || 'Ismeretlen fájl';
+                    toast({
+                      title: 'Riport feldolgozva!',
+                      description: `A következő riport sikeresen fel lett dolgozva: ${fileName}`,
+                      variant: 'default',
+                      duration: 5000,
+                      icon: ClipboardCheck,
+                    });
+                  });
+                }
+              }
+            }
+          }
+        )
+
+        // ━━ COURIER_REPORTS table ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'courier_reports' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate('courier-reports', 'uploadHistory');
+            // No per-row toast — the report_uploads completion toast is sufficient
+          }
+        )
+
+        // ━━ SHIPMENTS table (HRTSPED — fuvar-számla párosítás) ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'shipments' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate('shipments-matching', 'shipment-import-batches');
+          }
+        )
+
+        // ━━ SHIPMENT_MATCHES table (HRTSPED — párosítás eredmény) ━━
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'shipment_matches' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate('shipments-matching');
+          }
+        )
+
+        // ━━ TRANSPORT_DOCUMENTS table (HRTSPED — CMR, nalog, POD) ━━
+        // Note: We toast on INSERT here (not on invoice_uploads status) because
+        // retroactive rematch / filename-similarity never updates invoice_uploads.processing_status.
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'transport_documents' },
+          (payload) => {
+            if (!isMyCompany(payload)) return;
+            invalidate('shipments-matching', 'uploadHistory');
+
+            if (payload.eventType === 'INSERT') {
+              const row = payload.new as any;
+              // Only toast for matched/orphaned docs (not unclassified noise)
+              if (!row.id || !row.file_name) return;
+
+              const toastKey = `transport_doc_${row.id}`;
+              if (notifiedUploads.current.has(toastKey)) return;
+              notifiedUploads.current.add(toastKey);
+
+              const docTypeLabel: Record<string, string> = {
+                cmr: 'CMR fuvarlevél',
+                nalog: 'Megrendelés',
+                pod: 'POD',
+                other: 'Dokumentum',
+              };
+              const label = docTypeLabel[row.document_type] || 'Dokumentum';
+              const fileName = row.file_name;
+
+              if (row.status === 'matched') {
                 toast({
-                  title: `${label} utólag párosítva!`,
-                  description: `${row.file_name} párosítva lett egy fuvarhoz.`,
+                  title: `${label} párosítva!`,
+                  description: `${fileName} sikeresen párosítva lett egy fuvarhoz.`,
                   variant: 'default',
                   duration: 5000,
                   icon: Truck,
                 });
+              } else if (row.status === 'escalated') {
+                toast({
+                  title: `${label} eszkalálva`,
+                  description: `${fileName} nem párosítható automatikusan — kézi ellenőrzés szükséges.`,
+                  variant: 'destructive',
+                  duration: 8000,
+                  icon: AlertTriangle,
+                });
+              } else if (row.status === 'orphaned') {
+                // Transport doc arrived before the invoice — toast that it's registered
+                toast({
+                  title: `${label} feldolgozva`,
+                  description: `${fileName} rögzítve — vár a megfelelő számlára.`,
+                  variant: 'default',
+                  duration: 5000,
+                  icon: FileText,
+                });
+              }
+            }
+
+            // UPDATE: orphaned → matched (retroactive rematch found the invoice)
+            if (payload.eventType === 'UPDATE') {
+              const row = payload.new as any;
+              const oldRow = payload.old as any;
+              if (row.id && row.status === 'matched' && oldRow?.status !== 'matched') {
+                const toastKey = `transport_doc_rematch_${row.id}`;
+                if (!notifiedUploads.current.has(toastKey)) {
+                  notifiedUploads.current.add(toastKey);
+                  const docTypeLabel: Record<string, string> = {
+                    cmr: 'CMR fuvarlevél', nalog: 'Megrendelés', pod: 'POD', other: 'Dokumentum',
+                  };
+                  const label = docTypeLabel[row.document_type] || 'Dokumentum';
+                  toast({
+                    title: `${label} utólag párosítva!`,
+                    description: `${row.file_name} párosítva lett egy fuvarhoz.`,
+                    variant: 'default',
+                    duration: 5000,
+                    icon: Truck,
+                  });
+                }
               }
             }
           }
-        }
-      )
+        )
 
-      .subscribe((status, err) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('[RealtimeSync] ✅ Connected');
-        } else if (status === 'CLOSED') {
-          // Expected on company switch / unmount — log at debug level only
-          console.debug('[RealtimeSync] Channel closed');
+        .subscribe((status, err) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('[RealtimeSync] ✅ Connected');
+          } else if (status === 'CLOSED') {
+            // Expected on company switch / unmount — log at debug level only
+            console.debug('[RealtimeSync] Channel closed');
+          } else {
+            console.warn('[RealtimeSync] Channel:', status, err || '');
+          }
+        });
+
+      channelRef.current = channel;
+
+      // Reconnect on tab visibility change + conditional cache invalidation
+      const hiddenAtRef_local = { current: null as number | null };
+
+      const handleVisibility = () => {
+        if (document.visibilityState === 'hidden') {
+          hiddenAtRef_local.current = Date.now();
+          return;
+        }
+
+        // visible — user came back
+        if (!channelRef.current) return;
+
+        const awayMs = hiddenAtRef_local.current ? Date.now() - hiddenAtRef_local.current : 0;
+        hiddenAtRef_local.current = null;
+        const channelState = channelRef.current.state;
+
+        // 1. Reconnect if channel disconnected (unchanged behavior)
+        if (channelState !== 'joined' && channelState !== 'joining') {
+          console.log('[RealtimeSync] Reconnecting on tab focus...');
+          channelRef.current.subscribe();
+        }
+
+        // 2. Decide on invalidation:
+        //    - Channel was disconnected → always invalidate (may have missed events)
+        //    - Channel joined BUT away > 2 minutes → invalidate (browser may
+        //      have throttled/dropped WS frames)
+        //    - Channel joined AND away ≤ 2 minutes → skip (Realtime kept up)
+        const STALE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
+        const wasDisconnected = channelState !== 'joined' && channelState !== 'joining';
+
+        if (wasDisconnected || awayMs > STALE_THRESHOLD_MS) {
+          console.log(
+            `[RealtimeSync] Tab refocus invalidation: away=${Math.round(awayMs / 1000)}s, ` +
+            `channel=${channelState}, invalidating caches`
+          );
+          invalidate(
+            'salaries', 'salary_files', 'submittedInvoices', 'linkedInvoices',
+            'navInvoices', 'filteredNavInvoices', 'filteredSubmittedInvoices',
+            'transactions', 'dashboardData', 'dashboardAnalytics',
+            'kintlevo-nav', 'kintlevo-manual', 'uploadHistory',
+            'analyticsRaw', 'analyticsVat', 'recentInvoices',
+            'partners', 'partnersFull', 'projects', 'projectsList',
+            'pettyCashEntries', 'dashboardPettyCash',
+            'categories', 'dunning-sends', 'syncLogs',
+            'invoiceItems', 'shipments-matching',
+          );
+          // Also recover any Realtime notifications missed during the away period
+          catchUpToastsRef.current?.();
         } else {
-          console.warn('[RealtimeSync] Channel:', status, err || '');
+          console.debug(
+            `[RealtimeSync] Tab refocus skipped: away=${Math.round(awayMs / 1000)}s, ` +
+            `channel=${channelState} — Realtime kept up`
+          );
         }
-      });
+      };
+      document.addEventListener('visibilitychange', handleVisibility);
 
-    channelRef.current = channel;
-
-    // Reconnect on tab visibility change + conditional cache invalidation
-    const hiddenAtRef_local = { current: null as number | null };
-
-    const handleVisibility = () => {
-      if (document.visibilityState === 'hidden') {
-        hiddenAtRef_local.current = Date.now();
-        return;
-      }
-
-      // visible — user came back
-      if (!channelRef.current) return;
-
-      const awayMs = hiddenAtRef_local.current ? Date.now() - hiddenAtRef_local.current : 0;
-      hiddenAtRef_local.current = null;
-      const channelState = channelRef.current.state;
-
-      // 1. Reconnect if channel disconnected (unchanged behavior)
-      if (channelState !== 'joined' && channelState !== 'joining') {
-        console.log('[RealtimeSync] Reconnecting on tab focus...');
-        channelRef.current.subscribe();
-      }
-
-      // 2. Decide on invalidation:
-      //    - Channel was disconnected → always invalidate (may have missed events)
-      //    - Channel joined BUT away > 2 minutes → invalidate (browser may
-      //      have throttled/dropped WS frames)
-      //    - Channel joined AND away ≤ 2 minutes → skip (Realtime kept up)
-      const STALE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
-      const wasDisconnected = channelState !== 'joined' && channelState !== 'joining';
-
-      if (wasDisconnected || awayMs > STALE_THRESHOLD_MS) {
-        console.log(
-          `[RealtimeSync] Tab refocus invalidation: away=${Math.round(awayMs / 1000)}s, ` +
-          `channel=${channelState}, invalidating caches`
-        );
-        invalidate(
-          'salaries', 'salary_files', 'submittedInvoices', 'linkedInvoices',
-          'navInvoices', 'filteredNavInvoices', 'filteredSubmittedInvoices',
-          'transactions', 'dashboardData', 'dashboardAnalytics',
-          'kintlevo-nav', 'kintlevo-manual', 'uploadHistory',
-          'analyticsRaw', 'analyticsVat', 'recentInvoices',
-          'partners', 'partnersFull', 'projects', 'projectsList',
-          'pettyCashEntries', 'dashboardPettyCash',
-          'categories', 'dunning-sends', 'syncLogs',
-          'invoiceItems', 'shipments-matching',
-        );
-        // Also recover any Realtime notifications missed during the away period
-        catchUpToastsRef.current?.();
-      } else {
-        console.debug(
-          `[RealtimeSync] Tab refocus skipped: away=${Math.round(awayMs / 1000)}s, ` +
-          `channel=${channelState} — Realtime kept up`
-        );
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-
-    // Store the visibility handler ref for cleanup
-    visibilityHandlerRef.current = handleVisibility;
+      // Store the visibility handler ref for cleanup
+      visibilityHandlerRef.current = handleVisibility;
     }; // end initChannel
 
     initChannel();
@@ -712,38 +714,82 @@ export function LiveNotificationProvider() {
     };
   }, [companyId, showNotification, invalidate, isMyCompany]);
 
-  // ── SESSION-SCOPED POLLING ──
-  // Polls every 5 s, but ONLY while _pendingSessionUploads has entries.
-  // Entries are added by registerPendingUpload() at upload time and
-  // removed here once a terminal status is detected.
-  // DB load: (active_uploading_sessions × 1) / 5s — negligible at scale.
+  // ── AUTO-CATCH-UP & BACKFILL POLLING ──
+  // Polls the latest 5 invoice_uploads and transaction_uploads for the active company every 5s.
+  // This acts as a 100% reliable fallback for Supabase Realtime when events are filtered out by RLS.
   useEffect(() => {
     if (!companyId) return;
 
+    const lastSeen = new Map<string, string>();
     const TERMINAL = new Set(['processed', 'completed', 'cmr_attached', 'cmr_orphaned', 'cmr_escalated', 'ignored', 'error', 'failed', 'webhook_failed']);
 
     const poll = async () => {
-      if (_pendingSessionUploads.size === 0) return;
-      const ids = Array.from(_pendingSessionUploads);
       try {
-        const { data } = await (supabase as any)
+        // 1. Poll invoice_uploads
+        const { data: invoiceData } = await (supabase as any)
           .from('invoice_uploads')
-          .select('id, file_name, processing_status')
-          .in('id', ids);
+          .select('id, file_name, processing_status, created_at')
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: false })
+          .limit(5);
 
-        for (const row of (data || []) as { id: string; file_name: string; processing_status: string }[]) {
-          if (!TERMINAL.has(row.processing_status)) continue;
-          _pendingSessionUploads.delete(row.id);
-          const key = `session_${row.processing_status}_${row.id}`;
-          if (notifiedUploads.current.has(key)) continue;
-          notifiedUploads.current.add(key);
-          console.log('[SessionPoll] 🔔 Terminal status detected:', row.processing_status, row.file_name);
-          notifyUploadStatus(row);
+        for (const row of (invoiceData || []) as any[]) {
+          const prevStatus = lastSeen.get(row.id);
+          const isNewAndTerminal = prevStatus === undefined &&
+            TERMINAL.has(row.processing_status) &&
+            (Date.now() - new Date(row.created_at).getTime() < 30000);
+
+          if ((prevStatus !== undefined && prevStatus !== row.processing_status) || isNewAndTerminal) {
+            if (TERMINAL.has(row.processing_status)) {
+              console.log('[PollFallback] 🔔 Invoice upload status changed:', row.id, row.processing_status);
+              notifyUploadStatus(row);
+            }
+          }
+          lastSeen.set(row.id, row.processing_status);
+        }
+
+        // 2. Poll transaction_uploads
+        const { data: txData } = await (supabase as any)
+          .from('transaction_uploads')
+          .select('id, file_name, processing_status, created_at')
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        for (const row of (txData || []) as any[]) {
+          const prevStatus = lastSeen.get(row.id);
+          const isNewAndTerminal = prevStatus === undefined &&
+            row.processing_status === 'completed' &&
+            (Date.now() - new Date(row.created_at).getTime() < 30000);
+
+          if ((prevStatus !== undefined && prevStatus !== row.processing_status) || isNewAndTerminal) {
+            if (row.processing_status === 'completed') {
+              console.log('[PollFallback] 🔔 Transaction upload completed:', row.id);
+              toast({
+                title: 'Tranzakciók feldolgozva!',
+                description: `A következő fájl sikeresen fel lett dolgozva: ${row.file_name || 'Ismeretlen fájl'}`,
+                variant: 'default',
+                duration: 5000,
+                icon: Banknote,
+              });
+              // Invalidate transactions related queries
+              queryClientRef.current.invalidateQueries({ queryKey: ['transactions', companyId] });
+              queryClientRef.current.invalidateQueries({ queryKey: ['tx-kpis', companyId] });
+              queryClientRef.current.invalidateQueries({ queryKey: ['detected-banks', companyId] });
+              queryClientRef.current.invalidateQueries({ queryKey: ['upload-bank-map', companyId] });
+              queryClientRef.current.invalidateQueries({ queryKey: ['bank-upload-ids', companyId] });
+              queryClientRef.current.invalidateQueries({ queryKey: ['bank-transactions', companyId] });
+            }
+          }
+          lastSeen.set(row.id, row.processing_status);
         }
       } catch (err) {
-        // Silent — Realtime is the primary channel, polling is just a safety net
+        // Silent fallback
       }
     };
+
+    // Run once immediately on mount/company change
+    poll();
 
     const interval = setInterval(poll, 5000);
     return () => clearInterval(interval);

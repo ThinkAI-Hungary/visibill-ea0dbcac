@@ -217,8 +217,10 @@ export function useTransactionData() {
       toast({ title: 'Tranzakciók frissítve!' });
     } catch (error: any) {
       reportError({ type: 'db_query', component: 'useTransactionData', action: 'error', message: 'Sync error:', error: error });
-      toast({ title: 'Frissítés sikertelen', description: error.message || 'Hiba történt a frissítés során'
-      , variant: 'destructive' });
+      toast({
+        title: 'Frissítés sikertelen', description: error.message || 'Hiba történt a frissítés során'
+        , variant: 'destructive'
+      });
     } finally {
       setSyncing(false);
     }
@@ -231,10 +233,10 @@ export function useTransactionData() {
       const matchStatus = computeMatchStatus(transaction);
       const statusText = matchStatus === 'matched' ? 'Párosított'
         : matchStatus === 'suggested' ? 'Javasolt'
-        : matchStatus === 'auto_settled' ? 'Rendezett'
-        : matchStatus === 'no_invoice' ? 'Nincs hozzá számla'
-        : matchStatus === 'invoice_missing' ? 'Számla nincs feltöltve'
-        : 'Párosítatlan';
+          : matchStatus === 'auto_settled' ? 'Rendezett'
+            : matchStatus === 'no_invoice' ? 'Nincs hozzá számla'
+              : matchStatus === 'invoice_missing' ? 'Számla nincs feltöltve'
+                : 'Párosítatlan';
       return [
         transaction.transaction_date || '',
         transaction.description || '',

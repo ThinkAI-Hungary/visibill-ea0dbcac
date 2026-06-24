@@ -229,7 +229,7 @@ serve(async (req) => {
         return false;
       }
 
-      // Engedélyezett fájltípusok: dokumentumok + képek (lefotózott számlákhoz)
+      // Engedélyezett fájltípusok: dokumentumok + képek (lefotózott számlákhoz) + tranzakciós listák
       const allowedTypes = [
         'application/pdf',
         'image/jpeg',
@@ -237,9 +237,10 @@ serve(async (req) => {
         'image/png',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
         'application/vnd.ms-excel', // xls
+        'text/csv',
       ];
       
-      const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.xlsx', '.xls'];
+      const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.xlsx', '.xls', '.csv'];
       
       const hasAllowedType = allowedTypes.includes(fileType);
       const hasAllowedExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
@@ -252,6 +253,86 @@ serve(async (req) => {
       return true;
     };
 
+    // ── Classify attachment as invoice or transaction ──
+    // Rules (in priority order):
+    //   1. .xlsx/.xls/.csv → always 'transaction'
+    //   2. PDF filename keywords (tranzakci, bankszámlakivonat, kivonat, forgalmi, etc.) → 'transaction'
+    //   3. PDF filename with IBAN pattern (HU + 24-26 digits) → 'transaction'
+    //   4. PDF filename with OTP numeric pattern (__NNN-YYYY) → 'transaction'
+    //   5. Email subject keywords (only for PDFs not matched above) → 'transaction'
+    //   6. Default → 'invoice'
+    const TRANSACTION_FILENAME_KEYWORDS = [
+      'tranzakci', 'bankszámlakivonat', 'számlakivonat', 'kivonat',
+      'forgalmi', 'statement', 'account_statement', 'bank_statement',
+    ];
+    const TRANSACTION_SUBJECT_KEYWORDS = [
+      'tranzakció', 'tranzakciós', 'kivonat', 'számlakivonat',
+      'forgalmi', 'bank statement', 'account statement',
+    ];
+
+    const classifyAttachment = (attachmentName: string, emailSubject: string | null): 'invoice' | 'transaction' => {
+      const fn = attachmentName.toLowerCase();
+      const ext = fn.substring(fn.lastIndexOf('.'));
+
+      // 1. Extension-based (100% certain)
+      if (['.xlsx', '.xls', '.csv', '.mt940', '.sta'].includes(ext)) {
+        return 'transaction';
+      }
+
+      // Only apply heuristics to PDFs
+      if (ext !== '.pdf') return 'invoice';
+
+      // 2. Filename keywords (normalized — remove diacritics for matching)
+      const fnNorm = fn.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (TRANSACTION_FILENAME_KEYWORDS.some(kw => {
+        const kwNorm = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return fnNorm.includes(kwNorm);
+      })) {
+        return 'transaction';
+      }
+
+      // 3. IBAN pattern in filename (HU + 24-26 digits)
+      if (/hu\d{24,26}/i.test(fn.replace(/[^a-z0-9]/gi, ''))) {
+        return 'transaction';
+      }
+
+      // 4. OTP numeric pattern: long digits + __NNN-YYYY
+      if (/^\d{10,}.*__\d{3}-\d{4}/.test(fn)) {
+        return 'transaction';
+      }
+
+      // 5. Email subject keywords (fallback for PDFs)
+      if (emailSubject) {
+        const subj = emailSubject.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (TRANSACTION_SUBJECT_KEYWORDS.some(kw => {
+          const kwNorm = kw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          return subj.includes(kwNorm);
+        })) {
+          return 'transaction';
+        }
+      }
+
+      // 6. Default
+      return 'invoice';
+    };
+
+    // ── Detect bank hint from filename ──
+    const detectBankHint = (attachmentName: string): string | null => {
+      const fn = attachmentName.toLowerCase();
+      if (fn.includes('otp')) return 'otp';
+      if (fn.includes('cib')) return 'cib';
+      if (fn.includes('k&h') || fn.includes('kh_') || fn.includes('k_h')) return 'kh';
+      if (fn.includes('raiffeisen')) return 'raiffeisen';
+      if (fn.includes('erste')) return 'erste';
+      if (fn.includes('mkb')) return 'mkb';
+      if (fn.includes('unicredit')) return 'unicredit';
+      if (fn.includes('gránit') || fn.includes('granit')) return 'granit';
+      if (fn.includes('budapest bank') || fn.includes('bb_')) return 'budapest_bank';
+      // OTP-specific pattern: long numeric filename with __NNN-YYYY
+      if (/^\d{10,}.*__\d{3}-\d{4}/.test(fn)) return 'otp';
+      return null;
+    };
+
     // Process attachments (only available with multipart/form-data)
     if (attachments.length > 0) {
       console.log('Processing', attachments.length, 'attachments');
@@ -262,13 +343,18 @@ serve(async (req) => {
           continue;
         }
         
-        console.log(`Processing valid attachment: ${attachment.name}, type: ${attachment.type}, size: ${attachment.size}`);
-        
+        const classification = classifyAttachment(attachment.name, subject);
+        const bankHint = classification === 'transaction' ? detectBankHint(attachment.name) : null;
+        console.log(`Processing attachment: ${attachment.name} → ${classification}${bankHint ? ` (bank: ${bankHint})` : ''}`);
+
+        // Choose storage bucket based on classification
+        const storageBucket = classification === 'transaction' ? 'transactions' : 'invoice-uploads';
+        const storagePath = `${alias.user_id}/${Date.now()}-${attachment.name}`;
+
         // Upload to Supabase storage
-        const fileName = `${alias.user_id}/${Date.now()}-${attachment.name}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('invoice-uploads')
-          .upload(fileName, attachment, {
+          .from(storageBucket)
+          .upload(storagePath, attachment, {
             contentType: attachment.type,
             upsert: false,
           });
@@ -283,57 +369,97 @@ serve(async (req) => {
             message: `File upload failed: ${attachment.name}`,
             user_id: alias.user_id,
             company_id: alias.company_id,
-            context: { fileName: attachment.name, fileType: attachment.type, fileSize: attachment.size, uploadError: uploadError.message },
+            context: { fileName: attachment.name, fileType: attachment.type, fileSize: attachment.size, uploadError: uploadError.message, classification },
           });
           continue;
         }
 
-        console.log('File uploaded successfully:', fileName);
+        console.log(`File uploaded to ${storageBucket}:`, storagePath);
 
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
-          .from('invoice-uploads')
-          .getPublicUrl(fileName);
+          .from(storageBucket)
+          .getPublicUrl(storagePath);
 
-        // Create invoice upload record
-        const { data: uploadRecord, error: recordError } = await supabase
-          .from('invoice_uploads')
-          .insert({
-            user_id: alias.user_id,
-            company_id: alias.company_id,
-            file_name: attachment.name,
-            file_type: attachment.type,
-            file_size: attachment.size,
-            file_url: publicUrl,
-            upload_status: 'uploaded',
-            processing_status: 'pending',
-            metadata: {
-              source: 'email_alias',
-              company_name: alias.company_name,
-              sender,
-              subject,
-              received_at: new Date().toISOString(),
-            },
-          })
-          .select()
-          .single();
+        const emailMetadata = {
+          source: 'email_alias',
+          company_name: alias.company_name,
+          sender,
+          subject,
+          received_at: new Date().toISOString(),
+        };
 
-        if (recordError) {
-          console.error('Error creating invoice upload record:', recordError);
-          await logError(supabase, {
-            error_type: 'db_query',
-            component: 'process-mailgun-webhook',
-            action: 'create_upload_record',
-            message: `Failed to create invoice upload record for: ${attachment.name}`,
-            user_id: alias.user_id,
-            company_id: alias.company_id,
-            context: { fileName: attachment.name, recordError: recordError.message },
-          });
+        if (classification === 'transaction') {
+          // ── Transaction upload ──
+          const { data: txRecord, error: txError } = await supabase
+            .from('transaction_uploads')
+            .insert({
+              user_id: alias.user_id,
+              company_id: alias.company_id,
+              file_name: attachment.name,
+              file_type: attachment.type,
+              file_size: attachment.size,
+              file_url: publicUrl,
+              upload_status: 'uploaded',
+              processing_status: 'pending',
+              ...(bankHint ? { bank_hint: bankHint } : {}),
+              metadata: emailMetadata,
+            })
+            .select()
+            .single();
+
+          if (txError) {
+            console.error('Error creating transaction upload record:', txError);
+            await logError(supabase, {
+              error_type: 'db_query',
+              component: 'process-mailgun-webhook',
+              action: 'create_transaction_upload_record',
+              message: `Failed to create transaction upload record for: ${attachment.name}`,
+              user_id: alias.user_id,
+              company_id: alias.company_id,
+              context: { fileName: attachment.name, recordError: txError.message, bankHint },
+            });
+          } else {
+            console.log('Transaction upload record created:', txRecord.id, bankHint ? `(bank: ${bankHint})` : '');
+            // Processing is handled automatically by the DB trigger (trg_enqueue_transaction)
+            // which enqueues the job to the PGMQ transaction_jobs queue on INSERT.
+            console.log('Transaction job enqueued via DB trigger for PGMQ worker processing.');
+          }
         } else {
-          console.log('Invoice upload record created:', uploadRecord.id);
-          // Processing is handled automatically by the DB trigger (trg_enqueue_invoice)
-          // which enqueues the job to the PGMQ invoice_jobs queue on INSERT.
-          console.log('Job enqueued via DB trigger for PGMQ worker processing.');
+          // ── Invoice upload (original behavior) ──
+          const { data: uploadRecord, error: recordError } = await supabase
+            .from('invoice_uploads')
+            .insert({
+              user_id: alias.user_id,
+              company_id: alias.company_id,
+              file_name: attachment.name,
+              file_type: attachment.type,
+              file_size: attachment.size,
+              file_url: publicUrl,
+              upload_status: 'uploaded',
+              processing_status: 'pending',
+              metadata: emailMetadata,
+            })
+            .select()
+            .single();
+
+          if (recordError) {
+            console.error('Error creating invoice upload record:', recordError);
+            await logError(supabase, {
+              error_type: 'db_query',
+              component: 'process-mailgun-webhook',
+              action: 'create_upload_record',
+              message: `Failed to create invoice upload record for: ${attachment.name}`,
+              user_id: alias.user_id,
+              company_id: alias.company_id,
+              context: { fileName: attachment.name, recordError: recordError.message },
+            });
+          } else {
+            console.log('Invoice upload record created:', uploadRecord.id);
+            // Processing is handled automatically by the DB trigger (trg_enqueue_invoice)
+            // which enqueues the job to the PGMQ invoice_jobs queue on INSERT.
+            console.log('Job enqueued via DB trigger for PGMQ worker processing.');
+          }
         }
       }
     } else {

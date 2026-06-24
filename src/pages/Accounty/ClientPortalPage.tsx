@@ -417,7 +417,7 @@ export default function ClientPortalPage() {
     const totalStagedCount = Object.values(stagedFiles).reduce((sum, f) => sum + f.length, 0);
 
     return (
-      <div className="min-h-screen bg-background">
+      <div className="h-screen overflow-y-auto w-full bg-background">
         {/* Top header bar */}
         <div className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
           <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
