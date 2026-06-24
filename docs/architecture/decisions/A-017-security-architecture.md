@@ -9,7 +9,7 @@ A rendszer pénzügyi adatokat kezel (számlák, banki tranzakciók, NAV credent
 
 ## Decision
 
-**6 rétegű biztonsági modell:**
+**8 rétegű biztonsági modell:**
 
 ---
 
@@ -71,7 +71,12 @@ auth.users (1) ──→ company_members (N) ──→ companies (N)
 | `owner` | Teljes hozzáférés, cég törlés, tagok kezelése |
 | `admin` | Teljes hozzáférés, tagok kezelése |
 | `member` | Olvasás + írás, nincs tag kezelés |
-| `viewer` | Csak olvasás |
+| `assistant` | Számlák, tranzakciók, kintlévőségek, projektek R/W |
+| `viewer` | Csak olvasás — pénzügyi modulok |
+| `employee` | Csak Munkaidő modul (token-based, nincs email regisztráció) |
+| `management` / `thinkai` | Cross-tenant vezetői dashboard (`/management`) |
+
+> Lásd részletesen: [A-009: Auth és RBAC](./A-009-auth-rbac.md)
 
 **Frontend ellenőrzés:**
 ```typescript
@@ -229,7 +234,7 @@ query-nav-invoices EF ← decrypt ← nav_credentials tábla
 ## Consequences
 
 **Pozitív:**
-- 6 réteg → defense in depth
+- 8 réteg → defense in depth
 - RLS → adatszivárgás kockázat minimális, DB-szintű védelemmel
 - AES-256-GCM → credentials biztonságos tárolás
 - Audit trail → visszakereshető minden módosítás

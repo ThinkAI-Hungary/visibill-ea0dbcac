@@ -6,7 +6,7 @@
 
 ## Context
 
-A rendszernek támogatnia kell: regisztrációt, bejelentkezést, session kezelést, és 4 különböző felhasználói szerepet.
+A rendszernek támogatnia kell: regisztrációt, bejelentkezést, session kezelést, és 7 féle felhasználói szerepet.
 
 ## Decision
 
