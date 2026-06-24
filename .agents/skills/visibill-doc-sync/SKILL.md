@@ -171,6 +171,54 @@ Változás érkezett
 - Meglévő pattern változott (pl. badge variant, modal méret szabály)
 - Új pattern-t vezettünk be amit mások is fognak használni
 
+### ⭐ ADR minőségi szűrő — Mikor VALÓBAN kell ADR?
+
+> Inspiráció: `grill-with-docs` skill ADR-sparing elve.
+
+**ADR-t CSAK akkor írj, ha mindhárom feltétel teljesül:**
+
+| # | Feltétel | Kérdés amit feltesz magadnak |
+|---|---|---|
+| 1 | **Hard to reverse** | Ha valaki holnap visszafordítja ezt a döntést, fájdalmas lesz? |
+| 2 | **Surprising without context** | Egy jövőbeli AI agent / fejlesztő megkérdezné: "miért csinálták így?" |
+| 3 | **Real trade-off** | Volt értelmes alternatíva és konkrét okból választottuk ezt |
+
+**Ha bármelyik HIÁNYZIK → NEM kell új ADR.** Elég a meglévő doc frissítése vagy egy kód komment.
+
+**Példák:**
+```
+✅ ADR kell:  "Miért skipeli a send-email a signup-ot?"
+              → Hard to reverse (email flow), Surprising (miért nem küld?), Real trade-off (2 email vs 1)
+
+✅ ADR kell:  "Miért kötelező kijelentkeztetni email change után?"
+              → Hard to reverse (security), Surprising (más appok nem teszik), Real trade-off (UX vs security)
+
+❌ ADR FELESLEGES: "A badge piros"
+              → NOT hard to reverse, NOT surprising, NOT real trade-off
+
+❌ ADR FELESLEGES: "Verziószám frissítés v22-re"
+              → Nem döntés, csak implementáció
+```
+
+### Kód konzisztencia cross-check (doc írás ELŐTT kötelező)
+
+> Inspiráció: `grill-with-docs` skill "Cross-reference with code" elve.
+
+**Mielőtt bármilyen doc-ot írsz — ellenőrizd:** a leírni kívánt viselkedés egyezik-e a tényleges kóddal?
+
+```
+1. Olvasd be az érintett fájl(ok) jelenlegi tartalmát
+2. Hasonlítsd a doc-ban leírni kívánt viselkedéssel
+3. Ha eltérés van → NE dokumentáld a "kívánt" verziót
+   → Szólj a usernek: "A kód X-et csinál, de te Y-t szeretnél dokumentálni — melyik a helyes?"
+```
+
+**Tipikus eltérési helyek:**
+- Edge Function verziószám a kódban vs doc-ban
+- Trigger chain lépéseinek sorrendje
+- sessionStorage kulcsnevei
+- RLS policy feltételek
+
 ### Aktuális számozás (mindig ellenőrizd az index.md-t!)
 
 ```

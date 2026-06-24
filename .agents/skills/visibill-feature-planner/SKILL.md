@@ -58,7 +58,44 @@ TERVEZÉS → DÖNTÉSEK → DEKOMP. → IMPLEMENTÁCIÓ → INTEGR. VERIFY → 
 graphify query "<feature kulcsszavak>"
 ```
 
-### 1.3 Meglévő döntések felderítése — 4 réteg
+### 1.2a Terminológia konzisztencia ellenőrzés
+
+> Inspiráció: `grill-with-docs` skill "Challenge against the glossary" elve.
+
+Ha a user olyan fogalmat használ, ami eltér a meglévő PRD/ADR terminológiájától → **azonnal flag-eld**:
+
+```
+"A PRD-ben 'partner'-nek hívjuk ezt a fogalmat, de te 'ügyfél'-t mondasz — melyiket értjük?"
+"Az A-009 ADR-ben 'company_members' a cégtagság táblája, de te 'team members'-t mondasz — ugyanaz?"
+```
+
+**Visibill fogalomkészlet — ismert ütközési pontok:**
+
+| Vague/ütköző | Pontos Visibill fogalom | Hol definiált |
+|---|---|---|
+| "számla" | invoice (bejövő) vs. outbound_invoice (kimenő) | P-010, P-012 |
+| "partner" / "ügyfél" | company (cég entitás) | A-003 |
+| "könyvelő" | accountant (eaisyBooks) vs. admin (eaisybill) | A-009 |
+| "belép" | login (auth) vs. join-company (céghez csatlakozás) | A-009 |
+| "email megerősítés" | verify-email (custom) vs. email_confirmed_at (Supabase natív) | A-021 |
+
+Ha fuzzy fogalmat találsz → **pontosítsd MIELŐTT a döntési mátrixba viszel bármit.**
+
+### 1.2b Kód konzisztencia cross-check
+
+> Inspiráció: `grill-with-docs` skill "Cross-reference with code" elve.
+
+Ha a user leírja hogyan kellene valaminek működnie → **ellenőrizd a kódban**, hogy a jelenlegi implementáció egyezik-e:
+
+```
+1. grep / view_file az érintett kód területen
+2. Ha a kód MÁST csinál mint amit a user mond → surface it:
+   "A kód jelenleg X-et csinál, de te Y-t szeretnél — melyik a helyes kiindulópont?"
+3. Ha spec ↔ kód eltérés van → döntsd el ELŐSZÖR, csak aztán tervezz
+```
+
+**Miért kritikus:** Fázis 2 döntési mátrixát a meglévő tényleges viselkedésre kell alapozni, nem a user fejében élő (esetleg téves) képre.
+
 Keresd végig mind a 4 döntési réteget (BRD, PRD, ADR, Worker docs).
 
 ### 1.4 KÖTELEZŐ: Design Pattern Kontextus Betöltése
