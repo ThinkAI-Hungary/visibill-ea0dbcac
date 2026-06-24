@@ -13,11 +13,20 @@ export function Toaster() {
 
   return (
     <ToastProvider swipeDirection="right">
-      {toasts.map(function ({ id, title, description, action, ...props }) {
+      {toasts.map(function ({ id, title, description, action, icon: Icon, ...props }) {
         return (
           <Toast key={id} {...props}>
             <div className="grid gap-1">
-              {title && <ToastTitle>{title}</ToastTitle>}
+              {title && (
+                <ToastTitle>
+                  {Icon ? (
+                    <span className="flex items-center gap-2">
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {title}
+                    </span>
+                  ) : title}
+                </ToastTitle>
+              )}
               {description && <ToastDescription>{description}</ToastDescription>}
             </div>
             {action}

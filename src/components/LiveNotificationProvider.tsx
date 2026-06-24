@@ -1,9 +1,10 @@
-import { useEffect, useRef, useCallback } from 'react';
+﻿import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { reportError } from '@/lib/errorReporter';
+import { Truck, AlertTriangle, FileText, CheckCircle, Bell, ClipboardCheck, Banknote } from 'lucide-react';
 
 /**
  * Module-level registry of upload IDs that this browser session is
@@ -24,7 +25,7 @@ export function registerPendingUpload(uploadId: string) {
  * 1. Shows toast notifications when new files are processed (INSERT debounced per upload ID)
  * 2. Silently invalidates TanStack Query caches on any INSERT/UPDATE/DELETE for auto-refresh
  * 3. Session-scoped catch-up polling: polls only known pending upload IDs (registered via
- *    registerPendingUpload) — stops automatically when all resolve.
+ *    registerPendingUpload) â€” stops automatically when all resolve.
  * 4. Tab-focus catch-up: when user returns after 2+ min, checks last 15 min of completions.
  *
  * NOTE: We do NOT use server-side filters because Supabase Realtime filters
@@ -53,7 +54,7 @@ export function LiveNotificationProvider() {
   }, []);
 
 
-  // ── Notification toast (only for first INSERT per upload) ──
+  // â”€â”€ Notification toast (only for first INSERT per upload) â”€â”€
   const showNotification = useCallback(async (
     uploadId: string,
     parentTable: 'salary_files' | 'invoice_uploads' | 'transaction_uploads',
@@ -61,11 +62,11 @@ export function LiveNotificationProvider() {
     if (notifiedUploads.current.has(uploadId)) return;
     notifiedUploads.current.add(uploadId);
 
-    console.log('[RealtimeSync] 🔔 New file processed:', parentTable, uploadId);
+    console.log('[RealtimeSync] đź”” New file processed:', parentTable, uploadId);
 
-    let fileName = 'Ismeretlen fájl';
+    let fileName = 'Ismeretlen fĂˇjl';
     try {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from(parentTable)
         .select('file_name')
         .eq('id', uploadId)
@@ -76,38 +77,39 @@ export function LiveNotificationProvider() {
     }
 
     toast({
-      title: 'Gratulálunk!',
-      description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
+      title: 'GratulĂˇlunk!',
+      description: `A kĂ¶vetkezĹ‘ fĂˇjl sikeresen fel lett dolgozva: ${fileName}`,
       variant: 'default',
       duration: 3000,
+      icon: Bell,
     });
   }, []);
 
-  // ── Upload status → toast + targeted cache invalidation helper ──
+  // â”€â”€ Upload status â†’ toast + targeted cache invalidation helper â”€â”€
   // Used by session polling and tab-focus catch-up.
   const notifyUploadStatus = useCallback((row: { id: string; file_name: string; processing_status: string }) => {
-    const fileName = row.file_name || 'Ismeretlen fájl';
+    const fileName = row.file_name || 'Ismeretlen fĂˇjl';
     const qc = queryClientRef.current;
     const cid = companyIdRef.current;
     if (!cid) return;
 
     if (row.processing_status === 'processed' || row.processing_status === 'completed') {
-      toast({ title: 'Számla feldolgozva! ✓', description: `${fileName} sikeresen feldolgozva.`, variant: 'default', duration: 5000 });
+      toast({ title: 'SzĂˇmla feldolgozva!', description: `${fileName} sikeresen feldolgozva.`, variant: 'default', duration: 5000, icon: CheckCircle });
       qc.invalidateQueries({ queryKey: ['submittedInvoices', cid] });
       qc.invalidateQueries({ queryKey: ['recentInvoices', cid] });
       qc.invalidateQueries({ queryKey: ['dashboardData', cid] });
     } else if (row.processing_status === 'cmr_attached') {
-      toast({ title: '🚚 Dokumentum párosítva!', description: `${fileName} sikeresen párosítva egy fuvarhoz.`, variant: 'default', duration: 5000 });
+      toast({ title: 'Dokumentum pĂˇrosĂ­tva!', description: `${fileName} sikeresen pĂˇrosĂ­tva egy fuvarhoz.`, variant: 'default', duration: 5000, icon: Truck });
       qc.invalidateQueries({ queryKey: ['shipments-matching', cid] });
     } else if (row.processing_status === 'cmr_orphaned') {
-      toast({ title: '📄 Dokumentum rögzítve', description: `${fileName} — vár a megfelelő számlára.`, variant: 'default', duration: 5000 });
+      toast({ title: 'Dokumentum rĂ¶gzĂ­tve', description: `${fileName} â€” vĂˇr a megfelelĹ‘ szĂˇmlĂˇra.`, variant: 'default', duration: 5000, icon: FileText });
     } else if (row.processing_status === 'cmr_escalated') {
-      toast({ title: '⚠️ Eszkaláció szükséges', description: `${fileName} — eltérés, kézi ellenőrzés szükséges.`, variant: 'destructive', duration: 8000 });
+      toast({ title: 'EszkalĂˇciĂł szĂĽksĂ©ges', description: `${fileName} â€” eltĂ©rĂ©s, kĂ©zi ellenĹ‘rzĂ©s szĂĽksĂ©ges.`, variant: 'destructive', duration: 8000, icon: AlertTriangle });
       qc.invalidateQueries({ queryKey: ['shipments-matching', cid] });
     }
   }, []);
 
-  // ── Debounced cache invalidation (500ms) with companyId scoping ──
+  // â”€â”€ Debounced cache invalidation (500ms) with companyId scoping â”€â”€
   const debounceTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const invalidate = useCallback((...keys: string[]) => {
@@ -152,7 +154,7 @@ export function LiveNotificationProvider() {
       const channel = supabase
         .channel(`realtime-sync-${companyId}`)
 
-      // ━━ SALARY table ━━
+      // â”â” SALARY table â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'salary' },
@@ -173,7 +175,7 @@ export function LiveNotificationProvider() {
         }
       )
 
-      // ━━ SALARY_FILES table ━━
+      // â”â” SALARY_FILES table â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'salary_files' },
@@ -185,14 +187,14 @@ export function LiveNotificationProvider() {
             const row = payload.new as any;
             const oldRow = payload.old as any;
             if (row.id && row.status === 'completed' && oldRow?.status !== 'completed') {
-              console.log('[RealtimeSync] 🔔 salary_files status → completed:', row.id);
+              console.log('[RealtimeSync] đź”” salary_files status â†’ completed:', row.id);
               showNotification(row.id, 'salary_files');
             }
           }
         }
       )
 
-      // ━━ INVOICES table ━━
+      // â”â” INVOICES table â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'invoices' },
@@ -217,7 +219,7 @@ export function LiveNotificationProvider() {
         }
       )
 
-      // ━━ INVOICE_UPLOADS table ━━
+      // â”â” INVOICE_UPLOADS table â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'invoice_uploads' },
@@ -231,41 +233,43 @@ export function LiveNotificationProvider() {
             // Invoice pipeline: 'completed' / 'processed'
             const doneStatuses = ['completed', 'processed'];
             if (row.id && doneStatuses.includes(row.processing_status) && !doneStatuses.includes(oldRow?.processing_status)) {
-              console.log('[RealtimeSync] 🔔 invoice_uploads status → done:', row.id);
+              console.log('[RealtimeSync] đź”” invoice_uploads status â†’ done:', row.id);
               showNotification(row.id, 'invoice_uploads');
             }
 
-            // Transport doc pipeline: 'cmr_attached' → dokumentum párosítva
+            // Transport doc pipeline: 'cmr_attached' â†’ dokumentum pĂˇrosĂ­tva
             if (row.id && row.processing_status === 'cmr_attached' && oldRow?.processing_status !== 'cmr_attached') {
-              console.log('[RealtimeSync] 🔔 invoice_uploads status → cmr_attached:', row.id);
+              console.log('[RealtimeSync] đź”” invoice_uploads status â†’ cmr_attached:', row.id);
               const attachedKey = `cmr_attached_${row.id}`;
               if (!notifiedUploads.current.has(attachedKey)) {
                 notifiedUploads.current.add(attachedKey);
-                supabase.from('invoice_uploads').select('file_name').eq('id', row.id).single().then(({ data }) => {
-                  const fileName = data?.file_name || 'Ismeretlen fájl';
+                (supabase as any).from('invoice_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
+                  const fileName = data?.file_name || 'Ismeretlen fĂˇjl';
                   toast({
-                    title: '🚚 Dokumentum párosítva!',
-                    description: `${fileName} sikeresen párosítva lett egy fuvarhoz.`,
+                    title: 'Dokumentum pĂˇrosĂ­tva!',
+                    description: `${fileName} sikeresen pĂˇrosĂ­tva lett egy fuvarhoz.`,
                     variant: 'default',
                     duration: 5000,
+                    icon: Truck,
                   });
                 });
               }
             }
 
-            // Transport doc pipeline: 'cmr_escalated' → emberi ellenőrzés kell
+            // Transport doc pipeline: 'cmr_escalated' â†’ emberi ellenĹ‘rzĂ©s kell
             if (row.id && row.processing_status === 'cmr_escalated' && oldRow?.processing_status !== 'cmr_escalated') {
-              console.log('[RealtimeSync] ⚠️ invoice_uploads status → cmr_escalated:', row.id);
+              console.log('[RealtimeSync] âš ď¸Ź invoice_uploads status â†’ cmr_escalated:', row.id);
               const escalatedKey = `cmr_escalated_${row.id}`;
               if (!notifiedUploads.current.has(escalatedKey)) {
                 notifiedUploads.current.add(escalatedKey);
-                supabase.from('invoice_uploads').select('file_name').eq('id', row.id).single().then(({ data }) => {
-                  const fileName = data?.file_name || 'Ismeretlen fájl';
+                (supabase as any).from('invoice_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
+                  const fileName = data?.file_name || 'Ismeretlen fĂˇjl';
                   toast({
-                    title: '⚠️ Dokumentum eszkalálva',
-                    description: `${fileName} nem párosítható automatikusan — kézi ellenőrzés szükséges.`,
+                    title: 'Dokumentum eszkalĂˇlva',
+                    description: `${fileName} nem pĂˇrosĂ­thatĂł automatikusan â€” kĂ©zi ellenĹ‘rzĂ©s szĂĽksĂ©ges.`,
                     variant: 'destructive',
                     duration: 8000,
+                    icon: AlertTriangle,
                   });
                 });
               }
@@ -274,7 +278,7 @@ export function LiveNotificationProvider() {
         }
       )
 
-      // ━━ NAV_INVOICES table ━━
+      // â”â” NAV_INVOICES table â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'nav_invoices' },
@@ -291,7 +295,7 @@ export function LiveNotificationProvider() {
         }
       )
 
-      // ━━ TRANSACTIONS table ━━
+      // â”â” TRANSACTIONS table â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'transactions' },
@@ -320,7 +324,7 @@ export function LiveNotificationProvider() {
         }
       )
 
-      // ━━ PARTNERS table ━━
+      // â”â” PARTNERS table â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'partners' },
@@ -330,7 +334,7 @@ export function LiveNotificationProvider() {
         }
       )
 
-      // ━━ Upload tables (for upload history) ━━
+      // â”â” Upload tables (for upload history) â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'transaction_uploads' },
@@ -345,15 +349,16 @@ export function LiveNotificationProvider() {
               const completionKey = `completion_${row.id}`;
               if (!notifiedUploads.current.has(completionKey)) {
                 notifiedUploads.current.add(completionKey);
-                console.log('[RealtimeSync] 🔔 transaction_uploads status → completed:', row.id);
+                console.log('[RealtimeSync] đź”” transaction_uploads status â†’ completed:', row.id);
                 // Fetch file name for the toast
-                supabase.from('transaction_uploads').select('file_name').eq('id', row.id).single().then(({ data }) => {
-                  const fileName = data?.file_name || 'Ismeretlen fájl';
+                (supabase as any).from('transaction_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
+                  const fileName = data?.file_name || 'Ismeretlen fĂˇjl';
                   toast({
-                    title: 'Tranzakciók feldolgozva!',
-                    description: `A következő fájl sikeresen fel lett dolgozva: ${fileName}`,
+                    title: 'TranzakciĂłk feldolgozva!',
+                    description: `A kĂ¶vetkezĹ‘ fĂˇjl sikeresen fel lett dolgozva: ${fileName}`,
                     variant: 'default',
                     duration: 5000,
+                    icon: Banknote,
                   });
                 });
               }
@@ -364,7 +369,7 @@ export function LiveNotificationProvider() {
         }
       )
 
-      // ━━ CATEGORIES table ━━
+      // â”â” CATEGORIES table â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'categories' },
@@ -377,7 +382,7 @@ export function LiveNotificationProvider() {
         }
       )
 
-      // ━━ PROJECTS table ━━
+      // â”â” PROJECTS table â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'projects' },
@@ -391,7 +396,7 @@ export function LiveNotificationProvider() {
         }
       )
 
-      // ━━ DUNNING_SENDS table ━━
+      // â”â” DUNNING_SENDS table â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'dunning_sends' },
@@ -401,7 +406,7 @@ export function LiveNotificationProvider() {
         }
       )
 
-      // ━━ NAV_INVOICE_ITEMS table ━━
+      // â”â” NAV_INVOICE_ITEMS table â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'nav_invoice_items' },
@@ -413,7 +418,7 @@ export function LiveNotificationProvider() {
         }
       )
 
-      // ━━ INVOICE_ITEMS table (submitted/manual invoices) ━━
+      // â”â” INVOICE_ITEMS table (submitted/manual invoices) â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'invoice_items' },
@@ -425,7 +430,7 @@ export function LiveNotificationProvider() {
       )
 
 
-      // ━━ NAV_SYNC_LOGS table ━━
+      // â”â” NAV_SYNC_LOGS table â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'nav_sync_logs' },
@@ -435,7 +440,7 @@ export function LiveNotificationProvider() {
         }
       )
 
-      // ━━ REPORT_UPLOADS table ━━
+      // â”â” REPORT_UPLOADS table â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'report_uploads' },
@@ -449,7 +454,7 @@ export function LiveNotificationProvider() {
               const completionKey = `report_${row.id}`;
               if (!notifiedUploads.current.has(completionKey)) {
                 // Verify this is a genuine new completion by checking created_at
-                // If the report was completed more than 30s ago, it's a stale replay — skip
+                // If the report was completed more than 30s ago, it's a stale replay â€” skip
                 const createdAt = row.updated_at || row.created_at;
                 const ageMs = createdAt ? Date.now() - new Date(createdAt).getTime() : Infinity;
                 if (ageMs > 30_000) {
@@ -457,14 +462,15 @@ export function LiveNotificationProvider() {
                   return;
                 }
                 notifiedUploads.current.add(completionKey);
-                console.log('[RealtimeSync] 🔔 report_uploads status → completed:', row.id);
-                supabase.from('report_uploads').select('file_name').eq('id', row.id).single().then(({ data }) => {
-                  const fileName = data?.file_name || 'Ismeretlen fájl';
+                console.log('[RealtimeSync] đź”” report_uploads status â†’ completed:', row.id);
+                (supabase as any).from('report_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
+                  const fileName = data?.file_name || 'Ismeretlen fĂˇjl';
                   toast({
                     title: 'Riport feldolgozva!',
-                    description: `A következő riport sikeresen fel lett dolgozva: ${fileName}`,
+                    description: `A kĂ¶vetkezĹ‘ riport sikeresen fel lett dolgozva: ${fileName}`,
                     variant: 'default',
                     duration: 5000,
+                    icon: ClipboardCheck,
                   });
                 });
               }
@@ -473,18 +479,18 @@ export function LiveNotificationProvider() {
         }
       )
 
-      // ━━ COURIER_REPORTS table ━━
+      // â”â” COURIER_REPORTS table â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'courier_reports' },
         (payload) => {
           if (!isMyCompany(payload)) return;
           invalidate('courier-reports', 'uploadHistory');
-          // No per-row toast — the report_uploads completion toast is sufficient
+          // No per-row toast â€” the report_uploads completion toast is sufficient
         }
       )
 
-      // ━━ SHIPMENTS table (HRTSPED — fuvar-számla párosítás) ━━
+      // â”â” SHIPMENTS table (HRTSPED â€” fuvar-szĂˇmla pĂˇrosĂ­tĂˇs) â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'shipments' },
@@ -494,7 +500,7 @@ export function LiveNotificationProvider() {
         }
       )
 
-      // ━━ SHIPMENT_MATCHES table (HRTSPED — párosítás eredmény) ━━
+      // â”â” SHIPMENT_MATCHES table (HRTSPED â€” pĂˇrosĂ­tĂˇs eredmĂ©ny) â”â”
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'shipment_matches' },
@@ -504,7 +510,7 @@ export function LiveNotificationProvider() {
         }
       )
 
-      // ━━ TRANSPORT_DOCUMENTS table (HRTSPED — CMR, nalog, POD) ━━
+      // â”â” TRANSPORT_DOCUMENTS table (HRTSPED â€” CMR, nalog, POD) â”â”
       // Note: We toast on INSERT here (not on invoice_uploads status) because
       // retroactive rematch / filename-similarity never updates invoice_uploads.processing_status.
       .on(
@@ -524,8 +530,8 @@ export function LiveNotificationProvider() {
             notifiedUploads.current.add(toastKey);
 
             const docTypeLabel: Record<string, string> = {
-              cmr: 'CMR fuvarlevél',
-              nalog: 'Megrendelés',
+              cmr: 'CMR fuvarlevĂ©l',
+              nalog: 'MegrendelĂ©s',
               pod: 'POD',
               other: 'Dokumentum',
             };
@@ -534,30 +540,33 @@ export function LiveNotificationProvider() {
 
             if (row.status === 'matched') {
               toast({
-                title: `🚚 ${label} párosítva!`,
-                description: `${fileName} sikeresen párosítva lett egy fuvarhoz.`,
+                title: `${label} pĂˇrosĂ­tva!`,
+                description: `${fileName} sikeresen pĂˇrosĂ­tva lett egy fuvarhoz.`,
                 variant: 'default',
                 duration: 5000,
+                icon: Truck,
               });
             } else if (row.status === 'escalated') {
               toast({
-                title: `⚠️ ${label} eszkalálva`,
-                description: `${fileName} nem párosítható automatikusan — kézi ellenőrzés szükséges.`,
+                title: `${label} eszkalĂˇlva`,
+                description: `${fileName} nem pĂˇrosĂ­thatĂł automatikusan â€” kĂ©zi ellenĹ‘rzĂ©s szĂĽksĂ©ges.`,
                 variant: 'destructive',
                 duration: 8000,
+                icon: AlertTriangle,
               });
             } else if (row.status === 'orphaned') {
-              // Transport doc arrived before the invoice — toast that it's registered
+              // Transport doc arrived before the invoice â€” toast that it's registered
               toast({
-                title: `📄 ${label} feldolgozva`,
-                description: `${fileName} rögzítve — vár a megfelelő számlára.`,
+                title: `${label} feldolgozva`,
+                description: `${fileName} rĂ¶gzĂ­tve â€” vĂˇr a megfelelĹ‘ szĂˇmlĂˇra.`,
                 variant: 'default',
                 duration: 5000,
+                icon: FileText,
               });
             }
           }
 
-          // UPDATE: orphaned → matched (retroactive rematch found the invoice)
+          // UPDATE: orphaned â†’ matched (retroactive rematch found the invoice)
           if (payload.eventType === 'UPDATE') {
             const row = payload.new as any;
             const oldRow = payload.old as any;
@@ -566,14 +575,15 @@ export function LiveNotificationProvider() {
               if (!notifiedUploads.current.has(toastKey)) {
                 notifiedUploads.current.add(toastKey);
                 const docTypeLabel: Record<string, string> = {
-                  cmr: 'CMR fuvarlevél', nalog: 'Megrendelés', pod: 'POD', other: 'Dokumentum',
+                  cmr: 'CMR fuvarlevĂ©l', nalog: 'MegrendelĂ©s', pod: 'POD', other: 'Dokumentum',
                 };
                 const label = docTypeLabel[row.document_type] || 'Dokumentum';
                 toast({
-                  title: `🚚 ${label} utólag párosítva!`,
-                  description: `${row.file_name} párosítva lett egy fuvarhoz.`,
+                  title: `${label} utĂłlag pĂˇrosĂ­tva!`,
+                  description: `${row.file_name} pĂˇrosĂ­tva lett egy fuvarhoz.`,
                   variant: 'default',
                   duration: 5000,
+                  icon: Truck,
                 });
               }
             }
@@ -583,9 +593,9 @@ export function LiveNotificationProvider() {
 
       .subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
-          console.log('[RealtimeSync] ✅ Connected');
+          console.log('[RealtimeSync] âś… Connected');
         } else if (status === 'CLOSED') {
-          // Expected on company switch / unmount — log at debug level only
+          // Expected on company switch / unmount â€” log at debug level only
           console.debug('[RealtimeSync] Channel closed');
         } else {
           console.warn('[RealtimeSync] Channel:', status, err || '');
@@ -603,7 +613,7 @@ export function LiveNotificationProvider() {
         return;
       }
 
-      // visible — user came back
+      // visible â€” user came back
       if (!channelRef.current) return;
 
       const awayMs = hiddenAtRef_local.current ? Date.now() - hiddenAtRef_local.current : 0;
@@ -617,10 +627,10 @@ export function LiveNotificationProvider() {
       }
 
       // 2. Decide on invalidation:
-      //    - Channel was disconnected → always invalidate (may have missed events)
-      //    - Channel joined BUT away > 2 minutes → invalidate (browser may
+      //    - Channel was disconnected â†’ always invalidate (may have missed events)
+      //    - Channel joined BUT away > 2 minutes â†’ invalidate (browser may
       //      have throttled/dropped WS frames)
-      //    - Channel joined AND away ≤ 2 minutes → skip (Realtime kept up)
+      //    - Channel joined AND away â‰¤ 2 minutes â†’ skip (Realtime kept up)
       const STALE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
       const wasDisconnected = channelState !== 'joined' && channelState !== 'joining';
 
@@ -645,7 +655,7 @@ export function LiveNotificationProvider() {
       } else {
         console.debug(
           `[RealtimeSync] Tab refocus skipped: away=${Math.round(awayMs / 1000)}s, ` +
-          `channel=${channelState} — Realtime kept up`
+          `channel=${channelState} â€” Realtime kept up`
         );
       }
     };
@@ -671,11 +681,11 @@ export function LiveNotificationProvider() {
     };
   }, [companyId, showNotification, invalidate, isMyCompany]);
 
-  // ── SESSION-SCOPED POLLING ──
+  // â”€â”€ SESSION-SCOPED POLLING â”€â”€
   // Polls every 5 s, but ONLY while _pendingSessionUploads has entries.
   // Entries are added by registerPendingUpload() at upload time and
   // removed here once a terminal status is detected.
-  // DB load: (active_uploading_sessions × 1) / 5s — negligible at scale.
+  // DB load: (active_uploading_sessions Ă— 1) / 5s â€” negligible at scale.
   useEffect(() => {
     if (!companyId) return;
 
@@ -696,11 +706,11 @@ export function LiveNotificationProvider() {
           const key = `session_${row.processing_status}_${row.id}`;
           if (notifiedUploads.current.has(key)) continue;
           notifiedUploads.current.add(key);
-          console.log('[SessionPoll] 🔔 Terminal status detected:', row.processing_status, row.file_name);
+          console.log('[SessionPoll] đź”” Terminal status detected:', row.processing_status, row.file_name);
           notifyUploadStatus(row);
         }
       } catch (err) {
-        // Silent — Realtime is the primary channel, polling is just a safety net
+        // Silent â€” Realtime is the primary channel, polling is just a safety net
       }
     };
 
@@ -708,7 +718,7 @@ export function LiveNotificationProvider() {
     return () => clearInterval(interval);
   }, [companyId, notifyUploadStatus]);
 
-  // ── TAB FOCUS CATCH-UP ──
+  // â”€â”€ TAB FOCUS CATCH-UP â”€â”€
   // Exported as a standalone ref so the Realtime useEffect can call it from
   // its own handleVisibility closure without creating circular deps.
   const catchUpToastsRef = useRef<(() => Promise<void>) | null>(null);
@@ -730,7 +740,7 @@ export function LiveNotificationProvider() {
         const key = `catchup_${row.processing_status}_${row.id}`;
         if (notifiedUploads.current.has(key)) continue;
         notifiedUploads.current.add(key);
-        console.log('[CatchUp] 🔔 Missed event recovered:', row.processing_status, row.file_name);
+        console.log('[CatchUp] đź”” Missed event recovered:', row.processing_status, row.file_name);
         notifyUploadStatus(row);
       }
     } catch {
@@ -740,3 +750,4 @@ export function LiveNotificationProvider() {
 
   return null;
 }
+
