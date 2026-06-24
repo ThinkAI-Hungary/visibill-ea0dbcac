@@ -7,13 +7,20 @@ import { Suspense, lazy, useEffect } from "react";
 // screen — even if they already have an active session.
 ;(function handleEmailChangeHash() {
   const hash = window.location.hash;
-  const PENDING_KEY = 'visibill_pending_callback_hash';
+  const PENDING_KEY = 'visibill_pending_callback_type';
 
-  // If already at /auth/callback: capture the hash synchronously into sessionStorage
-  // BEFORE Supabase's async init clears it from the URL. This is the critical fix.
+  // If already at /auth/callback: capture the hash TYPE synchronously into sessionStorage
+  // BEFORE Supabase's async init clears the URL. Store only the type (not the access_token).
   if (window.location.pathname === '/auth/callback') {
     if (hash && !sessionStorage.getItem(PENDING_KEY)) {
-      sessionStorage.setItem(PENDING_KEY, hash);
+      const params = new URLSearchParams(hash.replace('#', ''));
+      const type = params.get('type');
+      const errCode = params.get('error_code');
+      if (type === 'email_change') {
+        sessionStorage.setItem(PENDING_KEY, 'email_change');
+      } else if (errCode === 'otp_expired') {
+        sessionStorage.setItem(PENDING_KEY, 'otp_expired');
+      }
     }
     return;
   }
@@ -23,7 +30,7 @@ import { Suspense, lazy, useEffect } from "react";
 
   // Successful email change confirmation
   if (params.get('type') === 'email_change') {
-    sessionStorage.setItem(PENDING_KEY, hash);
+    sessionStorage.setItem(PENDING_KEY, 'email_change');
     window.location.replace('/auth/callback' + hash);
     return;
   }
@@ -31,6 +38,7 @@ import { Suspense, lazy, useEffect } from "react";
   // Already-used token: otp_expired error on root URL = email_change
   // (password reset otp_expired lands on /reset-password, not here)
   if (params.get('error') === 'access_denied' && params.get('error_code') === 'otp_expired') {
+    sessionStorage.setItem(PENDING_KEY, 'otp_expired');
     window.location.replace('/auth/callback' + hash);
     return;
   }

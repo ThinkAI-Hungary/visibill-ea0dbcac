@@ -6,7 +6,7 @@ import { reportAuthError } from '@/lib/errorReporter';
 import { CheckCircle2, Mail, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const PENDING_KEY = 'visibill_pending_callback_hash';
+const PENDING_KEY = 'visibill_pending_callback_type';
 const SESSION_KEY = 'visibill_email_change_confirmed';
 
 /**
@@ -21,19 +21,14 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Read the hash from sessionStorage first — the IIFE saves it synchronously
-        // before Supabase's async init has a chance to clear it from the URL.
-        const savedHash = sessionStorage.getItem(PENDING_KEY) || window.location.hash;
+        // Read the pending type from sessionStorage — the IIFE saves it synchronously
+        // before Supabase's async init clears the URL hash. Only the type is stored
+        // (never the access_token), so there is no sensitive data in sessionStorage.
+        const pendingType = sessionStorage.getItem(PENDING_KEY);
         sessionStorage.removeItem(PENDING_KEY);
 
-        const hashParams = new URLSearchParams(savedHash.replace('#', ''));
-        const hashType = hashParams.get('type');
-        const accessToken = hashParams.get('access_token');
-        const hashError = hashParams.get('error');
-        const hashErrorCode = hashParams.get('error_code');
-
         // ── Email change: expired/already-used token ──────────────────────────
-        if (hashError && (hashErrorCode === 'otp_expired' || savedHash.includes('expired'))) {
+        if (pendingType === 'otp_expired') {
           if (sessionStorage.getItem(SESSION_KEY)) {
             sessionStorage.removeItem(SESSION_KEY);
             setEmailChanged(true);
@@ -45,19 +40,24 @@ export default function AuthCallback() {
         }
 
         // ── Email change: successful confirmation ─────────────────────────────
-        if (hashType === 'email_change' && accessToken) {
-          // Supabase auto-processes the hash and updates the email.
+        if (pendingType === 'email_change') {
+          // The Supabase client has already processed the hash and set a session.
           // Sign out so the user logs in fresh with their new email address.
           await supabase.auth.signOut();
-          // Persist the confirmation so a second (expired) click still shows the screen
           sessionStorage.setItem(SESSION_KEY, '1');
           setEmailChanged(true);
           window.history.replaceState(null, '', window.location.pathname);
           return;
         }
 
-        // ── Implicit flow access_token (non-email_change, e.g. magic link) ───
-        if (accessToken) {
+        // ── Fallback: check hash directly (for non-email_change OAuth flows) ─
+        const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+        const accessToken = hashParams.get('access_token');
+        const hashError = hashParams.get('error');
+        const errorDescription = hashParams.get('error_description');
+
+        // Implicit flow access_token (e.g. magic link — not email_change)
+        if (accessToken && !hashError) {
           await new Promise(r => setTimeout(r, 500));
           navigate('/', { replace: true });
           return;
@@ -67,7 +67,6 @@ export default function AuthCallback() {
         const params = new URLSearchParams(window.location.search);
         const code = params.get('code');
         const errorParam = params.get('error');
-        const errorDescription = params.get('error_description');
 
         if (errorParam) {
           reportAuthError('AuthCallback', 'oauth_error', errorDescription || errorParam, undefined, { errorParam, errorDescription });
@@ -85,6 +84,7 @@ export default function AuthCallback() {
         }
 
         navigate('/', { replace: true });
+
       } catch (err: any) {
         reportAuthError('AuthCallback', 'callback', err.message || 'Auth callback error', err);
         setError(err.message || 'Ismeretlen hiba történt');
