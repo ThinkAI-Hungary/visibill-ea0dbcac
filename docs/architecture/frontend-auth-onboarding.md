@@ -100,30 +100,171 @@ Auth.tsx  →  navigate('/')  →  RootRedirect  →  végső útvonal
 
 ---
 
-## Password Recovery Flow
+## Email Auth Flow-ok (2026-06-24 redesign)
 
-**Fájl:** `components/PasswordRecoveryRedirect.tsx` (App.tsx-ben)
+> Részletes döntési háttér: [A-021](./decisions/A-021-email-auth-flow-redesign.md)
 
-### Flow
+### Szinkron IIFE Hash Interception (App.tsx)
 
-1. User jelszó reset emailt kap
-2. Link-re kattint → `#type=recovery&access_token=...` hash-el érkezik
-3. `PasswordRecoveryRedirect` komponens detektálja a hash-t
-4. Átirányít → `/reset-password` + hash megtartása
-5. `ResetPassword` komponens feldolgozza a token-t
+Az `App.tsx` tetején, **minden React render előtt** fut egy modulszintű szinkron IIFE. Ez detektálja az auth hash-eket az URL-ben és átirányít az `/auth/callback`-re, mielőtt a Supabase kliens aszinkron inicializálása törölné a hash-t.
 
-### Hash Paraméterek
+**Miért IIFE és nem React component/useEffect?**
+A Supabase kliens `initialize()` aszinkron, de hamar fut és törli az URL hash-t `replaceState`-tel. Ha a detektálás `useEffect`-ben lenne (React render UTÁN), a hash már üres lenne.
 
-```tsx
-const hashParams = new URLSearchParams(location.hash.slice(1));
-const hasRecoveryHash = hashParams.get("type") === "recovery" && (
-  hashParams.has("access_token") ||
-  hashParams.has("refresh_token") ||
-  hashParams.has("token")
-);
+**IIFE által kezelt esetek:**
+| Hash tartalom | Akció |
+|---|---|
+| `#type=email_change&access_token=...` | `sessionStorage('visibill_pending_callback_type', 'email_change')` → redirect `/auth/callback` |
+| `#error=access_denied&error_code=otp_expired` | `sessionStorage('visibill_pending_callback_type', 'otp_expired')` → redirect `/auth/callback` |
+| pathname már `/auth/callback` | Hash type-ot menti sessionStorage-ba (ha még nem tette) → return (nincs redirect loop) |
+
+**sessionStorage biztonsági szabály:** Csak a típus stringet tároljuk (`'email_change'` / `'otp_expired'`), **soha nem az `access_token` JWT-t**. A Supabase kliens úgyis feldolgozza a tokent.
+
+---
+
+### Email Change Flow
+
+**Fájlok:** `src/pages/AuthCallback.tsx`, `src/App.tsx`
+
+#### Teljes flow:
+
+```
+User megváltoztatja az emailt (ChangeEmailDialog)
+        ↓
+PUT /auth/v1/user → Supabase elküldi a megerősítő emailt (send-email hook)
+        ↓
+User kattint az emailben lévő linkre
+        ↓
+Supabase: redirect → app.visibill.hu/#type=email_change&access_token=...
+        ↓
+IIFE (szinkron, React előtt):
+  - sessionStorage.set('visibill_pending_callback_type', 'email_change')
+  - window.location.replace('/auth/callback#...')
+        ↓
+/auth/callback betölt (fresh page load)
+  - IIFE: pathname === '/auth/callback' → hash már mentve, return
+  - Supabase async init: feldolgozza hash-t, beállít sessiont, törli hash-t
+        ↓
+AuthCallback.useEffect:
+  - sessionStorage.get('visibill_pending_callback_type') → 'email_change'
+  - removeItem (cleanup)
+  - supabase.auth.signOut()  ← kötelező kijelentkeztetés
+  - sessionStorage.set('visibill_email_change_confirmed', '1')
+  - setEmailChanged(true) → ✅ Confirmation screen
+```
+
+**Miért kötelező a kijelentkeztetés?**
+Iparági standard: az email cím megváltozott hitelesítő adat. A user az **új email + jelszó** kombinációval lép be újra. Ez biztonsági bevált gyakorlat (pl. GitHub, Google).
+
+#### 2. kattintás (token már felhasznált):
+
+```
+otp_expired hash → IIFE → /auth/callback
+        ↓
+AuthCallback: pendingType === 'otp_expired'
+  ├── sessionStorage.get('visibill_email_change_confirmed') megvan?
+  │     ✅ Confirmation screen: "Email sikeresen megváltoztatva"
+  └── Nincs flag?
+        ⚠️ Error screen: "Link lejárt vagy már fel lett használva"
 ```
 
 ---
+
+### Password Recovery Flow
+
+**Fájl:** `src/pages/ResetPassword.tsx`
+
+```
+User kap jelszó-reset emailt
+        ↓
+Kattint → /reset-password#type=recovery&access_token=...
+        ↓
+ResetPassword: isPasswordRecovery flag (AuthContext) + URL hash ellenőrzés
+        ↓
+Érvényes token → Jelszó visszaállítási form
+        ↓
+Lejárt/érvénytelen token → navigate('/auth?forgot=1') → ForgotPassword dialog előre nyitva
+```
+
+**Megjegyzés:** Password recovery `otp_expired` a `/reset-password` útvonalon jelenik meg (nem a gyökéren), ezért a ResetPassword kezeli, nem az IIFE.
+
+---
+
+### Signup (Regisztráció) Flow
+
+**Fájlok:** `supabase/functions/send-email/index.ts`, `supabase/functions/verify-email/index.ts`, `supabase/functions/send-welcome-email/index.ts`
+
+#### Kettős email probléma (megoldva)
+
+Korábban két email ment ki regisztrációkor:
+1. Auth Hook (`send-email`): egyszerű "Email cím megerősítése" + OTP kód  
+2. Postgres trigger → `send-welcome-email`: szép branded onboarding email
+
+**Megoldás:** A `send-email` hook `signup` típusnál **azonnali 200 OK-t** ad vissza email küldése nélkül. Csak a `send-welcome-email` megy ki.
+
+#### Teljes signup flow:
+
+```
+User regisztrál
+        ↓
+supabase.auth.signUp() → auth.users INSERT
+        ↓
+send-email hook: signup → skip (200 OK, no email)
+        ↓
+handle_new_user Postgres trigger:
+  - profiles INSERT (email_verify_token generálás)
+  - pg_net → send-welcome-email edge function
+        ↓
+send-welcome-email:
+  - Branded welcome email kiküldése
+  - Verify URL: app.visibill.hu/auth?verify_token=<custom_token>
+        ↓
+User kattint "Email cím megerősítése" gombra
+        ↓
+verify-email edge function:
+  - profiles.email_verified = true  ✓
+  - auth.users.email_confirmed_at = NOW()  ✓  (admin API)
+        ↓
+User bejelentkezhet (Supabase "Confirm email" setting kompatibilis)
+```
+
+#### Két verifikációs rendszer
+
+| Rendszer | Token típusa | Mit állít be | Hol tárolva |
+|---|---|---|---|
+| Supabase natív (Auth Hook) | `token_hash` (OTP) | `auth.users.email_confirmed_at` | `auth.users` |
+| Custom (Welcome email) | `email_verify_token` (hex) | `profiles.email_verified` | `profiles` |
+
+A `verify-email` Edge Function (v22) **mindkettőt beállítja** egyetlen kattintásra.
+
+> **Supabase "Confirm email" beállítás:** Authentication → Configuration → Sign In/Providers → User Signups → Confirm email. Ha BE van kapcsolva, a userek nem tudnak belépni amíg nem kattintanak a welcome emailben lévő linkre.
+
+---
+
+### AuthCallback Oldal
+
+**Fájl:** `src/pages/AuthCallback.tsx`
+
+```
+Prioritás  Feltétel                          Akció
+─────────────────────────────────────────────────────────────────
+1.         pendingType === 'otp_expired'      Ha confirmation flag van → success screen
+                                             Ha nincs → error screen
+2.         pendingType === 'email_change'     signOut() → confirmation screen → /auth
+3.         accessToken a hash-ben            500ms várakozás → navigate('/')
+4.         OAuth code a query-ban            exchangeCodeForSession() → navigate('/')
+5.         Hiba esetén                       Error screen megjelenítése
+```
+
+**sessionStorage kulcsok az AuthCallback-ben:**
+
+| Kulcs | Érték | Kezelő |
+|-------|-------|--------|
+| `visibill_pending_callback_type` | `'email_change'` \| `'otp_expired'` | IIFE ír, AuthCallback.useEffect olvas+töröl |
+| `visibill_email_change_confirmed` | `'1'` | email_change ír, otp_expired olvas+töröl |
+
+---
+
 
 ## App Ready Gate
 

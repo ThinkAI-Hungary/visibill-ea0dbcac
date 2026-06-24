@@ -1,7 +1,7 @@
 # Visibill — Architecture Decision Records (ADR)
 
-> **Utoljára frissítve:** 2026-06-23  
-> **Összesen:** 20 döntés | ✅ Decided: 19 | ⛔ Superseded: 1
+> **Utoljára frissítve:** 2026-06-24  
+> **Összesen:** 21 döntés | ✅ Decided: 20 | ⛔ Superseded: 1
 
 ---
 
@@ -48,6 +48,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | A-010 | Credential titkosítás (AES-256-GCM, per-user) | ✅ Decided | [A-010](./A-010-credential-encryption.md) |
 | A-017 | Biztonsági architektúra (5 réteg, audit trail) | ✅ Decided | [A-017](./A-017-security-architecture.md) |
 | A-020 | Auth Trigger Chain — Signup Incident és Tanulságok | ✅ Decided | [A-020](./A-020-auth-trigger-chain-incident.md) |
+| A-021 | Email Auth Flow Redesign — Email change, signup single email, hash interception, sessionStorage security | ✅ Decided | [A-021](./A-021-email-auth-flow-redesign.md) |
 
 ## 📧 Email & Integráció
 
