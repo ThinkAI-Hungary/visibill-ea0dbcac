@@ -8,6 +8,8 @@ import { Suspense, lazy, useEffect } from "react";
 ;(function handleEmailChangeHash() {
   const hash = window.location.hash;
   if (!hash) return;
+  // Don't redirect if already at /auth/callback — prevents infinite reload loop
+  if (window.location.pathname === '/auth/callback') return;
   const params = new URLSearchParams(hash.replace('#', ''));
   if (params.get('type') === 'email_change') {
     window.location.replace('/auth/callback' + hash);

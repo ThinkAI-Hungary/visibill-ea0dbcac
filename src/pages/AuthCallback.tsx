@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { reportAuthError } from '@/lib/errorReporter';
-import { CheckCircle2, Mail } from 'lucide-react';
+import { CheckCircle2, Mail, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+const SESSION_KEY = 'visibill_email_change_confirmed';
 
 /**
  * AuthCallback — handles the OAuth redirect from Google (and other providers),
@@ -18,29 +20,48 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Check for hash-based tokens first (implicit flow / email change)
         const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
         const hashType = hashParams.get('type');
         const accessToken = hashParams.get('access_token');
+        const hashError = hashParams.get('error');
+        const hashErrorCode = hashParams.get('error_code');
 
-        // Email change confirmation
-        if (hashType === 'email_change' && accessToken) {
-          // Supabase auto-processes the hash — sign out so user logs in fresh with new email
-          await supabase.auth.signOut();
-          setEmailChanged(true);
-          // Clean the hash from URL
+        // ── Email change: expired/already-used token ──────────────────────────
+        // Supabase redirects with error hash if the token is already consumed.
+        // We check this BEFORE the success path.
+        if (hashError && (hashErrorCode === 'otp_expired' || window.location.hash.includes('expired'))) {
+          // Token was already used on the first click — check if we have a stored
+          // confirmation from that first click
+          if (sessionStorage.getItem(SESSION_KEY)) {
+            sessionStorage.removeItem(SESSION_KEY);
+            setEmailChanged(true);
+          } else {
+            setError('Ez a megerősítő link már lejárt vagy fel lett használva. Ha az email váltás még nem sikerült, kérj új linket.');
+          }
           window.history.replaceState(null, '', window.location.pathname);
           return;
         }
 
-        // Handle implicit flow access_token (non-email_change)
+        // ── Email change: successful confirmation ─────────────────────────────
+        if (hashType === 'email_change' && accessToken) {
+          // Supabase auto-processes the hash and updates the email.
+          // Sign out so the user logs in fresh with their new email address.
+          await supabase.auth.signOut();
+          // Persist the confirmation so a second (expired) click still shows the screen
+          sessionStorage.setItem(SESSION_KEY, '1');
+          setEmailChanged(true);
+          window.history.replaceState(null, '', window.location.pathname);
+          return;
+        }
+
+        // ── Implicit flow access_token (non-email_change, e.g. magic link) ───
         if (accessToken) {
           await new Promise(r => setTimeout(r, 500));
           navigate('/', { replace: true });
           return;
         }
 
-        // Get the URL params — Supabase OAuth returns `code` for PKCE flow
+        // ── OAuth PKCE flow (code exchange) ───────────────────────────────────
         const params = new URLSearchParams(window.location.search);
         const code = params.get('code');
         const errorParam = params.get('error');
@@ -71,6 +92,7 @@ export default function AuthCallback() {
     handleCallback();
   }, [navigate]);
 
+  // ── Email change confirmation screen ───────────────────────────────────────
   if (emailChanged) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -99,23 +121,23 @@ export default function AuthCallback() {
     );
   }
 
+  // ── Error screen ───────────────────────────────────────────────────────────
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-md px-6">
           <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-            <svg className="h-8 w-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
+            <AlertCircle className="h-8 w-8 text-destructive" />
           </div>
-          <h1 className="text-xl font-bold text-foreground mb-2">Bejelentkezés sikertelen</h1>
+          <h1 className="text-xl font-bold text-foreground mb-2">Hiba történt</h1>
           <p className="text-sm text-muted-foreground mb-6">{error}</p>
-          <button
+          <Button
+            variant="outline"
             onClick={() => navigate('/auth', { replace: true })}
-            className="px-6 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            className="w-full"
           >
             Vissza a bejelentkezéshez
-          </button>
+          </Button>
         </div>
       </div>
     );
