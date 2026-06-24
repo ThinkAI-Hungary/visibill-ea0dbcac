@@ -1,5 +1,20 @@
 import { Suspense, lazy, useEffect } from "react";
 
+// ─── Synchronous email_change hash redirect ───────────────────────────────────
+// Must run before React renders anything. If Supabase lands us on the root URL
+// with type=email_change in the hash (from an email confirmation link), we
+// immediately hard-redirect to /auth/callback so the user sees the confirmation
+// screen — even if they already have an active session.
+;(function handleEmailChangeHash() {
+  const hash = window.location.hash;
+  if (!hash) return;
+  const params = new URLSearchParams(hash.replace('#', ''));
+  if (params.get('type') === 'email_change') {
+    window.location.replace('/auth/callback' + hash);
+  }
+})();
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache, useQuery } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
@@ -197,23 +212,6 @@ function ProtectedPage({ children }: { children: React.ReactNode }) {
   );
 }
 
-/**
- * AuthHashInterceptor — detects Supabase hash-based redirects (e.g. email_change)
- * on the root path and forwards them to /auth/callback for proper handling.
- */
-function AuthHashInterceptor() {
-  const navigate = useNavigate();
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash) return;
-    const params = new URLSearchParams(hash.replace('#', ''));
-    const type = params.get('type');
-    if (type === 'email_change') {
-      navigate('/auth/callback' + window.location.hash, { replace: true });
-    }
-  }, [navigate]);
-  return null;
-}
 
 
 /**
