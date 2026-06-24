@@ -120,3 +120,146 @@ A feature / módosítás **CSAK AKKOR kész** ha:
 2. **Jelezd ha új ADR/BRD/PRD kell** — ha implicit döntés született kódolás közben
 3. **Tartsd karban a számokat** — edge function, migration, context count-ok
 4. **graphify update MINDEN session végén** — a gráf maradjon aktuális
+
+---
+
+## Dokumentáció Taxonómia — Mi mibe kerül?
+
+### Rétegek és felelősségek
+
+| Típus | Mappa | Mi kerül bele? | Trigger |
+|---|---|---|---|
+| **ADR** (Architecture Decision Record) | `docs/architecture/decisions/A-XXX-*.md` | Technikai döntések, miért választottunk valamit, trade-off-ok. Edge function viselkedés, DB séma döntés, auth flow, caching stratégia. | Technikai döntés született (nem csak implementáció) |
+| **PRD** (Product Decision Record) | `docs/product/decisions/P-XXX-*.md` | UI/UX döntések, felhasználói workflow, képernyő viselkedés. Mikor jelenik meg egy modal, hogyan működik egy szűrő. | Felhasználói felület logika változott |
+| **BRD** (Business Decision Record) | `docs/business/decisions/XXX-*.md` | Üzleti szabályok, jogosultsági politikák, árazás, üzleti folyamatok. | Üzleti szabály változott vagy új létrejött |
+| **Design docs** | `docs/design/XX-*.md` | UI pattern-ek, komponens viselkedés, animáció, layout szabályok. | Pattern változott, nem egyszeri implementáció |
+| **Architecture overview** | `docs/architecture/frontend-auth-onboarding.md` stb. | Rendszer szintű folyamatok, flow diagramok, több komponenst érintő viselkedés leírása. | Cross-cutting flow változott |
+| **Worker docs** | `worker/docs/ARCHITECTURE.md` stb. | Worker pipeline, prompt stratégia, Python kód döntések. | Worker kód módosult |
+
+### Döntési fa — Új fájl vagy meglévő frissítése?
+
+```
+Változás érkezett
+      │
+      ├─ Van már meglévő doc amely pontosan ezt a területet fedi?
+      │      ├─ IGEN → Meglévő frissítése (új szekció vagy szekció update)
+      │      └─ NEM → Új doc létrehozása (ld. sablon lent)
+      │
+      ├─ Döntés született (technikai/üzleti/UI)?
+      │      └─ IGEN → KÖTELEZŐ: Döntés rögzítése (ADR/PRD/BRD) — implicit döntés tilos!
+      │
+      └─ Cross-cutting (több réteg érintett)?
+             └─ IGEN → Minden érintett rétegben frissítés + cross-referencia linkek
+```
+
+### Mikor kell ÚJ ADR/PRD/BRD?
+
+**Új ADR ha:**
+- Eddig nem dokumentált technikai döntés született
+- Egy meglévő ADR döntése megváltozott (→ új ADR az előző felváltásával)
+- Új edge function viselkedés, auth flow, caching stratégia, DB séma döntés
+
+**Meglévő ADR frissítése ha:**
+- A döntés ugyanaz, de implementációs részlet változott (pl. verziószám, viselkedés pontosítás)
+- Cross-reference hozzáadása (egy másik ADR-rel kapcsolódik)
+
+**Új PRD ha:**
+- Teljesen új UI felület vagy workflow jött létre
+- Meglévő workflow alapvetően megváltozott
+
+**Design doc frissítése (szinte soha új file) ha:**
+- Meglévő pattern változott (pl. badge variant, modal méret szabály)
+- Új pattern-t vezettünk be amit mások is fognak használni
+
+### Aktuális számozás (mindig ellenőrizd az index.md-t!)
+
+```
+ADR:  docs/architecture/decisions/index.md  → utolsó: A-021 → következő: A-022
+PRD:  docs/product/decisions/index.md       → utolsó: ellenőrizd a fájlt
+BRD:  docs/business/decisions/index.md      → utolsó: ellenőrizd a fájlt
+```
+
+> **FONTOS:** Mindig olvasd be az `index.md`-t a következő szám meghatározásához — ne becsüld meg!
+
+### Cross-reference szabályok
+
+**Kötelező linkelni ha:**
+- Új ADR → link a kapcsolódó PRD-re (ha az üzleti szál is dokumentált)
+- Új PRD → link a mögöttes ADR-re (technikai megvalósítás)
+- Bármely doc → link az index.md-re (szám regisztráció)
+
+**Tipikus cross-reference példa:**
+```markdown
+## Kapcsolódó
+- [A-009: Auth RBAC](./A-009-auth-rbac.md)      ← ha auth érintett
+- [A-021: Email Auth Flow](./A-021-*.md)          ← specifikus döntés
+- [P-010: Invoice Status](../product/...)         ← ha UI döntés is van
+```
+
+### Döntés minősítése — Melyik rétegbe tartozik?
+
+| Változtatás típusa | Réteg |
+|---|---|
+| "Miért nem küldünk dupla emailt" | **ADR** (tech döntés) |
+| "A badge piros legyen" | **PRD** (UI döntés) |
+| "A lejárt számla 30 nap után kap fizetési felszólítást" | **BRD** (üzleti szabály) |
+| "Minden badge `variant='destructive'` piros esetén" | **Design doc** (pattern) |
+| "Az email change flow így működik lépésről-lépésre" | **Architecture overview** (cross-cutting flow) |
+| "A `send-email` EF signup-ot skipeli" | **ADR** (tech döntés) + **A-005 frissítés** (registry) |
+
+---
+
+## Sablonok
+
+### Új ADR sablon
+```markdown
+# A-XXX: [Döntés neve]
+
+**Status:** Decided
+**Date:** [YYYY-MM-DD]
+**Utoljára frissítve:** [YYYY-MM-DD]
+
+## Context
+[Miért kellett dönteni? Mi volt a probléma?]
+
+## Decision
+[Mit döntöttünk? Pontosan, konkrétan.]
+
+## Consequences
+**Pozitív:** ...
+**Negatív:** ...
+
+## Kapcsolódó
+- [A-YYY: ...](./A-YYY-*.md)
+- [P-ZZZ: ...](../product/P-ZZZ-*.md)
+```
+
+### Új PRD sablon
+```markdown
+# P-XXX: [Feature neve] UX
+
+**Status:** Decided
+**Category:** [UI / Workflow / Navigation / stb.]
+**Question:** [Milyen UI kérdés merült fel?]
+**Decision:** [Mit döntöttünk?]
+**Current Implementation:** [Hogyan néz ki jelenleg?]
+**Rationale:** [Miért ez a döntés?]
+
+## Kapcsolódó
+- [A-XXX: ...](../../architecture/decisions/A-XXX-*.md)
+```
+
+### Új BRD sablon
+```markdown
+# Decision XXX: [Feature neve]
+
+**Status:** Decided
+**Category:** [Business Rule / Pricing / Access Control / stb.]
+**Question:** [Milyen üzleti kérdés merült fel?]
+**Decision:** [Mit döntöttünk?]
+**Rationale:** [Miért ez az üzleti döntés?]
+
+## Kapcsolódó
+- ADR: [link]
+- PRD: [link]
+```
