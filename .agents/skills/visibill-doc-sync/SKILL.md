@@ -1,6 +1,6 @@
 ---
 name: visibill-doc-sync
-description: Use after completing code changes in the eaisybill-prod or worker workspace to synchronize documentation with the codebase. Triggers on "frissítsd a doksit", "szinkronizáld a dokumentumokat", "docs update", "docs frissítés", "documentation sync", "update docs", "graphify update", or at the end of any development session that modified code files. Also triggers when the user says "kész a fejlesztés", "commitolok", "lezárom a session-t", or "push előtt". Triggers on project names: "visibill", "eaisybill", "eaisybill-prod", "vsweb".
+description: Use after completing code changes in the eaisybill-prod or worker workspace to synchronize documentation with the codebase. Triggers on "frissítsd a doksit", "szinkronizáld a dokumentumokat", "docs update", "docs frissítés", "documentation sync", "update docs", "graphify update", or at the end of any development session that modified code files. Also triggers when the user says "kész a fejlesztés", "commitolok", "lezárom a session-t", "push előtt", "dokumentáljuk", "dokumentáld le a változtatásokat", "dokumentáld a döntéseket", "rögzítsd a döntéseket", "írj ADR-t", "write ADR", "dokumentáljuk amit csináltunk", "frissítsd a dokumentációt", "ADR kell", "döntések dokumentálása", "session dokumentáció". Triggers on project names: "visibill", "eaisybill", "eaisybill-prod", "vsweb".
 ---
 
 # Visibill Doc Sync — Automatikus Dokumentáció Szinkronizáció
