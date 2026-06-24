@@ -85,6 +85,18 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Auth guard: only allow pg_cron and self-reinvocation that send the shared secret.
+  const cronSecret = Deno.env.get('CRON_SECRET');
+  const providedSecret = req.headers.get('x-cron-secret');
+  if (!cronSecret || providedSecret !== cronSecret) {
+    return new Response(
+      JSON.stringify({ error: 'Forbidden' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+
+
   try {
     // Parse request body for optional parameters
     let requestBody: any = {};
@@ -269,7 +281,8 @@ Deno.serve(async (req) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseServiceRoleKey}`
+            'Authorization': `Bearer ${supabaseServiceRoleKey}`,
+            'x-cron-secret': cronSecret
           },
           body: JSON.stringify({ depth: depth + 1, detailsOnly: true })
         }).catch(err => console.error('Self-reinvocation failed:', err));
