@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-09  
-**Utoljára frissítve:** 2026-06-23
+**Utoljára frissítve:** 2026-06-24
 
 ## Context
 
@@ -10,7 +10,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ## Decision
 
-**Supabase Edge Functions** (Deno runtime) — 48 deployed function + `_shared/` közös kód.
+**Supabase Edge Functions** (Deno runtime) — 45 deployed function + `_shared/` közös kód.
 
 **Közös kód:** `_shared/` mappa — CORS headers, Supabase client, utility-k.
 
@@ -33,9 +33,9 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 #### 📧 Email Küldés (8 db)
 
 | Function | JWT | Leírás |
-|----------|-----|--------|
-| `send-email` | ❌ | Általános email küldés (Mailgun API) — más EF-ek hívják |
-| `send-welcome-email` | ✅ | Regisztráció utáni üdvözlő email |
+|----------|-----|---------|
+| `send-email` | ❌ | **Supabase Auth Hook** — Resend API-n keresztül küld emailt auth eventekre (recovery, email_change, magiclink). Signup típust **skipeli** (v147 óta) — a welcome email kezeli. |
+| `send-welcome-email` | ❌ | Regisztrációs üdvözlő email — a `handle_new_user` Postgres trigger hívja pg_net-en keresztül (nem a frontend). Custom `email_verify_token` alapú megerősítő linket tartalmaz. |
 | `send-dunning-email` | ❌ | Fizetési felszólítás küldése |
 | `send-invoice-notification` | ✅ | Számla feldolgozás értesítés |
 | `send-notification-email` | ❌ | Általános értesítő email |
@@ -68,7 +68,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `invite-user` | ❌ | Felhasználó meghívás (email + role assignment) |
 | `join-company` | ✅ | Meghívás elfogadása — céghez csatlakozás |
 | `validate-employee-token` | ❌ | Alkalmazotti token validáció (munkaóra app) |
-| `verify-email` | ❌ | Email cím megerősítés link feldolgozása |
+| `verify-email` | ❌ | Custom token alapú email megerősítés (v22+): `profiles.email_verified = true` ÉS `auth.users.email_confirmed_at = NOW()` (admin API). Így a Supabase "Confirm email" setting BE lehet kapcsolva. |
 
 #### 🔑 NAV Credentials (2 db)
 
@@ -169,3 +169,4 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 - [A-010: Credential Encryption](./A-010-credential-encryption.md)
 - [A-015: Stripe Removal](./A-015-stripe-removal.md) (legacy EF-ek)
 - [A-019: Management Dashboard](./A-019-management-dashboard.md)
+- [A-021: Email Auth Flow Redesign](./A-021-email-auth-flow-redesign.md) (send-email hook, verify-email, signup single email)

@@ -2,7 +2,7 @@
 
 **Status:** Decided  
 **Date:** 2025-09  
-**Utoljára frissítve:** 2026-06-22
+**Utoljára frissítve:** 2026-06-24
 
 ## Context
 
@@ -32,9 +32,12 @@ A rendszernek támogatnia kell: regisztrációt, bejelentkezést, session kezel�
 - `useSessionGuard()` — session timeout (30 perc inaktivitás)
 
 **Auth flow:**
-1. Email + jelszó regisztráció → email verifikáció
-2. Supabase session → JWT token a böngészőben
-3. Minden API hívás JWT-vel → RLS policy-k érvényesülnek
+1. Email + jelszó regisztráció → welcome email (`send-welcome-email` EF, `handle_new_user` trigger hívja)
+2. Welcome emailben levő linkre kattintva: `verify-email` EF → `profiles.email_verified = true` + `auth.users.email_confirmed_at = NOW()` (admin API)
+3. Supabase session → JWT token a böngészőben
+4. Minden API hívás JWT-vel → RLS policy-k érvényesülnek
+
+> **Két verif. rendszer:** A `send-email` Auth Hook skipeli a signup típust (v147). A `verify-email` EF (v22) egyszerre állítja be a custom `profiles.email_verified` és a Supabase `auth.users.email_confirmed_at` mezőket. Részletek: [A-021](./A-021-email-auth-flow-redesign.md)
 
 ## Consequences
 
@@ -86,3 +89,4 @@ auth.users INSERT
 - [A-020: Auth Trigger Chain Incident](./A-020-auth-trigger-chain-incident.md)
 - [A-017: Biztonsági Architektúra](./A-017-security-architecture.md)
 - [A-003: Multi-tenancy RLS](./A-003-multi-tenancy-rls.md)
+- [A-021: Email Auth Flow Redesign](./A-021-email-auth-flow-redesign.md) (email change, signup single email, verify-email v22, sessionStorage security)
