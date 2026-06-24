@@ -377,7 +377,6 @@ const App = () => (
                 <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                     <ScrollToTop />
                     <PasswordRecoveryRedirect />
-                    <AuthHashInterceptor />
                     <Routes>
                     {/* Auth routes – no sidebar, own Suspense for lazy chunks */}
                     <Route path="/auth" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RemoveInitialLoader /><Auth /></Suspense>} />
