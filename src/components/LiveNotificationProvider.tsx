@@ -726,12 +726,12 @@ export function LiveNotificationProvider() {
       if (_pendingSessionUploads.size === 0) return;
       const ids = Array.from(_pendingSessionUploads);
       try {
-        const { data } = await supabase
+        const { data } = await (supabase as any)
           .from('invoice_uploads')
           .select('id, file_name, processing_status')
           .in('id', ids);
 
-        for (const row of (data || [])) {
+        for (const row of (data || []) as { id: string; file_name: string; processing_status: string }[]) {
           if (!TERMINAL.has(row.processing_status)) continue;
           _pendingSessionUploads.delete(row.id);
           const key = `session_${row.processing_status}_${row.id}`;
