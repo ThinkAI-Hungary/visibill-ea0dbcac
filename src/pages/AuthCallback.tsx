@@ -6,6 +6,7 @@ import { reportAuthError } from '@/lib/errorReporter';
 import { CheckCircle2, Mail, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+const PENDING_KEY = 'visibill_pending_callback_hash';
 const SESSION_KEY = 'visibill_email_change_confirmed';
 
 /**
@@ -20,18 +21,19 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+        // Read the hash from sessionStorage first — the IIFE saves it synchronously
+        // before Supabase's async init has a chance to clear it from the URL.
+        const savedHash = sessionStorage.getItem(PENDING_KEY) || window.location.hash;
+        sessionStorage.removeItem(PENDING_KEY);
+
+        const hashParams = new URLSearchParams(savedHash.replace('#', ''));
         const hashType = hashParams.get('type');
         const accessToken = hashParams.get('access_token');
         const hashError = hashParams.get('error');
         const hashErrorCode = hashParams.get('error_code');
 
         // ── Email change: expired/already-used token ──────────────────────────
-        // Supabase redirects with error hash if the token is already consumed.
-        // We check this BEFORE the success path.
-        if (hashError && (hashErrorCode === 'otp_expired' || window.location.hash.includes('expired'))) {
-          // Token was already used on the first click — check if we have a stored
-          // confirmation from that first click
+        if (hashError && (hashErrorCode === 'otp_expired' || savedHash.includes('expired'))) {
           if (sessionStorage.getItem(SESSION_KEY)) {
             sessionStorage.removeItem(SESSION_KEY);
             setEmailChanged(true);

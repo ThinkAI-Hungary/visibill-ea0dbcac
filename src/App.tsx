@@ -7,20 +7,29 @@ import { Suspense, lazy, useEffect } from "react";
 // screen — even if they already have an active session.
 ;(function handleEmailChangeHash() {
   const hash = window.location.hash;
+  const PENDING_KEY = 'visibill_pending_callback_hash';
+
+  // If already at /auth/callback: capture the hash synchronously into sessionStorage
+  // BEFORE Supabase's async init clears it from the URL. This is the critical fix.
+  if (window.location.pathname === '/auth/callback') {
+    if (hash && !sessionStorage.getItem(PENDING_KEY)) {
+      sessionStorage.setItem(PENDING_KEY, hash);
+    }
+    return;
+  }
+
   if (!hash) return;
-  // Don't redirect if already at /auth/callback — prevents infinite reload loop
-  if (window.location.pathname === '/auth/callback') return;
   const params = new URLSearchParams(hash.replace('#', ''));
 
   // Successful email change confirmation
   if (params.get('type') === 'email_change') {
+    sessionStorage.setItem(PENDING_KEY, hash);
     window.location.replace('/auth/callback' + hash);
     return;
   }
 
-  // Already-used token: Supabase returns error=access_denied&error_code=otp_expired on root URL.
-  // Password reset otp_expired lands on /reset-password (different redirect_to), not here.
-  // So any otp_expired on the root is from an email_change → forward to AuthCallback.
+  // Already-used token: otp_expired error on root URL = email_change
+  // (password reset otp_expired lands on /reset-password, not here)
   if (params.get('error') === 'access_denied' && params.get('error_code') === 'otp_expired') {
     window.location.replace('/auth/callback' + hash);
     return;
