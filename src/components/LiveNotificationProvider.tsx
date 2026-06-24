@@ -87,7 +87,16 @@ export function LiveNotificationProvider() {
 
   // ── Upload status → toast + targeted cache invalidation helper ──
   // Used by session polling and tab-focus catch-up.
+  // NOTE: Contains its own dedup guard (`upload_notif_{id}`) so neither session
+  // polling nor catch-up can fire duplicate toasts for the same upload regardless
+  // of which mechanism fires first.
   const notifyUploadStatus = useCallback((row: { id: string; file_name: string; processing_status: string }) => {
+    // Unified cross-mechanism dedup: once per upload ID, regardless of which
+    // mechanism (Realtime / session poll / catch-up) delivers the event first.
+    const dedupKey = `upload_notif_${row.id}`;
+    if (notifiedUploads.current.has(dedupKey)) return;
+    notifiedUploads.current.add(dedupKey);
+
     const fileName = row.file_name || 'Ismeretlen fájl';
     const qc = queryClientRef.current;
     const cid = companyIdRef.current;
@@ -98,14 +107,23 @@ export function LiveNotificationProvider() {
       qc.invalidateQueries({ queryKey: ['submittedInvoices', cid] });
       qc.invalidateQueries({ queryKey: ['recentInvoices', cid] });
       qc.invalidateQueries({ queryKey: ['dashboardData', cid] });
+      // Refresh the uploaded files modal so status badge updates without page reload
+      qc.invalidateQueries({ queryKey: ['uploadHistory'] });
+      qc.invalidateQueries({ queryKey: ['uploaded-files'] });
     } else if (row.processing_status === 'cmr_attached') {
       toast({ title: 'Dokumentum párosítva!', description: `${fileName} sikeresen párosítva egy fuvarhoz.`, variant: 'default', duration: 5000, icon: Truck });
       qc.invalidateQueries({ queryKey: ['shipments-matching', cid] });
+      qc.invalidateQueries({ queryKey: ['uploadHistory'] });
+      qc.invalidateQueries({ queryKey: ['uploaded-files'] });
     } else if (row.processing_status === 'cmr_orphaned') {
       toast({ title: 'Dokumentum rögzítve', description: `${fileName} — vár a megfelelő számlára.`, variant: 'default', duration: 5000, icon: FileText });
+      qc.invalidateQueries({ queryKey: ['uploadHistory'] });
+      qc.invalidateQueries({ queryKey: ['uploaded-files'] });
     } else if (row.processing_status === 'cmr_escalated') {
       toast({ title: 'Eszkaláció szükséges', description: `${fileName} — eltérés, kézi ellenőrzés szükséges.`, variant: 'destructive', duration: 8000, icon: AlertTriangle });
       qc.invalidateQueries({ queryKey: ['shipments-matching', cid] });
+      qc.invalidateQueries({ queryKey: ['uploadHistory'] });
+      qc.invalidateQueries({ queryKey: ['uploaded-files'] });
     }
   }, []);
 
