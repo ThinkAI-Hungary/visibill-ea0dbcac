@@ -7,6 +7,7 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ContentSkeleton } from "@/components/ui/content-skeleton";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
+import { ChangeEmailDialog } from "@/components/ChangeEmailDialog";
 import { EmailPreferences } from "@/components/EmailPreferences";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -390,6 +391,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
 
   // Sync settings tab to URL
@@ -530,7 +532,12 @@ export default function Settings() {
     setLoading(true);
     const { error } = await supabase.from('profiles').upsert({ user_id: user.id, name: profile.name, company: profile.company, position: profile.position, avatar_url: profile.avatar_url }, { onConflict: 'user_id' });
     if (error) { reportError({ type: 'db_query', component: 'Settings', action: 'updateProfile', message: 'Profile upsert failed', error }); toast({ title: 'Hiba történt', description: 'A profil mentése sikertelen.', variant: 'destructive' }); }
-    else { setInitialProfile({ ...profile }); toast({ title: 'Siker', description: 'A profil sikeresen mentve.' }); }
+    else {
+      // Sync name into auth user_metadata so the sidebar re-renders immediately
+      await supabase.auth.updateUser({ data: { name: profile.name } });
+      setInitialProfile({ ...profile });
+      toast({ title: 'Siker', description: 'A profil sikeresen mentve.' });
+    }
     setLoading(false);
   };
 
@@ -670,6 +677,7 @@ export default function Settings() {
         <TabsContent value="security">
           <SecuritySection
             onChangePassword={() => setPasswordDialogOpen(true)}
+            onChangeEmail={() => setEmailDialogOpen(true)}
             onExportData={handleExportData}
             exportLoading={exportLoading}
           />
@@ -677,6 +685,7 @@ export default function Settings() {
       </Tabs>
 
       <ChangePasswordDialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen} />
+      <ChangeEmailDialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen} />
       <UnsavedChangesDialog open={showDialog} onConfirm={confirmNavigation} onCancel={cancelNavigation} />
     </div>
   );

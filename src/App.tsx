@@ -198,6 +198,25 @@ function ProtectedPage({ children }: { children: React.ReactNode }) {
 }
 
 /**
+ * AuthHashInterceptor — detects Supabase hash-based redirects (e.g. email_change)
+ * on the root path and forwards them to /auth/callback for proper handling.
+ */
+function AuthHashInterceptor() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash) return;
+    const params = new URLSearchParams(hash.replace('#', ''));
+    const type = params.get('type');
+    if (type === 'email_change') {
+      navigate('/auth/callback' + window.location.hash, { replace: true });
+    }
+  }, [navigate]);
+  return null;
+}
+
+
+/**
  * RootRedirect — sends `/` to `/:companyId/:dateRange/` (scoped dashboard).
  * Uses the currently selected company and date range from context.
  */
@@ -360,6 +379,7 @@ const App = () => (
                 <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                     <ScrollToTop />
                     <PasswordRecoveryRedirect />
+                    <AuthHashInterceptor />
                     <Routes>
                     {/* Auth routes – no sidebar, own Suspense for lazy chunks */}
                     <Route path="/auth" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><RemoveInitialLoader /><Auth /></Suspense>} />

@@ -7,30 +7,33 @@ import { Label } from '@/components/ui/label';
 import { Lock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { reportAuthError } from '@/lib/errorReporter';
+import { useAuth } from '@/contexts/AuthContext';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isRecovery, setIsRecovery] = useState(false);
+  // Give the SDK a moment to process the hash before deciding it's invalid
+  const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
+  const { isPasswordRecovery } = useAuth();
 
   useEffect(() => {
-    // Check for recovery token in URL hash
+    // URL hash check (instant) — covers the case where the component mounts
+    // before onAuthStateChange fires in AuthContext
     const hash = window.location.hash;
-    if (hash && hash.includes('type=recovery')) {
-      setIsRecovery(true);
+    const hasRecoveryHash = hash.includes('type=recovery');
+
+    if (hasRecoveryHash || isPasswordRecovery) {
+      setChecking(false);
+      return;
     }
 
-    // Listen for PASSWORD_RECOVERY event
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsRecovery(true);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    // Wait briefly for AuthContext to process the PASSWORD_RECOVERY event
+    // (Supabase SDK fires it async after parsing the hash)
+    const timer = setTimeout(() => setChecking(false), 800);
+    return () => clearTimeout(timer);
+  }, [isPasswordRecovery]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,16 +64,56 @@ const ResetPassword = () => {
     }
   };
 
+  const isRecovery = isPasswordRecovery || window.location.hash.includes('type=recovery');
+
+  // Check for Supabase error in the hash (e.g. expired link)
+  const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+  const isExpired = hashParams.get('error_code') === 'otp_expired'
+    || (hashParams.get('error') === 'access_denied' && window.location.hash.includes('expired'));
+
+  // Expired link — show specific message with shortcut to forgot-password flow
+  if (isExpired) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm text-center space-y-4">
+          <h1 className="text-2xl font-bold text-foreground">A link lejárt</h1>
+          <p className="text-muted-foreground">
+            Ez a jelszó-visszaállító link már nem érvényes (lejárt vagy már felhasználták).
+            Kérj egy új linket az email címedre.
+          </p>
+          <Button
+            className="w-full"
+            onClick={() => navigate('/auth?forgot=1')}
+          >
+            Új link kérése
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Still waiting for the SDK to process the hash
+  if (checking && !isRecovery) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm text-center space-y-2">
+          <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm text-muted-foreground">Ellenőrzés...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!isRecovery) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm text-center space-y-4">
           <h1 className="text-2xl font-bold text-foreground">Jelszó visszaállítás</h1>
           <p className="text-muted-foreground">
-            Érvénytelen vagy lejárt visszaállítási link. Kérj új linket az email címedre.
+            Érvénytelen visszaállítási link. Kérj új linket az email címedre.
           </p>
-          <Button onClick={() => navigate('/auth')} className="w-full">
-            Vissza a bejelentkezéshez
+          <Button onClick={() => navigate('/auth?forgot=1')} className="w-full">
+            Új link kérése
           </Button>
         </div>
       </div>
