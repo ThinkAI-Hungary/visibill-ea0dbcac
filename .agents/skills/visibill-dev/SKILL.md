@@ -46,7 +46,38 @@ Lépés 1  Lépés 2    Lépés 3   Lépés 4  Lépés 5  (visibill-doc-sync)
 - Mi a jelenlegi implementált viselkedés (spec ↔ kód eltérés)?
 - Milyen design pattern-t kell követni?
 
-### 1.3 Pattern ellenőrzés — kötelező átfutni
+### 1.2a Terminológia konzisztencia ellenőrzés
+
+Ha a user olyan fogalmat használ, ami eltér a meglévő PRD/ADR terminológiájától → **azonnal flag-eld, mielőtt bármit implementálsz:**
+
+```
+"A PRD-ben 'partner'-nek hívjuk ezt, de te 'ügyfél'-t mondasz — melyiket értjük?"
+"Az A-009-ben 'company_members' a cégtagság, de te 'team members'-t mondasz — ugyanaz?"
+```
+
+**Ismert ütközési pontok:**
+
+| Vague / ütköző | Pontos Visibill fogalom | Hol definiált |
+|---|---|---|
+| "számla" | `invoice` (bejövő) vs. `outbound_invoice` (kimenő) | P-010, P-012 |
+| "partner" / "ügyfél" | `company` (cég entitás) | A-003 |
+| "könyvelő" | `accountant` (eaisyBooks) vs. `admin` (eaisybill) | A-009 |
+| "belép" | `login` (auth) vs. `join-company` (céghez csatlakozás) | A-009 |
+| "email megerősítés" | `verify-email` (custom token) vs. `email_confirmed_at` (Supabase natív) | A-021 |
+
+### 1.2b Kód konzisztencia cross-check
+
+Ha a user leírja hogyan működik valami → **ellenőrizd a kódban** mielőtt arra alapozod az implementációt:
+
+```
+1. grep / view_file az érintett fájlon
+2. Ha a kód MÁST csinál mint amit a user mond → surface it:
+   "A kód jelenleg X-et csinál, de te Y-t szeretnél — melyik a helyes kiindulópont?"
+3. Ha spec ↔ kód eltérés van → tisztázd ELŐSZÖR, csak aztán implementálj
+```
+
+> **Miért kritikus:** Ha a user rosszul emlékszik a jelenlegi viselkedésre és erre építesz → dupla munka.
+
 
 | Érintett elem | Kérdés | Meglévő pattern |
 |---|---|---|
