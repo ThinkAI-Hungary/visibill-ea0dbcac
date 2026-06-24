@@ -14,7 +14,7 @@
 - `LiveNotificationProvider` — `ProtectedLayout`-ban mountolva, mindig aktív
 - Supabase WS channel: figyelők az összes releváns táblára (`invoice_uploads`, `invoices`, `transport_documents`, `salary`, `transactions`, `shipment_matches`, stb.)
 - Client-side `company_id` szűrés (nem server-side, mert Realtime `REPLICA IDENTITY FULL` nélkül `oldRow` üres)
-- Dedup: `notifiedUploads` in-memory ref Set + **`_notifiedUploadIds` module-level Set** — cég váltáskor törlődik
+- Dedup: `notifiedUploads` in-memory ref Set (cég váltáskor törlődik) + `_notifiedUploadIds` module-level Set (csak tab újratöltésre resetődik, cégváltáskor **nem**)
 - **Korlát:** WS reconnect-nél a közben keletkező events **nem replay-elődnek** → réteg 2-3 kompenzálja
 
 ### Réteg 2 — Session-scoped polling (Realtime fallback)
@@ -34,8 +34,10 @@
 ### Toast típusok, cache invalidálás és Lucide ikonok
 | Esemény | Toast (ikon) | Cache keys |
 |---|---|---|
-| `invoices INSERT` | Bell — "Gratulálunk! Fájl feldolgozva" (3s) | `submittedInvoices`, `dashboardData`, ... |
-| `invoice_uploads` → `processed`/`completed` | CheckCircle — "Számla feldolgozva!" (5s) | `submittedInvoices`, `recentInvoices`, `dashboardData`, `uploadHistory`, `uploaded-files` |
+| `invoices INSERT` (ha `invoice_uploads_id` van) | Bell — "Gratulálunk! Fájl feldolgozva" (3s) | `submittedInvoices`, `dashboardData`, `recentInvoices`, `uploadHistory`, ... |
+| `invoice_uploads UPDATE` → `completed`/`processed` (Realtime) | Bell — "Gratulálunk! Fájl feldolgozva" (3s) | `uploadHistory`, `submittedInvoices` (Realtime csatornán) |
+| `invoice_uploads` → `processed`/`completed` (session poll) | CheckCircle — "Számla feldolgozva!" (5s) | `submittedInvoices`, `recentInvoices`, `dashboardData`, `uploadHistory`, `uploaded-files` |
+| `invoice_uploads` → `cmr_orphaned` (session poll/catch-up) | FileText — "Dokumentum rögzítve" (5s) | `uploadHistory`, `uploaded-files` |
 | `transport_documents INSERT` → `matched` | Truck — "[Típus] párosítva!" (5s) | `shipments-matching` |
 | `transport_documents INSERT` → `orphaned` | FileText — "[Típus] feldolgozva" (5s) | — |
 | `transport_documents INSERT` → `escalated` | AlertTriangle — "[Típus] eszkalálva" (8s, destructive) | `shipments-matching` |
@@ -49,13 +51,13 @@
 
 A négy független toast-forrás (Realtime, session poll, catch-up, UploadHistory) egymástól függetlenül is detectálhatja ugyanazt az átmenetet. A dedup háromszintű:
 
-1. **`upload_notif_{id}` key a `notifiedUploads` refben** — `notifyUploadStatus()` belsejében: ha be van állítva, a függvény azonnal `return`-öl. Ez lefedi: session poll, catch-up, Realtime cmr-handler.
-2. **`_notifiedUploadIds` module-level Set** — `notifyUploadStatus()` mindig beírja; `isUploadNotified(id)` exportált függvénnyel más komponensek is lekérdezhetik.
+1. **`upload_notif_{id}` key a `notifiedUploads` refben** — `notifyUploadStatus()` belsejében: ha be van állítva, a függvény azonnal `return`-öl. Ez lefedi a lokális session élettartamát.
+2. **`_notifiedUploadIds` module-level Set** — `notifyUploadStatus()` mindig beírja; `isUploadNotified(id)` exportált függvénnyel más komponensek is lekérdezhetik (cross-tab/cross-instance védelem).
 3. **`UploadHistory.tsx` fallback check** — `isUploadNotified(rec.id)` hívás a `prevStatus → curStatus` átmenet-toast előtt. Ha a LiveNotificationProvider már elküldte a toastot, az UploadHistory átugorja — de a cache invalidálást elvégzi.
 
-**UploadHistory fallback megmarad:** ha a user tab-ot frissíi (session poll üres), az UploadHistory pollingja még mindig detektálja és megjeleníti az értesítést.
+**UploadHistory fallback megmarad:** ha a user tab-ot frissíti (session poll üres), az UploadHistory pollingja még mindig detektálja és megjeleníti az értesítést.
 
-**Supabase TS cast:** dinamikus tábla lekérdezéseknél (változó `parentTable` paraméter, `.in(id, ids)` kötöttkészlet) a Supabase TS generatór `never`-t ad vissza. Lépjénk `(supabase as any)` cast-ra + explicit row típus annotációra a `for...of` során.
+**Supabase TS cast:** dinamikus tábla lekérdezéseknél (változó `parentTable` paraméter, `.in(id, ids)` kötöttkészlet) a Supabase TS generátor `never`-t ad vissza. Lépjünk `(supabase as any)` cast-ra + explicit row típus annotációra a `for...of` során.
 
 **Nincs értesítési center (harang ikon, lista):**
 - Toast + email kombináció elegendő

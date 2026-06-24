@@ -12,7 +12,7 @@
 - `ManualUpload.tsx` — drag & drop + fájlválasztó, 4 tab: Számlák / Tranzakciók / Bérek / Riportok
 - `document_category` választás: invoice / payroll (invoice_uploads táblában)
 - Támogatott formátumok: PDF, JPG, PNG, WebP (számlák); PDF, CSV, XLS/XLSX (tranzakciók, riportok)
-- `UploadHistory` komponens: korábbi feltöltések státusza, 90 másodperces polling
+- `UploadHistory` komponens: korábbi feltöltések státusza; **3 másodperces polling** (aktív amíg van folyamatban lévő feltöltés, vagy az utolsó feltöltés 90 másodpercnél frissebb)
 - `UploadedFilesModal` — feltöltött fájlok kezelése a tab-ra szűrve
 
 **Fájlkezelő Modal (UploadedFilesModal) — 2026-06-24:**
@@ -38,7 +38,7 @@ A feldolgozási toast értesítések **globálisan jelennek meg**, függetlenül
 **Session polling részletei:**
 - `registerPendingUpload(uploadId)` — exportált függvény a `LiveNotificationProvider`-ből
 - Hívás helye: `ManualUpload.tsx` — minden egyes `invoice_uploads.insert()` sikeres sor után
-- A polling automatikusan leáll, ha minden ID terminális státuszba kerül (`processed`, `cmr_attached`, `cmr_orphaned`, `cmr_escalated`, `ignored`, `error`)
+- A polling automatikusan leáll, ha minden ID terminális státuszba kerül (`processed`, `completed`, `cmr_attached`, `cmr_orphaned`, `cmr_escalated`, `ignored`, `error`, `failed`, `webhook_failed`)
 - Csak az `invoice_uploads` táblát pollozza (tranzakciókat a Realtime kezeli `transaction_uploads` listener-rel)
 
 **Toast státusz leképezés (`notifyUploadStatus`):**
