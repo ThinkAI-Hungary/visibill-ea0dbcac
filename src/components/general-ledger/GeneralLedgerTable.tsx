@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { ChevronDown, ChevronRight, Maximize2, Minimize2, Loader2, RefreshCw, Edit2, X, Check, ChevronsUpDown } from 'lucide-react';
-import { exportGlExcel } from '@/lib/glExport';
+import { exportGlExcel, exportGlAnalyticalExcel } from '@/lib/glExport';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
@@ -78,6 +78,7 @@ function highlightMatch(text: string, query: string): React.ReactNode {
 export interface GeneralLedgerTableRef {
   expandAllAndPrint: () => void;
   exportExcel: (companyName?: string) => Promise<void>;
+  exportAnalyticalExcel: (companyName?: string) => Promise<void>; // F6
   getStats: () => { accountCount: number; leafCount: number; totalDebit: number; totalCredit: number };
   expandAll: () => void;
   collapseAll: () => void;
@@ -88,11 +89,12 @@ interface GeneralLedgerTableProps {
   dateFrom?: string;
   dateTo?: string;
   globalSearch?: string;
+  isPolling?: boolean; // P4: only poll when AI/import is running
   onStatsChange?: (stats: { accountCount: number; leafCount: number; totalDebit: number; totalCredit: number; classifiedItems: number; totalItems: number }) => void;
 }
 
 function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.ForwardedRef<GeneralLedgerTableRef>) {
-  const { presetId, dateFrom, dateTo, globalSearch, onStatsChange } = props;
+  const { presetId, dateFrom, dateTo, globalSearch, isPolling, onStatsChange } = props;
   const { selectedCompany } = useCompany();
   const { session } = useAuth();
   const { toast } = useToast();
@@ -155,7 +157,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       return data || [];
     },
     enabled: !!presetId && !!selectedCompany?.id && !!exchangeRates,
-    refetchInterval: 3000,
+    refetchInterval: isPolling ? 3000 : false, // P4: conditional polling
     placeholderData: (prev: any) => prev,
   });
 
@@ -178,7 +180,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       return data || [];
     },
     enabled: !!selectedCompany?.id && !!presetId && !!exchangeRates,
-    refetchInterval: 3000,
+    refetchInterval: isPolling ? 3000 : false, // P4: conditional polling
     placeholderData: (prev: any) => prev,
   });
 
@@ -456,6 +458,9 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
     },
     exportExcel: async (companyName?: string) => {
       await exportGlExcel(processedRows, companyName, footerTotals);
+    },
+    exportAnalyticalExcel: async (companyName?: string) => {
+      await exportGlAnalyticalExcel(processedRows, companyName, footerTotals);
     },
     getStats: () => {
       const leaves = tableData.filter(d => !d.hasChildren);

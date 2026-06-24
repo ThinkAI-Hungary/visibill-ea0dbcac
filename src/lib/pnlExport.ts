@@ -56,7 +56,7 @@ export const exportPnlExcel = async (
     const pnlRow = worksheet.addRow({
       sor: row.row_code,
       nev: row.name,
-      elozo: null,
+      elozo: row.previousYear ? formatValue(row.previousYear) : null,
       targy: formatValue(row.displayBalance)
     });
 

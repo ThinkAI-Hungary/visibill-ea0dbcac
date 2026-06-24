@@ -131,7 +131,7 @@ function AccountyLayoutInner() {
   useEffect(() => {
     const count = kpis?.missingItems ?? 0;
     document.title = count > 0 ? `(${count}) eaisybooks` : 'eaisybooks';
-    return () => { document.title = 'eaisybooks'; };
+    return () => { document.title = 'eaisybill'; };
   }, [kpis?.missingItems]);
 
   const getUserInitials = () => {

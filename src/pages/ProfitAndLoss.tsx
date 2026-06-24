@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActivePreset } from '@/hooks/useActivePreset';
-import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText, Maximize2, Minimize2, ClipboardCopy, ExternalLink, AlertTriangle, Wand2 } from 'lucide-react';
+import { Loader2, Save, ChevronRight, ChevronDown, Download, ReceiptText, FileText, Maximize2, Minimize2, ClipboardCopy, ExternalLink, AlertTriangle, Wand2, BarChart3 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/page-header';
@@ -26,7 +26,8 @@ import { useScopedNavigate } from '@/lib/navigation';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
 import { reportError } from '@/lib/errorReporter';
-
+import PnlChart from '@/components/pnl/PnlChart'; // F9
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 
 // ── Default PnL mapping rules based on Hungarian Sztv. "A" variant ──
@@ -62,7 +63,16 @@ const DEFAULT_PNL_RULES: Array<{ prefix: string; pnlId: string; label: string }>
   { prefix: '98', pnlId: '00000000-0000-0000-0000-000000000300', label: 'III. Egyéb bevétel' },
 ];
 
-function PnlMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGenericPreset?: boolean }) {
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  PnlMappingTab (P5: receives glAccounts as prop, P6: split memo)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function PnlMappingTab({ presetId, isGenericPreset, glAccounts, isLoadingGlAccounts }: { 
+  presetId?: string; 
+  isGenericPreset?: boolean;
+  glAccounts?: any[];       // P5: passed from parent
+  isLoadingGlAccounts?: boolean;
+}) {
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -79,18 +89,6 @@ function PnlMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGen
       if (error) throw error;
       return data;
     }
-  });
-
-  // Fetch GL Accounts
-  const { data: glAccounts, isLoading: isLoadingGlAccounts } = useQuery({
-    queryKey: ['gl_accounts', presetId],
-    queryFn: async () => {
-      if (!presetId) return [];
-      const { data, error } = await supabase.from('gl_accounts').select('*').eq('preset_id', presetId).order('gl_number');
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!presetId
   });
 
   // Fetch Existing Mappings
@@ -205,7 +203,8 @@ function PnlMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGen
     });
   };
 
-  const processedAccounts = React.useMemo(() => {
+  // P6: Split memo — expensive tree build vs cheap visibility filter
+  const treeData = React.useMemo(() => {
     if (!glAccounts) return [];
     
     const cleanId = (id: string) => id ? String(id).replace(/\./g, '') : '';
@@ -225,13 +224,21 @@ function PnlMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGen
 
     return rawData.map(item => {
       const ancestors = rawData.filter(a => item.cid.startsWith(a.cid) && a.cid !== item.cid);
+      const ancestorIds = ancestors.map(a => a.id);
       const isRoot = ancestors.length === 0;
       const depth = ancestors.length;
-      const isVisibleOnScreen = isRoot || ancestors.every(a => expandedRowIds.has(a.id));
       
-      return { ...item, isRoot, depth, isVisibleOnScreen };
+      return { ...item, isRoot, depth, ancestorIds };
     });
-  }, [glAccounts, expandedRowIds]);
+  }, [glAccounts]);
+
+  // P6: Cheap visibility filter (only depends on expandedRowIds)
+  const processedAccounts = React.useMemo(() => {
+    return treeData.map(item => ({
+      ...item,
+      isVisibleOnScreen: item.isRoot || item.ancestorIds.every((id: string) => expandedRowIds.has(id))
+    }));
+  }, [treeData, expandedRowIds]);
 
   if (isLoadingStructure || isLoadingGlAccounts || isLoadingMappings) {
     return <div className="p-8 flex justify-center"><Loader2 className="animate-spin w-8 h-8 text-primary" /></div>;
@@ -340,16 +347,25 @@ function PnlMappingTab({ presetId, isGenericPreset }: { presetId?: string; isGen
   );
 }
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  PnlViewTab (U7, U8, F8, F9, F10)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 function PnlViewTab({ presetId }: { presetId?: string }) {
   const { selectedCompany } = useCompany();
   const { dateFromFormatted: dateFrom, dateToFormatted: dateTo } = useDateRange();
   const [inThousands, setInThousands] = useState(true);
   const [hideZeroRows, setHideZeroRows] = useState(false);
+  const [showChart, setShowChart] = useState(false); // F9
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [expandedGl, setExpandedGl] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const scopedNavigate = useScopedNavigate();
   const { data: exchangeRates } = useExchangeRates();
+
+  // F10: Determine previous fiscal year
+  const currentFiscalYear = dateFrom ? parseInt(dateFrom.substring(0, 4)) : new Date().getFullYear();
+  const previousFiscalYear = currentFiscalYear - 1;
 
   const { data: pnlData, isLoading } = useQuery({
     queryKey: ['pnl_report', selectedCompany?.id, presetId, dateFrom, dateTo, exchangeRates],
@@ -385,6 +401,36 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
     enabled: !!selectedCompany?.id && !!presetId
   });
 
+  // U7+F10: Load previous year frozen data from annual_reports
+  const { data: previousYearFrozen } = useQuery({
+    queryKey: ['frozen_pnl', selectedCompany?.id, previousFiscalYear],
+    queryFn: async () => {
+      if (!selectedCompany?.id) return null;
+      const { data } = await supabase
+        .from('annual_reports')
+        .select('frozen_pnl_data')
+        .eq('company_id', selectedCompany.id)
+        .eq('fiscal_year', previousFiscalYear)
+        .maybeSingle();
+      return data?.frozen_pnl_data || null;
+    },
+    enabled: !!selectedCompany?.id,
+    staleTime: 60_000,
+  });
+
+  // Build previous year lookup map
+  const prevYearMap = React.useMemo(() => {
+    if (!previousYearFrozen || !Array.isArray(previousYearFrozen)) return {};
+    const map: Record<string, number> = {};
+    previousYearFrozen.forEach((row: any) => {
+      if (row.row_code && row.balance != null) {
+        map[row.row_code] = Number(row.balance) || 0;
+      }
+    });
+    return map;
+  }, [previousYearFrozen]);
+
+  const hasPreviousYear = Object.keys(prevYearMap).length > 0;
 
   const toggleRow = (id: string) => {
     setExpandedRows(prev => {
@@ -464,9 +510,12 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
       // Display balance applies the multiplier (e.g., costs are positive in P&L)
       const displayBalance = rawBalance * (row.multiplier || 1);
 
-      return { ...row, displayBalance };
+      // F10: Previous year value from frozen data
+      const previousYear = prevYearMap[row.row_code] || 0;
+
+      return { ...row, displayBalance, previousYear };
     });
-  }, [pnlData]);
+  }, [pnlData, prevYearMap]);
 
   if (isLoading) {
     return <div className="p-12 flex justify-center"><Loader2 className="animate-spin w-8 h-8 text-primary" /></div>;
@@ -504,6 +553,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
           ].map(kpi => {
             const row = processedData.find(r => r.row_code === kpi.code);
             const val = row?.displayBalance || 0;
+            const prev = row?.previousYear || 0;
             const isPositive = val >= 0;
             return (
               <div key={kpi.code} className="bg-card border border-border/60 rounded-xl p-3.5">
@@ -513,11 +563,30 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                   isPositive ? "text-emerald-600" : "text-red-500"
                 )}>
                   {isPositive ? '+' : ''}{formatValue(val)} <span className="text-xs font-normal text-muted-foreground">{inThousands ? 'E Ft' : 'Ft'}</span>
+                  {/* U8: Only show % change badge if previous year data exists */}
+                  {hasPreviousYear && prev !== 0 && (() => {
+                    const pctChange = Math.round(((val - prev) / Math.abs(prev)) * 100);
+                    if (pctChange === 0) return null;
+                    const isUp = pctChange > 0;
+                    return (
+                      <span className={cn("ml-1.5 text-[10px] font-semibold", isUp ? "text-emerald-500" : "text-red-400")}>
+                        {isUp ? '▲' : '▼'}{Math.abs(pctChange)}%
+                      </span>
+                    );
+                  })()}
                 </div>
+                {hasPreviousYear && prev !== 0 && (
+                  <div className="text-[10px] text-muted-foreground mt-0.5">Előző év: {formatValue(prev)}</div>
+                )}
               </div>
             );
           })}
         </div>
+      )}
+
+      {/* F9: Waterfall chart (toggle) */}
+      {showChart && processedData.length > 0 && (
+        <PnlChart processedData={processedData} inThousands={inThousands} />
       )}
 
       <div className="flex justify-between items-center mb-6 bg-muted/30 p-4 rounded-xl border border-border/50 print:hidden">
@@ -532,6 +601,13 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
             <Switch id="hide-zero" checked={hideZeroRows} onCheckedChange={setHideZeroRows} />
             <Label htmlFor="hide-zero" className="font-medium cursor-pointer">
               Nullás sorok elrejtése
+            </Label>
+          </div>
+          {/* F9: Chart toggle */}
+          <div className="flex items-center space-x-2">
+            <Switch id="show-chart" checked={showChart} onCheckedChange={setShowChart} />
+            <Label htmlFor="show-chart" className="font-medium cursor-pointer flex items-center gap-1">
+              <BarChart3 className="w-3.5 h-3.5" /> Grafikon
             </Label>
           </div>
         </div>
@@ -564,7 +640,20 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
         <div className="grid grid-cols-12 gap-4 p-4 bg-muted/80 backdrop-blur-sm border-b border-border text-sm font-bold tracking-wide uppercase text-muted-foreground select-none sticky top-0 z-10">
           <div className="col-span-1 text-center">Sor</div>
           <div className="col-span-7">Megnevezés</div>
-          <div className="col-span-2 text-right">Előző Év</div>
+          <div className="col-span-2 text-right flex items-center justify-end gap-1">
+            Előző Év
+            {/* U7: Tooltip if no previous year data */}
+            {!hasPreviousYear && (
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertTriangle className="w-3 h-3 text-amber-500 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>Nincs lezárt {previousFiscalYear}. éves beszámoló</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
           <div className="col-span-2 text-right text-foreground">Tárgyidőszak</div>
         </div>
         
@@ -576,7 +665,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
               const isRoman = row.type === 'roman';
               const isCapital = row.type === 'capital';
 
-              if (hideZeroRows && !isCapital && row.displayBalance === 0 && (Number((row as any).previous_year) || 0) === 0) {
+              if (hideZeroRows && !isCapital && row.displayBalance === 0 && row.previousYear === 0) {
                 return null;
               }
               const glAccounts = (row.gl_accounts as any[]) || [];
@@ -606,18 +695,23 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
                       </div>
                       <span className={cn(isCapital && "uppercase tracking-wide")}>{row.name}</span>
                     </div>
-                    <div className="col-span-2 text-right text-muted-foreground/50 tabular-nums">
-                      -
+                    {/* F10: Previous year column — show real data or dash */}
+                    <div className={cn(
+                      "col-span-2 text-right tabular-nums",
+                      hasPreviousYear ? "text-muted-foreground" : "text-muted-foreground/50"
+                    )}>
+                      {hasPreviousYear ? formatValue(row.previousYear) : '—'}
                     </div>
                     <div className={cn(
                       "col-span-2 text-right tabular-nums",
                       isCapital ? "text-primary text-base" : ""
                     )}>
                       {formatValue(row.displayBalance)}
-                      {(() => {
-                        const prev = Number((row as any).previous_year) || 0;
-                        const curr = row.displayBalance || 0;
-                        if (prev === 0 || curr === prev) return null;
+                      {/* U8: Only show ▲/▼ badge if previous year data exists and is non-zero */}
+                      {hasPreviousYear && row.previousYear !== 0 && (() => {
+                        const prev = row.previousYear;
+                        const curr = row.displayBalance;
+                        if (curr === prev) return null;
                         const pctChange = Math.round(((curr - prev) / Math.abs(prev)) * 100);
                         const isUp = pctChange > 0;
                         return (
@@ -729,7 +823,7 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
           <ContextMenuItem onClick={collapseAllPnl} className="gap-2"><Minimize2 className="w-4 h-4" /> Mind összecsukása</ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem className="gap-2" onClick={() => {
-            const csv = 'Sor;Megnevezés;Előző év;Tárgyév\n' + processedData.map(r => `${r.row_code};${r.name};${(r as any).previous_year || 0};${r.displayBalance || 0}`).join('\n');
+            const csv = 'Sor;Megnevezés;Előző év;Tárgyév\n' + processedData.map(r => `${r.row_code};${r.name};${r.previousYear || 0};${r.displayBalance || 0}`).join('\n');
             navigator.clipboard.writeText(csv);
           }}><ClipboardCopy className="w-4 h-4" /> Másolás CSV-ként</ContextMenuItem>
         </ContextMenuContent>
@@ -737,6 +831,10 @@ function PnlViewTab({ presetId }: { presetId?: string }) {
     </div>
   );
 }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  Main ProfitAndLoss component (P5: single GL query)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export default function ProfitAndLoss() {
   const { selectedCompany } = useCompany();
@@ -756,8 +854,8 @@ export default function ProfitAndLoss() {
   const { activePresetId, setActivePresetId, presets } = useActivePreset(selectedCompany?.id);
   const { dateFrom, dateTo, setDateFrom, setDateTo } = useDateRange();
 
-  // Queries to compute validation warning
-  const { data: glAccounts } = useQuery({
+  // P5: Single GL accounts query — shared between main component and PnlMappingTab
+  const { data: glAccounts, isLoading: isLoadingGlAccounts } = useQuery({
     queryKey: ['gl_accounts', activePresetId],
     queryFn: async () => {
       if (!activePresetId) return [];
@@ -979,7 +1077,13 @@ export default function ProfitAndLoss() {
               </div>
             </CardHeader>
             <CardContent className="pt-6">
-              <PnlMappingTab presetId={activePresetId} isGenericPreset={presets?.find(p => p.id === activePresetId)?.type === 'generic'} />
+              {/* P5: Pass glAccounts as prop instead of re-querying */}
+              <PnlMappingTab 
+                presetId={activePresetId} 
+                isGenericPreset={presets?.find(p => p.id === activePresetId)?.type === 'generic'} 
+                glAccounts={glAccounts}
+                isLoadingGlAccounts={isLoadingGlAccounts}
+              />
             </CardContent>
           </Card>
         </TabsContent>
