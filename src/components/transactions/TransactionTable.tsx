@@ -114,7 +114,7 @@ const ExpandedTransactionInvoice = React.memo(function ExpandedTransactionInvoic
 
       // 2. Fetch additional manual matches from join table
       const { data: extraMatches } = await supabase
-        .from('transaction_invoice_matches')
+        .from('transaction_invoice_matches' as any)
         .select('invoice_id, invoice_source')
         .eq('transaction_id', transaction.id);
 

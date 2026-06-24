@@ -41,7 +41,7 @@ export function ReturnHistoryTable({ companyId, currentReturnId, onNavigate }: H
       </div>
       {history.map((ret: any) => (
         <button
-          key={ret.id}
+          key={ret.id ?? `${ret.period_year}-${ret.period_month}`}
           className={cn(
             "grid grid-cols-12 gap-2 px-4 py-2.5 text-sm w-full text-left hover:bg-muted/30 transition-colors",
             ret.id === currentReturnId && "bg-primary/5 border-l-2 border-l-primary"

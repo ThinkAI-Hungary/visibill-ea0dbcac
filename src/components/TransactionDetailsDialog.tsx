@@ -593,7 +593,7 @@ export const TransactionDetailsDialog = ({
   const fetchExtraMatches = async () => {
     if (!transaction) return;
     const { data } = await supabase
-      .from('transaction_invoice_matches')
+      .from('transaction_invoice_matches' as any)
       .select('id, invoice_id, invoice_source')
       .eq('transaction_id', transaction.id);
     
@@ -637,7 +637,7 @@ export const TransactionDetailsDialog = ({
       const source = submittedCheck ? 'submitted' : 'nav';
 
       const { error } = await supabase
-        .from('transaction_invoice_matches')
+        .from('transaction_invoice_matches' as any)
         .insert({
           transaction_id: transaction.id,
           invoice_id: selectedInvoiceId,
@@ -672,7 +672,7 @@ export const TransactionDetailsDialog = ({
     setSaving(true);
     try {
       const { error } = await supabase
-        .from('transaction_invoice_matches')
+        .from('transaction_invoice_matches' as any)
         .delete()
         .eq('id', matchId);
 
