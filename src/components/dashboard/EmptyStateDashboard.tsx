@@ -1015,6 +1015,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
             onClick={() => signOut()}
             className="absolute left-4 top-4 z-10 p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors group"
             aria-label="Kijelentkezés"
+            tabIndex={-1}
           >
             <LogOut className="h-4 w-4" />
             <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md bg-popover border border-border text-xs font-medium text-popover-foreground whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity shadow-md">
@@ -1040,6 +1041,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                     onClick={() => setIsOnboarding(true)} 
                     className="w-full" 
                     size="lg"
+                    autoFocus
                   >
                     Első lépések
                     <ArrowRight className="h-5 w-5 ml-2" />
