@@ -21,6 +21,18 @@ export function registerPendingUpload(uploadId: string) {
 }
 
 /**
+ * Module-level set of upload IDs for which a terminal-status toast has
+ * already been shown in this browser session. UploadHistory can call
+ * isUploadNotified() before showing its own fallback toast to prevent
+ * duplicates when session polling and UploadHistory polling both detect
+ * the same processing → completed transition.
+ */
+const _notifiedUploadIds = new Set<string>();
+export function isUploadNotified(uploadId: string): boolean {
+  return _notifiedUploadIds.has(uploadId);
+}
+
+/**
  * Global Realtime listener that:
  * 1. Shows toast notifications when new files are processed (INSERT debounced per upload ID)
  * 2. Silently invalidates TanStack Query caches on any INSERT/UPDATE/DELETE for auto-refresh
@@ -92,10 +104,11 @@ export function LiveNotificationProvider() {
   // of which mechanism fires first.
   const notifyUploadStatus = useCallback((row: { id: string; file_name: string; processing_status: string }) => {
     // Unified cross-mechanism dedup: once per upload ID, regardless of which
-    // mechanism (Realtime / session poll / catch-up) delivers the event first.
+    // mechanism (Realtime / session poll / catch-up / UploadHistory) fires first.
     const dedupKey = `upload_notif_${row.id}`;
     if (notifiedUploads.current.has(dedupKey)) return;
     notifiedUploads.current.add(dedupKey);
+    _notifiedUploadIds.add(row.id); // module-level: accessible to UploadHistory
 
     const fileName = row.file_name || 'Ismeretlen fájl';
     const qc = queryClientRef.current;

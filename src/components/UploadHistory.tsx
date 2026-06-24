@@ -16,6 +16,7 @@ import { hu } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { isUploadNotified } from '@/components/LiveNotificationProvider';
 import { lazy, Suspense } from 'react';
 
 const CMREscalationDialog = lazy(() => import('@/components/CMREscalationDialog'));
@@ -293,22 +294,25 @@ export default function UploadHistory({ activeTab }: UploadHistoryProps) {
       // Transition detected: was active (pending/processing) → now completed
       // This acts as a FALLBACK for cases where the Realtime event was missed.
       // CMR/transport document toasts are handled globally by LiveNotificationProvider.
+      // Skip if LiveNotificationProvider (session poll or catch-up) already showed a toast.
       if (prevStatus && activeStatuses.has(prevStatus) && doneStatuses.has(curStatus)) {
-        // Tab-aware toast title
-        const toastTitle = activeTab === 'invoices' ? 'Számlák feldolgozva!'
-          : activeTab === 'salaries' ? 'Bér/járulékok feldolgozva!'
-          : activeTab === 'bank-statements' ? 'Bankkivonat feldolgozva!'
-          : activeTab === 'reports' ? 'Riport feldolgozva!'
-          : 'Tranzakciók feldolgozva!';
+        if (!isUploadNotified(rec.id)) {
+          // Tab-aware toast title
+          const toastTitle = activeTab === 'invoices' ? 'Számlák feldolgozva!'
+            : activeTab === 'salaries' ? 'Bér/járulékok feldolgozva!'
+            : activeTab === 'bank-statements' ? 'Bankkivonat feldolgozva!'
+            : activeTab === 'reports' ? 'Riport feldolgozva!'
+            : 'Tranzakciók feldolgozva!';
 
-        toast({
-          title: toastTitle,
-          description: rec.metadata?.multi_invoice
-            ? `${rec.file_name} — ${rec.metadata.invoice_count_processed || 0} számla sikeresen feldolgozva.`
-            : `${rec.file_name} sikeresen fel lett dolgozva.`,
-          variant: 'default',
-          duration: 5000,
-        });
+          toast({
+            title: toastTitle,
+            description: rec.metadata?.multi_invoice
+              ? `${rec.file_name} — ${rec.metadata.invoice_count_processed || 0} számla sikeresen feldolgozva.`
+              : `${rec.file_name} sikeresen fel lett dolgozva.`,
+            variant: 'default',
+            duration: 5000,
+          });
+        }
 
         // Tab-aware cache invalidation
         if (activeTab === 'invoices') {
