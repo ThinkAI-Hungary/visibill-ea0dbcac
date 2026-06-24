@@ -189,8 +189,15 @@ Deno.serve(async (req) => {
     let subject: string
 
     if (email_action_type === 'signup') {
-      subject = 'Er\u0151s\u00edtsd meg az email c\u00edmed - Visibill'
-      html = buildConfirmationHtml(supabaseUrl, token_hash, email_action_type, redirect_to, token)
+      // Signup confirmation is handled by the send-welcome-email Edge Function
+      // (triggered by the handle_new_user Postgres trigger). That email contains
+      // the verify-email link which sets both profiles.email_verified AND
+      // auth.users.email_confirmed_at. No need to send a second email here.
+      console.log('[SEND-EMAIL] Signup: deferring to send-welcome-email, skipping hook email')
+      return new Response(
+        JSON.stringify({ success: true, skipped: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     } else if (email_action_type === 'recovery' || email_action_type === 'magiclink') {
       subject = email_action_type === 'recovery'
         ? 'Jelsz\u00f3 vissza\u00e1ll\u00edt\u00e1s - Visibill'
