@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useDateRange } from '@/contexts/DateRangeContext';
 import { supabase } from '@/integrations/supabase/client';
-import { startOfYear, endOfYear, parseISO } from 'date-fns';
+import { startOfYear, endOfYear, parseISO, format } from 'date-fns';
 
 // Paginated fetch helper for tables that may exceed the Supabase default 1000 row limit.
 // Keep the query type intentionally loose: Supabase's generated table union can become
@@ -262,7 +262,7 @@ export function useDashboardData() {
         supabase.rpc('get_nav_invoice_aggregates', {
           p_company_id: companyId,
           p_date_from: '2000-01-01',
-          p_date_to: dateToFormatted
+          p_date_to: format(new Date(), 'yyyy-MM-dd')  // always today — kintlévőség is cumulative regardless of date filter
         })
       ]);
 

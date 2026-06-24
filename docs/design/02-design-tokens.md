@@ -132,7 +132,11 @@ Egyedi színkódolás tranzakció típusonként:
 
 ### Sötét Mód
 
-A sötét mód változatok erősebb (alacsonyabb lightness) hátteret és fehér/világos szöveget használnak a kontraszt megőrzéséhez. Az egyes értékek a `src/index.css` `.dark` blokkjában találhatók.
+A sötét mód változatok erősebb (alacsonyabb lightness) hátteret (`30–40%`) és fehér vagy világos szöveget (`85–100% lightness`) használnak. Az értékek a `src/index.css` `.dark` blokkjában találhatók.
+
+> **Fontos:** A szövegszín NEM hardkódolt `text-white` — a `--tr-xxx-text` CSS változó dark mode-ban `0 0% 100%` (fehér), light mode-ban sötét értéket vesz fel. Így mindkét mód egyetlen Tailwind osztállyal kezelhető: `text-[hsl(var(--tr-xxx-text))]`.
+
+**Bug (javítva 2026-06-24):** A `getTypeBgClass()` függvény korábban `text-white`-t használt minden típusnál. Light mode-ban a 92% lightness pasztell háttéren ez olvashatatlan fehér szöveget eredményezett. Javítás: `text-[hsl(var(--tr-xxx-text))]` minden típusnál.
 
 ---
 

@@ -87,7 +87,13 @@ export function useSalaryData() {
 
   const metrics = useMemo(() => {
     const totalPayments = salaryItems
-      .filter((item) => (item.tipus === 'bér' || item.tipus === 'járulék' || item.tipus === 'adó') && isSalaryItemPaid(item))
+      .filter((item) => isSalaryItemPaid(item) && (
+        // Nettó bérek: egyenként per-dolgozónak utalva
+        item.tipus === 'bér' ||
+        // Adó/járulék: CSAK a NAV-nak utalt cég szintű összesítő sorok
+        // (per-dolgozó bontások kizárva – azok ugyanannak a részletei)
+        ((item.tipus === 'járulék' || item.tipus === 'adó') && !item.munkavallalo_neve)
+      ))
       .reduce((sum, item) => sum + Number(item.összeg), 0);
     
     const employeeCount = new Set(

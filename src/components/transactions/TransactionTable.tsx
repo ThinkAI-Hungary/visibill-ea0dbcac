@@ -45,23 +45,24 @@ const getTypeBgClass = (type: string | null): string => {
   if (!type) return '';
   const t = type.toLowerCase().trim();
 
-  if (t === 'szállítói tranzakció') return 'bg-[hsl(var(--tr-supplier-bg)/0.6)] text-white';
-  if (t === 'vevői tranzakció') return 'bg-[hsl(var(--tr-customer-bg)/0.6)] text-white';
-  if (t === 'számlák közötti átvezetés') return 'bg-[hsl(var(--tr-transfer-bg)/0.6)] text-white';
-  if (t === 'banki számlavezetési díj') return 'bg-[hsl(var(--tr-bankfee-bg)/0.6)] text-white';
-  if (t === 'kártyadíj') return 'bg-[hsl(var(--tr-cardfee-bg)/0.6)] text-white';
-  if (t === 'hiteltörlesztés' || t === 'tranzakciós illeték' || t === 'kamat') return 'bg-[hsl(var(--tr-loan-bg)/0.6)] text-white';
-  if (t === 'atm pénzfelvét') return 'bg-[hsl(var(--tr-atm-bg)/0.6)] text-white';
-  if (t === 'pénztári kp felvét') return 'bg-[hsl(var(--tr-cashout-bg)/0.6)] text-white';
-  if (t === 'pénztári kp befizetés' || t === 'kp befizetés atm-en keresztül') return 'bg-[hsl(var(--tr-cashin-bg)/0.6)] text-white';
-  if (t === 'bérek') return 'bg-[hsl(var(--tr-salary-bg)/0.6)] text-white';
-  if (t === 'járulékok/adók') return 'bg-[hsl(var(--tr-tax-bg)/0.6)] text-white';
-  if (t === 'bankköltség') return 'bg-[hsl(var(--tr-bankcost-bg)/0.6)] text-white';
-  if (t === 'kamatjóváírás') return 'bg-[hsl(var(--tr-interest-bg)/0.6)] text-white';
-  if (t === 'atm készpénzfelvét') return 'bg-[hsl(var(--tr-atmcash-bg)/0.6)] text-white';
+  if (t === 'szállítói tranzakció') return 'bg-[hsl(var(--tr-supplier-bg)/0.6)] text-[hsl(var(--tr-supplier-text))]';
+  if (t === 'vevői tranzakció') return 'bg-[hsl(var(--tr-customer-bg)/0.6)] text-[hsl(var(--tr-customer-text))]';
+  if (t === 'számlák közötti átvezetés') return 'bg-[hsl(var(--tr-transfer-bg)/0.6)] text-[hsl(var(--tr-transfer-text))]';
+  if (t === 'banki számlavezetési díj') return 'bg-[hsl(var(--tr-bankfee-bg)/0.6)] text-[hsl(var(--tr-bankfee-text))]';
+  if (t === 'kártyadíj') return 'bg-[hsl(var(--tr-cardfee-bg)/0.6)] text-[hsl(var(--tr-cardfee-text))]';
+  if (t === 'hiteltörlesztés' || t === 'tranzakciós illeték' || t === 'kamat') return 'bg-[hsl(var(--tr-loan-bg)/0.6)] text-[hsl(var(--tr-loan-text))]';
+  if (t === 'atm pénzfelvét') return 'bg-[hsl(var(--tr-atm-bg)/0.6)] text-[hsl(var(--tr-atm-text))]';
+  if (t === 'pénztári kp felvét') return 'bg-[hsl(var(--tr-cashout-bg)/0.6)] text-[hsl(var(--tr-cashout-text))]';
+  if (t === 'pénztári kp befizetés' || t === 'kp befizetés atm-en keresztül') return 'bg-[hsl(var(--tr-cashin-bg)/0.6)] text-[hsl(var(--tr-cashin-text))]';
+  if (t === 'bérek') return 'bg-[hsl(var(--tr-salary-bg)/0.6)] text-[hsl(var(--tr-salary-text))]';
+  if (t === 'járulékok/adók') return 'bg-[hsl(var(--tr-tax-bg)/0.6)] text-[hsl(var(--tr-tax-text))]';
+  if (t === 'bankköltség') return 'bg-[hsl(var(--tr-bankcost-bg)/0.6)] text-[hsl(var(--tr-bankcost-text))]';
+  if (t === 'kamatjóváírás') return 'bg-[hsl(var(--tr-interest-bg)/0.6)] text-[hsl(var(--tr-interest-text))]';
+  if (t === 'atm készpénzfelvét') return 'bg-[hsl(var(--tr-atmcash-bg)/0.6)] text-[hsl(var(--tr-atmcash-text))]';
 
   return '';
 };
+
 
 // ── Expanded invoice inline (lazy-loaded, reuses ExpandedInvoiceRow) ──
 
