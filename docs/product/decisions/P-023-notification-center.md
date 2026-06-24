@@ -14,7 +14,7 @@
 - `LiveNotificationProvider` — `ProtectedLayout`-ban mountolva, mindig aktív
 - Supabase WS channel: figyelők az összes releváns táblára (`invoice_uploads`, `invoices`, `transport_documents`, `salary`, `transactions`, `shipment_matches`, stb.)
 - Client-side `company_id` szűrés (nem server-side, mert Realtime `REPLICA IDENTITY FULL` nélkül `oldRow` üres)
-- Deduplikáció: `notifiedUploads` in-memory Set — cég váltáskor törlődik
+- Dedup: `notifiedUploads` in-memory ref Set + **`_notifiedUploadIds` module-level Set** — cég váltáskor törlődik
 - **Korlát:** WS reconnect-nél a közben keletkező events **nem replay-elődnek** → réteg 2-3 kompenzálja
 
 ### Réteg 2 — Session-scoped polling (Realtime fallback)
@@ -31,19 +31,31 @@
 - Megmutatja a `notifiedUploads`-ban még nem szereplő értesítéseket
 - **Skálázás:** ritka esemény, nem folyamatos DB terhelés
 
-### Toast típusok és cache invalidálás
-| Esemény | Toast | Cache keys |
+### Toast típusok, cache invalidálás és Lucide ikonok
+| Esemény | Toast (ikon) | Cache keys |
 |---|---|---|
-| `invoices INSERT` | "Gratulálunk! Fájl feldolgozva" (3s, generic) | `submittedInvoices`, `dashboardData`, ... |
-| `invoice_uploads` → `processed`/`completed` | "Számla feldolgozva! ✓" (5s) | `submittedInvoices`, `recentInvoices`, `dashboardData` |
-| `transport_documents INSERT` → `matched` | "🚚 [Típus] párosítva!" (5s) | `shipments-matching` |
-| `transport_documents INSERT` → `orphaned` | "📄 [Típus] feldolgozva" (5s) | — |
-| `transport_documents INSERT` → `escalated` | "⚠️ [Típus] eszkalálva" (8s, destructive) | `shipments-matching` |
-| `transport_documents UPDATE` → `matched` | "🚚 [Típus] utólag párosítva!" (5s) | `shipments-matching` |
-| `invoice_uploads` → `cmr_attached` | "🚚 Dokumentum párosítva!" (5s) | `shipments-matching` |
-| `invoice_uploads` → `cmr_escalated` | "⚠️ Eszkaláció szükséges" (8s, destructive) | `shipments-matching` |
-| `transaction_uploads` → `completed` | "Tranzakciók feldolgozva!" (5s) | `transactions` |
-| `report_uploads` → `completed` | "Riport feldolgozva!" (5s) | `courier-reports` |
+| `invoices INSERT` | Bell — "Gratulálunk! Fájl feldolgozva" (3s) | `submittedInvoices`, `dashboardData`, ... |
+| `invoice_uploads` → `processed`/`completed` | CheckCircle — "Számla feldolgozva!" (5s) | `submittedInvoices`, `recentInvoices`, `dashboardData`, `uploadHistory`, `uploaded-files` |
+| `transport_documents INSERT` → `matched` | Truck — "[Típus] párosítva!" (5s) | `shipments-matching` |
+| `transport_documents INSERT` → `orphaned` | FileText — "[Típus] feldolgozva" (5s) | — |
+| `transport_documents INSERT` → `escalated` | AlertTriangle — "[Típus] eszkalálva" (8s, destructive) | `shipments-matching` |
+| `transport_documents UPDATE` → `matched` | Truck — "[Típus] utólag párosítva!" (5s) | `shipments-matching` |
+| `invoice_uploads` → `cmr_attached` | Truck — "Dokumentum párosítva!" (5s) | `shipments-matching`, `uploadHistory`, `uploaded-files` |
+| `invoice_uploads` → `cmr_escalated` | AlertTriangle — "Eszkaláció szükséges" (8s, destructive) | `shipments-matching`, `uploadHistory`, `uploaded-files` |
+| `transaction_uploads` → `completed` | Banknote — "Tranzakciók feldolgozva!" (5s) | `transactions` |
+| `report_uploads` → `completed` | ClipboardCheck — "Riport feldolgozva!" (5s) | `courier-reports` |
+
+### Cross-komponens dedup architektúra (2026-06-24)
+
+A négy független toast-forrás (Realtime, session poll, catch-up, UploadHistory) egymástól függetlenül is detectálhatja ugyanazt az átmenetet. A dedup háromszintű:
+
+1. **`upload_notif_{id}` key a `notifiedUploads` refben** — `notifyUploadStatus()` belsejében: ha be van állítva, a függvény azonnal `return`-öl. Ez lefedi: session poll, catch-up, Realtime cmr-handler.
+2. **`_notifiedUploadIds` module-level Set** — `notifyUploadStatus()` mindig beírja; `isUploadNotified(id)` exportált függvénnyel más komponensek is lekérdezhetik.
+3. **`UploadHistory.tsx` fallback check** — `isUploadNotified(rec.id)` hívás a `prevStatus → curStatus` átmenet-toast előtt. Ha a LiveNotificationProvider már elküldte a toastot, az UploadHistory átugorja — de a cache invalidálást elvégzi.
+
+**UploadHistory fallback megmarad:** ha a user tab-ot frissíi (session poll üres), az UploadHistory pollingja még mindig detektálja és megjeleníti az értesítést.
+
+**Supabase TS cast:** dinamikus tábla lekérdezéseknél (változó `parentTable` paraméter, `.in(id, ids)` kötöttkészlet) a Supabase TS generatór `never`-t ad vissza. Lépjénk `(supabase as any)` cast-ra + explicit row típus annotációra a `for...of` során.
 
 **Nincs értesítési center (harang ikon, lista):**
 - Toast + email kombináció elegendő

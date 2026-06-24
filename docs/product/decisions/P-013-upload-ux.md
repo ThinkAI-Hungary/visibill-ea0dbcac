@@ -42,14 +42,19 @@ A feldolgozási toast értesítések **globálisan jelennek meg**, függetlenül
 - Csak az `invoice_uploads` táblát pollozza (tranzakciókat a Realtime kezeli `transaction_uploads` listener-rel)
 
 **Toast státusz leképezés (`notifyUploadStatus`):**
-| `processing_status` | Toast | Cache invalidálás |
+| `processing_status` | Toast (Lucide ikon) | Cache invalidálás |
 |---|---|---|
-| `processed` / `completed` | "Számla feldolgozva! ✓" | `submittedInvoices`, `recentInvoices`, `dashboardData` |
-| `cmr_attached` | "🚚 Dokumentum párosítva!" | `shipments-matching` |
-| `cmr_orphaned` | "📄 Dokumentum rögzítve" | — |
-| `cmr_escalated` | "⚠️ Eszkaláció szükséges" (destructive) | `shipments-matching` |
+| `processed` / `completed` | CheckCircle — "Számla feldolgozva!" | `submittedInvoices`, `recentInvoices`, `dashboardData`, **`uploadHistory`**, **`uploaded-files`** |
+| `cmr_attached` | Truck — "Dokumentum párosítva!" | `shipments-matching`, `uploadHistory`, `uploaded-files` |
+| `cmr_orphaned` | FileText — "Dokumentum rögzítve" | `uploadHistory`, `uploaded-files` |
+| `cmr_escalated` | AlertTriangle — "Eszkaláció szükséges" (destructive) | `shipments-matching`, `uploadHistory`, `uploaded-files` |
 
-**Dedup mechanizmus:** `notifiedUploads` in-memory Set a `LiveNotificationProvider`-ben — minden notification key egyszer kerül bele (`session_{status}_{id}`, `catchup_{status}_{id}`, `cmr_attached_{id}`, stb.). Cég váltáskor törlődik.
+**Dedup mechanizmus (2026-06-24):** Háromszintű, egységes dedup:
+1. **`notifiedUploads` ref** (`LiveNotificationProvider`-ben) — key: `upload_notif_{id}` — session polling, Realtime és catch-up mind ugyanezt ellenőrzi → egy upload-hoz csak egy toast kerülhet ki bármely mechanizmustól
+2. **`_notifiedUploadIds` module-level Set** — exportált `isUploadNotified(uploadId)` függvénnyel elérhető más komponensekből
+3. **`UploadHistory.tsx`** — `isUploadNotified(rec.id)` check a saját fallback toast előtt → nem küld dupla toastot, ha a LiveNotificationProvider már értesített; a cache invalidálást viszont mindig elvégzi
+
+Cég váltáskor a `notifiedUploads` ref törlődik (`notifiedUploads.current.clear()`); a `_notifiedUploadIds` session-szintű (tab újratöltésnél resetelődik).
 
 **Technikai részletek:**
 - `extractStoragePath(url, bucket)` — storage path kinyerés URL-ből
