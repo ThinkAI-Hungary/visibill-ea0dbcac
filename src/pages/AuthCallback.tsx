@@ -41,18 +41,20 @@ export default function AuthCallback() {
 
         // ── Email change: successful confirmation ─────────────────────────────
         if (pendingType === 'email_change') {
-          // Clean URL immediately — the hash/params contain the access token
-          window.history.replaceState(null, '', window.location.pathname);
+          // DO NOT call replaceState here — the Supabase SDK reads window.location.hash
+          // inside getSession() to process the email change token. Clearing the URL
+          // before getSession() would prevent the SDK from seeing the token.
 
-          // CRITICAL: wait for the Supabase SDK to finish processing the email change
-          // token before calling signOut(). The SDK works asynchronously — if signOut()
-          // races with the token exchange, the email change never completes server-side.
-          //
-          // Strategy: check if a session already exists (SDK already finished), or
-          // subscribe to onAuthStateChange and wait for SIGNED_IN / USER_UPDATED.
+          // Give the SDK a tick to initialize its internal hash detection before
+          // we call getSession() (which triggers hash processing).
+          await new Promise(r => setTimeout(r, 50));
+
+          // getSession() triggers the SDK to read & process the hash → establishes
+          // the new email-change session and fires SIGNED_IN/USER_UPDATED.
           const { data: { session: existingSession } } = await supabase.auth.getSession();
 
           if (!existingSession) {
+            // Session not yet ready — wait for SDK to fire the auth event
             await new Promise<void>((resolve) => {
               let timeoutId: ReturnType<typeof setTimeout>;
               const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -70,8 +72,10 @@ export default function AuthCallback() {
             });
           }
 
-          // Session confirmed (email changed) — sign out so user re-authenticates
-          // with the new email address.
+          // URL cleaned AFTER the SDK has read the hash
+          window.history.replaceState(null, '', window.location.pathname);
+
+          // Session confirmed — sign out so user re-authenticates with new email
           await supabase.auth.signOut();
           sessionStorage.setItem(SESSION_KEY, '1');
           setEmailChanged(true);
