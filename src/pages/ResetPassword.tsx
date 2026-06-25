@@ -31,31 +31,41 @@ const ResetPassword = () => {
   const navigate = useNavigate();
   const { isPasswordRecovery } = useAuth();
 
-  // Determine initial state from sessionStorage (set by App.tsx IIFE synchronously
-  // before Supabase clears the URL hash). Falls back to live hash as safety net.
-  const storedState = consumeResetPwState();
-  const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+  // consumeResetPwState() MUST run only once (on mount), via lazy useState initializer.
+  // If called on every render, it returns null after the first render (sessionStorage
+  // already cleared), causing the component to switch to the "invalid link" screen
+  // the moment the user starts typing.
+  const [storedState] = useState<'recovery' | 'expired' | null>(() => consumeResetPwState());
 
-  const isExpiredFromStorage = storedState === 'expired';
-  const isExpiredFromHash = hashParams.get('error_code') === 'otp_expired'
-    || (hashParams.get('error') === 'access_denied' && !!hashParams.get('error_code'));
-  const isExpired = isExpiredFromStorage || isExpiredFromHash;
+  // isExpired is derived once from storedState (stable) + hash fallback (also stable at mount)
+  const [isExpired] = useState(() => {
+    if (storedState === 'expired') return true;
+    const p = new URLSearchParams(window.location.hash.replace('#', ''));
+    return p.get('error_code') === 'otp_expired'
+      || (p.get('error') === 'access_denied' && !!p.get('error_code'));
+  });
 
-  const isRecoveryFromStorage = storedState === 'recovery';
+  // isValidRecovery latches to true and stays true for the lifetime of this component.
+  // isPasswordRecovery from context gets cleared by PasswordRecoveryRedirect as soon as
+  // we're on /reset-password — so we must not rely on it staying true across re-renders.
+  const [isValidRecovery, setIsValidRecovery] = useState(
+    () => storedState === 'recovery' || isPasswordRecovery || window.location.hash.includes('type=recovery')
+  );
 
-  // Give the SDK a moment to process the hash before deciding it is invalid.
-  // Skip the wait if we already know the state from sessionStorage.
-  const [checking, setChecking] = useState(!isRecoveryFromStorage && !isExpired);
+  // Wait for the SDK to fire PASSWORD_RECOVERY if we don't have storage confirmation yet.
+  const [checking, setChecking] = useState(!isValidRecovery && !isExpired);
 
   useEffect(() => {
-    if (!checking) return;
+    if (isValidRecovery) return; // already confirmed, nothing to do
     if (isPasswordRecovery) {
+      setIsValidRecovery(true);
       setChecking(false);
       return;
     }
+    if (!checking) return;
     const timer = setTimeout(() => setChecking(false), 800);
     return () => clearTimeout(timer);
-  }, [isPasswordRecovery, checking]);
+  }, [isPasswordRecovery, isValidRecovery, checking]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,8 +105,6 @@ const ResetPassword = () => {
     navigate('/auth?forgot=1');
   };
 
-  const isRecovery = isPasswordRecovery || isRecoveryFromStorage || window.location.hash.includes('type=recovery');
-
   if (isExpired) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -114,7 +122,7 @@ const ResetPassword = () => {
     );
   }
 
-  if (checking && !isRecovery) {
+  if (checking && !isValidRecovery) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm text-center space-y-2">
@@ -125,7 +133,7 @@ const ResetPassword = () => {
     );
   }
 
-  if (!isRecovery) {
+  if (!isValidRecovery) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm text-center space-y-4">
