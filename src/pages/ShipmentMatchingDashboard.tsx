@@ -183,10 +183,12 @@ export default function ShipmentMatchingDashboard() {
       await supabase.from('invoices')
         .update({ shipment_match_status: 'pending_shipment' })
         .eq('id', invoiceId);
-      // 4. Detach any transport_docs linked to this invoice (CMR goes back to escalated)
+      // 4. CMR transport_docs: csak a shipment-linket töröljük, az invoice-link MARAD
+      //    A CMR a számlához tartozik → 'linked' státuszra visszaállítva (nem 'orphaned'!)
       await supabase.from('transport_documents')
-        .update({ linked_invoice_id: null, status: 'orphaned' } as any)
+        .update({ linked_shipment_id: null, status: 'linked' } as any)
         .eq('linked_invoice_id', invoiceId);
+
       toast({ title: 'Számla leválasztva', description: `${invoiceDetachTarget.bizonylat} visszakerül az eszkalációs sorba.` });
       setInvoiceDetachTarget(null);
       queryClient.invalidateQueries({ queryKey: ['shipments-matching', selectedCompany.id] });
