@@ -6,10 +6,23 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useAccountyClients, type AccountyClient } from '@/hooks/accounty';
 
 // TAO filing statuses
 type TaoFilingStatus = 'not_started' | 'data_entry' | 'deductions' | 'credits' | 'review' | 'signed' | 'submitted' | 'accepted';
+
+interface EnrichedTaoClient extends AccountyClient {
+  taxpayerType: string;
+  taxRegime: string;
+  businessYear: string;
+  aee: number;
+  taxBase: number;
+  payableTax: number;
+  filingStatus: TaoFilingStatus;
+  tpStatus: string;
+  pillarTwo: boolean;
+  kivaAlany: boolean;
+}
 
 const FILING_STATUS: Record<TaoFilingStatus, { label: string; color: string; bg: string }> = {
   not_started:  { label: 'Nincs elindítva', color: 'text-slate-500',  bg: 'bg-slate-100 dark:bg-slate-800' },
@@ -30,7 +43,7 @@ const TP_STATUS: Record<string, { label: string; color: string }> = {
 };
 
 // Mock enrichment — TAO-specific data per client
-function enrichWithTaoData(client: any, idx: number) {
+function enrichWithTaoData(client: AccountyClient, idx: number): EnrichedTaoClient {
   const statuses: TaoFilingStatus[] = ['not_started', 'data_entry', 'deductions', 'credits', 'review', 'signed', 'submitted', 'accepted'];
   const tpStatuses = ['exempt', 'local_done', 'master_done', 'missing'];
   const taxpayerTypes = ['Kft.', 'Bt.', 'Zrt.', 'Alapítvány', 'Egyesület', 'Szövetkezet'];
@@ -61,7 +74,7 @@ export default function TaoPortfolioPage() {
   const [taxYear, setTaxYear] = useState(2025);
 
   const enriched = useMemo(
-    () => clients.map((c: any, i: number) => enrichWithTaoData(c, i)),
+    () => clients.map((c: AccountyClient, i: number) => enrichWithTaoData(c, i)),
     [clients]
   );
 
@@ -69,20 +82,20 @@ export default function TaoPortfolioPage() {
     let list = enriched;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      list = list.filter((c: any) =>
+      list = list.filter((c: EnrichedTaoClient) =>
         c.name.toLowerCase().includes(q) || c.taxNumber?.toLowerCase().includes(q)
       );
     }
-    if (filterMode === 'not_started') list = list.filter((c: any) => c.filingStatus === 'not_started');
-    if (filterMode === 'pillar2') list = list.filter((c: any) => c.pillarTwo);
-    if (filterMode === 'kiva') list = list.filter((c: any) => c.kivaAlany);
+    if (filterMode === 'not_started') list = list.filter((c: EnrichedTaoClient) => c.filingStatus === 'not_started');
+    if (filterMode === 'pillar2') list = list.filter((c: EnrichedTaoClient) => c.pillarTwo);
+    if (filterMode === 'kiva') list = list.filter((c: EnrichedTaoClient) => c.kivaAlany);
     return list;
   }, [enriched, searchQuery, filterMode]);
 
   const totalClients = enriched.length;
-  const kivaCount = enriched.filter((c: any) => c.kivaAlany).length;
-  const submittedCount = enriched.filter((c: any) => ['submitted', 'accepted'].includes(c.filingStatus)).length;
-  const pillar2Count = enriched.filter((c: any) => c.pillarTwo).length;
+  const kivaCount = enriched.filter((c: EnrichedTaoClient) => c.kivaAlany).length;
+  const submittedCount = enriched.filter((c: EnrichedTaoClient) => ['submitted', 'accepted'].includes(c.filingStatus)).length;
+  const pillar2Count = enriched.filter((c: EnrichedTaoClient) => c.pillarTwo).length;
 
   // Filing deadline
   const deadlineStr = taxYear === 2025 ? '2026. június 1.' : `${taxYear + 1}. május 31.`;
@@ -204,7 +217,7 @@ export default function TaoPortfolioPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((client: any) => {
+                filtered.map((client: EnrichedTaoClient) => {
                   const fs = FILING_STATUS[client.filingStatus as TaoFilingStatus] || FILING_STATUS.not_started;
                   const tp = TP_STATUS[client.tpStatus] || TP_STATUS.exempt;
                   return (

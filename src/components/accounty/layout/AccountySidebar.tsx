@@ -1,0 +1,636 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { 
+  Briefcase, 
+  FileWarning, 
+  Calendar, 
+  BarChart2, 
+  Settings, 
+  HelpCircle,
+  Search,
+  Sun,
+  Moon,
+  User,
+  LogOut,
+  ChevronRight,
+  AlertTriangle,
+  Clock,
+  MailCheck,
+  Calculator,
+  FileText,
+  TrendingUp,
+  Building2,
+  Users,
+  PanelLeft,
+  TicketCheck,
+  ShieldCheck,
+  BookOpen,
+  Scale,
+  Sparkles,
+  Rocket,
+  Landmark,
+  Shield
+} from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import AppModeSwitcher from '@/components/AppModeSwitcher';
+import { PATH_TO_MODULE } from '@/hooks/useAccountyPermissions';
+
+interface AccountySidebarProps {
+  isCollapsed: boolean;
+  toggleSidebarCollapse: () => void;
+  sidebarOpen: boolean;
+  setSidebarOpen: (v: boolean) => void;
+  hasEaisybillAccess: boolean;
+  kpis: any;
+  unreadTicketCount: number;
+  canAccess: (module: string) => boolean;
+  pathname: string;
+  user: any;
+  signOut: () => Promise<void>;
+  setCmdOpen: (v: boolean) => void;
+  theme: string;
+  setTheme: (t: string) => void;
+  allClients: any[] | null;
+  expandedPayroll: Set<string>;
+  togglePayrollClient: (id: string) => void;
+  payrollSearch: string;
+  setPayrollSearch: (s: string) => void;
+  showAllPayroll: boolean;
+  setShowAllPayroll: (v: boolean) => void;
+  expandedSections: Set<string>;
+  toggleSection: (key: string) => void;
+  isActive: (path: string) => boolean;
+  navigate: (path: string) => void;
+}
+
+export default function AccountySidebar({
+  isCollapsed,
+  toggleSidebarCollapse,
+  sidebarOpen,
+  setSidebarOpen,
+  hasEaisybillAccess,
+  kpis,
+  unreadTicketCount,
+  canAccess,
+  pathname,
+  user,
+  signOut,
+  setCmdOpen,
+  theme,
+  setTheme,
+  allClients,
+  expandedPayroll,
+  togglePayrollClient,
+  payrollSearch,
+  setPayrollSearch,
+  showAllPayroll,
+  setShowAllPayroll,
+  expandedSections,
+  toggleSection,
+  isActive,
+  navigate,
+}: AccountySidebarProps) {
+
+  const getUserInitials = () => {
+    if (user?.user_metadata?.name) {
+      return user.user_metadata.name
+        .split(' ')
+        .map((n: string) => n[0])
+        .join('')
+        .toUpperCase();
+    }
+    return user?.email?.substring(0, 2).toUpperCase() || 'U';
+  };
+
+  return (
+    <aside className={cn(
+      "flex flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 z-50",
+      isCollapsed ? "w-12" : "w-64",
+      "fixed inset-y-0 left-0 lg:static lg:translate-x-0",
+      sidebarOpen ? "translate-x-0" : "-translate-x-full"
+    )}>
+      {/* Logo Area */}
+      <div className={cn(
+        "border-b border-border shrink-0",
+        isCollapsed ? "p-2 py-4 flex justify-center" : "p-4"
+      )}>
+        <AppModeSwitcher
+          activeMode="accounty"
+          isCollapsed={isCollapsed}
+          showToggle={hasEaisybillAccess === true}
+        />
+      </div>
+
+      {/* Navigation — Collapsible groups */}
+      <nav className="flex-1 p-2 overflow-y-auto">
+        {/* Search trigger */}
+        {isCollapsed ? (
+          <div className="flex justify-center mb-2">
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setCmdOpen(true)}
+                  className="flex items-center justify-center rounded-md transition-colors w-8 h-8 hover:bg-primary/10 text-sidebar-foreground/60"
+                >
+                  <Search className="h-4 w-4 shrink-0" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Keresés... (Ctrl K)</TooltipContent>
+            </Tooltip>
+          </div>
+        ) : (
+          <button
+            onClick={() => setCmdOpen(true)}
+            className="flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors h-8 hover:bg-primary/10 text-sidebar-foreground/60 mb-1"
+          >
+            <Search className="h-4 w-4 shrink-0" />
+            <span className="truncate flex-1">Keresés...</span>
+            <kbd className="px-1.5 py-0.5 text-[9px] font-mono bg-sidebar-foreground/10 text-sidebar-foreground/50 rounded">Ctrl K</kbd>
+          </button>
+        )}
+
+        {isCollapsed ? (
+          /* Collapsed mode: icon-only with tooltip */
+          <ul className="flex w-full min-w-0 flex-col gap-1">
+            {[
+              { path: '/accounty', name: 'Portfólió', icon: Briefcase },
+              { path: '/accounty/missing-invoices', name: 'Hiányzó számlák', icon: FileWarning, badge: kpis?.missingItems },
+              { path: '/accounty/tax-calendar', name: 'Adó naptár', icon: Calendar },
+              { path: '/accounty/reports', name: 'Riportok', icon: BarChart2 },
+              { path: '/accounty/approval-queue', name: 'Jóváhagyás', icon: MailCheck },
+              { path: '/accounty/alerts', name: 'Riasztások', icon: AlertTriangle },
+              { path: '/accounty/nav-deadlines', name: 'NAV határidők', icon: Clock },
+              { path: '/accounty/onboarding', name: 'Onboarding', icon: Rocket },
+              { type: 'divider' as const },
+              { path: '/accounty/payroll-portfolio', name: 'Bérszámfejtés', icon: Calculator },
+              { type: 'divider' as const },
+              { path: '/accounty/tao', name: 'TAO Portfólió', icon: Landmark },
+              { path: '/accounty/tao/calendar', name: 'TAO Naptár', icon: Calendar },
+              { path: '/accounty/tao/taxpayer-types', name: 'Adózói Körök', icon: Users },
+              { type: 'divider' as const },
+              { path: '/accounty/settings', name: 'Beállítások', icon: Settings },
+              { path: '/accounty/tickets', name: 'Hibajegyek', icon: TicketCheck, badge: unreadTicketCount },
+              { path: '/accounty/help', name: 'Segítség', icon: HelpCircle },
+              { path: '/accounty/ai-assistant', name: 'AI Asszisztens', icon: Sparkles },
+              { path: '/accounty/admin/audit', name: 'Audit', icon: ShieldCheck },
+            ].filter(item => {
+              if ('type' in item) return true;
+              const module = PATH_TO_MODULE[(item as any).path];
+              return !module || canAccess(module);
+            }).map((item, idx) => {
+              if ('type' in item) return <li key={`div-${idx}`} className="my-1 mx-2 h-px bg-border/50" />;
+              const navItem = item as { path: string; name: string; icon: any; badge?: number };
+              return (
+                <li key={navItem.path} className="relative flex justify-center">
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <Link
+                        to={navItem.path}
+                        className={cn(
+                          "relative flex items-center justify-center rounded-md transition-all duration-200 w-8 h-8",
+                          isActive(navItem.path) ? "bg-primary/15 text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                        )}
+                      >
+                        <navItem.icon className="h-4 w-4 shrink-0" />
+                        {navItem.badge && navItem.badge > 0 ? (
+                          <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 flex items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                            {navItem.badge > 9 ? '9+' : navItem.badge}
+                          </span>
+                        ) : null}
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">{navItem.name}</TooltipContent>
+                  </Tooltip>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          /* Expanded mode: Collapsible groups */
+          <div className="flex flex-col gap-1">
+            {/* Portfólió csoport */}
+            {(() => {
+              const groupKey = 'portfolio';
+              const isOpen = expandedSections.has(groupKey);
+              const allPortfolioItems = [
+                { to: '/accounty', icon: Briefcase, label: 'Portfólió', exact: true },
+                { to: '/accounty/missing-invoices', icon: FileWarning, label: 'Hiányzó számlák', badge: kpis?.missingItems },
+                { to: '/accounty/tax-calendar', icon: Calendar, label: 'Adó naptár' },
+                { to: '/accounty/reports', icon: BarChart2, label: 'Riportok' },
+                { to: '/accounty/approval-queue', icon: MailCheck, label: 'Jóváhagyó rendszer' },
+                { to: '/accounty/alerts', icon: AlertTriangle, label: 'Riasztások' },
+                { to: '/accounty/nav-deadlines', icon: Clock, label: 'NAV határidők' },
+                { to: '/accounty/onboarding', icon: Rocket, label: 'Onboarding' },
+              ];
+              const items = allPortfolioItems.filter(item => {
+                const module = PATH_TO_MODULE[item.to];
+                return !module || canAccess(module);
+              });
+              const groupHasActive = items.some(i => i.exact ? pathname === i.to : isActive(i.to));
+              return (
+                <div>
+                  <button
+                    onClick={() => toggleSection(groupKey)}
+                    className={cn(
+                      "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
+                      !isOpen && groupHasActive
+                        ? "bg-primary/8 text-primary font-semibold"
+                        : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
+                    )}
+                  >
+                    <Briefcase className={cn("h-4 w-4 shrink-0 transition-colors", !isOpen && groupHasActive ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary")} />
+                    <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">Portfólió</span>
+                    <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", isOpen ? 'rotate-90' : '', !isOpen && groupHasActive ? 'text-primary' : 'text-muted-foreground')} />
+                    {!isOpen && groupHasActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />}
+                  </button>
+                  {isOpen && (
+                    <ul className="mt-0.5 flex flex-col gap-0.5 pb-1">
+                      {items.map(item => {
+                        const active = item.exact ? pathname === item.to : isActive(item.to);
+                        return (
+                          <li key={item.to}>
+                            <Link
+                              to={item.to}
+                              className={cn(
+                                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-colors",
+                                active ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                              )}
+                            >
+                              <item.icon className="h-4 w-4 shrink-0" />
+                              <span className="truncate flex-1">{item.label}</span>
+                              {item.badge && item.badge > 0 ? (
+                                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md min-w-5 text-center tabular-nums">{item.badge}</span>
+                              ) : null}
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Bérszámfejtés csoport */}
+            {(() => {
+              const groupKey = 'payroll';
+              const isOpen = expandedSections.has(groupKey);
+              const groupHasActive = pathname.includes('/accounty/payroll');
+              return (
+                <div>
+                  <button
+                    onClick={() => toggleSection(groupKey)}
+                    className={cn(
+                      "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
+                      !isOpen && groupHasActive
+                        ? "bg-primary/8 text-primary font-semibold"
+                        : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
+                    )}
+                  >
+                    <Calculator className={cn("h-4 w-4 shrink-0 transition-colors", !isOpen && groupHasActive ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary")} />
+                    <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">Bérszámfejtés</span>
+                    <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", isOpen ? 'rotate-90' : '', !isOpen && groupHasActive ? 'text-primary' : 'text-muted-foreground')} />
+                    {!isOpen && groupHasActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />}
+                  </button>
+                  {isOpen && (
+                    <ul className="mt-0.5 flex flex-col gap-0.5 pb-1">
+                      <li>
+                        <Link
+                          to="/accounty/payroll-portfolio"
+                          className={cn(
+                            "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-colors",
+                            isActive('/accounty/payroll-portfolio') ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                          )}
+                        >
+                          <BarChart2 className="h-4 w-4 shrink-0" />
+                          <span className="truncate">Áttekintés</span>
+                        </Link>
+                      </li>
+                      {(() => {
+                        const filtered = allClients
+                          ? (payrollSearch
+                              ? allClients.filter((c: any) => c.name.toLowerCase().includes(payrollSearch.toLowerCase()))
+                              : allClients
+                            ).slice(0, showAllPayroll ? undefined : 5)
+                          : [];
+                        return (
+                          <>
+                            {allClients && allClients.length > 3 && (
+                              <li className="px-4 mt-1 mb-0.5">
+                                <div className="relative">
+                                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+                                  <input
+                                    type="text"
+                                    placeholder="Ügyfél..."
+                                    value={payrollSearch}
+                                    onChange={e => setPayrollSearch(e.target.value)}
+                                    className="w-full text-[11px] pl-6 pr-2 py-1 bg-sidebar-foreground/5 rounded border-0 outline-none focus:ring-1 focus:ring-primary/30 text-sidebar-foreground placeholder:text-sidebar-foreground/30"
+                                  />
+                                </div>
+                              </li>
+                            )}
+                            {filtered.map((client: any) => {
+                              const basePath = `/accounty/payroll/${client.companyId}`;
+                              const isExpanded = expandedPayroll.has(client.companyId);
+                              const isPayrollActive = pathname.startsWith(basePath);
+                              return (
+                                <li key={client.id}>
+                                  <div className={cn(
+                                    "flex w-full items-center rounded-md pl-9 text-xs transition-colors",
+                                    isPayrollActive ? "text-primary font-medium" : "text-sidebar-foreground/70 hover:text-primary"
+                                  )}>
+                                    <Link
+                                      to={`/accounty/payroll/${client.companyId}`}
+                                      className="flex items-center gap-2 flex-1 min-w-0 py-1.5 px-2 rounded-l-md hover:bg-primary/10 transition-colors"
+                                    >
+                                      <Building2 className="h-3.5 w-3.5 shrink-0" />
+                                      <span className="truncate">{client.name}</span>
+                                    </Link>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); togglePayrollClient(client.companyId); }}
+                                      className="p-1.5 rounded-r-md hover:bg-primary/10 transition-colors shrink-0"
+                                      title={isExpanded ? 'Almenü összecsukása' : 'Almenü kinyitása'}
+                                    >
+                                      <ChevronRight className={cn("h-3 w-3 transition-transform duration-200", isExpanded ? 'rotate-90' : '')} />
+                                    </button>
+                                  </div>
+                                  {isExpanded && (
+                                    <ul className="ml-4 flex flex-col gap-0.5">
+                                      {[
+                                        { to: `${basePath}/employees`, icon: Users, label: 'Foglalkoztatottak' },
+                                        { to: `${basePath}/reports`, icon: TrendingUp, label: 'Riportok' },
+                                        { to: `${basePath}/filings`, icon: FileText, label: 'NAV bevallások' },
+                                        { to: `${basePath}/portal`, icon: Building2, label: 'Ügyfélportál' },
+                                        { to: `${basePath}/tax-params`, icon: Settings, label: 'Paraméterek' },
+                                      ].map(sub => (
+                                        <li key={sub.to}>
+                                          <Link
+                                            to={sub.to}
+                                            className={cn(
+                                              "flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs transition-colors",
+                                              isActive(sub.to) ? "font-semibold text-primary" : "text-sidebar-foreground/60 hover:text-primary"
+                                            )}
+                                          >
+                                            <sub.icon className="h-3.5 w-3.5 shrink-0" />
+                                            <span className="truncate">{sub.label}</span>
+                                          </Link>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </li>
+                              );
+                            })}
+                            {!showAllPayroll && allClients && allClients.length > 5 && !payrollSearch && (
+                              <li>
+                                <button
+                                  onClick={() => setShowAllPayroll(true)}
+                                  className="w-full flex items-center justify-center gap-1 py-1.5 text-[11px] text-sidebar-foreground/50 hover:text-primary transition-colors"
+                                >
+                                  + {allClients.length - 5} további cég
+                                </button>
+                              </li>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </ul>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* TAO / KIVA csoport */}
+            {(() => {
+              const groupKey = 'tao';
+              const isOpen = expandedSections.has(groupKey);
+              const items = [
+                { to: '/accounty/tao', icon: Landmark, label: 'TAO Portfólió', exact: true },
+                { to: '/accounty/tao/calendar', icon: Calendar, label: 'TAO Naptár' },
+                { to: '/accounty/tao/taxpayer-types', icon: Users, label: 'Adózói Körök' },
+              ];
+              const groupHasActive = pathname === '/accounty/tao' || pathname.startsWith('/accounty/tao/') || (pathname.includes('/tao') && pathname.includes('/client/'));
+              return (
+                <div>
+                  <button
+                    onClick={() => toggleSection(groupKey)}
+                    className={cn(
+                      "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
+                      !isOpen && groupHasActive
+                        ? "bg-emerald-500/8 text-emerald-600 font-semibold"
+                        : "text-sidebar-foreground/70 hover:bg-emerald-500/10 hover:text-emerald-600"
+                    )}
+                  >
+                    <Landmark className={cn("h-4 w-4 shrink-0 transition-colors", !isOpen && groupHasActive ? "text-emerald-600" : "text-muted-foreground group-hover/trigger:text-emerald-600")} />
+                    <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">TAO / KIVA</span>
+                    <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", isOpen ? 'rotate-90' : '', !isOpen && groupHasActive ? 'text-emerald-600' : 'text-muted-foreground')} />
+                    {!isOpen && groupHasActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-emerald-500" />}
+                  </button>
+                  {isOpen && (
+                    <ul className="mt-0.5 flex flex-col gap-0.5 pb-1">
+                      {items.map(item => {
+                        const active = item.exact ? pathname === item.to : isActive(item.to);
+                        return (
+                          <li key={item.to}>
+                            <Link
+                              to={item.to}
+                              className={cn(
+                                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-colors",
+                                active ? "bg-emerald-500/15 font-medium text-emerald-600" : "hover:bg-emerald-500/10 hover:text-emerald-600 text-sidebar-foreground"
+                              )}
+                            >
+                              <item.icon className="h-4 w-4 shrink-0" />
+                              <span className="truncate">{item.label}</span>
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Adminisztráció csoport */}
+            {(() => {
+              const groupKey = 'admin';
+              const isOpen = expandedSections.has(groupKey);
+              const allItems = [
+                { to: '/accounty/settings', icon: Settings, label: 'Beállítások' },
+                { to: '/accounty/tickets', icon: TicketCheck, label: 'Hibajegyek', badge: unreadTicketCount },
+                { to: '/accounty/help', icon: HelpCircle, label: 'Segítség' },
+                { to: '/accounty/ai-assistant', icon: Sparkles, label: 'AI Asszisztens' },
+                { to: '/accounty/profile/settings', icon: User, label: 'Profilbeállítások' },
+                { to: '/accounty/admin/audit', icon: ShieldCheck, label: 'Audit napló' },
+                { to: '/accounty/admin/gdpr', icon: ShieldCheck, label: 'GDPR' },
+                { to: '/accounty/admin/templates', icon: FileText, label: 'Sablonok' },
+                { to: '/accounty/admin/job-codes', icon: BookOpen, label: 'Jogviszonykódok' },
+                { to: '/accounty/admin/tax-parameters', icon: Calculator, label: 'Adómértékek' },
+                { to: '/accounty/admin/legal-updates', icon: Scale, label: 'Jogszabály-frissítések' },
+                { to: '/accounty/admin/permissions', icon: Shield, label: 'Jogosultságkezelő' },
+                { to: '/accounty/admin/accountants', icon: Users, label: 'Könyvelők kezelése' },
+              ];
+              const items = allItems.filter(item => {
+                const module = PATH_TO_MODULE[item.to];
+                return !module || canAccess(module);
+              });
+              const groupHasActive = items.some(i => isActive(i.to));
+              return (
+                <div>
+                  <button
+                    onClick={() => toggleSection(groupKey)}
+                    className={cn(
+                      "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
+                      !isOpen && groupHasActive
+                        ? "bg-primary/8 text-primary font-semibold"
+                        : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
+                    )}
+                  >
+                    <Settings className={cn("h-4 w-4 shrink-0 transition-colors", !isOpen && groupHasActive ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary")} />
+                    <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">Adminisztráció</span>
+                    <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", isOpen ? 'rotate-90' : '', !isOpen && groupHasActive ? 'text-primary' : 'text-muted-foreground')} />
+                    {!isOpen && groupHasActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />}
+                  </button>
+                  {isOpen && (
+                    <ul className="mt-0.5 flex flex-col gap-0.5 pb-1">
+                      {items.map(item => {
+                        const active = isActive(item.to);
+                        return (
+                          <li key={item.to}>
+                            <Link
+                              to={item.to}
+                              className={cn(
+                                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-colors",
+                                active ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
+                              )}
+                            >
+                              <item.icon className="h-4 w-4 shrink-0" />
+                              <span className="truncate flex-1">{item.label}</span>
+                              {item.badge && item.badge > 0 ? (
+                                <span className="h-5 min-w-5 px-1 flex items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                                  {item.badge > 9 ? '9+' : item.badge}
+                                </span>
+                              ) : null}
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+      </nav>
+
+      {/* User Profile Footer */}
+      <div className="mt-auto border-t border-border shrink-0">
+        {isCollapsed ? (
+          <div className="p-2 space-y-2 flex flex-col items-center">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user?.user_metadata?.avatar_url} />
+              <AvatarFallback className="text-xs">{getUserInitials()}</AvatarFallback>
+            </Avatar>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-8 h-8 hover:bg-primary/10 hover:text-primary">
+                  <div className="relative h-4 w-4">
+                    <Sun className={`h-4 w-4 absolute transition-all ${theme === 'dark' ? 'animate-rotate-out' : 'animate-rotate-in'}`} />
+                    <Moon className={`h-4 w-4 absolute transition-all ${theme === 'dark' ? 'animate-rotate-in' : 'animate-rotate-out'}`} />
+                  </div>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">{theme === 'dark' ? 'Világos mód' : 'Sötét mód'}</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" asChild className="w-8 h-8 p-0 hover:bg-primary/10 hover:text-primary hover:border-primary/30">
+                  <Link to="/accounty/profile/settings">
+                    <Settings className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Beállítások</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={async () => { await signOut(); navigate('/auth?app=eaisybooks'); }} className="w-8 h-8 hover:bg-primary/10 hover:text-primary hover:border-primary/30">
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Kilépés</TooltipContent>
+            </Tooltip>
+          </div>
+        ) : (
+          <div className="p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.user_metadata?.avatar_url} />
+                <AvatarFallback className="text-xs">{getUserInitials()}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {user?.user_metadata?.name || 'Felhasználó'}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+              >
+                <div className="relative h-4 w-4">
+                  <Sun className={`h-4 w-4 absolute transition-all ${theme === 'dark' ? 'animate-rotate-out' : 'animate-rotate-in'}`} />
+                  <Moon className={`h-4 w-4 absolute transition-all ${theme === 'dark' ? 'animate-rotate-in' : 'animate-rotate-out'}`} />
+                </div>
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-2 w-full">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" asChild className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
+                    <Link to="/accounty/profile/settings">
+                      <Settings className="h-5 w-5" />
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Beállítások</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" onClick={async () => { await signOut(); navigate('/auth?app=eaisybooks'); }} className="w-full aspect-square justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30">
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Kilépés</TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+        )}
+
+        {/* Sidebar Toggle */}
+        <div className={cn("p-2 border-t border-border shrink-0", isCollapsed ? 'flex justify-center' : '')}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebarCollapse}
+            className={cn(
+              "h-7 hover:bg-primary/10 hover:text-primary",
+              isCollapsed ? "w-7" : "w-full"
+            )}
+          >
+            {isCollapsed ? <PanelLeft className="h-4 w-4 shrink-0" /> : <PanelLeft className="h-4 w-4 shrink-0 rotate-180" />}
+            <span className="sr-only">Toggle Sidebar</span>
+          </Button>
+        </div>
+      </div>
+    </aside>
+  );
+}

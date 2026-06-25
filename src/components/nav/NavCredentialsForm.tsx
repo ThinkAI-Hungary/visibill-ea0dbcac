@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -267,7 +267,6 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
   const handleValidate = async () => {
     setValidating(true);
     try {
-      console.log('[NavCredentialsForm] Starting credential validation');
       
       // Get session and explicitly pass Authorization header
       const { data: { session } } = await supabase.auth.getSession();
@@ -279,7 +278,6 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
           Authorization: `Bearer ${session.access_token}`
         }
       });
-      console.log('[NavCredentialsForm] nav-token response', { data, error });
 
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
@@ -315,7 +313,6 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
 
   const triggerInitialSync = async (accessToken: string) => {
     try {
-      console.log('[NavCredentialsForm] Triggering 1-month initial sync with full details');
       
       // Calculate date range for 1 month back (30 days)
       const dateTo = new Date();
@@ -352,7 +349,6 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         hasError = true;
       } else {
         totalOutbound = outboundData?.totalInvoices || 0;
-        console.log('[NavCredentialsForm] OUTBOUND sync complete:', totalOutbound, 'invoices');
       }
       
       // Sync INBOUND invoices
@@ -373,13 +369,11 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
         hasError = true;
       } else {
         totalInbound = inboundData?.totalInvoices || 0;
-        console.log('[NavCredentialsForm] INBOUND sync complete:', totalInbound, 'invoices');
       }
 
       // Trigger categorization webhook only if we got invoices
       if (!hasError && (totalOutbound > 0 || totalInbound > 0) && companyId) {
         try {
-          console.log('[NavCredentialsForm] Triggering categorization webhook for initial sync');
           await supabase.functions.invoke('trigger-nav-categorization', {
             body: {
               companyId: companyId,
@@ -389,7 +383,6 @@ const NavCredentialsForm: React.FC<NavCredentialsFormProps> = ({ companyId, isOw
               Authorization: `Bearer ${accessToken}`
             }
           });
-          console.log('[NavCredentialsForm] Categorization webhook triggered successfully');
         } catch (categorizationError) {
           reportError({ type: 'api_call', component: 'NavCredentialsForm', action: 'error', message: '[NavCredentialsForm] Categorization webhook failed:', error: categorizationError });
         }

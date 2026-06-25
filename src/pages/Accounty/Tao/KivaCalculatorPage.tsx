@@ -4,7 +4,7 @@ import { ArrowLeft, Calculator, TrendingUp, Users, Landmark, Info, BarChart2 } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useAccountyClients } from '@/hooks/accounty';
 
 const fmt = (n: number) => new Intl.NumberFormat('hu-HU', { style: 'decimal', maximumFractionDigits: 0 }).format(n);
 

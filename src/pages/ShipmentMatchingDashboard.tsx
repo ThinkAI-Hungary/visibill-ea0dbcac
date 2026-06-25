@@ -982,7 +982,7 @@ export default function ShipmentMatchingDashboard() {
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => setCurrentPage(1)}
+                onClick={() => { setCurrentPage(1); setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50); }}
                 disabled={currentPage === 1}
               >
                 <ChevronsLeft className="h-4 w-4" />
@@ -991,7 +991,7 @@ export default function ShipmentMatchingDashboard() {
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50); }}
                 disabled={currentPage === 1}
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -1003,7 +1003,7 @@ export default function ShipmentMatchingDashboard() {
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50); }}
                 disabled={currentPage === totalPages}
               >
                 <ChevronRight className="h-4 w-4" />
@@ -1012,7 +1012,7 @@ export default function ShipmentMatchingDashboard() {
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => setCurrentPage(totalPages)}
+                onClick={() => { setCurrentPage(totalPages); setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50); }}
                 disabled={currentPage === totalPages}
               >
                 <ChevronsRight className="h-4 w-4" />

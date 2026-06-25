@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 import { useCreateEmployee } from '@/hooks/usePayrollData';
 
 interface ImportRow {
@@ -35,6 +36,7 @@ const SAMPLE_ROWS = [
 
 export default function EmployeeImportPage() {
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<'upload' | 'preview' | 'importing' | 'done'>('upload');
   const [rows, setRows] = useState<ImportRow[]>([]);
@@ -167,7 +169,7 @@ export default function EmployeeImportPage() {
       }
 
       if (parsed.length === 0) {
-        alert('A fájl üres vagy nem megfelelő formátumú. Kérjük használja a sablont.');
+        toast({ title: 'Hiba', description: 'A fájl üres vagy nem megfelelő formátúmú. Kérjük használja a sablont.', variant: 'destructive' });
         return;
       }
 

@@ -1,11 +1,10 @@
-import ExcelJS from 'exceljs';
-
 export const exportPnlExcel = async (
   processedData: any[],
   dbItems: any[] | null | undefined,
   inThousands: boolean,
   companyName: string = 'Vállalkozás'
 ) => {
+  const { default: ExcelJS } = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'eaisybill';
   workbook.created = new Date();

@@ -353,7 +353,6 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
             const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
             const dateChunks = splitDateRange(startDate, endDate);
             
-            console.log('[Onboarding] NAV sync: splitting 90 days into', dateChunks.length, 'chunks');
 
             // Process all chunks sequentially in background
             (async () => {
@@ -362,7 +361,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
                 // Refresh session before each chunk to prevent JWT expiration
                 const { data: { session: freshSession } } = await supabase.auth.getSession();
                 if (!freshSession) {
-                  console.warn('[Onboarding] Session expired during background sync, aborting remaining chunks');
+                  reportError({ type: 'auth', component: 'EmptyStateDashboard', action: 'warn', message: 'Session expired during background sync, aborting remaining chunks' });
                   break;
                 }
                 const currentToken = freshSession.access_token;
@@ -428,7 +427,7 @@ const EmptyStateDashboard = ({ onOnboardingComplete }: EmptyStateDashboardProps)
 
       // Rollback: delete the company if it was created but sub-steps failed
       if (rollbackNeeded && createdCompanyId) {
-        console.warn('[Onboarding] Rolling back company:', createdCompanyId);
+        reportError({ type: 'db_query', component: 'EmptyStateDashboard', action: 'warn', message: 'Rolling back company:', error: createdCompanyId });
         await supabase.from('companies').delete().eq('id', createdCompanyId);
       }
     } finally {

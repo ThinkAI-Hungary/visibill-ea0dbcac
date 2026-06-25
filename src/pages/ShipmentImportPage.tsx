@@ -43,6 +43,7 @@ import { formatCurrency } from '@/lib/utils';
 import { useScopedBasePath } from '@/lib/navigation';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+import { reportError } from '@/lib/errorReporter';
 
 interface ParsedRow {
   position_number: string;
@@ -396,12 +397,12 @@ export default function ShipmentImportPage() {
         const timeout = new Promise<void>((resolve) => setTimeout(resolve, 10000));
         const { error: efError } = await Promise.race([efPromise, timeout.then(() => ({ error: null, data: null }))]);
         if (efError) {
-          console.warn('[ShipmentImportPage] Retroactive match EF error (non-critical):', efError);
+          reportError({ type: 'edge_function', component: 'ShipmentImportPage', action: 'warn', message: 'Retroactive match EF error (non-critical)', error: efError });
         } else {
           queryClient.invalidateQueries({ queryKey: ['escalated-matches', selectedCompany.id] });
         }
       } catch (efErr) {
-        console.warn('[ShipmentImportPage] Retroactive match call failed (non-critical):', efErr);
+        reportError({ type: 'edge_function', component: 'ShipmentImportPage', action: 'warn', message: 'Retroactive match call failed (non-critical)', error: efErr });
       } finally {
         setIsMatching(false);
       }

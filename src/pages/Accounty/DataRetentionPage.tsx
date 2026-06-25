@@ -11,7 +11,7 @@ import {
   useAddRetentionRule, useDeleteRetentionRule,
   useDataContracts, useAddDataContract, useDeleteDataContract,
   type RetentionRule, type DataContract,
-} from '@/hooks/useAccountyData';
+} from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 

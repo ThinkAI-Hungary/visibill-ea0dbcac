@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Accounty seed helper – Calls the accounty-seed edge function
  * which runs with service_role (bypasses RLS) to create assignments.
  */
@@ -14,7 +14,6 @@ export async function seedAccountyAssignments() {
       return { error: 'Not logged in' };
     }
 
-    console.log('[seed] Calling accounty-seed edge function...');
 
     const { data, error } = await supabase.functions.invoke('accounty-seed', {
       headers: {
@@ -27,7 +26,6 @@ export async function seedAccountyAssignments() {
       return { error: error.message };
     }
 
-    console.log('[seed] Result:', data);
     return data;
   } catch (err) {
     reportError({ type: 'db_query', component: 'seedAccounty', action: 'error', message: '[seed] Unexpected error:', error: err });

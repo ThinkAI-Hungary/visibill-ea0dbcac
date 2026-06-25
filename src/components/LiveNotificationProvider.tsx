@@ -74,7 +74,6 @@ export function LiveNotificationProvider() {
     if (notifiedUploads.current.has(uploadId)) return;
     notifiedUploads.current.add(uploadId);
 
-    console.log('[RealtimeSync] 🔔 New file processed:', parentTable, uploadId);
 
     let fileName = 'Ismeretlen fájl';
     try {
@@ -220,7 +219,6 @@ export function LiveNotificationProvider() {
               const row = payload.new as any;
               const oldRow = payload.old as any;
               if (row.id && row.status === 'completed' && oldRow?.status !== 'completed') {
-                console.log('[RealtimeSync] 🔔 salary_files status → completed:', row.id);
                 showNotification(row.id, 'salary_files');
               }
             }
@@ -266,13 +264,11 @@ export function LiveNotificationProvider() {
               // Invoice pipeline: 'completed' / 'processed'
               const doneStatuses = ['completed', 'processed'];
               if (row.id && doneStatuses.includes(row.processing_status) && !doneStatuses.includes(oldRow?.processing_status)) {
-                console.log('[RealtimeSync] 🔔 invoice_uploads status → done:', row.id);
                 showNotification(row.id, 'invoice_uploads');
               }
 
               // Transport doc pipeline: 'cmr_attached' → dokumentum párosítva
               if (row.id && row.processing_status === 'cmr_attached' && oldRow?.processing_status !== 'cmr_attached') {
-                console.log('[RealtimeSync] 🔔 invoice_uploads status → cmr_attached:', row.id);
                 const attachedKey = `cmr_attached_${row.id}`;
                 if (!notifiedUploads.current.has(attachedKey)) {
                   notifiedUploads.current.add(attachedKey);
@@ -291,10 +287,9 @@ export function LiveNotificationProvider() {
 
               // Transport doc pipeline: 'cmr_escalated' → emberi ellenőrzés kell
               if (row.id && row.processing_status === 'cmr_escalated' && oldRow?.processing_status !== 'cmr_escalated') {
-                console.log('[RealtimeSync] ⚠️ invoice_uploads status → cmr_escalated:', row.id);
                 // Manuális leválasztáskor (EscalationListPage setCmrDetachTarget) ne jelenjen meg a toast
                 if (row.metadata?.manual_detach === true) {
-                  console.log('[RealtimeSync] skip cmr_escalated toast — manual_detach flag');
+                  // Skip cmr_escalated toast for manual_detach
                 } else {
                   const escalatedKey = `cmr_escalated_${row.id}`;
                   if (!notifiedUploads.current.has(escalatedKey)) {
@@ -389,7 +384,6 @@ export function LiveNotificationProvider() {
                 const completionKey = `completion_${row.id}`;
                 if (!notifiedUploads.current.has(completionKey)) {
                   notifiedUploads.current.add(completionKey);
-                  console.log('[RealtimeSync] 🔔 transaction_uploads status → completed:', row.id);
                   // Fetch file name for the toast
                   (supabase as any).from('transaction_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
                     const fileName = data?.file_name || 'Ismeretlen fájl';
@@ -441,7 +435,6 @@ export function LiveNotificationProvider() {
           'postgres_changes',
           { event: '*', schema: 'public', table: 'dunning_sends' },
           (payload) => {
-            console.log('[RealtimeSync] dunning_sends', payload.eventType);
             invalidate('dunning-sends', 'kintlevo-nav');
           }
         )
@@ -502,7 +495,6 @@ export function LiveNotificationProvider() {
                     return;
                   }
                   notifiedUploads.current.add(completionKey);
-                  console.log('[RealtimeSync] 🔔 report_uploads status → completed:', row.id);
                   (supabase as any).from('report_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
                     const fileName = data?.file_name || 'Ismeretlen fájl';
                     toast({
@@ -632,13 +624,8 @@ export function LiveNotificationProvider() {
         )
 
         .subscribe((status, err) => {
-          if (status === 'SUBSCRIBED') {
-            console.log('[RealtimeSync] ✅ Connected');
-          } else if (status === 'CLOSED') {
-            // Expected on company switch / unmount — log at debug level only
-            console.debug('[RealtimeSync] Channel closed');
-          } else {
-            console.warn('[RealtimeSync] Channel:', status, err || '');
+          if (status !== 'SUBSCRIBED' && status !== 'CLOSED') {
+            reportError({ type: 'realtime', component: 'LiveNotificationProvider', action: 'warn', message: `[RealtimeSync] Channel: ${status}`, error: err || undefined });
           }
         });
 
@@ -662,7 +649,6 @@ export function LiveNotificationProvider() {
 
         // 1. Reconnect if channel disconnected (unchanged behavior)
         if (channelState !== 'joined' && channelState !== 'joining') {
-          console.log('[RealtimeSync] Reconnecting on tab focus...');
           channelRef.current.subscribe();
         }
 
@@ -675,10 +661,6 @@ export function LiveNotificationProvider() {
         const wasDisconnected = channelState !== 'joined' && channelState !== 'joining';
 
         if (wasDisconnected || awayMs > STALE_THRESHOLD_MS) {
-          console.log(
-            `[RealtimeSync] Tab refocus invalidation: away=${Math.round(awayMs / 1000)}s, ` +
-            `channel=${channelState}, invalidating caches`
-          );
           invalidate(
             'salaries', 'salary_files', 'submittedInvoices', 'linkedInvoices',
             'navInvoices', 'filteredNavInvoices', 'filteredSubmittedInvoices',
@@ -692,11 +674,6 @@ export function LiveNotificationProvider() {
           );
           // Also recover any Realtime notifications missed during the away period
           catchUpToastsRef.current?.();
-        } else {
-          console.debug(
-            `[RealtimeSync] Tab refocus skipped: away=${Math.round(awayMs / 1000)}s, ` +
-            `channel=${channelState} — Realtime kept up`
-          );
         }
       };
       document.addEventListener('visibilitychange', handleVisibility);
@@ -749,7 +726,6 @@ export function LiveNotificationProvider() {
 
           if ((prevStatus !== undefined && prevStatus !== row.processing_status) || isNewAndTerminal) {
             if (TERMINAL.has(row.processing_status)) {
-              console.log('[PollFallback] 🔔 Invoice upload status changed:', row.id, row.processing_status);
               notifyUploadStatus(row);
             }
           }
@@ -772,7 +748,6 @@ export function LiveNotificationProvider() {
 
           if ((prevStatus !== undefined && prevStatus !== row.processing_status) || isNewAndTerminal) {
             if (row.processing_status === 'completed') {
-              console.log('[PollFallback] 🔔 Transaction upload completed:', row.id);
               toast({
                 title: 'Tranzakciók feldolgozva!',
                 description: `A következő fájl sikeresen fel lett dolgozva: ${row.file_name || 'Ismeretlen fájl'}`,
@@ -825,7 +800,6 @@ export function LiveNotificationProvider() {
         const key = `catchup_${row.processing_status}_${row.id}`;
         if (notifiedUploads.current.has(key)) continue;
         notifiedUploads.current.add(key);
-        console.log('[CatchUp] 🔔 Missed event recovered:', row.processing_status, row.file_name);
         notifyUploadStatus(row);
       }
     } catch {

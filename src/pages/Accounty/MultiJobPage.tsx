@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useEmployeeJobs, type EmployeeJob } from '@/hooks/useAccountyData';
+import { useEmployeeJobs, type EmployeeJob } from '@/hooks/accounty';
 
 function calculateInsurance(jobs: EmployeeJob[]) {
   const activeJobs = jobs.filter(j => j.status === 'active');

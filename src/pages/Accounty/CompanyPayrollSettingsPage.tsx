@@ -7,7 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useAccountyClients, useAccountyTaxProfile } from '@/hooks/useAccountyData';
+import { useAccountyClients, useAccountyTaxProfile } from '@/hooks/accounty';
 import { useCompanyLocations } from '@/hooks/useCompanyLocations';
 import { supabase } from '@/integrations/supabase/client';
 import { Breadcrumb } from '@/components/accounty/SharedComponents';

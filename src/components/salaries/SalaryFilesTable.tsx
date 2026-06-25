@@ -153,7 +153,6 @@ export function SalaryFilesDialog({ open: externalOpen, onOpenChange: externalOn
           .filter(Boolean) as string[];
         if (storagePaths.length > 0) {
           await supabase.storage.from('salaries').remove(storagePaths);
-          console.log('Deleted Storage files:', storagePaths);
         }
       }
 

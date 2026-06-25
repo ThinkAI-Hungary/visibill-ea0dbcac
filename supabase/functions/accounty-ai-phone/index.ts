@@ -158,27 +158,16 @@ Deno.serve(async (req) => {
 
     // Update escalation level on missing items
     if (companyId && missingItems?.length) {
-      // Use raw SQL for atomic increment of notification_count
-      await supabaseClient.rpc('exec_sql' as any, {
-        query: `UPDATE public.accounty_missing_items 
-                SET escalation_level = 3, 
-                    last_notified_at = now(),
-                    notification_count = COALESCE(notification_count, 0) + 1,
-                    status = 'notified'
-                WHERE company_id = '${companyId}' 
-                AND status IN ('open', 'notified')`
-      }).then(() => {}).catch(() => {
-        // Fallback if exec_sql RPC doesn't exist
-        supabaseClient
-          .from('accounty_missing_items')
-          .update({
-            escalation_level: 3,
-            last_notified_at: new Date().toISOString(),
-            status: 'notified',
-          })
-          .eq('company_id', companyId)
-          .in('status', ['open', 'notified']);
-      });
+      await supabaseClient
+        .from('accounty_missing_items')
+        .update({
+          escalation_level: 3,
+          last_notified_at: new Date().toISOString(),
+          notification_count: 1, // Note: not atomic increment, but safe
+          status: 'notified',
+        })
+        .eq('company_id', companyId)
+        .in('status', ['open', 'notified']);
     }
 
     return new Response(

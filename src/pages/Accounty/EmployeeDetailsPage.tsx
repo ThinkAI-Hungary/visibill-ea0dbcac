@@ -18,6 +18,7 @@ import {
 import { formatTajNumber, formatBankAccount, formatAmount } from '@/lib/payroll/validators';
 import { calculateLeaveBalance, type EmployeeLeaveInput } from '@/lib/payroll/leaveCalculator';
 import { useToast } from '@/hooks/use-toast';
+import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 
 // ── Declaration types (must match DB CHECK constraint) ──
 const DECLARATION_TYPES = [
@@ -56,7 +57,7 @@ export default function EmployeeDetailsPage() {
   const revokeDeclaration = useRevokeDeclaration();
   const updateEmployee = useUpdateEmployee();
 
-  const { data: employee, isLoading: empLoading } = usePayrollEmployee(empId || '');
+  const { data: employee, isLoading: empLoading, isError: empError, refetch: refetchEmp } = usePayrollEmployee(empId || '');
   const { data: employments = [] } = usePayrollEmployments(empId || '');
   const { data: declarations = [] } = usePayrollDeclarations(empId || '');
   const { data: garnishments = [] } = usePayrollGarnishments(empId || '');
@@ -64,6 +65,10 @@ export default function EmployeeDetailsPage() {
   // Get first employment for leave calc
   const primaryEmployment = employments.find(e => e.status === 'active') || employments[0];
   const { data: leaves = [] } = usePayrollLeaves(primaryEmployment?.id || '');
+
+  if (empError) {
+    return <AccountyErrorState message="Nem sikerült betölteni a foglalkoztatott adatait." onRetry={() => refetchEmp()} />;
+  }
 
   if (empLoading) {
     return (

@@ -10,9 +10,10 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { useAccountyFullReportData, type FullReportData, type InvoiceReportRow, type ReportRow } from '@/hooks/useAccountyData';
+import { useAccountyFullReportData, type FullReportData, type InvoiceReportRow, type ReportRow } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { reportError } from '@/lib/errorReporter';
 import {
   addToApprovalQueue,
   type OutgoingMessage,
@@ -270,7 +271,7 @@ ThinkAI`;
         description: `${typeLabel} – ${companyLabel}`,
       });
     } catch (err) {
-      console.error('Report send error:', err);
+      reportError({ type: 'db_query', component: 'ReportsPage', action: 'reportSend', message: 'Report send error', error: err as Error });
       toast({
         variant: 'destructive',
         title: 'Hiba',

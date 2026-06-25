@@ -4,7 +4,7 @@ import { ArrowLeft, Landmark, Save, Building2, Globe, Users, Info } from 'lucide
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useAccountyClients } from '@/hooks/accounty';
 
 const KKV_OPTIONS = [
   { value: 'micro', label: 'Mikrovállalkozás' },

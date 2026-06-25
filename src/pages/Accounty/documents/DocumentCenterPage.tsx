@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useAccountyDocuments, useGenerateDocuments, type AccountyDocument } from '@/hooks/useAccountyData';
+import { useAccountyDocuments, useGenerateDocuments, type AccountyDocument } from '@/hooks/accounty';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import { useToast } from '@/components/ui/use-toast';
 

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { usePayrollCalculations, usePayrollCycles, usePayrollEmployees } from '@/hooks/usePayrollData';
 import { usePayrollGarnishments } from '@/hooks/usePayrollData';
-import { useAccountyClients, useAccountyDocuments } from '@/hooks/useAccountyData';
+import { useAccountyClients, useAccountyDocuments } from '@/hooks/accounty';
 import { getPdfBlobUrl } from '@/lib/exportPdf';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -223,7 +223,7 @@ export default function OutputDocumentsPage() {
     calculations: calculations as any[],
   });
 
-  const handlePreview = (rowIndex?: number) => {
+  const handlePreview = async (rowIndex?: number) => {
     if (!config || calculations.length === 0) return;
     const ctx = getDocContext();
     let url = '';
@@ -235,7 +235,7 @@ export default function OutputDocumentsPage() {
       case 'summary': url = generateSummaryPdf(ctx); break;
       default: {
         // Fallback: generic table PDF
-        url = getPdfBlobUrl({
+        url = await getPdfBlobUrl({
           title: config.title,
           subtitle: config.subtitle,
           companyName: company?.name,

@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { usePayrollEmployments, type PayrollEmployment } from '@/hooks/usePayrollData';
-import { useAddJobModification } from '@/hooks/useAccountyData';
+import { useAddJobModification } from '@/hooks/accounty';
 import { useCompanyLocations } from '@/hooks/useCompanyLocations';
+import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 
 type ChangeType = 'worktime' | 'feor' | 'salary' | 'position' | 'site' | 'costcenter';
 
@@ -43,7 +44,7 @@ const EMPTY_PER_TYPE: Record<ChangeType, { newValue: string; reason: string }> =
 export default function JobModificationPage() {
   const { id, empId } = useParams<{ id: string; empId: string }>();
   const { toast } = useToast();
-  const { data: employments, isLoading } = usePayrollEmployments(empId || '');
+  const { data: employments, isLoading, isError: empError, refetch: refetchEmp } = usePayrollEmployments(empId || '');
   const addModMut = useAddJobModification();
   const { locations } = useCompanyLocations(id);
 
@@ -139,6 +140,7 @@ export default function JobModificationPage() {
     }
   };
 
+  if (empError) return <AccountyErrorState message="Nem sikerült betölteni a jogviszony adatokat." onRetry={() => refetchEmp()} />;
   if (isLoading) return <div className="flex items-center justify-center h-32 gap-2 text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin" /> Betöltés...</div>;
 
   return (

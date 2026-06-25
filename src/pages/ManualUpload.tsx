@@ -363,7 +363,7 @@ const ManualUpload = () => {
 
       // Phase 3: Update cache for all records
       // PGMQ: DB triggers automatically enqueue each inserted row
-      console.log(`[PGMQ] ${uploadRecords!.length} invoice uploads enqueued via DB trigger`);
+      // PGMQ: invoice uploads enqueued via DB trigger
       for (const rec of uploadRecords!) {
         addToUploadHistoryCache({
           id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
@@ -443,7 +443,7 @@ const ManualUpload = () => {
         throw batchError;
       }
 
-      console.log(`[PGMQ] ${uploadRecords!.length} bank statement uploads enqueued via DB trigger`);
+
       for (const rec of uploadRecords!) {
         addToUploadHistoryCache({
           id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
@@ -529,7 +529,7 @@ const ManualUpload = () => {
         throw new Error(`Adatbázis hiba: ${batchError.message}`);
       }
 
-      console.log(`[PGMQ] ${uploadRecords!.length} salary uploads enqueued via DB trigger`);
+
       for (const rec of uploadRecords!) {
         addToUploadHistoryCache({
           id: rec.id, file_name: rec.file_name, file_size: rec.file_size,
@@ -640,7 +640,6 @@ const ManualUpload = () => {
       }
 
       // Phase 3: Update cache
-      console.log(`[PGMQ] ${uploadRecords!.length} transaction uploads enqueued via DB trigger`);
       for (const rec of uploadRecords!) {
         addToUploadHistoryCache({
           id: rec.id, file_name: rec.file_name, file_size: rec.file_size,

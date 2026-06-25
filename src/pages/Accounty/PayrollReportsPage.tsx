@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import { cn } from '@/lib/utils';
 import { usePayrollCycles, usePayrollEmployees, usePayrollFilings } from '@/hooks/usePayrollData';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useAccountyClients } from '@/hooks/accounty';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 

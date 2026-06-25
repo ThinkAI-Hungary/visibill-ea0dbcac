@@ -106,7 +106,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error) {
           reportError({ type: 'auth', component: 'AuthContext', action: 'error', message: 'Session error:', error: error.message });
           if (error.message.includes('Refresh Token') || error.message.includes('refresh_token')) {
-            console.log('Invalid refresh token detected, clearing session...');
             try {
               localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
             } catch {}
@@ -219,7 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
     } catch (err: any) {
-      console.warn('signOut fallback (forced):', err?.message || err);
+      reportError({ type: 'auth', component: 'AuthContext', action: 'warn', message: 'signOut fallback (forced)', error: err });
     } finally {
       // ── Atomic Cleanup ──
 

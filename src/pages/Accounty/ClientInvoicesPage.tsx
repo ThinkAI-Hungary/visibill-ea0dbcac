@@ -4,8 +4,8 @@ import { ChevronLeft, ChevronDown, RefreshCcw, Upload, Search, MoreVertical, Clo
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCompanyInvoices } from '@/hooks/useAccountyData';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useCompanyInvoices } from '@/hooks/accounty';
+import { useAccountyClients } from '@/hooks/accounty';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';

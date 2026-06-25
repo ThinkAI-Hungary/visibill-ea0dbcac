@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { Calculator, Search, ChevronRight, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useAccountyClients, useAccountyCompanySummary } from '@/hooks/useAccountyData';
+import { useAccountyClients, useAccountyCompanySummary } from '@/hooks/accounty';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 
 // ── Types ──
 
@@ -51,13 +52,13 @@ interface PayrollRow {
 // ── Real data hook ──
 
 function usePayrollPortfolioData() {
-  const { data: clients = [], isLoading: clientsLoading } = useAccountyClients();
+  const { data: clients = [], isLoading: clientsLoading, isError: clientsError, refetch: refetchClients } = useAccountyClients();
   // Reuse the same hook that MissingInvoicesPage uses for consistency
-  const { data: companySummary = [], isLoading: summaryLoading } = useAccountyCompanySummary();
+  const { data: companySummary = [], isLoading: summaryLoading, isError: summaryError } = useAccountyCompanySummary();
 
   const companyIds = useMemo(() => clients.map((c: any) => c.companyId).filter(Boolean), [clients]);
 
-  const { data: payrollData, isLoading: payrollLoading } = useQuery({
+  const { data: payrollData, isLoading: payrollLoading, isError: payrollError } = useQuery({
     queryKey: ['payroll-portfolio-data', companyIds],
     queryFn: async () => {
       if (companyIds.length === 0) return {};
@@ -145,7 +146,7 @@ function usePayrollPortfolioData() {
     }));
   }, [clients, payrollData, summaryMap]);
 
-  return { rows, isLoading: clientsLoading || payrollLoading || summaryLoading };
+  return { rows, isLoading: clientsLoading || payrollLoading || summaryLoading, isError: clientsError || summaryError || payrollError, refetch: refetchClients };
 }
 
 // ── Component ──
@@ -153,9 +154,13 @@ function usePayrollPortfolioData() {
 type FilterMode = 'all' | 'missing' | 'not_started' | 'no_filing';
 
 export default function PayrollPortfolioPage() {
-  const { rows, isLoading } = usePayrollPortfolioData();
+  const { rows, isLoading, isError, refetch } = usePayrollPortfolioData();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
+
+  if (isError) {
+    return <AccountyErrorState message="Nem sikerült betölteni a bérszámfejtési portfólió adatait." onRetry={() => refetch()} />;
+  }
 
   const filtered = useMemo(() => {
     let list = rows;

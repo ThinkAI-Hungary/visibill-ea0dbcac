@@ -448,7 +448,7 @@ export const TransactionDetailsDialog = ({
       });
     } catch (e) {
       // Fire-and-forget: don't block the main flow
-      console.warn('Failed to log match override:', e);
+      reportError({ type: 'db_query', component: 'TransactionDetailsDialog', action: 'warn', message: 'Failed to log match override', error: e });
     }
   };
 

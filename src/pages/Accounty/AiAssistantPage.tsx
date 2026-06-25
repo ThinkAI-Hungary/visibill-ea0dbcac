@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { reportError } from '@/lib/errorReporter';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAiChatSessions, useAiChatMessages, AiChatSession } from '@/hooks/useAiChatSessions';
 
@@ -364,7 +365,7 @@ export function AiAssistantChat({ fullPage = false }: AiAssistantChatProps) {
           addMessage(currentSessionId!, 'assistant', partial).catch(() => {});
         }
       } else {
-        console.error('[AI Chat] Error:', err);
+        reportError({ type: 'api_call', component: 'AiAssistantChat', action: 'error', message: 'AI Chat streaming failed', error: err });
         const errorContent = `Hiba történt: ${err.message}\n\nKérlek próbáld újra.`;
         setMessages(prev => [...prev, {
           id: crypto.randomUUID(),

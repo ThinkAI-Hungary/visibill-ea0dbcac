@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -34,11 +34,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAccountyMissingItems, useAddMissingItem, useIgnoreMissingItem, useResolveMissingItem, useAccountyCommunicationPrefs, useGeneratePortalToken } from '@/hooks/useAccountyData';
+import { useAccountyMissingItems, useAccountyMissingCounts, useAddMissingItem, useIgnoreMissingItem, useResolveMissingItem, useAccountyCommunicationPrefs, useGeneratePortalToken } from '@/hooks/accounty';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { reportError } from '@/lib/errorReporter';
+import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 import {
   generateRequestEmail,
   addToApprovalQueue,
@@ -91,8 +92,30 @@ export default function ClientMissingInvoicesPage() {
     enabled: !!companyId,
   });
 
-  // Fetch missing items from Supabase
-  const { data: supabaseMissing, isLoading } = useAccountyMissingItems(companyId || '');
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const PAGE_SIZE = 100;
+
+  // Fetch missing items from Supabase (paginated)
+  const { data: paginatedData, isLoading, isError, refetch } = useAccountyMissingItems(companyId || '', currentPage, PAGE_SIZE);
+
+  if (isError) {
+    return (
+      <div className="w-full p-6">
+        <AccountyErrorState
+          message="Nem sikerült betölteni a hiányzó számlák adatait. Ellenőrizd a hálózati kapcsolatot."
+          onRetry={() => refetch()}
+        />
+      </div>
+    );
+  }
+
+  const supabaseMissing = paginatedData?.items;
+  const totalCount = paginatedData?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  // Server-side counts for KPI cards (no row transfer needed)
+  const { data: missingCounts } = useAccountyMissingCounts(companyId || '');
 
   // Mutations
   const addMissingItem = useAddMissingItem();
@@ -201,7 +224,8 @@ export default function ClientMissingInvoicesPage() {
     });
   }, [supabaseMissing]);
 
-  const clientName = companyData?.name || 'Betöltés...';
+   const clientName = companyData?.name || 'Betöltés...';
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('Minden forrás');
@@ -277,7 +301,7 @@ export default function ClientMissingInvoicesPage() {
         const { error: storageErr } = await supabase.storage
           .from('accounty_uploads')
           .remove(filesToDelete);
-        if (storageErr) console.error('Storage delete error:', storageErr.message);
+        if (storageErr) reportError({ type: 'upload', component: 'ClientMissingInvoicesPage', action: 'storageDelete', message: storageErr.message, error: storageErr });
       }
 
       // Reset status and clear uploaded_files
@@ -294,7 +318,7 @@ export default function ClientMissingInvoicesPage() {
       queryClient.invalidateQueries({ queryKey: ['accounty-missing-items'] });
       toast({ title: 'Eltávolítva', description: 'A feltöltött fájl(ok) törölve, a tétel visszaállt "Bekérésre vár" státuszra.' });
     } catch (err) {
-      console.error('Unresolve failed:', err);
+      reportError({ type: 'db_query', component: 'ClientMissingInvoicesPage', action: 'unresolve', message: 'Unresolve failed', error: err as Error });
       toast({ variant: 'destructive', title: 'Hiba', description: 'Nem sikerült eltávolítani.' });
     }
   };
@@ -621,28 +645,28 @@ export default function ClientMissingInvoicesPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards – server-side counts, no need to load all rows */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Összes hiányzó</p>
-          <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{invoices.filter(i => i.statusVariant !== 'success').length}</h3>
+          <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{missingCounts?.total?.toLocaleString('hu-HU') ?? '–'}</h3>
         </div>
         
         <div className="bg-red-50/50 dark:bg-red-900/20 p-5 rounded-xl border-2 border-red-200 dark:border-red-900/50 shadow-soft flex flex-col justify-between relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
           <p className="text-sm font-bold text-red-600 mb-2">Sürgős</p>
-          <h3 className="text-3xl font-black text-red-600">{invoices.filter(i => i.priority === 'Sürgős').length}</h3>
+          <h3 className="text-3xl font-black text-red-600">{missingCounts?.urgent?.toLocaleString('hu-HU') ?? '0'}</h3>
         </div>
         
         <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">NAV-ból</p>
-          <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{invoices.filter(i => i.source === 'NAV').length}</h3>
+          <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{missingCounts?.nav?.toLocaleString('hu-HU') ?? '–'}</h3>
         </div>
         
         <div className="bg-card p-5 rounded-xl border border-border shadow-soft flex flex-col justify-between">
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Becsült összeg</p>
           <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">
-            {new Intl.NumberFormat('hu-HU').format(invoices.reduce((sum, inv) => sum + (inv.amountRaw || 0), 0))} Ft
+            {missingCounts?.totalAmount != null ? new Intl.NumberFormat('hu-HU').format(missingCounts.totalAmount) + ' Ft' : '–'}
           </h3>
         </div>
       </div>
@@ -684,7 +708,7 @@ export default function ClientMissingInvoicesPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden">
+      <div ref={tableRef} className="bg-card border border-border rounded-xl shadow-soft overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -789,6 +813,34 @@ export default function ClientMissingInvoicesPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-border">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {currentPage * PAGE_SIZE + 1}–{Math.min((currentPage + 1) * PAGE_SIZE, totalCount)} / {totalCount.toLocaleString('hu-HU')} tétel
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setCurrentPage(p => Math.max(0, p - 1)); setSelectedIds([]); setTimeout(() => document.getElementById('accounty-main-scroll')?.scrollTo({ top: 0, behavior: 'smooth' }), 50); }}
+                disabled={currentPage === 0}
+                className="px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-card hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                ← Előző
+              </button>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300 px-2">
+                {currentPage + 1} / {totalPages}
+              </span>
+              <button
+                onClick={() => { setCurrentPage(p => Math.min(totalPages - 1, p + 1)); setSelectedIds([]); setTimeout(() => document.getElementById('accounty-main-scroll')?.scrollTo({ top: 0, behavior: 'smooth' }), 50); }}
+                disabled={currentPage >= totalPages - 1}
+                className="px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-card hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Következő →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Quick History Section */}
@@ -989,7 +1041,7 @@ export default function ClientMissingInvoicesPage() {
                                   setSelectedInvoiceForDetails({ ...selectedInvoiceForDetails, uploadedFiles: newFiles });
                                   toast({ title: 'Fájl törölve' });
                                 } catch (err) {
-                                  console.error('File delete error:', err);
+                                  reportError({ type: 'upload', component: 'ClientMissingInvoicesPage', action: 'fileDelete', message: 'File delete error', error: err as Error });
                                   toast({ variant: 'destructive', title: 'Törlés sikertelen' });
                                 }
                               }}

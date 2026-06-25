@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { reportError } from '@/lib/errorReporter';
+import { useToast } from '@/hooks/use-toast';
 import {
   Users, Building2, FileText, Clock,
   ChevronRight, ChevronLeft, ChevronDown, Search, LogOut, ArrowLeft, Shield,
@@ -589,10 +590,12 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
     return ['same'];
   }, [retryTargets]);
 
+  const { toast } = useToast();
+
   const openRetryModal = (ids: Array<{ source: string; id: string }>) => {
     const retryable = ids.filter(i => RETRYABLE_SOURCES.has(i.source));
     if (retryable.length === 0) {
-      window.alert('A kijelölt hibák forrása nem támogatja az újraküldést.');
+      toast({ title: 'Nem támogatott', description: 'A kijelölt hibák forrása nem támogatja az újraküldést.', variant: 'destructive' });
       return;
     }
     setRetryTargets(retryable);
@@ -616,7 +619,7 @@ function ErrorControlPanel({ onOpenCompany }: { onOpenCompany: (id: string) => v
           targetCategory: pipelineOverride.category,
         }),
       });
-      if (result.error) console.warn('Retry partial errors:', result.error);
+      if (result.error) reportError({ type: 'api_call', component: 'ManagementDashboard', action: 'warning', message: 'Retry partial errors', error: result.error });
       setSelected(new Set());
       queryClient.invalidateQueries({ queryKey: ['management-errors'] });
       queryClient.invalidateQueries({ queryKey: ['management-overview'] });

@@ -3,7 +3,8 @@ import { Bell, AlertTriangle, Info, CheckCircle, XCircle, Clock, TrendingUp, Use
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useAccountyClients } from '@/hooks/accounty';
+import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 
 type AlertLevel = 'critical' | 'warning' | 'info';
 type AlertCategory = 'all' | 'nav' | 'payroll' | 'employee' | 'system';
@@ -117,12 +118,16 @@ function generateAlerts(clients: any[]): Alert[] {
 }
 
 export default function AlertsCenterPage() {
-  const { data: clients = [] } = useAccountyClients();
+  const { data: clients = [], isError, refetch } = useAccountyClients();
   const [categoryFilter, setCategoryFilter] = useState<AlertCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
   // Track alert states: active / resolved / dismissed
   const [alertStates, setAlertStates] = useState<Record<string, AlertState>>({});
   const [showArchived, setShowArchived] = useState(false);
+
+  if (isError) {
+    return <AccountyErrorState message="Nem sikerült betölteni a riasztásokat." onRetry={() => refetch()} />;
+  }
 
   const allAlerts = useMemo(() => generateAlerts(clients), [clients]);
 

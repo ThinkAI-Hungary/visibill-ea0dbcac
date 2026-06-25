@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { useAccountyCompanySummary } from '@/hooks/useAccountyData';
+import { useAccountyCompanySummary } from '@/hooks/accounty';
+import { AccountyErrorState } from '@/components/accounty/AccountyErrorState';
 
 function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
   const [display, setDisplay] = useState(0);
@@ -33,7 +34,7 @@ export default function MissingInvoicesPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [kpiModal, setKpiModal] = useState<KpiModalType>(null);
 
-  const { data: companySummary, isLoading } = useAccountyCompanySummary();
+  const { data: companySummary, isLoading, isError, refetch } = useAccountyCompanySummary();
 
   // Transform RPC data to table format
   const data = useMemo(() => {
@@ -112,6 +113,32 @@ export default function MissingInvoicesPage() {
   const handleInvoiceClick = (invoice: any) => {
     setSelectedInvoiceForDetails(invoice);
   };
+
+  if (isError) {
+    return <AccountyErrorState message="Nem sikerült betölteni a hiányzó számlák listáját." onRetry={() => refetch()} />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="w-full space-y-6 animate-in fade-in duration-300">
+        <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+        <div className="grid grid-cols-4 gap-4">
+          {[0,1,2,3].map(i => (
+            <div key={i} className="bg-card rounded-xl border border-border p-5 h-28 animate-pulse">
+              <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded mb-6" />
+              <div className="h-7 w-12 bg-slate-200 dark:bg-slate-800 rounded" />
+            </div>
+          ))}
+        </div>
+        <div className="bg-card rounded-xl border border-border overflow-hidden animate-pulse">
+          <div className="h-12 bg-slate-50 dark:bg-slate-900/50 border-b border-border" />
+          {[0,1,2,3,4].map(i => (
+            <div key={i} className="h-16 border-b border-slate-100 dark:border-slate-800" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">

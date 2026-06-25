@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useDeclarations, type Declaration } from '@/hooks/useAccountyData';
+import { useDeclarations, type Declaration } from '@/hooks/accounty';
 
 const DECLARATION_TYPES = [
   { id: 'family', label: 'Családi kedvezmény', icon: Users, color: 'from-blue-500 to-indigo-500', desc: '1-3+ gyermek után járó adóalap-csökkentés', route: 'family', saving: '20 000 – 66 000 Ft/gyermek/hó' },

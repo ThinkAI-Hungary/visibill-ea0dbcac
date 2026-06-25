@@ -12,7 +12,7 @@ import {
   useCostCenters, useAddCostCenter, useUpdateCostCenter, useDeleteCostCenter,
   useDepartments, useAddDepartment, useUpdateDepartment, useDeleteDepartment,
   type Site, type CostCenter, type Department,
-} from '@/hooks/useAccountyData';
+} from '@/hooks/accounty';
 
 export default function CompanyStructurePage() {
   const { id } = useParams<{ id: string }>();

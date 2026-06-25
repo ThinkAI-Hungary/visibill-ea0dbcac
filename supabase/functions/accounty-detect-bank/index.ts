@@ -21,6 +21,33 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // ── Auth: require CRON_SECRET or valid user token ──
+    const cronSecret = Deno.env.get('CRON_SECRET')
+    const authHeader = req.headers.get('Authorization')
+    let authorized = false
+
+    if (cronSecret) {
+      const secretHeader = req.headers.get('x-cron-secret')
+      if (secretHeader === cronSecret) authorized = true
+    }
+
+    if (!authorized && authHeader) {
+      const tempClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      )
+      const { data: { user } } = await tempClient.auth.getUser(
+        authHeader.replace('Bearer ', '')
+      )
+      if (user) authorized = true
+    }
+
+    if (!authorized) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     console.log('[accounty-detect-bank] Starting bank transaction detection...')
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!

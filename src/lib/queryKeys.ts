@@ -186,4 +186,80 @@ export const queryKeys = {
     ['accounty-global-tax-params', year] as const,
   accountyLegalUpdates: () =>
     ['accounty-legal-updates'] as const,
+
+  // ── Accounty CRUD ──
+  accountyRetentionRules: (companyId: string) =>
+    ['retention-rules', companyId] as const,
+  accountyDataContracts: (companyId: string) =>
+    ['data-contracts', companyId] as const,
+  accountySites: (companyId: string) =>
+    ['sites', companyId] as const,
+  accountyCostCenters: (companyId: string) =>
+    ['cost-centers', companyId] as const,
+  accountyDepartments: (companyId: string) =>
+    ['departments', companyId] as const,
+  accountyYearEndTasks: (companyId: string, year: number) =>
+    ['year-end-tasks', companyId, year] as const,
+
+  // ── Accounty Payroll ──
+  accountyEmployeeJobs: (companyId: string, employeeId: string) =>
+    ['employee-jobs', companyId, employeeId] as const,
+  accountyDeclarations: (companyId: string) =>
+    ['declarations', companyId] as const,
+  accountyFilings: (companyId: string, filingType: string) =>
+    ['filings', companyId, filingType] as const,
+  accountyTransfers: (companyId: string, period?: string) =>
+    ['transfers', companyId, period] as const,
+  accountyDocuments: (companyId: string, docType?: string) =>
+    ['accounty-documents', companyId, docType] as const,
+
+  // ── Accounty Reports ──
+  accountyReportInvoices: () =>
+    ['accounty-report-invoices'] as const,
+  accountyMonthlyTrend: (userId: string) =>
+    ['accounty-monthly-trend', userId] as const,
+  accountyColleagueStats: () =>
+    ['accounty-colleague-stats'] as const,
+
+  // ── Accounty Misc ──
+  accountyPortalStats: () =>
+    ['accounty-portal-stats'] as const,
+  accountyAccountants: () =>
+    ['accounty-accountants'] as const,
+  accountyOfficeSettings: () =>
+    ['office-settings'] as const,
+  accountyCegkapuSettings: (companyId: string) =>
+    ['cegkapu-settings', companyId] as const,
+  accountyNavRepresentations: (companyId: string) =>
+    ['nav-representations', companyId] as const,
+  accountyMyAssignments: (userId: string) =>
+    ['accounty-my-assignments', userId] as const,
+  accountyCompanySummary: (userId: string) =>
+    ['accounty-company-summary', userId] as const,
+  accountyCompanyInvoices: (companyId: string) =>
+    ['company-invoices', companyId] as const,
+  accountyFirmAccountants: () =>
+    ['firm-accountants'] as const,
+  accountyMissingCounts: (companyId: string) =>
+    ['accounty-missing-counts', companyId] as const,
+  accountyPayrollEmployments: (employeeId: string) =>
+    ['payroll', 'employments', employeeId] as const,
+  accountyPayrollEmployees: () =>
+    ['payroll', 'employees'] as const,
+
+  // ── Accounty Settings/Profile ──
+  accountyFirmData: (userId: string) =>
+    ['accounty-firm-data', userId] as const,
+  accountyFirmMembers: (companyId: string) =>
+    ['accounty-firm-members', companyId] as const,
+  accountyFirmName: (userId: string) =>
+    ['accounty-firm-name', userId] as const,
+  accountyTeamMembers: (firmId?: string) =>
+    ['accounty-team-members', firmId] as const,
+  accountyMessages: (companyId: string) =>
+    ['accounty-messages', companyId] as const,
+  accountyModulePermissions: () =>
+    ['accounty-module-permissions'] as const,
+  accountyRole: (userId: string) =>
+    ['accounty-role', userId] as const,
 };

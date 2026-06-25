@@ -1,5 +1,3 @@
-import ExcelJS from 'exceljs';
-
 interface GLRow {
   id: string;
   name: string;
@@ -19,6 +17,7 @@ export const exportGlExcel = async (
   companyName: string = 'Vállalkozás',
   footerTotal: number = 0
 ) => {
+  const { default: ExcelJS } = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'eaisybill';
   workbook.created = new Date();
@@ -159,6 +158,7 @@ export const exportGlAnalyticalExcel = async (
   companyName: string = 'Vállalkozás',
   footerTotal: number = 0
 ) => {
+  const { default: ExcelJS } = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'eaisybill';
   workbook.created = new Date();

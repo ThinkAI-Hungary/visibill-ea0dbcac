@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { exportPdf, exportReceiptPdf } from '@/lib/exportPdf';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useAccountyClients } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
 
 type Step = 'preview' | 'sign' | 'submit' | 'receipt';

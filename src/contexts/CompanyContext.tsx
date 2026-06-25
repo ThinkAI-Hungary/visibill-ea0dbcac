@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext';
 import { STORAGE_KEYS } from '@/lib/constants';
 import { queryKeys } from '@/lib/queryKeys';
 import { safeStorage } from '@/lib/storage';
+import { reportError } from '@/lib/errorReporter';
 
 export interface Company {
   id: string;
@@ -78,7 +79,7 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
 
       if (assignmentError && assignmentError.code !== 'PGRST116') {
         // Ignore "table not found" — it might not exist in all setups
-        console.warn('accounty_assignments query error:', assignmentError.message);
+        reportError({ type: 'db_query', component: 'CompanyContext', action: 'warn', message: 'accounty_assignments query error', error: assignmentError });
       }
 
       // 4. Merge & deduplicate company IDs

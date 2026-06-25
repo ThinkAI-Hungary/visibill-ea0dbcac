@@ -128,7 +128,7 @@ const BalanceSheet = lazy(() => import("./pages/BalanceSheet"));
 const AnnualReportPage = lazy(() => import("./pages/AnnualReportPage"));
 const ManagementDashboard = lazy(() => import("./pages/ManagementDashboard"));
 const AccountyApp = lazy(() => import("./pages/Accounty/AccountyApp"));
-import AccountyLayout from "./pages/Accounty/AccountyLayout";
+const AccountyLayout = lazy(() => import("./pages/Accounty/AccountyLayout"));
 const NewClientPage = lazy(() => import("./pages/Accounty/NewClientPage"));
 const MissingInvoicesPage = lazy(() => import("./pages/Accounty/MissingInvoicesPage"));
 const ReportsPage = lazy(() => import("./pages/Accounty/ReportsPage"));
@@ -474,10 +474,12 @@ const App = () => (
                     <Route path="/accounty" element={
                       <ProtectedPage>
                           <RemoveInitialLoader />
-                          <AccountyLayout />
+                          <Suspense fallback={<LoadingSpinner message="eaisybooks betöltése..." />}>
+                            <AccountyLayout />
+                          </Suspense>
                       </ProtectedPage>
                     }>
-                      <Route index element={<AccountyApp />} />
+                      <Route index element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><AccountyApp /></Suspense>} />
                       <Route path="client/:id" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientDetailsPage /></Suspense>} />
                       <Route path="missing-invoices" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><MissingInvoicesPage /></Suspense>} />
                       <Route path="missing-invoices/:id" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientMissingInvoicesPage /></Suspense>} />

@@ -8,10 +8,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { usePayrollCycles, usePayrollEmployees } from '@/hooks/usePayrollData';
-import { useAccountyClients, useAccountyMissingItems } from '@/hooks/useAccountyData';
+import { useAccountyClients, useAccountyMissingItems } from '@/hooks/accounty';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { reportError } from '@/lib/errorReporter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const MONTHS = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
@@ -198,7 +199,7 @@ export default function ClientPortalPage() {
 
       toast({ title: 'Portál link generálva ', description: 'A link a vágólapra másolva. Érvényes: 30 nap.' });
     } catch (err) {
-      console.error('Portal token error:', err);
+      reportError({ type: 'db_query', component: 'ClientPortalPage', action: 'portalToken', message: 'Portal token error', error: err as Error });
       toast({ variant: 'destructive', title: 'Hiba', description: 'Nem sikerült a link generálás.' });
     } finally {
       setGeneratingLink(false);
@@ -263,7 +264,7 @@ export default function ClientPortalPage() {
           .single();
 
         if (logErr) {
-          console.error('[Portal] Upload log insert error:', logErr.message);
+          reportError({ type: 'db_query', component: 'ClientPortalPage', action: 'uploadLogInsert', message: logErr.message, error: logErr });
         }
         const logId = (logEntry as any)?.id;
 
@@ -273,7 +274,7 @@ export default function ClientPortalPage() {
           .upload(filePath, file, { upsert: false });
 
         if (uploadErr) {
-          console.error('[Portal] Storage upload error:', uploadErr.message);
+          reportError({ type: 'upload', component: 'ClientPortalPage', action: 'storageUpload', message: uploadErr.message, error: uploadErr });
           // Update log → error
           if (logId) {
             await supabase.from('accounty_uploads' as any)
@@ -313,7 +314,7 @@ export default function ClientPortalPage() {
           .select();
 
         if (resolveErr) {
-          console.error('[Portal] DB resolve error:', resolveErr.message);
+          reportError({ type: 'db_query', component: 'ClientPortalPage', action: 'dbResolve', message: resolveErr.message, error: resolveErr });
           toast({ variant: 'destructive', title: 'Hiba', description: `Státusz frissítés sikertelen: ${resolveErr.message}` });
           return;
         }
@@ -328,7 +329,7 @@ export default function ClientPortalPage() {
         toast({ variant: 'destructive', title: 'Feltöltés sikertelen', description: 'A fájl nem töltődött fel. Kérjük próbálja újra.' });
       }
     } catch (err: any) {
-      console.error('[Portal] Upload error:', err);
+      reportError({ type: 'upload', component: 'ClientPortalPage', action: 'upload', message: 'Upload error', error: err as Error });
       toast({ variant: 'destructive', title: 'Feltöltési hiba', description: err?.message || 'A fájl feltöltés sikertelen.' });
     }
   };

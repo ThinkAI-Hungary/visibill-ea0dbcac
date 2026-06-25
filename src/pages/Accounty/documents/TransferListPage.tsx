@@ -7,8 +7,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { ExportButton } from '@/components/accounty/ExportButton';
 import { cn } from '@/lib/utils';
-import { useTransfers, type Transfer } from '@/hooks/useAccountyData';
-import { useAccountyClients } from '@/hooks/useAccountyData';
+import { useTransfers, type Transfer } from '@/hooks/accounty';
+import { useAccountyClients } from '@/hooks/accounty';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { generateTransferPdf } from '@/lib/documentPdfs';
 import { usePayrollCycles, usePayrollCalculations } from '@/hooks/usePayrollData';
