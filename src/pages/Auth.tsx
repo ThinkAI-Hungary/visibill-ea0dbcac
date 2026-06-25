@@ -591,6 +591,9 @@ const Auth = () => {
     if (signUpSuccess) return;
     // Don't auto-navigate when email is not verified — user is locked
     if (isUnverified) return;
+    // Don't auto-navigate when user explicitly came to request a password reset link.
+    // ?forgot=1 is set by ResetPassword.tsx when the link is expired/invalid.
+    if (authSearchParams.get('forgot') === '1') return;
     if (user && hasEaisybillAccess !== undefined) {
       // Respect the eaisybooks toggle for routing
       const target = returnTo && returnTo !== '/'
@@ -598,7 +601,7 @@ const Auth = () => {
         : isEaisybooks ? '/accounty' : '/';
       navigate(target);
     }
-  }, [user, navigate, signUpSuccess, isUnverified, isEaisybooks, returnTo, hasEaisybillAccess]);
+  }, [user, navigate, signUpSuccess, isUnverified, isEaisybooks, returnTo, hasEaisybillAccess, authSearchParams]);
 
   // Non-passive wheel listener — adds to scroll velocity for smooth momentum
   useEffect(() => {

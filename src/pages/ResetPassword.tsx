@@ -9,31 +9,53 @@ import { toast } from '@/hooks/use-toast';
 import { reportAuthError } from '@/lib/errorReporter';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Read + clear the synchronously-captured hash state set by the App.tsx IIFE.
+// The IIFE runs before Supabase SDK init wipes window.location.hash via replaceState,
+// so this is the only reliable source of the original hash type.
+const RESET_PW_STATE_KEY = 'visibill_reset_pw_state';
+function consumeResetPwState(): 'recovery' | 'expired' | null {
+  try {
+    const val = sessionStorage.getItem(RESET_PW_STATE_KEY);
+    if (val === 'recovery' || val === 'expired') {
+      sessionStorage.removeItem(RESET_PW_STATE_KEY);
+      return val;
+    }
+  } catch {}
+  return null;
+}
+
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  // Give the SDK a moment to process the hash before deciding it's invalid
-  const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
   const { isPasswordRecovery } = useAuth();
 
-  useEffect(() => {
-    // URL hash check (instant) — covers the case where the component mounts
-    // before onAuthStateChange fires in AuthContext
-    const hash = window.location.hash;
-    const hasRecoveryHash = hash.includes('type=recovery');
+  // Determine initial state from sessionStorage (set by App.tsx IIFE synchronously
+  // before Supabase clears the URL hash). Falls back to live hash as safety net.
+  const storedState = consumeResetPwState();
+  const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
 
-    if (hasRecoveryHash || isPasswordRecovery) {
+  const isExpiredFromStorage = storedState === 'expired';
+  const isExpiredFromHash = hashParams.get('error_code') === 'otp_expired'
+    || (hashParams.get('error') === 'access_denied' && !!hashParams.get('error_code'));
+  const isExpired = isExpiredFromStorage || isExpiredFromHash;
+
+  const isRecoveryFromStorage = storedState === 'recovery';
+
+  // Give the SDK a moment to process the hash before deciding it is invalid.
+  // Skip the wait if we already know the state from sessionStorage.
+  const [checking, setChecking] = useState(!isRecoveryFromStorage && !isExpired);
+
+  useEffect(() => {
+    if (!checking) return;
+    if (isPasswordRecovery) {
       setChecking(false);
       return;
     }
-
-    // Wait briefly for AuthContext to process the PASSWORD_RECOVERY event
-    // (Supabase SDK fires it async after parsing the hash)
     const timer = setTimeout(() => setChecking(false), 800);
     return () => clearTimeout(timer);
-  }, [isPasswordRecovery]);
+  }, [isPasswordRecovery, checking]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,14 +86,17 @@ const ResetPassword = () => {
     }
   };
 
-  const isRecovery = isPasswordRecovery || window.location.hash.includes('type=recovery');
+  // Navigate to forgot-password form, signing out first so an active session
+  // cannot auto-redirect the user to the dashboard instead of showing the form.
+  const handleNewLinkRequest = async () => {
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch {}
+    navigate('/auth?forgot=1');
+  };
 
-  // Check for Supabase error in the hash (e.g. expired link)
-  const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
-  const isExpired = hashParams.get('error_code') === 'otp_expired'
-    || (hashParams.get('error') === 'access_denied' && window.location.hash.includes('expired'));
+  const isRecovery = isPasswordRecovery || isRecoveryFromStorage || window.location.hash.includes('type=recovery');
 
-  // Expired link — show specific message with shortcut to forgot-password flow
   if (isExpired) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -81,10 +106,7 @@ const ResetPassword = () => {
             Ez a jelszó-visszaállító link már nem érvényes (lejárt vagy már felhasználták).
             Kérj egy új linket az email címedre.
           </p>
-          <Button
-            className="w-full"
-            onClick={() => navigate('/auth?forgot=1')}
-          >
+          <Button className="w-full" onClick={handleNewLinkRequest}>
             Új link kérése
           </Button>
         </div>
@@ -92,7 +114,6 @@ const ResetPassword = () => {
     );
   }
 
-  // Still waiting for the SDK to process the hash
   if (checking && !isRecovery) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -112,7 +133,7 @@ const ResetPassword = () => {
           <p className="text-muted-foreground">
             Érvénytelen visszaállítási link. Kérj új linket az email címedre.
           </p>
-          <Button onClick={() => navigate('/auth?forgot=1')} className="w-full">
+          <Button onClick={handleNewLinkRequest} className="w-full">
             Új link kérése
           </Button>
         </div>

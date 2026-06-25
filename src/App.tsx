@@ -9,6 +9,26 @@ import { Suspense, lazy, useEffect } from "react";
   const hash = window.location.hash;
   const PENDING_KEY = 'visibill_pending_callback_type';
 
+  // ── /reset-password: capture hash synchronously BEFORE Supabase clears it ──
+  // Supabase SDK calls history.replaceState() during init, wiping the hash before
+  // React renders. ResetPassword.tsx must read from sessionStorage instead.
+  if (window.location.pathname === '/reset-password') {
+    if (hash) {
+      const params = new URLSearchParams(hash.replace('#', ''));
+      const type = params.get('type');
+      const errCode = params.get('error_code');
+      const errVal = params.get('error');
+      if (type === 'recovery') {
+        // Valid recovery token — mark so ResetPassword knows to show the form
+        sessionStorage.setItem('visibill_reset_pw_state', 'recovery');
+      } else if (errCode === 'otp_expired' || (errVal === 'access_denied' && errCode)) {
+        // Expired or already-used reset link
+        sessionStorage.setItem('visibill_reset_pw_state', 'expired');
+      }
+    }
+    return; // Never redirect away from /reset-password
+  }
+
   // If already at /auth/callback: capture the hash TYPE synchronously into sessionStorage
   // BEFORE Supabase's async init clears the URL. Store only the type (not the access_token).
   if (window.location.pathname === '/auth/callback') {
