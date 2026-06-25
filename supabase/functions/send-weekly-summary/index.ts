@@ -1,4 +1,4 @@
-﻿import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { Resend } from "npm:resend@4.0.0";
 import { renderAsync } from "npm:@react-email/components@0.0.22";
@@ -29,6 +29,14 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Require shared cron secret to prevent unauthenticated triggering / email spam.
+    const cronSecret = Deno.env.get('CRON_SECRET');
+    const provided = req.headers.get('x-cron-secret');
+    if (!cronSecret || provided !== cronSecret) {
+      console.error('🚫 send-weekly-summary called without valid CRON_SECRET');
+      return new Response('Forbidden', { status: 403, headers: corsHeaders });
+    }
+
     console.log("Starting weekly summary email job...");
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);

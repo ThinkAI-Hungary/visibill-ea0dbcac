@@ -419,7 +419,12 @@ export default function ProfileSettingsPage() {
     setLoading(true);
     const { error } = await supabase.from('profiles').upsert({ user_id: user.id, name: profile.name, company: profile.company, position: profile.position, avatar_url: profile.avatar_url }, { onConflict: 'user_id' });
     if (error) toast({ title: 'Hiba történt', description: 'A profil mentése sikertelen.', variant: 'destructive' });
-    else { setInitialProfile({ ...profile }); toast({ title: 'Siker', description: 'A profil sikeresen mentve.' }); }
+    else {
+      // Sync name into auth user_metadata so the sidebar re-renders immediately
+      await supabase.auth.updateUser({ data: { name: profile.name } });
+      setInitialProfile({ ...profile });
+      toast({ title: 'Siker', description: 'A profil sikeresen mentve.' });
+    }
     setLoading(false);
   };
 

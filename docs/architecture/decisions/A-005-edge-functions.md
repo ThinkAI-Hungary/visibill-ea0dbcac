@@ -10,7 +10,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 
 ## Decision
 
-**Supabase Edge Functions** (Deno runtime) — 45 deployed function + `_shared/` közös kód.
+**Supabase Edge Functions** (Deno runtime) — 46 deployed function + `_shared/` közös kód.
 
 **Közös kód:** `_shared/` mappa — CORS headers, Supabase client, utility-k.
 
@@ -131,6 +131,12 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | `fetch-mnb-rates` | ❌ | MNB SOAP API → `daily_exchange_rates` tábla upsert (cron + dashboard auto-trigger) |
 | `fetch-legal-updates` | ❌ | Jogi frissítések letöltése (cron) |
 
+#### 🚚 Szállitmányozás / HRTSPED (1 db)
+
+| Function | JWT | Leírás |
+|----------|-----|--------|
+| `shipment-retroactive-match` | ❌ | DR-031: Retroaktív shipment↔invoice párosítás invoice-first életciklushöz. A `ShipmentImportPage` hívja Excel import után (1 POST/import). Tábla: `shipment_matches`, `invoices`, `transport_documents`, `shipments`. 90 napos ablak. Service_role auth. |
+
 ---
 
 ### JWT Összefoglaló
@@ -138,7 +144,7 @@ A rendszernek serverless logikára van szüksége: NAV API hívások, email kül
 | JWT beállítás | Darabszám | Mikor |
 |---|---|---|
 | `verify_jwt: true` | 17 | Frontend-ből közvetlenül hívott function-ök |
-| `verify_jwt: false` | 31 | Webhook-ok, cron jobok, más EF-ek által hívottak, service_role auth, API key auth |
+| `verify_jwt: false` | 32 | Webhook-ok, cron jobok, más EF-ek által hívottak, service_role auth, API key auth |
 
 **Megjegyzés:** `verify_jwt: false` nem jelent védtelenséget — ezek a function-ök saját auth-ot implementálnak:
 - Webhook-ok: HMAC signature verification (Mailgun)

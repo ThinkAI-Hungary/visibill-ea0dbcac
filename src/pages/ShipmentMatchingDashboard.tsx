@@ -1,5 +1,5 @@
 import { useState, useMemo, Fragment } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,6 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import InvoiceImageDialog from '@/components/InvoiceImageDialog';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
   Truck, 
   CheckCircle2, 
@@ -29,7 +35,8 @@ import {
   Inbox,
   Link,
   ExternalLink,
-  Upload
+  Upload,
+  Unlink,
 } from 'lucide-react';
 import { format, getDaysInMonth, startOfMonth, addDays } from 'date-fns';
 import { hu } from 'date-fns/locale';
@@ -84,6 +91,8 @@ export default function ShipmentMatchingDashboard() {
   const basePath = useScopedBasePath();
   const { dateFrom } = useDateRange();
   const { theme } = useTheme();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // ── Chart colors ──
   // Explicit vibrant HSL values per theme — CSS var tokens are too muted for Recharts SVG.
@@ -145,6 +154,91 @@ export default function ShipmentMatchingDashboard() {
     }
   };
 
+  // ── Detach state ──
+  const [invoiceDetachTarget, setInvoiceDetachTarget] = useState<{
+    matchId: string; shipmentId: string; invoiceId: string; bizonylat: string;
+  } | null>(null);
+  const [docDetachTarget, setDocDetachTarget] = useState<{
+    docId: string; shipmentId: string; fileName: string; uploadId?: string;
+  } | null>(null);
+  const [isDetachingInvoice, setIsDetachingInvoice] = useState(false);
+  const [isDetachingDoc, setIsDetachingDoc] = useState(false);
+
+  // Detach invoice from shipment → send back to escalation
+  const handleDetachInvoice = async () => {
+    if (!invoiceDetachTarget || !selectedCompany?.id) return;
+    setIsDetachingInvoice(true);
+    try {
+      const { matchId, shipmentId, invoiceId } = invoiceDetachTarget;
+      // 1. Update match status → pending_shipment (keep the record so escalation list can find it)
+      //    Also clear shipment_id so the match is no longer tied to this shipment
+      await supabase.from('shipment_matches' as any)
+        .update({ status: 'pending_shipment', shipment_id: null, confidence_score: 0 })
+        .eq('id', matchId);
+      // 2. Reset shipment status
+      await supabase.from('shipments' as any)
+        .update({ match_status: 'unmatched', matched_invoice_id: null })
+        .eq('id', shipmentId);
+      // 3. Reset invoice status → pending_shipment (escalation queue)
+      await supabase.from('invoices')
+        .update({ shipment_match_status: 'pending_shipment' })
+        .eq('id', invoiceId);
+      // 4. Detach any transport_docs linked to this invoice (CMR goes back to escalated)
+      await supabase.from('transport_documents')
+        .update({ linked_invoice_id: null, status: 'orphaned' } as any)
+        .eq('linked_invoice_id', invoiceId);
+      toast({ title: 'Számla leválasztva', description: `${invoiceDetachTarget.bizonylat} visszakerül az eszkalációs sorba.` });
+      setInvoiceDetachTarget(null);
+      queryClient.invalidateQueries({ queryKey: ['shipments-matching', selectedCompany.id] });
+      queryClient.invalidateQueries({ queryKey: ['escalated-matches', selectedCompany.id] });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Leválasztás sikertelen', description: err.message });
+    } finally {
+      setIsDetachingInvoice(false);
+    }
+  };
+
+  // Detach a transport document from shipment → send back to escalation
+  const handleDetachDoc = async () => {
+    if (!docDetachTarget || !selectedCompany?.id) return;
+    setIsDetachingDoc(true);
+    try {
+      const { docId, shipmentId, uploadId } = docDetachTarget;
+      // 1. Unlink transport_document from shipment
+      await supabase.from('transport_documents')
+        .update({ linked_shipment_id: null, linked_invoice_id: null, status: 'orphaned' } as any)
+        .eq('id', docId);
+      // 2. If there's a corresponding invoice_upload, set it back to cmr_escalated (with manual_detach flag)
+      if (uploadId) {
+        const { data: uRow } = await supabase.from('invoice_uploads').select('metadata').eq('id', uploadId).single();
+        const mergedMeta = { ...((uRow as any)?.metadata ?? {}), manual_detach: true };
+        await supabase.from('invoice_uploads')
+          .update({ processing_status: 'cmr_escalated', metadata: mergedMeta } as any)
+          .eq('id', uploadId);
+      } else {
+        // Fallback: find invoice_uploads linked via metadata->cmr_result->cmr_id, then merge manual_detach flag
+        const { data: matchedUploads } = await (supabase as any)
+          .from('invoice_uploads')
+          .select('id, metadata')
+          .eq('company_id', selectedCompany.id)
+          .filter('metadata->cmr_result->>cmr_id', 'eq', docId);
+        for (const u of (matchedUploads ?? []) as { id: string; metadata: Record<string, unknown> | null }[]) {
+          const mergedMeta = { ...(u.metadata ?? {}), manual_detach: true };
+          await supabase.from('invoice_uploads')
+            .update({ processing_status: 'cmr_escalated', metadata: mergedMeta } as any)
+            .eq('id', u.id);
+        }
+      }
+      toast({ title: 'Dokumentum leválasztva', description: `${docDetachTarget.fileName} visszakerül az eszkalált dokumentumok közé.` });
+      setDocDetachTarget(null);
+      queryClient.invalidateQueries({ queryKey: ['shipments-matching', selectedCompany.id] });
+      queryClient.invalidateQueries({ queryKey: ['escalated-uploads', selectedCompany.id] });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Leválasztás sikertelen', description: err.message });
+    } finally {
+      setIsDetachingDoc(false);
+    }
+  };
 
   // Fetch Shipments with joined Matches and CMRs
   const { data: shipments = [], isLoading } = useQuery<DashboardShipment[]>({
@@ -743,7 +837,25 @@ export default function ShipmentMatchingDashboard() {
                                         </div>
                                       )}
                                       {/* Action bar */}
-                                      <div className="flex justify-end px-4 pb-3">
+                                      <div className="flex justify-between items-center px-4 pb-3">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="text-destructive hover:text-destructive hover:bg-destructive/10 text-xs h-7 px-2"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (activeMatch.invoice?.id) {
+                                              setInvoiceDetachTarget({
+                                                matchId: activeMatch.id,
+                                                shipmentId: s.id,
+                                                invoiceId: activeMatch.invoice.id,
+                                                bizonylat: activeMatch.invoice.bizonylatsorszam,
+                                              });
+                                            }
+                                          }}
+                                        >
+                                          <Unlink className="h-3 w-3 mr-1" /> Számla leválasztása
+                                        </Button>
                                         <Button 
                                           variant="ghost" 
                                           size="sm"
@@ -802,17 +914,31 @@ export default function ShipmentMatchingDashboard() {
                                               {doc.file_size > 0 && <>Méret: {(doc.file_size / 1024).toFixed(0)} KB | </>}Feltöltve: {format(new Date(doc.created_at), 'yyyy. MM. dd.')}
                                             </p>
                                           </div>
-                                          <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-7 w-7" 
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              window.open(doc.file_path, '_blank');
-                                            }}
-                                          >
-                                            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
-                                          </Button>
+                                          <div className="flex items-center gap-1 shrink-0">
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-7 px-2 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10"
+                                              title="Dokumentum leválasztása"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setDocDetachTarget({ docId: doc.id, shipmentId: s.id, fileName: doc.file_name });
+                                              }}
+                                            >
+                                              <Unlink className="h-3 w-3 mr-1" /> Leválaszt
+                                            </Button>
+                                            <Button 
+                                              variant="ghost" 
+                                              size="icon" 
+                                              className="h-7 w-7" 
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                window.open(doc.file_path, '_blank');
+                                              }}
+                                            >
+                                              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+                                            </Button>
+                                          </div>
                                         </div>
                                       ))}
                                     </div>
@@ -906,6 +1032,54 @@ export default function ShipmentMatchingDashboard() {
           setInvoiceDialogLoading(null);
         }}
       />
+
+      {/* Invoice leválasztás AlertDialog */}
+      <AlertDialog open={!!invoiceDetachTarget} onOpenChange={(open) => { if (!open) setInvoiceDetachTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Számla leválasztása a fuvarról</AlertDialogTitle>
+            <AlertDialogDescription>
+              Biztosan leválasztod a <strong>{invoiceDetachTarget?.bizonylat}</strong> számlát erről a fuvarról?
+              A számla visszakerül az eszkalációs sorba (várakozó futarriport állapotba). A csatolt CMR dokumentum is leválasztódik.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDetachingInvoice}>Mégse</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={handleDetachInvoice}
+              disabled={isDetachingInvoice}
+            >
+              {isDetachingInvoice ? <span className="h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin mr-1.5" /> : null}
+              Leválaszt
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dokumentum leválasztás AlertDialog */}
+      <AlertDialog open={!!docDetachTarget} onOpenChange={(open) => { if (!open) setDocDetachTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Dokumentum leválasztása</AlertDialogTitle>
+            <AlertDialogDescription>
+              Biztosan leválasztod a <strong>{docDetachTarget?.fileName}</strong> dokumentumot erről a fuvarról?
+              A dokumentum visszakerül az eszkalált dokumentumok közé.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDetachingDoc}>Mégse</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={handleDetachDoc}
+              disabled={isDetachingDoc}
+            >
+              {isDetachingDoc ? <span className="h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin mr-1.5" /> : null}
+              Leválaszt
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );

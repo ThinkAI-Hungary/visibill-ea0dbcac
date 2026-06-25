@@ -46,6 +46,31 @@ TERVEZÉS → DÖNTÉSEK → DEKOMP. → IMPLEMENTÁCIÓ → INTEGR. VERIFY → 
 
 ## FÁZIS 1: Kontextus Gyűjtés (NE kódolj!)
 
+### 1.0 Hypothesis — confidence check (Spec lookup ELŐTT)
+
+```
+HYPOTHESIS: [1 mondatban mit értettél meg a kérésből]
+CONFIDENCE: ~X% — hiányzik: [mi nem tiszta még]
+```
+
+> Ha confidence < 70% → kérdezz MIELŐTT spec lookupot indítasz.
+
+**ASSUMPTIONS I'M MAKING** (rögzítsd mielőtt bármit tervezel):
+```
+ASSUMPTIONS I'M MAKING:
+1. [Feltételezés — pl. auth Supabase-alapú marad]
+2. [Feltételezés — pl. ez az eaisybill-prod, nem a worker]
+3. [Feltételezés — pl. csak owner lát majd új adatot]
+→ Jelezz ha bármelyik téves, mielőtt tervezek.
+```
+
+**Reframe as Success Criteria** (elvont igény → mérhető feltétel):
+```
+Kérés: "Legyen gyorsabb / jobb / szebb"
+→ Konkretizálva: "Dashboard LCP < 2s / API p95 < 300ms / 0 console error"
+→ Ez a helyes cél?
+```
+
 ### 1.1 User kérés értelmezése
 ```markdown
 ## 🎯 Feature összefoglaló
@@ -57,6 +82,7 @@ TERVEZÉS → DÖNTÉSEK → DEKOMP. → IMPLEMENTÁCIÓ → INTEGR. VERIFY → 
 ```bash
 graphify query "<feature kulcsszavak>"
 ```
+
 
 ### 1.2a Terminológia konzisztencia ellenőrzés
 
@@ -179,8 +205,22 @@ Készíts egy **teljes döntési mátrixot** — minden döntéspontot listázz 
 
 ### 🔐 Biztonság
 | # | Kérdés | Opciók | Meglévő pattern | Ajánlás |
-|---|--------|--------|-----------------|---------|
+|---|--------|--------|-----------------|---------| 
 | D-7 | Ki férhet hozzá? | a) Mindenki b) Owner c) Admin+ | ADR A-009 | ... |
+
+**⚡ STRIDE gyorscheck** (5 perc, security-érintett feature előtt):
+
+| Threat | Kérdés | Visibill kontextus |
+|--------|--------|--------------------|
+| **S**poofing | Valaki megszemélyesíthet user-t/cég-t? | JWT token kezelés, RLS company_id |
+| **T**ampering | Megváltoztatható adat átvitel/tárolás közben? | Input validáció EF-ben |
+| **R**epudiation | Tagadható-e egy action? | Audit log szükséges? |
+| **I**nformation disclosure | Szivároghat-e adat más céghez? | RLS policy → multi-tenancy! |
+| **D**enial of service | Túlterhelhető az endpoint? | Rate limit, payload méret |
+| **E**levation of privilege | Kaphat valaki jogosulatlan hozzáférést? | Role check, SECURITY DEFINER |
+
+> Ha bármelyik sor „Igen"-t kap → adja hozzá D-8+, D-9+ sorokként a mátrixba.
+
 
 ### 🤖 AI/Worker (ha releváns)
 | # | Kérdés | Opciók | Meglévő pattern | Ajánlás |
@@ -225,7 +265,22 @@ Az agent **saját maga határozza meg** a modul méretét a következők alapjá
 - **Dependency depth** — mennyi másik fájltól függ
 - **Verifikálhatóság** — tudjuk-e izoláltan tesztelni
 
+**Standard méretosztályok:**
+
+| Méret | Fájlok | Leírás | Példa |
+|-------|--------|--------|-------|
+| **XS** | 1 | Egyetlen függvény, config változás | RLS policy hozzáadás |
+| **S** | 1-2 | Egy hook vagy endpoint | `useRegisters.ts` + types |
+| **M** | 3-5 | Egy feature slice | Hook + component + page szekció |
+| **L** | 5-8 | Multi-component feature | Teljes oldal új layouttal |
+| **XL** | 8+ | **TÚL NAGY — bontsd tovább!** | — |
+
+> **And rule:** Ha az „és" szó szerepel a modul nevében → valójában két modul. Bontsd szét.  
+> ✅ `Module 3: Hook — useRegisters`  
+> ❌ `Module 3: Hook + UI — useRegisters és RegisterSelector` → két modul legyen.
+
 > **Alapelv:** Egy modul annyi fájlt tartalmazzon, amennyit **egyetlen verifikációs lépésben** megbízhatóan ellenőrizni tudsz. Ha kétséges → kisebb modulra bontsd.
+
 
 ### Modul terv formátum
 
@@ -619,10 +674,25 @@ A meglévő funkciók nem törtek el:
 **Integration test:** ✅ PASS — [evidence: screenshot/output]
 **Regresszió:** ✅ Dashboard, Számlák, Navigáció — mind OK
 
+**OUT OF SCOPE (nem változott):** [explicit felsorolás — pl. "a worker pipeline érintetlen"]
+
 **Kérlek teszteld:** [mit és hogyan kell tesztelni a böngészőben]
 
 ⚠️ Ha működik, frissítem az összes releváns dokumentációt (BRD/PRD/ADR/Design docs).
 ```
+
+**Rollout döntési thresholdok** (objektív rollback döntéshez):
+
+| Metrika | 🟢 Folytat | 🟡 Vár és vizsgál | 🔴 Rollback |
+|---------|-----------|-------------------|-------------|
+| Error rate | ≤ baseline | 10-100% feletti | >2× baseline |
+| P95 latency | ≤ 20% feletti | 20-50% feletti | >50% feletti |
+| Client JS hibák | Nincs új típus | Új hiba <0.1% session | Új hiba >0.1% session |
+| Üzleti metrika | Semleges / pozitív | Csökkenés <5% | Csökkenés >5% |
+
+> **Rollback feltételei:** Error rate >2×, P95 latency >50%, adatintegritási probléma, vagy biztonsági sérülékenység.
+
+
 
 ---
 

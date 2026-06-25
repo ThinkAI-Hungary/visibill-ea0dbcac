@@ -77,6 +77,7 @@ export default function ShipmentImportPage() {
   const [isParsing, setIsParsing] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [isImporting, setIsImporting] = useState(false);
+  const [isMatching, setIsMatching] = useState(false); // EF retroaktív matching fut
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [deletingBatchId, setDeletingBatchId] = useState<string | null>(null);
   const [confirmDeleteBatch, setConfirmDeleteBatch] = useState<ImportBatch | null>(null);
@@ -382,9 +383,32 @@ export default function ShipmentImportPage() {
       // Invalidate queries — 'shipments-matching' is the key used by ShipmentMatchingDashboard
       queryClient.invalidateQueries({ queryKey: ['shipments-matching', selectedCompany.id] });
       queryClient.invalidateQueries({ queryKey: ['shipment-import-batches', selectedCompany.id] });
+      queryClient.invalidateQueries({ queryKey: ['escalations', selectedCompany.id] });
 
-      // Navigate immediately — dashboard will mount with stale cache and refetch automatically
+      // DR-031: Retroaktív matching — invoice-first életciklus kezelés
+      // FONTOS: await-eljük az EF hívást a navigate() ELŐTT.
+      // isMatching=true alatt a gomb disabled és a progress szöveg változik.
+      setIsMatching(true);
+      try {
+        const efPromise = supabase.functions.invoke('shipment-retroactive-match', {
+          body: { company_id: selectedCompany.id, import_session_id: batch.id },
+        });
+        const timeout = new Promise<void>((resolve) => setTimeout(resolve, 10000));
+        const { error: efError } = await Promise.race([efPromise, timeout.then(() => ({ error: null, data: null }))]);
+        if (efError) {
+          console.warn('[ShipmentImportPage] Retroactive match EF error (non-critical):', efError);
+        } else {
+          queryClient.invalidateQueries({ queryKey: ['escalated-matches', selectedCompany.id] });
+        }
+      } catch (efErr) {
+        console.warn('[ShipmentImportPage] Retroactive match call failed (non-critical):', efErr);
+      } finally {
+        setIsMatching(false);
+      }
+
+      // Navigálás csak az EF befejezése (vagy timeout) után
       navigate(`${basePath}/shipments`);
+
 
     } catch (err: any) {
       toast({
@@ -475,23 +499,27 @@ export default function ShipmentImportPage() {
                       </Button>
                     </div>
 
-                    {isImporting && (
+                    {(isImporting || isMatching) && (
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs font-semibold">
-                          <span>Feltöltés és mentés...</span>
-                          <span>{importProgress}%</span>
+                          <span>
+                            {isMatching
+                              ? '⚡ Párosítás folyamatban...'
+                              : 'Feltöltés és mentés...'}
+                          </span>
+                          <span>{isMatching ? '100%' : `${importProgress}%`}</span>
                         </div>
-                        <Progress value={importProgress} className="h-2" />
+                        <Progress value={isMatching ? 100 : importProgress} className="h-2" />
                       </div>
                     )}
 
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" onClick={() => { setFile(null); setParsedRows([]); }} disabled={isImporting}>
+                      <Button variant="outline" onClick={() => { setFile(null); setParsedRows([]); }} disabled={isImporting || isMatching}>
                         Mégse
                       </Button>
-                      <Button onClick={handleImport} disabled={isImporting || parsedRows.length === 0}>
+                      <Button onClick={handleImport} disabled={isImporting || isMatching || parsedRows.length === 0}>
                         <Check className="h-4 w-4 mr-2" />
-                        Importálás indítása ({parsedRows.length} sor)
+                        {isMatching ? 'Párosítás...' : `Importálás indítása (${parsedRows.length} sor)`}
                       </Button>
                     </div>
                   </div>

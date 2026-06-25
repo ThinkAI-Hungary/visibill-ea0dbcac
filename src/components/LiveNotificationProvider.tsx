@@ -102,7 +102,7 @@ export function LiveNotificationProvider() {
   // NOTE: Contains its own dedup guard (`upload_notif_{id}`) so neither session
   // polling nor catch-up can fire duplicate toasts for the same upload regardless
   // of which mechanism fires first.
-  const notifyUploadStatus = useCallback((row: { id: string; file_name: string; processing_status: string }) => {
+  const notifyUploadStatus = useCallback((row: { id: string; file_name: string; processing_status: string; metadata?: Record<string, unknown> | null }) => {
     // Unified cross-mechanism dedup: once per upload ID, regardless of which
     // mechanism (Realtime / session poll / catch-up / UploadHistory) fires first.
     const dedupKey = `upload_notif_${row.id}`;
@@ -133,6 +133,8 @@ export function LiveNotificationProvider() {
       qc.invalidateQueries({ queryKey: ['uploadHistory'] });
       qc.invalidateQueries({ queryKey: ['uploaded-files'] });
     } else if (row.processing_status === 'cmr_escalated') {
+      // Manuális leválasztáskor (manual_detach: true) ne jelenjen meg az eszkaláció toast
+      if ((row as any).metadata?.manual_detach) return;
       toast({ title: 'Eszkaláció szükséges', description: `${fileName} — eltérés, kézi ellenőrzés szükséges.`, variant: 'destructive', duration: 8000, icon: AlertTriangle });
       qc.invalidateQueries({ queryKey: ['shipments-matching', cid] });
       qc.invalidateQueries({ queryKey: ['uploadHistory'] });
@@ -290,19 +292,24 @@ export function LiveNotificationProvider() {
               // Transport doc pipeline: 'cmr_escalated' → emberi ellenőrzés kell
               if (row.id && row.processing_status === 'cmr_escalated' && oldRow?.processing_status !== 'cmr_escalated') {
                 console.log('[RealtimeSync] ⚠️ invoice_uploads status → cmr_escalated:', row.id);
-                const escalatedKey = `cmr_escalated_${row.id}`;
-                if (!notifiedUploads.current.has(escalatedKey)) {
-                  notifiedUploads.current.add(escalatedKey);
-                  (supabase as any).from('invoice_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
-                    const fileName = data?.file_name || 'Ismeretlen fájl';
-                    toast({
-                      title: 'Dokumentum eszkalálva',
-                      description: `${fileName} nem párosítható automatikusan — kézi ellenőrzés szükséges.`,
-                      variant: 'destructive',
-                      duration: 8000,
-                      icon: AlertTriangle,
+                // Manuális leválasztáskor (EscalationListPage setCmrDetachTarget) ne jelenjen meg a toast
+                if (row.metadata?.manual_detach === true) {
+                  console.log('[RealtimeSync] skip cmr_escalated toast — manual_detach flag');
+                } else {
+                  const escalatedKey = `cmr_escalated_${row.id}`;
+                  if (!notifiedUploads.current.has(escalatedKey)) {
+                    notifiedUploads.current.add(escalatedKey);
+                    (supabase as any).from('invoice_uploads').select('file_name').eq('id', row.id).single().then(({ data }: { data: { file_name?: string } | null }) => {
+                      const fileName = data?.file_name || 'Ismeretlen fájl';
+                      toast({
+                        title: 'Dokumentum eszkalálva',
+                        description: `${fileName} nem párosítható automatikusan — kézi ellenőrzés szükséges.`,
+                        variant: 'destructive',
+                        duration: 8000,
+                        icon: AlertTriangle,
+                      });
                     });
-                  });
+                  }
                 }
               }
             }
@@ -539,7 +546,7 @@ export function LiveNotificationProvider() {
           { event: '*', schema: 'public', table: 'shipment_matches' },
           (payload) => {
             if (!isMyCompany(payload)) return;
-            invalidate('shipments-matching');
+            invalidate('shipments-matching', 'escalated-matches');
           }
         )
 
@@ -728,7 +735,8 @@ export function LiveNotificationProvider() {
         // 1. Poll invoice_uploads
         const { data: invoiceData } = await (supabase as any)
           .from('invoice_uploads')
-          .select('id, file_name, processing_status, created_at')
+          .select('id, file_name, processing_status, created_at, metadata')
+
           .eq('company_id', companyId)
           .order('created_at', { ascending: false })
           .limit(5);

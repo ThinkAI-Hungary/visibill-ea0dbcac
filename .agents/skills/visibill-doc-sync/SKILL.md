@@ -180,10 +180,21 @@ Változás érkezett
 | # | Feltétel | Kérdés amit feltesz magadnak |
 |---|---|---|
 | 1 | **Hard to reverse** | Ha valaki holnap visszafordítja ezt a döntést, fájdalmas lesz? |
-| 2 | **Surprising without context** | Egy jövőbeli AI agent / fejlesztő megkérdezné: "miért csinálták így?" |
+| 2 | **Surprising without context** | Egy jövőbeli AI agent / fejlesztő megkérdezné: „miért csinálták így?" |
 | 3 | **Real trade-off** | Volt értelmes alternatíva és konkrét okból választottuk ezt |
 
 **Ha bármelyik HIÁNYZIK → NEM kell új ADR.** Elég a meglévő doc frissítése vagy egy kód komment.
+
+**⭐ Extra trigger — „Repeat-Explain" jel:**  
+Ha ugyanazt az architekturális döntést **kétszer kellett elmagyarázni** egy session-ben → valószínűleg ADR kell. Ha egy döntést újra meg újra elmagyarázol, a következő agent session ugyanolyan kérdéseket fog feltenni. Írj ADR-t, és ne kelljen többé.
+
+**ADR életciklus státuszok:**
+
+| Státusz | Mikor |
+|---------|-------|
+| `Decided` | Aktív, érvényes döntés |
+| `Superseded` | Felváltotta egy újabb ADR (add `Superseded by: A-XXX` sort) |
+| `Deprecated` | Már nem releváns, de nem helyettesítette semmi |
 
 **Példák:**
 ```
@@ -193,12 +204,15 @@ Változás érkezett
 ✅ ADR kell:  "Miért kötelező kijelentkeztetni email change után?"
               → Hard to reverse (security), Surprising (más appok nem teszik), Real trade-off (UX vs security)
 
+✅ ADR kell:  Egy döntést ma másodszor kellett elmagyarázni → Repeat-Explain trigger
+
 ❌ ADR FELESLEGES: "A badge piros"
               → NOT hard to reverse, NOT surprising, NOT real trade-off
 
 ❌ ADR FELESLEGES: "Verziószám frissítés v22-re"
               → Nem döntés, csak implementáció
 ```
+
 
 ### Kód konzisztencia cross-check (doc írás ELŐTT kötelező)
 
@@ -266,6 +280,9 @@ BRD:  docs/business/decisions/index.md      → utolsó: ellenőrizd a fájlt
 **Status:** Decided
 **Date:** [YYYY-MM-DD]
 **Utoljára frissítve:** [YYYY-MM-DD]
+<!-- Ha egy korábbi döntést vált fel: -->
+<!-- **Superseded by:** A-YYY -->
+<!-- **Supersedes:** A-ZZZ -->
 
 ## Context
 [Miért kellett dönteni? Mi volt a probléma?]
@@ -281,6 +298,7 @@ BRD:  docs/business/decisions/index.md      → utolsó: ellenőrizd a fájlt
 - [A-YYY: ...](./A-YYY-*.md)
 - [P-ZZZ: ...](../product/P-ZZZ-*.md)
 ```
+
 
 ### Új PRD sablon
 ```markdown
