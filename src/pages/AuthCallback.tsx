@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { reportAuthError } from '@/lib/errorReporter';
 import { CheckCircle2, Mail, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { STORAGE_KEYS } from '@/lib/constants';
 
 const PENDING_KEY = 'visibill_pending_callback_type';
 const SESSION_KEY = 'visibill_email_change_confirmed';
@@ -15,6 +17,7 @@ const SESSION_KEY = 'visibill_email_change_confirmed';
  */
 export default function AuthCallback() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [emailChanged, setEmailChanged] = useState(false);
 
@@ -75,8 +78,17 @@ export default function AuthCallback() {
           // URL cleaned AFTER the SDK has read the hash
           window.history.replaceState(null, '', window.location.pathname);
 
-          // Session confirmed — sign out so user re-authenticates with new email
+          // Sign out so user re-authenticates with the new email address.
           await supabase.auth.signOut();
+
+          // Clear TanStack Query cache — without this, the companies/access queries
+          // may be in a cancelled/indeterminate state and the first re-login shows
+          // the onboarding page instead of the dashboard (same as AuthContext.signOut).
+          queryClient.clear();
+
+          // Also clear LAST_ACTIVE so the 4h gate doesn't block immediate re-login.
+          try { localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVE); } catch {}
+
           sessionStorage.setItem(SESSION_KEY, '1');
           setEmailChanged(true);
           return;
