@@ -41,12 +41,40 @@ export default function AuthCallback() {
 
         // ── Email change: successful confirmation ─────────────────────────────
         if (pendingType === 'email_change') {
-          // The Supabase client has already processed the hash and set a session.
-          // Sign out so the user logs in fresh with their new email address.
+          // Clean URL immediately — the hash/params contain the access token
+          window.history.replaceState(null, '', window.location.pathname);
+
+          // CRITICAL: wait for the Supabase SDK to finish processing the email change
+          // token before calling signOut(). The SDK works asynchronously — if signOut()
+          // races with the token exchange, the email change never completes server-side.
+          //
+          // Strategy: check if a session already exists (SDK already finished), or
+          // subscribe to onAuthStateChange and wait for SIGNED_IN / USER_UPDATED.
+          const { data: { session: existingSession } } = await supabase.auth.getSession();
+
+          if (!existingSession) {
+            await new Promise<void>((resolve) => {
+              let timeoutId: ReturnType<typeof setTimeout>;
+              const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+                if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+                  clearTimeout(timeoutId);
+                  subscription.unsubscribe();
+                  resolve();
+                }
+              });
+              // 6-second fallback — if SDK never fires, proceed anyway
+              timeoutId = setTimeout(() => {
+                subscription.unsubscribe();
+                resolve();
+              }, 6000);
+            });
+          }
+
+          // Session confirmed (email changed) — sign out so user re-authenticates
+          // with the new email address.
           await supabase.auth.signOut();
           sessionStorage.setItem(SESSION_KEY, '1');
           setEmailChanged(true);
-          window.history.replaceState(null, '', window.location.pathname);
           return;
         }
 

@@ -29,17 +29,30 @@ import { Suspense, lazy, useEffect } from "react";
     return; // Never redirect away from /reset-password
   }
 
-  // If already at /auth/callback: capture the hash TYPE synchronously into sessionStorage
-  // BEFORE Supabase's async init clears the URL. Store only the type (not the access_token).
+  // If already at /auth/callback: capture the TYPE synchronously into sessionStorage
+  // BEFORE Supabase's async init clears the URL. Two formats to handle:
+  //   1. Hash fragment:  /auth/callback#type=email_change&access_token=...  (implicit flow)
+  //   2. Query params:   /auth/callback?type=email_change&token_hash=...    (newer Supabase format)
   if (window.location.pathname === '/auth/callback') {
-    if (hash && !sessionStorage.getItem(PENDING_KEY)) {
-      const params = new URLSearchParams(hash.replace('#', ''));
-      const type = params.get('type');
-      const errCode = params.get('error_code');
-      if (type === 'email_change') {
+    if (!sessionStorage.getItem(PENDING_KEY)) {
+      // First check query params (token_hash format)
+      const qp = new URLSearchParams(window.location.search);
+      const qpType = qp.get('type');
+      const qpErrCode = qp.get('error_code');
+      if (qpType === 'email_change') {
         sessionStorage.setItem(PENDING_KEY, 'email_change');
-      } else if (errCode === 'otp_expired') {
+      } else if (qpErrCode === 'otp_expired' || qp.get('error') === 'access_denied') {
         sessionStorage.setItem(PENDING_KEY, 'otp_expired');
+      } else if (hash) {
+        // Fallback: hash fragment format
+        const hp = new URLSearchParams(hash.replace('#', ''));
+        const hpType = hp.get('type');
+        const hpErrCode = hp.get('error_code');
+        if (hpType === 'email_change') {
+          sessionStorage.setItem(PENDING_KEY, 'email_change');
+        } else if (hpErrCode === 'otp_expired') {
+          sessionStorage.setItem(PENDING_KEY, 'otp_expired');
+        }
       }
     }
     return;
