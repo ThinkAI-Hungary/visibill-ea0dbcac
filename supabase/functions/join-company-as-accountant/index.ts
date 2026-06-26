@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
       .insert({
         accountant_user_id: user.id,
         company_id: company.id,
+        accounting_firm_id: company.id,
         role: "könyvelő",
         is_primary: true,
         is_main_accountant: true,

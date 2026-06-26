@@ -140,10 +140,20 @@ function FirmMembersCard({ companyId, companyName, isOwnerOrAdmin, toast }: { co
         .select('id, accountant_user_id, role, created_at')
         .eq('accounting_firm_id', companyId);
       if (data && data.length > 0) {
-        const userIds = (data as any[]).map((m: any) => m.accountant_user_id);
+        // Deduplicate by user — each user should appear only once
+        const ROLE_PRIORITY: Record<string, number> = { iroda_admin: 0, senior_könyvelő: 1, könyvelő: 2, asszisztens: 3 };
+        const userMap = new Map<string, any>();
+        for (const m of data as any[]) {
+          const existing = userMap.get(m.accountant_user_id);
+          if (!existing || (ROLE_PRIORITY[m.role] ?? 99) < (ROLE_PRIORITY[existing.role] ?? 99)) {
+            userMap.set(m.accountant_user_id, m);
+          }
+        }
+        const uniqueAssignments = [...userMap.values()];
+        const userIds = uniqueAssignments.map((m: any) => m.accountant_user_id);
         const { data: profiles } = await supabase.from('profiles').select('user_id, name').in('user_id', userIds);
         const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
-        return (data as any[]).map((m: any) => ({
+        return uniqueAssignments.map((m: any) => ({
           id: m.id,
           user_id: m.accountant_user_id,
           role: m.role,
@@ -311,8 +321,8 @@ export default function ProfileSettingsPage() {
   const { companies, selectedCompany, setSelectedCompany, refreshCompanies, loading: companiesLoading } = useCompany();
 
   // Fetch the accounting firm name for the current user
-  const { data: firmName } = useQuery({
-    queryKey: ['accounty-firm-name', user?.id],
+  const { data: firmData } = useQuery({
+    queryKey: ['accounty-firm-info', user?.id],
     queryFn: async () => {
       const { data } = await supabase
         .from('accounty_assignments' as any)
@@ -321,16 +331,19 @@ export default function ProfileSettingsPage() {
         .limit(1);
       if (!data || data.length === 0) return null;
       const firmId = (data[0] as any).accounting_firm_id;
+      if (!firmId) return null;
       const { data: company } = await supabase
         .from('companies')
-        .select('name')
+        .select('id, name')
         .eq('id', firmId)
         .single();
-      return company?.name || null;
+      return company ? { id: company.id, name: company.name } : null;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
+  const firmName = firmData?.name || null;
+  const firmId = firmData?.id || null;
 
   const ACCOUNTY_ROLE_LABELS: Record<string, string> = {
     iroda_admin: 'Iroda Admin',
@@ -533,8 +546,8 @@ export default function ProfileSettingsPage() {
             {selectedCompany && selectedCompany.owner_id === user?.id && (
               <CompanyAccessCard companyId={selectedCompany.id} toast={toast} />
             )}
-            {selectedCompany && (
-              <FirmMembersCard companyId={selectedCompany.id} companyName={selectedCompany.name} isOwnerOrAdmin={isAdmin} toast={toast} />
+            {firmId && (
+              <FirmMembersCard companyId={firmId} companyName={firmName || ''} isOwnerOrAdmin={isAdmin} toast={toast} />
             )}
           </BusinessSection>
         </TabsContent>

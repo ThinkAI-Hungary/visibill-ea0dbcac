@@ -256,7 +256,8 @@ export function InviteUserDialog({
             member_insert_failed: 'Nem sikerült hozzárendelni a felhasználót a céghez.',
           };
           const msg = errorMessages[result?.error] || result?.error || 'Ismeretlen hiba történt.';
-          toast({ title: 'Hiba', description: msg, variant: 'destructive' });
+          const detail = result?.details ? ` (${result.details})` : '';
+          toast({ title: 'Hiba', description: msg + detail, variant: 'destructive' });
           setLoading(false);
           return;
         }
