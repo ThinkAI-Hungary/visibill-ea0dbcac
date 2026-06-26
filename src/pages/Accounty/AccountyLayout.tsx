@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { AccountyRoleProvider, useAccountyRole } from './AccountyRoleContext';
 import { useAuth } from '@/contexts/AuthContext';
