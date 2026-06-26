@@ -202,10 +202,9 @@ export default function GeneralLedgerPage() {
     { combo: { key: 'p', ctrl: true }, handler: handlePrint, description: 'Nyomtatás' },
   ]);
 
-  // U6: Detect "first use" (no presets or empty data)
+  // U6: Detect "first use" (no presets)
   const hasPresets = presets && presets.length > 0;
-  const hasData = glStats && glStats.accountCount > 0;
-  const showOnboarding = !hasPresets || (!hasData && !activePresetId);
+  const showOnboarding = !hasPresets;
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10 page-animate">

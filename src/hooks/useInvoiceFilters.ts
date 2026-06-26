@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { NavInvoice, SubmittedInvoice, Partner, Category, Project } from './useInvoiceData';
+import { useActivePreset } from './useActivePreset';
 
 export type InvoiceTab = 'OUTBOUND' | 'INBOUND' | 'SUBMITTED_INBOUND' | 'SUBMITTED_OUTBOUND';
 
@@ -61,6 +62,7 @@ export function useInvoiceFilters(
   activeTab: InvoiceTab
 ) {
   const [searchParams] = useSearchParams();
+  const { activePresetId } = useActivePreset(companyId);
 
   // Initialize all state from URL searchParams (enables link sharing)
   const [filters, setFilters] = useState<InvoiceFilters>(() => {
@@ -117,7 +119,7 @@ export function useInvoiceFilters(
       filters.submitted, filters.project, filters.category,
       filters.paymentMethod, filters.amountMin, filters.amountMax,
       sortField, sortDirection, navCurrentPage, navPageSize,
-      issueDateFrom, issueDateTo,
+      issueDateFrom, issueDateTo, activePresetId
     ],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_filtered_nav_invoices', {
@@ -140,6 +142,7 @@ export function useInvoiceFilters(
         p_page_size: navPageSize,
         p_issue_date_from: issueDateFrom,
         p_issue_date_to: issueDateTo,
+        p_preset_id: activePresetId || null,
       });
       if (error) throw error;
       return (data || []) as (NavInvoice & { total_count: number })[];

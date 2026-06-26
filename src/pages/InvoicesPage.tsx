@@ -1376,8 +1376,8 @@ const InvoicesPage = () => {
                                     {invoice.invoice_delivery_date ? format(new Date(invoice.invoice_delivery_date), 'yyyy. MM. dd.', { locale: hu }) : '-'}
                                   </TableCell>
                                   <TableCell className="font-medium font-mono whitespace-nowrap">
-                                    <CopyableCell value={invoice.invoice_number || '-'} ariaLabel={`${invoice.invoice_number} bizonylatsorszám másolása`} />
-                                  </TableCell>
+                                     <CopyableCell value={invoice.invoice_number || '-'} ariaLabel={`${invoice.invoice_number} bizonylatsorszám másolása`} />
+                                   </TableCell>
                                   <TableCell className={cn("text-right font-mono tabular-nums", !invoice.invoice_net_amount ? "text-muted-foreground" : activeTab === 'INBOUND' ? "text-destructive" : "text-success")}>
                                     {formatCurrency(invoice.invoice_net_amount || 0, invoice.currency || 'HUF')}
                                   </TableCell>
@@ -1478,6 +1478,8 @@ const InvoicesPage = () => {
                                       invoiceDate={invoice.invoice_issue_date || ''}
                                       companyId={companyId}
                                       onMatchUpdate={invalidateInvoiceData}
+                                      glNumbers={invoice.gl_numbers}
+                                      hasSubmittedMatch={submittedMatches.length > 0}
                                     />
                                   );
                                 })()}

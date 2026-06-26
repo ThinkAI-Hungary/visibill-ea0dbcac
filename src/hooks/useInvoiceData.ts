@@ -49,6 +49,7 @@ export interface NavInvoice {
   category_id: string | null;
   transaction_id: string | null;
   exclude_from_accounting?: boolean;
+  gl_numbers?: string | null;
 }
 
 export interface SubmittedInvoice {

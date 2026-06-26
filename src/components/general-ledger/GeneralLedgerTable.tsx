@@ -51,6 +51,9 @@ interface LedgerItem {
   originalAmount?: number;
   originalCurrency?: string;
   isExcluded?: boolean;
+  isTemporary?: boolean;
+  finalBalance?: number;
+  tempBalance?: number;
 }
 
 const formatCurrency = (value: number) => {
@@ -265,19 +268,42 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
          };
       });
 
-      // Now roll up sums for all parent (non-leaf) nodes
+      // Now roll up sums and split final vs temporary balances for all parent nodes
       let rolledUpData: LedgerItem[] = rawData.map(item => {
-        if (!item.hasChildren) return item;
-
-        // Find ALL descendants in rawData (both leaves and non-leaves)
-        const descendants = rawData.filter(d => d.cid.startsWith(item.cid) && d.cid !== item.cid);
-        // We sum the RAW balances of all descendants
-        const descendantsRawSum = descendants.reduce((acc, d) => acc + d.balance, 0);
+        // Find ALL descendants in rawData (including self)
+        const descendants = rawData.filter(d => d.cid.startsWith(item.cid));
         
-        // Parent's total is its own raw balance + the sum of all descendants' raw balances
-        const totalBalance = descendantsRawSum + item.balance;
+        let finalBalance = 0;
+        let tempBalance = 0;
 
-        return { ...item, balance: totalBalance };
+        if (dbItems && dbItems.length > 0) {
+          const descendantsCids = new Set(descendants.map(d => d.cid));
+          dbItems.forEach(dbItem => {
+            if (dbItem.is_excluded) return;
+            const parentDbItem = dbData.find(db => db.gl_account_id === dbItem.gl_account_id);
+            if (parentDbItem) {
+              const parentCid = cleanId(parentDbItem.gl_number);
+              if (descendantsCids.has(parentCid)) {
+                if (dbItem.is_temporary) {
+                  tempBalance += Number(dbItem.amount) || 0;
+                } else {
+                  finalBalance += Number(dbItem.amount) || 0;
+                }
+              }
+            }
+          });
+        } else {
+          finalBalance = item.balance;
+        }
+
+        const totalBalance = finalBalance + tempBalance;
+
+        return { 
+          ...item, 
+          balance: totalBalance,
+          finalBalance,
+          tempBalance
+        };
       });
 
       if (dbItems && dbItems.length > 0) {
@@ -329,7 +355,8 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
              // @ts-ignore
              originalAmount: Number(item.original_amount) || 0,
              // @ts-ignore
-             originalCurrency: item.original_currency
+             originalCurrency: item.original_currency,
+             isTemporary: !!item.is_temporary
            });
         });
 
@@ -351,7 +378,7 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
       return rolledUpData;
     }
     return [];
-   }, [dbData, dbItems]);
+  }, [dbData, dbItems]);
 
   // Separate list of excluded items for the "Nem könyvelt" section
   const excludedItems = useMemo(() => {
@@ -706,7 +733,16 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                              <span className="text-xs truncate">{row.date ? row.date.substring(0, 10).replace(/-/g, '.') : ''}</span>
                            </>
                         ) : (
-                           highlightMatch(row.id, deferredSearch)
+                           <span className={cn(
+                             "font-semibold",
+                             (row.tempBalance && row.tempBalance !== 0 && (!row.finalBalance || row.finalBalance === 0)) 
+                               ? "text-orange-500 dark:text-orange-400" 
+                               : (row.finalBalance && row.finalBalance !== 0 && (!row.tempBalance || row.tempBalance === 0))
+                               ? "text-emerald-600 dark:text-emerald-400"
+                               : "text-foreground"
+                           )}>
+                             {highlightMatch(row.id, deferredSearch)}
+                           </span>
                         )}
                       </div>
                       <div className="col-span-7 py-3 pr-3 text-sm flex items-center gap-2" style={{ paddingLeft: indentPadding }}>
@@ -725,11 +761,47 @@ function GeneralLedgerTableBase(props: GeneralLedgerTableProps, ref: React.Forwa
                             {row.itemType}
                           </span>
                         )}
+                        {row.isItem && row.isTemporary && (
+                          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300 font-semibold whitespace-nowrap">
+                            Ideiglenes
+                          </span>
+                        )}
+                        {row.isItem && !row.isTemporary && (
+                          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 font-semibold whitespace-nowrap">
+                            Végleges
+                          </span>
+                        )}
                       </div>
                       
                       <div className={cn("col-span-3 p-3 flex justify-end items-center gap-4 text-sm tabular-nums font-medium", isNegative ? "text-destructive" : "")}>
                         <div className="flex flex-col items-end">
-                          <span>{row.balance !== 0 ? formatCurrency(row.balance) : ""}</span>
+                          {row.isItem ? (
+                            row.isTemporary ? (
+                              <span className="text-orange-500 dark:text-orange-400 font-semibold">
+                                {row.balance !== 0 ? formatCurrency(row.balance) : ""}
+                              </span>
+                            ) : (
+                              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                                {row.balance !== 0 ? formatCurrency(row.balance) : ""}
+                              </span>
+                            )
+                          ) : (
+                            <div className="flex flex-col items-end gap-0.5">
+                              {row.finalBalance !== 0 && (
+                                <span className="text-emerald-600 dark:text-emerald-400 font-semibold" title="Végleges egyenleg">
+                                  {formatCurrency(row.finalBalance || 0)}
+                                </span>
+                              )}
+                              {row.tempBalance !== 0 && (
+                                <span className="text-orange-500 dark:text-orange-400 font-semibold text-xs" title="Ideiglenes egyenleg">
+                                  {formatCurrency(row.tempBalance || 0)} <span className="text-[10px] opacity-80">(Ideigl.)</span>
+                                </span>
+                              )}
+                              {(!row.finalBalance || row.finalBalance === 0) && (!row.tempBalance || row.tempBalance === 0) && row.balance !== 0 && (
+                                <span>{formatCurrency(row.balance)}</span>
+                              )}
+                            </div>
+                          )}
                           {row.originalCurrency && row.originalCurrency !== 'HUF' && (
                             <span className="text-[10px] text-muted-foreground font-normal leading-tight">
                               ({formatCurrency(row.originalAmount || 0).replace(',00', '')} {row.originalCurrency})

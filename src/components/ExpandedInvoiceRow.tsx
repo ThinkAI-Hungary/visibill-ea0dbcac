@@ -2,7 +2,7 @@ import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { useState } from 'react';
-import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown, Search, Check, Plus, X, Unlink } from 'lucide-react';
+import { Eye, Link2, FileText, ArrowRightLeft, CheckCircle2, GitBranch, AlertTriangle, ChevronDown, Search, Check, Plus, X, Unlink, FileSpreadsheet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -116,6 +116,8 @@ interface ExpandedInvoiceRowProps {
   companyId?: string;
   /** Called after successful match/unmatch/verify operations */
   onMatchUpdate?: () => void;
+  glNumbers?: string | null;
+  hasSubmittedMatch?: boolean;
 }
 
 // Compact collapsible transaction list inside invoice cards
@@ -190,6 +192,8 @@ const ExpandedInvoiceRow = ({
   invoiceDate,
   companyId,
   onMatchUpdate,
+  glNumbers,
+  hasSubmittedMatch = false,
 }: ExpandedInvoiceRowProps) => {
   // Invoice-side matching is enabled when all required props are provided
   const matchingEnabled = !!(invoiceId && companyId && invoiceDate && !hideStandaloneTransactions);
@@ -249,6 +253,31 @@ const ExpandedInvoiceRow = ({
           <div className="accordion-grid-animate">
             <div className="accordion-overflow">
               <div className="py-6 px-8 space-y-4 max-w-3xl ml-4">
+            {/* General Ledger numbers */}
+            {glNumbers && (
+              <div className="mb-4 expand-animate bg-card border border-border/40 p-3 rounded-lg flex flex-col gap-2 max-w-lg">
+                <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-primary" />
+                  Hozzárendelt főkönyvi számok
+                </div>
+                <div className="flex flex-wrap gap-1.5 font-mono">
+                  {glNumbers.split(', ').map(num => (
+                    <span
+                      key={num}
+                      className={cn(
+                        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border",
+                        hasSubmittedMatch
+                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
+                          : "bg-orange-500/10 text-orange-500 border-orange-500/20 dark:text-orange-400"
+                      )}
+                    >
+                      {num} ({hasSubmittedMatch ? 'Végleges' : 'Ideiglenes'})
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Header */}
             <div className="flex items-center justify-between mb-4 expand-animate">
               <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
