@@ -40,14 +40,11 @@ export default defineConfig(({ mode }) => ({
           if (id.includes('node_modules/@supabase/')) {
             return 'vendor-supabase';
           }
-          // Recharts + all d3/victory deps must stay in ONE chunk to avoid
-          // "Cannot access 's' before initialization" TDZ circular dep errors.
-          if (id.includes('node_modules/recharts/') ||
-              id.includes('node_modules/d3-') ||
-              id.includes('node_modules/d3/') ||
-              id.includes('node_modules/victory-vendor/')) {
-            return 'vendor-charts';
-          }
+          // NOTE: Do NOT manually chunk recharts / d3 / victory-vendor.
+          // Forcing them into a single chunk triggers a TDZ
+          // "Cannot access 'S' before initialization" error at runtime
+          // because of circular deps between recharts and d3 submodules.
+          // Let Rollup's default code-splitting handle these.
           // Radix UI primitives — shared across many components
           if (id.includes('node_modules/@radix-ui/')) {
             return 'vendor-radix';
