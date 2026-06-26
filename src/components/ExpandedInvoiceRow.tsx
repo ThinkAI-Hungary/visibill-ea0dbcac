@@ -27,6 +27,8 @@ interface MatchedSubmittedInvoice {
   image_url: string | null;
   melleklet_url: string | null;
   invoice_type?: string | null;
+  category_id?: string | null;
+  project_id?: string | null;
 }
 
 // Human-readable invoice_type labels (uses central map)
@@ -118,6 +120,10 @@ interface ExpandedInvoiceRowProps {
   onMatchUpdate?: () => void;
   glNumbers?: string | null;
   hasSubmittedMatch?: boolean;
+  /** Categories list for badge lookup */
+  categories?: Array<{ id: string; name: string; color?: string | null }>;
+  /** Projects list for badge lookup */
+  projects?: Array<{ id: string; name: string; color?: string | null }>;
 }
 
 // Compact collapsible transaction list inside invoice cards
@@ -194,6 +200,8 @@ const ExpandedInvoiceRow = ({
   onMatchUpdate,
   glNumbers,
   hasSubmittedMatch = false,
+  categories,
+  projects,
 }: ExpandedInvoiceRowProps) => {
   // Invoice-side matching is enabled when all required props are provided
   const matchingEnabled = !!(invoiceId && companyId && invoiceDate && !hideStandaloneTransactions);
@@ -469,14 +477,33 @@ const ExpandedInvoiceRow = ({
               >
                 <CardHeader className="py-2 px-3">
                   <CardTitle className="text-xs font-medium flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <FileText className="h-3 w-3 text-muted-foreground" />
+                    <span className="flex items-center gap-1.5 flex-wrap">
+                      <FileText className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                       Párosított beküldött számla
                       {inv.invoice_type && (
                         <Badge variant="outline" className="text-[9px] h-4 px-1.5 bg-primary/10 text-primary border-primary/20">
                           {getInvoiceTypeLabel(inv.invoice_type)}
                         </Badge>
                       )}
+                      {inv.category_id && categories && (() => {
+                        const cat = categories.find(c => c.id === inv.category_id);
+                        return cat ? (
+                          <Badge variant="outline" className="text-[9px] h-4 px-1.5 gap-0.5" style={{ backgroundColor: (cat.color || '#6366f1') + '20', color: cat.color || '#6366f1', borderColor: (cat.color || '#6366f1') + '40' }}>
+                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color || '#6366f1' }} />
+                            {cat.name}
+                          </Badge>
+                        ) : null;
+                      })()}
+                      {inv.project_id && projects && (() => {
+                        const proj = projects.find(p => p.id === inv.project_id);
+                        const projColor = proj?.color || '#7c3aed';
+                        return proj ? (
+                          <Badge variant="outline" className="text-[9px] h-4 px-1.5 gap-0.5" style={{ backgroundColor: projColor + '20', color: projColor, borderColor: projColor + '40' }}>
+                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: projColor }} />
+                            {proj.name}
+                          </Badge>
+                        ) : null;
+                      })()}
                     </span>
                     <div className="flex items-center gap-2">
                       <Badge variant="success" className="gap-1 text-[10px] h-5">

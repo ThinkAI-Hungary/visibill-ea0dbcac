@@ -82,11 +82,13 @@ export interface Partner {
 export interface Category {
   id: string;
   name: string;
+  color?: string | null;
 }
 
 export interface Project {
   id: string;
   name: string;
+  color?: string | null;
 }
 
 export interface CourierReportRecord {
@@ -173,7 +175,7 @@ export function useInvoiceData(
     queryFn: async () => {
       const { data, error } = await supabase
         .from('categories')
-        .select('id, name')
+        .select('id, name, color')
         .eq('company_id', companyId);
       if (error) throw error;
       return (data || []) as Category[];
@@ -186,7 +188,7 @@ export function useInvoiceData(
     queryFn: async () => {
       const { data, error } = await supabase
         .from('projects')
-        .select('id, name')
+        .select('id, name, color')
         .eq('company_id', companyId);
       if (error) throw error;
       return (data || []) as Project[];

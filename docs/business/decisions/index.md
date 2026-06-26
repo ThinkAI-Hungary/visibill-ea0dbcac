@@ -50,6 +50,7 @@ Minden döntés egy külön `.md` fájl. Menj végig rajtuk sorban, és töltsd 
 | 012 | Számla típusok | ✅ Decided | [012-invoice-types.md](./012-invoice-types.md) |
 | 013 | Számla beviteli csatornák | ✅ Decided | [013-invoice-channels.md](./013-invoice-channels.md) |
 | 014 | Számla kiállítás képesség | 🔴 Open | [014-invoice-creation.md](./014-invoice-creation.md) |
+| 039 | Kategóriák és projektek dual-table szinkronizációja | ✅ Decided | [039-categories-projects-sync.md](./039-categories-projects-sync.md) |
 
 ## 🏛️ NAV Integráció
 

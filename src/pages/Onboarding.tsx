@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,7 +40,7 @@ interface CategoryStats {
 
 const CategoryPageSkeleton = () => {
   return (
-    <div className="p-6 max-w-[900px] mx-auto page-animate">
+    <div className="p-6 max-w-[1200px] mx-auto page-animate">
       {/* Page header skeleton */}
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -143,6 +144,7 @@ const Onboarding = () => {
   const { user } = useAuth();
   const { selectedCompany } = useCompany();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { canWrite: canWriteModule } = useEaisybillPermissions();
   const writable = canWriteModule('categories');
   
@@ -305,6 +307,7 @@ const Onboarding = () => {
       name: cat.name || 'Névtelen',
       invoiceCount: cat.id ? (categoryStats[cat.id]?.invoiceCount || 0) : 0,
       totalAmount: cat.id ? (categoryStats[cat.id]?.totalAmount || 0) : 0,
+      currencyTotals: cat.id ? (categoryStats[cat.id]?.currencyTotals || {}) : {},
       color: cat.color || DEFAULT_CATEGORY_COLOR,
     })),
     [categories, categoryStats]
@@ -392,12 +395,14 @@ const Onboarding = () => {
           .from('invoices')
           .select('id, bizonylatsorszam, invoice_direction, elado_nev, kibocsatas_datuma, brutto_vegosszeg, penznem')
           .eq('company_id', selectedCompany.id)
+          .eq('invoice_direction', 'INBOUND')
           .is('category_id', null)
           .or(`bizonylatsorszam.ilike.%${query}%,elado_nev.ilike.%${query}%`),
         supabase
           .from('nav_invoices')
           .select('id, invoice_number, invoice_direction, supplier_name, invoice_issue_date, invoice_gross_amount')
           .eq('company_id', selectedCompany.id)
+          .eq('invoice_direction', 'INBOUND')
           .is('category_id', null)
           .or(`invoice_number.ilike.%${query}%,supplier_name.ilike.%${query}%`),
       ]);
@@ -424,8 +429,14 @@ const Onboarding = () => {
         source: 'nav_invoices' as const,
       }));
 
-      // Merge results from both sources
-      const merged = [...fromUploaded, ...fromNav];
+      // Merge results, deduplicate by invoice number (same invoice can exist in both tables)
+      const seen = new Set<string>();
+      const merged = [...fromUploaded, ...fromNav].filter(inv => {
+        const key = (inv.invoice_number || inv.id).toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
       setSearchResults(prev => ({ ...prev, [categoryId]: merged }));
     } catch (error) {
       reportError({ type: 'db_query', component: 'Onboarding', action: 'error', message: 'Search error', error });
@@ -483,9 +494,12 @@ const Onboarding = () => {
     if (toAdd.length === 0) return;
     try {
       await Promise.all(
-        toAdd.map(inv =>
-          supabase.from(inv.source).update({ category_id: categoryId }).eq('id', inv.id)
-        )
+        toAdd.flatMap(inv => [
+          // Always update the invoices table by bizonylatsorszam
+          supabase.from('invoices').update({ category_id: categoryId }).eq('bizonylatsorszam', inv.invoice_number),
+          // Always update the nav_invoices table by invoice_number
+          supabase.from('nav_invoices').update({ category_id: categoryId }).eq('invoice_number', inv.invoice_number),
+        ])
       );
       // Update local state optimistically
       setCategoryStats(prev => {
@@ -549,6 +563,8 @@ const Onboarding = () => {
           .eq('company_id', selectedCompany.id);
         
         if (error) throw error;
+        // Invalidate React Query cache so InvoicesPage badges update immediately
+        queryClient.invalidateQueries({ queryKey: ['categories', selectedCompany.id] });
         toast({ title: 'Kategória mentve!' });
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Mentés sikertelen', description: error.message });
@@ -680,7 +696,7 @@ const Onboarding = () => {
   }
 
   return (
-    <div className="p-6 max-w-[900px] mx-auto page-animate">
+    <div className="p-6 max-w-[1200px] mx-auto page-animate">
       {/* Page header */}
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -722,14 +738,14 @@ const Onboarding = () => {
               Név
             </div>
             {/* Stats headers */}
-            <div className="flex items-center gap-4 flex-shrink-0">
-              <div className="w-14 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-center">
+            <div className="flex items-center gap-3 flex-shrink-0 w-[420px]">
+              <div className="w-14 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-center flex-shrink-0">
                 Arány
               </div>
-              <div className="w-12 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">
+              <div className="w-10 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right flex-shrink-0">
                 Számla
               </div>
-              <div className="w-28 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">
+              <div className="flex-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-right">
                 Összeg
               </div>
             </div>

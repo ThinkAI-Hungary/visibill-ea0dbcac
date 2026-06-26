@@ -1404,25 +1404,35 @@ const InvoicesPage = () => {
                                       <Checkbox checked={invoice.submitted === true || (navToSubmittedMap.get(normalizeInvNum(invoice.invoice_number))?.length ?? 0) > 0} disabled className="cursor-default opacity-70" />
                                     </TableCell>
                                   )}
-                                  {activeTab === 'INBOUND' && (
-                                    <TableCell className="text-center">
-                                      <Select value={invoice.category_id || 'none'} onValueChange={(value) => handleCategoryChange(invoice.id, value)}>
-                                        <SelectTrigger className="w-[120px] h-8 mx-auto bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0"><SelectValue placeholder="Válassz..." /></SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="none">-</SelectItem>
-                                          {categories.map((category) => (<SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>))}
-                                        </SelectContent>
-                                      </Select>
-                                    </TableCell>
-                                  )}
+                                  {activeTab === 'INBOUND' && (() => {
+                                    const submittedMatches = navToSubmittedMap.get(normalizeInvNum(invoice.invoice_number)) || [];
+                                    const effectiveCategoryId = invoice.category_id || submittedMatches[0]?.category_id || null;
+                                    return (
+                                      <TableCell className="text-center">
+                                        <Select value={effectiveCategoryId || 'none'} onValueChange={(value) => handleCategoryChange(invoice.id, value, invoice.invoice_number)}>
+                                          <SelectTrigger className="w-[120px] h-8 mx-auto bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0"><SelectValue placeholder="Válassz..." /></SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="none">-</SelectItem>
+                                            {categories.map((category) => (<SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>))}
+                                          </SelectContent>
+                                        </Select>
+                                      </TableCell>
+                                    );
+                                  })()}
                                   <TableCell className="text-center">
-                                    <Select value={invoice.project_id || 'none'} onValueChange={(value) => handleProjectChange(invoice.id, value)}>
-                                      <SelectTrigger className="w-[120px] h-8 mx-auto bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0"><SelectValue placeholder="Válassz..." /></SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="none">-</SelectItem>
-                                        {projects.map((project) => (<SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>))}
-                                      </SelectContent>
-                                    </Select>
+                                    {(() => {
+                                      const submittedMatches = navToSubmittedMap.get(normalizeInvNum(invoice.invoice_number)) || [];
+                                      const effectiveProjectId = invoice.project_id || submittedMatches[0]?.project_id || null;
+                                      return (
+                                        <Select value={effectiveProjectId || 'none'} onValueChange={(value) => handleProjectChange(invoice.id, value, invoice.invoice_number)}>
+                                          <SelectTrigger className="w-[120px] h-8 mx-auto bg-transparent border-transparent hover:border-border/50 focus:border-primary/50 transition-colors [&>span]:truncate [&>span]:flex-1 [&>svg]:shrink-0"><SelectValue placeholder="Válassz..." /></SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="none">-</SelectItem>
+                                            {projects.map((project) => (<SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>))}
+                                          </SelectContent>
+                                        </Select>
+                                      );
+                                    })()}
                                   </TableCell>
                                   <TableCell className="text-center">
                                     <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted/50 text-muted-foreground border border-black/10 dark:border-white/10">{getPaymentMethodLabel(invoice.payment_method)}</span>
@@ -1480,6 +1490,8 @@ const InvoicesPage = () => {
                                       onMatchUpdate={invalidateInvoiceData}
                                       glNumbers={invoice.gl_numbers}
                                       hasSubmittedMatch={submittedMatches.length > 0}
+                                      categories={categories}
+                                      projects={projects}
                                     />
                                   );
                                 })()}
@@ -1828,6 +1840,8 @@ const InvoicesPage = () => {
                                     invoiceDate={invoice.kibocsatas_datuma || ''}
                                     companyId={companyId}
                                     onMatchUpdate={invalidateInvoiceData}
+                                    categories={categories}
+                                    projects={projects}
                                   />
                                 );
                               })()}

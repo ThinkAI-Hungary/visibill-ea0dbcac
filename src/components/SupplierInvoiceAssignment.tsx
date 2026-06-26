@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -116,6 +116,8 @@ export function SupplierInvoiceAssignment({
   const handleAssign = async (invoiceId: string) => {
     setAssigningId(invoiceId);
     try {
+      // Find the invoice number for cross-table sync
+      const inv = invoices.find(i => i.id === invoiceId);
       const { error } = await supabase
         .from('nav_invoices')
         .update({ project_id: projectId })
@@ -133,6 +135,11 @@ export function SupplierInvoiceAssignment({
           return;
         }
         throw error;
+      }
+
+      // Sync to invoices table by invoice_number
+      if (inv?.invoice_number) {
+        await supabase.from('invoices').update({ project_id: projectId }).eq('bizonylatsorszam', inv.invoice_number);
       }
 
       toast({
@@ -156,12 +163,18 @@ export function SupplierInvoiceAssignment({
   const handleUnassign = async (invoiceId: string) => {
     setAssigningId(invoiceId);
     try {
+      const inv = invoices.find(i => i.id === invoiceId);
       const { error } = await supabase
         .from('nav_invoices')
         .update({ project_id: null })
         .eq('id', invoiceId);
 
       if (error) throw error;
+
+      // Sync to invoices table by invoice_number
+      if (inv?.invoice_number) {
+        await supabase.from('invoices').update({ project_id: null }).eq('bizonylatsorszam', inv.invoice_number);
+      }
 
       toast({
         title: 'Hozzárendelés törölve',

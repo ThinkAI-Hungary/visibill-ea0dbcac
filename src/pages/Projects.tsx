@@ -353,6 +353,7 @@ const Projects = () => {
       setEditingProject(null);
       setIsCreating(false);
       queryClient.invalidateQueries({ queryKey: queryKeys.projects(selectedCompany?.id || '') });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projectsList(selectedCompany?.id || '') });
     } catch (error: any) {
       toast({
         variant: 'destructive',

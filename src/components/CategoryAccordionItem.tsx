@@ -102,19 +102,20 @@ export function CategoryAccordionItem({
             {name}
           </span>
           {tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {tags.slice(0, 4).map((tag, i) => (
+            <div className="flex items-center gap-1 mt-1 flex-nowrap overflow-hidden">
+              {tags.slice(0, 3).map((tag, i) => (
                 <Badge
                   key={i}
                   variant="secondary"
-                  className="text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-0"
+                  className="text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-0 max-w-[120px] truncate flex-shrink-0"
+                  title={tag}
                 >
                   {tag}
                 </Badge>
               ))}
-              {tags.length > 4 && (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-                  +{tags.length - 4}
+              {tags.length > 3 && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">
+                  +{tags.length - 3}
                 </Badge>
               )}
             </div>
@@ -122,9 +123,9 @@ export function CategoryAccordionItem({
         </div>
 
         {/* Stats */}
-        <div className="flex items-center gap-4 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-shrink-0 w-[420px]">
           {/* Progress bar */}
-          <div className="w-14 h-1.5 bg-muted rounded-full overflow-hidden">
+          <div className="w-14 h-1.5 bg-muted rounded-full overflow-hidden flex-shrink-0">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{ width: `${Math.max(pct, isEmpty ? 0 : 1)}%`, backgroundColor: color }}
@@ -132,16 +133,19 @@ export function CategoryAccordionItem({
           </div>
 
           {/* Invoice count */}
-          <div className="text-right w-12">
+          <div className="text-right w-10 flex-shrink-0">
             <div className={`text-sm font-bold tabular-nums ${isEmpty ? 'text-muted-foreground' : ''}`}>
               {invoiceCount}
             </div>
           </div>
 
-          {/* Amount */}
-          <div className="text-right min-w-[7rem] max-w-[16rem]">
-            <div className={`text-sm font-bold tabular-nums ${isEmpty ? 'text-muted-foreground' : ''}`}
-                 style={!isEmpty ? { color } : undefined}>
+          {/* Amount — single line, wider container handles long strings */}
+          <div className="text-right flex-1 min-w-0">
+            <div
+              className={`text-sm font-bold tabular-nums truncate ${isEmpty ? 'text-muted-foreground' : ''}`}
+              style={!isEmpty ? { color } : undefined}
+              title={amountDisplay}
+            >
               {amountDisplay}
             </div>
           </div>

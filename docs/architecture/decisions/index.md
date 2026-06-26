@@ -62,6 +62,7 @@ Minden döntés egy külön `.md` fájl, amely leírja **miért** választottuk 
 | # | Döntés | Státusz | Fájl |
 |---|--------|---------|------|
 | A-016 | PostgreSQL query stratégia — 79 RPC function teljes katalógus | ✅ Decided | [A-016](./A-016-postgresql-query-strategy.md) |
+| A-022 | Kategóriák és projektek dual-table szinkronizációja | ✅ Decided | [A-022](./A-022-categories-projects-sync.md) |
 
 ## 🖥️ Frontend
 

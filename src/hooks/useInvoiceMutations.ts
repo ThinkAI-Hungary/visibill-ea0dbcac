@@ -218,32 +218,40 @@ export function useInvoiceMutations({
     }
   };
 
-  const handleProjectChange = async (invoiceId: string, projectId: string | null) => {
+  const handleProjectChange = async (invoiceId: string, projectId: string | null, invoiceNumber?: string | null) => {
+    const value = projectId === 'none' ? null : projectId;
     try {
-      const { error } = await supabase
-        .from('nav_invoices')
-        .update({ project_id: projectId === 'none' ? null : projectId })
-        .eq('id', invoiceId);
-      if (error) throw error;
+      // Always update nav_invoices by ID
+      const navPromise = supabase.from('nav_invoices').update({ project_id: value }).eq('id', invoiceId);
+      // Update linked invoices row by bizonylatsorszam if we know the invoice number
+      const subPromise = invoiceNumber
+        ? supabase.from('invoices').update({ project_id: value }).eq('bizonylatsorszam', invoiceNumber)
+        : Promise.resolve({ error: null });
+      const [navRes, subRes] = await Promise.all([navPromise, subPromise]);
+      if (navRes.error) throw navRes.error;
+      if (subRes.error) throw subRes.error;
       invalidateInvoiceData();
       toast({ title: 'Projekt hozzárendelve' });
     } catch (error) {
-      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error updating project:', error: error });
+      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error updating project:', error });
       toast({ title: 'Hiba a projekt hozzárendelésekor', variant: 'destructive' });
     }
   };
 
-  const handleCategoryChange = async (invoiceId: string, categoryId: string | null) => {
+  const handleCategoryChange = async (invoiceId: string, categoryId: string | null, invoiceNumber?: string | null) => {
+    const value = categoryId === 'none' ? null : categoryId;
     try {
-      const { error } = await supabase
-        .from('nav_invoices')
-        .update({ category_id: categoryId === 'none' ? null : categoryId })
-        .eq('id', invoiceId);
-      if (error) throw error;
+      const navPromise = supabase.from('nav_invoices').update({ category_id: value }).eq('id', invoiceId);
+      const subPromise = invoiceNumber
+        ? supabase.from('invoices').update({ category_id: value }).eq('bizonylatsorszam', invoiceNumber)
+        : Promise.resolve({ error: null });
+      const [navRes, subRes] = await Promise.all([navPromise, subPromise]);
+      if (navRes.error) throw navRes.error;
+      if (subRes.error) throw subRes.error;
       invalidateInvoiceData();
       toast({ title: 'Kategória hozzárendelve' });
     } catch (error) {
-      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error updating category:', error: error });
+      reportError({ type: 'db_query', component: 'useInvoiceMutations', action: 'error', message: 'Error updating category:', error });
       toast({ title: 'Hiba a kategória hozzárendelésekor', variant: 'destructive' });
     }
   };
