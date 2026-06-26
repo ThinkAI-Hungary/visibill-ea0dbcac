@@ -244,6 +244,7 @@ interface TransactionRowProps {
   onToggleExpand?: (id: string) => void;
   onOpenDetails: (transaction: Transaction) => void;
   bankLabel?: string | null;
+  bankFullName?: string | null;
   bankBgClass?: string;
   isDuplicate?: boolean;
   isSelected?: boolean;
@@ -251,7 +252,7 @@ interface TransactionRowProps {
   showCheckbox?: boolean;
 }
 
-const TransactionRow = React.memo(function TransactionRow({ transaction, exchangeRates, isExpanded, onToggleExpand, onOpenDetails, bankLabel, bankBgClass, isDuplicate, isSelected, onSelect, showCheckbox }: TransactionRowProps) {
+const TransactionRow = React.memo(function TransactionRow({ transaction, exchangeRates, isExpanded, onToggleExpand, onOpenDetails, bankLabel, bankFullName, bankBgClass, isDuplicate, isSelected, onSelect, showCheckbox }: TransactionRowProps) {
   const matchStatus = computeMatchStatus(transaction);
 
   return (
@@ -317,12 +318,19 @@ const TransactionRow = React.memo(function TransactionRow({ transaction, exchang
             </Tooltip>
           </TooltipProvider>
           {bankLabel && (
-            <span className={cn(
-              "text-[9px] px-1.5 py-0.5 rounded font-medium shrink-0 border",
-              bankBgClass || 'bg-muted text-muted-foreground'
-            )}>
-              {bankLabel}
-            </span>
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className={cn(
+                    "text-[9px] px-1.5 py-0.5 rounded font-medium shrink-0 border cursor-default",
+                    bankBgClass || 'bg-muted text-muted-foreground'
+                  )}>
+                    {bankLabel}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{bankFullName || bankLabel}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       </TableCell>
@@ -452,7 +460,7 @@ interface TransactionTableProps {
   onSort: (field: string) => void;
   onOpenDetails: (transaction: Transaction) => void;
   uploadBankMap?: Record<string, string>;
-  bankConfig?: Record<string, { label: string; bgClass: string }>;
+  bankConfig?: Record<string, { label: string; fullName?: string; bgClass: string }>;
   duplicateTxIds?: Set<string>;
   onBulkStatusChange?: (ids: string[], matchType: string) => void;
   onBulkExport?: (ids: string[], format: 'csv' | 'xlsx') => void;
@@ -734,6 +742,7 @@ const TransactionTable = React.memo(function TransactionTable({
                     onToggleExpand={toggleExpand}
                     onOpenDetails={onOpenDetails}
                     bankLabel={cfg?.label}
+                    bankFullName={cfg?.fullName}
                     bankBgClass={cfg?.bgClass}
                     isDuplicate={duplicateTxIds?.has(transaction.id)}
                     isSelected={selectedIds.has(transaction.id)}

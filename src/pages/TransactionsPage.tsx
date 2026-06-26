@@ -28,17 +28,17 @@ import { toast } from '@/hooks/use-toast';
 
 
 // ── Bank display config ──
-const BANK_CONFIG: Record<string, { label: string; color: string; bgClass: string }> = {
-  otp:        { label: 'OTP',        color: 'bg-emerald-500', bgClass: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' },
-  cib:        { label: 'CIB',        color: 'bg-red-500',     bgClass: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20' },
-  raiffeisen: { label: 'Raiffeisen', color: 'bg-yellow-500',  bgClass: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20' },
-  kh:         { label: 'K&H',        color: 'bg-blue-600',    bgClass: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' },
-  erste:      { label: 'Erste',      color: 'bg-sky-500',     bgClass: 'bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20' },
-  unicredit:  { label: 'UniCredit',  color: 'bg-rose-600',    bgClass: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20' },
-  magnet:     { label: 'MagNet',     color: 'bg-violet-500',  bgClass: 'bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20' },
-  granit:     { label: 'Gránit',     color: 'bg-stone-500',   bgClass: 'bg-stone-500/10 text-stone-700 dark:text-stone-400 border-stone-500/20' },
-  wise:       { label: 'Wise',       color: 'bg-[#9FE870]',   bgClass: 'bg-lime-500/10 text-lime-700 dark:text-lime-400 border-lime-500/20' },
-  revolut:    { label: 'Revolut',    color: 'bg-[#0075EB]',   bgClass: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' },
+const BANK_CONFIG: Record<string, { label: string; fullName: string; color: string; bgClass: string }> = {
+  otp:        { label: 'OTP',        fullName: 'OTP Bank Nyrt.',              color: 'bg-emerald-500', bgClass: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' },
+  cib:        { label: 'CIB',        fullName: 'CIB Bank Zrt.',              color: 'bg-red-500',     bgClass: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20' },
+  raiffeisen: { label: 'Raiffeisen', fullName: 'Raiffeisen Bank Zrt.',        color: 'bg-yellow-500',  bgClass: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20' },
+  kh:         { label: 'K&H',        fullName: 'K&H Bank Zrt.',              color: 'bg-blue-600',    bgClass: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' },
+  erste:      { label: 'Erste',      fullName: 'Erste Bank Hungary Zrt.',     color: 'bg-sky-500',     bgClass: 'bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20' },
+  unicredit:  { label: 'UniCredit',  fullName: 'UniCredit Bank Hungary Zrt.', color: 'bg-rose-600',    bgClass: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20' },
+  magnet:     { label: 'MagNet',     fullName: 'MagNet Magyar Közösségi Bank Zrt.', color: 'bg-violet-500', bgClass: 'bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20' },
+  granit:     { label: 'Gránit',     fullName: 'Gránit Bank Zrt.',            color: 'bg-stone-500',   bgClass: 'bg-stone-500/10 text-stone-700 dark:text-stone-400 border-stone-500/20' },
+  wise:       { label: 'Wise',       fullName: 'Wise Payments Ltd.',           color: 'bg-[#9FE870]',   bgClass: 'bg-lime-500/10 text-lime-700 dark:text-lime-400 border-lime-500/20' },
+  revolut:    { label: 'Revolut',    fullName: 'Revolut Bank UAB',             color: 'bg-[#0075EB]',   bgClass: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' },
 };
 
 const FIXED_TABS = ['general', 'gls', 'mpl', 'mixpack'] as const;

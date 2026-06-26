@@ -330,6 +330,21 @@ serve(async (req) => {
       if (fn.includes('budapest bank') || fn.includes('bb_')) return 'budapest_bank';
       // OTP-specific pattern: long numeric filename with __NNN-YYYY
       if (/^\d{10,}.*__\d{3}-\d{4}/.test(fn)) return 'otp';
+      // Fallback: IBAN-based detection (HUkk + 3-digit GIRO routing code)
+      const ibanMatch = attachmentName.match(/HU\d{2}(\d{3})/i);
+      if (ibanMatch) {
+        const GIRO_MAP: Record<string, string> = {
+          '117': 'otp', '116': 'erste', '107': 'cib',
+          '104': 'kh', '120': 'raiffeisen', '103': 'mbh',
+          '108': 'mkb', '109': 'unicredit', '121': 'magnet',
+          '112': 'granit',
+        };
+        const detected = GIRO_MAP[ibanMatch[1]];
+        if (detected) {
+          console.log(`Bank detected from IBAN GIRO code ${ibanMatch[1]}: ${detected}`);
+          return detected;
+        }
+      }
       return null;
     };
 
