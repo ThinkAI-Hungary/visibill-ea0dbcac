@@ -1,7 +1,7 @@
 # Visibill — Product Requirements: Döntések
 
-> **Utoljára frissítve:** 2026-06-24  
-> **Összesen:** 33 döntés | ✅ Decided: 30 | ⛔ Superseded: 2 | 🔴 Open: 1
+> **Utoljára frissítve:** 2026-06-26  
+> **Összesen:** 35 döntés | ✅ Decided: 32 | ⛔ Superseded: 2 | 🔴 Open: 1
 
 ---
 
@@ -104,3 +104,14 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 |---|--------|---------|------|
 | P-036 | Management Dashboard UI és navigáció | ✅ Decided | [P-036](./P-036-management-dashboard.md) |
 
+## 👥 Partnertörzs
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| P-040 | Partnertörzs dual-table számlák + interaktív detail panel | ✅ Decided | [P-040](./P-040-partners-invoice-panel.md) |
+
+## 🏷️ Kategóriák
+
+| # | Döntés | Státusz | Fájl |
+|---|--------|---------|------|
+| P-041 | Kategóriák multi-currency összeg + dual-table hozzárendelési keresés | ✅ Decided | [P-041](./P-041-categories-multicurrency-search.md) |

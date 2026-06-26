@@ -3,17 +3,51 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, Pencil, Trash2 } from 'lucide-react';
 import { resolveIcon } from '@/components/IconPicker';
 
+export interface CategoryInvoice {
+  id: string;
+  invoice_number: string | null;
+  invoice_direction: string | null;
+  supplier_name: string | null;
+  invoice_issue_date: string | null;
+  invoice_gross_amount: number | null;
+  penznem: string | null;
+  /** Which DB table this invoice lives in */
+  source: 'invoices' | 'nav_invoices';
+}
+
 interface CategoryAccordionItemProps {
   name: string;
   description: string;
   color: string;
   iconName: string | null;
   invoiceCount: number;
+  /** HUF-only total — used for progress bar ratio */
   totalAmount: number;
   totalAllAmount: number;
+  /** Per-currency totals, e.g. { HUF: 12000, USD: 45.5 } */
+  currencyTotals: Record<string, number>;
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
+}
+
+/** Format a single currency amount. HUF → "12 000 Ft", others → "45,50 USD" */
+function formatCurrencyAmount(amount: number, currency: string): string {
+  const formatted = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 2 }).format(amount);
+  return currency === 'HUF' ? `${formatted} Ft` : `${formatted} ${currency}`;
+}
+
+/** Build "X Ft | Y USD | Z EUR" display string from currencyTotals map */
+export function formatCurrencyTotals(currencyTotals: Record<string, number>): string {
+  const parts = Object.entries(currencyTotals)
+    .filter(([, amt]) => amt !== 0)
+    .sort(([a], [b]) => {
+      if (a === 'HUF') return -1;
+      if (b === 'HUF') return 1;
+      return a.localeCompare(b);
+    })
+    .map(([currency, amount]) => formatCurrencyAmount(amount, currency));
+  return parts.length > 0 ? parts.join(' | ') : '0 Ft';
 }
 
 export function CategoryAccordionItem({
@@ -24,6 +58,7 @@ export function CategoryAccordionItem({
   invoiceCount,
   totalAmount,
   totalAllAmount,
+  currencyTotals,
   onToggle,
   onEdit,
   onDelete,
@@ -33,10 +68,8 @@ export function CategoryAccordionItem({
   const isEmpty = invoiceCount === 0;
   const pct = totalAllAmount > 0 ? Math.round((totalAmount / totalAllAmount) * 100) : 0;
 
-  const formatAmount = (amount: number | null) => {
-    if (amount === null || amount === undefined) return '0 Ft';
-    return new Intl.NumberFormat('hu-HU').format(amount) + ' Ft';
-  };
+  const amountDisplay = isEmpty ? '0 Ft' : formatCurrencyTotals(currencyTotals);
+
 
   return (
     <div className="border-b border-border last:border-b-0">
@@ -106,10 +139,10 @@ export function CategoryAccordionItem({
           </div>
 
           {/* Amount */}
-          <div className="text-right w-28">
+          <div className="text-right min-w-[7rem] max-w-[16rem]">
             <div className={`text-sm font-bold tabular-nums ${isEmpty ? 'text-muted-foreground' : ''}`}
                  style={!isEmpty ? { color } : undefined}>
-              {formatAmount(totalAmount)}
+              {amountDisplay}
             </div>
           </div>
         </div>

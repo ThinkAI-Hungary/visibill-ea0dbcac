@@ -334,3 +334,44 @@ Az eaisyBooks modul **teljesen önálló layout-ot** használ (`AccountyLayout`)
 | Role | Owner/Admin/Member/Employee | admin/könyvelő |
 | Command palette | Nincs | Ctrl+K — oldalak + ügyfelek keresése |
 
+---
+
+## 9. Oldal-szintű Funkciók (2026-06-26)
+
+### Partnertörzs (`/partners`)
+
+**Layout:** Master–Detail splitscreen (bal: lista, jobb: detail panel)
+
+**Master lista:**
+- Szűrők: típus (Vevő / Szállító / Mindkettő) + szabad szöveges keresés
+- Táblázat oszlopok: Név/Cím, Adószám, Típus, Számlák (db)
+- Számlaszám aggregáció: **mindkét forrásból** (NAV + Beküldött), adószám-prefix alapján
+
+**Detail panel (jobb oldal):**
+- Cégadatok: Adószám, Székhely, Email-cím
+- Könyvelési beállítás: „Bekerüljön a könyvelésbe?" toggle (partner + összes számlája)
+- Számlák szekció:
+  - **Keresőmező** — számlaszám alapú szűrés
+  - **Tab switcher** — NAV | Beküldött (darabszámmal)
+  - **Kattintható kártyák** → `PartnerInvoiceDetailDialog`
+
+**PartnerInvoiceDetailDialog:**
+- Fejléc: számlaszám, ellenpartner, dátumok, bruttó összeg, fizetési mód, irány badge, forrás badge
+- Tételek táblázat: Megnevezés, Mennyiség, Egység, Nettó, ÁFA, Bruttó, **Főkönyvi szám**
+- Adatforrás: `nav_invoice_items` (NAV) vagy `invoice_items` (Beküldött)
+
+> **Kapcsolódó döntés:** [P-040](./decisions/P-040-partners-invoice-panel.md)
+
+---
+
+### Kategóriák (`/categories`)
+
+**Layout:** Accordion lista — egy GL kategória / sor
+
+**Funkciók:**
+- Kategóriákhoz hozzárendelt számlák összegének megjelenítése
+- **Multi-currency:** ha több deviza van, `886 778 Ft | 1 200 USD` formátumban jelenik meg
+- **Hozzárendelési kereső:** mindkét forrásból (NAV + Beküldött) javasol számlákat
+
+> **Kapcsolódó döntés:** [P-041](./decisions/P-041-categories-multicurrency-search.md)
+

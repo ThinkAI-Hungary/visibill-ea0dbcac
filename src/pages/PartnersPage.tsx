@@ -51,6 +51,10 @@ import { PartnerTypeFilter, PartnerTypeFilterValue } from "@/components/ui/partn
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { TableEmptyState } from "@/components/ui/table-empty-state";
 import { TablePlaceholderRows } from "@/components/ui/table-placeholder-rows";
+import {
+  PartnerInvoiceDetailDialog,
+  type PartnerInvoice,
+} from "@/components/partners/PartnerInvoiceDetailDialog";
 
 const DEFAULT_PAGE_SIZE = 15;
 
@@ -100,6 +104,21 @@ export default function PartnersPage() {
   const [emailError, setEmailError] = useState("");
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  // Invoice detail dialog state
+  const [selectedInvoiceForDetail, setSelectedInvoiceForDetail] = useState<PartnerInvoice | null>(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  // Invoice tab state in right panel
+  const [invoiceTab, setInvoiceTab] = useState<'nav' | 'uploaded'>('nav');
+  const [invoiceSearch, setInvoiceSearch] = useState('');
+
+  const openInvoiceDetail = (inv: PartnerInvoice) => {
+    setSelectedInvoiceForDetail(inv);
+    setIsDetailDialogOpen(true);
+  };
+  const closeInvoiceDetail = () => {
+    setIsDetailDialogOpen(false);
+    setSelectedInvoiceForDetail(null);
+  };
 
   // ── URL param helpers ──
   const setPartnerParam = useCallback((partnerId: string | null) => {
@@ -117,49 +136,49 @@ export default function PartnersPage() {
     queryFn: async () => {
       if (!selectedCompany?.id) return [];
 
-      // Fetch partners
-      const { data: partnerData, error: partnerError } = await supabase
-        .from("partners")
-        .select("id, name, tax_number, address, email, partner_type, company_id, user_id, default_project_id, created_at, updated_at, exclude_from_accounting")
-        .eq("company_id", selectedCompany.id)
-        .order("name", { ascending: true });
+      // Fetch partners + invoice counts from both tables in parallel
+      const [{ data: partnerData, error: partnerError }, { data: supplierCounts }, { data: customerCounts }, { data: uploadedCounts }] = await Promise.all([
+        supabase
+          .from("partners")
+          .select("id, name, tax_number, address, email, partner_type, company_id, user_id, default_project_id, created_at, updated_at, exclude_from_accounting")
+          .eq("company_id", selectedCompany.id)
+          .order("name", { ascending: true }),
+        supabase.from("nav_invoices").select("supplier_tax_number").eq("company_id", selectedCompany.id),
+        supabase.from("nav_invoices").select("customer_tax_number").eq("company_id", selectedCompany.id),
+        supabase.from("invoices").select("elado_vat_id, vevo_vat_id").eq("company_id", selectedCompany.id),
+      ]);
 
       if (partnerError) throw partnerError;
 
-      // Fetch invoice counts grouped by tax_number
-      // We will queries for both supplier and customer directions since they use separate columns in nav_invoices
-      const { data: supplierCounts, error: supplierCountsErr } = await supabase
-        .from("nav_invoices")
-        .select("supplier_tax_number")
-        .eq("company_id", selectedCompany.id);
-
-      const { data: customerCounts, error: customerCountsErr } = await supabase
-        .from("nav_invoices")
-        .select("customer_tax_number")
-        .eq("company_id", selectedCompany.id);
-
       const countsMap: Record<string, number> = {};
 
-      if (!supplierCountsErr && supplierCounts) {
-        supplierCounts.forEach((inv: any) => {
-          if (inv.supplier_tax_number) {
-            const cleanTax = inv.supplier_tax_number.substring(0, 8);
-            countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
-          }
-        });
-      }
-
-      if (!customerCountsErr && customerCounts) {
-        customerCounts.forEach((inv: any) => {
-          if (inv.customer_tax_number) {
-            const cleanTax = inv.customer_tax_number.substring(0, 8);
-            countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
-          }
-        });
-      }
+      // NAV supplier invoices
+      (supplierCounts || []).forEach((inv: any) => {
+        if (inv.supplier_tax_number) {
+          const cleanTax = inv.supplier_tax_number.substring(0, 8);
+          countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
+        }
+      });
+      // NAV customer invoices
+      (customerCounts || []).forEach((inv: any) => {
+        if (inv.customer_tax_number) {
+          const cleanTax = inv.customer_tax_number.substring(0, 8);
+          countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
+        }
+      });
+      // Uploaded invoices — elado_vat_id and vevo_vat_id
+      (uploadedCounts || []).forEach((inv: any) => {
+        if (inv.elado_vat_id) {
+          const cleanTax = inv.elado_vat_id.replace(/-/g, '').substring(0, 8);
+          countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
+        } else if (inv.vevo_vat_id) {
+          const cleanTax = inv.vevo_vat_id.replace(/-/g, '').substring(0, 8);
+          countsMap[cleanTax] = (countsMap[cleanTax] || 0) + 1;
+        }
+      });
 
       return (partnerData as Partner[]).map(partner => {
-        const cleanTax = partner.tax_number ? partner.tax_number.substring(0, 8) : '';
+        const cleanTax = partner.tax_number ? partner.tax_number.replace(/-/g, '').substring(0, 8) : '';
         return {
           ...partner,
           invoice_count: countsMap[cleanTax] || 0
@@ -176,21 +195,72 @@ export default function PartnersPage() {
     return (partners as any[]).find(p => p.id === selectedPartnerId) || null;
   }, [partners, selectedPartnerId]);
 
-  // Fetch selected partner's NAV invoices
+  // Fetch selected partner's invoices — both NAV and uploaded
   const { data: partnerInvoices, isLoading: isLoadingInvoices } = useQuery({
-    queryKey: ['partner-nav-invoices', selectedPartner?.tax_number],
-    queryFn: async () => {
+    queryKey: ['partner-all-invoices', selectedPartner?.tax_number, selectedCompany?.id],
+    queryFn: async (): Promise<PartnerInvoice[]> => {
       if (!selectedPartner?.tax_number || !selectedCompany?.id) return [];
-      const { data, error } = await supabase
-        .from('nav_invoices')
-        .select('id, invoice_number, invoice_direction, invoice_gross_amount, invoice_issue_date, currency')
-        .eq('company_id', selectedCompany.id)
-        .or(`supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number}`)
-        .order('invoice_issue_date', { ascending: false })
-        .limit(50); // Show last 50 invoices for performance & space
-      
-      if (error) throw error;
-      return data;
+      const cleanTax = selectedPartner.tax_number.replace(/-/g, '').substring(0, 8);
+
+      const [{ data: navData }, { data: uploadedData }] = await Promise.all([
+        // NAV invoices
+        supabase
+          .from('nav_invoices')
+          .select('id, invoice_number, invoice_direction, invoice_gross_amount, invoice_net_amount, invoice_issue_date, payment_date, currency, supplier_name, customer_name, payment_method')
+          .eq('company_id', selectedCompany.id)
+          .or(`supplier_tax_number.eq.${selectedPartner.tax_number},customer_tax_number.eq.${selectedPartner.tax_number}`)
+          .order('invoice_issue_date', { ascending: false })
+          .limit(50),
+        // Uploaded invoices matched by VAT ID prefix
+        supabase
+          .from('invoices')
+          .select('id, bizonylatsorszam, invoice_direction, brutto_vegosszeg, kibocsatas_datuma, fizetesi_hatarido, penznem, elado_nev, vevo_nev, fizetesi_mod, elado_vat_id, vevo_vat_id')
+          .eq('company_id', selectedCompany.id)
+          .or(`elado_vat_id.ilike.${cleanTax}%,vevo_vat_id.ilike.${cleanTax}%`)
+          .order('kibocsatas_datuma', { ascending: false })
+          .limit(50),
+      ]);
+
+      const fromNav: PartnerInvoice[] = (navData || []).map((inv: any) => {
+        const isOutbound = inv.invoice_direction === 'OUTBOUND';
+        return {
+          id: inv.id,
+          source: 'nav' as const,
+          invoice_number: inv.invoice_number,
+          invoice_direction: inv.invoice_direction,
+          invoice_gross_amount: inv.invoice_gross_amount,
+          invoice_net_amount: inv.invoice_net_amount,
+          invoice_issue_date: inv.invoice_issue_date,
+          payment_date: inv.payment_date,
+          currency: inv.currency || 'HUF',
+          counterparty_name: isOutbound ? inv.customer_name : inv.supplier_name,
+          payment_method: inv.payment_method,
+        };
+      });
+
+      const fromUploaded: PartnerInvoice[] = (uploadedData || []).map((inv: any) => {
+        const isOutbound = inv.invoice_direction === 'OUTBOUND';
+        return {
+          id: inv.id,
+          source: 'uploaded' as const,
+          invoice_number: inv.bizonylatsorszam,
+          invoice_direction: inv.invoice_direction,
+          invoice_gross_amount: inv.brutto_vegosszeg,
+          invoice_net_amount: null,
+          invoice_issue_date: inv.kibocsatas_datuma,
+          payment_date: inv.fizetesi_hatarido,
+          currency: inv.penznem || 'HUF',
+          counterparty_name: isOutbound ? inv.vevo_nev : inv.elado_nev,
+          payment_method: inv.fizetesi_mod,
+        };
+      });
+
+      // Merge, sort by date DESC
+      return [...fromNav, ...fromUploaded].sort((a, b) => {
+        const da = a.invoice_issue_date ? new Date(a.invoice_issue_date).getTime() : 0;
+        const db = b.invoice_issue_date ? new Date(b.invoice_issue_date).getTime() : 0;
+        return db - da;
+      });
     },
     enabled: !!selectedPartner?.tax_number && !!selectedCompany?.id,
   });
@@ -371,6 +441,7 @@ export default function PartnersPage() {
   const selectPartner = (id: string) => {
     setSelectedPartnerId(id);
     setPartnerParam(id);
+    setInvoiceSearch(''); // reset search on partner switch
   };
 
   const validateEmail = (email: string): boolean => {
@@ -618,9 +689,11 @@ export default function PartnersPage() {
                         </span>
                       )}
                       
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-500 bg-emerald-500/5 px-2 py-0.5 rounded-md border border-emerald-500/10">
-                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Szinkronizált
-                      </span>
+                      {partnerInvoices && partnerInvoices.some(inv => inv.source === 'nav') && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-500 bg-emerald-500/5 px-2 py-0.5 rounded-md border border-emerald-500/10">
+                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> NAV szinkronizált
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -661,10 +734,6 @@ export default function PartnersPage() {
                     ) : (
                       <span className="text-xs text-muted-foreground/50">—</span>
                     )}
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground font-semibold">NAV státusz</p>
-                    <p className="text-xs font-semibold mt-0.5 text-emerald-600 dark:text-emerald-400">Kapcsolódva</p>
                   </div>
                   <div className="col-span-2">
                     <p className="text-[10px] text-muted-foreground font-semibold">Székhely</p>
@@ -709,26 +778,82 @@ export default function PartnersPage() {
                 </div>
               </div>
 
-              {/* Associated NAV Invoices List */}
+              {/* Partner Számlák — tabbed */}
               <div className="space-y-3 shrink-0">
-                <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider">NAV Online Számlák</h4>
+                {/* Tab header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1 bg-muted/40 rounded-lg p-0.5">
+                    {(['nav', 'uploaded'] as const).map((tab) => {
+                      const count = partnerInvoices?.filter(inv => inv.source === tab).length ?? 0;
+                      const label = tab === 'nav' ? 'NAV' : 'Beküldött';
+                      return (
+                        <button
+                          key={tab}
+                          type="button"
+                          onClick={() => setInvoiceTab(tab)}
+                          className={cn(
+                            "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all",
+                            invoiceTab === tab
+                              ? "bg-card text-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {label}
+                          {count > 0 && (
+                            <span className={cn(
+                              "inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold",
+                              invoiceTab === tab
+                                ? tab === 'nav' ? "bg-violet-500/15 text-violet-400" : "bg-amber-500/15 text-amber-400"
+                                : "bg-muted text-muted-foreground"
+                            )}>
+                              {count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Invoice search */}
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Számlaszám keresése..."
+                    value={invoiceSearch}
+                    onChange={(e) => setInvoiceSearch(e.target.value)}
+                    className="pl-8 h-8 text-xs bg-background/50"
+                  />
+                </div>
+
+                {/* Invoice list */}
                 <div className="h-[350px] border border-border/30 rounded-xl bg-muted/5 overflow-hidden flex flex-col">
                   <div className="overflow-y-auto flex-1 p-2 space-y-2">
                     {isLoadingInvoices ? (
                       <div className="flex items-center justify-center h-32">
                         <LoadingSpinner className="h-6 w-6 text-muted-foreground" />
                       </div>
-                    ) : !partnerInvoices || partnerInvoices.length === 0 ? (
-                      <div className="text-center py-10 text-xs text-muted-foreground">
-                        Nincsenek NAV számlák ehhez a partnerhez
-                      </div>
-                    ) : (
-                      partnerInvoices.map((invoice) => {
-                        const isOutbound = invoice.invoice_direction === 'OUTBOUND';
+                    ) : (() => {
+                      const q = invoiceSearch.trim().toLowerCase();
+                      const filtered = (partnerInvoices || [])
+                        .filter(inv => inv.source === invoiceTab)
+                        .filter(inv => !q || (inv.invoice_number || '').toLowerCase().includes(q));
+                      if (filtered.length === 0) {
                         return (
-                          <div
+                          <div className="text-center py-10 text-xs text-muted-foreground">
+                            {invoiceTab === 'nav' ? 'Nincsenek NAV számlák' : 'Nincsenek beküldött számlák'}
+                          </div>
+                        );
+                      }
+                      return filtered.map((invoice) => {
+                        const isOutbound = invoice.invoice_direction === 'OUTBOUND';
+                        const cur = invoice.currency || 'HUF';
+                        return (
+                          <button
                             key={invoice.id}
-                            className="flex items-center justify-between p-2.5 rounded-lg bg-card/65 border border-border/40 hover:border-primary/30 hover:bg-muted/15 transition-all text-xs"
+                            type="button"
+                            onClick={() => openInvoiceDetail(invoice)}
+                            className="w-full flex items-center justify-between p-2.5 rounded-lg bg-card/65 border border-border/40 hover:border-primary/30 hover:bg-muted/15 transition-all text-xs cursor-pointer text-left"
                           >
                             <div className="min-w-0 flex-1 pr-2">
                               <div className="flex items-center gap-1.5">
@@ -736,7 +861,7 @@ export default function PartnersPage() {
                                   "w-1.5 h-1.5 rounded-full shrink-0",
                                   isOutbound ? "bg-emerald-500" : "bg-blue-500"
                                 )}></span>
-                                <span className="font-mono font-medium truncate">{invoice.invoice_number}</span>
+                                <span className="font-mono font-medium truncate">{invoice.invoice_number || '–'}</span>
                               </div>
                               {invoice.invoice_issue_date && (
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -750,16 +875,16 @@ export default function PartnersPage() {
                             </div>
                             <div className="text-right">
                               <p className="font-mono font-semibold">
-                                {formatCurrency(invoice.invoice_gross_amount || 0, invoice.currency || 'HUF')}
+                                {formatCurrency(invoice.invoice_gross_amount || 0, cur)}
                               </p>
                               <span className="text-[9px] text-muted-foreground uppercase font-bold">
-                                {isOutbound ? 'Vevő' : 'Szállító'}
+                                {isOutbound ? 'Kimenő' : 'Bejövő'}
                               </span>
                             </div>
-                          </div>
+                          </button>
                         );
-                      })
-                    )}
+                      });
+                    })()}
                   </div>
                 </div>
               </div>
@@ -866,6 +991,13 @@ export default function PartnersPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Invoice detail dialog */}
+      <PartnerInvoiceDetailDialog
+        invoice={selectedInvoiceForDetail}
+        open={isDetailDialogOpen}
+        onClose={closeInvoiceDetail}
+      />
     </div>
   );
 }

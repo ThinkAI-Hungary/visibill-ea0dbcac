@@ -9,13 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, X, Search, ChevronLeft, ChevronRight, CheckCircle2, Circle } from 'lucide-react';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 import { reportError } from '@/lib/errorReporter';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { CategoryDonutChart } from '@/components/CategoryDonutChart';
-import { CategoryAccordionItem, type CategoryInvoice } from '@/components/CategoryAccordionItem';
+import { CategoryAccordionItem, formatCurrencyTotals, type CategoryInvoice } from '@/components/CategoryAccordionItem';
 import { IconPicker, ColorPicker, DEFAULT_CATEGORY_COLOR, resolveIcon } from '@/components/IconPicker';
 import { FolderOpen } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -30,7 +30,10 @@ interface Category {
 
 interface CategoryStats {
   invoiceCount: number;
+  /** HUF total only — used for progress bar */
   totalAmount: number;
+  /** Per-currency totals map, e.g. { HUF: 12000, USD: 45.5 } */
+  currencyTotals: Record<string, number>;
   invoices: CategoryInvoice[];
 }
 
@@ -164,6 +167,8 @@ const Onboarding = () => {
 
   // Invoice search state (per category)
   const [searchResults, setSearchResults] = useState<Record<string, CategoryInvoice[]>>({});
+  // Bulk selection: Set of invoice IDs currently ticked in the search dropdown
+  const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
 
   // Track initial state for unsaved changes detection
   const [initialCategories, setInitialCategories] = useState<Category[] | null>(null);
@@ -210,23 +215,62 @@ const Onboarding = () => {
       setCategories(loadedCategories);
       setInitialCategories(loadedCategories.map(c => ({ ...c })));
 
-      // Load invoice stats per category
+      // Load invoice stats per category — both invoices and nav_invoices
       const stats: Record<string, CategoryStats> = {};
       
       for (const cat of loadedCategories) {
         if (!cat.id) continue;
         
-        const { data: invoices } = await supabase
-          .from('nav_invoices')
-          .select('id, invoice_number, invoice_direction, supplier_name, invoice_issue_date, invoice_gross_amount')
-          .eq('company_id', selectedCompany.id)
-          .eq('category_id', cat.id)
-          .order('invoice_issue_date', { ascending: false });
+        const [{ data: uploadedInvoices }, { data: navInvoices }] = await Promise.all([
+          supabase
+            .from('invoices')
+            .select('id, bizonylatsorszam, invoice_direction, elado_nev, kibocsatas_datuma, brutto_vegosszeg, penznem')
+            .eq('company_id', selectedCompany.id)
+            .eq('category_id', cat.id)
+            .order('kibocsatas_datuma', { ascending: false }),
+          supabase
+            .from('nav_invoices')
+            .select('id, invoice_number, invoice_direction, supplier_name, invoice_issue_date, invoice_gross_amount')
+            .eq('company_id', selectedCompany.id)
+            .eq('category_id', cat.id)
+            .order('invoice_issue_date', { ascending: false }),
+        ]);
         
-        const invList = (invoices || []) as CategoryInvoice[];
+        const fromUploaded: CategoryInvoice[] = (uploadedInvoices || []).map((inv: any) => ({
+          id: inv.id,
+          invoice_number: inv.bizonylatsorszam,
+          invoice_direction: inv.invoice_direction,
+          supplier_name: inv.elado_nev,
+          invoice_issue_date: inv.kibocsatas_datuma,
+          invoice_gross_amount: inv.brutto_vegosszeg,
+          penznem: inv.penznem || 'HUF',
+          source: 'invoices' as const,
+        }));
+
+        const fromNav: CategoryInvoice[] = (navInvoices || []).map((inv: any) => ({
+          id: inv.id,
+          invoice_number: inv.invoice_number,
+          invoice_direction: inv.invoice_direction,
+          supplier_name: inv.supplier_name,
+          invoice_issue_date: inv.invoice_issue_date,
+          invoice_gross_amount: inv.invoice_gross_amount,
+          penznem: 'HUF',
+          source: 'nav_invoices' as const,
+        }));
+
+        const invList: CategoryInvoice[] = [...fromUploaded, ...fromNav];
+
+        // Build per-currency totals
+        const currencyTotals: Record<string, number> = {};
+        for (const inv of invList) {
+          const cur = inv.penznem || 'HUF';
+          currencyTotals[cur] = (currencyTotals[cur] || 0) + (inv.invoice_gross_amount || 0);
+        }
+
         stats[cat.id] = {
           invoiceCount: invList.length,
-          totalAmount: invList.reduce((sum, inv) => sum + (inv.invoice_gross_amount || 0), 0),
+          totalAmount: currencyTotals['HUF'] || 0,
+          currencyTotals,
           invoices: invList,
         };
       }
@@ -278,6 +322,7 @@ const Onboarding = () => {
       setSearchResults(prev => ({ ...prev, [selectedCategoryForModal]: [] }));
     }
     setModalSearchQuery('');
+    setBulkSelected(new Set());
     setSelectedCategoryForModal(null);
     setActiveDonutIndex(null);
     setModalCurrentPage(1);
@@ -296,8 +341,13 @@ const Onboarding = () => {
   // Remove invoice from category
   const handleRemoveInvoice = async (invoiceId: string, categoryId: string) => {
     try {
+      // Find which table the invoice is from
+      const allInvoices = Object.values(categoryStats).flatMap(s => s.invoices);
+      const inv = allInvoices.find(i => i.id === invoiceId);
+      const tableName = inv?.source ?? 'invoices';
+
       const { error } = await supabase
-        .from('nav_invoices')
+        .from(tableName)
         .update({ category_id: null })
         .eq('id', invoiceId);
       
@@ -308,9 +358,15 @@ const Onboarding = () => {
         const stats = { ...prev };
         if (stats[categoryId]) {
           const newInvoices = stats[categoryId].invoices.filter(inv => inv.id !== invoiceId);
+          const currencyTotals: Record<string, number> = {};
+          for (const i of newInvoices) {
+            const cur = i.penznem || 'HUF';
+            currencyTotals[cur] = (currencyTotals[cur] || 0) + (i.invoice_gross_amount || 0);
+          }
           stats[categoryId] = {
             invoiceCount: newInvoices.length,
-            totalAmount: newInvoices.reduce((sum, inv) => sum + (inv.invoice_gross_amount || 0), 0),
+            totalAmount: currencyTotals['HUF'] || 0,
+            currencyTotals,
             invoices: newInvoices,
           };
         }
@@ -323,7 +379,7 @@ const Onboarding = () => {
     }
   };
 
-  // Search unassigned invoices for a category
+  // Search unassigned invoices for a category — queries both invoices and nav_invoices
   const handleSearchInvoice = async (query: string, categoryId: string) => {
     if (!query.trim() || !selectedCompany) {
       setSearchResults(prev => ({ ...prev, [categoryId]: [] }));
@@ -331,15 +387,48 @@ const Onboarding = () => {
     }
 
     try {
-      const { data } = await supabase
-        .from('nav_invoices')
-        .select('id, invoice_number, invoice_direction, supplier_name, invoice_issue_date, invoice_gross_amount')
-        .eq('company_id', selectedCompany.id)
-        .is('category_id', null)
-        .or(`invoice_number.ilike.%${query}%,supplier_name.ilike.%${query}%`)
-        .limit(10);
+      const [{ data: uploadedData }, { data: navData }] = await Promise.all([
+        supabase
+          .from('invoices')
+          .select('id, bizonylatsorszam, invoice_direction, elado_nev, kibocsatas_datuma, brutto_vegosszeg, penznem')
+          .eq('company_id', selectedCompany.id)
+          .is('category_id', null)
+          .or(`bizonylatsorszam.ilike.%${query}%,elado_nev.ilike.%${query}%`)
+          .limit(10),
+        supabase
+          .from('nav_invoices')
+          .select('id, invoice_number, invoice_direction, supplier_name, invoice_issue_date, invoice_gross_amount')
+          .eq('company_id', selectedCompany.id)
+          .is('category_id', null)
+          .or(`invoice_number.ilike.%${query}%,supplier_name.ilike.%${query}%`)
+          .limit(10),
+      ]);
 
-      setSearchResults(prev => ({ ...prev, [categoryId]: (data || []) as CategoryInvoice[] }));
+      const fromUploaded: CategoryInvoice[] = (uploadedData || []).map((inv: any) => ({
+        id: inv.id,
+        invoice_number: inv.bizonylatsorszam,
+        invoice_direction: inv.invoice_direction,
+        supplier_name: inv.elado_nev,
+        invoice_issue_date: inv.kibocsatas_datuma,
+        invoice_gross_amount: inv.brutto_vegosszeg,
+        penznem: inv.penznem || 'HUF',
+        source: 'invoices' as const,
+      }));
+
+      const fromNav: CategoryInvoice[] = (navData || []).map((inv: any) => ({
+        id: inv.id,
+        invoice_number: inv.invoice_number,
+        invoice_direction: inv.invoice_direction,
+        supplier_name: inv.supplier_name,
+        invoice_issue_date: inv.invoice_issue_date,
+        invoice_gross_amount: inv.invoice_gross_amount,
+        penznem: 'HUF',
+        source: 'nav_invoices' as const,
+      }));
+
+      // Merge and limit to 10 total
+      const merged = [...fromUploaded, ...fromNav].slice(0, 10);
+      setSearchResults(prev => ({ ...prev, [categoryId]: merged }));
     } catch (error) {
       reportError({ type: 'db_query', component: 'Onboarding', action: 'error', message: 'Search error', error });
     }
@@ -348,25 +437,32 @@ const Onboarding = () => {
   // Add invoice to a category
   const handleAddInvoice = async (invoiceId: string, categoryId: string) => {
     try {
+      // Find the invoice in search results to determine the correct table
+      const allResults = Object.values(searchResults).flat();
+      const invoice = allResults.find(inv => inv.id === invoiceId);
+      const tableName = invoice?.source ?? 'invoices';
+
       const { error } = await supabase
-        .from('nav_invoices')
+        .from(tableName)
         .update({ category_id: categoryId })
         .eq('id', invoiceId);
 
       if (error) throw error;
 
-      // Get the invoice data from search results to add to local state
-      const allResults = Object.values(searchResults).flat();
-      const invoice = allResults.find(inv => inv.id === invoiceId);
-
       if (invoice) {
         setCategoryStats(prev => {
           const stats = { ...prev };
-          const current = stats[categoryId] || { invoiceCount: 0, totalAmount: 0, invoices: [] };
+          const current = stats[categoryId] || { invoiceCount: 0, totalAmount: 0, currencyTotals: {}, invoices: [] };
           const newInvoices = [...current.invoices, invoice];
+          const currencyTotals: Record<string, number> = {};
+          for (const i of newInvoices) {
+            const cur = i.penznem || 'HUF';
+            currencyTotals[cur] = (currencyTotals[cur] || 0) + (i.invoice_gross_amount || 0);
+          }
           stats[categoryId] = {
             invoiceCount: newInvoices.length,
-            totalAmount: newInvoices.reduce((sum, inv) => sum + (inv.invoice_gross_amount || 0), 0),
+            totalAmount: currencyTotals['HUF'] || 0,
+            currencyTotals,
             invoices: newInvoices,
           };
           return stats;
@@ -376,6 +472,45 @@ const Onboarding = () => {
       // Clear search results for this category
       setSearchResults(prev => ({ ...prev, [categoryId]: [] }));
       toast({ title: 'Számla hozzárendelve a kategóriához' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Hiba', description: error.message });
+    }
+  };
+
+  // Bulk-add all selected invoices to a category
+  const handleBulkAddInvoices = async (categoryId: string) => {
+    if (bulkSelected.size === 0) return;
+    const allResults = Object.values(searchResults).flat();
+    const toAdd = allResults.filter(inv => bulkSelected.has(inv.id));
+    if (toAdd.length === 0) return;
+    try {
+      await Promise.all(
+        toAdd.map(inv =>
+          supabase.from(inv.source).update({ category_id: categoryId }).eq('id', inv.id)
+        )
+      );
+      // Update local state optimistically
+      setCategoryStats(prev => {
+        const stats = { ...prev };
+        const current = stats[categoryId] || { invoiceCount: 0, totalAmount: 0, currencyTotals: {}, invoices: [] };
+        const newInvoices = [...current.invoices, ...toAdd];
+        const currencyTotals: Record<string, number> = {};
+        for (const i of newInvoices) {
+          const cur = i.penznem || 'HUF';
+          currencyTotals[cur] = (currencyTotals[cur] || 0) + (i.invoice_gross_amount || 0);
+        }
+        stats[categoryId] = {
+          invoiceCount: newInvoices.length,
+          totalAmount: currencyTotals['HUF'] || 0,
+          currencyTotals,
+          invoices: newInvoices,
+        };
+        return stats;
+      });
+      setSearchResults(prev => ({ ...prev, [categoryId]: [] }));
+      setBulkSelected(new Set());
+      setModalSearchQuery('');
+      toast({ title: `${toAdd.length} számla hozzárendelve a kategóriához` });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Hiba', description: error.message });
     }
@@ -441,17 +576,11 @@ const Onboarding = () => {
     
     if (cat.id) {
       try {
-        // Remove category from invoices first
-        await supabase
-          .from('nav_invoices')
-          .update({ category_id: null })
-          .eq('category_id', cat.id);
-        
-        // Also handle 'invoices' table references
-        await supabase
-          .from('invoices')
-          .update({ category_id: null })
-          .eq('category_id', cat.id);
+        // Remove category from both tables in parallel
+        await Promise.all([
+          supabase.from('invoices').update({ category_id: null }).eq('category_id', cat.id),
+          supabase.from('nav_invoices').update({ category_id: null }).eq('category_id', cat.id),
+        ]);
         
         const { error } = await supabase
           .from('categories')
@@ -559,7 +688,7 @@ const Onboarding = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Kategóriák</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Kattints a kategóriákra a hozzárendelt számlák megtekintéséhez, újak hozzáadásához vagy a meglévők leválasztásához.
+            Csoportosítsd számláidat egyéni kategóriákba (pl. Marketing, IT, Rezsi) a kiadásaid átlátható követéséhez és elemzéséhez. Kattints egy kategóriára a hozzárendelt számlák megtekintéséhez, új számlák hozzáadásához vagy meglévők leválasztásához.
           </p>
         </div>
         <Button onClick={() => setShowNewDialog(true)} className="gap-2" disabled={!writable} title={!writable ? 'Nincs írási jogosultságod' : undefined}>
@@ -625,6 +754,7 @@ const Onboarding = () => {
                 invoiceCount={stats?.invoiceCount || 0}
                 totalAmount={stats?.totalAmount || 0}
                 totalAllAmount={totalAmount}
+                currencyTotals={stats?.currencyTotals || {}}
                 onToggle={() => toggleCategory(catId)}
                 onEdit={() => openEditDialog(index)}
                 onDelete={() => confirmDeleteCategory(index)}
@@ -856,9 +986,11 @@ const Onboarding = () => {
         const displayCount = paginatedInvoices.length > 0 ? paginatedInvoices.length : 1;
         const emptyRowsNeeded = ITEMS_PER_PAGE - displayCount;
 
-        const formatAmount = (amount: number | null) => {
+        const formatAmount = (amount: number | null, currency?: string | null) => {
           if (amount === null || amount === undefined) return '0 Ft';
-          return new Intl.NumberFormat('hu-HU').format(amount) + ' Ft';
+          const cur = currency || 'HUF';
+          const formatted = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 2 }).format(amount);
+          return cur === 'HUF' ? `${formatted} Ft` : `${formatted} ${cur}`;
         };
 
         return (
@@ -928,7 +1060,7 @@ const Onboarding = () => {
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground h-12 py-0 align-middle">{inv.invoice_issue_date || '–'}</TableCell>
                             <TableCell className="text-right text-xs font-semibold tabular-nums h-12 py-0 align-middle">
-                              {formatAmount(inv.invoice_gross_amount)}
+                              {formatAmount(inv.invoice_gross_amount, inv.penznem)}
                             </TableCell>
                             <TableCell className="h-12 py-0 align-middle">
                               <Button
@@ -992,50 +1124,104 @@ const Onboarding = () => {
               {/* Bottom search section for assignment */}
               <div className="border-t border-border pt-4 mt-auto">
                 <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
-                  Új számla hozzáadása
+                  Számlák hozzárendelése
                 </h3>
                 <div className="relative">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Keresés számlaszám, partner alapján a kategorizálatlan számlák között..."
+                      placeholder="Keresés számlaszám, partner alapán a kategorizálatlan számlák között..."
                       value={modalSearchQuery}
                       onChange={(e) => {
                         setModalSearchQuery(e.target.value);
                         handleSearchInvoice(e.target.value, selectedCategoryForModal);
+                        setBulkSelected(new Set()); // clear selection on new search
                       }}
                       className="pl-9 h-10 bg-background/50 border-dashed"
                     />
                   </div>
                   {modalSearchQuery && searchResults[selectedCategoryForModal] && searchResults[selectedCategoryForModal].length > 0 && (
-                    <div className="absolute left-0 right-0 bottom-full mb-1 z-50 bg-card border border-border rounded-lg shadow-xl max-h-48 overflow-y-auto p-1">
-                      {searchResults[selectedCategoryForModal].map((inv) => (
+                    <div className="absolute left-0 right-0 bottom-full mb-1 z-50 bg-card border border-border rounded-lg shadow-xl max-h-56 overflow-y-auto">
+                      {/* Select-all row */}
+                      <div className="sticky top-0 bg-muted/80 backdrop-blur border-b border-border/60 px-3 py-1.5 flex items-center justify-between">
                         <button
-                          key={inv.id}
-                          className="w-full flex items-center gap-3 px-3 py-2 text-xs hover:bg-primary/5 text-left border-b border-border/50 last:border-b-0 rounded-md transition-colors"
+                          type="button"
+                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                           onClick={() => {
-                            handleAddInvoice(inv.id, selectedCategoryForModal);
-                            setModalSearchQuery('');
+                            const allIds = searchResults[selectedCategoryForModal].map(inv => inv.id);
+                            const allSelected = allIds.every(id => bulkSelected.has(id));
+                            if (allSelected) {
+                              setBulkSelected(new Set());
+                            } else {
+                              setBulkSelected(new Set(allIds));
+                            }
                           }}
                         >
-                          <Plus className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                          <span className="font-semibold w-24 truncate">{inv.invoice_number}</span>
-                          <Badge
-                            variant="secondary"
-                            className={`text-[10px] px-1.5 py-0 h-4 border-0 flex-shrink-0 ${
-                              inv.invoice_direction === 'INBOUND'
-                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                                : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                            }`}
-                          >
-                            {inv.invoice_direction === 'INBOUND' ? 'BE' : 'KI'}
-                          </Badge>
-                          <span className="text-muted-foreground flex-1 truncate">
-                            {inv.supplier_name || '–'}
-                          </span>
-                          <span className="font-bold tabular-nums flex-shrink-0">{formatAmount(inv.invoice_gross_amount)}</span>
+                          {searchResults[selectedCategoryForModal].every(inv => bulkSelected.has(inv.id))
+                            ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                            : <Circle className="h-3.5 w-3.5" />}
+                          Mindet kijelöl
                         </button>
-                      ))}
+                        <span className="text-[10px] text-muted-foreground">
+                          {searchResults[selectedCategoryForModal].length} találat
+                        </span>
+                      </div>
+                      {/* Invoice rows */}
+                      {searchResults[selectedCategoryForModal].map((inv) => {
+                        const isSelected = bulkSelected.has(inv.id);
+                        return (
+                          <button
+                            key={inv.id}
+                            className={`w-full flex items-center gap-3 px-3 py-2 text-xs text-left border-b border-border/50 last:border-b-0 transition-colors ${
+                              isSelected ? 'bg-primary/8 hover:bg-primary/12' : 'hover:bg-primary/5'
+                            }`}
+                            onClick={() => {
+                              setBulkSelected(prev => {
+                                const next = new Set(prev);
+                                if (next.has(inv.id)) next.delete(inv.id);
+                                else next.add(inv.id);
+                                return next;
+                              });
+                            }}
+                          >
+                            {isSelected
+                              ? <CheckCircle2 className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                              : <Circle className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />}
+                            <span className="font-semibold w-24 truncate">{inv.invoice_number}</span>
+                            <Badge
+                              variant="secondary"
+                              className={`text-[10px] px-1.5 py-0 h-4 border-0 flex-shrink-0 ${
+                                inv.invoice_direction === 'INBOUND'
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                  : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                              }`}
+                            >
+                              {inv.invoice_direction === 'INBOUND' ? 'BE' : 'KI'}
+                            </Badge>
+                            <span className="text-muted-foreground flex-1 truncate">
+                              {inv.supplier_name || '–'}
+                            </span>
+                            <span className="font-bold tabular-nums flex-shrink-0">{formatAmount(inv.invoice_gross_amount, inv.penznem)}</span>
+                          </button>
+                        );
+                      })}
+                      {/* Bulk assign footer */}
+                      {bulkSelected.size > 0 && (
+                        <div className="sticky bottom-0 border-t border-border bg-card px-3 py-2 flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">
+                            <span className="font-semibold text-foreground">{bulkSelected.size} db</span> kijelölve
+                          </span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-7 text-xs gap-1.5"
+                            onClick={() => handleBulkAddInvoices(selectedCategoryForModal)}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            Hozzárendelés ({bulkSelected.size} db)
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
