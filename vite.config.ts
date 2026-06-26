@@ -20,6 +20,11 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom"],
   },
+  // Pre-bundle recharts + d3 together to avoid TDZ circular dependency errors
+  // when they are split into separate manual chunks at build time.
+  optimizeDeps: {
+    include: ["recharts"],
+  },
   build: {
     rollupOptions: {
       output: {
@@ -35,9 +40,11 @@ export default defineConfig(({ mode }) => ({
           if (id.includes('node_modules/@supabase/')) {
             return 'vendor-supabase';
           }
-          // Recharts — only used by analytics/dashboard pages
+          // Recharts + all d3/victory deps must stay in ONE chunk to avoid
+          // "Cannot access 's' before initialization" TDZ circular dep errors.
           if (id.includes('node_modules/recharts/') ||
               id.includes('node_modules/d3-') ||
+              id.includes('node_modules/d3/') ||
               id.includes('node_modules/victory-vendor/')) {
             return 'vendor-charts';
           }
