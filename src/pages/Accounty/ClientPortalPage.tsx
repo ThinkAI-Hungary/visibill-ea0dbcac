@@ -86,7 +86,8 @@ export default function ClientPortalPage() {
   const { data: clients } = useAccountyClients();
   const { data: cycles = [] } = usePayrollCycles(companyId || '');
   const { data: employees = [] } = usePayrollEmployees(companyId || '');
-  const { data: missingItems = [] } = useAccountyMissingItems(companyId || '');
+  const { data: missingData } = useAccountyMissingItems(companyId || '');
+  const missingItems = missingData?.items ?? [];
 
   // ── Fetch active portal tokens ──
   const { data: portalTokens = [] } = useQuery({
