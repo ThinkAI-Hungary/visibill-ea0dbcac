@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/components/ui/use-toast';
-import { Plus, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, X, Search, ChevronLeft, ChevronRight, CheckCircle2, Circle } from 'lucide-react';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 import { reportError } from '@/lib/errorReporter';
@@ -167,6 +167,8 @@ const Onboarding = () => {
 
   // Invoice search state (per category)
   const [searchResults, setSearchResults] = useState<Record<string, CategoryInvoice[]>>({});
+  // Bulk selection: Set of invoice IDs currently ticked in the search dropdown
+  const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
 
   // Track initial state for unsaved changes detection
   const [initialCategories, setInitialCategories] = useState<Category[] | null>(null);
@@ -320,6 +322,7 @@ const Onboarding = () => {
       setSearchResults(prev => ({ ...prev, [selectedCategoryForModal]: [] }));
     }
     setModalSearchQuery('');
+    setBulkSelected(new Set());
     setSelectedCategoryForModal(null);
     setActiveDonutIndex(null);
     setModalCurrentPage(1);
@@ -469,6 +472,45 @@ const Onboarding = () => {
       // Clear search results for this category
       setSearchResults(prev => ({ ...prev, [categoryId]: [] }));
       toast({ title: 'Számla hozzárendelve a kategóriához' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Hiba', description: error.message });
+    }
+  };
+
+  // Bulk-add all selected invoices to a category
+  const handleBulkAddInvoices = async (categoryId: string) => {
+    if (bulkSelected.size === 0) return;
+    const allResults = Object.values(searchResults).flat();
+    const toAdd = allResults.filter(inv => bulkSelected.has(inv.id));
+    if (toAdd.length === 0) return;
+    try {
+      await Promise.all(
+        toAdd.map(inv =>
+          supabase.from(inv.source).update({ category_id: categoryId }).eq('id', inv.id)
+        )
+      );
+      // Update local state optimistically
+      setCategoryStats(prev => {
+        const stats = { ...prev };
+        const current = stats[categoryId] || { invoiceCount: 0, totalAmount: 0, currencyTotals: {}, invoices: [] };
+        const newInvoices = [...current.invoices, ...toAdd];
+        const currencyTotals: Record<string, number> = {};
+        for (const i of newInvoices) {
+          const cur = i.penznem || 'HUF';
+          currencyTotals[cur] = (currencyTotals[cur] || 0) + (i.invoice_gross_amount || 0);
+        }
+        stats[categoryId] = {
+          invoiceCount: newInvoices.length,
+          totalAmount: currencyTotals['HUF'] || 0,
+          currencyTotals,
+          invoices: newInvoices,
+        };
+        return stats;
+      });
+      setSearchResults(prev => ({ ...prev, [categoryId]: [] }));
+      setBulkSelected(new Set());
+      setModalSearchQuery('');
+      toast({ title: `${toAdd.length} számla hozzárendelve a kategóriához` });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Hiba', description: error.message });
     }
@@ -1082,50 +1124,104 @@ const Onboarding = () => {
               {/* Bottom search section for assignment */}
               <div className="border-t border-border pt-4 mt-auto">
                 <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
-                  Új számla hozzáadása
+                  Számlák hozzárendelése
                 </h3>
                 <div className="relative">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Keresés számlaszám, partner alapján a kategorizálatlan számlák között..."
+                      placeholder="Keresés számlaszám, partner alapán a kategorizálatlan számlák között..."
                       value={modalSearchQuery}
                       onChange={(e) => {
                         setModalSearchQuery(e.target.value);
                         handleSearchInvoice(e.target.value, selectedCategoryForModal);
+                        setBulkSelected(new Set()); // clear selection on new search
                       }}
                       className="pl-9 h-10 bg-background/50 border-dashed"
                     />
                   </div>
                   {modalSearchQuery && searchResults[selectedCategoryForModal] && searchResults[selectedCategoryForModal].length > 0 && (
-                    <div className="absolute left-0 right-0 bottom-full mb-1 z-50 bg-card border border-border rounded-lg shadow-xl max-h-48 overflow-y-auto p-1">
-                      {searchResults[selectedCategoryForModal].map((inv) => (
+                    <div className="absolute left-0 right-0 bottom-full mb-1 z-50 bg-card border border-border rounded-lg shadow-xl max-h-56 overflow-y-auto">
+                      {/* Select-all row */}
+                      <div className="sticky top-0 bg-muted/80 backdrop-blur border-b border-border/60 px-3 py-1.5 flex items-center justify-between">
                         <button
-                          key={inv.id}
-                          className="w-full flex items-center gap-3 px-3 py-2 text-xs hover:bg-primary/5 text-left border-b border-border/50 last:border-b-0 rounded-md transition-colors"
+                          type="button"
+                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                           onClick={() => {
-                            handleAddInvoice(inv.id, selectedCategoryForModal);
-                            setModalSearchQuery('');
+                            const allIds = searchResults[selectedCategoryForModal].map(inv => inv.id);
+                            const allSelected = allIds.every(id => bulkSelected.has(id));
+                            if (allSelected) {
+                              setBulkSelected(new Set());
+                            } else {
+                              setBulkSelected(new Set(allIds));
+                            }
                           }}
                         >
-                          <Plus className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                          <span className="font-semibold w-24 truncate">{inv.invoice_number}</span>
-                          <Badge
-                            variant="secondary"
-                            className={`text-[10px] px-1.5 py-0 h-4 border-0 flex-shrink-0 ${
-                              inv.invoice_direction === 'INBOUND'
-                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                                : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                            }`}
-                          >
-                            {inv.invoice_direction === 'INBOUND' ? 'BE' : 'KI'}
-                          </Badge>
-                          <span className="text-muted-foreground flex-1 truncate">
-                            {inv.supplier_name || '–'}
-                          </span>
-                          <span className="font-bold tabular-nums flex-shrink-0">{formatAmount(inv.invoice_gross_amount, inv.penznem)}</span>
+                          {searchResults[selectedCategoryForModal].every(inv => bulkSelected.has(inv.id))
+                            ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                            : <Circle className="h-3.5 w-3.5" />}
+                          Mindet kijelöl
                         </button>
-                      ))}
+                        <span className="text-[10px] text-muted-foreground">
+                          {searchResults[selectedCategoryForModal].length} találat
+                        </span>
+                      </div>
+                      {/* Invoice rows */}
+                      {searchResults[selectedCategoryForModal].map((inv) => {
+                        const isSelected = bulkSelected.has(inv.id);
+                        return (
+                          <button
+                            key={inv.id}
+                            className={`w-full flex items-center gap-3 px-3 py-2 text-xs text-left border-b border-border/50 last:border-b-0 transition-colors ${
+                              isSelected ? 'bg-primary/8 hover:bg-primary/12' : 'hover:bg-primary/5'
+                            }`}
+                            onClick={() => {
+                              setBulkSelected(prev => {
+                                const next = new Set(prev);
+                                if (next.has(inv.id)) next.delete(inv.id);
+                                else next.add(inv.id);
+                                return next;
+                              });
+                            }}
+                          >
+                            {isSelected
+                              ? <CheckCircle2 className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                              : <Circle className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />}
+                            <span className="font-semibold w-24 truncate">{inv.invoice_number}</span>
+                            <Badge
+                              variant="secondary"
+                              className={`text-[10px] px-1.5 py-0 h-4 border-0 flex-shrink-0 ${
+                                inv.invoice_direction === 'INBOUND'
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                  : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                              }`}
+                            >
+                              {inv.invoice_direction === 'INBOUND' ? 'BE' : 'KI'}
+                            </Badge>
+                            <span className="text-muted-foreground flex-1 truncate">
+                              {inv.supplier_name || '–'}
+                            </span>
+                            <span className="font-bold tabular-nums flex-shrink-0">{formatAmount(inv.invoice_gross_amount, inv.penznem)}</span>
+                          </button>
+                        );
+                      })}
+                      {/* Bulk assign footer */}
+                      {bulkSelected.size > 0 && (
+                        <div className="sticky bottom-0 border-t border-border bg-card px-3 py-2 flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">
+                            <span className="font-semibold text-foreground">{bulkSelected.size} db</span> kijelölve
+                          </span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-7 text-xs gap-1.5"
+                            onClick={() => handleBulkAddInvoices(selectedCategoryForModal)}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            Hozzárendelés ({bulkSelected.size} db)
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

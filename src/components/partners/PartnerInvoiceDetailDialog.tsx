@@ -184,7 +184,7 @@ export function PartnerInvoiceDetailDialog({
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto min-h-0">
-          <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-1 py-3 sticky top-0 bg-card/95 backdrop-blur-sm">
+          <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-1 py-3 sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border/40">
             Tételek
           </h4>
 
@@ -199,7 +199,7 @@ export function PartnerInvoiceDetailDialog({
           ) : (
             <Table className="text-xs">
               <TableHeader>
-                <TableRow className="bg-muted/20 hover:bg-muted/20">
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
                   <TableHead className="text-[10px] font-semibold uppercase tracking-wider w-[32%]">
                     Megnevezés
                   </TableHead>
