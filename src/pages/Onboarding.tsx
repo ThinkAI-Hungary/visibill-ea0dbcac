@@ -15,7 +15,7 @@ import { UnsavedChangesDialog } from '@/components/UnsavedChangesDialog';
 import { reportError } from '@/lib/errorReporter';
 import { useEaisybillPermissions } from '@/hooks/useEaisybillPermissions';
 import { CategoryDonutChart } from '@/components/CategoryDonutChart';
-import { CategoryAccordionItem, type CategoryInvoice } from '@/components/CategoryAccordionItem';
+import { CategoryAccordionItem, formatCurrencyTotals, type CategoryInvoice } from '@/components/CategoryAccordionItem';
 import { IconPicker, ColorPicker, DEFAULT_CATEGORY_COLOR, resolveIcon } from '@/components/IconPicker';
 import { FolderOpen } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -30,7 +30,10 @@ interface Category {
 
 interface CategoryStats {
   invoiceCount: number;
+  /** HUF total only — used for progress bar */
   totalAmount: number;
+  /** Per-currency totals map, e.g. { HUF: 12000, USD: 45.5 } */
+  currencyTotals: Record<string, number>;
   invoices: CategoryInvoice[];
 }
 
@@ -210,23 +213,62 @@ const Onboarding = () => {
       setCategories(loadedCategories);
       setInitialCategories(loadedCategories.map(c => ({ ...c })));
 
-      // Load invoice stats per category
+      // Load invoice stats per category — both invoices and nav_invoices
       const stats: Record<string, CategoryStats> = {};
       
       for (const cat of loadedCategories) {
         if (!cat.id) continue;
         
-        const { data: invoices } = await supabase
-          .from('nav_invoices')
-          .select('id, invoice_number, invoice_direction, supplier_name, invoice_issue_date, invoice_gross_amount')
-          .eq('company_id', selectedCompany.id)
-          .eq('category_id', cat.id)
-          .order('invoice_issue_date', { ascending: false });
+        const [{ data: uploadedInvoices }, { data: navInvoices }] = await Promise.all([
+          supabase
+            .from('invoices')
+            .select('id, bizonylatsorszam, invoice_direction, elado_nev, kibocsatas_datuma, brutto_vegosszeg, penznem')
+            .eq('company_id', selectedCompany.id)
+            .eq('category_id', cat.id)
+            .order('kibocsatas_datuma', { ascending: false }),
+          supabase
+            .from('nav_invoices')
+            .select('id, invoice_number, invoice_direction, supplier_name, invoice_issue_date, invoice_gross_amount')
+            .eq('company_id', selectedCompany.id)
+            .eq('category_id', cat.id)
+            .order('invoice_issue_date', { ascending: false }),
+        ]);
         
-        const invList = (invoices || []) as CategoryInvoice[];
+        const fromUploaded: CategoryInvoice[] = (uploadedInvoices || []).map((inv: any) => ({
+          id: inv.id,
+          invoice_number: inv.bizonylatsorszam,
+          invoice_direction: inv.invoice_direction,
+          supplier_name: inv.elado_nev,
+          invoice_issue_date: inv.kibocsatas_datuma,
+          invoice_gross_amount: inv.brutto_vegosszeg,
+          penznem: inv.penznem || 'HUF',
+          source: 'invoices' as const,
+        }));
+
+        const fromNav: CategoryInvoice[] = (navInvoices || []).map((inv: any) => ({
+          id: inv.id,
+          invoice_number: inv.invoice_number,
+          invoice_direction: inv.invoice_direction,
+          supplier_name: inv.supplier_name,
+          invoice_issue_date: inv.invoice_issue_date,
+          invoice_gross_amount: inv.invoice_gross_amount,
+          penznem: 'HUF',
+          source: 'nav_invoices' as const,
+        }));
+
+        const invList: CategoryInvoice[] = [...fromUploaded, ...fromNav];
+
+        // Build per-currency totals
+        const currencyTotals: Record<string, number> = {};
+        for (const inv of invList) {
+          const cur = inv.penznem || 'HUF';
+          currencyTotals[cur] = (currencyTotals[cur] || 0) + (inv.invoice_gross_amount || 0);
+        }
+
         stats[cat.id] = {
           invoiceCount: invList.length,
-          totalAmount: invList.reduce((sum, inv) => sum + (inv.invoice_gross_amount || 0), 0),
+          totalAmount: currencyTotals['HUF'] || 0,
+          currencyTotals,
           invoices: invList,
         };
       }
@@ -296,8 +338,13 @@ const Onboarding = () => {
   // Remove invoice from category
   const handleRemoveInvoice = async (invoiceId: string, categoryId: string) => {
     try {
+      // Find which table the invoice is from
+      const allInvoices = Object.values(categoryStats).flatMap(s => s.invoices);
+      const inv = allInvoices.find(i => i.id === invoiceId);
+      const tableName = inv?.source ?? 'invoices';
+
       const { error } = await supabase
-        .from('nav_invoices')
+        .from(tableName)
         .update({ category_id: null })
         .eq('id', invoiceId);
       
@@ -308,9 +355,15 @@ const Onboarding = () => {
         const stats = { ...prev };
         if (stats[categoryId]) {
           const newInvoices = stats[categoryId].invoices.filter(inv => inv.id !== invoiceId);
+          const currencyTotals: Record<string, number> = {};
+          for (const i of newInvoices) {
+            const cur = i.penznem || 'HUF';
+            currencyTotals[cur] = (currencyTotals[cur] || 0) + (i.invoice_gross_amount || 0);
+          }
           stats[categoryId] = {
             invoiceCount: newInvoices.length,
-            totalAmount: newInvoices.reduce((sum, inv) => sum + (inv.invoice_gross_amount || 0), 0),
+            totalAmount: currencyTotals['HUF'] || 0,
+            currencyTotals,
             invoices: newInvoices,
           };
         }
@@ -323,7 +376,7 @@ const Onboarding = () => {
     }
   };
 
-  // Search unassigned invoices for a category
+  // Search unassigned invoices for a category — queries both invoices and nav_invoices
   const handleSearchInvoice = async (query: string, categoryId: string) => {
     if (!query.trim() || !selectedCompany) {
       setSearchResults(prev => ({ ...prev, [categoryId]: [] }));
@@ -331,15 +384,48 @@ const Onboarding = () => {
     }
 
     try {
-      const { data } = await supabase
-        .from('nav_invoices')
-        .select('id, invoice_number, invoice_direction, supplier_name, invoice_issue_date, invoice_gross_amount')
-        .eq('company_id', selectedCompany.id)
-        .is('category_id', null)
-        .or(`invoice_number.ilike.%${query}%,supplier_name.ilike.%${query}%`)
-        .limit(10);
+      const [{ data: uploadedData }, { data: navData }] = await Promise.all([
+        supabase
+          .from('invoices')
+          .select('id, bizonylatsorszam, invoice_direction, elado_nev, kibocsatas_datuma, brutto_vegosszeg, penznem')
+          .eq('company_id', selectedCompany.id)
+          .is('category_id', null)
+          .or(`bizonylatsorszam.ilike.%${query}%,elado_nev.ilike.%${query}%`)
+          .limit(10),
+        supabase
+          .from('nav_invoices')
+          .select('id, invoice_number, invoice_direction, supplier_name, invoice_issue_date, invoice_gross_amount')
+          .eq('company_id', selectedCompany.id)
+          .is('category_id', null)
+          .or(`invoice_number.ilike.%${query}%,supplier_name.ilike.%${query}%`)
+          .limit(10),
+      ]);
 
-      setSearchResults(prev => ({ ...prev, [categoryId]: (data || []) as CategoryInvoice[] }));
+      const fromUploaded: CategoryInvoice[] = (uploadedData || []).map((inv: any) => ({
+        id: inv.id,
+        invoice_number: inv.bizonylatsorszam,
+        invoice_direction: inv.invoice_direction,
+        supplier_name: inv.elado_nev,
+        invoice_issue_date: inv.kibocsatas_datuma,
+        invoice_gross_amount: inv.brutto_vegosszeg,
+        penznem: inv.penznem || 'HUF',
+        source: 'invoices' as const,
+      }));
+
+      const fromNav: CategoryInvoice[] = (navData || []).map((inv: any) => ({
+        id: inv.id,
+        invoice_number: inv.invoice_number,
+        invoice_direction: inv.invoice_direction,
+        supplier_name: inv.supplier_name,
+        invoice_issue_date: inv.invoice_issue_date,
+        invoice_gross_amount: inv.invoice_gross_amount,
+        penznem: 'HUF',
+        source: 'nav_invoices' as const,
+      }));
+
+      // Merge and limit to 10 total
+      const merged = [...fromUploaded, ...fromNav].slice(0, 10);
+      setSearchResults(prev => ({ ...prev, [categoryId]: merged }));
     } catch (error) {
       reportError({ type: 'db_query', component: 'Onboarding', action: 'error', message: 'Search error', error });
     }
@@ -348,25 +434,32 @@ const Onboarding = () => {
   // Add invoice to a category
   const handleAddInvoice = async (invoiceId: string, categoryId: string) => {
     try {
+      // Find the invoice in search results to determine the correct table
+      const allResults = Object.values(searchResults).flat();
+      const invoice = allResults.find(inv => inv.id === invoiceId);
+      const tableName = invoice?.source ?? 'invoices';
+
       const { error } = await supabase
-        .from('nav_invoices')
+        .from(tableName)
         .update({ category_id: categoryId })
         .eq('id', invoiceId);
 
       if (error) throw error;
 
-      // Get the invoice data from search results to add to local state
-      const allResults = Object.values(searchResults).flat();
-      const invoice = allResults.find(inv => inv.id === invoiceId);
-
       if (invoice) {
         setCategoryStats(prev => {
           const stats = { ...prev };
-          const current = stats[categoryId] || { invoiceCount: 0, totalAmount: 0, invoices: [] };
+          const current = stats[categoryId] || { invoiceCount: 0, totalAmount: 0, currencyTotals: {}, invoices: [] };
           const newInvoices = [...current.invoices, invoice];
+          const currencyTotals: Record<string, number> = {};
+          for (const i of newInvoices) {
+            const cur = i.penznem || 'HUF';
+            currencyTotals[cur] = (currencyTotals[cur] || 0) + (i.invoice_gross_amount || 0);
+          }
           stats[categoryId] = {
             invoiceCount: newInvoices.length,
-            totalAmount: newInvoices.reduce((sum, inv) => sum + (inv.invoice_gross_amount || 0), 0),
+            totalAmount: currencyTotals['HUF'] || 0,
+            currencyTotals,
             invoices: newInvoices,
           };
           return stats;
@@ -441,17 +534,11 @@ const Onboarding = () => {
     
     if (cat.id) {
       try {
-        // Remove category from invoices first
-        await supabase
-          .from('nav_invoices')
-          .update({ category_id: null })
-          .eq('category_id', cat.id);
-        
-        // Also handle 'invoices' table references
-        await supabase
-          .from('invoices')
-          .update({ category_id: null })
-          .eq('category_id', cat.id);
+        // Remove category from both tables in parallel
+        await Promise.all([
+          supabase.from('invoices').update({ category_id: null }).eq('category_id', cat.id),
+          supabase.from('nav_invoices').update({ category_id: null }).eq('category_id', cat.id),
+        ]);
         
         const { error } = await supabase
           .from('categories')
@@ -559,7 +646,7 @@ const Onboarding = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Kategóriák</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Kattints a kategóriákra a hozzárendelt számlák megtekintéséhez, újak hozzáadásához vagy a meglévők leválasztásához.
+            Csoportosítsd számláidat egyéni kategóriákba (pl. Marketing, IT, Rezsi) a kiadásaid átlátható követéséhez és elemzéséhez. Kattints egy kategóriára a hozzárendelt számlák megtekintéséhez, új számlák hozzáadásához vagy meglévők leválasztásához.
           </p>
         </div>
         <Button onClick={() => setShowNewDialog(true)} className="gap-2" disabled={!writable} title={!writable ? 'Nincs írási jogosultságod' : undefined}>
@@ -625,6 +712,7 @@ const Onboarding = () => {
                 invoiceCount={stats?.invoiceCount || 0}
                 totalAmount={stats?.totalAmount || 0}
                 totalAllAmount={totalAmount}
+                currencyTotals={stats?.currencyTotals || {}}
                 onToggle={() => toggleCategory(catId)}
                 onEdit={() => openEditDialog(index)}
                 onDelete={() => confirmDeleteCategory(index)}
@@ -856,9 +944,11 @@ const Onboarding = () => {
         const displayCount = paginatedInvoices.length > 0 ? paginatedInvoices.length : 1;
         const emptyRowsNeeded = ITEMS_PER_PAGE - displayCount;
 
-        const formatAmount = (amount: number | null) => {
+        const formatAmount = (amount: number | null, currency?: string | null) => {
           if (amount === null || amount === undefined) return '0 Ft';
-          return new Intl.NumberFormat('hu-HU').format(amount) + ' Ft';
+          const cur = currency || 'HUF';
+          const formatted = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 2 }).format(amount);
+          return cur === 'HUF' ? `${formatted} Ft` : `${formatted} ${cur}`;
         };
 
         return (
@@ -928,7 +1018,7 @@ const Onboarding = () => {
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground h-12 py-0 align-middle">{inv.invoice_issue_date || '–'}</TableCell>
                             <TableCell className="text-right text-xs font-semibold tabular-nums h-12 py-0 align-middle">
-                              {formatAmount(inv.invoice_gross_amount)}
+                              {formatAmount(inv.invoice_gross_amount, inv.penznem)}
                             </TableCell>
                             <TableCell className="h-12 py-0 align-middle">
                               <Button
@@ -1033,7 +1123,7 @@ const Onboarding = () => {
                           <span className="text-muted-foreground flex-1 truncate">
                             {inv.supplier_name || '–'}
                           </span>
-                          <span className="font-bold tabular-nums flex-shrink-0">{formatAmount(inv.invoice_gross_amount)}</span>
+                          <span className="font-bold tabular-nums flex-shrink-0">{formatAmount(inv.invoice_gross_amount, inv.penznem)}</span>
                         </button>
                       ))}
                     </div>
