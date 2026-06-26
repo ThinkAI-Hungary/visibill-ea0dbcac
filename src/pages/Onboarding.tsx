@@ -393,15 +393,13 @@ const Onboarding = () => {
           .select('id, bizonylatsorszam, invoice_direction, elado_nev, kibocsatas_datuma, brutto_vegosszeg, penznem')
           .eq('company_id', selectedCompany.id)
           .is('category_id', null)
-          .or(`bizonylatsorszam.ilike.%${query}%,elado_nev.ilike.%${query}%`)
-          .limit(10),
+          .or(`bizonylatsorszam.ilike.%${query}%,elado_nev.ilike.%${query}%`),
         supabase
           .from('nav_invoices')
           .select('id, invoice_number, invoice_direction, supplier_name, invoice_issue_date, invoice_gross_amount')
           .eq('company_id', selectedCompany.id)
           .is('category_id', null)
-          .or(`invoice_number.ilike.%${query}%,supplier_name.ilike.%${query}%`)
-          .limit(10),
+          .or(`invoice_number.ilike.%${query}%,supplier_name.ilike.%${query}%`),
       ]);
 
       const fromUploaded: CategoryInvoice[] = (uploadedData || []).map((inv: any) => ({
@@ -426,8 +424,8 @@ const Onboarding = () => {
         source: 'nav_invoices' as const,
       }));
 
-      // Merge and limit to 10 total
-      const merged = [...fromUploaded, ...fromNav].slice(0, 10);
+      // Merge results from both sources
+      const merged = [...fromUploaded, ...fromNav];
       setSearchResults(prev => ({ ...prev, [categoryId]: merged }));
     } catch (error) {
       reportError({ type: 'db_query', component: 'Onboarding', action: 'error', message: 'Search error', error });
@@ -1141,7 +1139,7 @@ const Onboarding = () => {
                     />
                   </div>
                   {modalSearchQuery && searchResults[selectedCategoryForModal] && searchResults[selectedCategoryForModal].length > 0 && (
-                    <div className="absolute left-0 right-0 bottom-full mb-1 z-50 bg-card border border-border rounded-lg shadow-xl max-h-56 overflow-y-auto">
+                    <div className="absolute left-0 right-0 bottom-full mb-1 z-50 bg-card border border-border rounded-lg shadow-xl max-h-96 overflow-y-auto">
                       {/* Select-all row */}
                       <div className="sticky top-0 bg-muted/80 backdrop-blur border-b border-border/60 px-3 py-1.5 flex items-center justify-between">
                         <button
