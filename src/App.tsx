@@ -220,6 +220,45 @@ const TaoYearEndWizardPage = lazy(() => import("./pages/Accounty/Tao/TaoYearEndW
 const KivaCalculatorPage = lazy(() => import("./pages/Accounty/Tao/KivaCalculatorPage"));
 const TaoKivaComparePage = lazy(() => import("./pages/Accounty/Tao/TaoKivaComparePage"));
 
+// EV / Egyszeres könyvvitel module
+const EvPortfolioDashboard = lazy(() => import("./pages/Accounty/Ev/EvPortfolioDashboard"));
+const EvCalendarPage = lazy(() => import("./pages/Accounty/Ev/EvCalendarPage"));
+const EvFormsOverviewPage = lazy(() => import("./pages/Accounty/Ev/EvFormsOverviewPage"));
+const EvThresholdMonitorPage = lazy(() => import("./pages/Accounty/Ev/EvThresholdMonitorPage"));
+const ClientEvMainPage = lazy(() => import("./pages/Accounty/Ev/ClientEvMainPage"));
+const EvSetupWizardPage = lazy(() => import("./pages/Accounty/Ev/EvSetupWizardPage"));
+const EvMasterDataPage = lazy(() => import("./pages/Accounty/Ev/EvMasterDataPage"));
+const EvLifecyclePage = lazy(() => import("./pages/Accounty/Ev/EvLifecyclePage"));
+const EvFlatRatePage = lazy(() => import("./pages/Accounty/Ev/EvFlatRatePage"));
+const EvEntrepreneurialBasePage = lazy(() => import("./pages/Accounty/Ev/EvEntrepreneurialBasePage"));
+const EvEntrepreneurialDividendPage = lazy(() => import("./pages/Accounty/Ev/EvEntrepreneurialDividendPage"));
+const EvDepreciationPage = lazy(() => import("./pages/Accounty/Ev/EvDepreciationPage"));
+const EvKataPage = lazy(() => import("./pages/Accounty/Ev/EvKataPage"));
+const EvComparePage = lazy(() => import("./pages/Accounty/Ev/EvComparePage"));
+const CashbookMainPage = lazy(() => import("./pages/Accounty/Ev/CashbookMainPage"));
+const CashbookLedgerView = lazy(() => import("./pages/Accounty/Ev/CashbookLedgerView"));
+const CashbookCloseWizard = lazy(() => import("./pages/Accounty/Ev/CashbookCloseWizard"));
+const EvContributionsPage = lazy(() => import("./pages/Accounty/Ev/EvContributionsPage"));
+const EvHipaPage = lazy(() => import("./pages/Accounty/Ev/EvHipaPage"));
+const EvVatPage = lazy(() => import("./pages/Accounty/Ev/EvVatPage"));
+const EvChamberPage = lazy(() => import("./pages/Accounty/Ev/EvChamberPage"));
+const EvCompanyCarTaxPage = lazy(() => import("./pages/Accounty/Ev/EvCompanyCarTaxPage"));
+const EvInnovationLevyPage = lazy(() => import("./pages/Accounty/Ev/EvInnovationLevyPage"));
+const EvSzjaReturnPage = lazy(() => import("./pages/Accounty/Ev/EvSzjaReturnPage"));
+const EvContribReturnPage = lazy(() => import("./pages/Accounty/Ev/EvContribReturnPage"));
+const EvKataReturnPage = lazy(() => import("./pages/Accounty/Ev/EvKataReturnPage"));
+const EvHipaReturnPage = lazy(() => import("./pages/Accounty/Ev/EvHipaReturnPage"));
+const EvVatCarReturnPage = lazy(() => import("./pages/Accounty/Ev/EvVatCarReturnPage"));
+const EvRecordsOverviewPage = lazy(() => import("./pages/Accounty/Ev/EvRecordsOverviewPage"));
+const EvRecordDetailPage = lazy(() => import("./pages/Accounty/Ev/EvRecordDetailPage"));
+const EvIncomeReportPage = lazy(() => import("./pages/Accounty/Ev/EvIncomeReportPage"));
+const EvOptimizationPage = lazy(() => import("./pages/Accounty/Ev/EvOptimizationPage"));
+const OrgBookkeepingModePage = lazy(() => import("./pages/Accounty/Ev/OrgBookkeepingModePage"));
+const OrgCivilPage = lazy(() => import("./pages/Accounty/Ev/OrgCivilPage"));
+const OrgCondominiumPage = lazy(() => import("./pages/Accounty/Ev/OrgCondominiumPage"));
+const OrgOtherPage = lazy(() => import("./pages/Accounty/Ev/OrgOtherPage"));
+const OrgSimplifiedReportPage = lazy(() => import("./pages/Accounty/Ev/OrgSimplifiedReportPage"));
+
 import { reportError } from '@/lib/errorReporter';
 
 const queryClient = new QueryClient({
@@ -576,6 +615,51 @@ const App = () => (
                       <Route path="client/:id/tao/year-end/:year" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoYearEndWizardPage /></Suspense>} />
                       <Route path="client/:id/tao/kiva" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><KivaCalculatorPage /></Suspense>} />
                       <Route path="client/:id/tao/compare" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><TaoKivaComparePage /></Suspense>} />
+                      {/* EV / Egyszeres könyvvitel module — portfolio */}
+                      <Route path="ev" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvPortfolioDashboard /></Suspense>} />
+                      <Route path="ev/calendar" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvCalendarPage /></Suspense>} />
+                      <Route path="ev/forms" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvFormsOverviewPage /></Suspense>} />
+                      <Route path="ev/thresholds" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvThresholdMonitorPage /></Suspense>} />
+                      {/* EV — client-level */}
+                      <Route path="client/:id/ev" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><ClientEvMainPage /></Suspense>} />
+                      <Route path="client/:id/ev/setup" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvSetupWizardPage /></Suspense>} />
+                      <Route path="client/:id/ev/master-data" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvMasterDataPage /></Suspense>} />
+                      <Route path="client/:id/ev/lifecycle" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvLifecyclePage /></Suspense>} />
+                      {/* EV — tax form calculators */}
+                      <Route path="client/:id/ev/flat-rate" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvFlatRatePage /></Suspense>} />
+                      <Route path="client/:id/ev/entrepreneurial" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvEntrepreneurialBasePage /></Suspense>} />
+                      <Route path="client/:id/ev/dividend" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvEntrepreneurialDividendPage /></Suspense>} />
+                      <Route path="client/:id/ev/depreciation" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvDepreciationPage /></Suspense>} />
+                      <Route path="client/:id/ev/kata" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvKataPage /></Suspense>} />
+                      <Route path="client/:id/ev/compare" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvComparePage /></Suspense>} />
+                      {/* EV — cashbook */}
+                      <Route path="client/:id/ev/cashbook" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CashbookMainPage /></Suspense>} />
+                      <Route path="client/:id/ev/cashbook/ledger" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CashbookLedgerView /></Suspense>} />
+                      <Route path="client/:id/ev/cashbook/close" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><CashbookCloseWizard /></Suspense>} />
+                      {/* EV — contributions & taxes */}
+                      <Route path="client/:id/ev/contributions" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvContributionsPage /></Suspense>} />
+                      <Route path="client/:id/ev/hipa" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvHipaPage /></Suspense>} />
+                      <Route path="client/:id/ev/vat" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvVatPage /></Suspense>} />
+                      <Route path="client/:id/ev/chamber" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvChamberPage /></Suspense>} />
+                      <Route path="client/:id/ev/car-tax" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvCompanyCarTaxPage /></Suspense>} />
+                      <Route path="client/:id/ev/innovation" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvInnovationLevyPage /></Suspense>} />
+                      {/* EV — tax returns */}
+                      <Route path="client/:id/ev/returns" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvSzjaReturnPage /></Suspense>} />
+                      <Route path="client/:id/ev/returns/contrib" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvContribReturnPage /></Suspense>} />
+                      <Route path="client/:id/ev/returns/kata" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvKataReturnPage /></Suspense>} />
+                      <Route path="client/:id/ev/returns/hipa" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvHipaReturnPage /></Suspense>} />
+                      <Route path="client/:id/ev/returns/vat-car" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvVatCarReturnPage /></Suspense>} />
+                      {/* EV — records & reports */}
+                      <Route path="client/:id/ev/records" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvRecordsOverviewPage /></Suspense>} />
+                      <Route path="client/:id/ev/records/:recordType" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvRecordDetailPage /></Suspense>} />
+                      <Route path="client/:id/ev/income-report" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvIncomeReportPage /></Suspense>} />
+                      <Route path="client/:id/ev/optimization" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><EvOptimizationPage /></Suspense>} />
+                      {/* EV — organization screens (4.x) */}
+                      <Route path="client/:id/ev/org/bookkeeping" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OrgBookkeepingModePage /></Suspense>} />
+                      <Route path="client/:id/ev/org/civil" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OrgCivilPage /></Suspense>} />
+                      <Route path="client/:id/ev/org/condominium" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OrgCondominiumPage /></Suspense>} />
+                      <Route path="client/:id/ev/org/other" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OrgOtherPage /></Suspense>} />
+                      <Route path="client/:id/ev/org/simplified-report" element={<Suspense fallback={<LoadingSpinner message="Betöltés..." />}><OrgSimplifiedReportPage /></Suspense>} />
                     </Route>
 
                     {/* Protected routes with persistent sidebar */}

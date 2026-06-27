@@ -1,6 +1,6 @@
 # Visibill — Information Architecture & Navigation
 
-> **Verzió:** 1.3 | **Dátum:** 2026-06-23  
+> **Verzió:** 1.4 | **Dátum:** 2026-06-27  
 > **Forrás:** [AppSidebar.tsx](../../src/components/AppSidebar.tsx) · [App.tsx](../../src/App.tsx)  
 > **Kapcsolódó döntés:** [P-006 Sidebar Structure](./decisions/P-006-sidebar-structure.md)
 
@@ -374,4 +374,28 @@ Az eaisyBooks modul **teljesen önálló layout-ot** használ (`AccountyLayout`)
 - **Hozzárendelési kereső:** mindkét forrásból (NAV + Beküldött) javasol számlákat
 
 > **Kapcsolódó döntés:** [P-041](./decisions/P-041-categories-multicurrency-search.md)
+
+---
+
+### Számla Tételek (`InvoiceItemsDialog`)
+
+**Layout:** Dialógus — számlatételek listája GL besorolás szerkesztéssel
+
+**Megnyitás:**
+- NAV számla sorból → "Tételek" gomb → `source='nav'`
+- Beküldött számla sorból → "Tételek" gomb → `source='submitted'`
+
+**Tételek táblázat:**
+- Oszlopok: Sorszám, Megnevezés, Mennyiség, Egységár, Nettó, ÁFA, Bruttó, **Főkönyvi szám (GL)**
+- GL szerkesztés: ceruza ikon → keresőmezős GL szám választó (`Command` komponens)
+- Preset-alapú: a GL besorolás a cég aktív preset-jéhez (`useActivePreset`) kötődik
+
+**GL Twin Sync (2026-06-27):**
+- Ha a szerkesztett számla párosítva van (NAV `invoice_number` ↔ Beküldött `bizonylatsorszam` normalizálva)
+- A rendszer automatikusan megkeresi a **"testvér" tételt** a másik táblában azonos `line_number`-rel
+- **Egyetlen batch RPC** (`override_gl_classifications_batch`) frissíti mindkét oldalt
+- Toast visszajelzés: *„Főkönyvi besorolás frissítve. (párosított számla is frissítve)"*
+- Graceful degradation: ha nincs twin, csak az elsődleges tétel frissül
+
+> **Kapcsolódó döntés:** [P-043](./decisions/P-043-gl-twin-sync.md) · [P-019](./decisions/P-019-gl-suggestion.md)
 

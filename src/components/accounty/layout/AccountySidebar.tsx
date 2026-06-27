@@ -29,7 +29,8 @@ import {
   Sparkles,
   Rocket,
   Landmark,
-  Shield
+  Shield,
+  PiggyBank
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -170,6 +171,8 @@ export default function AccountySidebar({
               { path: '/accounty/tao', name: 'TAO Portfólió', icon: Landmark },
               { path: '/accounty/tao/calendar', name: 'TAO Naptár', icon: Calendar },
               { path: '/accounty/tao/taxpayer-types', name: 'Adózói Körök', icon: Users },
+              { type: 'divider' as const },
+              { path: '/accounty/ev', name: 'EV Portfólió', icon: PiggyBank },
               { type: 'divider' as const },
               { path: '/accounty/settings', name: 'Beállítások', icon: Settings },
               { path: '/accounty/tickets', name: 'Hibajegyek', icon: TicketCheck, badge: unreadTicketCount },
@@ -440,6 +443,55 @@ export default function AccountySidebar({
                               className={cn(
                                 "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-colors",
                                 active ? "bg-emerald-500/15 font-medium text-emerald-600" : "hover:bg-emerald-500/10 hover:text-emerald-600 text-sidebar-foreground"
+                              )}
+                            >
+                              <item.icon className="h-4 w-4 shrink-0" />
+                              <span className="truncate">{item.label}</span>
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* EV / Egyszeres könyvvitel csoport */}
+            {(() => {
+              const groupKey = 'ev';
+              const isOpen = expandedSections.has(groupKey);
+              const items = [
+                { to: '/accounty/ev', icon: PiggyBank, label: 'EV Portfólió', exact: true },
+              ];
+              const groupHasActive = pathname === '/accounty/ev' || pathname.startsWith('/accounty/ev/') || (pathname.includes('/ev') && pathname.includes('/client/'));
+              return (
+                <div>
+                  <button
+                    onClick={() => toggleSection(groupKey)}
+                    className={cn(
+                      "relative flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors select-none group/trigger",
+                      !isOpen && groupHasActive
+                        ? "bg-primary/8 text-primary font-semibold"
+                        : "text-sidebar-foreground/70 hover:bg-primary/10 hover:text-primary"
+                    )}
+                  >
+                    <PiggyBank className={cn("h-4 w-4 shrink-0 transition-colors", !isOpen && groupHasActive ? "text-primary" : "text-muted-foreground group-hover/trigger:text-primary")} />
+                    <span className="flex-1 text-left text-xs font-medium uppercase tracking-wider">EV / Szervezetek</span>
+                    <ChevronRight className={cn("h-3.5 w-3.5 transition-transform duration-200", isOpen ? 'rotate-90' : '', !isOpen && groupHasActive ? 'text-primary' : 'text-muted-foreground')} />
+                    {!isOpen && groupHasActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 rounded-r-md bg-primary" />}
+                  </button>
+                  {isOpen && (
+                    <ul className="mt-0.5 flex flex-col gap-0.5 pb-1">
+                      {items.map(item => {
+                        const active = item.exact ? pathname === item.to : isActive(item.to);
+                        return (
+                          <li key={item.to}>
+                            <Link
+                              to={item.to}
+                              className={cn(
+                                "flex w-full items-center gap-2 rounded-md px-2 py-1.5 pl-9 text-left text-sm transition-colors",
+                                active ? "bg-primary/15 font-medium text-primary" : "hover:bg-primary/10 hover:text-primary text-sidebar-foreground"
                               )}
                             >
                               <item.icon className="h-4 w-4 shrink-0" />

@@ -155,6 +155,24 @@ export function useAccountyClients() {
   });
 }
 
+/**
+ * Convenience hook to get a single AccountyClient by its company id.
+ * Internally derives its data from `useAccountyClients` so no extra DB call is made.
+ */
+export function useAccountyClient(companyId: string | undefined) {
+  const clientsQuery = useAccountyClients();
+  const client = companyId
+    ? clientsQuery.data?.find(c => c.id === companyId) ?? null
+    : null;
+
+  return {
+    data: client,
+    isLoading: clientsQuery.isLoading,
+    error: clientsQuery.error,
+  };
+}
+
+
 // ── KPIs ──
 
 export function useAccountyKpis() {

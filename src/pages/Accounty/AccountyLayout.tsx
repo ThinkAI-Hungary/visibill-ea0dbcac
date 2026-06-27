@@ -35,7 +35,8 @@ import {
   Landmark,
   Shield,
   WifiOff,
-  User
+  User,
+  PiggyBank
 } from 'lucide-react';
 import { useUnreadTicketCount } from '@/hooks/useTickets';
 import { AiAssistantChat as AiDrawerChat } from './AiAssistantPage';
@@ -105,6 +106,9 @@ function AccountyLayoutInner() {
     }
     if (path === '/accounty/tao') {
       return pathname === '/accounty/tao';
+    }
+    if (path === '/accounty/ev') {
+      return pathname === '/accounty/ev';
     }
     return pathname.startsWith(path);
   };
@@ -217,6 +221,7 @@ function AccountyLayoutInner() {
     { name: 'TAO Portfólió', path: '/accounty/tao', icon: Landmark },
     { name: 'TAO Naptár', path: '/accounty/tao/calendar', icon: Calendar },
     { name: 'TAO Adózói Körök', path: '/accounty/tao/taxpayer-types', icon: Users },
+    { name: 'EV Portfólió', path: '/accounty/ev', icon: PiggyBank },
   ];
 
   const filteredPages = cmdQuery ? cmdPages.filter(p => p.name.toLowerCase().includes(cmdQuery.toLowerCase())) : cmdPages;

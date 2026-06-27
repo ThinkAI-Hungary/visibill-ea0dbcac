@@ -1,7 +1,7 @@
 # Visibill — Product Requirements: Döntések
 
-> **Utoljára frissítve:** 2026-06-26  
-> **Összesen:** 35 döntés | ✅ Decided: 32 | ⛔ Superseded: 2 | 🔴 Open: 1
+> **Utoljára frissítve:** 2026-06-27  
+> **Összesen:** 36 döntés | ✅ Decided: 33 | ⛔ Superseded: 2 | 🔴 Open: 1
 
 ---
 
@@ -52,6 +52,7 @@ Minden döntés egy külön `.md` fájl. A **Decided** státuszúaknál a dönt�
 | P-019 | GL kategorizálás javaslat (manuális elfogadás) | ✅ Decided | [P-019](./P-019-gl-suggestion.md) |
 | P-020 | Beszámoló workflow (3 oldal, lineáris) | ✅ Decided | [P-020](./P-020-report-workflow.md) |
 | P-021 | Export formátumok (CSV + PDF) | ✅ Decided | [P-021](./P-021-export-formats.md) |
+| P-043 | GL besorolás NAV ↔ Beküldött dual-table szinkronizáció (twin sync) | ✅ Decided | [P-043](./P-043-gl-twin-sync.md) |
 
 ## 🔔 Értesítések & Kommunikáció
 

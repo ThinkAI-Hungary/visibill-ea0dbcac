@@ -31,6 +31,7 @@ export type {
 // ── Clients ──
 export {
   useAccountyClients,
+  useAccountyClient,
   useAccountyKpis,
   useAccountyTaxProfile,
   useUpsertTaxProfile,
