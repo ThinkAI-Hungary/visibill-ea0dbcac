@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { useAccountyClient } from '@/hooks/accounty';
 import { formatHuf } from '@/lib/evCalculations';
 import { useCashbookEntries, useEvClientSettings, useCreateCashbookEntry, type PenztarkonyvTetel } from '@/hooks/useEvData';
+import { useDateRange } from '@/contexts/DateRangeContext';
 import CashbookEntryForm, { type CashbookEntryFormData } from './CashbookEntryForm';
 import { toast } from '@/hooks/use-toast';
 
@@ -38,6 +39,7 @@ export default function CashbookMainPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDirection, setFilterDirection] = useState<FilterDirection>('all');
   const [showNewEntryForm, setShowNewEntryForm] = useState(false);
+  const { dateFromFormatted, dateToFormatted } = useDateRange();
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: rawEntries, isLoading } = useCashbookEntries(id, taxYear);
@@ -63,6 +65,13 @@ export default function CashbookMainPage() {
 
   const filtered = useMemo(() => {
     let list = entries;
+    // Date range filter from global date picker
+    if (dateFromFormatted) {
+      list = list.filter(e => e.entryDate >= dateFromFormatted);
+    }
+    if (dateToFormatted) {
+      list = list.filter(e => e.entryDate <= dateToFormatted);
+    }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       list = list.filter(e =>
@@ -75,13 +84,13 @@ export default function CashbookMainPage() {
       list = list.filter(e => e.direction === filterDirection);
     }
     return list;
-  }, [entries, searchQuery, filterDirection]);
+  }, [entries, searchQuery, filterDirection, dateFromFormatted, dateToFormatted]);
 
-  // Totals
-  const totalBevetel = entries.filter(e => e.direction === 'bevetel').reduce((s, e) => s + e.amount, 0);
-  const totalKiadas = entries.filter(e => e.direction === 'kiadas').reduce((s, e) => s + e.amount, 0);
+  // Totals based on filtered data (respects date range)
+  const totalBevetel = filtered.filter(e => e.direction === 'bevetel').reduce((s, e) => s + e.amount, 0);
+  const totalKiadas = filtered.filter(e => e.direction === 'kiadas').reduce((s, e) => s + e.amount, 0);
   const balance = totalBevetel - totalKiadas;
-  const closedCount = entries.filter(e => e.periodClosed).length;
+  const closedCount = filtered.filter(e => e.periodClosed).length;
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
@@ -106,6 +115,18 @@ export default function CashbookMainPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            to={`/accounty/client/${id}/ev/cashbook/ledger`}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          >
+            <FileText className="w-3.5 h-3.5" /> Főkönyvi nézet
+          </Link>
+          <Link
+            to={`/accounty/client/${id}/ev/cashbook/close`}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          >
+            <Lock className="w-3.5 h-3.5" /> Periódus zárás
+          </Link>
           <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 transition-colors">
             <Download className="w-3.5 h-3.5" /> Export
           </button>

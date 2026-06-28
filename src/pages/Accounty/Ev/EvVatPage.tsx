@@ -7,7 +7,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
 import { formatHuf, formatPercent, DEFAULT_2026_PARAMS } from '@/lib/evCalculations';
-import { useEvClientSettings, useEvYtdRevenue, useEvVatReturns } from '@/hooks/useEvData';
+import { useEvClientSettings, useEvYtdRevenue, useEvVatReturns, useUpdateEvSettings } from '@/hooks/useEvData';
+import { toast } from '@/hooks/use-toast';
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
@@ -20,6 +21,7 @@ export default function EvVatPage() {
   const { data: evSettings } = useEvClientSettings(id, taxYear);
   const { data: ytdRevenueMap } = useEvYtdRevenue(taxYear);
   const { data: dbVatReturns = [] } = useEvVatReturns(id, taxYear);
+  const updateSettings = useUpdateEvSettings();
 
   const vatStatus = evSettings?.vat_status ?? 'alanyi_mentes';
   const ytdRevenue = ytdRevenueMap?.get(id || '') ?? 0;
@@ -82,7 +84,16 @@ export default function EvVatPage() {
               {vatStatusOptions.map(opt => (
                 <button
                   key={opt.value}
-                  onClick={() => {}}
+                  onClick={() => {
+                    if (!id || !evSettings || opt.value === vatStatus) return;
+                    updateSettings.mutate(
+                      { company_id: id, tax_year: taxYear, vat_status: opt.value as any },
+                      {
+                        onSuccess: () => toast({ title: 'ÁFA státusz frissítve', description: `ÁFA státusz: ${opt.label}` }),
+                        onError: (err: any) => toast({ variant: 'destructive', title: 'Hiba', description: err.message || 'Nem sikerült menteni.' }),
+                      }
+                    );
+                  }}
                   className={cn(
                     'w-full flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all text-left',
                     vatStatus === opt.value

@@ -195,7 +195,12 @@ export default function EvSetupWizardPage() {
                   ].map(opt => (
                     <button
                       key={opt.value}
-                      onClick={() => setForm(f => ({ ...f, taxpayerForm: opt.value }))}
+                      onClick={() => setForm(f => ({
+                        ...f,
+                        taxpayerForm: opt.value,
+                        // KATA → kötelezően főfoglalkozás (Szja tv. + DB constraint)
+                        ...(opt.value === 'kata' ? { employmentStatus: 'foallasu' as EmploymentStatus } : {}),
+                      }))}
                       className={cn(
                         'p-4 rounded-xl border-2 transition-all text-left',
                         form.taxpayerForm === opt.value
@@ -238,25 +243,36 @@ export default function EvSetupWizardPage() {
 
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Foglalkoztatási jogviszony</p>
+                  {form.taxpayerForm === 'kata' && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+                      ⚠ KATA kisadózó kizárólag főfoglalkozásúként választható (KATA tv. 2. § (1)).
+                    </p>
+                  )}
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       { value: 'foallasu' as EmploymentStatus, label: 'Főfoglalkozás' },
                       { value: 'mellekallasu' as EmploymentStatus, label: 'Mellékállás' },
                       { value: 'kiegeszito' as EmploymentStatus, label: 'Kiegészítő (nyugdíjas)' },
-                    ].map(opt => (
-                      <button
-                        key={opt.value}
-                        onClick={() => setForm(f => ({ ...f, employmentStatus: opt.value }))}
-                        className={cn(
-                          'p-3 rounded-lg border transition-all text-sm font-medium',
-                          form.employmentStatus === opt.value
-                            ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
-                            : 'border-border text-slate-600 dark:text-slate-400'
-                        )}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
+                    ].map(opt => {
+                      const isDisabled = form.taxpayerForm === 'kata' && opt.value !== 'foallasu';
+                      return (
+                        <button
+                          key={opt.value}
+                          onClick={() => !isDisabled && setForm(f => ({ ...f, employmentStatus: opt.value }))}
+                          disabled={isDisabled}
+                          className={cn(
+                            'p-3 rounded-lg border transition-all text-sm font-medium',
+                            isDisabled
+                              ? 'border-border bg-slate-50 dark:bg-slate-800/30 text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                              : form.employmentStatus === opt.value
+                                ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
+                                : 'border-border text-slate-600 dark:text-slate-400'
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 

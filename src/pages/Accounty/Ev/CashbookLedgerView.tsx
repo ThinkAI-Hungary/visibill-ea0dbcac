@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, BookOpen, BarChart3, TrendingUp,
-  TrendingDown, PieChart, Layers, Calendar, Filter, Loader2
+  TrendingDown, Layers, Calendar, Filter, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
@@ -130,8 +130,7 @@ export default function CashbookLedgerView() {
   const totalExpense = entries.filter(e => e.direction === 'kiadas').reduce((s, e) => s + e.amount, 0);
   const totalBalance = totalRevenue - totalExpense;
 
-  // Max for chart scaling
-  const maxMonthly = Math.max(...monthlyData.map(m => Math.max(m.revenue, m.expense)), 1);
+
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
@@ -161,7 +160,7 @@ export default function CashbookLedgerView() {
           {([
             ['monthly', 'Havi', Calendar],
             ['columns', 'Oszlopok', Layers],
-            ['chart', 'Grafikon', PieChart],
+            ['chart', 'Grafikon', BarChart3],
           ] as [ViewMode, string, typeof Calendar][]).map(([v, l, Icon]) => (
             <button
               key={v}
@@ -360,58 +359,121 @@ export default function CashbookLedgerView() {
           )}
 
           {/* Chart view */}
-          {viewMode === 'chart' && (
-            <div className="bg-card rounded-xl border border-border shadow-soft p-6 space-y-4">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <PieChart className="w-4 h-4 text-indigo-500" />
-                Havi bevétel vs. kiadás
-              </h3>
+          {viewMode === 'chart' && (() => {
+            // Calculate nice Y-axis scale
+            const rawMax = Math.max(...monthlyData.map(m => Math.max(m.revenue, m.expense)), 1);
+            const magnitude = Math.pow(10, Math.floor(Math.log10(rawMax)));
+            const niceMax = Math.ceil(rawMax / magnitude) * magnitude;
+            const gridLines = 5;
+            const stepVal = niceMax / gridLines;
 
-              <div className="space-y-3">
-                {monthlyData.map(m => {
-                  const revBarW = maxMonthly > 0 ? (m.revenue / maxMonthly) * 100 : 0;
-                  const expBarW = maxMonthly > 0 ? (m.expense / maxMonthly) * 100 : 0;
-                  return (
-                    <div key={m.month} className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 w-24">{m.label}</span>
-                        <div className="flex items-center gap-4 text-[10px] text-slate-400">
-                          <span className="text-green-600 font-mono">{m.revenue > 0 ? formatHuf(m.revenue) : '—'}</span>
-                          <span className="text-red-500 font-mono">{m.expense > 0 ? formatHuf(m.expense) : '—'}</span>
-                        </div>
-                      </div>
-                      <div className="space-y-0.5">
-                        <div className="h-3 bg-slate-50 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-green-400 to-green-500 rounded-full transition-all duration-500"
-                            style={{ width: `${revBarW}%` }}
-                          />
-                        </div>
-                        <div className="h-3 bg-slate-50 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-red-400 to-red-500 rounded-full transition-all duration-500"
-                            style={{ width: `${expBarW}%` }}
-                          />
-                        </div>
+            return (
+              <div className="bg-card rounded-xl border border-border shadow-soft p-6 space-y-4">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-indigo-500" />
+                  Havi bevétel vs. kiadás — {selectedYear}
+                </h3>
+
+                {/* Vertical bar chart */}
+                <div className="flex items-end gap-0" style={{ height: '320px' }}>
+                  {/* Y-axis labels */}
+                  <div className="flex flex-col justify-between h-full pr-2 pb-7 shrink-0">
+                    {Array.from({ length: gridLines + 1 }).map((_, i) => {
+                      const val = niceMax - i * stepVal;
+                      return (
+                        <span key={i} className="text-[10px] text-slate-400 font-mono tabular-nums text-right w-16">
+                          {val >= 1_000_000 ? `${(val / 1_000_000).toFixed(val % 1_000_000 === 0 ? 0 : 1)}M` : val >= 1000 ? `${(val / 1000).toFixed(0)}e` : val.toFixed(0)}
+                        </span>
+                      );
+                    })}
+                  </div>
+
+                  {/* Chart area */}
+                  <div className="flex-1 flex flex-col h-full">
+                    {/* Bars area with gridlines */}
+                    <div className="flex-1 relative">
+                      {/* Horizontal gridlines */}
+                      {Array.from({ length: gridLines + 1 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="absolute w-full border-t border-slate-100 dark:border-slate-800"
+                          style={{ top: `${(i / gridLines) * 100}%` }}
+                        />
+                      ))}
+
+                      {/* Bars */}
+                      <div className="relative z-10 flex items-end h-full gap-1">
+                        {monthlyData.map(m => {
+                          const revH = niceMax > 0 ? (m.revenue / niceMax) * 100 : 0;
+                          const expH = niceMax > 0 ? (m.expense / niceMax) * 100 : 0;
+                          return (
+                            <div key={m.month} className="flex-1 flex items-end justify-center gap-0.5 h-full group relative">
+                              {/* Revenue bar */}
+                              <div
+                                className="w-[45%] bg-gradient-to-t from-green-500 to-green-400 rounded-t-sm transition-all duration-500 hover:from-green-600 hover:to-green-500 min-h-0"
+                                style={{ height: `${revH}%` }}
+                                title={`Bevétel: ${formatHuf(m.revenue)}`}
+                              />
+                              {/* Expense bar */}
+                              <div
+                                className="w-[45%] bg-gradient-to-t from-red-500 to-red-400 rounded-t-sm transition-all duration-500 hover:from-red-600 hover:to-red-500 min-h-0"
+                                style={{ height: `${expH}%` }}
+                                title={`Kiadás: ${formatHuf(m.expense)}`}
+                              />
+
+                              {/* Tooltip on hover */}
+                              {(m.revenue > 0 || m.expense > 0) && (
+                                <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] rounded-lg px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20 shadow-lg">
+                                  <p className="font-semibold mb-0.5">{m.label}</p>
+                                  <p className="text-green-400">Bev: {formatHuf(m.revenue)}</p>
+                                  <p className="text-red-400">Kiad: {formatHuf(m.expense)}</p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
 
-              {/* Legend */}
-              <div className="flex items-center gap-6 pt-2 border-t border-border">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-gradient-to-r from-green-400 to-green-500" />
-                  <span className="text-xs text-slate-500">Bevétel</span>
+                    {/* X-axis labels */}
+                    <div className="flex gap-1 pt-2 border-t border-slate-200 dark:border-slate-700">
+                      {monthlyData.map(m => (
+                        <div key={m.month} className="flex-1 text-center">
+                          <span className={cn(
+                            'text-[10px] font-medium',
+                            m.entryCount > 0 ? 'text-slate-600 dark:text-slate-400' : 'text-slate-300 dark:text-slate-700'
+                          )}>
+                            {m.label.substring(0, 3)}.
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-gradient-to-r from-red-400 to-red-500" />
-                  <span className="text-xs text-slate-500">Kiadás</span>
+
+                {/* Legend + totals */}
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-green-500 to-green-400" />
+                      <span className="text-xs text-slate-500">Bevétel</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-red-500 to-red-400" />
+                      <span className="text-xs text-slate-500">Kiadás</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="text-green-600 font-bold font-mono">{formatHuf(totalRevenue)}</span>
+                    <span className="text-red-500 font-bold font-mono">{formatHuf(totalExpense)}</span>
+                    <span className={cn('font-bold font-mono', totalBalance >= 0 ? 'text-slate-700 dark:text-slate-300' : 'text-red-600')}>
+                      Egyenleg: {formatHuf(totalBalance)}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </>
       )}
 

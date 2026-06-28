@@ -1,21 +1,25 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  Database, ArrowLeft, ChevronRight, Save, Edit3,
+  Database, ArrowLeft, ChevronRight, Save, Edit3, X,
   Building2, User, MapPin, Phone, Mail, Globe,
   FileText, Shield, Briefcase, Tag, Clock, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 import { useAccountyClient } from '@/hooks/accounty';
-import { useEvClientSettings } from '@/hooks/useEvData';
+import { useEvClientSettings, useUpdateEvSettings } from '@/hooks/useEvData';
+import { toast } from '@/hooks/use-toast';
 
-// ─── Component ──────────────────────────────────────────────────────────────
+// ─── Editable data field ────────────────────────────────────────────────────
 
-function DataField({ label, value, icon: Icon, mono }: {
+function DataField({ label, value, icon: Icon, mono, isEditing, onChange }: {
   label: string;
   value: string;
   icon?: any;
   mono?: boolean;
+  isEditing?: boolean;
+  onChange?: (val: string) => void;
 }) {
   return (
     <div className="space-y-1">
@@ -23,25 +27,40 @@ function DataField({ label, value, icon: Icon, mono }: {
         {Icon && <Icon className="w-3 h-3" />}
         {label}
       </label>
-      <p className={cn(
-        'text-sm text-slate-900 dark:text-slate-100 font-medium',
-        mono && 'font-mono tabular-nums'
-      )}>
-        {value || '—'}
-      </p>
+      {isEditing && onChange ? (
+        <Input
+          value={value || ''}
+          onChange={e => onChange(e.target.value)}
+          className={cn('text-sm h-8 bg-card', mono && 'font-mono')}
+          placeholder={label}
+        />
+      ) : (
+        <p className={cn(
+          'text-sm text-slate-900 dark:text-slate-100 font-medium',
+          mono && 'font-mono tabular-nums'
+        )}>
+          {value || '—'}
+        </p>
+      )}
     </div>
   );
 }
+
+// ─── Main component ─────────────────────────────────────────────────────────
 
 export default function EvMasterDataPage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
   const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: settings, isLoading } = useEvClientSettings(id, 2026);
+  const updateSettings = useUpdateEvSettings();
 
-  // Build display data from client + EV settings
+  // ─── Edit form state ───────────────────────────────────────────────────────
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
+
   const masterData = useMemo(() => {
     const s = settings;
     const c = client;
@@ -56,10 +75,10 @@ export default function EvMasterDataPage() {
       motherName: '',
       nationality: '',
       idCardNumber: '',
-      headquarters: c?.address || '',
-      mailingAddress: c?.address || '',
-      phone: c?.phone || '',
-      email: c?.email || '',
+      headquarters: '',
+      mailingAddress: '',
+      phone: '',
+      email: '',
       website: '',
       mainActivityCode: s?.main_activity_code || '',
       mainActivityName: '',
@@ -74,16 +93,68 @@ export default function EvMasterDataPage() {
     };
   }, [settings, client]);
 
+  const startEditing = useCallback(() => {
+    setEditForm({
+      registrationNumber: masterData.registrationNumber,
+      taxId: masterData.taxId,
+      navTechUser: masterData.navTechUser,
+      birthName: masterData.birthName,
+      birthDate: masterData.birthDate,
+      motherName: masterData.motherName,
+      nationality: masterData.nationality,
+      idCardNumber: masterData.idCardNumber,
+      headquarters: masterData.headquarters,
+      mailingAddress: masterData.mailingAddress,
+      phone: masterData.phone,
+      email: masterData.email,
+      website: masterData.website,
+      mainActivityCode: masterData.mainActivityCode,
+      mainActivityName: masterData.mainActivityName,
+      startDate: masterData.startDate,
+      chamberMembership: masterData.chamberMembership,
+      chamberNumber: masterData.chamberNumber,
+    });
+    setIsEditing(true);
+  }, [masterData]);
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditForm({});
+  };
+
+  const handleSave = async () => {
+    if (!id || !settings) return;
+    setSaving(true);
+    try {
+      await updateSettings.mutateAsync({
+        company_id: id,
+        tax_year: settings.tax_year,
+        registration_number: editForm.registrationNumber || null,
+        main_activity_code: editForm.mainActivityCode || null,
+      });
+      toast({ title: 'Törzsadatok mentve', description: 'A módosítások sikeresen elmentésre kerültek.' });
+      setIsEditing(false);
+      setEditForm({});
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Hiba történt', description: err.message || 'Nem sikerült menteni.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const upd = (key: string) => (val: string) => setEditForm(f => ({ ...f, [key]: val }));
+  const getVal = (key: string, fallback: string) => isEditing ? (editForm[key] ?? fallback) : fallback;
+
   const sections = [
     {
       title: 'NAV azonosítók',
       icon: Shield,
       color: 'from-indigo-500 to-purple-600',
       fields: [
-        { label: 'Nyilvántartási szám', value: masterData.registrationNumber, icon: FileText, mono: true },
-        { label: 'Adószám', value: masterData.taxNumber, icon: Shield, mono: true },
-        { label: 'Adóazonosító jel', value: masterData.taxId, icon: Tag, mono: true },
-        { label: 'NAV tech. felhasználó', value: masterData.navTechUser, icon: Globe, mono: true },
+        { label: 'Nyilvántartási szám', key: 'registrationNumber', value: masterData.registrationNumber, icon: FileText, mono: true, editable: true },
+        { label: 'Adószám', key: 'taxNumber', value: masterData.taxNumber, icon: Shield, mono: true, editable: false },
+        { label: 'Adóazonosító jel', key: 'taxId', value: masterData.taxId, icon: Tag, mono: true, editable: true },
+        { label: 'NAV tech. felhasználó', key: 'navTechUser', value: masterData.navTechUser, icon: Globe, mono: true, editable: true },
       ],
     },
     {
@@ -91,12 +162,12 @@ export default function EvMasterDataPage() {
       icon: User,
       color: 'from-violet-500 to-fuchsia-600',
       fields: [
-        { label: 'Vállalkozó neve', value: masterData.name, icon: User },
-        { label: 'Születési név', value: masterData.birthName },
-        { label: 'Születési dátum', value: masterData.birthDate ? new Date(masterData.birthDate).toLocaleDateString('hu-HU') : '', icon: Clock },
-        { label: 'Anyja neve', value: masterData.motherName },
-        { label: 'Állampolgárság', value: masterData.nationality },
-        { label: 'Személyi ig. szám', value: masterData.idCardNumber, mono: true },
+        { label: 'Vállalkozó neve', key: 'name', value: masterData.name, icon: User, editable: false },
+        { label: 'Születési név', key: 'birthName', value: masterData.birthName, editable: true },
+        { label: 'Születési dátum', key: 'birthDate', value: masterData.birthDate ? new Date(masterData.birthDate).toLocaleDateString('hu-HU') : '', icon: Clock, editable: true },
+        { label: 'Anyja neve', key: 'motherName', value: masterData.motherName, editable: true },
+        { label: 'Állampolgárság', key: 'nationality', value: masterData.nationality, editable: true },
+        { label: 'Személyi ig. szám', key: 'idCardNumber', value: masterData.idCardNumber, mono: true, editable: true },
       ],
     },
     {
@@ -104,11 +175,11 @@ export default function EvMasterDataPage() {
       icon: MapPin,
       color: 'from-teal-500 to-cyan-600',
       fields: [
-        { label: 'Székhely', value: masterData.headquarters, icon: MapPin },
-        { label: 'Levelezési cím', value: masterData.mailingAddress },
-        { label: 'Telefon', value: masterData.phone, icon: Phone, mono: true },
-        { label: 'E-mail', value: masterData.email, icon: Mail },
-        { label: 'Honlap', value: masterData.website, icon: Globe },
+        { label: 'Székhely', key: 'headquarters', value: masterData.headquarters, icon: MapPin, editable: true },
+        { label: 'Levelezési cím', key: 'mailingAddress', value: masterData.mailingAddress, editable: true },
+        { label: 'Telefon', key: 'phone', value: masterData.phone, icon: Phone, mono: true, editable: true },
+        { label: 'E-mail', key: 'email', value: masterData.email, icon: Mail, editable: true },
+        { label: 'Honlap', key: 'website', value: masterData.website, icon: Globe, editable: true },
       ],
     },
     {
@@ -116,10 +187,10 @@ export default function EvMasterDataPage() {
       icon: Briefcase,
       color: 'from-rose-500 to-pink-600',
       fields: [
-        { label: 'Fő tevékenység (TEÁOR)', value: masterData.mainActivityCode ? `${masterData.mainActivityCode}${masterData.mainActivityName ? ` – ${masterData.mainActivityName}` : ''}` : '', icon: Tag },
-        { label: 'Tevékenység kezdete', value: masterData.startDate ? new Date(masterData.startDate).toLocaleDateString('hu-HU') : '', icon: Clock },
-        { label: 'Kamarai tagság', value: masterData.chamberMembership, icon: Building2 },
-        { label: 'Kamarai szám', value: masterData.chamberNumber, mono: true },
+        { label: 'Fő tevékenység (TEÁOR)', key: 'mainActivityCode', value: masterData.mainActivityCode ? `${masterData.mainActivityCode}${masterData.mainActivityName ? ` – ${masterData.mainActivityName}` : ''}` : '', icon: Tag, editable: true },
+        { label: 'Tevékenység kezdete', key: 'startDate', value: masterData.startDate ? new Date(masterData.startDate).toLocaleDateString('hu-HU') : '', icon: Clock, editable: true },
+        { label: 'Kamarai tagság', key: 'chamberMembership', value: masterData.chamberMembership, icon: Building2, editable: true },
+        { label: 'Kamarai szám', key: 'chamberNumber', value: masterData.chamberNumber, mono: true, editable: true },
       ],
     },
   ];
@@ -150,21 +221,31 @@ export default function EvMasterDataPage() {
             <p className="text-sm text-slate-500">{client?.name || 'Ügyfél'} – NAV azonosítók, személyes és tevékenységi adatok</p>
           </div>
         </div>
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          className={cn(
-            'flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-            isEditing
-              ? 'bg-green-600 text-white hover:bg-green-700'
-              : 'bg-indigo-600 text-white hover:bg-indigo-700'
-          )}
-        >
-          {isEditing ? (
-            <><Save className="w-3.5 h-3.5" /> Mentés</>
-          ) : (
-            <><Edit3 className="w-3.5 h-3.5" /> Szerkesztés</>
-          )}
-        </button>
+        {isEditing ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={cancelEditing}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" /> Mégse
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Mentés
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={startEditing}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+          >
+            <Edit3 className="w-3.5 h-3.5" /> Szerkesztés
+          </button>
+        )}
       </div>
 
       {/* Loading */}
@@ -186,7 +267,15 @@ export default function EvMasterDataPage() {
                 </div>
                 <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {section.fields.map(field => (
-                    <DataField key={field.label} {...field} />
+                    <DataField
+                      key={field.label}
+                      label={field.label}
+                      value={isEditing && field.editable ? (editForm[field.key] ?? field.value) : field.value}
+                      icon={field.icon}
+                      mono={field.mono}
+                      isEditing={isEditing && field.editable}
+                      onChange={field.editable ? upd(field.key) : undefined}
+                    />
                   ))}
                 </div>
               </div>

@@ -56,6 +56,17 @@ export default function ClientEvMainPage() {
   // Navigation sections
   const sections = [
     {
+      title: 'Törzsadatok & életciklus',
+      description: 'Alapadatok, beállítások, tevékenység-történet',
+      icon: Settings,
+      color: 'indigo',
+      items: [
+        { to: `/accounty/client/${id}/ev/master-data`, label: 'Törzsadatok', icon: ClipboardList },
+        { to: `/accounty/client/${id}/ev/lifecycle`, label: 'Életciklus', icon: Calendar },
+        { to: `/accounty/client/${id}/ev/setup`, label: 'Beállítás varázsló', icon: Settings },
+      ],
+    },
+    {
       title: 'Adózási forma & kalkulátorok',
       description: 'Adóalap számítás, forma-választó, összehasonlítás',
       icon: Calculator,
@@ -76,6 +87,7 @@ export default function ClientEvMainPage() {
       color: 'violet',
       items: [
         { to: `/accounty/client/${id}/ev/cashbook`, label: 'Pénztárkönyv', icon: BookOpen },
+        { to: `/accounty/client/${id}/ev/cashbook/ledger`, label: 'Főkönyvi nézet', icon: BarChart3 },
         { to: `/accounty/client/${id}/ev/cashbook/close`, label: 'Időszaki zárás', icon: ClipboardList },
       ],
     },
@@ -94,7 +106,7 @@ export default function ClientEvMainPage() {
     },
     {
       title: 'Közteher-modul',
-      description: 'Járulékok, HIPA, ÁFA, kamarai hozzájárulás',
+      description: 'Járulékok, HIPA, ÁFA, kamarai hozzájárulás, cégautóadó',
       icon: Landmark,
       color: 'rose',
       items: [
@@ -102,20 +114,36 @@ export default function ClientEvMainPage() {
         { to: `/accounty/client/${id}/ev/hipa`, label: 'Helyi iparűzési adó', icon: Landmark },
         { to: `/accounty/client/${id}/ev/vat`, label: 'ÁFA kezelés', icon: Receipt },
         { to: `/accounty/client/${id}/ev/chamber`, label: 'Kamarai hozzájárulás', icon: Shield },
-        { to: `/accounty/client/${id}/ev/company-car-tax`, label: 'Cégautóadó', icon: Car },
+        { to: `/accounty/client/${id}/ev/car-tax`, label: 'Cégautóadó', icon: Car },
+        { to: `/accounty/client/${id}/ev/innovation`, label: 'Innovációs járulék', icon: TrendingUp },
       ],
     },
     {
       title: 'Bevallások & Riportok',
-      description: 'SZJA, járulék, HIPA, ÁFA bevallások',
+      description: 'SZJA, járulék, KATA, HIPA, ÁFA/cégautó bevallások',
       icon: ClipboardList,
       color: 'cyan',
       items: [
-        { to: `/accounty/client/${id}/ev/returns/szja`, label: 'SZJA bevallás (25SZJA)', icon: FileText },
-        { to: `/accounty/client/${id}/ev/returns/contributions`, label: 'Járulékbevallás (2658)', icon: Calculator },
+        { to: `/accounty/client/${id}/ev/returns`, label: 'SZJA bevallás (25SZJA)', icon: FileText },
+        { to: `/accounty/client/${id}/ev/returns/contrib`, label: 'Járulékbevallás (2658)', icon: Calculator },
+        { to: `/accounty/client/${id}/ev/returns/kata`, label: 'KATA bevallás', icon: Shield },
         { to: `/accounty/client/${id}/ev/returns/hipa`, label: 'HIPA bevallás', icon: Landmark },
-        { to: `/accounty/client/${id}/ev/reports/income`, label: 'Jövedelem-kimutatás', icon: TrendingUp },
-        { to: `/accounty/client/${id}/ev/reports/optimization`, label: 'Adóoptimalizálás', icon: BarChart3 },
+        { to: `/accounty/client/${id}/ev/returns/vat-car`, label: 'ÁFA / cégautóadó bevallás', icon: Car },
+        { to: `/accounty/client/${id}/ev/income-report`, label: 'Jövedelem-kimutatás', icon: TrendingUp },
+        { to: `/accounty/client/${id}/ev/optimization`, label: 'Adóoptimalizálás', icon: BarChart3 },
+      ],
+    },
+    {
+      title: 'Szervezeti nyilvántartás',
+      description: 'Civil szervezet, társasház, egyszeres könyvvitel mód',
+      icon: Users,
+      color: 'indigo',
+      items: [
+        { to: `/accounty/client/${id}/ev/org/bookkeeping`, label: 'Könyvvezetés mód', icon: BookOpen },
+        { to: `/accounty/client/${id}/ev/org/civil`, label: 'Civil szervezet', icon: Users },
+        { to: `/accounty/client/${id}/ev/org/condominium`, label: 'Társasház', icon: Landmark },
+        { to: `/accounty/client/${id}/ev/org/other`, label: 'Egyéb szervezet', icon: Package },
+        { to: `/accounty/client/${id}/ev/org/simplified-report`, label: 'Egyszerűsített beszámoló', icon: FileText },
       ],
     },
   ];

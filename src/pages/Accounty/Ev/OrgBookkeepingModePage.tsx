@@ -3,10 +3,12 @@ import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, BookOpen, Building2, Calculator,
   CheckCircle2, AlertTriangle, Info, Scale, ArrowRight,
-  FileText, Landmark, Shield, HelpCircle
+  FileText, Landmark, Shield, HelpCircle, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAccountyClient } from '@/hooks/accounty';
+import { useEvClientSettings, useUpdateEvSettings } from '@/hooks/useEvData';
+import { toast } from '@/hooks/use-toast';
 
 type BookkeepingMode = 'single' | 'double';
 
@@ -80,8 +82,11 @@ const ORG_TYPES = [
 export default function OrgBookkeepingModePage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
+  const { data: evSettings } = useEvClientSettings(id, 2026);
+  const updateSettings = useUpdateEvSettings();
   const [selectedMode, setSelectedMode] = useState<BookkeepingMode | null>(null);
   const [selectedOrgType, setSelectedOrgType] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
@@ -215,11 +220,28 @@ export default function OrgBookkeepingModePage() {
                 és a törvényi feltételek alapján a(z) {selectedMode === 'single' ? 'egyszeres' : 'kettős'} könyvvitel alkalmazása javasolt.
               </p>
               <div className="flex items-center gap-2 pt-2">
-                <button className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors shadow-sm">
-                  Beállítás mentése <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-                <button className="flex items-center gap-1.5 px-4 py-2 text-sm text-slate-600 border border-border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                  <HelpCircle className="w-3.5 h-3.5" /> Részletes tájékoztató
+                <button
+                  onClick={async () => {
+                    if (!id || !selectedMode) return;
+                    setSaving(true);
+                    try {
+                      await updateSettings.mutateAsync({
+                        company_id: id,
+                        tax_year: 2026,
+                        bookkeeping_mode: selectedMode === 'single' ? 'egyszeres' : 'kettos',
+                      });
+                      toast({ title: 'Beállítás mentve', description: `Könyvvezetési mód: ${MODES.find(m => m.id === selectedMode)?.name}` });
+                    } catch (err: any) {
+                      toast({ variant: 'destructive', title: 'Hiba', description: err.message || 'Nem sikerült menteni.' });
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  disabled={saving}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
+                  Beállítás mentése
                 </button>
               </div>
             </div>

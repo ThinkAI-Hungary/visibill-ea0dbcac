@@ -38,7 +38,17 @@ interface CloseCheck {
 }
 
 function runCloseChecks(period: PeriodSummary, allPeriods: PeriodSummary[]): CloseCheck[] {
-  const prevPeriod = period.month > 1 ? allPeriods[period.month - 2] : null;
+  // Check: all previous months must be either closed or have 0 entries
+  const prevMonthsOk = period.month === 1 || allPeriods
+    .slice(0, period.month - 1)
+    .every(p => p.isClosed || p.entryCount === 0);
+
+  const prevDetail = period.month === 1
+    ? 'Első hónap — nincs előző'
+    : prevMonthsOk
+      ? 'Minden korábbi hónap lezárva vagy üres'
+      : 'Korábbi hónapok között van lezáratlan, tétellel rendelkező hónap!';
+
   return [
     {
       label: 'Tételszám > 0',
@@ -63,13 +73,9 @@ function runCloseChecks(period: PeriodSummary, allPeriods: PeriodSummary[]): Clo
       detail: 'Minden sztornó feldolgozva',
     },
     {
-      label: 'Előző hónap lezárva',
-      passed: period.month === 1 || (prevPeriod?.isClosed === true),
-      detail: period.month === 1
-        ? 'Első hónap — nincs előző'
-        : prevPeriod?.isClosed
-          ? 'Előző hónap sikeresen lezárva'
-          : 'Az előző hónapot még nem zárták le!',
+      label: 'Korábbi hónapok rendben',
+      passed: prevMonthsOk,
+      detail: prevDetail,
     },
   ];
 }
@@ -333,12 +339,12 @@ export default function CashbookCloseWizard() {
             ))}
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+          <div className="flex justify-between pt-2 border-t border-border">
             <button
               onClick={() => { setStep('select'); setSelectedMonth(null); }}
-              className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
             >
-              Mégsem
+              <ArrowLeft className="w-3.5 h-3.5" /> Vissza
             </button>
             <button
               onClick={() => setStep('confirm')}
@@ -382,12 +388,12 @@ export default function CashbookCloseWizard() {
             </ul>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-between pt-2">
             <button
               onClick={() => setStep('review')}
-              className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
             >
-              Vissza
+              <ArrowLeft className="w-3.5 h-3.5" /> Vissza
             </button>
             <button
               onClick={handleClose}

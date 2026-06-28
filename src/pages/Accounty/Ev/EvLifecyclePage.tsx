@@ -1,13 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  GitBranch, ArrowLeft, ChevronRight, Plus, Calendar,
+  GitBranch, ArrowLeft, ChevronRight, Plus, Calendar, X,
   Play, Pause, StopCircle, RefreshCw, ArrowRightLeft,
-  CheckCircle2, Clock, AlertTriangle, FileText, Loader2
+  CheckCircle2, Clock, AlertTriangle, Save, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 import { useAccountyClient } from '@/hooks/accounty';
 import { useEvLifecycleEvents, type EvLifecycleEvent } from '@/hooks/useEvData';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -32,7 +36,24 @@ const FORM_LABELS: Record<string, string> = {
 export default function EvLifecyclePage() {
   const { id } = useParams<{ id: string }>();
   const { data: client } = useAccountyClient(id);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const queryClient = useQueryClient();
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // New event form state
+  const [newEvent, setNewEvent] = useState<{
+    eventType: EventType;
+    eventDate: string;
+    fromForm: string;
+    toForm: string;
+    notes: string;
+  }>({
+    eventType: 'start',
+    eventDate: new Date().toISOString().split('T')[0],
+    fromForm: '',
+    toForm: '',
+    notes: '',
+  });
 
   // ─── Real data from Supabase ───────────────────────────────────────────────
   const { data: rawEvents, isLoading } = useEvLifecycleEvents(id);
@@ -45,7 +66,6 @@ export default function EvLifecyclePage() {
       fromForm: e.from_form,
       toForm: e.to_form,
       notes: e.notes,
-      createdBy: '', // not stored in DB
     }));
   }, [rawEvents]);
 
@@ -54,6 +74,34 @@ export default function EvLifecyclePage() {
   const isActive = latestEvent ? latestEvent.eventType !== 'end' && latestEvent.eventType !== 'pause' : false;
   const currentForm = events.filter(e => e.toForm).pop()?.toForm || 'atalany';
   const firstEvent = events.length > 0 ? events[0] : null;
+
+  const handleSaveEvent = async () => {
+    if (!id) return;
+    setSaving(true);
+    try {
+      const insertData: Record<string, any> = {
+        company_id: id,
+        event_type: newEvent.eventType,
+        event_date: newEvent.eventDate,
+        notes: newEvent.notes || null,
+      };
+      if (newEvent.eventType === 'form_change') {
+        insertData.from_form = newEvent.fromForm || null;
+        insertData.to_form = newEvent.toForm || null;
+      }
+      const { error } = await supabase.from('accounty_ev_lifecycle_events').insert(insertData);
+      if (error) throw error;
+
+      toast({ title: 'Esemény rögzítve', description: `${EVENT_CONFIG[newEvent.eventType].label} sikeresen mentve.` });
+      queryClient.invalidateQueries({ queryKey: ['ev-lifecycle-events', id] });
+      setShowAddForm(false);
+      setNewEvent({ eventType: 'start', eventDate: new Date().toISOString().split('T')[0], fromForm: '', toForm: '', notes: '' });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Hiba', description: err.message || 'Nem sikerült menteni az eseményt.' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
@@ -82,25 +130,119 @@ export default function EvLifecyclePage() {
           </div>
         </div>
         <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          onClick={() => setShowAddForm(!showAddForm)}
+          className={cn(
+            'flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+            showAddForm
+              ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+              : 'bg-indigo-600 text-white hover:bg-indigo-700'
+          )}
         >
-          <Plus className="w-3.5 h-3.5" /> Új esemény
+          {showAddForm ? <><X className="w-3.5 h-3.5" /> Mégse</> : <><Plus className="w-3.5 h-3.5" /> Új esemény</>}
         </button>
       </div>
+
+      {/* Add event form */}
+      {showAddForm && (
+        <div className="bg-card rounded-xl border-2 border-indigo-200 dark:border-indigo-800 shadow-soft p-5 space-y-4 animate-in slide-in-from-top-2 duration-300">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Új életciklus esemény rögzítése</h3>
+
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            {(Object.entries(EVENT_CONFIG) as [EventType, typeof EVENT_CONFIG[EventType]][]).map(([type, config]) => (
+              <button
+                key={type}
+                onClick={() => setNewEvent(f => ({ ...f, eventType: type }))}
+                className={cn(
+                  'flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all text-center',
+                  newEvent.eventType === type
+                    ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/20'
+                    : 'border-border hover:border-slate-300'
+                )}
+              >
+                <span className={config.color}>{config.icon}</span>
+                <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300">{config.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Esemény dátuma</label>
+              <Input
+                type="date"
+                value={newEvent.eventDate}
+                onChange={e => setNewEvent(f => ({ ...f, eventDate: e.target.value }))}
+                className="bg-card"
+              />
+            </div>
+
+            {newEvent.eventType === 'form_change' && (
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Eredeti forma</label>
+                  <select
+                    value={newEvent.fromForm}
+                    onChange={e => setNewEvent(f => ({ ...f, fromForm: e.target.value }))}
+                    className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground"
+                  >
+                    <option value="">Válasszon...</option>
+                    <option value="atalany">Átalányadó</option>
+                    <option value="vszja">Vállalkozói SZJA</option>
+                    <option value="kata">KATA</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Új forma</label>
+                  <select
+                    value={newEvent.toForm}
+                    onChange={e => setNewEvent(f => ({ ...f, toForm: e.target.value }))}
+                    className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground"
+                  >
+                    <option value="">Válasszon...</option>
+                    <option value="atalany">Átalányadó</option>
+                    <option value="vszja">Vállalkozói SZJA</option>
+                    <option value="kata">KATA</option>
+                  </select>
+                </div>
+              </>
+            )}
+
+            <div className={cn('space-y-1.5', newEvent.eventType !== 'form_change' && 'col-span-1')}>
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Megjegyzés (opcionális)</label>
+              <Input
+                value={newEvent.notes}
+                onChange={e => setNewEvent(f => ({ ...f, notes: e.target.value }))}
+                placeholder="Pl. NAV bejelentés iktatószáma"
+                className="bg-card"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              onClick={handleSaveEvent}
+              disabled={saving || !newEvent.eventDate}
+              className="flex items-center gap-1.5 px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Esemény mentése
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Loading state */}
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
         </div>
-      ) : events.length === 0 ? (
+      ) : events.length === 0 && !showAddForm ? (
         <div className="bg-card rounded-xl border border-border shadow-soft p-12 text-center">
           <GitBranch className="w-10 h-10 mx-auto mb-3 text-slate-300" />
           <p className="text-sm text-slate-500">Nincs még életciklus esemény rögzítve.</p>
           <p className="text-xs text-slate-400 mt-1">Kattintson az „Új esemény" gombra az első esemény rögzítéséhez.</p>
         </div>
-      ) : (
+      ) : events.length > 0 && (
         <>
           {/* Current status card */}
           <div className="bg-card rounded-xl border border-border shadow-soft p-5">
@@ -137,62 +279,62 @@ export default function EvLifecyclePage() {
           </div>
 
           {/* Timeline */}
-          <div className="relative">
-            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700" />
-
-            <div className="space-y-4">
-              {[...events].reverse().map((event, idx) => {
-                const config = EVENT_CONFIG[event.eventType];
-                if (!config) return null;
-                return (
-                  <div key={event.id} className="relative flex gap-4 items-start">
-                    {/* Timeline dot */}
+          <div className="space-y-0">
+            {[...events].reverse().map((event, idx, arr) => {
+              const config = EVENT_CONFIG[event.eventType];
+              if (!config) return null;
+              const isLast = idx === arr.length - 1;
+              return (
+                <div key={event.id} className="flex items-stretch">
+                  {/* Left column: icon + connector line */}
+                  <div className="flex flex-col items-center w-12 shrink-0">
                     <div className={cn(
-                      'relative z-10 flex items-center justify-center w-12 h-12 rounded-xl shrink-0',
+                      'flex items-center justify-center w-12 h-12 rounded-xl shrink-0',
                       config.bgColor
                     )}>
                       <span className={config.color}>{config.icon}</span>
                     </div>
+                    {!isLast && (
+                      <div className="w-0.5 flex-1 bg-slate-200 dark:bg-slate-700" />
+                    )}
+                  </div>
 
-                    {/* Content */}
-                    <div className={cn(
-                      'flex-1 bg-card rounded-xl border border-border shadow-soft p-4',
-                      idx === 0 && 'ring-2 ring-indigo-500/20'
-                    )}>
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className={cn('text-sm font-semibold', config.color)}>
-                            {config.label}
-                          </p>
-                          {event.eventType === 'form_change' && event.fromForm && event.toForm && (
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                                {FORM_LABELS[event.fromForm]}
-                              </span>
-                              <ArrowRightLeft className="w-3 h-3 text-slate-400" />
-                              <span className="text-xs font-medium px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600">
-                                {FORM_LABELS[event.toForm]}
-                              </span>
-                            </div>
-                          )}
-                          {event.notes && (
-                            <p className="text-xs text-slate-500 mt-2">{event.notes}</p>
-                          )}
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-sm font-mono tabular-nums text-slate-700 dark:text-slate-300">
-                            {new Date(event.eventDate).toLocaleDateString('hu-HU')}
-                          </p>
-                          {event.createdBy && (
-                            <p className="text-[10px] text-slate-400 mt-0.5">{event.createdBy}</p>
-                          )}
-                        </div>
+                  {/* Right column: content card */}
+                  <div className={cn(
+                    'flex-1 ml-4 bg-card rounded-xl border border-border shadow-soft p-4',
+                    isLast ? 'mb-0' : 'mb-4',
+                    idx === 0 && 'ring-2 ring-indigo-500/20'
+                  )}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className={cn('text-sm font-semibold', config.color)}>
+                          {config.label}
+                        </p>
+                        {event.eventType === 'form_change' && event.fromForm && event.toForm && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                              {FORM_LABELS[event.fromForm]}
+                            </span>
+                            <ArrowRightLeft className="w-3 h-3 text-slate-400" />
+                            <span className="text-xs font-medium px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600">
+                              {FORM_LABELS[event.toForm]}
+                            </span>
+                          </div>
+                        )}
+                        {event.notes && (
+                          <p className="text-xs text-slate-500 mt-2">{event.notes}</p>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-mono tabular-nums text-slate-700 dark:text-slate-300">
+                          {new Date(event.eventDate).toLocaleDateString('hu-HU')}
+                        </p>
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         </>
       )}

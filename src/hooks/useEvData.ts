@@ -764,7 +764,7 @@ export function useAllEvTaxReturns(taxYear: number) {
 
 // ─── Record Type → DB Table mapping ────────────────────────────────────────
 
-const RECORD_TABLE_MAP: Record<string, string> = {
+export const RECORD_TABLE_MAP: Record<string, string> = {
   'vevo-szallito': 'accounty_ev_records_receivables',
   'tao-kesz': 'accounty_ev_records_fixed_assets',
   'keszlet': 'accounty_ev_records_inventory',
@@ -797,6 +797,79 @@ export function useEvRecords(companyId: string | undefined, recordType: string, 
       return (data || []) as Record<string, any>[];
     },
     enabled: !!companyId && !!tableName,
+  });
+}
+
+/**
+ * Generic mutation: insert a record into any EV record table.
+ */
+export function useCreateEvRecord() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ['create-ev-record'],
+    mutationFn: async ({ recordType, data }: { recordType: string; data: Record<string, any> }) => {
+      const tableName = RECORD_TABLE_MAP[recordType];
+      if (!tableName) throw new Error(`Unknown record type: ${recordType}`);
+      const { data: result, error } = await supabase
+        .from(tableName as any)
+        .insert(data)
+        .select()
+        .single();
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['ev-records'] });
+      queryClient.invalidateQueries({ queryKey: ['ev-record-counts'] });
+    },
+  });
+}
+
+/**
+ * Generic mutation: update a record in any EV record table.
+ */
+export function useUpdateEvRecord() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ['update-ev-record'],
+    mutationFn: async ({ recordType, id, data }: { recordType: string; id: string; data: Record<string, any> }) => {
+      const tableName = RECORD_TABLE_MAP[recordType];
+      if (!tableName) throw new Error(`Unknown record type: ${recordType}`);
+      const { data: result, error } = await supabase
+        .from(tableName as any)
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ev-records'] });
+    },
+  });
+}
+
+/**
+ * Generic mutation: delete a record from any EV record table.
+ */
+export function useDeleteEvRecord() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ['delete-ev-record'],
+    mutationFn: async ({ recordType, id }: { recordType: string; id: string }) => {
+      const tableName = RECORD_TABLE_MAP[recordType];
+      if (!tableName) throw new Error(`Unknown record type: ${recordType}`);
+      const { error } = await supabase
+        .from(tableName as any)
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ev-records'] });
+      queryClient.invalidateQueries({ queryKey: ['ev-record-counts'] });
+    },
   });
 }
 

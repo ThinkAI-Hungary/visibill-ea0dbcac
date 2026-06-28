@@ -22,16 +22,23 @@ export default function EvEntrepreneurialBasePage() {
   const [otherIncome, setOtherIncome] = useState(0);
   const [employerCosts, setEmployerCosts] = useState(2_880_000);
   const [depreciationTotal, setDepreciationTotal] = useState(800_000);
+  const [kivet, setKivet] = useState(4_000_000);
+
+  // Total deductible = costs + depreciation + employer costs
+  const totalDeductible = costs + depreciationTotal + employerCosts;
 
   const result = useMemo(() => calculateEntrepreneurialTax(
-    revenue,
-    costs,
-    DEFAULT_2026_PARAMS
-  ), [revenue, costs]);
+    revenue + otherIncome,
+    totalDeductible,
+    kivet,
+    0,
+    DEFAULT_2026_PARAMS,
+  ), [revenue, otherIncome, totalDeductible, kivet]);
 
   const netIncome = revenue - costs;
-  const taxableBase = netIncome - depreciationTotal;
-  const effectiveTaxRate = taxableBase > 0 ? ((result.szjaAmount + result.szochoAmount) / revenue) * 100 : 0;
+  const taxableBase = result.taxBase;
+  const totalTax = result.totalTax;
+  const effectiveTaxRate = revenue > 0 ? (totalTax / revenue) * 100 : 0;
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500">
@@ -74,7 +81,7 @@ export default function EvEntrepreneurialBasePage() {
                 <input
                   type="number"
                   value={revenue}
-                  onChange={e => setRevenue(Number(e.target.value))}
+                  onChange={e => setRevenue(Number(e.target.value) || 0)}
                   className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground font-mono tabular-nums text-right"
                 />
               </div>
@@ -83,7 +90,7 @@ export default function EvEntrepreneurialBasePage() {
                 <input
                   type="number"
                   value={costs}
-                  onChange={e => setCosts(Number(e.target.value))}
+                  onChange={e => setCosts(Number(e.target.value) || 0)}
                   className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground font-mono tabular-nums text-right"
                 />
               </div>
@@ -92,7 +99,7 @@ export default function EvEntrepreneurialBasePage() {
                 <input
                   type="number"
                   value={otherIncome}
-                  onChange={e => setOtherIncome(Number(e.target.value))}
+                  onChange={e => setOtherIncome(Number(e.target.value) || 0)}
                   className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground font-mono tabular-nums text-right"
                 />
               </div>
@@ -101,7 +108,7 @@ export default function EvEntrepreneurialBasePage() {
                 <input
                   type="number"
                   value={employerCosts}
-                  onChange={e => setEmployerCosts(Number(e.target.value))}
+                  onChange={e => setEmployerCosts(Number(e.target.value) || 0)}
                   className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground font-mono tabular-nums text-right"
                 />
               </div>
@@ -110,9 +117,19 @@ export default function EvEntrepreneurialBasePage() {
                 <input
                   type="number"
                   value={depreciationTotal}
-                  onChange={e => setDepreciationTotal(Number(e.target.value))}
+                  onChange={e => setDepreciationTotal(Number(e.target.value) || 0)}
                   className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground font-mono tabular-nums text-right"
                 />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-500 block mb-1">Vállalkozói kivét (Ft)</label>
+                <input
+                  type="number"
+                  value={kivet}
+                  onChange={e => setKivet(Number(e.target.value) || 0)}
+                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-card text-foreground font-mono tabular-nums text-right"
+                />
+                <p className="text-[10px] text-slate-400 mt-0.5">A vállalkozó személyes felhasználásra kivett összeg (SZJA-köteles jövedelem)</p>
               </div>
             </div>
           </div>
@@ -124,9 +141,9 @@ export default function EvEntrepreneurialBasePage() {
               <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
                 <p className="font-semibold">Vállalkozói SZJA szabályok (2026)</p>
                 <ul className="list-disc list-inside space-y-0.5">
-                  <li>Vállalkozói személyi jövedelemadó mértéke: {formatPercent(DEFAULT_2026_PARAMS.entrepreneurTaxRate)}</li>
-                  <li>Vállalkozói osztalékalap SZJA: {formatPercent(DEFAULT_2026_PARAMS.szjaRate)}</li>
-                  <li>Szocho mértéke: {formatPercent(DEFAULT_2026_PARAMS.szochoRate)}</li>
+                  <li>Vállalkozói SZJA mértéke: {formatPercent(DEFAULT_2026_PARAMS.vszjaRate)}</li>
+                  <li>Osztalékalap SZJA: {formatPercent(DEFAULT_2026_PARAMS.szjaRate)}</li>
+                  <li>Szocho mértéke: {formatPercent(DEFAULT_2026_PARAMS.szochoKulcs)}</li>
                   <li>Költségarány tételesen igazolva</li>
                 </ul>
               </div>
@@ -137,7 +154,7 @@ export default function EvEntrepreneurialBasePage() {
         {/* Results */}
         <div className="lg:col-span-2 space-y-4">
           {/* Summary cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
               <p className="text-xs text-slate-500 mb-1">Vállalkozói bevétel</p>
               <p className="text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">{formatHuf(revenue)}</p>
@@ -149,6 +166,10 @@ export default function EvEntrepreneurialBasePage() {
             <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
               <p className="text-xs text-slate-500 mb-1">Adóalap</p>
               <p className="text-lg font-bold text-violet-600 tabular-nums">{formatHuf(taxableBase)}</p>
+            </div>
+            <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
+              <p className="text-xs text-slate-500 mb-1">Összes adóteher</p>
+              <p className="text-lg font-bold text-red-500 tabular-nums">{formatHuf(totalTax)}</p>
             </div>
             <div className="bg-card rounded-xl border border-border p-4 shadow-soft">
               <p className="text-xs text-slate-500 mb-1">Effektív adóráta</p>
@@ -166,8 +187,9 @@ export default function EvEntrepreneurialBasePage() {
               <Row label="2. (-) Elismert költségek" value={formatHuf(costs)} negative />
               <Row label="3. (=) Nyers jövedelem" value={formatHuf(netIncome)} bold />
               <Row label="4. (-) Értékcsökkenési leírás (ÉCS)" value={formatHuf(depreciationTotal)} negative />
-              <Row label="5. (+) Egyéb bevételek" value={formatHuf(otherIncome)} />
-              <Row label="6. (=) Vállalkozói adóalap" value={formatHuf(taxableBase)} bold highlight />
+              <Row label="5. (-) Foglalkoztatói költségek" value={formatHuf(employerCosts)} negative />
+              <Row label="6. (+) Egyéb bevételek" value={formatHuf(otherIncome)} />
+              <Row label="7. (=) Vállalkozói adóalap" value={formatHuf(taxableBase)} bold highlight />
             </div>
           </div>
 
@@ -177,9 +199,12 @@ export default function EvEntrepreneurialBasePage() {
               <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Adószámítás</h2>
             </div>
             <div className="divide-y divide-border">
-              <Row label="Vállalkozói SZJA (9%)" value={formatHuf(result.szjaAmount)} />
-              <Row label="Szocho (13%)" value={formatHuf(result.szochoAmount)} />
-              <Row label="Összes adóteher" value={formatHuf(result.szjaAmount + result.szochoAmount)} bold highlight />
+              <Row label={`Vállalkozói SZJA (${formatPercent(DEFAULT_2026_PARAMS.vszjaRate)})`} value={formatHuf(result.entrepreneurialTax)} />
+              <Row label="(-) Vállalkozói kivét" value={formatHuf(kivet)} negative />
+              <Row label="(=) Osztalékalap" value={formatHuf(result.dividendBase)} bold />
+              <Row label={`Osztalék-SZJA (${formatPercent(DEFAULT_2026_PARAMS.szjaRate)})`} value={formatHuf(result.dividendSzja)} />
+              <Row label={`Szocho (${formatPercent(DEFAULT_2026_PARAMS.szochoKulcs)})`} value={formatHuf(result.dividendSzocho)} />
+              <Row label="Összes adóteher" value={formatHuf(totalTax)} bold highlight />
             </div>
           </div>
 
